@@ -1,0 +1,17 @@
+# AI assistants
+.claude/
+.codex/
+.cursor/
+.aider*
+CLAUDE.md
+AGENTS.md
+.clinerules
+.windsurfrules
+
+# IDE
+.idea/
+*.iml
+
+# Build
+build/
+node_modules/
