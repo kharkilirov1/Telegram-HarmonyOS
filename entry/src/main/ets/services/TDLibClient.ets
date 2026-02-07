@@ -129,6 +129,20 @@ export class TDLibClient {
     });
   }
 
+  // --- Contact methods ---
+
+  async getContacts(): Promise<object> {
+    return this.send('getContacts');
+  }
+
+  async searchContacts(query: string, limit: number = 50): Promise<object> {
+    return this.send('searchContacts', { query: query, limit: limit });
+  }
+
+  async getUser(userId: number): Promise<object> {
+    return this.send('getUser', { user_id: userId });
+  }
+
   // --- Message methods ---
 
   async sendMessage(chatId: number, text: string, replyToMessageId: number = 0): Promise<object> {

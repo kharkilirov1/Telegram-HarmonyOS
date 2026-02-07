@@ -2,13 +2,15 @@ import { TDLibClient } from '../services/TDLibClient';
 import { NotificationCenter, EventId } from '../controllers/NotificationCenter';
 import { PhoneNumberPage } from './Login/PhoneNumberPage';
 import { ChatListPage } from './Chat/ChatListPage';
+import { ContactsPage } from './Contacts/ContactsPage';
+import { CallsPage } from './Calls/CallsPage';
 
 @Entry
 @ComponentV2
 struct Index {
   @Local isAuthorized: boolean = false;
   @Provider('navPathStack') navPathStack: NavPathStack = new NavPathStack();
-  @Local currentTabIndex: number = 0;
+  @Local currentTabIndex: number = 2;
 
   // Auth state handler — driven by NotificationCenter, not raw TDLib
   private authHandler = (args?: Record<string, Object>): void => {
@@ -53,15 +55,15 @@ struct Index {
       if (this.isAuthorized) {
         // Authorized: Tab bar like Telegram iOS (Contacts, Calls, Chats, Settings)
         Tabs({ barPosition: BarPosition.End, index: this.currentTabIndex }) {
-          // Tab 0: Contacts (stub)
+          // Tab 0: Contacts
           TabContent() {
-            this.contactsStub()
+            ContactsPage()
           }
           .tabBar(this.tabBarItem(0, $r('app.media.ic_contact'), $r('app.string.contacts_title')))
 
-          // Tab 1: Calls (stub)
+          // Tab 1: Calls
           TabContent() {
-            this.callsStub()
+            CallsPage()
           }
           .tabBar(this.tabBarItem(1, $r('app.media.ic_phone_call'), $r('app.string.calls_title')))
 
@@ -116,79 +118,6 @@ struct Index {
     .width('100%')
     .height(50)
     .justifyContent(FlexAlign.Center)
-  }
-
-  // Stub: Contacts tab
-  @Builder
-  contactsStub() {
-    Column() {
-      // Top bar
-      Row() {
-        Text($r('app.string.contacts_title'))
-          .fontSize(28)
-          .fontWeight(FontWeight.Bold)
-          .fontColor($r('app.color.text_primary'))
-        Blank()
-        Image($r('app.media.ic_search'))
-          .width(22).height(22)
-          .fillColor($r('app.color.telegram_blue'))
-      }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 8 })
-
-      // Placeholder
-      Column() {
-        Image($r('app.media.ic_contact'))
-          .width(64).height(64)
-          .fillColor($r('app.color.text_secondary'))
-          .opacity(0.4)
-        Text($r('app.string.contacts'))
-          .fontSize(15)
-          .fontColor($r('app.color.text_secondary'))
-          .margin({ top: 12 })
-      }
-      .width('100%')
-      .layoutWeight(1)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Center)
-    }
-    .width('100%')
-    .height('100%')
-    .backgroundColor($r('app.color.background_primary'))
-  }
-
-  // Stub: Calls tab
-  @Builder
-  callsStub() {
-    Column() {
-      Row() {
-        Text($r('app.string.calls_title'))
-          .fontSize(28)
-          .fontWeight(FontWeight.Bold)
-          .fontColor($r('app.color.text_primary'))
-        Blank()
-      }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 8 })
-
-      Column() {
-        Image($r('app.media.ic_phone_call'))
-          .width(64).height(64)
-          .fillColor($r('app.color.text_secondary'))
-          .opacity(0.4)
-        Text($r('app.string.calls_title'))
-          .fontSize(15)
-          .fontColor($r('app.color.text_secondary'))
-          .margin({ top: 12 })
-      }
-      .width('100%')
-      .layoutWeight(1)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Center)
-    }
-    .width('100%')
-    .height('100%')
-    .backgroundColor($r('app.color.background_primary'))
   }
 
   // Settings as tab content (navigates to full settings on tap)

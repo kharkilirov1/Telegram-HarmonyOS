@@ -487,6 +487,46 @@
     {
       "name": "profile_change_number",
       "value": "Change Number"
+    },
+    {
+      "name": "contacts_sort",
+      "value": "Sort"
+    },
+    {
+      "name": "contacts_invite_friends",
+      "value": "Invite Friends"
+    },
+    {
+      "name": "contacts_find_nearby",
+      "value": "Find People Nearby"
+    },
+    {
+      "name": "calls_all",
+      "value": "All"
+    },
+    {
+      "name": "calls_missed",
+      "value": "Missed"
+    },
+    {
+      "name": "calls_no_recent",
+      "value": "No recent calls"
+    },
+    {
+      "name": "calls_no_missed",
+      "value": "No missed calls"
+    },
+    {
+      "name": "calls_unknown",
+      "value": "Unknown"
+    },
+    {
+      "name": "calls_voice",
+      "value": "Voice Call"
+    },
+    {
+      "name": "calls_video",
+      "value": "Video Call"
     }
   ]
 }

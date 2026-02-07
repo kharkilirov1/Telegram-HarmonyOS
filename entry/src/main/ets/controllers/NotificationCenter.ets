@@ -24,6 +24,13 @@ export enum EventId {
   FILE_DOWNLOAD_PROGRESS = 40,
   FILE_DOWNLOAD_COMPLETED = 41,
 
+  // Contacts
+  CONTACTS_UPDATED = 45,
+
+  // Calls
+  CALLS_UPDATED = 46,
+  CALL_STATE_UPDATED = 47,
+
   // Connection
   CONNECTION_STATE_CHANGED = 50,
 }
