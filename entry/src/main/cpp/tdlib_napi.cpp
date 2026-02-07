@@ -138,7 +138,163 @@ static void stub_handle_send(const std::string& request) {
             auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
             extra_str = request.substr(colon + 1, end - colon - 1);
         }
-        stub_enqueue("{\"@type\":\"messages\",\"total_count\":2,\"messages\":[{\"@type\":\"message\",\"id\":9001,\"chat_id\":-1001,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"date\":1700000900,\"is_outgoing\":false,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Hello from stub!\"}}},{\"@type\":\"message\",\"id\":9002,\"chat_id\":-1001,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":0},\"date\":1700000950,\"is_outgoing\":true,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Hi! Stub reply.\"}}}],\"@extra\":" + extra_str + "}");
+
+        // Determine which chat to generate history for
+        int chat_id = -1001;
+        auto cid_pos = request.find("\"chat_id\"");
+        if (cid_pos != std::string::npos) {
+            auto colon = request.find(':', cid_pos);
+            chat_id = std::stoi(request.substr(colon + 1));
+        }
+
+        // Generate diverse messages for the first private chat
+        if (chat_id == -1001) {
+            stub_enqueue("{\"@type\":\"messages\",\"total_count\":10,\"messages\":["
+                // 1. Text message with reply
+                "{\"@type\":\"message\",\"id\":9001,\"chat_id\":-1001,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"date\":1700000100,\"is_outgoing\":false,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Hey! Have you seen the new HarmonyOS update?\"}}},"
+                // 2. Reply
+                "{\"@type\":\"message\",\"id\":9002,\"chat_id\":-1001,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":0},\"date\":1700000200,\"is_outgoing\":true,\"reply_to\":{\"@type\":\"messageReplyToMessage\",\"message_id\":9001},\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Yes! The Liquid Glass UI looks amazing.\"}}},"
+                // 3. Photo message
+                "{\"@type\":\"message\",\"id\":9003,\"chat_id\":-1001,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"date\":1700000300,\"is_outgoing\":false,\"content\":{\"@type\":\"messagePhoto\",\"photo\":{\"@type\":\"photo\",\"sizes\":[{\"@type\":\"photoSize\",\"type\":\"m\",\"width\":320,\"height\":240}]},\"caption\":{\"@type\":\"formattedText\",\"text\":\"Check out this screenshot!\"}}},"
+                // 4. Voice message
+                "{\"@type\":\"message\",\"id\":9004,\"chat_id\":-1001,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":0},\"date\":1700000400,\"is_outgoing\":true,\"content\":{\"@type\":\"messageVoiceNote\",\"voice_note\":{\"@type\":\"voiceNote\",\"duration\":12,\"waveform\":\"AQID\"},\"caption\":{\"@type\":\"formattedText\",\"text\":\"\"}}},"
+                // 5. Document
+                "{\"@type\":\"message\",\"id\":9005,\"chat_id\":-1001,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"date\":1700000500,\"is_outgoing\":false,\"content\":{\"@type\":\"messageDocument\",\"document\":{\"@type\":\"document\",\"file_name\":\"HarmonyOS_API22_Guide.pdf\",\"mime_type\":\"application/pdf\"},\"caption\":{\"@type\":\"formattedText\",\"text\":\"\"}}},"
+                // 6. Video
+                "{\"@type\":\"message\",\"id\":9006,\"chat_id\":-1001,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"date\":1700000600,\"is_outgoing\":false,\"content\":{\"@type\":\"messageVideo\",\"video\":{\"@type\":\"video\",\"duration\":45,\"width\":1920,\"height\":1080},\"caption\":{\"@type\":\"formattedText\",\"text\":\"Demo video of the new features\"}}},"
+                // 7. Sticker
+                "{\"@type\":\"message\",\"id\":9007,\"chat_id\":-1001,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":0},\"date\":1700000700,\"is_outgoing\":true,\"content\":{\"@type\":\"messageSticker\",\"sticker\":{\"@type\":\"sticker\",\"emoji\":\"\\ud83d\\ude0e\"}}},"
+                // 8. Forwarded message
+                "{\"@type\":\"message\",\"id\":9008,\"chat_id\":-1001,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"date\":1700000800,\"is_outgoing\":false,\"forward_info\":{\"@type\":\"messageForwardInfo\",\"origin\":{\"@type\":\"messageOriginUser\",\"sender_name\":\"Tech News Channel\"}},\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"HarmonyOS NEXT now supports WebGL 2.0 and advanced Canvas rendering.\"}}},"
+                // 9. Link message
+                "{\"@type\":\"message\",\"id\":9009,\"chat_id\":-1001,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":0},\"date\":1700000900,\"is_outgoing\":true,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Check this out: https://developer.huawei.com/harmonyos\"}}},"
+                // 10. Text
+                "{\"@type\":\"message\",\"id\":9010,\"chat_id\":-1001,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"date\":1700001000,\"is_outgoing\":false,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"That's awesome! Let me know when you want to test it together.\"}}}"
+                "],\"@extra\":" + extra_str + "}");
+        }
+        // Group chat — messages from multiple senders
+        else if (chat_id == -1003) {
+            stub_enqueue("{\"@type\":\"messages\",\"total_count\":6,\"messages\":["
+                "{\"@type\":\"message\",\"id\":3101,\"chat_id\":-1003,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"date\":1700000100,\"is_outgoing\":false,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Anyone tried the new API 22 canvas features?\"}}},"
+                "{\"@type\":\"message\",\"id\":3102,\"chat_id\":-1003,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100002},\"date\":1700000200,\"is_outgoing\":false,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Yes! The Liquid Glass blur effects are incredible.\"}}},"
+                "{\"@type\":\"message\",\"id\":3103,\"chat_id\":-1003,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100003},\"date\":1700000300,\"is_outgoing\":false,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"I'm working on a Telegram client using it right now!\"}}},"
+                "{\"@type\":\"message\",\"id\":3104,\"chat_id\":-1003,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":0},\"date\":1700000400,\"is_outgoing\":true,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Same here! The backgroundBlurStyle works great.\"}}},"
+                "{\"@type\":\"message\",\"id\":3105,\"chat_id\":-1003,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"date\":1700000500,\"is_outgoing\":false,\"content\":{\"@type\":\"messageDocument\",\"document\":{\"@type\":\"document\",\"file_name\":\"api22_samples.zip\",\"mime_type\":\"application/zip\"},\"caption\":{\"@type\":\"formattedText\",\"text\":\"Here are some sample projects\"}}},"
+                "{\"@type\":\"message\",\"id\":3106,\"chat_id\":-1003,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100002},\"date\":1700000600,\"is_outgoing\":false,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Thanks! Very helpful.\"}}}"
+                "],\"@extra\":" + extra_str + "}");
+        }
+        // Default: basic messages for other chats
+        else {
+            stub_enqueue("{\"@type\":\"messages\",\"total_count\":2,\"messages\":["
+                "{\"@type\":\"message\",\"id\":9001,\"chat_id\":" + std::to_string(chat_id) + ",\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100002},\"date\":1700000900,\"is_outgoing\":false,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Hello!\"}}},"
+                "{\"@type\":\"message\",\"id\":9002,\"chat_id\":" + std::to_string(chat_id) + ",\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":0},\"date\":1700000950,\"is_outgoing\":true,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Hi there!\"}}}"
+                "],\"@extra\":" + extra_str + "}");
+        }
+    }
+    else if (request.find("\"sendMessage\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        // Extract chat_id and text
+        int send_chat_id = -1001;
+        auto scid = request.find("\"chat_id\"");
+        if (scid != std::string::npos) {
+            auto colon = request.find(':', scid);
+            send_chat_id = std::stoi(request.substr(colon + 1));
+        }
+        // Extract the message text
+        std::string send_text = "Message";
+        auto text_pos = request.find("\"text\":{\"@type\":\"formattedText\",\"text\":\"");
+        if (text_pos != std::string::npos) {
+            auto start = text_pos + 39;
+            auto end = request.find("\"", start);
+            if (end != std::string::npos) {
+                send_text = request.substr(start, end - start);
+            }
+        }
+        static int stub_msg_id = 20000;
+        int msg_id = ++stub_msg_id;
+        long now = 1700001000 + msg_id;
+
+        // Reply with the sent message as updateNewMessage
+        stub_enqueue("{\"@type\":\"ok\",\"@extra\":" + extra_str + "}");
+        stub_enqueue("{\"@type\":\"updateNewMessage\",\"message\":{\"@type\":\"message\",\"id\":" +
+            std::to_string(msg_id) + ",\"chat_id\":" + std::to_string(send_chat_id) +
+            ",\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":0},\"date\":" +
+            std::to_string(now) + ",\"is_outgoing\":true,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"" +
+            send_text + "\"}}}}");
+
+        // Simulate a reply after 2 seconds
+        std::thread([send_chat_id, msg_id]() {
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            // Typing indicator
+            stub_enqueue("{\"@type\":\"updateChatAction\",\"chat_id\":" + std::to_string(send_chat_id) +
+                ",\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"action\":{\"@type\":\"chatActionTyping\"}}");
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            stub_enqueue("{\"@type\":\"updateChatAction\",\"chat_id\":" + std::to_string(send_chat_id) +
+                ",\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"action\":{\"@type\":\"chatActionCancel\"}}");
+            // Auto-reply
+            int reply_id = msg_id + 1000;
+            long reply_time = 1700001000 + reply_id;
+            stub_enqueue("{\"@type\":\"updateNewMessage\",\"message\":{\"@type\":\"message\",\"id\":" +
+                std::to_string(reply_id) + ",\"chat_id\":" + std::to_string(send_chat_id) +
+                ",\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"date\":" +
+                std::to_string(reply_time) + ",\"is_outgoing\":false,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Got your message! \\ud83d\\udc4d\"}}}}");
+        }).detach();
+    }
+    else if (request.find("\"searchMessages\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        stub_enqueue("{\"@type\":\"foundMessages\",\"total_count\":2,\"messages\":["
+            "{\"@type\":\"message\",\"id\":9001,\"chat_id\":-1001,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"date\":1700000100,\"is_outgoing\":false,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Hey! Have you seen the new HarmonyOS update?\"}}},"
+            "{\"@type\":\"message\",\"id\":3104,\"chat_id\":-1003,\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":0},\"date\":1700000400,\"is_outgoing\":true,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Same here! The backgroundBlurStyle works great.\"}}}"
+            "],\"@extra\":" + extra_str + "}");
+    }
+    else if (request.find("\"createPrivateChat\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        int user_id = 100001;
+        auto uid_pos = request.find("\"user_id\"");
+        if (uid_pos != std::string::npos) {
+            auto colon = request.find(':', uid_pos);
+            user_id = std::stoi(request.substr(colon + 1));
+        }
+        // Return the chat_id (negative of user_id range)
+        int result_chat_id = -(user_id - 100000 + 1000);
+        stub_enqueue("{\"@type\":\"chat\",\"id\":" + std::to_string(result_chat_id) +
+            ",\"@extra\":" + extra_str + "}");
+    }
+    else if (request.find("\"editMessageText\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        stub_enqueue("{\"@type\":\"ok\",\"@extra\":" + extra_str + "}");
     }
     else if (request.find("\"searchCallMessages\"") != std::string::npos) {
         std::string extra_str;

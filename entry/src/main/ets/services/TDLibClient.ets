@@ -143,7 +143,37 @@ export class TDLibClient {
     return this.send('getUser', { user_id: userId });
   }
 
+  // --- Create chat ---
+
+  async createPrivateChat(userId: number): Promise<object> {
+    return this.send('createPrivateChat', { user_id: userId, force: false });
+  }
+
+  // --- Search ---
+
+  async searchMessages(query: string, limit: number = 50): Promise<object> {
+    return this.send('searchMessages', {
+      chat_list: { '@type': 'chatListMain' },
+      query: query,
+      offset: '',
+      offset_chat_id: 0,
+      offset_message_id: 0,
+      limit: limit
+    });
+  }
+
   // --- Message methods ---
+
+  async editMessageText(chatId: number, messageId: number, text: string): Promise<object> {
+    return this.send('editMessageText', {
+      chat_id: chatId,
+      message_id: messageId,
+      input_message_content: {
+        '@type': 'inputMessageText',
+        text: { '@type': 'formattedText', text: text }
+      }
+    });
+  }
 
   async sendMessage(chatId: number, text: string, replyToMessageId: number = 0): Promise<object> {
     const params: Record<string, object | number> = {

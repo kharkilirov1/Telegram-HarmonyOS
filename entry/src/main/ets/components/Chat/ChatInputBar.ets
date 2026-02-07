@@ -1,21 +1,41 @@
 import { Message } from '../../models/Message';
+import { EmojiPicker } from './EmojiPicker';
+import { AttachmentPanel } from './AttachmentPanel';
 
 @ComponentV2
 export struct ChatInputBar {
   @Local inputText: string = '';
   @Local isRecording: boolean = false;
   @Local recordingDuration: number = 0;
+  @Local showEmojiPicker: boolean = false;
+  @Local showAttachPanel: boolean = false;
   @Param replyMessage: Message | null = null;
+  @Param editMessage: Message | null = null;
 
   @Param onSendMessage: (text: string) => void = () => {};
+  @Param onEditMessage: (messageId: number, text: string) => void = () => {};
   @Param onAttachTap: () => void = () => {};
   @Param onCancelReply: () => void = () => {};
+  @Param onCancelEdit: () => void = () => {};
+
+  aboutToAppear(): void {
+    // Pre-fill text when editing a message
+    if (this.editMessage !== null) {
+      this.inputText = this.editMessage.text;
+    }
+  }
 
   build() {
     Column() {
       // Reply bar
       if (this.replyMessage !== null) {
         Row() {
+          Image($r('app.media.ic_reply'))
+            .width(18)
+            .height(18)
+            .fillColor($r('app.color.telegram_blue'))
+            .margin({ right: 6 })
+
           Divider()
             .vertical(true)
             .strokeWidth(2)
@@ -47,7 +67,56 @@ export struct ChatInputBar {
         }
         .width('100%')
         .height(40)
-        .padding({ left: 16, right: 12 })
+        .padding({ left: 12, right: 12 })
+        .backgroundColor($r('app.color.background_primary'))
+
+        Divider().strokeWidth(0.5).color($r('app.color.separator'))
+      }
+
+      // Edit bar (like Telegram — blue edit icon + "Editing" label)
+      if (this.editMessage !== null) {
+        Row() {
+          Image($r('app.media.ic_edit'))
+            .width(18)
+            .height(18)
+            .fillColor($r('app.color.telegram_blue'))
+            .margin({ right: 6 })
+
+          Divider()
+            .vertical(true)
+            .strokeWidth(2)
+            .color($r('app.color.telegram_blue'))
+            .height('100%')
+
+          Column() {
+            Text($r('app.string.editing_message'))
+              .fontSize(13)
+              .fontWeight(FontWeight.Medium)
+              .fontColor($r('app.color.telegram_blue'))
+              .maxLines(1)
+
+            Text(this.editMessage.text)
+              .fontSize(13)
+              .fontColor($r('app.color.text_secondary'))
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+          }
+          .margin({ left: 8 })
+          .layoutWeight(1)
+          .alignItems(HorizontalAlign.Start)
+
+          Image($r('app.media.ic_close'))
+            .width(18)
+            .height(18)
+            .fillColor($r('app.color.text_secondary'))
+            .onClick(() => {
+              this.onCancelEdit();
+              this.inputText = '';
+            })
+        }
+        .width('100%')
+        .height(40)
+        .padding({ left: 12, right: 12 })
         .backgroundColor($r('app.color.background_primary'))
 
         Divider().strokeWidth(0.5).color($r('app.color.separator'))
@@ -60,19 +129,26 @@ export struct ChatInputBar {
         if (this.isRecording) {
           this.buildRecordingUI()
         } else {
-          // Emoji button (like Android Telegram — left of text area)
-          Image($r('app.media.ic_emoji'))
+          // Emoji button — toggles emoji picker (like Android Telegram)
+          Image(this.showEmojiPicker ? $r('app.media.ic_close') : $r('app.media.ic_emoji'))
             .width(24)
             .height(24)
             .fillColor($r('app.color.text_secondary'))
             .margin({ right: 6 })
+            .onClick(() => {
+              this.showEmojiPicker = !this.showEmojiPicker;
+              this.showAttachPanel = false;
+            })
 
-          // Attach button
+          // Attach button — toggles attachment panel
           Image($r('app.media.ic_attach'))
             .width(24)
             .height(24)
             .fillColor($r('app.color.text_secondary'))
-            .onClick(() => this.onAttachTap())
+            .onClick(() => {
+              this.showAttachPanel = !this.showAttachPanel;
+              this.showEmojiPicker = false;
+            })
             .margin({ right: 6 })
 
           // Text area
@@ -86,10 +162,14 @@ export struct ChatInputBar {
             .onChange((value: string) => {
               this.inputText = value;
             })
+            .onFocus(() => {
+              this.showEmojiPicker = false;
+              this.showAttachPanel = false;
+            })
 
           // Send / Mic toggle
           if (this.inputText.trim().length > 0) {
-            Image($r('app.media.ic_send'))
+            Image(this.editMessage !== null ? $r('app.media.ic_check_single') : $r('app.media.ic_send'))
               .width(28)
               .height(28)
               .fillColor($r('app.color.telegram_blue'))
@@ -97,7 +177,11 @@ export struct ChatInputBar {
               .onClick(() => {
                 const text = this.inputText.trim();
                 if (text.length > 0) {
-                  this.onSendMessage(text);
+                  if (this.editMessage !== null) {
+                    this.onEditMessage(this.editMessage.id, text);
+                  } else {
+                    this.onSendMessage(text);
+                  }
                   this.inputText = '';
                 }
               })
@@ -124,6 +208,28 @@ export struct ChatInputBar {
         adaptiveColor: AdaptiveColor.DEFAULT,
         scale: 1.0
       })
+
+      // Emoji picker panel (slides up like Telegram Android)
+      if (this.showEmojiPicker) {
+        EmojiPicker({
+          onEmojiSelected: (emoji: string) => {
+            this.inputText += emoji;
+          }
+        })
+      }
+
+      // Attachment panel
+      if (this.showAttachPanel) {
+        AttachmentPanel({
+          onCamera: () => { this.showAttachPanel = false; },
+          onGallery: () => { this.showAttachPanel = false; },
+          onFile: () => { this.showAttachPanel = false; },
+          onLocation: () => { this.showAttachPanel = false; },
+          onContact: () => { this.showAttachPanel = false; },
+          onPoll: () => { this.showAttachPanel = false; },
+          onClose: () => { this.showAttachPanel = false; }
+        })
+      }
     }
     .width('100%')
   }
@@ -168,6 +274,7 @@ export struct ChatInputBar {
   private startRecording(): void {
     this.isRecording = true;
     this.recordingDuration = 0;
-    // TODO: Start AudioCapturer from @kit.AudioKit
+    this.showEmojiPicker = false;
+    this.showAttachPanel = false;
   }
 }

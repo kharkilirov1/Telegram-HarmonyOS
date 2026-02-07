@@ -1,5 +1,6 @@
 import { TDLibClient } from '../services/TDLibClient';
 import { NotificationCenter, EventId } from './NotificationCenter';
+import { NotificationService } from '../services/NotificationService';
 import { Chat } from '../models/Chat';
 import { Message, MessageContentType } from '../models/Message';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -188,6 +189,19 @@ export class MessagesController {
         EventId.NEW_MESSAGE,
         { chatId: msg.chatId, message: msg } as Record<string, Object>
       );
+
+      // Trigger push notification for incoming messages
+      if (!msg.isOutgoing) {
+        const chat = this.chatsById.get(msg.chatId);
+        if (chat && !chat.isMuted) {
+          NotificationService.getInstance().showMessageNotification(
+            chat.title,
+            msg.senderName || chat.title,
+            this.extractTextPreview({ content: { '@type': 'messageText', text: { text: msg.text } } } as Record<string, object>),
+            msg.chatId
+          );
+        }
+      }
     });
 
     client.on('updateMessageContent', (update: object) => {

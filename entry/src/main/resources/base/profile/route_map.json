@@ -16,6 +16,16 @@
       "buildFunction": "ChatDetailBuilder"
     },
     {
+      "name": "NewChat",
+      "pageSourceFile": "src/main/ets/pages/Chat/NewChatPage.ets",
+      "buildFunction": "NewChatBuilder"
+    },
+    {
+      "name": "Search",
+      "pageSourceFile": "src/main/ets/pages/Chat/SearchPage.ets",
+      "buildFunction": "SearchBuilder"
+    },
+    {
       "name": "Settings",
       "pageSourceFile": "src/main/ets/pages/Settings/SettingsPage.ets",
       "buildFunction": "SettingsBuilder"

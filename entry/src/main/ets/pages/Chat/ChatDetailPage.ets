@@ -1,4 +1,5 @@
 import { MessagesController } from '../../controllers/MessagesController';
+import { TDLibClient } from '../../services/TDLibClient';
 import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
 import { Message, GroupedMessage, MessageDateGroup } from '../../models/Message';
 import { Chat } from '../../models/Chat';
@@ -44,6 +45,7 @@ export struct ChatDetailPage {
   @Local showScrollToBottom: boolean = false;
   @Local newMessageCount: number = 0;
   @Local replyMessage: Message | null = null;
+  @Local editMessage: Message | null = null;
   @Local chatPhoto: string | null = null;
   @Local chatInitial: string = '';
 
@@ -194,6 +196,7 @@ export struct ChatDetailPage {
                       onForward: (msg: Message) => { this.forwardMessage(msg); },
                       onCopy: (msg: Message) => { this.copyMessageText(msg); },
                       onDelete: (msg: Message) => { this.deleteMessage(msg); },
+                      onEdit: (msg: Message) => { this.editMessage = msg; },
                       onMediaTap: (url: string) => {
                         this.navPathStack.pushPath({
                           name: 'MediaViewer',
@@ -259,8 +262,11 @@ export struct ChatDetailPage {
         // --- Input bar ---
         ChatInputBar({
           replyMessage: this.replyMessage,
+          editMessage: this.editMessage,
           onSendMessage: (text: string) => this.sendMessage(text),
-          onCancelReply: () => { this.replyMessage = null; }
+          onEditMessage: (messageId: number, text: string) => this.editMessageText(messageId, text),
+          onCancelReply: () => { this.replyMessage = null; },
+          onCancelEdit: () => { this.editMessage = null; }
         })
       }
       .width('100%')
@@ -330,6 +336,24 @@ export struct ChatDetailPage {
     this.replyMessage = null;
     await MessagesController.getInstance()
       .sendTextMessage(this.chatId, text, replyId);
+  }
+
+  private async editMessageText(messageId: number, text: string): Promise<void> {
+    this.editMessage = null;
+    await TDLibClient.getInstance().send('editMessageText', {
+      chat_id: this.chatId,
+      message_id: messageId,
+      input_message_content: {
+        '@type': 'inputMessageText',
+        text: { '@type': 'formattedText', text: text }
+      }
+    });
+    // Update local message
+    const msg = this.messages.find(m => m.id === messageId);
+    if (msg) {
+      msg.text = text;
+      this.rebuildFlatList();
+    }
   }
 
   private forwardMessage(msg: Message): void {

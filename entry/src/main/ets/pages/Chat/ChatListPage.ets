@@ -62,10 +62,23 @@ export struct ChatListPage {
 
           Blank()
 
-          Image($r('app.media.ic_edit'))
-            .width(22)
-            .height(22)
-            .fillColor($r('app.color.telegram_blue'))
+          Row({ space: 16 }) {
+            Image($r('app.media.ic_search'))
+              .width(22)
+              .height(22)
+              .fillColor($r('app.color.telegram_blue'))
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'Search' });
+              })
+
+            Image($r('app.media.ic_edit'))
+              .width(22)
+              .height(22)
+              .fillColor($r('app.color.telegram_blue'))
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'NewChat' });
+              })
+          }
         }
         .width('100%')
         .height(44)
@@ -166,7 +179,7 @@ export struct ChatListPage {
       .height('100%')
       .backgroundColor($r('app.color.background_primary'))
 
-      // FAB — like Android Telegram (pencil/compose icon)
+      // FAB — like Android Telegram (pencil/compose icon) → opens NewChat
       Button() {
         Image($r('app.media.ic_edit'))
           .width(24)
@@ -179,6 +192,9 @@ export struct ChatListPage {
       .backgroundColor($r('app.color.telegram_blue'))
       .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: 4 })
       .margin({ right: 16, bottom: 16 })
+      .onClick(() => {
+        this.navPathStack.pushPath({ name: 'NewChat' });
+      })
     }
     .width('100%')
     .height('100%')

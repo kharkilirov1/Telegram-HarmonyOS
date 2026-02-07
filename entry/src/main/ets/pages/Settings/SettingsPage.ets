@@ -1,5 +1,6 @@
 import { PreferencesService } from '../../services/PreferencesService';
 import { AuthController } from '../../controllers/AuthController';
+import { ConfigurationConstant } from '@kit.AbilityKit';
 
 @Builder
 export function SettingsBuilder(name: string, param: Object) {
@@ -357,6 +358,7 @@ export struct SettingsPage {
           if (isChecked) {
             this.themeMode = mode;
             PreferencesService.getInstance().setThemeMode(mode);
+            this.applyTheme(mode);
           }
         })
         .margin({ right: 12 })
@@ -376,6 +378,25 @@ export struct SettingsPage {
       case 'contacts': return 'My Contacts';
       case 'nobody': return 'Nobody';
       default: return 'Everybody';
+    }
+  }
+
+  private applyTheme(mode: string): void {
+    try {
+      const ctx = getContext(this).getApplicationContext();
+      switch (mode) {
+        case 'light':
+          ctx.setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT);
+          break;
+        case 'dark':
+          ctx.setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_DARK);
+          break;
+        default:
+          ctx.setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
+          break;
+      }
+    } catch (e) {
+      // Fallback: some environments may not support setColorMode
     }
   }
 

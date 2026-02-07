@@ -1,5 +1,8 @@
 import { Message, MessageContentType } from '../../models/Message';
 
+// URL detection regex
+const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/gi;
+
 @ComponentV2
 export struct MessageBubble {
   @Param message: Message = new Message();
@@ -10,6 +13,7 @@ export struct MessageBubble {
   @Param onForward: (message: Message) => void = () => {};
   @Param onCopy: (message: Message) => void = () => {};
   @Param onDelete: (message: Message) => void = () => {};
+  @Param onEdit: (message: Message) => void = () => {};
   @Param onMediaTap: (url: string) => void = () => {};
 
   build() {
@@ -18,7 +22,6 @@ export struct MessageBubble {
         // Avatar space for incoming messages
         if (!this.message.isOutgoing) {
           if (this.isLastInGroup && this.showSenderName) {
-            // Show avatar on last message in group
             Text(this.getInitial())
               .fontSize(14)
               .fontWeight(FontWeight.Medium)
@@ -133,28 +136,40 @@ export struct MessageBubble {
   }
 
   private showMessageActions(): void {
+    // Build action list — Edit only for own messages (like Telegram)
+    const buttons: Array<AlertDialogButtonOptions> = [
+      {
+        value: 'Reply',
+        action: () => { this.onReply(this.message); }
+      },
+      {
+        value: 'Forward',
+        action: () => { this.onForward(this.message); }
+      },
+      {
+        value: 'Copy',
+        action: () => { this.onCopy(this.message); }
+      }
+    ];
+
+    // Edit is only available for outgoing text messages (like Telegram)
+    if (this.message.isOutgoing && this.message.contentType === MessageContentType.TEXT) {
+      buttons.push({
+        value: 'Edit',
+        action: () => { this.onEdit(this.message); }
+      });
+    }
+
+    buttons.push({
+      value: 'Delete',
+      fontColor: $r('app.color.error_red'),
+      action: () => { this.onDelete(this.message); }
+    });
+
     AlertDialog.show({
       title: undefined,
       message: undefined,
-      buttons: [
-        {
-          value: 'Reply',
-          action: () => { this.onReply(this.message); }
-        },
-        {
-          value: 'Forward',
-          action: () => { this.onForward(this.message); }
-        },
-        {
-          value: 'Copy',
-          action: () => { this.onCopy(this.message); }
-        },
-        {
-          value: 'Delete',
-          fontColor: $r('app.color.error_red'),
-          action: () => { this.onDelete(this.message); }
-        }
-      ]
+      buttons: buttons
     });
   }
 
@@ -188,13 +203,70 @@ export struct MessageBubble {
   @Builder
   buildText() {
     Column() {
-      Text(this.message.text)
-        .fontSize(16)
-        .fontColor($r('app.color.text_primary'))
-        .lineHeight(21)
+      // Detect URLs and render as rich text (reference: Telegram link rendering)
+      if (this.containsUrl(this.message.text)) {
+        this.buildRichText()
+      } else {
+        Text(this.message.text)
+          .fontSize(16)
+          .fontColor($r('app.color.text_primary'))
+          .lineHeight(21)
+      }
+
+      // Link preview card (if URL detected)
+      if (this.containsUrl(this.message.text)) {
+        this.buildLinkPreview()
+      }
 
       this.buildTimeRow()
     }
+  }
+
+  @Builder
+  buildRichText() {
+    Text() {
+      ForEach(this.splitByUrls(this.message.text), (part: TextPart) => {
+        if (part.isUrl) {
+          Span(part.text)
+            .fontColor($r('app.color.telegram_blue'))
+            .decoration({ type: TextDecorationType.Underline, color: $r('app.color.telegram_blue') })
+        } else {
+          Span(part.text)
+            .fontColor($r('app.color.text_primary'))
+        }
+      })
+    }
+    .fontSize(16)
+    .lineHeight(21)
+  }
+
+  @Builder
+  buildLinkPreview() {
+    // Minimal link preview card (like Telegram — site name, title, description)
+    Column() {
+      Divider()
+        .strokeWidth(2)
+        .color($r('app.color.telegram_blue'))
+        .width('100%')
+
+      Text(this.extractDomain(this.message.text))
+        .fontSize(12)
+        .fontColor($r('app.color.telegram_blue'))
+        .fontWeight(FontWeight.Medium)
+        .margin({ top: 4 })
+        .maxLines(1)
+
+      Text(this.extractDomain(this.message.text))
+        .fontSize(14)
+        .fontColor($r('app.color.text_primary'))
+        .fontWeight(FontWeight.Medium)
+        .margin({ top: 2 })
+        .maxLines(1)
+    }
+    .width('100%')
+    .padding({ left: 8, top: 4, bottom: 4 })
+    .margin({ top: 4 })
+    .alignItems(HorizontalAlign.Start)
   }
 
   @Builder
@@ -214,6 +286,20 @@ export struct MessageBubble {
                 this.onMediaTap(this.message.photoUrl);
               }
             })
+        } else {
+          // Photo placeholder (stub mode)
+          Column() {
+            Image($r('app.media.ic_photo'))
+              .width(48)
+              .height(48)
+              .fillColor(Color.White)
+              .opacity(0.7)
+          }
+          .width('100%')
+          .height(180)
+          .borderRadius(15)
+          .backgroundColor('#E0E0E0')
+          .justifyContent(FlexAlign.Center)
         }
 
         // Time overlay on photo
@@ -263,104 +349,151 @@ export struct MessageBubble {
 
   @Builder
   buildVoice() {
-    Row() {
-      Image($r('app.media.ic_play'))
-        .width(32)
-        .height(32)
-        .fillColor($r('app.color.telegram_blue'))
+    Column() {
+      Row() {
+        Image($r('app.media.ic_play'))
+          .width(36)
+          .height(36)
+          .fillColor(Color.White)
+          .backgroundColor($r('app.color.telegram_blue'))
+          .borderRadius(18)
+          .padding(8)
 
-      Column() {
-        // Waveform bars
-        Row({ space: 1 }) {
-          ForEach(this.message.voiceWaveform.length > 0
-            ? this.message.voiceWaveform
-            : [0.3, 0.5, 0.8, 1.0, 0.7, 0.4, 0.6, 0.9, 0.5, 0.3,
-              0.7, 0.8, 0.4, 0.6, 0.9, 0.5, 0.3, 0.7, 0.4, 0.6],
-            (amp: number, idx: number) => {
-              Column()
-                .width(2)
-                .height(amp * 20)
-                .borderRadius(1)
-                .backgroundColor($r('app.color.telegram_blue'))
-            })
+        Column() {
+          // Waveform bars with gradient-like effect
+          Row({ space: 1 }) {
+            ForEach(this.message.voiceWaveform.length > 0
+              ? this.message.voiceWaveform
+              : [0.3, 0.5, 0.8, 1.0, 0.7, 0.4, 0.6, 0.9, 0.5, 0.3,
+                0.7, 0.8, 0.4, 0.6, 0.9, 0.5, 0.3, 0.7, 0.4, 0.6],
+              (amp: number, idx: number) => {
+                Column()
+                  .width(3)
+                  .height(amp * 24)
+                  .borderRadius(1.5)
+                  .backgroundColor($r('app.color.telegram_blue'))
+              })
+          }
+          .height(28)
+          .alignItems(VerticalAlign.Center)
+
+          Row() {
+            Text(this.formatDuration(this.message.voiceDuration))
+              .fontSize(12)
+              .fontColor($r('app.color.text_secondary'))
+            Blank().layoutWeight(1)
+          }
+          .width('100%')
+          .margin({ top: 2 })
         }
-        .height(24)
-        .alignItems(VerticalAlign.Center)
-
-        Text(this.formatDuration(this.message.voiceDuration))
-          .fontSize(11)
-          .fontColor($r('app.color.text_secondary'))
+        .margin({ left: 10 })
+        .layoutWeight(1)
       }
-      .margin({ left: 8 })
-      .layoutWeight(1)
+      .width('100%')
+
+      this.buildTimeRow()
     }
-    .width('100%')
   }
 
   @Builder
   buildVideo() {
-    Stack({ alignContent: Alignment.Center }) {
-      if (this.message.photoUrl) {
-        Image(this.message.photoUrl)
-          .alt($r('app.media.ic_photo'))
-          .autoResize(true)
-          .onError(() => {})
-          .width('100%')
-          .borderRadius(15)
-          .objectFit(ImageFit.Cover)
+    Column() {
+      Stack({ alignContent: Alignment.Center }) {
+        if (this.message.photoUrl) {
+          Image(this.message.photoUrl)
+            .alt($r('app.media.ic_photo'))
+            .autoResize(true)
+            .onError(() => {})
+            .width('100%')
+            .height(200)
+            .borderRadius(15)
+            .objectFit(ImageFit.Cover)
+        } else {
+          // Video placeholder (stub mode)
+          Column()
+            .width('100%')
+            .height(200)
+            .borderRadius(15)
+            .backgroundColor('#333333')
+        }
+
+        // Play button overlay
+        Column() {
+          Image($r('app.media.ic_play'))
+            .width(28)
+            .height(28)
+            .fillColor(Color.White)
+        }
+        .width(52)
+        .height(52)
+        .borderRadius(26)
+        .backgroundColor($r('app.color.play_overlay'))
+        .justifyContent(FlexAlign.Center)
+
+        // Duration badge
+        if (this.message.videoDuration > 0) {
+          Text(this.formatDuration(this.message.videoDuration))
+            .fontSize(11)
+            .fontColor(Color.White)
+            .backgroundColor($r('app.color.time_overlay'))
+            .borderRadius(4)
+            .padding({ left: 4, right: 4, top: 1, bottom: 1 })
+            .position({ x: 8, y: 8 })
+        }
       }
 
-      // Play button overlay
-      Circle()
-        .width(48)
-        .height(48)
-        .fill($r('app.color.play_overlay'))
-
-      Image($r('app.media.ic_play'))
-        .width(24)
-        .height(24)
-        .fillColor(Color.White)
-
-      // Duration badge
-      if (this.message.videoDuration > 0) {
-        Text(this.formatDuration(this.message.videoDuration))
-          .fontSize(11)
-          .fontColor(Color.White)
-          .backgroundColor($r('app.color.time_overlay'))
-          .borderRadius(4)
-          .padding({ left: 4, right: 4, top: 1, bottom: 1 })
-          .position({ x: 8, y: 8 })
+      // Caption
+      if (this.message.text.length > 0) {
+        Text(this.message.text)
+          .fontSize(16)
+          .fontColor($r('app.color.text_primary'))
+          .margin({ left: 8, right: 8, top: 4 })
       }
     }
   }
 
   @Builder
   buildDocument() {
-    Row() {
-      Image($r('app.media.ic_document'))
-        .width(40)
-        .height(40)
-        .fillColor($r('app.color.telegram_blue'))
+    Column() {
+      Row() {
+        // Document icon with file extension styling
+        Column() {
+          Image($r('app.media.ic_document'))
+            .width(24)
+            .height(24)
+            .fillColor(Color.White)
+        }
+        .width(44)
+        .height(44)
+        .borderRadius(8)
+        .backgroundColor($r('app.color.telegram_blue'))
+        .justifyContent(FlexAlign.Center)
 
-      Column() {
-        Text(this.message.fileName || $r('app.string.document_label'))
-          .fontSize(15)
-          .fontWeight(FontWeight.Medium)
-          .fontColor($r('app.color.telegram_blue'))
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
+        Column() {
+          Text(this.message.fileName || $r('app.string.document_label'))
+            .fontSize(15)
+            .fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.telegram_blue'))
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
 
-        Text($r('app.string.file_label'))
-          .fontSize(13)
-          .fontColor($r('app.color.text_secondary'))
+          Text($r('app.string.file_label'))
+            .fontSize(13)
+            .fontColor($r('app.color.text_secondary'))
+        }
+        .margin({ left: 10 })
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start)
+
+        Image($r('app.media.ic_download'))
+          .width(22)
+          .height(22)
+          .fillColor($r('app.color.telegram_blue'))
       }
-      .margin({ left: 10 })
-      .layoutWeight(1)
-      .alignItems(HorizontalAlign.Start)
+      .width('100%')
 
       this.buildTimeRow()
     }
-    .width('100%')
   }
 
   // --- Time + checkmarks row ---
@@ -414,8 +547,58 @@ export struct MessageBubble {
   }
 
   private formatDuration(seconds: number): string {
-    const m = Math.floor(seconds / 60);
+    const hours = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
+    if (hours > 0) {
+      return `${hours}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
+
+  // --- URL detection ---
+
+  private containsUrl(text: string): boolean {
+    return URL_REGEX.test(text);
+  }
+
+  private extractDomain(text: string): string {
+    const match = text.match(URL_REGEX);
+    if (match && match.length > 0) {
+      try {
+        const url = match[0];
+        const domainMatch = url.match(/https?:\/\/([^/]+)/);
+        return domainMatch ? domainMatch[1] : url;
+      } catch (e) {
+        return '';
+      }
+    }
+    return '';
+  }
+
+  private splitByUrls(text: string): TextPart[] {
+    const parts: TextPart[] = [];
+    let lastIndex = 0;
+    const regex = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/gi;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push({ text: text.substring(lastIndex, match.index), isUrl: false });
+      }
+      parts.push({ text: match[0], isUrl: true });
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < text.length) {
+      parts.push({ text: text.substring(lastIndex), isUrl: false });
+    }
+
+    return parts.length > 0 ? parts : [{ text: text, isUrl: false }];
+  }
+}
+
+interface TextPart {
+  text: string;
+  isUrl: boolean;
 }

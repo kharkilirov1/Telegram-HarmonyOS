@@ -5,6 +5,9 @@ import { TDLibClient } from './services/TDLibClient';
 import { AuthController } from './controllers/AuthController';
 import { MessagesController } from './controllers/MessagesController';
 import { FileController } from './controllers/FileController';
+import { ContactsController } from './controllers/ContactsController';
+import { CallsController } from './controllers/CallsController';
+import { NotificationService } from './services/NotificationService';
 
 const TAG = 'TelegramAbilityStage';
 const DOMAIN = 0x0000;
@@ -21,5 +24,10 @@ export default class TelegramAbilityStage extends AbilityStage {
     AuthController.getInstance();
     MessagesController.getInstance();
     FileController.getInstance();
+    ContactsController.getInstance();
+    CallsController.getInstance();
+
+    // Request notification permission (HarmonyOS NotificationKit)
+    NotificationService.getInstance().requestPermission();
   }
 }

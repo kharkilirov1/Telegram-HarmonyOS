@@ -527,6 +527,42 @@
     {
       "name": "calls_video",
       "value": "Video Call"
+    },
+    {
+      "name": "editing_message",
+      "value": "Editing"
+    },
+    {
+      "name": "search_messages_placeholder",
+      "value": "Search messages..."
+    },
+    {
+      "name": "search_no_results",
+      "value": "No results found"
+    },
+    {
+      "name": "attach_camera",
+      "value": "Camera"
+    },
+    {
+      "name": "attach_gallery",
+      "value": "Gallery"
+    },
+    {
+      "name": "attach_file",
+      "value": "File"
+    },
+    {
+      "name": "attach_location",
+      "value": "Location"
+    },
+    {
+      "name": "attach_contact",
+      "value": "Contact"
+    },
+    {
+      "name": "attach_poll",
+      "value": "Poll"
     }
   ]
 }
