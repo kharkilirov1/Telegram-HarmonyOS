@@ -1,4 +1,5 @@
 import { AuthController } from '../../controllers/AuthController';
+import { TelegramMascot, MascotState } from '../../components/Common/TelegramMascot';
 
 @Builder
 export function LoginPasswordBuilder() {
@@ -13,6 +14,7 @@ export struct PasswordPage {
   @Local errorMessage: string = '';
   @Local passwordHint: string = '';
   @Local showPassword: boolean = false;
+  @Local mascotState: MascotState = MascotState.CLOSE;
 
   aboutToAppear(): void {
     this.passwordHint = AuthController.getInstance().getPasswordHint();
@@ -43,14 +45,11 @@ export struct PasswordPage {
         .height(44)
         .padding({ left: 16, right: 16 })
 
-        Blank().height(40)
+        Blank().height(20)
 
-        // Lock icon (like real Telegram — would be monkey animation in real app)
-        Image($r('app.media.ic_lock'))
-          .width(80)
-          .height(80)
-          .fillColor($r('app.color.telegram_blue'))
-          .margin({ bottom: 20 })
+        // Animated mascot — closes eyes for password, peeks when toggled
+        TelegramMascot({ mascotState: this.mascotState, size: 120 })
+          .margin({ bottom: 12 })
 
         // Title
         Text($r('app.string.two_step_title'))
@@ -80,13 +79,19 @@ export struct PasswordPage {
               this.password = value;
               this.errorMessage = '';
             })
+            .onFocus(() => {
+              // Monkey closes eyes when password field is focused
+              if (!this.showPassword) {
+                this.mascotState = MascotState.CLOSE;
+              }
+            })
             .onSubmit(() => {
               if (this.password.length > 0) {
                 this.submitPassword();
               }
             })
 
-          // Show/hide password toggle
+          // Show/hide password toggle — monkey peeks / closes eyes
           Image(this.showPassword ? $r('app.media.ic_close') : $r('app.media.ic_search'))
             .width(20)
             .height(20)
@@ -94,6 +99,13 @@ export struct PasswordPage {
             .margin({ right: 12 })
             .onClick(() => {
               this.showPassword = !this.showPassword;
+              if (this.showPassword) {
+                // Monkey peeks through fingers
+                this.mascotState = MascotState.PEEK;
+              } else {
+                // Monkey closes eyes again
+                this.mascotState = MascotState.CLOSE_AND_PEEK;
+              }
             })
         }
         .width('80%')

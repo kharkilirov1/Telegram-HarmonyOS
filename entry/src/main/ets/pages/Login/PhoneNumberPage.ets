@@ -1,4 +1,5 @@
 import { AuthController } from '../../controllers/AuthController';
+import { TelegramMascot, MascotState } from '../../components/Common/TelegramMascot';
 
 @ComponentV2
 export struct PhoneNumberPage {
@@ -29,11 +30,9 @@ export struct PhoneNumberPage {
 
         Blank().height(20)
 
-        // Telegram logo — centered, like real Telegram login
-        Image($r('app.media.app_icon'))
-          .width(96)
-          .height(96)
-          .margin({ bottom: 20 })
+        // Animated mascot — the Telegram monkey (like real Telegram login)
+        TelegramMascot({ mascotState: MascotState.IDLE, size: 120 })
+          .margin({ bottom: 16 })
 
         // Title — "Your Phone Number"
         Text($r('app.string.login_your_phone'))

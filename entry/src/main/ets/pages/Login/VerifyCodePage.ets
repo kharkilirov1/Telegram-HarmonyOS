@@ -1,4 +1,5 @@
 import { AuthController } from '../../controllers/AuthController';
+import { TelegramMascot, MascotState } from '../../components/Common/TelegramMascot';
 
 @Builder
 export function LoginCodeBuilder(name: string, param: Object) {
@@ -13,6 +14,7 @@ export struct VerifyCodePage {
   @Local isLoading: boolean = false;
   @Local errorMessage: string = '';
   @Local resendTimer: number = 60;
+  @Local mascotState: MascotState = MascotState.IDLE;
   private timerInterval: number = -1;
 
   aboutToAppear(): void {
@@ -50,13 +52,11 @@ export struct VerifyCodePage {
         .height(44)
         .padding({ left: 16, right: 16 })
 
-        Blank().height(40)
+        Blank().height(20)
 
-        // Telegram icon
-        Image($r('app.media.app_icon'))
-          .width(80)
-          .height(80)
-          .margin({ bottom: 20 })
+        // Animated mascot — tracks code input (like real Telegram)
+        TelegramMascot({ mascotState: this.mascotState, size: 120 })
+          .margin({ bottom: 12 })
 
         // Title
         Text($r('app.string.enter_code_title'))
@@ -95,9 +95,14 @@ export struct VerifyCodePage {
           .onChange((value: string) => {
             this.code = value;
             this.errorMessage = '';
+            // Mascot tracks code input — switches to tracking when typing
+            this.mascotState = value.length > 0 ? MascotState.TRACKING : MascotState.IDLE;
             if (value.length >= 5) {
               this.submitCode();
             }
+          })
+          .onFocus(() => {
+            this.mascotState = this.code.length > 0 ? MascotState.TRACKING : MascotState.IDLE;
           })
 
         // Error message

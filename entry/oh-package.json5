@@ -5,5 +5,7 @@
   "main": "",
   "author": "",
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {
+    "@ohos/lottie": "^2.0.12"
+  }
 }
