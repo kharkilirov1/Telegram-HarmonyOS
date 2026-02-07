@@ -88,6 +88,28 @@ export class MessagesController {
     await TDLibClient.getInstance().sendMessage(chatId, text, replyToMessageId);
   }
 
+  async deleteMessage(chatId: number, messageId: number): Promise<void> {
+    await TDLibClient.getInstance().send('deleteMessages', {
+      chat_id: chatId,
+      message_ids: [messageId],
+      revoke: true
+    });
+
+    // Remove from local cache
+    const messages = this.messagesByChat.get(chatId);
+    if (messages) {
+      const idx = messages.findIndex(m => m.id === messageId);
+      if (idx >= 0) {
+        messages.splice(idx, 1);
+      }
+    }
+
+    NotificationCenter.getInstance().post(
+      EventId.MESSAGE_DELETED,
+      { chatId: chatId, messageId: messageId } as Record<string, Object>
+    );
+  }
+
   // --- TDLib update subscriptions ---
 
   private subscribeToUpdates(): void {

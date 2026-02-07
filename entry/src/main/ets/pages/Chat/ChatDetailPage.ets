@@ -8,6 +8,8 @@ import { TypingIndicator } from '../../components/Common/TypingIndicator';
 import { ChatInputBar } from '../../components/Chat/ChatInputBar';
 import { formatLastSeen } from '../../components/Common/AvatarWithStatus';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
+import { pasteboard } from '@kit.BasicServicesKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 @Builder
 export function ChatDetailBuilder(name: string, param: Object) {
@@ -159,7 +161,17 @@ export struct ChatDetailPage {
                       message: item.groupedMessage.message,
                       isFirstInGroup: item.groupedMessage.isFirstInGroup,
                       isLastInGroup: item.groupedMessage.isLastInGroup,
-                      showSenderName: this.isGroupChat
+                      showSenderName: this.isGroupChat,
+                      onReply: (msg: Message) => { this.replyMessage = msg; },
+                      onForward: (msg: Message) => { this.forwardMessage(msg); },
+                      onCopy: (msg: Message) => { this.copyMessageText(msg); },
+                      onDelete: (msg: Message) => { this.deleteMessage(msg); },
+                      onMediaTap: (url: string) => {
+                        this.navPathStack.pushPath({
+                          name: 'MediaViewer',
+                          param: { url: url } as Record<string, string>
+                        });
+                      }
                     })
                   }
                 }
@@ -288,6 +300,26 @@ export struct ChatDetailPage {
     this.replyMessage = null;
     await MessagesController.getInstance()
       .sendTextMessage(this.chatId, text, replyId);
+  }
+
+  private forwardMessage(msg: Message): void {
+    // TODO: open chat picker for forwarding
+    hilog.info(0x0001, 'ChatDetail', 'Forward message: %{public}d', msg.id);
+  }
+
+  private copyMessageText(msg: Message): void {
+    // Copy text content to clipboard via pasteboard
+    if (msg.text.length > 0) {
+      const pasteData = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, msg.text);
+      const systemPasteboard = pasteboard.getSystemPasteboard();
+      systemPasteboard.setDataSync(pasteData);
+    }
+  }
+
+  private async deleteMessage(msg: Message): Promise<void> {
+    await MessagesController.getInstance().deleteMessage(this.chatId, msg.id);
+    this.messages = this.messages.filter(m => m.id !== msg.id);
+    this.rebuildFlatList();
   }
 
   // --- Build flat list from messages (sender groups + date groups → flat items) ---

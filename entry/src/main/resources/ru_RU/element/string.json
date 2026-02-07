@@ -251,6 +251,122 @@
     {
       "name": "secret_chat",
       "value": "Секретный чат"
+    },
+    {
+      "name": "settings_theme",
+      "value": "Тема"
+    },
+    {
+      "name": "settings_theme_system",
+      "value": "Системная"
+    },
+    {
+      "name": "settings_theme_light",
+      "value": "Светлая"
+    },
+    {
+      "name": "settings_theme_dark",
+      "value": "Тёмная"
+    },
+    {
+      "name": "settings_notifications",
+      "value": "Уведомления"
+    },
+    {
+      "name": "settings_notifications_enabled",
+      "value": "Уведомления"
+    },
+    {
+      "name": "settings_notification_sound",
+      "value": "Звук уведомления"
+    },
+    {
+      "name": "settings_notification_sound_default",
+      "value": "По умолчанию"
+    },
+    {
+      "name": "settings_chat",
+      "value": "Настройки чата"
+    },
+    {
+      "name": "settings_send_by_enter",
+      "value": "Отправка по Enter"
+    },
+    {
+      "name": "settings_font_size",
+      "value": "Размер шрифта"
+    },
+    {
+      "name": "settings_privacy",
+      "value": "Конфиденциальность"
+    },
+    {
+      "name": "settings_last_seen",
+      "value": "Последний визит"
+    },
+    {
+      "name": "settings_everybody",
+      "value": "Все"
+    },
+    {
+      "name": "settings_my_contacts",
+      "value": "Мои контакты"
+    },
+    {
+      "name": "settings_nobody",
+      "value": "Никто"
+    },
+    {
+      "name": "settings_about",
+      "value": "О приложении"
+    },
+    {
+      "name": "settings_version",
+      "value": "Версия"
+    },
+    {
+      "name": "settings_log_out",
+      "value": "Выйти"
+    },
+    {
+      "name": "profile_title",
+      "value": "Профиль"
+    },
+    {
+      "name": "profile_phone",
+      "value": "Телефон"
+    },
+    {
+      "name": "profile_username",
+      "value": "Имя пользователя"
+    },
+    {
+      "name": "profile_bio",
+      "value": "О себе"
+    },
+    {
+      "name": "profile_no_bio",
+      "value": "Нет"
+    },
+    {
+      "name": "profile_edit",
+      "value": "Редактировать"
+    },
+    {
+      "name": "media_save",
+      "value": "Сохранить"
+    },
+    {
+      "name": "media_share",
+      "value": "Поделиться"
+    },
+    {
+      "name": "message_copied",
+      "value": "Сообщение скопировано"
+    },
+    {
+      "name": "select_message",
+      "value": "Выбрать"
     }
   ]
 }

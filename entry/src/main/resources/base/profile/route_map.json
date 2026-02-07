@@ -14,6 +14,21 @@
       "name": "ChatDetail",
       "pageSourceFile": "src/main/ets/pages/Chat/ChatDetailPage.ets",
       "buildFunction": "ChatDetailBuilder"
+    },
+    {
+      "name": "Settings",
+      "pageSourceFile": "src/main/ets/pages/Settings/SettingsPage.ets",
+      "buildFunction": "SettingsBuilder"
+    },
+    {
+      "name": "Profile",
+      "pageSourceFile": "src/main/ets/pages/Settings/ProfilePage.ets",
+      "buildFunction": "ProfileBuilder"
+    },
+    {
+      "name": "MediaViewer",
+      "pageSourceFile": "src/main/ets/pages/Settings/MediaViewerPage.ets",
+      "buildFunction": "MediaViewerBuilder"
     }
   ]
 }

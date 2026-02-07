@@ -115,6 +115,42 @@
     {
       "name": "sender_color_7",
       "value": "#009688"
+    },
+    {
+      "name": "settings_section_bg",
+      "value": "#2C2C2E"
+    },
+    {
+      "name": "settings_icon_blue",
+      "value": "#3390EC"
+    },
+    {
+      "name": "settings_icon_green",
+      "value": "#4DCC5E"
+    },
+    {
+      "name": "settings_icon_orange",
+      "value": "#FF9F0A"
+    },
+    {
+      "name": "settings_icon_purple",
+      "value": "#BF5AF2"
+    },
+    {
+      "name": "settings_icon_red",
+      "value": "#FF453A"
+    },
+    {
+      "name": "logout_red",
+      "value": "#FF453A"
+    },
+    {
+      "name": "action_sheet_bg",
+      "value": "#1C1C1E"
+    },
+    {
+      "name": "media_viewer_bg",
+      "value": "#000000"
     }
   ]
 }

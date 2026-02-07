@@ -38,10 +38,19 @@ export struct ChatListPage {
     Column() {
       // Top bar
       Row() {
+        Image($r('app.media.ic_settings'))
+          .width(24)
+          .height(24)
+          .fillColor($r('app.color.telegram_blue'))
+          .onClick(() => {
+            this.navPathStack.pushPath({ name: 'Settings' });
+          })
+
         Text($r('app.string.chats_title'))
           .fontSize(28)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
+          .margin({ left: 12 })
 
         Blank()
 

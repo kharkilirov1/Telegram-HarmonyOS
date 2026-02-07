@@ -6,6 +6,11 @@ export struct MessageBubble {
   @Param isFirstInGroup: boolean = true;
   @Param isLastInGroup: boolean = true;
   @Param showSenderName: boolean = false;
+  @Param onReply: (message: Message) => void = () => {};
+  @Param onForward: (message: Message) => void = () => {};
+  @Param onCopy: (message: Message) => void = () => {};
+  @Param onDelete: (message: Message) => void = () => {};
+  @Param onMediaTap: (url: string) => void = () => {};
 
   build() {
     Column() {
@@ -109,6 +114,12 @@ export struct MessageBubble {
         .borderRadius(this.getBubbleRadii())
         .backgroundColor(this.getBubbleColor())
         .constraintSize({ maxWidth: '75%' })
+        .gesture(
+          LongPressGesture()
+            .onAction(() => {
+              this.showMessageActions();
+            })
+        )
       }
       .width('100%')
       .justifyContent(this.message.isOutgoing ? FlexAlign.End : FlexAlign.Start)
@@ -119,6 +130,32 @@ export struct MessageBubble {
       top: this.isFirstInGroup ? 6 : 1,
       bottom: this.isLastInGroup ? 6 : 1
     })
+  }
+
+  private showMessageActions(): void {
+    AlertDialog.show({
+      title: undefined,
+      message: undefined,
+      buttons: [
+        {
+          value: 'Reply',
+          action: () => { this.onReply(this.message); }
+        },
+        {
+          value: 'Forward',
+          action: () => { this.onForward(this.message); }
+        },
+        {
+          value: 'Copy',
+          action: () => { this.onCopy(this.message); }
+        },
+        {
+          value: 'Delete',
+          fontColor: $r('app.color.error_red'),
+          action: () => { this.onDelete(this.message); }
+        }
+      ]
+    });
   }
 
   // --- Bubble shape: tail on last message of group ---
@@ -172,6 +209,11 @@ export struct MessageBubble {
             .width('100%')
             .borderRadius(15)
             .objectFit(ImageFit.Cover)
+            .onClick(() => {
+              if (this.message.photoUrl) {
+                this.onMediaTap(this.message.photoUrl);
+              }
+            })
         }
 
         // Time overlay on photo

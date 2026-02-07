@@ -251,6 +251,122 @@
     {
       "name": "secret_chat",
       "value": "Secret Chat"
+    },
+    {
+      "name": "settings_theme",
+      "value": "Theme"
+    },
+    {
+      "name": "settings_theme_system",
+      "value": "System"
+    },
+    {
+      "name": "settings_theme_light",
+      "value": "Light"
+    },
+    {
+      "name": "settings_theme_dark",
+      "value": "Dark"
+    },
+    {
+      "name": "settings_notifications",
+      "value": "Notifications"
+    },
+    {
+      "name": "settings_notifications_enabled",
+      "value": "Notifications"
+    },
+    {
+      "name": "settings_notification_sound",
+      "value": "Notification Sound"
+    },
+    {
+      "name": "settings_notification_sound_default",
+      "value": "Default"
+    },
+    {
+      "name": "settings_chat",
+      "value": "Chat Settings"
+    },
+    {
+      "name": "settings_send_by_enter",
+      "value": "Send by Enter"
+    },
+    {
+      "name": "settings_font_size",
+      "value": "Font Size"
+    },
+    {
+      "name": "settings_privacy",
+      "value": "Privacy"
+    },
+    {
+      "name": "settings_last_seen",
+      "value": "Last Seen"
+    },
+    {
+      "name": "settings_everybody",
+      "value": "Everybody"
+    },
+    {
+      "name": "settings_my_contacts",
+      "value": "My Contacts"
+    },
+    {
+      "name": "settings_nobody",
+      "value": "Nobody"
+    },
+    {
+      "name": "settings_about",
+      "value": "About"
+    },
+    {
+      "name": "settings_version",
+      "value": "Version"
+    },
+    {
+      "name": "settings_log_out",
+      "value": "Log Out"
+    },
+    {
+      "name": "profile_title",
+      "value": "Profile"
+    },
+    {
+      "name": "profile_phone",
+      "value": "Phone"
+    },
+    {
+      "name": "profile_username",
+      "value": "Username"
+    },
+    {
+      "name": "profile_bio",
+      "value": "Bio"
+    },
+    {
+      "name": "profile_no_bio",
+      "value": "None"
+    },
+    {
+      "name": "profile_edit",
+      "value": "Edit"
+    },
+    {
+      "name": "media_save",
+      "value": "Save"
+    },
+    {
+      "name": "media_share",
+      "value": "Share"
+    },
+    {
+      "name": "message_copied",
+      "value": "Message copied"
+    },
+    {
+      "name": "select_message",
+      "value": "Select"
     }
   ]
 }
