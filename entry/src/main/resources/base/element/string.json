@@ -563,6 +563,114 @@
     {
       "name": "attach_poll",
       "value": "Poll"
+    },
+    {
+      "name": "create",
+      "value": "Create"
+    },
+    {
+      "name": "forward_to",
+      "value": "Forward to..."
+    },
+    {
+      "name": "channel_name",
+      "value": "Channel Name"
+    },
+    {
+      "name": "channel_description",
+      "value": "Description"
+    },
+    {
+      "name": "public_channel",
+      "value": "Public Channel"
+    },
+    {
+      "name": "private_channel",
+      "value": "Private Channel"
+    },
+    {
+      "name": "public_link",
+      "value": "Public Link"
+    },
+    {
+      "name": "group_name",
+      "value": "Group Name"
+    },
+    {
+      "name": "add_members",
+      "value": "Add Members"
+    },
+    {
+      "name": "invite_to_channel",
+      "value": "Invite Members"
+    },
+    {
+      "name": "passcode_lock",
+      "value": "Passcode Lock"
+    },
+    {
+      "name": "two_step_verification",
+      "value": "Two-Step Verification"
+    },
+    {
+      "name": "active_sessions",
+      "value": "Active Sessions"
+    },
+    {
+      "name": "auto_delete_messages",
+      "value": "Auto-Delete Messages"
+    },
+    {
+      "name": "delete_my_account",
+      "value": "Delete My Account"
+    },
+    {
+      "name": "storage_usage",
+      "value": "Storage Usage"
+    },
+    {
+      "name": "network_usage",
+      "value": "Network Usage"
+    },
+    {
+      "name": "auto_download_media",
+      "value": "Auto-Download Media"
+    },
+    {
+      "name": "auto_play_media",
+      "value": "Auto-Play Media"
+    },
+    {
+      "name": "save_to_gallery",
+      "value": "Save to Gallery"
+    },
+    {
+      "name": "clear_cache",
+      "value": "Clear Cache"
+    },
+    {
+      "name": "create_new_folder",
+      "value": "Create New Folder"
+    },
+    {
+      "name": "recommended_folders",
+      "value": "Recommended"
+    },
+    {
+      "name": "shared_media_files",
+      "value": "Files"
+    },
+    {
+      "name": "shared_media_links",
+      "value": "Links"
+    },
+    {
+      "name": "shared_media_voice",
+      "value": "Voice"
+    },
+    {
+      "name": "pinned_message",
+      "value": "Pinned Message"
     }
   ]
 }

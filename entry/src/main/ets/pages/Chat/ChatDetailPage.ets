@@ -48,6 +48,8 @@ export struct ChatDetailPage {
   @Local editMessage: Message | null = null;
   @Local chatPhoto: string | null = null;
   @Local chatInitial: string = '';
+  @Local pinnedMessage: Message | null = null;
+  @Local showPinnedBar: boolean = true;
 
   private listScroller: Scroller = new Scroller();
   private messageDataSource: BasicDataSource<ChatDetailListItem> = new BasicDataSource<ChatDetailListItem>();
@@ -171,6 +173,48 @@ export struct ChatDetailPage {
           adaptiveColor: AdaptiveColor.DEFAULT,
           scale: 1.0
         })
+
+        // --- Pinned message bar (like Telegram iOS/Android) ---
+        if (this.pinnedMessage !== null && this.showPinnedBar) {
+          Row() {
+            Divider()
+              .vertical(true)
+              .strokeWidth(2)
+              .color($r('app.color.telegram_blue'))
+              .height('100%')
+
+            Column() {
+              Text('Pinned Message')
+                .fontSize(12)
+                .fontWeight(FontWeight.Medium)
+                .fontColor($r('app.color.telegram_blue'))
+              Text(this.pinnedMessage.text)
+                .fontSize(13)
+                .fontColor($r('app.color.text_primary'))
+                .maxLines(1)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+            }
+            .margin({ left: 8 })
+            .alignItems(HorizontalAlign.Start)
+            .layoutWeight(1)
+
+            Image($r('app.media.ic_close'))
+              .width(16).height(16)
+              .fillColor($r('app.color.text_secondary'))
+              .onClick(() => { this.showPinnedBar = false; })
+          }
+          .width('100%')
+          .height(36)
+          .padding({ left: 12, right: 12 })
+          .backgroundColor($r('app.color.glass_nav_bg'))
+          .onClick(() => {
+            // Scroll to pinned message
+            const idx = this.messages.findIndex(m => m.id === this.pinnedMessage?.id);
+            if (idx >= 0) {
+              this.listScroller.scrollToIndex(idx);
+            }
+          })
+        }
 
         // --- Messages ---
         if (this.isLoading) {
@@ -299,6 +343,13 @@ export struct ChatDetailPage {
       if (msgs.length < 50) {
         this.endReachedOlder = true;
       }
+      // Detect first pinned-style message (stub: use first non-outgoing message with text)
+      if (this.messages.length > 2) {
+        const candidate = this.messages.find(m => !m.isOutgoing && m.text.length > 10);
+        if (candidate) {
+          this.pinnedMessage = candidate;
+        }
+      }
       this.rebuildFlatList();
       this.scrollToBottom();
     } catch (e) {
@@ -357,8 +408,11 @@ export struct ChatDetailPage {
   }
 
   private forwardMessage(msg: Message): void {
-    // TODO: open chat picker for forwarding
-    hilog.info(0x0001, 'ChatDetail', 'Forward message: %{public}d', msg.id);
+    // Open ForwardPicker page to select target chat
+    this.navPathStack.pushPath({
+      name: 'ForwardPicker',
+      param: { messageId: msg.id, chatId: this.chatId } as Record<string, number>
+    });
   }
 
   private copyMessageText(msg: Message): void {

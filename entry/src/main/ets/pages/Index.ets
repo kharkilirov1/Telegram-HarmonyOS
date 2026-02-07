@@ -189,6 +189,9 @@ struct Index {
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             this.settingsRow($r('app.media.ic_group'), $r('app.color.settings_icon_blue'),
               $r('app.string.settings_chat_folders'))
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'ChatFolders' });
+              })
           }
           .width('100%')
           .backgroundColor($r('app.color.glass_card_bg'))
@@ -206,9 +209,15 @@ struct Index {
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             this.settingsRow($r('app.media.ic_lock'), $r('app.color.settings_icon_blue'),
               $r('app.string.settings_privacy_security'))
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'PrivacySettings' });
+              })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             this.settingsRow($r('app.media.ic_document'), $r('app.color.settings_icon_green'),
               $r('app.string.settings_data_storage'))
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'DataStorage' });
+              })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             this.settingsRow($r('app.media.ic_sticker'), $r('app.color.settings_icon_blue'),
               $r('app.string.settings_appearance'))

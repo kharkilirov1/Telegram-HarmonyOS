@@ -77,10 +77,14 @@ export struct NewChatPage {
 
         Divider().strokeWidth(0.5).color($r('app.color.separator'))
 
-        // Quick action rows
-        this.quickAction($r('app.media.ic_group'), $r('app.string.new_group'))
+        // Quick action rows — navigate to create pages
+        this.quickActionClickable($r('app.media.ic_group'), $r('app.string.new_group'), () => {
+          this.navPathStack.pushPath({ name: 'CreateGroup' });
+        })
         Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
-        this.quickAction($r('app.media.ic_channel'), $r('app.string.new_channel'))
+        this.quickActionClickable($r('app.media.ic_channel'), $r('app.string.new_channel'), () => {
+          this.navPathStack.pushPath({ name: 'CreateChannel' });
+        })
         Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
         this.quickAction($r('app.media.ic_lock'), $r('app.string.secret_chat'))
         Divider().strokeWidth(0.5).color($r('app.color.separator'))
@@ -124,12 +128,10 @@ export struct NewChatPage {
     Row() {
       Column() {
         Image(icon)
-          .width(20)
-          .height(20)
+          .width(20).height(20)
           .fillColor(Color.White)
       }
-      .width(40)
-      .height(40)
+      .width(40).height(40)
       .borderRadius(20)
       .backgroundColor($r('app.color.telegram_blue'))
       .justifyContent(FlexAlign.Center)
@@ -139,9 +141,31 @@ export struct NewChatPage {
         .fontSize(16)
         .fontColor($r('app.color.telegram_blue'))
     }
-    .width('100%')
-    .height(50)
+    .width('100%').height(50)
     .alignItems(VerticalAlign.Center)
+  }
+
+  @Builder
+  quickActionClickable(icon: Resource, label: Resource, onTap: () => void) {
+    Row() {
+      Column() {
+        Image(icon)
+          .width(20).height(20)
+          .fillColor(Color.White)
+      }
+      .width(40).height(40)
+      .borderRadius(20)
+      .backgroundColor($r('app.color.telegram_blue'))
+      .justifyContent(FlexAlign.Center)
+      .margin({ left: 16, right: 12 })
+
+      Text(label)
+        .fontSize(16)
+        .fontColor($r('app.color.telegram_blue'))
+    }
+    .width('100%').height(50)
+    .alignItems(VerticalAlign.Center)
+    .onClick(onTap)
   }
 
   @Builder

@@ -296,6 +296,131 @@ static void stub_handle_send(const std::string& request) {
         }
         stub_enqueue("{\"@type\":\"ok\",\"@extra\":" + extra_str + "}");
     }
+    else if (request.find("\"createNewBasicGroupChat\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        // Extract title
+        std::string title = "New Group";
+        auto title_pos = request.find("\"title\":\"");
+        if (title_pos != std::string::npos) {
+            auto start = title_pos + 9;
+            auto end = request.find("\"", start);
+            if (end != std::string::npos) title = request.substr(start, end - start);
+        }
+        static int stub_group_id = -2001;
+        int group_chat_id = stub_group_id--;
+        stub_enqueue("{\"@type\":\"chat\",\"id\":" + std::to_string(group_chat_id) +
+            ",\"title\":\"" + title + "\",\"type\":{\"@type\":\"chatTypeBasicGroup\",\"basic_group_id\":" +
+            std::to_string(-group_chat_id) + "},\"@extra\":" + extra_str + "}");
+        // Also push updateNewChat so the chat appears in the list
+        stub_enqueue("{\"@type\":\"updateNewChat\",\"chat\":{\"@type\":\"chat\",\"id\":" +
+            std::to_string(group_chat_id) + ",\"title\":\"" + title +
+            "\",\"type\":{\"@type\":\"chatTypeBasicGroup\",\"basic_group_id\":" +
+            std::to_string(-group_chat_id) +
+            "},\"last_message\":null,\"unread_count\":0,\"positions\":[{\"@type\":\"chatPosition\",\"list\":{\"@type\":\"chatListMain\"},\"order\":\"6900002000\",\"is_pinned\":false}],\"notification_settings\":{\"@type\":\"chatNotificationSettings\",\"mute_for\":0}}}");
+    }
+    else if (request.find("\"createNewSupergroupChat\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        std::string title = "New Channel";
+        auto title_pos = request.find("\"title\":\"");
+        if (title_pos != std::string::npos) {
+            auto start = title_pos + 9;
+            auto end = request.find("\"", start);
+            if (end != std::string::npos) title = request.substr(start, end - start);
+        }
+        bool is_channel = request.find("\"is_channel\":true") != std::string::npos;
+        static int stub_supergroup_id = -3001;
+        int sg_chat_id = stub_supergroup_id--;
+        int sg_id = -sg_chat_id;
+        stub_enqueue("{\"@type\":\"chat\",\"id\":" + std::to_string(sg_chat_id) +
+            ",\"title\":\"" + title + "\",\"type\":{\"@type\":\"chatTypeSupergroup\",\"supergroup_id\":" +
+            std::to_string(sg_id) + ",\"is_channel\":" + (is_channel ? "true" : "false") +
+            "},\"@extra\":" + extra_str + "}");
+        stub_enqueue("{\"@type\":\"updateNewChat\",\"chat\":{\"@type\":\"chat\",\"id\":" +
+            std::to_string(sg_chat_id) + ",\"title\":\"" + title +
+            "\",\"type\":{\"@type\":\"chatTypeSupergroup\",\"supergroup_id\":" +
+            std::to_string(sg_id) + ",\"is_channel\":" + (is_channel ? "true" : "false") +
+            "},\"last_message\":null,\"unread_count\":0,\"positions\":[{\"@type\":\"chatPosition\",\"list\":{\"@type\":\"chatListMain\"},\"order\":\"6900002000\",\"is_pinned\":false}],\"notification_settings\":{\"@type\":\"chatNotificationSettings\",\"mute_for\":0}}}");
+    }
+    else if (request.find("\"forwardMessages\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        // Extract target chat_id
+        int target_chat_id = -1001;
+        auto tcid = request.find("\"chat_id\"");
+        if (tcid != std::string::npos) {
+            auto colon = request.find(':', tcid);
+            target_chat_id = std::stoi(request.substr(colon + 1));
+        }
+        static int stub_fwd_id = 30000;
+        int fwd_id = ++stub_fwd_id;
+        long fwd_time = 1700001000 + fwd_id;
+        // Return ok + updateNewMessage with forwarded content
+        stub_enqueue("{\"@type\":\"messages\",\"total_count\":1,\"messages\":[{\"@type\":\"message\",\"id\":" +
+            std::to_string(fwd_id) + ",\"chat_id\":" + std::to_string(target_chat_id) +
+            ",\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":0},\"date\":" +
+            std::to_string(fwd_time) +
+            ",\"is_outgoing\":true,\"forward_info\":{\"@type\":\"messageForwardInfo\",\"origin\":{\"@type\":\"messageOriginUser\",\"sender_name\":\"You\"}},\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"[Forwarded message]\"}}}],\"@extra\":" +
+            extra_str + "}");
+    }
+    else if (request.find("\"setName\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        stub_enqueue("{\"@type\":\"ok\",\"@extra\":" + extra_str + "}");
+    }
+    else if (request.find("\"setBio\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        stub_enqueue("{\"@type\":\"ok\",\"@extra\":" + extra_str + "}");
+    }
+    else if (request.find("\"setUsername\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        stub_enqueue("{\"@type\":\"ok\",\"@extra\":" + extra_str + "}");
+    }
     else if (request.find("\"searchCallMessages\"") != std::string::npos) {
         std::string extra_str;
         auto pos = request.find("\"@extra\"");

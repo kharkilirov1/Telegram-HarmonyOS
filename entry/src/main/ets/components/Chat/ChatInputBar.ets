@@ -1,6 +1,11 @@
+// Chat input bar with emoji, stickers, GIF, attachments, voice recording
+// Reference: Telegram iOS ChatInputBar, Android ChatActivityEnterView
+
 import { Message } from '../../models/Message';
 import { EmojiPicker } from './EmojiPicker';
 import { AttachmentPanel } from './AttachmentPanel';
+import { StickerPicker } from './StickerPicker';
+import { GifPicker } from './GifPicker';
 
 @ComponentV2
 export struct ChatInputBar {
@@ -9,6 +14,8 @@ export struct ChatInputBar {
   @Local recordingDuration: number = 0;
   @Local showEmojiPicker: boolean = false;
   @Local showAttachPanel: boolean = false;
+  @Local showStickerPicker: boolean = false;
+  @Local showGifPicker: boolean = false;
   @Param replyMessage: Message | null = null;
   @Param editMessage: Message | null = null;
 
@@ -17,9 +24,11 @@ export struct ChatInputBar {
   @Param onAttachTap: () => void = () => {};
   @Param onCancelReply: () => void = () => {};
   @Param onCancelEdit: () => void = () => {};
+  @Param onSendSticker: (emoji: string) => void = () => {};
+
+  private recordingTimerId: number = -1;
 
   aboutToAppear(): void {
-    // Pre-fill text when editing a message
     if (this.editMessage !== null) {
       this.inputText = this.editMessage.text;
     }
@@ -31,8 +40,7 @@ export struct ChatInputBar {
       if (this.replyMessage !== null) {
         Row() {
           Image($r('app.media.ic_reply'))
-            .width(18)
-            .height(18)
+            .width(18).height(18)
             .fillColor($r('app.color.telegram_blue'))
             .margin({ right: 6 })
 
@@ -48,7 +56,6 @@ export struct ChatInputBar {
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.telegram_blue'))
               .maxLines(1)
-
             Text(this.replyMessage.text)
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
@@ -60,25 +67,22 @@ export struct ChatInputBar {
           .alignItems(HorizontalAlign.Start)
 
           Image($r('app.media.ic_close'))
-            .width(18)
-            .height(18)
+            .width(18).height(18)
             .fillColor($r('app.color.text_secondary'))
             .onClick(() => this.onCancelReply())
         }
-        .width('100%')
-        .height(40)
+        .width('100%').height(40)
         .padding({ left: 12, right: 12 })
         .backgroundColor($r('app.color.background_primary'))
 
         Divider().strokeWidth(0.5).color($r('app.color.separator'))
       }
 
-      // Edit bar (like Telegram — blue edit icon + "Editing" label)
+      // Edit bar
       if (this.editMessage !== null) {
         Row() {
           Image($r('app.media.ic_edit'))
-            .width(18)
-            .height(18)
+            .width(18).height(18)
             .fillColor($r('app.color.telegram_blue'))
             .margin({ right: 6 })
 
@@ -94,7 +98,6 @@ export struct ChatInputBar {
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.telegram_blue'))
               .maxLines(1)
-
             Text(this.editMessage.text)
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
@@ -106,16 +109,14 @@ export struct ChatInputBar {
           .alignItems(HorizontalAlign.Start)
 
           Image($r('app.media.ic_close'))
-            .width(18)
-            .height(18)
+            .width(18).height(18)
             .fillColor($r('app.color.text_secondary'))
             .onClick(() => {
               this.onCancelEdit();
               this.inputText = '';
             })
         }
-        .width('100%')
-        .height(40)
+        .width('100%').height(40)
         .padding({ left: 12, right: 12 })
         .backgroundColor($r('app.color.background_primary'))
 
@@ -129,25 +130,26 @@ export struct ChatInputBar {
         if (this.isRecording) {
           this.buildRecordingUI()
         } else {
-          // Emoji button — toggles emoji picker (like Android Telegram)
-          Image(this.showEmojiPicker ? $r('app.media.ic_close') : $r('app.media.ic_emoji'))
-            .width(24)
-            .height(24)
+          // Emoji/Sticker toggle button
+          Image(this.showEmojiPicker || this.showStickerPicker || this.showGifPicker
+            ? $r('app.media.ic_close')
+            : $r('app.media.ic_emoji'))
+            .width(24).height(24)
             .fillColor($r('app.color.text_secondary'))
             .margin({ right: 6 })
             .onClick(() => {
+              this.closeAllPanels();
               this.showEmojiPicker = !this.showEmojiPicker;
-              this.showAttachPanel = false;
             })
 
-          // Attach button — toggles attachment panel
+          // Attach button
           Image($r('app.media.ic_attach'))
-            .width(24)
-            .height(24)
+            .width(24).height(24)
             .fillColor($r('app.color.text_secondary'))
             .onClick(() => {
-              this.showAttachPanel = !this.showAttachPanel;
-              this.showEmojiPicker = false;
+              const wasOpen = this.showAttachPanel;
+              this.closeAllPanels();
+              this.showAttachPanel = !wasOpen;
             })
             .margin({ right: 6 })
 
@@ -159,19 +161,13 @@ export struct ChatInputBar {
             .backgroundColor($r('app.color.background_secondary'))
             .borderRadius(18)
             .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-            .onChange((value: string) => {
-              this.inputText = value;
-            })
-            .onFocus(() => {
-              this.showEmojiPicker = false;
-              this.showAttachPanel = false;
-            })
+            .onChange((value: string) => { this.inputText = value; })
+            .onFocus(() => { this.closeAllPanels(); })
 
           // Send / Mic toggle
           if (this.inputText.trim().length > 0) {
             Image(this.editMessage !== null ? $r('app.media.ic_check_single') : $r('app.media.ic_send'))
-              .width(28)
-              .height(28)
+              .width(28).height(28)
               .fillColor($r('app.color.telegram_blue'))
               .margin({ left: 6 })
               .onClick(() => {
@@ -187,16 +183,14 @@ export struct ChatInputBar {
               })
           } else {
             Image($r('app.media.ic_mic'))
-              .width(24)
-              .height(24)
+              .width(24).height(24)
               .fillColor($r('app.color.text_secondary'))
               .margin({ left: 6 })
               .gesture(
                 LongPressGesture({ repeat: false, duration: 200 })
-                  .onAction(() => {
-                    this.startRecording();
-                  })
+                  .onAction(() => { this.startRecording(); })
               )
+              .onClick(() => { this.startRecording(); })
           }
         }
       }
@@ -209,11 +203,52 @@ export struct ChatInputBar {
         scale: 1.0
       })
 
-      // Emoji picker panel (slides up like Telegram Android)
+      // Panel selector tabs (emoji / stickers / gifs) — like Telegram Android
+      if (this.showEmojiPicker || this.showStickerPicker || this.showGifPicker) {
+        Row({ space: 0 }) {
+          this.panelTab('Emoji', this.showEmojiPicker, () => {
+            this.showEmojiPicker = true;
+            this.showStickerPicker = false;
+            this.showGifPicker = false;
+          })
+          this.panelTab('Stickers', this.showStickerPicker, () => {
+            this.showEmojiPicker = false;
+            this.showStickerPicker = true;
+            this.showGifPicker = false;
+          })
+          this.panelTab('GIFs', this.showGifPicker, () => {
+            this.showEmojiPicker = false;
+            this.showStickerPicker = false;
+            this.showGifPicker = true;
+          })
+        }
+        .width('100%')
+        .height(36)
+        .backgroundColor($r('app.color.background_primary'))
+      }
+
+      // Emoji picker panel
       if (this.showEmojiPicker) {
         EmojiPicker({
-          onEmojiSelected: (emoji: string) => {
-            this.inputText += emoji;
+          onEmojiSelected: (emoji: string) => { this.inputText += emoji; }
+        })
+      }
+
+      // Sticker picker panel
+      if (this.showStickerPicker) {
+        StickerPicker({
+          onStickerSelected: (emoji: string) => {
+            this.onSendSticker(emoji);
+            this.closeAllPanels();
+          }
+        })
+      }
+
+      // GIF picker panel
+      if (this.showGifPicker) {
+        GifPicker({
+          onGifSelected: (gifId: number) => {
+            this.closeAllPanels();
           }
         })
       }
@@ -235,11 +270,30 @@ export struct ChatInputBar {
   }
 
   @Builder
+  panelTab(label: string, isActive: boolean, onTap: () => void) {
+    Column() {
+      Text(label)
+        .fontSize(14)
+        .fontColor(isActive
+          ? $r('app.color.telegram_blue')
+          : $r('app.color.text_secondary'))
+        .fontWeight(isActive ? FontWeight.Medium : FontWeight.Normal)
+        .padding({ left: 16, right: 16, top: 8, bottom: 8 })
+
+      Divider()
+        .strokeWidth(2)
+        .color(isActive ? $r('app.color.telegram_blue') : Color.Transparent)
+        .width('80%')
+    }
+    .layoutWeight(1)
+    .onClick(onTap)
+  }
+
+  @Builder
   buildRecordingUI() {
     Row() {
       Circle()
-        .width(10)
-        .height(10)
+        .width(10).height(10)
         .fill($r('app.color.recording_red'))
 
       Text(this.formatRecordingDuration())
@@ -251,8 +305,7 @@ export struct ChatInputBar {
 
       Row() {
         Image($r('app.media.ic_back'))
-          .width(14)
-          .height(14)
+          .width(14).height(14)
           .fillColor($r('app.color.text_secondary'))
         Text($r('app.string.slide_to_cancel'))
           .fontSize(14)
@@ -261,6 +314,12 @@ export struct ChatInputBar {
       }
 
       Blank().layoutWeight(1)
+
+      // Stop recording button
+      Image($r('app.media.ic_send'))
+        .width(28).height(28)
+        .fillColor($r('app.color.telegram_blue'))
+        .onClick(() => { this.stopRecording(); })
     }
     .width('100%')
   }
@@ -274,7 +333,28 @@ export struct ChatInputBar {
   private startRecording(): void {
     this.isRecording = true;
     this.recordingDuration = 0;
+    this.closeAllPanels();
+
+    // Timer for recording duration display
+    this.recordingTimerId = setInterval(() => {
+      this.recordingDuration++;
+    }, 1000);
+  }
+
+  private stopRecording(): void {
+    this.isRecording = false;
+    if (this.recordingTimerId >= 0) {
+      clearInterval(this.recordingTimerId);
+      this.recordingTimerId = -1;
+    }
+    // Voice message would be sent here with actual AudioCapturer
+    // For stub mode, just stop the recording UI
+  }
+
+  private closeAllPanels(): void {
     this.showEmojiPicker = false;
+    this.showStickerPicker = false;
+    this.showGifPicker = false;
     this.showAttachPanel = false;
   }
 }

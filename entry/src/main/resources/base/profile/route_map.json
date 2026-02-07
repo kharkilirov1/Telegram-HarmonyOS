@@ -39,6 +39,41 @@
       "name": "MediaViewer",
       "pageSourceFile": "src/main/ets/pages/Settings/MediaViewerPage.ets",
       "buildFunction": "MediaViewerBuilder"
+    },
+    {
+      "name": "CreateGroup",
+      "pageSourceFile": "src/main/ets/pages/Chat/CreateGroupPage.ets",
+      "buildFunction": "CreateGroupBuilder"
+    },
+    {
+      "name": "CreateChannel",
+      "pageSourceFile": "src/main/ets/pages/Chat/CreateChannelPage.ets",
+      "buildFunction": "CreateChannelBuilder"
+    },
+    {
+      "name": "ForwardPicker",
+      "pageSourceFile": "src/main/ets/pages/Chat/ForwardPickerPage.ets",
+      "buildFunction": "ForwardPickerBuilder"
+    },
+    {
+      "name": "PrivacySettings",
+      "pageSourceFile": "src/main/ets/pages/Settings/PrivacySettingsPage.ets",
+      "buildFunction": "PrivacySettingsBuilder"
+    },
+    {
+      "name": "DataStorage",
+      "pageSourceFile": "src/main/ets/pages/Settings/DataStoragePage.ets",
+      "buildFunction": "DataStorageBuilder"
+    },
+    {
+      "name": "ChatFolders",
+      "pageSourceFile": "src/main/ets/pages/Settings/ChatFoldersPage.ets",
+      "buildFunction": "ChatFoldersBuilder"
+    },
+    {
+      "name": "SharedMedia",
+      "pageSourceFile": "src/main/ets/pages/Settings/SharedMediaPage.ets",
+      "buildFunction": "SharedMediaBuilder"
     }
   ]
 }
