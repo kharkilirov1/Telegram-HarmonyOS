@@ -1,0 +1,48 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "Telegram HarmonyOS client"
+    },
+    {
+      "name": "ability_desc",
+      "value": "Telegram main ability"
+    },
+    {
+      "name": "ability_label",
+      "value": "Telegram"
+    },
+    {
+      "name": "login_title",
+      "value": "Sign in to Telegram"
+    },
+    {
+      "name": "login_subtitle",
+      "value": "Please enter your phone number"
+    },
+    {
+      "name": "phone_placeholder",
+      "value": "Phone number"
+    },
+    {
+      "name": "code_placeholder",
+      "value": "Verification code"
+    },
+    {
+      "name": "password_placeholder",
+      "value": "Password"
+    },
+    {
+      "name": "next_button",
+      "value": "Next"
+    },
+    {
+      "name": "chats_title",
+      "value": "Chats"
+    },
+    {
+      "name": "search_placeholder",
+      "value": "Search"
+    }
+  ]
+}

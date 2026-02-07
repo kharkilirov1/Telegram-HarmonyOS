@@ -15,3 +15,13 @@ AGENTS.md
 # Build
 build/
 node_modules/
+oh_modules/
+.preview/
+.hvigor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local config (API keys)
+entry/src/main/ets/services/Config.local.ets

@@ -1,0 +1,44 @@
+{
+  "color": [
+    {
+      "name": "start_window_background",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "telegram_blue",
+      "value": "#0088CC"
+    },
+    {
+      "name": "telegram_blue_dark",
+      "value": "#006DAA"
+    },
+    {
+      "name": "chat_bubble_outgoing",
+      "value": "#EFFFDE"
+    },
+    {
+      "name": "chat_bubble_incoming",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "text_primary",
+      "value": "#000000"
+    },
+    {
+      "name": "text_secondary",
+      "value": "#8E8E93"
+    },
+    {
+      "name": "separator",
+      "value": "#E5E5EA"
+    },
+    {
+      "name": "background_primary",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "background_secondary",
+      "value": "#F2F2F7"
+    }
+  ]
+}
