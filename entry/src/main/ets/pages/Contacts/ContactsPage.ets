@@ -12,6 +12,8 @@ export struct ContactsPage {
   @Local sectionLetters: string[] = [];
 
   private contactDataSource: BasicDataSource<User> = new BasicDataSource<User>();
+  private listScroller: Scroller = new Scroller();
+  private searchTimerId: number = -1;
 
   private contactsHandler = (): void => {
     this.refreshContacts();
@@ -83,7 +85,12 @@ export struct ContactsPage {
         .margin({ left: 16, right: 16, top: 4, bottom: 4 })
         .onChange((value: string) => {
           this.searchText = value;
-          this.refreshContacts();
+          if (this.searchTimerId >= 0) {
+            clearTimeout(this.searchTimerId);
+          }
+          this.searchTimerId = setTimeout(() => {
+            this.refreshContacts();
+          }, 300);
         })
 
       Divider().strokeWidth(0.5).color($r('app.color.separator'))
@@ -101,7 +108,7 @@ export struct ContactsPage {
         .justifyContent(FlexAlign.Center)
       } else {
         Stack({ alignContent: Alignment.End }) {
-          List() {
+          List({ scroller: this.listScroller }) {
             // Action rows at top
             ListItem() {
               this.actionRow($r('app.media.ic_contact_add'), $r('app.string.contacts_invite_friends'))
@@ -139,6 +146,9 @@ export struct ContactsPage {
                   .textAlign(TextAlign.Center)
                   .width(16)
                   .height(14)
+                  .onClick(() => {
+                    this.scrollToLetter(letter);
+                  })
               })
             }
             .justifyContent(FlexAlign.Center)
@@ -228,6 +238,15 @@ export struct ContactsPage {
       '#3F51B5', '#2196F3', '#00BCD4', '#009688'
     ];
     return colors[Math.abs(userId) % colors.length];
+  }
+
+  private scrollToLetter(letter: string): void {
+    const contacts = this.contactDataSource.getAllData() as User[];
+    // +2 offset for the two action rows at top
+    const idx = contacts.findIndex(u => u.firstName.charAt(0).toUpperCase() === letter);
+    if (idx >= 0) {
+      this.listScroller.scrollToIndex(idx + 2);
+    }
   }
 
   private refreshContacts(): void {

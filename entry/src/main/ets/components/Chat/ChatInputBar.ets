@@ -7,9 +7,9 @@ export struct ChatInputBar {
   @Local recordingDuration: number = 0;
   @Param replyMessage: Message | null = null;
 
-  onSendMessage: (text: string) => void = () => {};
-  onAttachTap: () => void = () => {};
-  onCancelReply: () => void = () => {};
+  @Param onSendMessage: (text: string) => void = () => {};
+  @Param onAttachTap: () => void = () => {};
+  @Param onCancelReply: () => void = () => {};
 
   build() {
     Column() {
