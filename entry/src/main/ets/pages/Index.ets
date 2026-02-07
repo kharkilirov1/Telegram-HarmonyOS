@@ -78,6 +78,13 @@ struct Index {
           .tabBar(this.tabBarItem(3, $r('app.media.ic_settings'), $r('app.string.settings')))
         }
         .barMode(BarMode.Fixed)
+        .barOverlap(true)
+        .barBackgroundColor($r('app.color.glass_tab_bg'))
+        .barBackgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
+          colorMode: ThemeColorMode.SYSTEM,
+          adaptiveColor: AdaptiveColor.DEFAULT,
+          scale: 1.0
+        })
         .animationDuration(200)
         .onChange((index: number) => {
           this.currentTabIndex = index;
@@ -238,68 +245,74 @@ struct Index {
             this.navPathStack.pushPath({ name: 'Profile' });
           })
 
-          Divider().strokeWidth(0.5).color($r('app.color.separator'))
+          Blank().height(16)
 
-          // Saved Messages
-          this.settingsRow($r('app.media.ic_saved'), $r('app.color.settings_icon_blue'),
-            $r('app.string.saved_messages'))
-          Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
+          // --- Glass Card 1: Quick actions ---
+          Column() {
+            this.settingsRow($r('app.media.ic_saved'), $r('app.color.settings_icon_blue'),
+              $r('app.string.saved_messages'))
+            Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
+            this.settingsRow($r('app.media.ic_phone_call'), $r('app.color.settings_icon_green'),
+              $r('app.string.settings_recent_calls'))
+            Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
+            this.settingsRow($r('app.media.ic_channel'), $r('app.color.settings_icon_orange'),
+              $r('app.string.settings_devices'))
+            Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
+            this.settingsRow($r('app.media.ic_group'), $r('app.color.settings_icon_blue'),
+              $r('app.string.settings_chat_folders'))
+          }
+          .width('100%')
+          .backgroundColor($r('app.color.glass_card_bg'))
+          .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+          .borderRadius(16)
+          .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
+          .margin({ left: 16, right: 16 })
 
-          // Recent Calls
-          this.settingsRow($r('app.media.ic_phone_call'), $r('app.color.settings_icon_green'),
-            $r('app.string.settings_recent_calls'))
-          Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
+          Blank().height(16)
 
-          // Devices
-          this.settingsRow($r('app.media.ic_channel'), $r('app.color.settings_icon_orange'),
-            $r('app.string.settings_devices'))
-          Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
+          // --- Glass Card 2: Settings ---
+          Column() {
+            this.settingsRow($r('app.media.ic_unmute'), $r('app.color.settings_icon_red'),
+              $r('app.string.settings_notifications_sounds'))
+            Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
+            this.settingsRow($r('app.media.ic_lock'), $r('app.color.settings_icon_blue'),
+              $r('app.string.settings_privacy_security'))
+            Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
+            this.settingsRow($r('app.media.ic_document'), $r('app.color.settings_icon_green'),
+              $r('app.string.settings_data_storage'))
+            Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
+            this.settingsRow($r('app.media.ic_sticker'), $r('app.color.settings_icon_blue'),
+              $r('app.string.settings_appearance'))
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'Settings' });
+              })
+            Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
+            this.settingsRow($r('app.media.ic_location'), $r('app.color.settings_icon_purple'),
+              $r('app.string.settings_language'))
+            Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
+            this.settingsRow($r('app.media.ic_emoji'), $r('app.color.settings_icon_orange'),
+              $r('app.string.settings_stickers'))
+          }
+          .width('100%')
+          .backgroundColor($r('app.color.glass_card_bg'))
+          .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+          .borderRadius(16)
+          .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
+          .margin({ left: 16, right: 16 })
 
-          // Chat Folders
-          this.settingsRow($r('app.media.ic_group'), $r('app.color.settings_icon_blue'),
-            $r('app.string.settings_chat_folders'))
+          Blank().height(16)
 
-          Blank().height(24)
-          Divider().strokeWidth(0.5).color($r('app.color.separator'))
-
-          // Notifications & Sounds
-          this.settingsRow($r('app.media.ic_unmute'), $r('app.color.settings_icon_red'),
-            $r('app.string.settings_notifications_sounds'))
-          Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
-
-          // Privacy & Security
-          this.settingsRow($r('app.media.ic_lock'), $r('app.color.settings_icon_blue'),
-            $r('app.string.settings_privacy_security'))
-          Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
-
-          // Data & Storage
-          this.settingsRow($r('app.media.ic_document'), $r('app.color.settings_icon_green'),
-            $r('app.string.settings_data_storage'))
-          Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
-
-          // Appearance
-          this.settingsRow($r('app.media.ic_sticker'), $r('app.color.settings_icon_blue'),
-            $r('app.string.settings_appearance'))
-            .onClick(() => {
-              this.navPathStack.pushPath({ name: 'Settings' });
-            })
-          Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
-
-          // Language
-          this.settingsRow($r('app.media.ic_location'), $r('app.color.settings_icon_purple'),
-            $r('app.string.settings_language'))
-          Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
-
-          // Stickers
-          this.settingsRow($r('app.media.ic_emoji'), $r('app.color.settings_icon_orange'),
-            $r('app.string.settings_stickers'))
-
-          Blank().height(24)
-          Divider().strokeWidth(0.5).color($r('app.color.separator'))
-
-          // Power Saving
-          this.settingsRow($r('app.media.ic_saved'), $r('app.color.settings_icon_green'),
-            $r('app.string.settings_power_saving'))
+          // --- Glass Card 3: Power Saving ---
+          Column() {
+            this.settingsRow($r('app.media.ic_saved'), $r('app.color.settings_icon_green'),
+              $r('app.string.settings_power_saving'))
+          }
+          .width('100%')
+          .backgroundColor($r('app.color.glass_card_bg'))
+          .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+          .borderRadius(16)
+          .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
+          .margin({ left: 16, right: 16 })
 
           Blank().height(40)
         }

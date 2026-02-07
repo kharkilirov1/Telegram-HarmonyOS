@@ -64,9 +64,12 @@ export struct SettingsPage {
         .width('100%')
         .height(56)
         .padding({ left: 16, right: 16 })
-        .backgroundColor($r('app.color.background_primary'))
-
-        Divider().strokeWidth(0.5).color($r('app.color.separator'))
+        .backgroundColor($r('app.color.glass_nav_bg'))
+        .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
+          colorMode: ThemeColorMode.SYSTEM,
+          adaptiveColor: AdaptiveColor.DEFAULT,
+          scale: 1.0
+        })
 
         // Scrollable settings content
         Scroll() {
@@ -117,8 +120,10 @@ export struct SettingsPage {
               this.themeOption('dark', $r('app.string.settings_theme_dark'))
             }
             .width('100%')
-            .backgroundColor($r('app.color.settings_section_bg'))
-            .borderRadius(10)
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
             this.sectionGap()
@@ -167,8 +172,10 @@ export struct SettingsPage {
               .padding({ left: 16, right: 16 })
             }
             .width('100%')
-            .backgroundColor($r('app.color.settings_section_bg'))
-            .borderRadius(10)
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
             this.sectionGap()
@@ -238,8 +245,10 @@ export struct SettingsPage {
               .padding({ left: 16, right: 16, bottom: 8 })
             }
             .width('100%')
-            .backgroundColor($r('app.color.settings_section_bg'))
-            .borderRadius(10)
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
             this.sectionGap()
@@ -266,8 +275,10 @@ export struct SettingsPage {
               .onClick(() => this.showLastSeenPicker())
             }
             .width('100%')
-            .backgroundColor($r('app.color.settings_section_bg'))
-            .borderRadius(10)
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
             this.sectionGap()
@@ -285,8 +296,10 @@ export struct SettingsPage {
                 })
             }
             .width('100%')
-            .backgroundColor($r('app.color.settings_section_bg'))
-            .borderRadius(10)
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
             // Bottom padding

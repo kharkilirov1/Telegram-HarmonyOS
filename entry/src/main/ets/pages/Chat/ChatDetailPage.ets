@@ -163,9 +163,12 @@ export struct ChatDetailPage {
         .width('100%')
         .height(56)
         .padding({ left: 8, right: 16 })
-        .backgroundColor($r('app.color.background_primary'))
-
-        Divider().strokeWidth(0.5).color($r('app.color.separator'))
+        .backgroundColor($r('app.color.glass_nav_bg'))
+        .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
+          colorMode: ThemeColorMode.SYSTEM,
+          adaptiveColor: AdaptiveColor.DEFAULT,
+          scale: 1.0
+        })
 
         // --- Messages ---
         if (this.isLoading) {

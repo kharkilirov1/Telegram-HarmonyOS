@@ -70,6 +70,12 @@ export struct ChatListPage {
         .width('100%')
         .height(44)
         .padding({ left: 16, right: 16 })
+        .backgroundColor($r('app.color.glass_nav_bg'))
+        .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
+          colorMode: ThemeColorMode.SYSTEM,
+          adaptiveColor: AdaptiveColor.DEFAULT,
+          scale: 1.0
+        })
 
         // Search bar — like both platforms
         Search({ placeholder: $r('app.string.search_placeholder'), value: this.searchText })

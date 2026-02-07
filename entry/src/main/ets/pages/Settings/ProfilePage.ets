@@ -38,7 +38,12 @@ export struct ProfilePage {
         .width('100%')
         .height(44)
         .padding({ left: 16, right: 16 })
-        .backgroundColor($r('app.color.background_primary'))
+        .backgroundColor($r('app.color.glass_nav_bg'))
+        .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
+          colorMode: ThemeColorMode.SYSTEM,
+          adaptiveColor: AdaptiveColor.DEFAULT,
+          scale: 1.0
+        })
 
         Divider().strokeWidth(0.5).color($r('app.color.separator'))
 
@@ -129,8 +134,10 @@ export struct ProfilePage {
               )
             }
             .width('100%')
-            .backgroundColor($r('app.color.settings_section_bg'))
-            .borderRadius(10)
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
             Blank().height(24)
@@ -159,8 +166,10 @@ export struct ProfilePage {
               .padding({ left: 16, right: 16 })
             }
             .width('100%')
-            .backgroundColor($r('app.color.settings_section_bg'))
-            .borderRadius(10)
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
             Blank().height(24)
@@ -190,8 +199,10 @@ export struct ProfilePage {
               .padding({ left: 16, right: 16 })
             }
             .width('100%')
-            .backgroundColor($r('app.color.settings_section_bg'))
-            .borderRadius(10)
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
             Blank().height(24)
@@ -220,8 +231,10 @@ export struct ProfilePage {
               .padding({ left: 16, right: 16 })
             }
             .width('100%')
-            .backgroundColor($r('app.color.settings_section_bg'))
-            .borderRadius(10)
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
             Blank().height(24)
@@ -239,8 +252,10 @@ export struct ProfilePage {
                 })
             }
             .width('100%')
-            .backgroundColor($r('app.color.settings_section_bg'))
-            .borderRadius(10)
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
             Blank().height(40)

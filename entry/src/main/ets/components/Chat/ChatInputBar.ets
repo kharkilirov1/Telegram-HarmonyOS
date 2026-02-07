@@ -118,7 +118,12 @@ export struct ChatInputBar {
       }
       .width('100%')
       .padding({ left: 8, right: 8, top: 6, bottom: 6 })
-      .backgroundColor($r('app.color.background_primary'))
+      .backgroundColor($r('app.color.glass_input_bg'))
+      .backgroundBlurStyle(BlurStyle.COMPONENT_THIN, {
+        colorMode: ThemeColorMode.SYSTEM,
+        adaptiveColor: AdaptiveColor.DEFAULT,
+        scale: 1.0
+      })
     }
     .width('100%')
   }

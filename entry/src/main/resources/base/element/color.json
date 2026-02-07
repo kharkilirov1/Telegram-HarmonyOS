@@ -151,6 +151,26 @@
     {
       "name": "media_viewer_bg",
       "value": "#000000"
+    },
+    {
+      "name": "glass_nav_bg",
+      "value": "#E6FFFFFF"
+    },
+    {
+      "name": "glass_tab_bg",
+      "value": "#CCFFFFFF"
+    },
+    {
+      "name": "glass_input_bg",
+      "value": "#E6FFFFFF"
+    },
+    {
+      "name": "glass_card_bg",
+      "value": "#D9FFFFFF"
+    },
+    {
+      "name": "glass_card_shadow",
+      "value": "#14000000"
     }
   ]
 }
