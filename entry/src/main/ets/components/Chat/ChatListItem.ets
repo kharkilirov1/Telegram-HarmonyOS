@@ -25,7 +25,7 @@ export struct ChatListItem {
         // Top row: channel icon + title + mute icon + time
         Row() {
           if (this.chat.isChannel) {
-            Image($r('sys.media.ohos_ic_public_sound'))
+            Image($r('app.media.ic_channel'))
               .width(16)
               .height(16)
               .fillColor($r('app.color.text_primary'))
@@ -41,7 +41,7 @@ export struct ChatListItem {
             .layoutWeight(1)
 
           if (this.chat.isMuted) {
-            Image($r('sys.media.ohos_ic_public_mute'))
+            Image($r('app.media.ic_mute'))
               .width(15)
               .height(15)
               .fillColor($r('app.color.text_secondary'))
@@ -92,7 +92,7 @@ export struct ChatListItem {
               .height(20)
               .textAlign(TextAlign.Center)
           } else if (this.chat.isPinned) {
-            Image($r('sys.media.ohos_ic_public_push_pin'))
+            Image($r('app.media.ic_pin'))
               .width(16)
               .height(16)
               .fillColor($r('app.color.text_secondary'))

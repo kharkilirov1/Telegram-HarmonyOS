@@ -42,7 +42,7 @@ export struct ChatListPage {
 
         Blank()
 
-        Image($r('sys.media.ohos_ic_public_edit'))
+        Image($r('app.media.ic_edit'))
           .width(24)
           .height(24)
           .fillColor($r('app.color.telegram_blue'))
@@ -108,15 +108,15 @@ export struct ChatListPage {
     Row() {
       Button() {
         Column() {
-          Image($r('sys.media.ohos_ic_public_mute'))
+          Image(chat.isMuted ? $r('app.media.ic_unmute') : $r('app.media.ic_mute'))
             .width(22).height(22).fillColor(Color.White)
-          Text(chat.isMuted ? 'Unmute' : 'Mute')
+          Text(chat.isMuted ? $r('app.string.unmute') : $r('app.string.mute'))
             .fontSize(11).fontColor(Color.White)
         }
       }
       .width(72)
       .height('100%')
-      .backgroundColor(chat.isMuted ? '#4DCC5E' : '#8E8E93')
+      .backgroundColor(chat.isMuted ? $r('app.color.swipe_unmute') : $r('app.color.swipe_mute'))
     }
   }
 
@@ -126,39 +126,39 @@ export struct ChatListPage {
     Row() {
       Button() {
         Column() {
-          Image($r('sys.media.ohos_ic_public_ok'))
+          Image($r('app.media.ic_check_double'))
             .width(22).height(22).fillColor(Color.White)
-          Text(chat.unreadCount > 0 ? 'Read' : 'Unread')
+          Text(chat.unreadCount > 0 ? $r('app.string.read') : $r('app.string.unread'))
             .fontSize(11).fontColor(Color.White)
         }
       }
       .width(72)
       .height('100%')
-      .backgroundColor('#3F51B5')
+      .backgroundColor($r('app.color.swipe_read'))
 
       Button() {
         Column() {
-          Image($r('sys.media.ohos_ic_public_push_pin'))
+          Image($r('app.media.ic_pin'))
             .width(22).height(22).fillColor(Color.White)
-          Text(chat.isPinned ? 'Unpin' : 'Pin')
+          Text(chat.isPinned ? $r('app.string.unpin') : $r('app.string.pin'))
             .fontSize(11).fontColor(Color.White)
         }
       }
       .width(72)
       .height('100%')
-      .backgroundColor('#8E8E93')
+      .backgroundColor($r('app.color.swipe_pin'))
 
       Button() {
         Column() {
-          Image($r('sys.media.ohos_ic_public_remove'))
+          Image($r('app.media.ic_delete'))
             .width(22).height(22).fillColor(Color.White)
-          Text('Delete')
+          Text($r('app.string.delete'))
             .fontSize(11).fontColor(Color.White)
         }
       }
       .width(72)
       .height('100%')
-      .backgroundColor(Color.Red)
+      .backgroundColor($r('app.color.swipe_delete'))
     }
   }
 

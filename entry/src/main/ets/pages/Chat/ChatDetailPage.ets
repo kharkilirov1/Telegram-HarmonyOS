@@ -76,7 +76,7 @@ export struct ChatDetailPage {
       Column() {
         // --- Top bar ---
         Row() {
-          Image($r('sys.media.ohos_ic_public_arrow_left'))
+          Image($r('app.media.ic_back'))
             .width(24)
             .height(24)
             .fillColor($r('app.color.telegram_blue'))
@@ -90,18 +90,30 @@ export struct ChatDetailPage {
               .maxLines(1)
 
             if (this.isTyping) {
-              TypingIndicator({ typingText: 'typing' })
+              TypingIndicator({ typingText: $r('app.string.typing') })
             } else {
               Text(this.lastSeenText)
                 .fontSize(13)
                 .fontColor(this.lastSeenText === 'online'
-                  ? '#4DCC5E'
+                  ? $r('app.color.online_indicator')
                   : $r('app.color.text_secondary'))
             }
           }
           .margin({ left: 12 })
           .alignItems(HorizontalAlign.Start)
           .layoutWeight(1)
+
+          // Call and more buttons
+          Image($r('app.media.ic_phone_call'))
+            .width(22)
+            .height(22)
+            .fillColor($r('app.color.telegram_blue'))
+            .margin({ right: 16 })
+
+          Image($r('app.media.ic_more'))
+            .width(22)
+            .height(22)
+            .fillColor($r('app.color.telegram_blue'))
         }
         .width('100%')
         .height(56)
@@ -164,12 +176,12 @@ export struct ChatDetailPage {
                     .padding({ left: 6, right: 6, top: 2, bottom: 2 })
                     .margin({ bottom: 4 })
                 }
-                Image($r('sys.media.ohos_ic_public_arrow_down'))
+                Image($r('app.media.ic_arrow_down'))
                   .width(36).height(36)
                   .fillColor($r('app.color.text_secondary'))
                   .backgroundColor(Color.White)
                   .borderRadius(18)
-                  .shadow({ radius: 4, color: '#20000000' })
+                  .shadow({ radius: 4, color: $r('app.color.shadow_color') })
               }
               .position({ right: 16, bottom: 16 })
               .onClick(() => {

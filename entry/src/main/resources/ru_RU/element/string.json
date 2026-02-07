@@ -2,11 +2,11 @@
   "string": [
     {
       "name": "module_desc",
-      "value": "Telegram HarmonyOS client"
+      "value": "Telegram клиент для HarmonyOS"
     },
     {
       "name": "ability_desc",
-      "value": "Telegram main ability"
+      "value": "Основное приложение Telegram"
     },
     {
       "name": "ability_label",
@@ -14,167 +14,167 @@
     },
     {
       "name": "login_title",
-      "value": "Sign in to Telegram"
+      "value": "Вход в Telegram"
     },
     {
       "name": "login_subtitle",
-      "value": "Please enter your phone number"
+      "value": "Пожалуйста, введите номер телефона"
     },
     {
       "name": "phone_placeholder",
-      "value": "Phone number"
+      "value": "Номер телефона"
     },
     {
       "name": "code_placeholder",
-      "value": "Verification code"
+      "value": "Код подтверждения"
     },
     {
       "name": "password_placeholder",
-      "value": "Password"
+      "value": "Пароль"
     },
     {
       "name": "next_button",
-      "value": "Next"
+      "value": "Далее"
     },
     {
       "name": "chats_title",
-      "value": "Chats"
+      "value": "Чаты"
     },
     {
       "name": "search_placeholder",
-      "value": "Search"
+      "value": "Поиск"
     },
     {
       "name": "enter_code_title",
-      "value": "Enter Code"
+      "value": "Введите код"
     },
     {
       "name": "code_sent_to",
-      "value": "We've sent a code to %s"
+      "value": "Мы отправили код на %s"
     },
     {
       "name": "two_step_title",
-      "value": "Two-Step Verification"
+      "value": "Двухэтапная аутентификация"
     },
     {
       "name": "two_step_subtitle",
-      "value": "Your account is protected with an additional password."
+      "value": "Ваш аккаунт защищён дополнительным паролем."
     },
     {
       "name": "hint_prefix",
-      "value": "Hint: %s"
+      "value": "Подсказка: %s"
     },
     {
       "name": "error_send_code",
-      "value": "Failed to send code. Please try again."
+      "value": "Не удалось отправить код. Попробуйте ещё раз."
     },
     {
       "name": "error_invalid_code",
-      "value": "Invalid code. Please try again."
+      "value": "Неверный код. Попробуйте ещё раз."
     },
     {
       "name": "error_wrong_password",
-      "value": "Wrong password. Please try again."
+      "value": "Неверный пароль. Попробуйте ещё раз."
     },
     {
       "name": "message_placeholder",
-      "value": "Message"
+      "value": "Сообщение"
     },
     {
       "name": "slide_to_cancel",
-      "value": "Slide to cancel"
+      "value": "Сдвиньте для отмены"
     },
     {
       "name": "forwarded_from",
-      "value": "Forwarded from %s"
+      "value": "Переслано от %s"
     },
     {
       "name": "document_label",
-      "value": "Document"
+      "value": "Документ"
     },
     {
       "name": "file_label",
-      "value": "File"
+      "value": "Файл"
     },
     {
       "name": "typing",
-      "value": "typing"
+      "value": "печатает"
     },
     {
       "name": "online",
-      "value": "online"
+      "value": "в сети"
     },
     {
       "name": "last_seen_recently",
-      "value": "last seen recently"
+      "value": "был(а) недавно"
     },
     {
       "name": "last_seen_within_week",
-      "value": "last seen within a week"
+      "value": "был(а) на этой неделе"
     },
     {
       "name": "last_seen_within_month",
-      "value": "last seen within a month"
+      "value": "был(а) в этом месяце"
     },
     {
       "name": "last_seen_long_ago",
-      "value": "last seen a long time ago"
+      "value": "был(а) давно"
     },
     {
       "name": "members_count",
-      "value": "%d members"
+      "value": "%d участников"
     },
     {
       "name": "mute",
-      "value": "Mute"
+      "value": "Без звука"
     },
     {
       "name": "unmute",
-      "value": "Unmute"
+      "value": "Со звуком"
     },
     {
       "name": "read",
-      "value": "Read"
+      "value": "Прочитано"
     },
     {
       "name": "unread",
-      "value": "Unread"
+      "value": "Не прочитано"
     },
     {
       "name": "pin",
-      "value": "Pin"
+      "value": "Закрепить"
     },
     {
       "name": "unpin",
-      "value": "Unpin"
+      "value": "Открепить"
     },
     {
       "name": "delete",
-      "value": "Delete"
+      "value": "Удалить"
     },
     {
       "name": "today",
-      "value": "Today"
+      "value": "Сегодня"
     },
     {
       "name": "yesterday",
-      "value": "Yesterday"
+      "value": "Вчера"
     },
     {
       "name": "photo",
-      "value": "Photo"
+      "value": "Фото"
     },
     {
       "name": "video",
-      "value": "Video"
+      "value": "Видео"
     },
     {
       "name": "voice_message",
-      "value": "Voice message"
+      "value": "Голосовое сообщение"
     },
     {
       "name": "sticker",
-      "value": "Sticker"
+      "value": "Стикер"
     },
     {
       "name": "gif",
@@ -182,75 +182,75 @@
     },
     {
       "name": "contact_label",
-      "value": "Contact"
+      "value": "Контакт"
     },
     {
       "name": "location_label",
-      "value": "Location"
+      "value": "Геопозиция"
     },
     {
       "name": "poll",
-      "value": "Poll"
+      "value": "Опрос"
     },
     {
       "name": "loading",
-      "value": "Loading..."
+      "value": "Загрузка..."
     },
     {
       "name": "no_messages",
-      "value": "No messages yet"
+      "value": "Сообщений пока нет"
     },
     {
       "name": "reply",
-      "value": "Reply"
+      "value": "Ответить"
     },
     {
       "name": "forward",
-      "value": "Forward"
+      "value": "Переслать"
     },
     {
       "name": "copy",
-      "value": "Copy"
+      "value": "Копировать"
     },
     {
       "name": "edit",
-      "value": "Edit"
+      "value": "Редактировать"
     },
     {
       "name": "cancel",
-      "value": "Cancel"
+      "value": "Отмена"
     },
     {
       "name": "done",
-      "value": "Done"
+      "value": "Готово"
     },
     {
       "name": "settings",
-      "value": "Settings"
+      "value": "Настройки"
     },
     {
       "name": "contacts",
-      "value": "Contacts"
+      "value": "Контакты"
     },
     {
       "name": "saved_messages",
-      "value": "Saved Messages"
+      "value": "Избранное"
     },
     {
       "name": "new_message",
-      "value": "New Message"
+      "value": "Новое сообщение"
     },
     {
       "name": "new_group",
-      "value": "New Group"
+      "value": "Новая группа"
     },
     {
       "name": "new_channel",
-      "value": "New Channel"
+      "value": "Новый канал"
     },
     {
       "name": "secret_chat",
-      "value": "Secret Chat"
+      "value": "Секретный чат"
     }
   ]
 }

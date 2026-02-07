@@ -64,12 +64,19 @@ export struct MessageBubble {
 
           // Forwarded header
           if (this.message.forwardedFrom.length > 0) {
-            Text(`Forwarded from ${this.message.forwardedFrom}`)
-              .fontSize(13)
-              .fontWeight(FontWeight.Medium)
-              .fontColor($r('app.color.telegram_blue'))
-              .fontStyle(FontStyle.Italic)
-              .margin({ bottom: 4 })
+            Row() {
+              Image($r('app.media.ic_forward'))
+                .width(14)
+                .height(14)
+                .fillColor($r('app.color.telegram_blue'))
+                .margin({ right: 4 })
+              Text(this.message.forwardedFrom)
+                .fontSize(13)
+                .fontWeight(FontWeight.Medium)
+                .fontColor($r('app.color.telegram_blue'))
+                .fontStyle(FontStyle.Italic)
+            }
+            .margin({ bottom: 4 })
           }
 
           // Sender name (groups, first in group only)
@@ -175,7 +182,7 @@ export struct MessageBubble {
         }
         .padding({ left: 6, right: 6, top: 2, bottom: 2 })
         .borderRadius(10)
-        .backgroundColor('#66000000')
+        .backgroundColor($r('app.color.time_overlay'))
         .margin({ right: 6, bottom: 6 })
       }
 
@@ -209,7 +216,7 @@ export struct MessageBubble {
   @Builder
   buildVoice() {
     Row() {
-      Image($r('sys.media.ohos_ic_public_play'))
+      Image($r('app.media.ic_play'))
         .width(32)
         .height(32)
         .fillColor($r('app.color.telegram_blue'))
@@ -256,9 +263,9 @@ export struct MessageBubble {
       Circle()
         .width(48)
         .height(48)
-        .fill('#88000000')
+        .fill($r('app.color.play_overlay'))
 
-      Image($r('sys.media.ohos_ic_public_play'))
+      Image($r('app.media.ic_play'))
         .width(24)
         .height(24)
         .fillColor(Color.White)
@@ -268,7 +275,7 @@ export struct MessageBubble {
         Text(this.formatDuration(this.message.videoDuration))
           .fontSize(11)
           .fontColor(Color.White)
-          .backgroundColor('#66000000')
+          .backgroundColor($r('app.color.time_overlay'))
           .borderRadius(4)
           .padding({ left: 4, right: 4, top: 1, bottom: 1 })
           .position({ x: 8, y: 8 })
@@ -279,20 +286,20 @@ export struct MessageBubble {
   @Builder
   buildDocument() {
     Row() {
-      Image($r('sys.media.ohos_ic_public_folder'))
+      Image($r('app.media.ic_document'))
         .width(40)
         .height(40)
         .fillColor($r('app.color.telegram_blue'))
 
       Column() {
-        Text(this.message.fileName || 'Document')
+        Text(this.message.fileName || $r('app.string.document_label'))
           .fontSize(15)
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.telegram_blue'))
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
 
-        Text('File')
+        Text($r('app.string.file_label'))
           .fontSize(13)
           .fontColor($r('app.color.text_secondary'))
       }
@@ -324,18 +331,21 @@ export struct MessageBubble {
 
   @Builder
   buildCheckmarks(tint: ResourceColor) {
-    Text(this.message.isRead ? '\u2713\u2713' : '\u2713')
-      .fontSize(12)
-      .fontColor(this.message.isRead ? $r('app.color.telegram_blue') : tint)
+    Image(this.message.isRead ? $r('app.media.ic_check_double') : $r('app.media.ic_check_single'))
+      .width(16)
+      .height(16)
+      .fillColor(this.message.isRead ? $r('app.color.telegram_blue') : tint)
       .margin({ left: 3 })
   }
 
   // --- Helpers ---
 
-  private getSenderColor(): string {
-    const colors: string[] = [
-      '#FF5733', '#E91E63', '#9C27B0', '#3F51B5',
-      '#2196F3', '#00BCD4', '#009688'
+  private getSenderColor(): ResourceColor {
+    const colors: Resource[] = [
+      $r('app.color.sender_color_1'), $r('app.color.sender_color_2'),
+      $r('app.color.sender_color_3'), $r('app.color.sender_color_4'),
+      $r('app.color.sender_color_5'), $r('app.color.sender_color_6'),
+      $r('app.color.sender_color_7')
     ];
     return colors[Math.abs(this.message.senderId) % colors.length];
   }

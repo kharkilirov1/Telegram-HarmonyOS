@@ -39,7 +39,7 @@ export struct ChatInputBar {
           .layoutWeight(1)
           .alignItems(HorizontalAlign.Start)
 
-          Image($r('sys.media.ohos_ic_public_cancel'))
+          Image($r('app.media.ic_close'))
             .width(18)
             .height(18)
             .fillColor($r('app.color.text_secondary'))
@@ -61,7 +61,7 @@ export struct ChatInputBar {
           this.buildRecordingUI()
         } else {
           // Attach button
-          Image($r('sys.media.ohos_ic_public_add'))
+          Image($r('app.media.ic_attach'))
             .width(24)
             .height(24)
             .fillColor($r('app.color.text_secondary'))
@@ -69,7 +69,7 @@ export struct ChatInputBar {
             .margin({ right: 6 })
 
           // Text area
-          TextArea({ placeholder: 'Message', text: this.inputText })
+          TextArea({ placeholder: $r('app.string.message_placeholder'), text: this.inputText })
             .fontSize(16)
             .layoutWeight(1)
             .constraintSize({ minHeight: 36, maxHeight: 120 })
@@ -82,7 +82,7 @@ export struct ChatInputBar {
 
           // Send / Mic toggle
           if (this.inputText.trim().length > 0) {
-            Image($r('sys.media.ohos_ic_public_send'))
+            Image($r('app.media.ic_send'))
               .width(28)
               .height(28)
               .fillColor($r('app.color.telegram_blue'))
@@ -95,7 +95,7 @@ export struct ChatInputBar {
                 }
               })
           } else {
-            Image($r('sys.media.ohos_ic_public_voice'))
+            Image($r('app.media.ic_mic'))
               .width(24)
               .height(24)
               .fillColor($r('app.color.text_secondary'))
@@ -122,7 +122,7 @@ export struct ChatInputBar {
       Circle()
         .width(10)
         .height(10)
-        .fill(Color.Red)
+        .fill($r('app.color.recording_red'))
 
       Text(this.formatRecordingDuration())
         .fontSize(16)
@@ -132,11 +132,11 @@ export struct ChatInputBar {
       Blank().layoutWeight(1)
 
       Row() {
-        Image($r('sys.media.ohos_ic_public_arrow_left'))
+        Image($r('app.media.ic_back'))
           .width(14)
           .height(14)
           .fillColor($r('app.color.text_secondary'))
-        Text('Slide to cancel')
+        Text($r('app.string.slide_to_cancel'))
           .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .margin({ left: 4 })

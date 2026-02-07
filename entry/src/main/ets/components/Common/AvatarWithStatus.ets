@@ -30,7 +30,7 @@ export struct AvatarWithStatus {
         Circle()
           .width(this.size * 0.26)
           .height(this.size * 0.26)
-          .fill('#4DCC5E')
+          .fill($r('app.color.online_indicator'))
           .stroke(Color.White)
           .strokeWidth(2)
       }

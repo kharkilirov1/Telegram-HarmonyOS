@@ -13,7 +13,7 @@ export struct VerifyCodePage {
       Column() {
         // Back button area
         Row() {
-          Image($r('sys.media.ohos_ic_public_arrow_left'))
+          Image($r('app.media.ic_back'))
             .width(24)
             .height(24)
             .fillColor($r('app.color.telegram_blue'))
@@ -32,7 +32,7 @@ export struct VerifyCodePage {
           .margin({ top: 40, bottom: 24 })
 
         // Title
-        Text('Enter Code')
+        Text($r('app.string.enter_code_title'))
           .fontSize(24)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
@@ -70,7 +70,7 @@ export struct VerifyCodePage {
         if (this.errorMessage.length > 0) {
           Text(this.errorMessage)
             .fontSize(13)
-            .fontColor(Color.Red)
+            .fontColor($r('app.color.error_red'))
             .margin({ top: 8 })
         }
 

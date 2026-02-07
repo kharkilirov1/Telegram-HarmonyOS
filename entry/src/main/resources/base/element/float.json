@@ -1,0 +1,180 @@
+{
+  "float": [
+    {
+      "name": "avatar_size_chat_list",
+      "value": "54vp"
+    },
+    {
+      "name": "avatar_size_chat_detail",
+      "value": "34vp"
+    },
+    {
+      "name": "avatar_size_login",
+      "value": "96vp"
+    },
+    {
+      "name": "icon_size_toolbar",
+      "value": "24vp"
+    },
+    {
+      "name": "icon_size_small",
+      "value": "16vp"
+    },
+    {
+      "name": "icon_size_send",
+      "value": "28vp"
+    },
+    {
+      "name": "icon_size_fab",
+      "value": "36vp"
+    },
+    {
+      "name": "icon_size_play",
+      "value": "32vp"
+    },
+    {
+      "name": "icon_size_play_overlay",
+      "value": "48vp"
+    },
+    {
+      "name": "bubble_radius",
+      "value": "17vp"
+    },
+    {
+      "name": "bubble_tail_radius",
+      "value": "4vp"
+    },
+    {
+      "name": "input_radius",
+      "value": "18vp"
+    },
+    {
+      "name": "button_radius",
+      "value": "10vp"
+    },
+    {
+      "name": "badge_radius",
+      "value": "10vp"
+    },
+    {
+      "name": "photo_radius",
+      "value": "15vp"
+    },
+    {
+      "name": "toolbar_height",
+      "value": "56vp"
+    },
+    {
+      "name": "chat_list_item_height",
+      "value": "76vp"
+    },
+    {
+      "name": "input_min_height",
+      "value": "36vp"
+    },
+    {
+      "name": "input_max_height",
+      "value": "120vp"
+    },
+    {
+      "name": "button_height",
+      "value": "48vp"
+    },
+    {
+      "name": "reply_bar_height",
+      "value": "40vp"
+    },
+    {
+      "name": "sticker_size",
+      "value": "160vp"
+    },
+    {
+      "name": "swipe_button_width",
+      "value": "72vp"
+    },
+    {
+      "name": "font_size_title_large",
+      "value": "28fp"
+    },
+    {
+      "name": "font_size_title",
+      "value": "24fp"
+    },
+    {
+      "name": "font_size_headline",
+      "value": "17fp"
+    },
+    {
+      "name": "font_size_body",
+      "value": "16fp"
+    },
+    {
+      "name": "font_size_subhead",
+      "value": "15fp"
+    },
+    {
+      "name": "font_size_caption",
+      "value": "13fp"
+    },
+    {
+      "name": "font_size_small",
+      "value": "12fp"
+    },
+    {
+      "name": "font_size_time",
+      "value": "11fp"
+    },
+    {
+      "name": "font_size_code",
+      "value": "24fp"
+    },
+    {
+      "name": "spacing_xs",
+      "value": "2vp"
+    },
+    {
+      "name": "spacing_sm",
+      "value": "4vp"
+    },
+    {
+      "name": "spacing_md",
+      "value": "8vp"
+    },
+    {
+      "name": "spacing_lg",
+      "value": "12vp"
+    },
+    {
+      "name": "spacing_xl",
+      "value": "16vp"
+    },
+    {
+      "name": "spacing_xxl",
+      "value": "24vp"
+    },
+    {
+      "name": "spacing_xxxl",
+      "value": "32vp"
+    },
+    {
+      "name": "group_spacing",
+      "value": "6vp"
+    },
+    {
+      "name": "within_group_spacing",
+      "value": "1vp"
+    },
+    {
+      "name": "divider_width",
+      "value": "0.5vp"
+    },
+    {
+      "name": "reply_divider_width",
+      "value": "2vp"
+    },
+    {
+      "name": "online_dot_ratio",
+      "value": "0.26"
+    }
+  ]
+}

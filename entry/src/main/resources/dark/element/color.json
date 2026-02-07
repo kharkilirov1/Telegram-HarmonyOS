@@ -2,43 +2,43 @@
   "color": [
     {
       "name": "start_window_background",
-      "value": "#FFFFFF"
+      "value": "#1C1C1E"
     },
     {
       "name": "telegram_blue",
-      "value": "#0088CC"
+      "value": "#3390EC"
     },
     {
       "name": "telegram_blue_dark",
-      "value": "#006DAA"
+      "value": "#2B7CD3"
     },
     {
       "name": "chat_bubble_outgoing",
-      "value": "#EFFFDE"
+      "value": "#2B5278"
     },
     {
       "name": "chat_bubble_incoming",
-      "value": "#FFFFFF"
+      "value": "#1E2C3A"
     },
     {
       "name": "text_primary",
-      "value": "#000000"
-    },
-    {
-      "name": "text_secondary",
-      "value": "#8E8E93"
-    },
-    {
-      "name": "separator",
-      "value": "#E5E5EA"
-    },
-    {
-      "name": "background_primary",
       "value": "#FFFFFF"
     },
     {
+      "name": "text_secondary",
+      "value": "#8B8D93"
+    },
+    {
+      "name": "separator",
+      "value": "#2C2C2E"
+    },
+    {
+      "name": "background_primary",
+      "value": "#1C1C1E"
+    },
+    {
       "name": "background_secondary",
-      "value": "#F2F2F7"
+      "value": "#2C2C2E"
     },
     {
       "name": "online_indicator",
@@ -82,7 +82,7 @@
     },
     {
       "name": "shadow_color",
-      "value": "#20000000"
+      "value": "#40000000"
     },
     {
       "name": "date_separator_bg",

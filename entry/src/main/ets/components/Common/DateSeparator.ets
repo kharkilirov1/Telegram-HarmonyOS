@@ -12,7 +12,7 @@ export struct DateSeparator {
         .fontColor(Color.White)
         .padding({ left: 12, right: 12, top: 4, bottom: 4 })
         .borderRadius(12)
-        .backgroundColor('#B3000000')
+        .backgroundColor($r('app.color.date_separator_bg'))
 
       Blank().layoutWeight(1)
     }

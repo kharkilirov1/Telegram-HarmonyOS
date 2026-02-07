@@ -13,7 +13,7 @@ export struct PasswordPage {
       Column() {
         // Back button
         Row() {
-          Image($r('sys.media.ohos_ic_public_arrow_left'))
+          Image($r('app.media.ic_back'))
             .width(24)
             .height(24)
             .fillColor($r('app.color.telegram_blue'))
@@ -26,21 +26,21 @@ export struct PasswordPage {
         .padding({ left: 16, top: 12 })
 
         // Lock icon
-        Image($r('sys.media.ohos_ic_public_lock'))
+        Image($r('app.media.ic_lock'))
           .width(80)
           .height(80)
           .fillColor($r('app.color.telegram_blue'))
           .margin({ top: 40, bottom: 24 })
 
         // Title
-        Text('Two-Step Verification')
+        Text($r('app.string.two_step_title'))
           .fontSize(24)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
           .margin({ bottom: 8 })
 
         // Subtitle
-        Text('Your account is protected with\nan additional password.')
+        Text($r('app.string.two_step_subtitle'))
           .fontSize(15)
           .fontColor($r('app.color.text_secondary'))
           .textAlign(TextAlign.Center)
@@ -71,7 +71,7 @@ export struct PasswordPage {
         if (this.errorMessage.length > 0) {
           Text(this.errorMessage)
             .fontSize(13)
-            .fontColor(Color.Red)
+            .fontColor($r('app.color.error_red'))
             .margin({ top: 8 })
         }
 
