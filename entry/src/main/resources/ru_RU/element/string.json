@@ -367,6 +367,126 @@
     {
       "name": "select_message",
       "value": "Выбрать"
+    },
+    {
+      "name": "login_your_phone",
+      "value": "Ваш номер телефона"
+    },
+    {
+      "name": "login_confirm_text",
+      "value": "Пожалуйста, подтвердите код страны и введите свой номер телефона."
+    },
+    {
+      "name": "login_choose_country",
+      "value": "Выберите страну"
+    },
+    {
+      "name": "login_wrong_number",
+      "value": "Неверный номер?"
+    },
+    {
+      "name": "login_resend_code",
+      "value": "Запросить код повторно через %s"
+    },
+    {
+      "name": "login_forgot_password",
+      "value": "Забыли пароль?"
+    },
+    {
+      "name": "folder_all",
+      "value": "Все"
+    },
+    {
+      "name": "folder_personal",
+      "value": "Личные"
+    },
+    {
+      "name": "folder_groups",
+      "value": "Группы"
+    },
+    {
+      "name": "folder_channels",
+      "value": "Каналы"
+    },
+    {
+      "name": "folder_bots",
+      "value": "Боты"
+    },
+    {
+      "name": "folder_unread",
+      "value": "Непрочитанные"
+    },
+    {
+      "name": "contacts_title",
+      "value": "Контакты"
+    },
+    {
+      "name": "calls_title",
+      "value": "Звонки"
+    },
+    {
+      "name": "settings_recent_calls",
+      "value": "Недавние звонки"
+    },
+    {
+      "name": "settings_devices",
+      "value": "Устройства"
+    },
+    {
+      "name": "settings_chat_folders",
+      "value": "Папки чатов"
+    },
+    {
+      "name": "settings_notifications_sounds",
+      "value": "Уведомления и звуки"
+    },
+    {
+      "name": "settings_privacy_security",
+      "value": "Конфиденциальность"
+    },
+    {
+      "name": "settings_data_storage",
+      "value": "Данные и память"
+    },
+    {
+      "name": "settings_appearance",
+      "value": "Оформление"
+    },
+    {
+      "name": "settings_language",
+      "value": "Язык"
+    },
+    {
+      "name": "settings_stickers",
+      "value": "Стикеры и эмодзи"
+    },
+    {
+      "name": "settings_power_saving",
+      "value": "Энергосбережение"
+    },
+    {
+      "name": "settings_ask_question",
+      "value": "Задать вопрос"
+    },
+    {
+      "name": "settings_telegram_faq",
+      "value": "Вопросы и ответы"
+    },
+    {
+      "name": "settings_telegram_features",
+      "value": "Возможности Telegram"
+    },
+    {
+      "name": "profile_set_photo",
+      "value": "Установить фото"
+    },
+    {
+      "name": "profile_shared_media",
+      "value": "Общие медиа"
+    },
+    {
+      "name": "profile_change_number",
+      "value": "Сменить номер"
     }
   ]
 }

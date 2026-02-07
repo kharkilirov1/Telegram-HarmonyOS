@@ -60,6 +60,13 @@ export struct ChatInputBar {
         if (this.isRecording) {
           this.buildRecordingUI()
         } else {
+          // Emoji button (like Android Telegram — left of text area)
+          Image($r('app.media.ic_emoji'))
+            .width(24)
+            .height(24)
+            .fillColor($r('app.color.text_secondary'))
+            .margin({ right: 6 })
+
           // Attach button
           Image($r('app.media.ic_attach'))
             .width(24)

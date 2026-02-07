@@ -12,30 +12,45 @@ export struct PasswordPage {
   @Local isLoading: boolean = false;
   @Local errorMessage: string = '';
   @Local passwordHint: string = '';
+  @Local showPassword: boolean = false;
+
+  aboutToAppear(): void {
+    this.passwordHint = AuthController.getInstance().getPasswordHint();
+  }
 
   build() {
     NavDestination() {
       Column() {
-        // Back button
+        // Top bar: Back + "Next"
         Row() {
           Image($r('app.media.ic_back'))
             .width(24)
             .height(24)
             .fillColor($r('app.color.telegram_blue'))
-            .onClick(() => {
-              this.navPathStack.pop();
-            })
+            .onClick(() => this.navPathStack.pop())
+
           Blank()
+
+          if (this.password.length > 0 && !this.isLoading) {
+            Text($r('app.string.next_button'))
+              .fontSize(17)
+              .fontWeight(FontWeight.Medium)
+              .fontColor($r('app.color.telegram_blue'))
+              .onClick(() => this.submitPassword())
+          }
         }
         .width('100%')
-        .padding({ left: 16, top: 12 })
+        .height(44)
+        .padding({ left: 16, right: 16 })
 
-        // Lock icon
+        Blank().height(40)
+
+        // Lock icon (like real Telegram — would be monkey animation in real app)
         Image($r('app.media.ic_lock'))
           .width(80)
           .height(80)
           .fillColor($r('app.color.telegram_blue'))
-          .margin({ top: 40, bottom: 24 })
+          .margin({ bottom: 20 })
 
         // Title
         Text($r('app.string.two_step_title'))
@@ -46,30 +61,53 @@ export struct PasswordPage {
 
         // Subtitle
         Text($r('app.string.two_step_subtitle'))
-          .fontSize(15)
+          .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .textAlign(TextAlign.Center)
+          .padding({ left: 40, right: 40 })
           .margin({ bottom: 32 })
 
-        // Password input
-        TextInput({ placeholder: $r('app.string.password_placeholder'), text: this.password })
-          .type(InputType.Password)
-          .fontSize(17)
-          .width('80%')
-          .height(48)
-          .backgroundColor($r('app.color.background_secondary'))
-          .borderRadius(10)
-          .onChange((value: string) => {
-            this.password = value;
-            this.errorMessage = '';
-          })
+        // Password input with show/hide toggle (like both platforms)
+        Row() {
+          TextInput({ placeholder: $r('app.string.password_placeholder'), text: this.password })
+            .type(this.showPassword ? InputType.Normal : InputType.Password)
+            .fontSize(17)
+            .layoutWeight(1)
+            .height(48)
+            .backgroundColor(Color.Transparent)
+            .caretColor($r('app.color.telegram_blue'))
+            .onChange((value: string) => {
+              this.password = value;
+              this.errorMessage = '';
+            })
+            .onSubmit(() => {
+              if (this.password.length > 0) {
+                this.submitPassword();
+              }
+            })
 
-        // Hint
+          // Show/hide password toggle
+          Image(this.showPassword ? $r('app.media.ic_close') : $r('app.media.ic_search'))
+            .width(20)
+            .height(20)
+            .fillColor($r('app.color.text_secondary'))
+            .margin({ right: 12 })
+            .onClick(() => {
+              this.showPassword = !this.showPassword;
+            })
+        }
+        .width('80%')
+        .height(48)
+        .backgroundColor($r('app.color.background_secondary'))
+        .borderRadius(10)
+        .padding({ left: 12 })
+
+        // Hint (like real Telegram)
         if (this.passwordHint.length > 0) {
           Text(`Hint: ${this.passwordHint}`)
             .fontSize(13)
             .fontColor($r('app.color.text_secondary'))
-            .margin({ top: 8 })
+            .margin({ top: 12 })
         }
 
         // Error message
@@ -80,27 +118,22 @@ export struct PasswordPage {
             .margin({ top: 8 })
         }
 
-        // Next button
-        Button($r('app.string.next_button'))
-          .type(ButtonType.Capsule)
-          .width('60%')
-          .height(48)
-          .fontSize(17)
-          .fontWeight(FontWeight.Medium)
-          .backgroundColor($r('app.color.telegram_blue'))
-          .margin({ top: 24 })
-          .enabled(!this.isLoading && this.password.length > 0)
-          .onClick(() => {
-            this.submitPassword();
-          })
-
         if (this.isLoading) {
           LoadingProgress()
             .width(32)
             .height(32)
-            .margin({ top: 16 })
+            .margin({ top: 20 })
             .color($r('app.color.telegram_blue'))
         }
+
+        // "Forgot Password?" link (like real Telegram)
+        Text($r('app.string.login_forgot_password'))
+          .fontSize(14)
+          .fontColor($r('app.color.telegram_blue'))
+          .margin({ top: 24 })
+          .onClick(() => {
+            // TODO: password recovery flow
+          })
 
         Blank()
       }

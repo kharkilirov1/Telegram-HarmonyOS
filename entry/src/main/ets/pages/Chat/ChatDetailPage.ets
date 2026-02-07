@@ -44,6 +44,8 @@ export struct ChatDetailPage {
   @Local showScrollToBottom: boolean = false;
   @Local newMessageCount: number = 0;
   @Local replyMessage: Message | null = null;
+  @Local chatPhoto: string | null = null;
+  @Local chatInitial: string = '';
 
   private listScroller: Scroller = new Scroller();
   private messageDataSource: BasicDataSource<ChatDetailListItem> = new BasicDataSource<ChatDetailListItem>();
@@ -102,6 +104,29 @@ export struct ChatDetailPage {
             .fillColor($r('app.color.telegram_blue'))
             .onClick(() => this.navPathStack.pop())
 
+          // Chat avatar (like both iOS and Android Telegram)
+          if (this.chatPhoto) {
+            Image(this.chatPhoto)
+              .alt($r('app.media.app_icon'))
+              .autoResize(true)
+              .onError(() => {})
+              .width(36)
+              .height(36)
+              .borderRadius(18)
+              .margin({ left: 8 })
+          } else {
+            Text(this.chatInitial)
+              .fontSize(15)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(Color.White)
+              .width(36)
+              .height(36)
+              .borderRadius(18)
+              .backgroundColor($r('app.color.telegram_blue'))
+              .textAlign(TextAlign.Center)
+              .margin({ left: 8 })
+          }
+
           Column() {
             Text(this.chatTitle)
               .fontSize(17)
@@ -119,7 +144,7 @@ export struct ChatDetailPage {
                   : $r('app.color.text_secondary'))
             }
           }
-          .margin({ left: 12 })
+          .margin({ left: 10 })
           .alignItems(HorizontalAlign.Start)
           .layoutWeight(1)
 
@@ -248,6 +273,8 @@ export struct ChatDetailPage {
     if (chat) {
       this.chatTitle = chat.title;
       this.isGroupChat = chat.isGroup;
+      this.chatPhoto = chat.photo;
+      this.chatInitial = chat.title.length > 0 ? chat.title.charAt(0) : '?';
       this.lastSeenText = chat.isGroup
         ? `${chat.unreadCount} members`
         : formatLastSeen(chat.isUserOnline, 0);

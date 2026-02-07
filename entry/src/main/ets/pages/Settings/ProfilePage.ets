@@ -1,3 +1,5 @@
+import { AuthController } from '../../controllers/AuthController';
+
 @Builder
 export function ProfileBuilder(name: string, param: Object) {
   ProfilePage()
@@ -13,11 +15,13 @@ export struct ProfilePage {
   @Local phoneNumber: string = '+1 234 567 890';
   @Local bio: string = '';
   @Local photoUrl: string | null = null;
+  @Local isOnline: boolean = false;
+  @Local notificationsEnabled: boolean = true;
 
   build() {
     NavDestination() {
       Column() {
-        // Top bar
+        // Top bar — like Telegram iOS profile: "Back" left, "Edit" right
         Row() {
           Image($r('app.media.ic_back'))
             .width(24)
@@ -25,16 +29,14 @@ export struct ProfilePage {
             .fillColor($r('app.color.telegram_blue'))
             .onClick(() => this.navPathStack.pop())
 
-          Text($r('app.string.profile_title'))
-            .fontSize(20)
-            .fontWeight(FontWeight.Bold)
-            .fontColor($r('app.color.text_primary'))
-            .margin({ left: 16 })
-
           Blank()
+
+          Text($r('app.string.profile_edit'))
+            .fontSize(17)
+            .fontColor($r('app.color.telegram_blue'))
         }
         .width('100%')
-        .height(56)
+        .height(44)
         .padding({ left: 16, right: 16 })
         .backgroundColor($r('app.color.background_primary'))
 
@@ -42,40 +44,61 @@ export struct ProfilePage {
 
         Scroll() {
           Column() {
-            // --- Avatar + Name header ---
+            // --- Large avatar + Name header (like Telegram iOS/Android profile) ---
             Column() {
-              if (this.photoUrl) {
-                Image(this.photoUrl)
-                  .alt($r('app.media.app_icon'))
-                  .autoResize(true)
-                  .onError(() => {})
-                  .width(90)
-                  .height(90)
-                  .borderRadius(45)
-              } else {
-                Text(this.getInitials())
-                  .fontSize(36)
-                  .fontWeight(FontWeight.Medium)
-                  .fontColor(Color.White)
-                  .width(90)
-                  .height(90)
-                  .borderRadius(45)
-                  .backgroundColor($r('app.color.telegram_blue'))
-                  .textAlign(TextAlign.Center)
+              Stack({ alignContent: Alignment.BottomEnd }) {
+                if (this.photoUrl) {
+                  Image(this.photoUrl)
+                    .alt($r('app.media.app_icon'))
+                    .autoResize(true)
+                    .onError(() => {})
+                    .width(100)
+                    .height(100)
+                    .borderRadius(50)
+                } else {
+                  Text(this.getInitials())
+                    .fontSize(40)
+                    .fontWeight(FontWeight.Medium)
+                    .fontColor(Color.White)
+                    .width(100)
+                    .height(100)
+                    .borderRadius(50)
+                    .backgroundColor($r('app.color.telegram_blue'))
+                    .textAlign(TextAlign.Center)
+                }
+
+                // Online indicator dot (like both platforms)
+                if (this.isOnline) {
+                  Circle()
+                    .width(16)
+                    .height(16)
+                    .fill($r('app.color.online_indicator'))
+                    .stroke(Color.White)
+                    .strokeWidth(2)
+                    .position({ right: 2, bottom: 2 })
+                }
               }
 
+              // "Set Profile Photo" link (like iOS Telegram)
+              Text($r('app.string.profile_set_photo'))
+                .fontSize(14)
+                .fontColor($r('app.color.telegram_blue'))
+                .margin({ top: 10 })
+
+              // Name
               Text(this.getFullName())
-                .fontSize(22)
+                .fontSize(24)
                 .fontWeight(FontWeight.Bold)
                 .fontColor($r('app.color.text_primary'))
                 .margin({ top: 12 })
 
-              if (this.username.length > 0) {
-                Text(`@${this.username}`)
-                  .fontSize(15)
-                  .fontColor($r('app.color.text_secondary'))
-                  .margin({ top: 4 })
-              }
+              // Online status
+              Text(this.isOnline ? $r('app.string.online') : $r('app.string.last_seen_recently'))
+                .fontSize(14)
+                .fontColor(this.isOnline
+                  ? $r('app.color.online_indicator')
+                  : $r('app.color.text_secondary'))
+                .margin({ top: 4 })
             }
             .width('100%')
             .padding({ top: 24, bottom: 24 })
@@ -84,23 +107,25 @@ export struct ProfilePage {
 
             Blank().height(24)
 
-            // --- Info section ---
+            // --- Info section (like Telegram iOS grouped list) ---
             Column() {
               // Phone
-              this.infoRow($r('app.string.profile_phone'), this.phoneNumber)
-              Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
+              this.infoRow($r('app.string.profile_phone'), this.phoneNumber, $r('app.media.ic_phone_call'))
+              Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
 
               // Username
               this.infoRow(
                 $r('app.string.profile_username'),
-                this.username.length > 0 ? `@${this.username}` : '-'
+                this.username.length > 0 ? `@${this.username}` : '-',
+                $r('app.media.ic_contact')
               )
-              Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
+              Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
 
               // Bio
               this.infoRow(
                 $r('app.string.profile_bio'),
-                this.bio.length > 0 ? this.bio : '-'
+                this.bio.length > 0 ? this.bio : '-',
+                $r('app.media.ic_edit')
               )
             }
             .width('100%')
@@ -110,19 +135,24 @@ export struct ProfilePage {
 
             Blank().height(24)
 
-            // --- Action buttons ---
+            // --- Shared Media section (like both platforms) ---
             Column() {
-              // Notifications
               Row() {
-                Image($r('app.media.ic_unmute'))
+                Image($r('app.media.ic_photo'))
                   .width(22)
                   .height(22)
                   .fillColor($r('app.color.telegram_blue'))
                   .margin({ right: 12 })
 
-                Text($r('app.string.settings_notifications'))
+                Text($r('app.string.profile_shared_media'))
                   .fontSize(16)
-                  .fontColor($r('app.color.telegram_blue'))
+                  .fontColor($r('app.color.text_primary'))
+                  .layoutWeight(1)
+
+                Image($r('app.media.ic_forward'))
+                  .width(14)
+                  .height(14)
+                  .fillColor($r('app.color.text_secondary'))
               }
               .width('100%')
               .height(48)
@@ -133,7 +163,87 @@ export struct ProfilePage {
             .borderRadius(10)
             .margin({ left: 16, right: 16 })
 
-            Blank().height(32)
+            Blank().height(24)
+
+            // --- Notifications toggle (like real Telegram profile) ---
+            Column() {
+              Row() {
+                Image($r('app.media.ic_unmute'))
+                  .width(22)
+                  .height(22)
+                  .fillColor($r('app.color.settings_icon_green'))
+                  .margin({ right: 12 })
+
+                Text($r('app.string.settings_notifications'))
+                  .fontSize(16)
+                  .fontColor($r('app.color.text_primary'))
+                  .layoutWeight(1)
+
+                Toggle({ type: ToggleType.Switch, isOn: this.notificationsEnabled })
+                  .selectedColor($r('app.color.telegram_blue'))
+                  .onChange((isOn: boolean) => {
+                    this.notificationsEnabled = isOn;
+                  })
+              }
+              .width('100%')
+              .height(48)
+              .padding({ left: 16, right: 16 })
+            }
+            .width('100%')
+            .backgroundColor($r('app.color.settings_section_bg'))
+            .borderRadius(10)
+            .margin({ left: 16, right: 16 })
+
+            Blank().height(24)
+
+            // --- Change Number (like real Telegram settings) ---
+            Column() {
+              Row() {
+                Image($r('app.media.ic_phone_call'))
+                  .width(22)
+                  .height(22)
+                  .fillColor($r('app.color.settings_icon_orange'))
+                  .margin({ right: 12 })
+
+                Text($r('app.string.profile_change_number'))
+                  .fontSize(16)
+                  .fontColor($r('app.color.text_primary'))
+                  .layoutWeight(1)
+
+                Image($r('app.media.ic_forward'))
+                  .width(14)
+                  .height(14)
+                  .fillColor($r('app.color.text_secondary'))
+              }
+              .width('100%')
+              .height(48)
+              .padding({ left: 16, right: 16 })
+            }
+            .width('100%')
+            .backgroundColor($r('app.color.settings_section_bg'))
+            .borderRadius(10)
+            .margin({ left: 16, right: 16 })
+
+            Blank().height(24)
+
+            // --- Log Out (like real Telegram — red text) ---
+            Column() {
+              Text($r('app.string.settings_log_out'))
+                .fontSize(16)
+                .fontColor($r('app.color.logout_red'))
+                .textAlign(TextAlign.Center)
+                .width('100%')
+                .height(48)
+                .onClick(() => {
+                  this.showLogoutConfirmation();
+                })
+            }
+            .width('100%')
+            .backgroundColor($r('app.color.settings_section_bg'))
+            .borderRadius(10)
+            .margin({ left: 16, right: 16 })
+
+            Blank().height(40)
           }
           .width('100%')
         }
@@ -149,20 +259,29 @@ export struct ProfilePage {
   }
 
   @Builder
-  infoRow(label: Resource, value: string) {
-    Column() {
-      Text(label)
-        .fontSize(13)
-        .fontColor($r('app.color.text_secondary'))
+  infoRow(label: Resource, value: string, icon: Resource) {
+    Row() {
+      Image(icon)
+        .width(22)
+        .height(22)
+        .fillColor($r('app.color.telegram_blue'))
+        .margin({ right: 12 })
 
-      Text(value)
-        .fontSize(16)
-        .fontColor($r('app.color.text_primary'))
-        .margin({ top: 2 })
+      Column() {
+        Text(value)
+          .fontSize(16)
+          .fontColor($r('app.color.text_primary'))
+
+        Text(label)
+          .fontSize(13)
+          .fontColor($r('app.color.text_secondary'))
+          .margin({ top: 2 })
+      }
+      .alignItems(HorizontalAlign.Start)
+      .layoutWeight(1)
     }
     .width('100%')
     .padding({ left: 16, right: 16, top: 10, bottom: 10 })
-    .alignItems(HorizontalAlign.Start)
   }
 
   private getFullName(): string {
@@ -177,5 +296,23 @@ export struct ProfilePage {
       initials += this.lastName.charAt(0);
     }
     return initials.length > 0 ? initials : '?';
+  }
+
+  private showLogoutConfirmation(): void {
+    AlertDialog.show({
+      title: $r('app.string.settings_log_out'),
+      message: undefined,
+      primaryButton: {
+        value: 'Cancel',
+        action: () => {}
+      },
+      secondaryButton: {
+        value: 'Log Out',
+        fontColor: $r('app.color.logout_red'),
+        action: () => {
+          AuthController.getInstance().logout();
+        }
+      }
+    });
   }
 }

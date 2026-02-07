@@ -9,12 +9,22 @@ export struct ChatListPage {
   @Consumer('navPathStack') navPathStack: NavPathStack = new NavPathStack();
   @Local searchText: string = '';
   @Local isLoading: boolean = true;
+  @Local activeFolderIndex: number = 0;
 
   private chatDataSource: BasicDataSource<Chat> = new BasicDataSource<Chat>();
 
+  // Folder tabs: All, Personal, Groups, Channels, Bots (like Android Telegram)
+  private readonly folderLabels: Resource[] = [
+    $r('app.string.folder_all'),
+    $r('app.string.folder_personal'),
+    $r('app.string.folder_groups'),
+    $r('app.string.folder_channels'),
+    $r('app.string.folder_bots')
+  ];
+
   private dialogsHandler = (): void => {
     const chats = MessagesController.getInstance().getSortedDialogs();
-    this.chatDataSource.setData([...chats]);
+    this.applyFolderFilter(chats);
     this.isLoading = false;
   };
 
@@ -35,89 +45,140 @@ export struct ChatListPage {
   }
 
   build() {
-    Column() {
-      // Top bar
-      Row() {
-        Image($r('app.media.ic_settings'))
-          .width(24)
-          .height(24)
-          .fillColor($r('app.color.telegram_blue'))
-          .onClick(() => {
-            this.navPathStack.pushPath({ name: 'Settings' });
+    Stack({ alignContent: Alignment.BottomEnd }) {
+      Column() {
+        // Top bar — like Telegram iOS: "Edit" left, "Chats" center, "Compose" right
+        Row() {
+          Text($r('app.string.edit'))
+            .fontSize(16)
+            .fontColor($r('app.color.telegram_blue'))
+
+          Blank()
+
+          Text($r('app.string.chats_title'))
+            .fontSize(17)
+            .fontWeight(FontWeight.Bold)
+            .fontColor($r('app.color.text_primary'))
+
+          Blank()
+
+          Image($r('app.media.ic_edit'))
+            .width(22)
+            .height(22)
+            .fillColor($r('app.color.telegram_blue'))
+        }
+        .width('100%')
+        .height(44)
+        .padding({ left: 16, right: 16 })
+
+        // Search bar — like both platforms
+        Search({ placeholder: $r('app.string.search_placeholder'), value: this.searchText })
+          .width('100%')
+          .height(36)
+          .margin({ left: 16, right: 16, bottom: 0 })
+          .onChange((value: string) => {
+            this.searchText = value;
+            this.applyFilter();
           })
 
-        Text($r('app.string.chats_title'))
-          .fontSize(28)
-          .fontWeight(FontWeight.Bold)
-          .fontColor($r('app.color.text_primary'))
-          .margin({ left: 12 })
+        // Folder tabs — like Android Telegram ViewPager tabs
+        Scroll() {
+          Row({ space: 0 }) {
+            ForEach(this.folderLabels, (label: Resource, index: number) => {
+              Column() {
+                Text(label)
+                  .fontSize(14)
+                  .fontWeight(this.activeFolderIndex === index ? FontWeight.Medium : FontWeight.Normal)
+                  .fontColor(this.activeFolderIndex === index
+                    ? $r('app.color.telegram_blue')
+                    : $r('app.color.text_secondary'))
+                  .padding({ left: 16, right: 16, top: 10, bottom: 10 })
 
-        Blank()
+                // Active indicator
+                Divider()
+                  .strokeWidth(2)
+                  .color(this.activeFolderIndex === index
+                    ? $r('app.color.telegram_blue')
+                    : Color.Transparent)
+                  .width('80%')
+              }
+              .onClick(() => {
+                this.activeFolderIndex = index;
+                const allChats = MessagesController.getInstance().getSortedDialogs();
+                this.applyFolderFilter(allChats);
+              })
+            })
+          }
+        }
+        .scrollable(ScrollDirection.Horizontal)
+        .scrollBar(BarState.Off)
+        .width('100%')
 
+        Divider().strokeWidth(0.5).color($r('app.color.separator'))
+
+        // Chat list
+        if (this.isLoading) {
+          Column() {
+            LoadingProgress()
+              .width(40)
+              .height(40)
+              .color($r('app.color.telegram_blue'))
+          }
+          .width('100%')
+          .layoutWeight(1)
+          .justifyContent(FlexAlign.Center)
+        } else {
+          List() {
+            LazyForEach(this.chatDataSource, (chat: Chat) => {
+              ListItem() {
+                ChatListItem({
+                  chat: chat,
+                  onChatClick: (chatId: number) => {
+                    this.navPathStack.pushPath({ name: 'ChatDetail', param: chatId });
+                  }
+                })
+              }
+              .swipeAction({
+                start: this.swipeStartBuilder(chat),
+                end: this.swipeEndBuilder(chat)
+              })
+            }, (chat: Chat) => chat.id.toString())
+          }
+          .width('100%')
+          .layoutWeight(1)
+          .cachedCount(5)
+          .edgeEffect(EdgeEffect.Spring)
+          .divider({
+            strokeWidth: 0.5,
+            color: $r('app.color.separator'),
+            startMargin: 82,
+            endMargin: 0
+          })
+        }
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor($r('app.color.background_primary'))
+
+      // FAB — like Android Telegram (pencil/compose icon)
+      Button() {
         Image($r('app.media.ic_edit'))
           .width(24)
           .height(24)
-          .fillColor($r('app.color.telegram_blue'))
+          .fillColor(Color.White)
       }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 8 })
-
-      // Search bar
-      Search({ placeholder: $r('app.string.search_placeholder'), value: this.searchText })
-        .width('100%')
-        .height(36)
-        .margin({ left: 16, right: 16, bottom: 8 })
-        .onChange((value: string) => {
-          this.searchText = value;
-          this.applyFilter();
-        })
-
-      // Chat list
-      if (this.isLoading) {
-        Column() {
-          LoadingProgress()
-            .width(40)
-            .height(40)
-            .color($r('app.color.telegram_blue'))
-        }
-        .width('100%')
-        .layoutWeight(1)
-        .justifyContent(FlexAlign.Center)
-      } else {
-        List() {
-          LazyForEach(this.chatDataSource, (chat: Chat) => {
-            ListItem() {
-              ChatListItem({
-                chat: chat,
-                onChatClick: (chatId: number) => {
-                  this.navPathStack.pushPath({ name: 'ChatDetail', param: chatId });
-                }
-              })
-            }
-            .swipeAction({
-              start: this.swipeStartBuilder(chat),
-              end: this.swipeEndBuilder(chat)
-            })
-          }, (chat: Chat) => chat.id.toString())
-        }
-        .width('100%')
-        .layoutWeight(1)
-        .cachedCount(5)
-        .edgeEffect(EdgeEffect.Spring)
-        .divider({
-          strokeWidth: 0.5,
-          color: $r('app.color.separator'),
-          startMargin: 82,
-          endMargin: 0
-        })
-      }
+      .width(56)
+      .height(56)
+      .borderRadius(28)
+      .backgroundColor($r('app.color.telegram_blue'))
+      .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: 4 })
+      .margin({ right: 16, bottom: 16 })
     }
     .width('100%')
     .height('100%')
-    .backgroundColor($r('app.color.background_primary'))
   }
 
-  // Leading swipe: mute/unmute
+  // Leading swipe: mute/unmute (like iOS Telegram)
   @Builder
   swipeStartBuilder(chat: Chat) {
     Row() {
@@ -135,7 +196,7 @@ export struct ChatListPage {
     }
   }
 
-  // Trailing swipe: read, pin, delete
+  // Trailing swipe: read, pin, delete (like iOS Telegram)
   @Builder
   swipeEndBuilder(chat: Chat) {
     Row() {
@@ -180,12 +241,41 @@ export struct ChatListPage {
   private applyFilter(): void {
     const allChats = MessagesController.getInstance().getSortedDialogs();
     if (this.searchText.length === 0) {
-      this.chatDataSource.setData([...allChats]);
+      this.applyFolderFilter(allChats);
     } else {
       const filtered = allChats.filter((chat) =>
         chat.title.toLowerCase().includes(this.searchText.toLowerCase())
       );
       this.chatDataSource.setData(filtered);
     }
+  }
+
+  private applyFolderFilter(allChats: Chat[]): void {
+    let filtered: Chat[];
+    switch (this.activeFolderIndex) {
+      case 1: // Personal — private chats only
+        filtered = allChats.filter(c => !c.isGroup && !c.isChannel);
+        break;
+      case 2: // Groups
+        filtered = allChats.filter(c => c.isGroup && !c.isChannel);
+        break;
+      case 3: // Channels
+        filtered = allChats.filter(c => c.isChannel);
+        break;
+      case 4: // Bots — filter by title convention (placeholder)
+        filtered = allChats.filter(c => !c.isGroup && !c.isChannel);
+        break;
+      default: // All
+        filtered = [...allChats];
+        break;
+    }
+
+    if (this.searchText.length > 0) {
+      filtered = filtered.filter(c =>
+        c.title.toLowerCase().includes(this.searchText.toLowerCase())
+      );
+    }
+
+    this.chatDataSource.setData(filtered);
   }
 }

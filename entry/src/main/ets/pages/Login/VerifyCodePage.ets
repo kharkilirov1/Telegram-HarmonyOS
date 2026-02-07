@@ -12,29 +12,51 @@ export struct VerifyCodePage {
   @Local code: string = '';
   @Local isLoading: boolean = false;
   @Local errorMessage: string = '';
+  @Local resendTimer: number = 60;
+  private timerInterval: number = -1;
+
+  aboutToAppear(): void {
+    this.startResendTimer();
+  }
+
+  aboutToDisappear(): void {
+    if (this.timerInterval >= 0) {
+      clearInterval(this.timerInterval);
+    }
+  }
 
   build() {
     NavDestination() {
       Column() {
-        // Back button area
+        // Top bar: Back + "Next" (like real Telegram)
         Row() {
           Image($r('app.media.ic_back'))
             .width(24)
             .height(24)
             .fillColor($r('app.color.telegram_blue'))
-            .onClick(() => {
-              this.navPathStack.pop();
-            })
+            .onClick(() => this.navPathStack.pop())
+
           Blank()
+
+          if (this.code.length >= 5 && !this.isLoading) {
+            Text($r('app.string.next_button'))
+              .fontSize(17)
+              .fontWeight(FontWeight.Medium)
+              .fontColor($r('app.color.telegram_blue'))
+              .onClick(() => this.submitCode())
+          }
         }
         .width('100%')
-        .padding({ left: 16, top: 12 })
+        .height(44)
+        .padding({ left: 16, right: 16 })
 
-        // Icon
+        Blank().height(40)
+
+        // Telegram icon
         Image($r('app.media.app_icon'))
           .width(80)
           .height(80)
-          .margin({ top: 40, bottom: 24 })
+          .margin({ bottom: 20 })
 
         // Title
         Text($r('app.string.enter_code_title'))
@@ -44,17 +66,24 @@ export struct VerifyCodePage {
           .margin({ bottom: 8 })
 
         // Subtitle with phone number
-        Text(`We've sent a code to ${this.phoneNumber}`)
-          .fontSize(15)
+        Text(`We've sent the code to ${this.phoneNumber}`)
+          .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .textAlign(TextAlign.Center)
-          .margin({ bottom: 32 })
-          .padding({ left: 32, right: 32 })
+          .margin({ bottom: 8 })
+          .padding({ left: 40, right: 40 })
 
-        // Code input
-        TextInput({ placeholder: $r('app.string.code_placeholder'), text: this.code })
+        // "Wrong number?" link (like real Telegram)
+        Text($r('app.string.login_wrong_number'))
+          .fontSize(14)
+          .fontColor($r('app.color.telegram_blue'))
+          .margin({ bottom: 32 })
+          .onClick(() => this.navPathStack.pop())
+
+        // Code input — large centered digits (like both platforms)
+        TextInput({ placeholder: '_ _ _ _ _', text: this.code })
           .type(InputType.Number)
-          .fontSize(24)
+          .fontSize(28)
           .fontWeight(FontWeight.Medium)
           .textAlign(TextAlign.Center)
           .maxLength(6)
@@ -62,10 +91,10 @@ export struct VerifyCodePage {
           .height(56)
           .backgroundColor($r('app.color.background_secondary'))
           .borderRadius(10)
+          .caretColor($r('app.color.telegram_blue'))
           .onChange((value: string) => {
             this.code = value;
             this.errorMessage = '';
-            // Auto-submit when 5 digits entered
             if (value.length >= 5) {
               this.submitCode();
             }
@@ -76,29 +105,32 @@ export struct VerifyCodePage {
           Text(this.errorMessage)
             .fontSize(13)
             .fontColor($r('app.color.error_red'))
-            .margin({ top: 8 })
+            .margin({ top: 12 })
         }
-
-        // Next button
-        Button($r('app.string.next_button'))
-          .type(ButtonType.Capsule)
-          .width('60%')
-          .height(48)
-          .fontSize(17)
-          .fontWeight(FontWeight.Medium)
-          .backgroundColor($r('app.color.telegram_blue'))
-          .margin({ top: 24 })
-          .enabled(!this.isLoading && this.code.length >= 5)
-          .onClick(() => {
-            this.submitCode();
-          })
 
         if (this.isLoading) {
           LoadingProgress()
             .width(32)
             .height(32)
-            .margin({ top: 16 })
+            .margin({ top: 20 })
             .color($r('app.color.telegram_blue'))
+        }
+
+        // Resend timer (like real Telegram)
+        if (this.resendTimer > 0) {
+          Text(`You can request the code again in 0:${this.resendTimer.toString().padStart(2, '0')}`)
+            .fontSize(14)
+            .fontColor($r('app.color.text_secondary'))
+            .margin({ top: 24 })
+        } else {
+          Text($r('app.string.login_resend_code'))
+            .fontSize(14)
+            .fontColor($r('app.color.telegram_blue'))
+            .margin({ top: 24 })
+            .onClick(() => {
+              this.resendTimer = 60;
+              this.startResendTimer();
+            })
         }
 
         Blank()
@@ -123,5 +155,18 @@ export struct VerifyCodePage {
     } finally {
       this.isLoading = false;
     }
+  }
+
+  private startResendTimer(): void {
+    if (this.timerInterval >= 0) {
+      clearInterval(this.timerInterval);
+    }
+    this.timerInterval = setInterval(() => {
+      this.resendTimer--;
+      if (this.resendTimer <= 0) {
+        clearInterval(this.timerInterval);
+        this.timerInterval = -1;
+      }
+    }, 1000);
   }
 }

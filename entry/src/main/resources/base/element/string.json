@@ -367,6 +367,126 @@
     {
       "name": "select_message",
       "value": "Select"
+    },
+    {
+      "name": "login_your_phone",
+      "value": "Your Phone Number"
+    },
+    {
+      "name": "login_confirm_text",
+      "value": "Please confirm your country code and enter your phone number."
+    },
+    {
+      "name": "login_choose_country",
+      "value": "Choose a country"
+    },
+    {
+      "name": "login_wrong_number",
+      "value": "Wrong number?"
+    },
+    {
+      "name": "login_resend_code",
+      "value": "You can request the code again in %s"
+    },
+    {
+      "name": "login_forgot_password",
+      "value": "Forgot password?"
+    },
+    {
+      "name": "folder_all",
+      "value": "All"
+    },
+    {
+      "name": "folder_personal",
+      "value": "Personal"
+    },
+    {
+      "name": "folder_groups",
+      "value": "Groups"
+    },
+    {
+      "name": "folder_channels",
+      "value": "Channels"
+    },
+    {
+      "name": "folder_bots",
+      "value": "Bots"
+    },
+    {
+      "name": "folder_unread",
+      "value": "Unread"
+    },
+    {
+      "name": "contacts_title",
+      "value": "Contacts"
+    },
+    {
+      "name": "calls_title",
+      "value": "Calls"
+    },
+    {
+      "name": "settings_recent_calls",
+      "value": "Recent Calls"
+    },
+    {
+      "name": "settings_devices",
+      "value": "Devices"
+    },
+    {
+      "name": "settings_chat_folders",
+      "value": "Chat Folders"
+    },
+    {
+      "name": "settings_notifications_sounds",
+      "value": "Notifications and Sounds"
+    },
+    {
+      "name": "settings_privacy_security",
+      "value": "Privacy and Security"
+    },
+    {
+      "name": "settings_data_storage",
+      "value": "Data and Storage"
+    },
+    {
+      "name": "settings_appearance",
+      "value": "Appearance"
+    },
+    {
+      "name": "settings_language",
+      "value": "Language"
+    },
+    {
+      "name": "settings_stickers",
+      "value": "Stickers and Emoji"
+    },
+    {
+      "name": "settings_power_saving",
+      "value": "Power Saving"
+    },
+    {
+      "name": "settings_ask_question",
+      "value": "Ask a Question"
+    },
+    {
+      "name": "settings_telegram_faq",
+      "value": "Telegram FAQ"
+    },
+    {
+      "name": "settings_telegram_features",
+      "value": "Telegram Features"
+    },
+    {
+      "name": "profile_set_photo",
+      "value": "Set Profile Photo"
+    },
+    {
+      "name": "profile_shared_media",
+      "value": "Shared Media"
+    },
+    {
+      "name": "profile_change_number",
+      "value": "Change Number"
     }
   ]
 }
