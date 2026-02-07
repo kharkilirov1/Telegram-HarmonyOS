@@ -1,6 +1,6 @@
-@Component
+@ComponentV2
 export struct DateSeparator {
-  @Prop dateText: string = '';
+  @Param dateText: string = '';
 
   build() {
     Row() {

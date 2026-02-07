@@ -1,12 +1,12 @@
 import { AuthController } from '../../controllers/AuthController';
 
-@Component
+@ComponentV2
 export struct PhoneNumberPage {
-  @Consume('navPathStack') navPathStack: NavPathStack;
-  @State phoneNumber: string = '';
-  @State countryCode: string = '+7';
-  @State isLoading: boolean = false;
-  @State errorMessage: string = '';
+  @Consumer('navPathStack') navPathStack: NavPathStack = new NavPathStack();
+  @Local phoneNumber: string = '';
+  @Local countryCode: string = '+7';
+  @Local isLoading: boolean = false;
+  @Local errorMessage: string = '';
 
   build() {
     NavDestination() {

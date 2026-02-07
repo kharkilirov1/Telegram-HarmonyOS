@@ -1,0 +1,19 @@
+{
+  "routerMap": [
+    {
+      "name": "LoginCode",
+      "pageSourceFile": "src/main/ets/pages/Login/VerifyCodePage.ets",
+      "buildFunction": "LoginCodeBuilder"
+    },
+    {
+      "name": "LoginPassword",
+      "pageSourceFile": "src/main/ets/pages/Login/PasswordPage.ets",
+      "buildFunction": "LoginPasswordBuilder"
+    },
+    {
+      "name": "ChatDetail",
+      "pageSourceFile": "src/main/ets/pages/Chat/ChatDetailPage.ets",
+      "buildFunction": "ChatDetailBuilder"
+    }
+  ]
+}

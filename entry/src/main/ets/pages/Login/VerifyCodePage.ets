@@ -1,12 +1,17 @@
 import { AuthController } from '../../controllers/AuthController';
 
-@Component
+@Builder
+export function LoginCodeBuilder(name: string, param: Object) {
+  VerifyCodePage({ phoneNumber: (param as string) || '' })
+}
+
+@ComponentV2
 export struct VerifyCodePage {
-  @Consume('navPathStack') navPathStack: NavPathStack;
-  @Prop phoneNumber: string = '';
-  @State code: string = '';
-  @State isLoading: boolean = false;
-  @State errorMessage: string = '';
+  @Consumer('navPathStack') navPathStack: NavPathStack = new NavPathStack();
+  @Param phoneNumber: string = '';
+  @Local code: string = '';
+  @Local isLoading: boolean = false;
+  @Local errorMessage: string = '';
 
   build() {
     NavDestination() {

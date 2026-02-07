@@ -1,29 +1,29 @@
-@Observed
+@ObservedV2
 export class Message {
-  id: number;
-  chatId: number;
-  senderId: number;
-  senderName: string;
-  senderPhotoUrl: string | null;
-  text: string;
-  date: number;
-  isOutgoing: boolean;
-  isRead: boolean;
-  replyToMessageId: number;
-  replyPreviewText: string;
-  replyPreviewSenderName: string;
-  forwardedFrom: string;
+  @Trace id: number;
+  @Trace chatId: number;
+  @Trace senderId: number;
+  @Trace senderName: string;
+  @Trace senderPhotoUrl: string | null;
+  @Trace text: string;
+  @Trace date: number;
+  @Trace isOutgoing: boolean;
+  @Trace isRead: boolean;
+  @Trace replyToMessageId: number;
+  @Trace replyPreviewText: string;
+  @Trace replyPreviewSenderName: string;
+  @Trace forwardedFrom: string;
 
   // Content
-  contentType: MessageContentType;
-  photoUrl: string | null;
-  photoFileId: number;
-  fileName: string | null;
-  voiceDuration: number;
-  voiceWaveform: number[];
-  videoDuration: number;
-  stickerUrl: string | null;
-  stickerFileId: number;
+  @Trace contentType: MessageContentType;
+  @Trace photoUrl: string | null;
+  @Trace photoFileId: number;
+  @Trace fileName: string | null;
+  @Trace voiceDuration: number;
+  @Trace voiceWaveform: number[];
+  @Trace videoDuration: number;
+  @Trace stickerUrl: string | null;
+  @Trace stickerFileId: number;
 
   constructor(
     id: number = 0,

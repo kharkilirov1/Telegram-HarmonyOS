@@ -1,4 +1,5 @@
 import { TDLibClient } from '../services/TDLibClient';
+import { SecurityService } from '../services/SecurityService';
 import { NotificationCenter, EventId } from './NotificationCenter';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
@@ -62,7 +63,8 @@ export class AuthController {
 
       // Handle states that need automatic responses
       if (stateType === 'authorizationStateWaitEncryptionKey') {
-        client.send('checkDatabaseEncryptionKey', { encryption_key: '' });
+        const dbKey = SecurityService.getInstance().getDatabaseEncryptionKey();
+        client.send('checkDatabaseEncryptionKey', { encryption_key: dbKey });
         return;
       }
 

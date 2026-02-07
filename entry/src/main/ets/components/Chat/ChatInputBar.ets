@@ -1,11 +1,11 @@
 import { Message } from '../../models/Message';
 
-@Component
+@ComponentV2
 export struct ChatInputBar {
-  @Link inputText: string;
-  @State isRecording: boolean = false;
-  @State recordingDuration: number = 0;
-  @Prop replyMessage: Message | null = null;
+  @Local inputText: string = '';
+  @Local isRecording: boolean = false;
+  @Local recordingDuration: number = 0;
+  @Param replyMessage: Message | null = null;
 
   onSendMessage: (text: string) => void = () => {};
   onAttachTap: () => void = () => {};

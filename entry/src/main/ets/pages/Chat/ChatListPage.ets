@@ -2,16 +2,19 @@ import { MessagesController } from '../../controllers/MessagesController';
 import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
 import { Chat } from '../../models/Chat';
 import { ChatListItem } from '../../components/Chat/ChatListItem';
+import { BasicDataSource } from '../../datasources/BasicDataSource';
 
-@Component
+@ComponentV2
 export struct ChatListPage {
-  @Consume('navPathStack') navPathStack: NavPathStack;
-  @State chatList: Chat[] = [];
-  @State searchText: string = '';
-  @State isLoading: boolean = true;
+  @Consumer('navPathStack') navPathStack: NavPathStack = new NavPathStack();
+  @Local searchText: string = '';
+  @Local isLoading: boolean = true;
+
+  private chatDataSource: BasicDataSource<Chat> = new BasicDataSource<Chat>();
 
   private dialogsHandler = (): void => {
-    this.chatList = [...MessagesController.getInstance().getSortedDialogs()];
+    const chats = MessagesController.getInstance().getSortedDialogs();
+    this.chatDataSource.setData([...chats]);
     this.isLoading = false;
   };
 
@@ -57,6 +60,7 @@ export struct ChatListPage {
         .margin({ left: 16, right: 16, bottom: 8 })
         .onChange((value: string) => {
           this.searchText = value;
+          this.applyFilter();
         })
 
       // Chat list
@@ -72,7 +76,7 @@ export struct ChatListPage {
         .justifyContent(FlexAlign.Center)
       } else {
         List() {
-          ForEach(this.getFilteredChats(), (chat: Chat) => {
+          LazyForEach(this.chatDataSource, (chat: Chat) => {
             ListItem() {
               ChatListItem({
                 chat: chat,
@@ -89,6 +93,8 @@ export struct ChatListPage {
         }
         .width('100%')
         .layoutWeight(1)
+        .cachedCount(5)
+        .edgeEffect(EdgeEffect.Spring)
         .divider({
           strokeWidth: 0.5,
           color: $r('app.color.separator'),
@@ -162,12 +168,15 @@ export struct ChatListPage {
     }
   }
 
-  private getFilteredChats(): Chat[] {
+  private applyFilter(): void {
+    const allChats = MessagesController.getInstance().getSortedDialogs();
     if (this.searchText.length === 0) {
-      return this.chatList;
+      this.chatDataSource.setData([...allChats]);
+    } else {
+      const filtered = allChats.filter((chat) =>
+        chat.title.toLowerCase().includes(this.searchText.toLowerCase())
+      );
+      this.chatDataSource.setData(filtered);
     }
-    return this.chatList.filter((chat) =>
-      chat.title.toLowerCase().includes(this.searchText.toLowerCase())
-    );
   }
 }

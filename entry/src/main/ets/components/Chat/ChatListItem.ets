@@ -2,9 +2,9 @@ import { Chat } from '../../models/Chat';
 import { AvatarWithStatus } from '../Common/AvatarWithStatus';
 import { TypingIndicator } from '../Common/TypingIndicator';
 
-@Component
+@ComponentV2
 export struct ChatListItem {
-  @ObjectLink chat: Chat;
+  @Param chat: Chat = new Chat();
   onChatClick: (chatId: number) => void = () => {};
 
   build() {

@@ -7,26 +7,44 @@ import { DateSeparator, formatDateSeparator } from '../../components/Common/Date
 import { TypingIndicator } from '../../components/Common/TypingIndicator';
 import { ChatInputBar } from '../../components/Chat/ChatInputBar';
 import { formatLastSeen } from '../../components/Common/AvatarWithStatus';
+import { BasicDataSource } from '../../datasources/BasicDataSource';
 
-@Component
+@Builder
+export function ChatDetailBuilder(name: string, param: Object) {
+  ChatDetailPage({ chatId: param as number })
+}
+
+// Flat list item: either a date separator or a message
+export class ChatDetailListItem {
+  isDateSeparator: boolean;
+  dateLabel: string;
+  groupedMessage: GroupedMessage | null;
+
+  constructor(isDateSeparator: boolean, dateLabel: string = '', groupedMessage: GroupedMessage | null = null) {
+    this.isDateSeparator = isDateSeparator;
+    this.dateLabel = dateLabel;
+    this.groupedMessage = groupedMessage;
+  }
+}
+
+@ComponentV2
 export struct ChatDetailPage {
-  @Consume('navPathStack') navPathStack: NavPathStack;
-  @Prop chatId: number = 0;
-  @State chatTitle: string = '';
-  @State lastSeenText: string = '';
-  @State isTyping: boolean = false;
-  @State isGroupChat: boolean = false;
-  @State messages: Message[] = [];
-  @State messageGroups: MessageDateGroup[] = [];
-  @State inputText: string = '';
-  @State isLoading: boolean = true;
-  @State isLoadingOlder: boolean = false;
-  @State endReachedOlder: boolean = false;
-  @State showScrollToBottom: boolean = false;
-  @State newMessageCount: number = 0;
-  @State replyMessage: Message | null = null;
+  @Consumer('navPathStack') navPathStack: NavPathStack = new NavPathStack();
+  @Param chatId: number = 0;
+  @Local chatTitle: string = '';
+  @Local lastSeenText: string = '';
+  @Local isTyping: boolean = false;
+  @Local isGroupChat: boolean = false;
+  @Local messages: Message[] = [];
+  @Local isLoading: boolean = true;
+  @Local isLoadingOlder: boolean = false;
+  @Local endReachedOlder: boolean = false;
+  @Local showScrollToBottom: boolean = false;
+  @Local newMessageCount: number = 0;
+  @Local replyMessage: Message | null = null;
 
   private listScroller: Scroller = new Scroller();
+  private messageDataSource: BasicDataSource<ChatDetailListItem> = new BasicDataSource<ChatDetailListItem>();
 
   // Event handlers
   private newMessageHandler = (args?: Record<string, Object>): void => {
@@ -36,7 +54,7 @@ export struct ChatDetailPage {
 
     const msg = args['message'] as Message;
     this.messages.push(msg);
-    this.rebuildGroups();
+    this.rebuildFlatList();
 
     if (this.showScrollToBottom) {
       this.newMessageCount++;
@@ -132,26 +150,30 @@ export struct ChatDetailPage {
         } else {
           Stack() {
             List({ scroller: this.listScroller }) {
-              ForEach(this.messageGroups, (group: MessageDateGroup) => {
-                // Date separator
+              LazyForEach(this.messageDataSource, (item: ChatDetailListItem) => {
                 ListItem() {
-                  DateSeparator({ dateText: group.dateLabel })
-                }
-
-                ForEach(group.messages, (item: GroupedMessage) => {
-                  ListItem() {
+                  if (item.isDateSeparator) {
+                    DateSeparator({ dateText: item.dateLabel })
+                  } else if (item.groupedMessage !== null) {
                     MessageBubble({
-                      message: item.message,
-                      isFirstInGroup: item.isFirstInGroup,
-                      isLastInGroup: item.isLastInGroup,
+                      message: item.groupedMessage.message,
+                      isFirstInGroup: item.groupedMessage.isFirstInGroup,
+                      isLastInGroup: item.groupedMessage.isLastInGroup,
                       showSenderName: this.isGroupChat
                     })
                   }
-                }, (item: GroupedMessage) => item.message.id.toString())
-              }, (group: MessageDateGroup) => group.dateLabel)
+                }
+              }, (item: ChatDetailListItem) => {
+                if (item.isDateSeparator) {
+                  return `date_${item.dateLabel}`;
+                }
+                return `msg_${item.groupedMessage?.message.id.toString() ?? '0'}`;
+              })
             }
             .width('100%')
             .layoutWeight(1)
+            .cachedCount(5)
+            .edgeEffect(EdgeEffect.Spring)
             .backgroundColor($r('app.color.background_secondary'))
             .padding({ top: 8, bottom: 8 })
             .onScrollIndex((firstIndex: number, lastIndex: number) => {
@@ -160,7 +182,7 @@ export struct ChatDetailPage {
                 this.loadOlderMessages();
               }
               // Show/hide scroll-to-bottom
-              const totalItems = this.getTotalListItems();
+              const totalItems = this.messageDataSource.totalCount();
               this.showScrollToBottom = (totalItems - lastIndex) > 15;
             })
 
@@ -196,7 +218,6 @@ export struct ChatDetailPage {
 
         // --- Input bar ---
         ChatInputBar({
-          inputText: $inputText,
           replyMessage: this.replyMessage,
           onSendMessage: (text: string) => this.sendMessage(text),
           onCancelReply: () => { this.replyMessage = null; }
@@ -230,7 +251,7 @@ export struct ChatDetailPage {
       if (msgs.length < 50) {
         this.endReachedOlder = true;
       }
-      this.rebuildGroups();
+      this.rebuildFlatList();
       this.scrollToBottom();
     } catch (e) {
       // Handle error
@@ -253,7 +274,7 @@ export struct ChatDetailPage {
       }
       if (older.length > 0) {
         this.messages = [...older.reverse(), ...this.messages];
-        this.rebuildGroups();
+        this.rebuildFlatList();
       }
     } catch (e) {
       // Handle error
@@ -269,11 +290,10 @@ export struct ChatDetailPage {
       .sendTextMessage(this.chatId, text, replyId);
   }
 
-  // --- Message grouping (sender groups + date groups) ---
+  // --- Build flat list from messages (sender groups + date groups → flat items) ---
 
-  private rebuildGroups(): void {
+  private rebuildFlatList(): void {
     const TIME_THRESHOLD = 3 * 60; // 3 minutes
-    const dateMap = new Map<string, GroupedMessage[]>();
 
     // First pass: compute sender grouping flags
     const grouped: GroupedMessage[] = this.messages.map((msg, i) => {
@@ -295,26 +315,20 @@ export struct ChatDetailPage {
       return new GroupedMessage(msg, !sameSenderAsPrev, !sameSenderAsNext);
     });
 
-    // Second pass: group by date
+    // Build flat list: interleave date separators and messages
+    const flatItems: ChatDetailListItem[] = [];
+    let currentDateLabel = '';
+
     for (const item of grouped) {
-      const label = formatDateSeparator(item.message.date);
-      if (!dateMap.has(label)) {
-        dateMap.set(label, []);
+      const dateLabel = formatDateSeparator(item.message.date);
+      if (dateLabel !== currentDateLabel) {
+        flatItems.push(new ChatDetailListItem(true, dateLabel));
+        currentDateLabel = dateLabel;
       }
-      dateMap.get(label)!.push(item);
+      flatItems.push(new ChatDetailListItem(false, '', item));
     }
 
-    // Build final array preserving order
-    const result: MessageDateGroup[] = [];
-    const seen = new Set<string>();
-    for (const item of grouped) {
-      const label = formatDateSeparator(item.message.date);
-      if (!seen.has(label)) {
-        seen.add(label);
-        result.push(new MessageDateGroup(label, dateMap.get(label)!));
-      }
-    }
-    this.messageGroups = result;
+    this.messageDataSource.setData(flatItems);
   }
 
   private sameDay(ts1: number, ts2: number): boolean {
@@ -323,16 +337,8 @@ export struct ChatDetailPage {
     return d1.toDateString() === d2.toDateString();
   }
 
-  private getTotalListItems(): number {
-    let count = 0;
-    for (const g of this.messageGroups) {
-      count += 1 + g.messages.length; // 1 for date separator
-    }
-    return count;
-  }
-
   private scrollToBottom(): void {
-    const total = this.getTotalListItems();
+    const total = this.messageDataSource.totalCount();
     if (total > 0) {
       this.listScroller.scrollToIndex(total - 1);
     }

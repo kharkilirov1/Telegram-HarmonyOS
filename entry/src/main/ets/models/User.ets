@@ -1,13 +1,13 @@
-@Observed
+@ObservedV2
 export class User {
-  id: number;
-  firstName: string;
-  lastName: string;
-  username: string;
-  phoneNumber: string;
-  photoUrl: string | null;
-  isOnline: boolean;
-  lastSeenDate: number;
+  @Trace id: number;
+  @Trace firstName: string;
+  @Trace lastName: string;
+  @Trace username: string;
+  @Trace phoneNumber: string;
+  @Trace photoUrl: string | null;
+  @Trace isOnline: boolean;
+  @Trace lastSeenDate: number;
 
   constructor(
     id: number = 0,

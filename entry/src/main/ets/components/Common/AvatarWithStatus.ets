@@ -1,16 +1,19 @@
-@Component
+@ComponentV2
 export struct AvatarWithStatus {
-  @Prop photoUrl: string = '';
-  @Prop initials: string = '';
-  @Prop avatarColor: string = '#2196F3';
-  @Prop size: number = 54;
-  @Prop isOnline: boolean = false;
-  @Prop showOnlineDot: boolean = true;
+  @Param photoUrl: string = '';
+  @Param initials: string = '';
+  @Param avatarColor: string = '#2196F3';
+  @Param size: number = 54;
+  @Param isOnline: boolean = false;
+  @Param showOnlineDot: boolean = true;
 
   build() {
     Stack({ alignContent: Alignment.BottomEnd }) {
       if (this.photoUrl.length > 0) {
         Image(this.photoUrl)
+          .alt($r('app.media.app_icon'))
+          .autoResize(true)
+          .onError(() => {})
           .width(this.size)
           .height(this.size)
           .borderRadius(this.size / 2)

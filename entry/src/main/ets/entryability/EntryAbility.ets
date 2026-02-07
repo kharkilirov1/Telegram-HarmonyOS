@@ -1,13 +1,16 @@
 import { UIAbility } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
+import { PreferencesService } from '../services/PreferencesService';
 
 const TAG = 'EntryAbility';
 const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {
-  onCreate(): void {
+  async onCreate(): Promise<void> {
     hilog.info(DOMAIN, TAG, 'onCreate');
+    // Initialize preferences with ability context
+    await PreferencesService.getInstance().initialize(this.context);
   }
 
   onDestroy(): void {

@@ -1,12 +1,17 @@
 import { AuthController } from '../../controllers/AuthController';
 
-@Component
+@Builder
+export function LoginPasswordBuilder() {
+  PasswordPage()
+}
+
+@ComponentV2
 export struct PasswordPage {
-  @Consume('navPathStack') navPathStack: NavPathStack;
-  @State password: string = '';
-  @State isLoading: boolean = false;
-  @State errorMessage: string = '';
-  @State passwordHint: string = '';
+  @Consumer('navPathStack') navPathStack: NavPathStack = new NavPathStack();
+  @Local password: string = '';
+  @Local isLoading: boolean = false;
+  @Local errorMessage: string = '';
+  @Local passwordHint: string = '';
 
   build() {
     NavDestination() {

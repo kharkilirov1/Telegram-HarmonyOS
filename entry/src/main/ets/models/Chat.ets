@@ -1,22 +1,22 @@
-@Observed
+@ObservedV2
 export class Chat {
-  id: number;
-  title: string;
-  lastMessage: string;
-  lastMessageDate: number;
-  lastMessageSenderId: number;
-  lastMessageSenderName: string;
-  unreadCount: number;
-  photo: string | null;
-  photoFileId: number;
-  isGroup: boolean;
-  isChannel: boolean;
-  isPinned: boolean;
-  isMuted: boolean;
-  isTyping: boolean;
-  typingDescription: string;
-  isUserOnline: boolean;
-  order: string;
+  @Trace id: number;
+  @Trace title: string;
+  @Trace lastMessage: string;
+  @Trace lastMessageDate: number;
+  @Trace lastMessageSenderId: number;
+  @Trace lastMessageSenderName: string;
+  @Trace unreadCount: number;
+  @Trace photo: string | null;
+  @Trace photoFileId: number;
+  @Trace isGroup: boolean;
+  @Trace isChannel: boolean;
+  @Trace isPinned: boolean;
+  @Trace isMuted: boolean;
+  @Trace isTyping: boolean;
+  @Trace typingDescription: string;
+  @Trace isUserOnline: boolean;
+  @Trace order: string;
 
   constructor(
     id: number = 0,

@@ -1,19 +1,13 @@
 import { TDLibClient } from '../services/TDLibClient';
-import { AuthController } from '../controllers/AuthController';
-import { MessagesController } from '../controllers/MessagesController';
-import { FileController } from '../controllers/FileController';
 import { NotificationCenter, EventId } from '../controllers/NotificationCenter';
 import { PhoneNumberPage } from './Login/PhoneNumberPage';
-import { VerifyCodePage } from './Login/VerifyCodePage';
-import { PasswordPage } from './Login/PasswordPage';
 import { ChatListPage } from './Chat/ChatListPage';
-import { ChatDetailPage } from './Chat/ChatDetailPage';
 
 @Entry
-@Component
+@ComponentV2
 struct Index {
-  @State isAuthorized: boolean = false;
-  @Provide('navPathStack') navPathStack: NavPathStack = new NavPathStack();
+  @Local isAuthorized: boolean = false;
+  @Provider('navPathStack') navPathStack: NavPathStack = new NavPathStack();
 
   // Auth state handler — driven by NotificationCenter, not raw TDLib
   private authHandler = (args?: Record<string, Object>): void => {
@@ -43,12 +37,7 @@ struct Index {
   };
 
   aboutToAppear(): void {
-    // Initialize all layers in order
-    TDLibClient.getInstance().initialize();
-    AuthController.getInstance();
-    MessagesController.getInstance();
-    FileController.getInstance();
-
+    // Singletons already initialized in TelegramAbilityStage.onCreate()
     NotificationCenter.getInstance()
       .addObserver(EventId.AUTH_STATE_CHANGED, this.authHandler);
   }
@@ -59,17 +48,6 @@ struct Index {
     TDLibClient.getInstance().destroy();
   }
 
-  @Builder
-  routeMap(name: string, param: Object) {
-    if (name === 'LoginCode') {
-      VerifyCodePage({ phoneNumber: (param as string) || '' })
-    } else if (name === 'LoginPassword') {
-      PasswordPage()
-    } else if (name === 'ChatDetail') {
-      ChatDetailPage({ chatId: param as number })
-    }
-  }
-
   build() {
     Navigation(this.navPathStack) {
       if (this.isAuthorized) {
@@ -78,7 +56,6 @@ struct Index {
         PhoneNumberPage()
       }
     }
-    .navDestination(this.routeMap)
     .hideTitleBar(true)
     .mode(NavigationMode.Stack)
   }

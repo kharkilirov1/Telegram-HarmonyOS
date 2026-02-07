@@ -1,8 +1,15 @@
 import { AuthorizationState } from '../models/User';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { taskpool } from '@kit.ArkTS';
 
 // Native NAPI module
 import tdlib from 'libtdlib_napi.so';
+
+// Offload heavy JSON parsing to TaskPool worker thread
+@Concurrent
+function parseJsonInBackground(jsonStr: string): object {
+  return JSON.parse(jsonStr);
+}
 
 const TAG = 'TDLibClient';
 const DOMAIN = 0x0001;
@@ -165,9 +172,12 @@ export class TDLibClient {
     });
   }
 
-  private handleResponse(responseJson: string): void {
+  private async handleResponse(responseJson: string): Promise<void> {
     try {
-      const response: Record<string, object> = JSON.parse(responseJson);
+      // Parse JSON off the main thread via TaskPool
+      const task = new taskpool.Task(parseJsonInBackground, responseJson);
+      const response = await taskpool.execute(task) as Record<string, object>;
+
       const type = response['@type'] as string;
       const extra = response['@extra'] as number;
 

@@ -1,9 +1,9 @@
-@Component
+@ComponentV2
 export struct TypingIndicator {
-  @State dot1Scale: number = 0.4;
-  @State dot2Scale: number = 0.4;
-  @State dot3Scale: number = 0.4;
-  @Prop typingText: string = 'typing';
+  @Local dot1Scale: number = 0.4;
+  @Local dot2Scale: number = 0.4;
+  @Local dot3Scale: number = 0.4;
+  @Param typingText: string = 'typing';
   private intervalId: number = -1;
   private phase: number = 0;
 

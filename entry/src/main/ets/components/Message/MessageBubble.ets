@@ -1,11 +1,11 @@
 import { Message, MessageContentType } from '../../models/Message';
 
-@Component
+@ComponentV2
 export struct MessageBubble {
-  @ObjectLink message: Message;
-  @Prop isFirstInGroup: boolean = true;
-  @Prop isLastInGroup: boolean = true;
-  @Prop showSenderName: boolean = false;
+  @Param message: Message = new Message();
+  @Param isFirstInGroup: boolean = true;
+  @Param isLastInGroup: boolean = true;
+  @Param showSenderName: boolean = false;
 
   build() {
     Column() {
@@ -166,6 +166,9 @@ export struct MessageBubble {
       Stack({ alignContent: Alignment.BottomEnd }) {
         if (this.message.photoUrl) {
           Image(this.message.photoUrl)
+            .alt($r('app.media.ic_photo'))
+            .autoResize(true)
+            .onError(() => {})
             .width('100%')
             .borderRadius(15)
             .objectFit(ImageFit.Cover)
@@ -202,6 +205,8 @@ export struct MessageBubble {
     Column() {
       if (this.message.stickerUrl) {
         Image(this.message.stickerUrl)
+          .autoResize(true)
+          .onError(() => {})
           .width(160)
           .height(160)
           .objectFit(ImageFit.Contain)
@@ -254,6 +259,9 @@ export struct MessageBubble {
     Stack({ alignContent: Alignment.Center }) {
       if (this.message.photoUrl) {
         Image(this.message.photoUrl)
+          .alt($r('app.media.ic_photo'))
+          .autoResize(true)
+          .onError(() => {})
           .width('100%')
           .borderRadius(15)
           .objectFit(ImageFit.Cover)
