@@ -1,39 +1,87 @@
-import { TDLibClient } from '../../services/TDLibClient';
-import { Message, MessageContentType } from '../../models/Message';
+import { MessagesController } from '../../controllers/MessagesController';
+import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
+import { Message, GroupedMessage, MessageDateGroup } from '../../models/Message';
+import { Chat } from '../../models/Chat';
 import { MessageBubble } from '../../components/Message/MessageBubble';
+import { DateSeparator, formatDateSeparator } from '../../components/Common/DateSeparator';
+import { TypingIndicator } from '../../components/Common/TypingIndicator';
+import { ChatInputBar } from '../../components/Chat/ChatInputBar';
+import { formatLastSeen } from '../../components/Common/AvatarWithStatus';
 
 @Component
 export struct ChatDetailPage {
   @Consume('navPathStack') navPathStack: NavPathStack;
   @Prop chatId: number = 0;
   @State chatTitle: string = '';
+  @State lastSeenText: string = '';
+  @State isTyping: boolean = false;
+  @State isGroupChat: boolean = false;
   @State messages: Message[] = [];
+  @State messageGroups: MessageDateGroup[] = [];
   @State inputText: string = '';
   @State isLoading: boolean = true;
+  @State isLoadingOlder: boolean = false;
+  @State endReachedOlder: boolean = false;
+  @State showScrollToBottom: boolean = false;
+  @State newMessageCount: number = 0;
+  @State replyMessage: Message | null = null;
 
   private listScroller: Scroller = new Scroller();
 
+  // Event handlers
+  private newMessageHandler = (args?: Record<string, Object>): void => {
+    if (!args) return;
+    const msgChatId = args['chatId'] as number;
+    if (msgChatId !== this.chatId) return;
+
+    const msg = args['message'] as Message;
+    this.messages.push(msg);
+    this.rebuildGroups();
+
+    if (this.showScrollToBottom) {
+      this.newMessageCount++;
+    } else {
+      this.scrollToBottom();
+    }
+  };
+
+  private typingHandler = (args?: Record<string, Object>): void => {
+    if (!args) return;
+    const chatId = args['chatId'] as number;
+    if (chatId !== this.chatId) return;
+
+    const chat = MessagesController.getInstance().getChat(this.chatId);
+    this.isTyping = chat?.isTyping || false;
+  };
+
   aboutToAppear(): void {
+    NotificationCenter.getInstance()
+      .addObserver(EventId.NEW_MESSAGE, this.newMessageHandler);
+    NotificationCenter.getInstance()
+      .addObserver(EventId.CHAT_ACTION_UPDATED, this.typingHandler);
+
     this.loadChatInfo();
-    this.loadMessages();
-    this.subscribeToNewMessages();
+    this.loadInitialMessages();
+  }
+
+  aboutToDisappear(): void {
+    NotificationCenter.getInstance()
+      .removeObserver(EventId.NEW_MESSAGE, this.newMessageHandler);
+    NotificationCenter.getInstance()
+      .removeObserver(EventId.CHAT_ACTION_UPDATED, this.typingHandler);
   }
 
   build() {
     NavDestination() {
       Column() {
-        // Top bar
+        // --- Top bar ---
         Row() {
-          // Back button
           Image($r('sys.media.ohos_ic_public_arrow_left'))
             .width(24)
             .height(24)
             .fillColor($r('app.color.telegram_blue'))
-            .onClick(() => {
-              this.navPathStack.pop();
-            })
+            .onClick(() => this.navPathStack.pop())
 
-          // Chat info
           Column() {
             Text(this.chatTitle)
               .fontSize(17)
@@ -41,99 +89,106 @@ export struct ChatDetailPage {
               .fontColor($r('app.color.text_primary'))
               .maxLines(1)
 
-            Text('last seen recently')
-              .fontSize(13)
-              .fontColor($r('app.color.text_secondary'))
+            if (this.isTyping) {
+              TypingIndicator({ typingText: 'typing' })
+            } else {
+              Text(this.lastSeenText)
+                .fontSize(13)
+                .fontColor(this.lastSeenText === 'online'
+                  ? '#4DCC5E'
+                  : $r('app.color.text_secondary'))
+            }
           }
           .margin({ left: 12 })
           .alignItems(HorizontalAlign.Start)
           .layoutWeight(1)
-
-          Blank()
         }
         .width('100%')
         .height(56)
         .padding({ left: 8, right: 16 })
         .backgroundColor($r('app.color.background_primary'))
 
-        Divider()
-          .strokeWidth(0.5)
-          .color($r('app.color.separator'))
+        Divider().strokeWidth(0.5).color($r('app.color.separator'))
 
-        // Messages list
+        // --- Messages ---
         if (this.isLoading) {
           Column() {
             LoadingProgress()
-              .width(40)
-              .height(40)
-              .color($r('app.color.telegram_blue'))
+              .width(40).height(40).color($r('app.color.telegram_blue'))
           }
-          .width('100%')
-          .layoutWeight(1)
-          .justifyContent(FlexAlign.Center)
+          .width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
         } else {
-          List({ scroller: this.listScroller }) {
-            ForEach(this.messages, (message: Message) => {
-              ListItem() {
-                MessageBubble({ message: message })
+          Stack() {
+            List({ scroller: this.listScroller }) {
+              ForEach(this.messageGroups, (group: MessageDateGroup) => {
+                // Date separator
+                ListItem() {
+                  DateSeparator({ dateText: group.dateLabel })
+                }
+
+                ForEach(group.messages, (item: GroupedMessage) => {
+                  ListItem() {
+                    MessageBubble({
+                      message: item.message,
+                      isFirstInGroup: item.isFirstInGroup,
+                      isLastInGroup: item.isLastInGroup,
+                      showSenderName: this.isGroupChat
+                    })
+                  }
+                }, (item: GroupedMessage) => item.message.id.toString())
+              }, (group: MessageDateGroup) => group.dateLabel)
+            }
+            .width('100%')
+            .layoutWeight(1)
+            .backgroundColor($r('app.color.background_secondary'))
+            .padding({ top: 8, bottom: 8 })
+            .onScrollIndex((firstIndex: number, lastIndex: number) => {
+              // Load older messages when near top
+              if (firstIndex < 5 && !this.isLoadingOlder && !this.endReachedOlder) {
+                this.loadOlderMessages();
               }
-            }, (message: Message) => message.id.toString())
+              // Show/hide scroll-to-bottom
+              const totalItems = this.getTotalListItems();
+              this.showScrollToBottom = (totalItems - lastIndex) > 15;
+            })
+
+            // Scroll-to-bottom FAB
+            if (this.showScrollToBottom) {
+              Column() {
+                if (this.newMessageCount > 0) {
+                  Text(this.newMessageCount.toString())
+                    .fontSize(12)
+                    .fontColor(Color.White)
+                    .backgroundColor($r('app.color.telegram_blue'))
+                    .borderRadius(10)
+                    .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+                    .margin({ bottom: 4 })
+                }
+                Image($r('sys.media.ohos_ic_public_arrow_down'))
+                  .width(36).height(36)
+                  .fillColor($r('app.color.text_secondary'))
+                  .backgroundColor(Color.White)
+                  .borderRadius(18)
+                  .shadow({ radius: 4, color: '#20000000' })
+              }
+              .position({ right: 16, bottom: 16 })
+              .onClick(() => {
+                this.newMessageCount = 0;
+                this.scrollToBottom();
+              })
+            }
           }
           .width('100%')
           .layoutWeight(1)
-          .backgroundColor($r('app.color.background_secondary'))
-          .padding({ top: 8, bottom: 8 })
         }
 
-        Divider()
-          .strokeWidth(0.5)
-          .color($r('app.color.separator'))
-
-        // Input bar
-        Row() {
-          // Attach button
-          Image($r('sys.media.ohos_ic_public_add'))
-            .width(24)
-            .height(24)
-            .fillColor($r('app.color.text_secondary'))
-            .margin({ right: 8 })
-
-          // Text input
-          TextInput({ placeholder: 'Message', text: this.inputText })
-            .fontSize(16)
-            .layoutWeight(1)
-            .height(40)
-            .backgroundColor($r('app.color.background_secondary'))
-            .borderRadius(20)
-            .padding({ left: 16, right: 16 })
-            .onChange((value: string) => {
-              this.inputText = value;
-            })
-            .onSubmit(() => {
-              this.sendMessage();
-            })
-
-          // Send / Mic button
-          if (this.inputText.length > 0) {
-            Image($r('sys.media.ohos_ic_public_send'))
-              .width(28)
-              .height(28)
-              .fillColor($r('app.color.telegram_blue'))
-              .margin({ left: 8 })
-              .onClick(() => {
-                this.sendMessage();
-              })
-          } else {
-            Image($r('sys.media.ohos_ic_public_voice'))
-              .width(24)
-              .height(24)
-              .fillColor($r('app.color.text_secondary'))
-              .margin({ left: 8 })
-          }
-        }
-        .width('100%')
-        .padding({ left: 8, right: 12, top: 6, bottom: 6 })
-        .backgroundColor($r('app.color.background_primary'))
+        // --- Input bar ---
+        ChatInputBar({
+          inputText: $inputText,
+          replyMessage: this.replyMessage,
+          onSendMessage: (text: string) => this.sendMessage(text),
+          onCancelReply: () => { this.replyMessage = null; }
+        })
       }
       .width('100%')
       .height('100%')
@@ -141,23 +196,30 @@ export struct ChatDetailPage {
     .hideTitleBar(true)
   }
 
-  private async loadChatInfo(): Promise<void> {
-    try {
-      const result = await TDLibClient.getInstance().getChat(this.chatId) as Record<string, string>;
-      this.chatTitle = result['title'] || '';
-    } catch (e) {
-      // Handle error
+  // --- Data loading ---
+
+  private loadChatInfo(): void {
+    const chat = MessagesController.getInstance().getChat(this.chatId);
+    if (chat) {
+      this.chatTitle = chat.title;
+      this.isGroupChat = chat.isGroup;
+      this.lastSeenText = chat.isGroup
+        ? `${chat.unreadCount} members`
+        : formatLastSeen(chat.isUserOnline, 0);
     }
   }
 
-  private async loadMessages(): Promise<void> {
+  private async loadInitialMessages(): Promise<void> {
     this.isLoading = true;
     try {
-      const result = await TDLibClient.getInstance().getChatHistory(this.chatId) as Record<string, object>;
-      const rawMessages = result['messages'] as Record<string, object>[];
-      if (rawMessages) {
-        this.messages = rawMessages.map((raw) => this.parseMessage(raw)).reverse();
+      const msgs = await MessagesController.getInstance()
+        .loadMessages(this.chatId, 0, 50);
+      this.messages = msgs.reverse();
+      if (msgs.length < 50) {
+        this.endReachedOlder = true;
       }
+      this.rebuildGroups();
+      this.scrollToBottom();
     } catch (e) {
       // Handle error
     } finally {
@@ -165,74 +227,102 @@ export struct ChatDetailPage {
     }
   }
 
-  private subscribeToNewMessages(): void {
-    TDLibClient.getInstance().on('updateNewMessage', (update: object) => {
-      const data = update as Record<string, object>;
-      const rawMessage = data['message'] as Record<string, object>;
-      if (rawMessage) {
-        const msg = this.parseMessage(rawMessage);
-        if (msg.chatId === this.chatId) {
-          this.messages.push(msg);
-          // Scroll to bottom
-          this.listScroller.scrollToIndex(this.messages.length - 1);
-        }
+  private async loadOlderMessages(): Promise<void> {
+    if (this.isLoadingOlder || this.endReachedOlder || this.messages.length === 0) return;
+    this.isLoadingOlder = true;
+
+    try {
+      const oldestId = this.messages[0].id;
+      const older = await MessagesController.getInstance()
+        .loadMessages(this.chatId, oldestId, 50);
+
+      if (older.length < 50) {
+        this.endReachedOlder = true;
       }
+      if (older.length > 0) {
+        this.messages = [...older.reverse(), ...this.messages];
+        this.rebuildGroups();
+      }
+    } catch (e) {
+      // Handle error
+    } finally {
+      this.isLoadingOlder = false;
+    }
+  }
+
+  private async sendMessage(text: string): Promise<void> {
+    const replyId = this.replyMessage?.id || 0;
+    this.replyMessage = null;
+    await MessagesController.getInstance()
+      .sendTextMessage(this.chatId, text, replyId);
+  }
+
+  // --- Message grouping (sender groups + date groups) ---
+
+  private rebuildGroups(): void {
+    const TIME_THRESHOLD = 3 * 60; // 3 minutes
+    const dateMap = new Map<string, GroupedMessage[]>();
+
+    // First pass: compute sender grouping flags
+    const grouped: GroupedMessage[] = this.messages.map((msg, i) => {
+      const prev = i > 0 ? this.messages[i - 1] : null;
+      const next = i < this.messages.length - 1 ? this.messages[i + 1] : null;
+
+      const sameSenderAsPrev = prev !== null
+        && prev.senderId === msg.senderId
+        && prev.isOutgoing === msg.isOutgoing
+        && (msg.date - prev.date) < TIME_THRESHOLD
+        && this.sameDay(prev.date, msg.date);
+
+      const sameSenderAsNext = next !== null
+        && next.senderId === msg.senderId
+        && next.isOutgoing === msg.isOutgoing
+        && (next.date - msg.date) < TIME_THRESHOLD
+        && this.sameDay(msg.date, next.date);
+
+      return new GroupedMessage(msg, !sameSenderAsPrev, !sameSenderAsNext);
     });
-  }
 
-  private async sendMessage(): Promise<void> {
-    const text = this.inputText.trim();
-    if (text.length === 0) return;
-
-    this.inputText = '';
-    await TDLibClient.getInstance().sendMessage(this.chatId, text);
-  }
-
-  private parseMessage(raw: Record<string, object>): Message {
-    const content = raw['content'] as Record<string, object>;
-    let text = '';
-    let contentType = MessageContentType.UNSUPPORTED;
-    let photoUrl: string | null = null;
-
-    if (content) {
-      const type = content['@type'] as string;
-      if (type === 'messageText') {
-        contentType = MessageContentType.TEXT;
-        const textObj = content['text'] as Record<string, string>;
-        text = textObj?.['text'] || '';
-      } else if (type === 'messagePhoto') {
-        contentType = MessageContentType.PHOTO;
-        const caption = content['caption'] as Record<string, string>;
-        text = caption?.['text'] || '';
-      } else if (type === 'messageVideo') {
-        contentType = MessageContentType.VIDEO;
-        text = '[Video]';
-      } else if (type === 'messageDocument') {
-        contentType = MessageContentType.DOCUMENT;
-        text = '[Document]';
-      } else if (type === 'messageVoiceNote') {
-        contentType = MessageContentType.VOICE;
-        text = '[Voice message]';
-      } else if (type === 'messageSticker') {
-        contentType = MessageContentType.STICKER;
-        text = '[Sticker]';
+    // Second pass: group by date
+    for (const item of grouped) {
+      const label = formatDateSeparator(item.message.date);
+      if (!dateMap.has(label)) {
+        dateMap.set(label, []);
       }
+      dateMap.get(label)!.push(item);
     }
 
-    const senderId = raw['sender_id'] as Record<string, number>;
+    // Build final array preserving order
+    const result: MessageDateGroup[] = [];
+    const seen = new Set<string>();
+    for (const item of grouped) {
+      const label = formatDateSeparator(item.message.date);
+      if (!seen.has(label)) {
+        seen.add(label);
+        result.push(new MessageDateGroup(label, dateMap.get(label)!));
+      }
+    }
+    this.messageGroups = result;
+  }
 
-    return new Message(
-      raw['id'] as number,
-      raw['chat_id'] as number,
-      senderId?.['user_id'] || 0,
-      '',
-      text,
-      raw['date'] as number,
-      raw['is_outgoing'] as boolean,
-      false,
-      0,
-      contentType,
-      photoUrl
-    );
+  private sameDay(ts1: number, ts2: number): boolean {
+    const d1 = new Date(ts1 * 1000);
+    const d2 = new Date(ts2 * 1000);
+    return d1.toDateString() === d2.toDateString();
+  }
+
+  private getTotalListItems(): number {
+    let count = 0;
+    for (const g of this.messageGroups) {
+      count += 1 + g.messages.length; // 1 for date separator
+    }
+    return count;
+  }
+
+  private scrollToBottom(): void {
+    const total = this.getTotalListItems();
+    if (total > 0) {
+      this.listScroller.scrollToIndex(total - 1);
+    }
   }
 }

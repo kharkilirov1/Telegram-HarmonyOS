@@ -1,4 +1,5 @@
-import { TDLibClient } from '../../services/TDLibClient';
+import { MessagesController } from '../../controllers/MessagesController';
+import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
 import { Chat } from '../../models/Chat';
 import { ChatListItem } from '../../components/Chat/ChatListItem';
 
@@ -9,9 +10,25 @@ export struct ChatListPage {
   @State searchText: string = '';
   @State isLoading: boolean = true;
 
+  private dialogsHandler = (): void => {
+    this.chatList = [...MessagesController.getInstance().getSortedDialogs()];
+    this.isLoading = false;
+  };
+
   aboutToAppear(): void {
-    this.loadChats();
-    this.subscribeToUpdates();
+    NotificationCenter.getInstance()
+      .addObserver(EventId.DIALOGS_UPDATED, this.dialogsHandler);
+    NotificationCenter.getInstance()
+      .addObserver(EventId.CHAT_ACTION_UPDATED, this.dialogsHandler);
+
+    MessagesController.getInstance().loadDialogs(30);
+  }
+
+  aboutToDisappear(): void {
+    NotificationCenter.getInstance()
+      .removeObserver(EventId.DIALOGS_UPDATED, this.dialogsHandler);
+    NotificationCenter.getInstance()
+      .removeObserver(EventId.CHAT_ACTION_UPDATED, this.dialogsHandler);
   }
 
   build() {
@@ -25,7 +42,6 @@ export struct ChatListPage {
 
         Blank()
 
-        // Compose button
         Image($r('sys.media.ohos_ic_public_edit'))
           .width(24)
           .height(24)
@@ -66,7 +82,8 @@ export struct ChatListPage {
               })
             }
             .swipeAction({
-              end: this.swipeActionBuilder(chat)
+              start: this.swipeStartBuilder(chat),
+              end: this.swipeEndBuilder(chat)
             })
           }, (chat: Chat) => chat.id.toString())
         }
@@ -85,15 +102,59 @@ export struct ChatListPage {
     .backgroundColor($r('app.color.background_primary'))
   }
 
+  // Leading swipe: mute/unmute
   @Builder
-  swipeActionBuilder(chat: Chat) {
+  swipeStartBuilder(chat: Chat) {
     Row() {
-      // Mute / Pin / Delete actions (like iOS Telegram)
       Button() {
-        Image($r('sys.media.ohos_ic_public_remove'))
-          .width(20)
-          .height(20)
-          .fillColor(Color.White)
+        Column() {
+          Image($r('sys.media.ohos_ic_public_mute'))
+            .width(22).height(22).fillColor(Color.White)
+          Text(chat.isMuted ? 'Unmute' : 'Mute')
+            .fontSize(11).fontColor(Color.White)
+        }
+      }
+      .width(72)
+      .height('100%')
+      .backgroundColor(chat.isMuted ? '#4DCC5E' : '#8E8E93')
+    }
+  }
+
+  // Trailing swipe: read, pin, delete
+  @Builder
+  swipeEndBuilder(chat: Chat) {
+    Row() {
+      Button() {
+        Column() {
+          Image($r('sys.media.ohos_ic_public_ok'))
+            .width(22).height(22).fillColor(Color.White)
+          Text(chat.unreadCount > 0 ? 'Read' : 'Unread')
+            .fontSize(11).fontColor(Color.White)
+        }
+      }
+      .width(72)
+      .height('100%')
+      .backgroundColor('#3F51B5')
+
+      Button() {
+        Column() {
+          Image($r('sys.media.ohos_ic_public_push_pin'))
+            .width(22).height(22).fillColor(Color.White)
+          Text(chat.isPinned ? 'Unpin' : 'Pin')
+            .fontSize(11).fontColor(Color.White)
+        }
+      }
+      .width(72)
+      .height('100%')
+      .backgroundColor('#8E8E93')
+
+      Button() {
+        Column() {
+          Image($r('sys.media.ohos_ic_public_remove'))
+            .width(22).height(22).fillColor(Color.White)
+          Text('Delete')
+            .fontSize(11).fontColor(Color.White)
+        }
       }
       .width(72)
       .height('100%')
@@ -108,47 +169,5 @@ export struct ChatListPage {
     return this.chatList.filter((chat) =>
       chat.title.toLowerCase().includes(this.searchText.toLowerCase())
     );
-  }
-
-  private async loadChats(): Promise<void> {
-    this.isLoading = true;
-    try {
-      await TDLibClient.getInstance().loadChats(30);
-    } catch (e) {
-      // Handle error
-    } finally {
-      this.isLoading = false;
-    }
-  }
-
-  private subscribeToUpdates(): void {
-    const client = TDLibClient.getInstance();
-
-    client.on('updateNewChat', (update: object) => {
-      const chatData = update as Record<string, object>;
-      const rawChat = chatData['chat'] as Record<string, object>;
-      const chat = new Chat(
-        rawChat['id'] as number,
-        rawChat['title'] as string
-      );
-      this.chatList.push(chat);
-    });
-
-    client.on('updateChatLastMessage', (update: object) => {
-      const data = update as Record<string, object>;
-      const chatId = data['chat_id'] as number;
-      const idx = this.chatList.findIndex((c) => c.id === chatId);
-      if (idx >= 0) {
-        const msg = data['last_message'] as Record<string, object>;
-        if (msg) {
-          const content = msg['content'] as Record<string, object>;
-          if (content && content['@type'] === 'messageText') {
-            const textObj = content['text'] as Record<string, string>;
-            this.chatList[idx].lastMessage = textObj['text'] || '';
-          }
-          this.chatList[idx].lastMessageDate = msg['date'] as number;
-        }
-      }
-    });
   }
 }

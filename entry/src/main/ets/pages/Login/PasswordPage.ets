@@ -1,4 +1,4 @@
-import { TDLibClient } from '../../services/TDLibClient';
+import { AuthController } from '../../controllers/AuthController';
 
 @Component
 export struct PasswordPage {
@@ -112,7 +112,7 @@ export struct PasswordPage {
     this.errorMessage = '';
 
     try {
-      await TDLibClient.getInstance().checkAuthPassword(this.password);
+      await AuthController.getInstance().submitPassword(this.password);
     } catch (e) {
       this.errorMessage = 'Wrong password. Please try again.';
     } finally {

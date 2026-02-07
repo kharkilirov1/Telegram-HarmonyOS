@@ -1,4 +1,4 @@
-import { TDLibClient } from '../../services/TDLibClient';
+import { AuthController } from '../../controllers/AuthController';
 
 @Component
 export struct VerifyCodePage {
@@ -112,9 +112,7 @@ export struct VerifyCodePage {
     this.errorMessage = '';
 
     try {
-      await TDLibClient.getInstance().checkAuthCode(this.code);
-      // If 2FA is needed, TDLib will send updateAuthorizationState with waitPassword
-      // Otherwise, auth is complete
+      await AuthController.getInstance().submitCode(this.code);
     } catch (e) {
       this.errorMessage = 'Invalid code. Please try again.';
     } finally {

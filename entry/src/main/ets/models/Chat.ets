@@ -4,11 +4,19 @@ export class Chat {
   title: string;
   lastMessage: string;
   lastMessageDate: number;
+  lastMessageSenderId: number;
+  lastMessageSenderName: string;
   unreadCount: number;
   photo: string | null;
+  photoFileId: number;
   isGroup: boolean;
   isChannel: boolean;
   isPinned: boolean;
+  isMuted: boolean;
+  isTyping: boolean;
+  typingDescription: string;
+  isUserOnline: boolean;
+  order: string;
 
   constructor(
     id: number = 0,
@@ -25,10 +33,18 @@ export class Chat {
     this.title = title;
     this.lastMessage = lastMessage;
     this.lastMessageDate = lastMessageDate;
+    this.lastMessageSenderId = 0;
+    this.lastMessageSenderName = '';
     this.unreadCount = unreadCount;
     this.photo = photo;
+    this.photoFileId = 0;
     this.isGroup = isGroup;
     this.isChannel = isChannel;
     this.isPinned = isPinned;
+    this.isMuted = false;
+    this.isTyping = false;
+    this.typingDescription = '';
+    this.isUserOnline = false;
+    this.order = '0';
   }
 }

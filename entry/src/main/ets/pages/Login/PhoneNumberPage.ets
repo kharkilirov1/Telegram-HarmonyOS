@@ -1,4 +1,4 @@
-import { TDLibClient } from '../../services/TDLibClient';
+import { AuthController } from '../../controllers/AuthController';
 
 @Component
 export struct PhoneNumberPage {
@@ -105,10 +105,8 @@ export struct PhoneNumberPage {
     const fullNumber = this.countryCode + this.phoneNumber;
 
     try {
-      await TDLibClient.getInstance().setPhoneNumber(fullNumber);
-      // Navigation to code page happens via updateAuthorizationState handler
-      // in Index.ets, but we can also push directly:
-      this.navPathStack.pushPath({ name: 'LoginCode', param: fullNumber });
+      // Navigation happens via AuthController → NotificationCenter → Index.ets
+      await AuthController.getInstance().submitPhoneNumber(fullNumber);
     } catch (e) {
       this.errorMessage = 'Failed to send code. Please try again.';
     } finally {

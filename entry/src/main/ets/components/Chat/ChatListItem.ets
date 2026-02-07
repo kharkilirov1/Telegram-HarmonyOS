@@ -1,4 +1,6 @@
 import { Chat } from '../../models/Chat';
+import { AvatarWithStatus } from '../Common/AvatarWithStatus';
+import { TypingIndicator } from '../Common/TypingIndicator';
 
 @Component
 export struct ChatListItem {
@@ -7,32 +9,29 @@ export struct ChatListItem {
 
   build() {
     Row() {
-      // Avatar
-      Stack() {
-        if (this.chat.photo !== null) {
-          Image(this.chat.photo)
-            .width(54)
-            .height(54)
-            .borderRadius(27)
-        } else {
-          // Placeholder avatar with initials
-          Text(this.getInitials())
-            .fontSize(20)
-            .fontWeight(FontWeight.Medium)
-            .fontColor(Color.White)
-            .width(54)
-            .height(54)
-            .borderRadius(27)
-            .backgroundColor(this.getAvatarColor())
-            .textAlign(TextAlign.Center)
-        }
-      }
+      // Avatar with online indicator
+      AvatarWithStatus({
+        photoUrl: this.chat.photo || '',
+        initials: this.getInitials(),
+        avatarColor: this.getAvatarColor(),
+        size: 54,
+        isOnline: this.chat.isUserOnline,
+        showOnlineDot: !this.chat.isGroup && !this.chat.isChannel
+      })
       .margin({ right: 12 })
 
-      // Chat info
+      // Content column
       Column() {
-        // Top row: name + time
+        // Top row: channel icon + title + mute icon + time
         Row() {
+          if (this.chat.isChannel) {
+            Image($r('sys.media.ohos_ic_public_sound'))
+              .width(16)
+              .height(16)
+              .fillColor($r('app.color.text_primary'))
+              .margin({ right: 4 })
+          }
+
           Text(this.chat.title)
             .fontSize(16)
             .fontWeight(FontWeight.Medium)
@@ -41,30 +40,62 @@ export struct ChatListItem {
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .layoutWeight(1)
 
+          if (this.chat.isMuted) {
+            Image($r('sys.media.ohos_ic_public_mute'))
+              .width(15)
+              .height(15)
+              .fillColor($r('app.color.text_secondary'))
+              .margin({ left: 4, right: 4 })
+          }
+
           Text(this.formatDate(this.chat.lastMessageDate))
             .fontSize(13)
-            .fontColor(this.chat.unreadCount > 0 ? $r('app.color.telegram_blue') : $r('app.color.text_secondary'))
+            .fontColor(this.chat.unreadCount > 0 && !this.chat.isMuted
+              ? $r('app.color.telegram_blue')
+              : $r('app.color.text_secondary'))
         }
         .width('100%')
 
-        // Bottom row: last message + unread badge
+        // Bottom row: typing / last message + badge / pin
         Row() {
-          Text(this.chat.lastMessage)
+          if (this.chat.isTyping) {
+            TypingIndicator({ typingText: this.chat.typingDescription })
+              .layoutWeight(1)
+          } else {
+            Text() {
+              // Sender prefix for groups
+              if (this.chat.isGroup && this.chat.lastMessageSenderName.length > 0) {
+                Span(this.chat.lastMessageSenderName + ': ')
+                  .fontWeight(FontWeight.Medium)
+                  .fontColor($r('app.color.text_primary'))
+              }
+              Span(this.chat.lastMessage)
+                .fontColor($r('app.color.text_secondary'))
+            }
             .fontSize(15)
-            .fontColor($r('app.color.text_secondary'))
             .maxLines(2)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .layoutWeight(1)
+          }
 
+          // Right: unread badge OR pin icon
           if (this.chat.unreadCount > 0) {
             Text(this.chat.unreadCount > 99 ? '99+' : this.chat.unreadCount.toString())
-              .fontSize(13)
+              .fontSize(12)
               .fontColor(Color.White)
-              .backgroundColor($r('app.color.telegram_blue'))
-              .borderRadius(12)
-              .padding({ left: 8, right: 8, top: 2, bottom: 2 })
-              .minWidth(24)
+              .backgroundColor(this.chat.isMuted
+                ? $r('app.color.text_secondary')
+                : $r('app.color.telegram_blue'))
+              .borderRadius(10)
+              .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+              .minWidth(20)
+              .height(20)
               .textAlign(TextAlign.Center)
+          } else if (this.chat.isPinned) {
+            Image($r('sys.media.ohos_ic_public_push_pin'))
+              .width(16)
+              .height(16)
+              .fillColor($r('app.color.text_secondary'))
           }
         }
         .width('100%')
@@ -73,10 +104,9 @@ export struct ChatListItem {
       .layoutWeight(1)
     }
     .width('100%')
-    .padding({ left: 16, right: 16, top: 10, bottom: 10 })
-    .onClick(() => {
-      this.onChatClick(this.chat.id);
-    })
+    .height(76)
+    .padding({ left: 16, right: 16 })
+    .onClick(() => this.onChatClick(this.chat.id))
   }
 
   private getInitials(): string {
@@ -88,7 +118,6 @@ export struct ChatListItem {
   }
 
   private getAvatarColor(): string {
-    // Telegram-style avatar colors based on id
     const colors: string[] = [
       '#FF5733', '#E91E63', '#9C27B0', '#673AB7',
       '#3F51B5', '#2196F3', '#00BCD4', '#009688'
@@ -102,11 +131,9 @@ export struct ChatListItem {
     const now = new Date();
 
     if (date.toDateString() === now.toDateString()) {
-      // Today: show time
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' } as Intl.DateTimeFormatOptions);
     }
 
-    // Older: show date
     const diff = now.getTime() - date.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     if (days < 7) {
