@@ -1,4 +1,5 @@
 import lottie, { AnimationItem } from '@ohos/lottie';
+import { util } from '@kit.ArkTS';
 
 export enum MascotState {
   IDLE = 'idle',
@@ -9,7 +10,7 @@ export enum MascotState {
   CLOSE_PEEK_TO_IDLE = 'close_peek_to_idle'
 }
 
-// Map animation state to raw file name
+// Map animation state to rawfile name
 function getAnimationFile(state: MascotState): string {
   switch (state) {
     case MascotState.IDLE:
@@ -26,6 +27,9 @@ function getAnimationFile(state: MascotState): string {
       return 'animations/monkey_close_peek_to_idle.json';
   }
 }
+
+// Cache parsed animation data to avoid repeated file reads
+const animationDataCache = new Map<string, object>();
 
 @ComponentV2
 export struct TelegramMascot {
@@ -52,6 +56,8 @@ export struct TelegramMascot {
       .height(this.size)
       .backgroundColor(Color.Transparent)
       .onReady(() => {
+        this.canvasCtx.imageSmoothingEnabled = true;
+        this.canvasCtx.imageSmoothingQuality = 'medium';
         this.playAnimation(this.mascotState);
       })
   }
@@ -59,6 +65,25 @@ export struct TelegramMascot {
   @Monitor('mascotState')
   onStateChange(): void {
     this.playAnimation(this.mascotState);
+  }
+
+  private loadAnimationData(fileName: string): object | null {
+    // Return from cache if already loaded
+    const cached = animationDataCache.get(fileName);
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      const rawData = getContext(this).resourceManager.getRawFileContentSync(fileName);
+      const decoder = new util.TextDecoder('utf-8');
+      const jsonStr = decoder.decodeToString(rawData);
+      const data = JSON.parse(jsonStr) as object;
+      animationDataCache.set(fileName, data);
+      return data;
+    } catch (e) {
+      return null;
+    }
   }
 
   private playAnimation(state: MascotState): void {
@@ -76,6 +101,11 @@ export struct TelegramMascot {
       this.animationItem = null;
     }
 
+    const animData = this.loadAnimationData(fileName);
+    if (!animData) {
+      return;
+    }
+
     const loopStates: MascotState[] = [MascotState.IDLE, MascotState.TRACKING];
     const shouldLoop = loopStates.includes(state);
 
@@ -84,7 +114,7 @@ export struct TelegramMascot {
       renderer: 'canvas',
       loop: shouldLoop,
       autoplay: true,
-      path: fileName,
+      animationData: animData,
       name: this.canvasName
     });
 
