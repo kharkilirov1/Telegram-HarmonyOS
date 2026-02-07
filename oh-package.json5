@@ -1,9 +1,9 @@
 {
-  "modelVersion": "5.0.0",
+  "modelVersion": "6.0.2",
   "description": "Telegram client for HarmonyOS",
   "dependencies": {},
   "devDependencies": {
-    "@ohos/hvigor-ohos-plugin": "4.0.2",
-    "@ohos/hvigor": "4.0.2"
+    "@ohos/hvigor-ohos-plugin": "5.0.2",
+    "@ohos/hvigor": "5.0.2"
   }
 }

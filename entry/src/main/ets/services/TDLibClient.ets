@@ -167,7 +167,7 @@ export class TDLibClient {
       api_hash: '',      // TODO: Replace with real API hash
       system_language_code: 'en',
       device_model: 'HarmonyOS Device',
-      system_version: 'HarmonyOS 5.0',
+      system_version: 'HarmonyOS 6.0',
       application_version: '1.0.0'
     });
   }

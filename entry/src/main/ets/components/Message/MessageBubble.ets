@@ -247,6 +247,7 @@ export struct MessageBubble {
     Column() {
       if (this.message.stickerUrl) {
         Image(this.message.stickerUrl)
+          .alt($r('app.media.ic_sticker'))
           .autoResize(true)
           .onError(() => {})
           .width(160)
