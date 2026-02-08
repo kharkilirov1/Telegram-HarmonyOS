@@ -1287,6 +1287,214 @@
     {
       "name": "waiting_for_user",
       "value": "Waiting for %s to come online"
+    },
+    {
+      "name": "video_player",
+      "value": "Video Player"
+    },
+    {
+      "name": "play",
+      "value": "Play"
+    },
+    {
+      "name": "pause",
+      "value": "Pause"
+    },
+    {
+      "name": "current_session",
+      "value": "Current Session"
+    },
+    {
+      "name": "other_sessions",
+      "value": "Other Sessions"
+    },
+    {
+      "name": "terminate_all_sessions",
+      "value": "Terminate All Other Sessions"
+    },
+    {
+      "name": "terminate_session",
+      "value": "Terminate Session"
+    },
+    {
+      "name": "terminate_all_confirm",
+      "value": "Are you sure you want to terminate all other sessions?"
+    },
+    {
+      "name": "last_active",
+      "value": "Last active"
+    },
+    {
+      "name": "no_other_sessions",
+      "value": "No other active sessions"
+    },
+    {
+      "name": "terminate_all_warning",
+      "value": "Logs out all devices except for this one."
+    },
+    {
+      "name": "enable_passcode",
+      "value": "Enable Passcode"
+    },
+    {
+      "name": "use_biometric",
+      "value": "Unlock with Biometrics"
+    },
+    {
+      "name": "auto_lock_timeout",
+      "value": "Auto-Lock"
+    },
+    {
+      "name": "show_notifications_content",
+      "value": "Show Content in Notifications"
+    },
+    {
+      "name": "enter_passcode",
+      "value": "Enter Passcode"
+    },
+    {
+      "name": "confirm_passcode",
+      "value": "Confirm Passcode"
+    },
+    {
+      "name": "passcode_mismatch",
+      "value": "Passcodes don't match. Please try again."
+    },
+    {
+      "name": "auto_lock_disabled",
+      "value": "Disabled"
+    },
+    {
+      "name": "auto_lock_1min",
+      "value": "If away for 1 minute"
+    },
+    {
+      "name": "auto_lock_5min",
+      "value": "If away for 5 minutes"
+    },
+    {
+      "name": "auto_lock_1hour",
+      "value": "If away for 1 hour"
+    },
+    {
+      "name": "auto_lock_5hours",
+      "value": "If away for 5 hours"
+    },
+    {
+      "name": "change_passcode",
+      "value": "Change Passcode"
+    },
+    {
+      "name": "turn_off_passcode",
+      "value": "Turn Passcode Off"
+    },
+    {
+      "name": "proxy_settings",
+      "value": "Proxy Settings"
+    },
+    {
+      "name": "use_proxy",
+      "value": "Use Proxy"
+    },
+    {
+      "name": "add_proxy",
+      "value": "Add Proxy"
+    },
+    {
+      "name": "edit_proxy",
+      "value": "Edit Proxy"
+    },
+    {
+      "name": "delete_proxy",
+      "value": "Delete Proxy"
+    },
+    {
+      "name": "proxy_server",
+      "value": "Server"
+    },
+    {
+      "name": "proxy_port",
+      "value": "Port"
+    },
+    {
+      "name": "proxy_type",
+      "value": "Type"
+    },
+    {
+      "name": "proxy_username",
+      "value": "Username"
+    },
+    {
+      "name": "proxy_password",
+      "value": "Password"
+    },
+    {
+      "name": "proxy_secret",
+      "value": "Secret"
+    },
+    {
+      "name": "proxy_socks5",
+      "value": "SOCKS5"
+    },
+    {
+      "name": "proxy_http",
+      "value": "HTTP"
+    },
+    {
+      "name": "proxy_mtproto",
+      "value": "MTProto"
+    },
+    {
+      "name": "proxy_connected",
+      "value": "Connected"
+    },
+    {
+      "name": "proxy_checking",
+      "value": "Checking..."
+    },
+    {
+      "name": "proxy_available",
+      "value": "Available"
+    },
+    {
+      "name": "proxy_unavailable",
+      "value": "Unavailable"
+    },
+    {
+      "name": "no_proxies",
+      "value": "No proxies configured"
+    },
+    {
+      "name": "proxy_ping_ms",
+      "value": "%d ms"
+    },
+    {
+      "name": "search_in_chat",
+      "value": "Search in chat"
+    },
+    {
+      "name": "tap_to_reveal",
+      "value": "Tap to reveal"
+    },
+    {
+      "name": "view_once_photo",
+      "value": "View once photo"
+    },
+    {
+      "name": "view_once_video",
+      "value": "View once video"
+    },
+    {
+      "name": "last_active_minutes",
+      "value": "%dm ago"
+    },
+    {
+      "name": "last_active_hours",
+      "value": "%dh ago"
+    },
+    {
+      "name": "last_active_days",
+      "value": "%dd ago"
     }
   ]
 }

@@ -154,7 +154,7 @@ export struct SettingsPage {
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
 
-              // Devices
+              // Devices / Active Sessions
               Row() {
                 this.settingsIcon($r('app.media.ic_device'), $r('app.color.settings_icon_orange'))
 
@@ -170,6 +170,9 @@ export struct SettingsPage {
               .width('100%')
               .height(48)
               .padding({ left: 16, right: 16 })
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'SessionManagement' });
+              })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
 
@@ -248,6 +251,28 @@ export struct SettingsPage {
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
 
+              // Passcode & Biometric Lock
+              Row() {
+                this.settingsIcon($r('app.media.ic_lock'), $r('app.color.settings_icon_orange'))
+
+                Text($r('app.string.passcode_lock'))
+                  .fontSize(16)
+                  .fontColor($r('app.color.text_primary'))
+                  .layoutWeight(1)
+
+                Image($r('app.media.ic_forward'))
+                  .width(14).height(14)
+                  .fillColor($r('app.color.text_secondary'))
+              }
+              .width('100%')
+              .height(48)
+              .padding({ left: 16, right: 16 })
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'BiometricLock' });
+              })
+
+              Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
+
               // Data and Storage
               Row() {
                 this.settingsIcon($r('app.media.ic_download'), $r('app.color.settings_icon_green'))
@@ -266,6 +291,28 @@ export struct SettingsPage {
               .padding({ left: 16, right: 16 })
               .onClick(() => {
                 this.navPathStack.pushPath({ name: 'DataStorage' });
+              })
+
+              Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
+
+              // Proxy Settings
+              Row() {
+                this.settingsIcon($r('app.media.ic_forward'), $r('app.color.settings_icon_green'))
+
+                Text($r('app.string.proxy_settings'))
+                  .fontSize(16)
+                  .fontColor($r('app.color.text_primary'))
+                  .layoutWeight(1)
+
+                Image($r('app.media.ic_forward'))
+                  .width(14).height(14)
+                  .fillColor($r('app.color.text_secondary'))
+              }
+              .width('100%')
+              .height(48)
+              .padding({ left: 16, right: 16 })
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'ProxySettings' });
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })

@@ -167,6 +167,29 @@ export class MessagesController {
     return rawMessages.map(raw => this.parseMessage(raw));
   }
 
+  // --- Per-chat search ---
+
+  async searchChatMessages(chatId: number, query: string, fromMessageId: number = 0,
+    limit: number = 50): Promise<Message[]> {
+    try {
+      const result = await TDLibClient.getInstance().send('searchChatMessages', {
+        chat_id: chatId,
+        query: query,
+        sender_id: null,
+        from_message_id: fromMessageId,
+        offset: 0,
+        limit: limit,
+        filter: null,
+        message_thread_id: 0
+      }) as Record<string, object>;
+      const rawMessages = result['messages'] as Record<string, object>[];
+      if (!rawMessages) return [];
+      return rawMessages.map(raw => this.parseMessage(raw));
+    } catch {
+      return [];
+    }
+  }
+
   // --- Drafts ---
 
   async setDraft(chatId: number, text: string, replyToMessageId: number = 0): Promise<void> {
@@ -462,6 +485,20 @@ export class MessagesController {
     const selfDestruct = raw['self_destruct_type'] as Record<string, object>;
     if (selfDestruct) {
       msg.selfDestructIn = (selfDestruct['self_destruct_time'] as number) || 0;
+      // View-once: self-destruct type with specific timer
+      const sdType = (selfDestruct['@type'] as string) || '';
+      if (sdType === 'messageSelfDestructTypeImmediately') {
+        msg.isViewOnce = true;
+      }
+    }
+
+    // Spoiler (has_spoiler flag on photo/video content)
+    const content = raw['content'] as Record<string, object>;
+    if (content) {
+      const hasSpoiler = content['has_spoiler'] as boolean;
+      if (hasSpoiler) {
+        msg.hasSpoiler = true;
+      }
     }
 
     // Content

@@ -1287,6 +1287,214 @@
     {
       "name": "waiting_for_user",
       "value": "等待%s上线"
+    },
+    {
+      "name": "video_player",
+      "value": "视频播放器"
+    },
+    {
+      "name": "play",
+      "value": "播放"
+    },
+    {
+      "name": "pause",
+      "value": "暂停"
+    },
+    {
+      "name": "current_session",
+      "value": "当前会话"
+    },
+    {
+      "name": "other_sessions",
+      "value": "其他会话"
+    },
+    {
+      "name": "terminate_all_sessions",
+      "value": "终止所有其他会话"
+    },
+    {
+      "name": "terminate_session",
+      "value": "终止会话"
+    },
+    {
+      "name": "terminate_all_confirm",
+      "value": "确定要终止所有其他会话吗？"
+    },
+    {
+      "name": "last_active",
+      "value": "上次活跃"
+    },
+    {
+      "name": "no_other_sessions",
+      "value": "没有其他活跃会话"
+    },
+    {
+      "name": "terminate_all_warning",
+      "value": "注销除此设备外的所有设备。"
+    },
+    {
+      "name": "enable_passcode",
+      "value": "启用密码锁"
+    },
+    {
+      "name": "use_biometric",
+      "value": "使用生物识别解锁"
+    },
+    {
+      "name": "auto_lock_timeout",
+      "value": "自动锁定"
+    },
+    {
+      "name": "show_notifications_content",
+      "value": "在通知中显示内容"
+    },
+    {
+      "name": "enter_passcode",
+      "value": "输入密码"
+    },
+    {
+      "name": "confirm_passcode",
+      "value": "确认密码"
+    },
+    {
+      "name": "passcode_mismatch",
+      "value": "密码不匹配，请重试。"
+    },
+    {
+      "name": "auto_lock_disabled",
+      "value": "已禁用"
+    },
+    {
+      "name": "auto_lock_1min",
+      "value": "离开1分钟后"
+    },
+    {
+      "name": "auto_lock_5min",
+      "value": "离开5分钟后"
+    },
+    {
+      "name": "auto_lock_1hour",
+      "value": "离开1小时后"
+    },
+    {
+      "name": "auto_lock_5hours",
+      "value": "离开5小时后"
+    },
+    {
+      "name": "change_passcode",
+      "value": "更改密码"
+    },
+    {
+      "name": "turn_off_passcode",
+      "value": "关闭密码锁"
+    },
+    {
+      "name": "proxy_settings",
+      "value": "代理设置"
+    },
+    {
+      "name": "use_proxy",
+      "value": "使用代理"
+    },
+    {
+      "name": "add_proxy",
+      "value": "添加代理"
+    },
+    {
+      "name": "edit_proxy",
+      "value": "编辑代理"
+    },
+    {
+      "name": "delete_proxy",
+      "value": "删除代理"
+    },
+    {
+      "name": "proxy_server",
+      "value": "服务器"
+    },
+    {
+      "name": "proxy_port",
+      "value": "端口"
+    },
+    {
+      "name": "proxy_type",
+      "value": "类型"
+    },
+    {
+      "name": "proxy_username",
+      "value": "用户名"
+    },
+    {
+      "name": "proxy_password",
+      "value": "密码"
+    },
+    {
+      "name": "proxy_secret",
+      "value": "密钥"
+    },
+    {
+      "name": "proxy_socks5",
+      "value": "SOCKS5"
+    },
+    {
+      "name": "proxy_http",
+      "value": "HTTP"
+    },
+    {
+      "name": "proxy_mtproto",
+      "value": "MTProto"
+    },
+    {
+      "name": "proxy_connected",
+      "value": "已连接"
+    },
+    {
+      "name": "proxy_checking",
+      "value": "检查中..."
+    },
+    {
+      "name": "proxy_available",
+      "value": "可用"
+    },
+    {
+      "name": "proxy_unavailable",
+      "value": "不可用"
+    },
+    {
+      "name": "no_proxies",
+      "value": "未配置代理"
+    },
+    {
+      "name": "proxy_ping_ms",
+      "value": "%d毫秒"
+    },
+    {
+      "name": "search_in_chat",
+      "value": "在聊天中搜索"
+    },
+    {
+      "name": "tap_to_reveal",
+      "value": "点击查看"
+    },
+    {
+      "name": "view_once_photo",
+      "value": "一次性照片"
+    },
+    {
+      "name": "view_once_video",
+      "value": "一次性视频"
+    },
+    {
+      "name": "last_active_minutes",
+      "value": "%d分钟前"
+    },
+    {
+      "name": "last_active_hours",
+      "value": "%d小时前"
+    },
+    {
+      "name": "last_active_days",
+      "value": "%d天前"
     }
   ]
 }

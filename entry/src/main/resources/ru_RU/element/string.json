@@ -1287,6 +1287,214 @@
     {
       "name": "waiting_for_user",
       "value": "Ожидание, когда %s будет онлайн"
+    },
+    {
+      "name": "video_player",
+      "value": "Видеоплеер"
+    },
+    {
+      "name": "play",
+      "value": "Воспроизведение"
+    },
+    {
+      "name": "pause",
+      "value": "Пауза"
+    },
+    {
+      "name": "current_session",
+      "value": "Текущая сессия"
+    },
+    {
+      "name": "other_sessions",
+      "value": "Другие сессии"
+    },
+    {
+      "name": "terminate_all_sessions",
+      "value": "Завершить все другие сессии"
+    },
+    {
+      "name": "terminate_session",
+      "value": "Завершить сессию"
+    },
+    {
+      "name": "terminate_all_confirm",
+      "value": "Вы уверены, что хотите завершить все другие сессии?"
+    },
+    {
+      "name": "last_active",
+      "value": "Последняя активность"
+    },
+    {
+      "name": "no_other_sessions",
+      "value": "Нет других активных сессий"
+    },
+    {
+      "name": "terminate_all_warning",
+      "value": "Выход из аккаунта на всех устройствах, кроме этого."
+    },
+    {
+      "name": "enable_passcode",
+      "value": "Включить код-пароль"
+    },
+    {
+      "name": "use_biometric",
+      "value": "Разблокировка биометрией"
+    },
+    {
+      "name": "auto_lock_timeout",
+      "value": "Автоблокировка"
+    },
+    {
+      "name": "show_notifications_content",
+      "value": "Показывать содержимое уведомлений"
+    },
+    {
+      "name": "enter_passcode",
+      "value": "Введите код-пароль"
+    },
+    {
+      "name": "confirm_passcode",
+      "value": "Подтвердите код-пароль"
+    },
+    {
+      "name": "passcode_mismatch",
+      "value": "Коды не совпадают. Попробуйте ещё раз."
+    },
+    {
+      "name": "auto_lock_disabled",
+      "value": "Отключено"
+    },
+    {
+      "name": "auto_lock_1min",
+      "value": "Через 1 минуту"
+    },
+    {
+      "name": "auto_lock_5min",
+      "value": "Через 5 минут"
+    },
+    {
+      "name": "auto_lock_1hour",
+      "value": "Через 1 час"
+    },
+    {
+      "name": "auto_lock_5hours",
+      "value": "Через 5 часов"
+    },
+    {
+      "name": "change_passcode",
+      "value": "Изменить код-пароль"
+    },
+    {
+      "name": "turn_off_passcode",
+      "value": "Отключить код-пароль"
+    },
+    {
+      "name": "proxy_settings",
+      "value": "Настройки прокси"
+    },
+    {
+      "name": "use_proxy",
+      "value": "Использовать прокси"
+    },
+    {
+      "name": "add_proxy",
+      "value": "Добавить прокси"
+    },
+    {
+      "name": "edit_proxy",
+      "value": "Редактировать прокси"
+    },
+    {
+      "name": "delete_proxy",
+      "value": "Удалить прокси"
+    },
+    {
+      "name": "proxy_server",
+      "value": "Сервер"
+    },
+    {
+      "name": "proxy_port",
+      "value": "Порт"
+    },
+    {
+      "name": "proxy_type",
+      "value": "Тип"
+    },
+    {
+      "name": "proxy_username",
+      "value": "Имя пользователя"
+    },
+    {
+      "name": "proxy_password",
+      "value": "Пароль"
+    },
+    {
+      "name": "proxy_secret",
+      "value": "Секрет"
+    },
+    {
+      "name": "proxy_socks5",
+      "value": "SOCKS5"
+    },
+    {
+      "name": "proxy_http",
+      "value": "HTTP"
+    },
+    {
+      "name": "proxy_mtproto",
+      "value": "MTProto"
+    },
+    {
+      "name": "proxy_connected",
+      "value": "Подключено"
+    },
+    {
+      "name": "proxy_checking",
+      "value": "Проверка..."
+    },
+    {
+      "name": "proxy_available",
+      "value": "Доступно"
+    },
+    {
+      "name": "proxy_unavailable",
+      "value": "Недоступно"
+    },
+    {
+      "name": "no_proxies",
+      "value": "Прокси не настроены"
+    },
+    {
+      "name": "proxy_ping_ms",
+      "value": "%d мс"
+    },
+    {
+      "name": "search_in_chat",
+      "value": "Поиск в чате"
+    },
+    {
+      "name": "tap_to_reveal",
+      "value": "Нажмите для просмотра"
+    },
+    {
+      "name": "view_once_photo",
+      "value": "Одноразовое фото"
+    },
+    {
+      "name": "view_once_video",
+      "value": "Одноразовое видео"
+    },
+    {
+      "name": "last_active_minutes",
+      "value": "%d мин назад"
+    },
+    {
+      "name": "last_active_hours",
+      "value": "%d ч назад"
+    },
+    {
+      "name": "last_active_days",
+      "value": "%d дн назад"
     }
   ]
 }

@@ -17,6 +17,7 @@ export struct MessageBubble {
   @Param onDelete: (message: Message) => void = () => {};
   @Param onEdit: (message: Message) => void = () => {};
   @Param onMediaTap: (url: string) => void = () => {};
+  @Param onVideoPlay: (url: string, duration: number) => void = () => {};
   @Param onReactionTap: (message: Message, emoji: string) => void = () => {};
   @Param onPollVote: (message: Message, optionIndex: number) => void = () => {};
   @Param isSelectionMode: boolean = false;
@@ -25,6 +26,8 @@ export struct MessageBubble {
 
   @Local swipeOffsetX: number = 0;
   @Local downloadProgress: number = -1; // -1 = not downloading, 0..100 = progress
+  @Local spoilerRevealed: boolean = false;
+  @Local viewOnceOpened: boolean = false;
 
   build() {
     Column() {
@@ -116,8 +119,10 @@ export struct MessageBubble {
               .margin({ bottom: 2 })
           }
 
-          // --- Content by type ---
-          if (this.message.contentType === MessageContentType.STICKER) {
+          // View-once indicator
+          if (this.message.isViewOnce && !this.viewOnceOpened) {
+            this.buildViewOnce()
+          } else if (this.message.contentType === MessageContentType.STICKER) {
             this.buildSticker()
           } else if (this.message.contentType === MessageContentType.PHOTO) {
             this.buildPhoto()
@@ -283,6 +288,14 @@ export struct MessageBubble {
       // Detect URLs and render as rich text (reference: Telegram link rendering)
       if (this.containsUrl(this.message.text)) {
         this.buildRichText()
+      } else if (this.message.hasSpoiler && !this.spoilerRevealed) {
+        // Spoiler text — blurred until tapped
+        Text(this.message.text)
+          .fontSize(16)
+          .fontColor($r('app.color.text_primary'))
+          .lineHeight(21)
+          .blur(15)
+          .onClick(() => { this.spoilerRevealed = true; })
       } else {
         Text(this.message.text)
           .fontSize(16)
@@ -358,8 +371,11 @@ export struct MessageBubble {
             .width('100%')
             .borderRadius(15)
             .objectFit(ImageFit.Cover)
+            .blur(this.message.hasSpoiler && !this.spoilerRevealed ? 40 : 0)
             .onClick(() => {
-              if (this.message.photoUrl) {
+              if (this.message.hasSpoiler && !this.spoilerRevealed) {
+                this.spoilerRevealed = true;
+              } else if (this.message.photoUrl) {
                 this.onMediaTap(this.message.photoUrl);
               }
             })
@@ -485,6 +501,7 @@ export struct MessageBubble {
             .height(200)
             .borderRadius(15)
             .objectFit(ImageFit.Cover)
+            .blur(this.message.hasSpoiler && !this.spoilerRevealed ? 40 : 0)
         } else {
           // Video placeholder (stub mode)
           Column()
@@ -494,18 +511,26 @@ export struct MessageBubble {
             .backgroundColor('#333333')
         }
 
-        // Play button overlay
-        Column() {
-          Image($r('app.media.ic_play'))
-            .width(28)
-            .height(28)
-            .fillColor(Color.White)
+        if (this.message.hasSpoiler && !this.spoilerRevealed) {
+          // Spoiler: tap to reveal
+          Text($r('app.string.tap_to_reveal'))
+            .fontSize(14)
+            .fontColor(Color.White)
+            .fontWeight(FontWeight.Medium)
+        } else {
+          // Play button overlay
+          Column() {
+            Image($r('app.media.ic_play'))
+              .width(28)
+              .height(28)
+              .fillColor(Color.White)
+          }
+          .width(52)
+          .height(52)
+          .borderRadius(26)
+          .backgroundColor($r('app.color.play_overlay'))
+          .justifyContent(FlexAlign.Center)
         }
-        .width(52)
-        .height(52)
-        .borderRadius(26)
-        .backgroundColor($r('app.color.play_overlay'))
-        .justifyContent(FlexAlign.Center)
 
         // Duration badge
         if (this.message.videoDuration > 0) {
@@ -518,6 +543,13 @@ export struct MessageBubble {
             .position({ x: 8, y: 8 })
         }
       }
+      .onClick(() => {
+        if (this.message.hasSpoiler && !this.spoilerRevealed) {
+          this.spoilerRevealed = true;
+        } else {
+          this.onVideoPlay(this.message.photoUrl || '', this.message.videoDuration);
+        }
+      })
 
       // Caption
       if (this.message.text.length > 0) {
@@ -698,6 +730,59 @@ export struct MessageBubble {
           .margin({ top: -24 })
       }
     }
+  }
+
+  // --- View-once message (like Telegram "view once" photo/video) ---
+
+  @Builder
+  buildViewOnce() {
+    Column() {
+      Column() {
+        Image($r('app.media.ic_photo'))
+          .width(40).height(40)
+          .fillColor($r('app.color.telegram_blue'))
+          .opacity(0.6)
+      }
+      .width(200)
+      .height(200)
+      .borderRadius(15)
+      .backgroundColor($r('app.color.background_secondary'))
+      .justifyContent(FlexAlign.Center)
+      .blur(30)
+
+      Row() {
+        Image($r('app.media.ic_view_once'))
+          .width(16).height(16)
+          .fillColor($r('app.color.telegram_blue'))
+          .margin({ right: 4 })
+        Text(this.message.contentType === MessageContentType.PHOTO
+          ? $r('app.string.view_once_photo')
+          : $r('app.string.view_once_video'))
+          .fontSize(14)
+          .fontColor($r('app.color.telegram_blue'))
+          .fontWeight(FontWeight.Medium)
+      }
+      .margin({ top: 8 })
+      .justifyContent(FlexAlign.Center)
+
+      this.buildTimeRow()
+    }
+    .onClick(() => {
+      this.viewOnceOpened = true;
+    })
+  }
+
+  // --- Spoiler overlay for photos/videos ---
+
+  @Builder
+  buildSpoilerOverlay() {
+    Column()
+      .width('100%')
+      .height('100%')
+      .backgroundColor('#88000000')
+      .blur(40)
+      .justifyContent(FlexAlign.Center)
+      .onClick(() => { this.spoilerRevealed = true; })
   }
 
   // --- Helpers ---

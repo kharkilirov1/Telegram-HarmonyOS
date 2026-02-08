@@ -129,6 +129,26 @@
       "name": "InviteLinks",
       "pageSourceFile": "src/main/ets/pages/Chat/InviteLinksPage.ets",
       "buildFunction": "InviteLinksBuilder"
+    },
+    {
+      "name": "VideoPlayer",
+      "pageSourceFile": "src/main/ets/pages/Chat/VideoPlayerPage.ets",
+      "buildFunction": "VideoPlayerBuilder"
+    },
+    {
+      "name": "SessionManagement",
+      "pageSourceFile": "src/main/ets/pages/Settings/SessionManagementPage.ets",
+      "buildFunction": "SessionManagementBuilder"
+    },
+    {
+      "name": "BiometricLock",
+      "pageSourceFile": "src/main/ets/pages/Settings/BiometricLockPage.ets",
+      "buildFunction": "BiometricLockBuilder"
+    },
+    {
+      "name": "ProxySettings",
+      "pageSourceFile": "src/main/ets/pages/Settings/ProxySettingsPage.ets",
+      "buildFunction": "ProxySettingsBuilder"
     }
   ]
 }

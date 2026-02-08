@@ -59,6 +59,12 @@ export class Message {
   @Trace schedulingState: number; // 0 = none, timestamp = scheduled date
   @Trace selfDestructIn: number; // seconds, 0 = no self-destruct
 
+  // View-once
+  @Trace isViewOnce: boolean;
+
+  // Spoiler
+  @Trace hasSpoiler: boolean;
+
   // Reactions
   @Trace reactions: MessageReaction[];
 
@@ -111,6 +117,8 @@ export class Message {
     this.mediaAlbumId = '';
     this.schedulingState = 0;
     this.selfDestructIn = 0;
+    this.isViewOnce = false;
+    this.hasSpoiler = false;
     this.reactions = [];
   }
 }

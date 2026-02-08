@@ -54,6 +54,13 @@ export struct ChatDetailPage {
   @Local selectedMessageIds: number[] = [];
   @Local isChannelChat: boolean = false;
 
+  // Per-chat search
+  @Local isSearchMode: boolean = false;
+  @Local searchQuery: string = '';
+  @Local searchResults: Message[] = [];
+  @Local currentSearchIndex: number = -1;
+  @Local isSearching: boolean = false;
+
   private listScroller: Scroller = new Scroller();
   private messageDataSource: BasicDataSource<ChatDetailListItem> = new BasicDataSource<ChatDetailListItem>();
 
@@ -221,6 +228,13 @@ export struct ChatDetailPage {
                 });
               })
 
+            Image($r('app.media.ic_search'))
+              .width(22)
+              .height(22)
+              .fillColor($r('app.color.telegram_blue'))
+              .margin({ right: 16 })
+              .onClick(() => { this.isSearchMode = true; })
+
             Image($r('app.media.ic_more'))
               .width(22)
               .height(22)
@@ -236,6 +250,64 @@ export struct ChatDetailPage {
           adaptiveColor: AdaptiveColor.DEFAULT,
           scale: 1.0
         })
+
+        // --- Per-chat search bar ---
+        if (this.isSearchMode) {
+          Row() {
+            Image($r('app.media.ic_back'))
+              .width(20).height(20)
+              .fillColor($r('app.color.text_secondary'))
+              .onClick(() => {
+                this.isSearchMode = false;
+                this.searchQuery = '';
+                this.searchResults = [];
+                this.currentSearchIndex = -1;
+              })
+
+            TextInput({ text: this.searchQuery, placeholder: $r('app.string.search_in_chat') })
+              .layoutWeight(1)
+              .height(36)
+              .margin({ left: 8, right: 8 })
+              .backgroundColor($r('app.color.search_bar_bg'))
+              .borderRadius(18)
+              .fontSize(15)
+              .onChange((value: string) => {
+                this.searchQuery = value;
+                if (value.length > 0) {
+                  this.performChatSearch(value);
+                } else {
+                  this.searchResults = [];
+                  this.currentSearchIndex = -1;
+                }
+              })
+
+            if (this.isSearching) {
+              LoadingProgress()
+                .width(20).height(20)
+                .color($r('app.color.telegram_blue'))
+            } else if (this.searchResults.length > 0) {
+              Text(`${this.currentSearchIndex + 1}/${this.searchResults.length}`)
+                .fontSize(13)
+                .fontColor($r('app.color.text_secondary'))
+                .margin({ right: 4 })
+
+              Image($r('app.media.ic_arrow_up'))
+                .width(20).height(20)
+                .fillColor($r('app.color.telegram_blue'))
+                .onClick(() => { this.navigateSearchResult(-1); })
+
+              Image($r('app.media.ic_arrow_down'))
+                .width(20).height(20)
+                .fillColor($r('app.color.telegram_blue'))
+                .margin({ left: 4 })
+                .onClick(() => { this.navigateSearchResult(1); })
+            }
+          }
+          .width('100%')
+          .height(48)
+          .padding({ left: 12, right: 12 })
+          .backgroundColor($r('app.color.glass_nav_bg'))
+        }
 
         // --- Pinned message bar (like Telegram iOS/Android) ---
         if (this.pinnedMessage !== null && this.showPinnedBar) {
@@ -311,6 +383,12 @@ export struct ChatDetailPage {
                         this.navPathStack.pushPath({
                           name: 'MediaViewer',
                           param: { url: url } as Record<string, string>
+                        });
+                      },
+                      onVideoPlay: (url: string, duration: number) => {
+                        this.navPathStack.pushPath({
+                          name: 'VideoPlayer',
+                          param: { videoUrl: url, duration: duration } as Record<string, Object>
                         });
                       },
                       onReactionTap: (msg: Message, emoji: string) => {
@@ -694,6 +772,58 @@ export struct ChatDetailPage {
     const total = this.messageDataSource.totalCount();
     if (total > 0) {
       this.listScroller.scrollToIndex(total - 1);
+    }
+  }
+
+  // --- Per-chat search ---
+
+  private searchTimer: number = 0;
+
+  private performChatSearch(query: string): void {
+    // Debounce search requests
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+    this.searchTimer = setTimeout(async () => {
+      this.isSearching = true;
+      try {
+        const results = await MessagesController.getInstance()
+          .searchChatMessages(this.chatId, query, 0, 50);
+        this.searchResults = results;
+        this.currentSearchIndex = results.length > 0 ? 0 : -1;
+        if (results.length > 0) {
+          this.scrollToMessage(results[0].id);
+        }
+      } catch {
+        this.searchResults = [];
+        this.currentSearchIndex = -1;
+      }
+      this.isSearching = false;
+    }, 300) as number;
+  }
+
+  private navigateSearchResult(direction: number): void {
+    if (this.searchResults.length === 0) return;
+    let newIndex = this.currentSearchIndex + direction;
+    if (newIndex < 0) newIndex = this.searchResults.length - 1;
+    if (newIndex >= this.searchResults.length) newIndex = 0;
+    this.currentSearchIndex = newIndex;
+    this.scrollToMessage(this.searchResults[newIndex].id);
+  }
+
+  private scrollToMessage(messageId: number): void {
+    const idx = this.messages.findIndex(m => m.id === messageId);
+    if (idx >= 0) {
+      // Account for date separators in flat list
+      let flatIdx = 0;
+      for (let i = 0; i < this.messageDataSource.totalCount(); i++) {
+        const item = this.messageDataSource.getData(i) as ChatDetailListItem;
+        if (!item.isDateSeparator && item.groupedMessage?.message.id === messageId) {
+          flatIdx = i;
+          break;
+        }
+      }
+      this.listScroller.scrollToIndex(flatIdx);
     }
   }
 }
