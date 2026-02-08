@@ -1,6 +1,7 @@
 import { AuthorizationState } from '../models/User';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { taskpool } from '@kit.ArkTS';
+import { TELEGRAM_API_ID, TELEGRAM_API_HASH } from './Config.local';
 
 // Native NAPI module
 import tdlib from 'libtdlib_napi.so';
@@ -15,13 +16,6 @@ const TAG = 'TDLibClient';
 const DOMAIN = 0x0001;
 
 type TDLibUpdateHandler = (update: object) => void;
-
-/**
- * Telegram API credentials — obtain from https://my.telegram.org/apps
- * Set these before building the app. DO NOT commit real values to VCS.
- */
-const TELEGRAM_API_ID: number = 0;        // Replace with your api_id
-const TELEGRAM_API_HASH: string = '';      // Replace with your api_hash
 
 export class TDLibClient {
   private static instance: TDLibClient | null = null;
