@@ -1711,6 +1711,186 @@
     {
       "name": "data_summary_off",
       "value": "Off"
+    },
+    {
+      "name": "no_stories",
+      "value": "No stories"
+    },
+    {
+      "name": "stories_label",
+      "value": "Stories"
+    },
+    {
+      "name": "my_story",
+      "value": "My Story"
+    },
+    {
+      "name": "add_account",
+      "value": "Add Account"
+    },
+    {
+      "name": "switch_account",
+      "value": "Switch Account"
+    },
+    {
+      "name": "account_info",
+      "value": "Account %s"
+    },
+    {
+      "name": "max_accounts_reached",
+      "value": "Maximum accounts reached (3)"
+    },
+    {
+      "name": "bot_commands",
+      "value": "Bot Commands"
+    },
+    {
+      "name": "bot_info",
+      "value": "What can this bot do?"
+    },
+    {
+      "name": "bot_start",
+      "value": "Start"
+    },
+    {
+      "name": "bot_stop",
+      "value": "Stop Bot"
+    },
+    {
+      "name": "bot_restart",
+      "value": "Restart Bot"
+    },
+    {
+      "name": "bot_settings",
+      "value": "Bot Settings"
+    },
+    {
+      "name": "open_mini_app",
+      "value": "Open App"
+    },
+    {
+      "name": "mini_app_label",
+      "value": "Mini App"
+    },
+    {
+      "name": "telegram_premium",
+      "value": "Telegram Premium"
+    },
+    {
+      "name": "premium_subtitle",
+      "value": "Unlock exclusive features"
+    },
+    {
+      "name": "premium_feature_reactions",
+      "value": "Unique Reactions"
+    },
+    {
+      "name": "premium_feature_stickers",
+      "value": "Premium Stickers"
+    },
+    {
+      "name": "premium_feature_upload",
+      "value": "4 GB Uploads"
+    },
+    {
+      "name": "premium_feature_speed",
+      "value": "Faster Downloads"
+    },
+    {
+      "name": "premium_feature_voice_text",
+      "value": "Voice-to-Text"
+    },
+    {
+      "name": "premium_feature_no_ads",
+      "value": "No Ads"
+    },
+    {
+      "name": "premium_subscribe",
+      "value": "Subscribe to Premium"
+    },
+    {
+      "name": "passport_title",
+      "value": "Telegram Passport"
+    },
+    {
+      "name": "passport_subtitle",
+      "value": "Your secure digital identity"
+    },
+    {
+      "name": "passport_personal_details",
+      "value": "Personal Details"
+    },
+    {
+      "name": "passport_id_document",
+      "value": "ID Document"
+    },
+    {
+      "name": "passport_address",
+      "value": "Address"
+    },
+    {
+      "name": "passport_phone",
+      "value": "Phone Number"
+    },
+    {
+      "name": "passport_email",
+      "value": "Email"
+    },
+    {
+      "name": "nearby_people",
+      "value": "People Nearby"
+    },
+    {
+      "name": "nearby_subtitle",
+      "value": "Discover Telegram users and groups near you"
+    },
+    {
+      "name": "nearby_make_visible",
+      "value": "Make Myself Visible"
+    },
+    {
+      "name": "nearby_users",
+      "value": "Users Nearby"
+    },
+    {
+      "name": "nearby_groups",
+      "value": "Groups Nearby"
+    },
+    {
+      "name": "nearby_create_group",
+      "value": "Create a Local Group"
+    },
+    {
+      "name": "business_account",
+      "value": "Business Account"
+    },
+    {
+      "name": "business_subtitle",
+      "value": "Manage your business on Telegram"
+    },
+    {
+      "name": "business_location",
+      "value": "Business Location"
+    },
+    {
+      "name": "business_hours",
+      "value": "Business Hours"
+    },
+    {
+      "name": "business_greeting",
+      "value": "Greeting Message"
+    },
+    {
+      "name": "business_away",
+      "value": "Away Message"
+    },
+    {
+      "name": "business_quick_replies",
+      "value": "Quick Replies"
+    },
+    {
+      "name": "business_chatbots",
+      "value": "Chatbots"
     }
   ]
 }

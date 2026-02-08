@@ -284,7 +284,36 @@ struct Index {
 
           Blank().height(16)
 
-          // --- Glass Card 3: Power Saving ---
+          // --- Glass Card 3: Premium & Features ---
+          Column() {
+            this.settingsRow($r('app.media.ic_sticker'), $r('app.color.settings_icon_purple'),
+              $r('app.string.telegram_premium'))
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'Premium' });
+              })
+            Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
+            this.settingsRow($r('app.media.ic_contact'), $r('app.color.settings_icon_blue'),
+              $r('app.string.nearby_people'))
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'NearbyPeople' });
+              })
+            Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
+            this.settingsRow($r('app.media.ic_settings'), $r('app.color.settings_icon_green'),
+              $r('app.string.business_account'))
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'BusinessAccount' });
+              })
+          }
+          .width('100%')
+          .backgroundColor($r('app.color.glass_card_bg'))
+          .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+          .borderRadius(16)
+          .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
+          .margin({ left: 16, right: 16 })
+
+          Blank().height(16)
+
+          // --- Glass Card 4: Power Saving ---
           Column() {
             this.settingsRow($r('app.media.ic_saved'), $r('app.color.settings_icon_green'),
               $r('app.string.settings_power_saving'))

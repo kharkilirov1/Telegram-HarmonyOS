@@ -1711,6 +1711,186 @@
     {
       "name": "data_summary_off",
       "value": "Выкл"
+    },
+    {
+      "name": "no_stories",
+      "value": "Нет историй"
+    },
+    {
+      "name": "stories_label",
+      "value": "Истории"
+    },
+    {
+      "name": "my_story",
+      "value": "Моя история"
+    },
+    {
+      "name": "add_account",
+      "value": "Добавить аккаунт"
+    },
+    {
+      "name": "switch_account",
+      "value": "Сменить аккаунт"
+    },
+    {
+      "name": "account_info",
+      "value": "Аккаунт %s"
+    },
+    {
+      "name": "max_accounts_reached",
+      "value": "Достигнут лимит аккаунтов (3)"
+    },
+    {
+      "name": "bot_commands",
+      "value": "Команды бота"
+    },
+    {
+      "name": "bot_info",
+      "value": "Что умеет этот бот?"
+    },
+    {
+      "name": "bot_start",
+      "value": "Запустить"
+    },
+    {
+      "name": "bot_stop",
+      "value": "Остановить бота"
+    },
+    {
+      "name": "bot_restart",
+      "value": "Перезапустить бота"
+    },
+    {
+      "name": "bot_settings",
+      "value": "Настройки бота"
+    },
+    {
+      "name": "open_mini_app",
+      "value": "Открыть приложение"
+    },
+    {
+      "name": "mini_app_label",
+      "value": "Мини-приложение"
+    },
+    {
+      "name": "telegram_premium",
+      "value": "Telegram Premium"
+    },
+    {
+      "name": "premium_subtitle",
+      "value": "Откройте эксклюзивные функции"
+    },
+    {
+      "name": "premium_feature_reactions",
+      "value": "Уникальные реакции"
+    },
+    {
+      "name": "premium_feature_stickers",
+      "value": "Премиум стикеры"
+    },
+    {
+      "name": "premium_feature_upload",
+      "value": "Загрузка до 4 ГБ"
+    },
+    {
+      "name": "premium_feature_speed",
+      "value": "Быстрая загрузка"
+    },
+    {
+      "name": "premium_feature_voice_text",
+      "value": "Голос в текст"
+    },
+    {
+      "name": "premium_feature_no_ads",
+      "value": "Без рекламы"
+    },
+    {
+      "name": "premium_subscribe",
+      "value": "Подписаться на Premium"
+    },
+    {
+      "name": "passport_title",
+      "value": "Telegram Passport"
+    },
+    {
+      "name": "passport_subtitle",
+      "value": "Ваша защищённая цифровая личность"
+    },
+    {
+      "name": "passport_personal_details",
+      "value": "Личные данные"
+    },
+    {
+      "name": "passport_id_document",
+      "value": "Документ"
+    },
+    {
+      "name": "passport_address",
+      "value": "Адрес"
+    },
+    {
+      "name": "passport_phone",
+      "value": "Номер телефона"
+    },
+    {
+      "name": "passport_email",
+      "value": "Электронная почта"
+    },
+    {
+      "name": "nearby_people",
+      "value": "Люди рядом"
+    },
+    {
+      "name": "nearby_subtitle",
+      "value": "Находите пользователей и группы Telegram рядом с вами"
+    },
+    {
+      "name": "nearby_make_visible",
+      "value": "Сделать себя видимым"
+    },
+    {
+      "name": "nearby_users",
+      "value": "Пользователи рядом"
+    },
+    {
+      "name": "nearby_groups",
+      "value": "Группы рядом"
+    },
+    {
+      "name": "nearby_create_group",
+      "value": "Создать местную группу"
+    },
+    {
+      "name": "business_account",
+      "value": "Бизнес-аккаунт"
+    },
+    {
+      "name": "business_subtitle",
+      "value": "Управляйте бизнесом в Telegram"
+    },
+    {
+      "name": "business_location",
+      "value": "Адрес компании"
+    },
+    {
+      "name": "business_hours",
+      "value": "Часы работы"
+    },
+    {
+      "name": "business_greeting",
+      "value": "Приветственное сообщение"
+    },
+    {
+      "name": "business_away",
+      "value": "Сообщение об отсутствии"
+    },
+    {
+      "name": "business_quick_replies",
+      "value": "Быстрые ответы"
+    },
+    {
+      "name": "business_chatbots",
+      "value": "Чат-боты"
     }
   ]
 }

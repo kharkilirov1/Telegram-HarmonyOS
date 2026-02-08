@@ -3,6 +3,7 @@ import { TDLibClient } from '../../services/TDLibClient';
 import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
 import { Chat } from '../../models/Chat';
 import { ChatListItem } from '../../components/Chat/ChatListItem';
+import { StoriesBar } from '../../components/Chat/StoriesBar';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
 
 @ComponentV2
@@ -138,6 +139,13 @@ export struct ChatListPage {
         .width('100%')
 
         Divider().strokeWidth(0.5).color($r('app.color.separator'))
+
+        // Stories bar — horizontal scrollable circles (like iOS/Android Telegram)
+        StoriesBar({
+          onStoryClick: (chatId: number) => {
+            this.navPathStack.pushPath({ name: 'StoryViewer', param: chatId });
+          }
+        })
 
         // Chat list
         if (this.isLoading) {

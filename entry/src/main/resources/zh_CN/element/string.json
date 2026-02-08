@@ -1711,6 +1711,186 @@
     {
       "name": "data_summary_off",
       "value": "关闭"
+    },
+    {
+      "name": "no_stories",
+      "value": "暂无动态"
+    },
+    {
+      "name": "stories_label",
+      "value": "动态"
+    },
+    {
+      "name": "my_story",
+      "value": "我的动态"
+    },
+    {
+      "name": "add_account",
+      "value": "添加账户"
+    },
+    {
+      "name": "switch_account",
+      "value": "切换账户"
+    },
+    {
+      "name": "account_info",
+      "value": "账户 %s"
+    },
+    {
+      "name": "max_accounts_reached",
+      "value": "已达最大账户数 (3)"
+    },
+    {
+      "name": "bot_commands",
+      "value": "机器人命令"
+    },
+    {
+      "name": "bot_info",
+      "value": "这个机器人能做什么？"
+    },
+    {
+      "name": "bot_start",
+      "value": "开始"
+    },
+    {
+      "name": "bot_stop",
+      "value": "停止机器人"
+    },
+    {
+      "name": "bot_restart",
+      "value": "重新启动机器人"
+    },
+    {
+      "name": "bot_settings",
+      "value": "机器人设置"
+    },
+    {
+      "name": "open_mini_app",
+      "value": "打开应用"
+    },
+    {
+      "name": "mini_app_label",
+      "value": "小程序"
+    },
+    {
+      "name": "telegram_premium",
+      "value": "Telegram Premium"
+    },
+    {
+      "name": "premium_subtitle",
+      "value": "解锁专属功能"
+    },
+    {
+      "name": "premium_feature_reactions",
+      "value": "独特回应"
+    },
+    {
+      "name": "premium_feature_stickers",
+      "value": "高级贴纸"
+    },
+    {
+      "name": "premium_feature_upload",
+      "value": "4 GB 上传"
+    },
+    {
+      "name": "premium_feature_speed",
+      "value": "更快下载"
+    },
+    {
+      "name": "premium_feature_voice_text",
+      "value": "语音转文字"
+    },
+    {
+      "name": "premium_feature_no_ads",
+      "value": "无广告"
+    },
+    {
+      "name": "premium_subscribe",
+      "value": "订阅 Premium"
+    },
+    {
+      "name": "passport_title",
+      "value": "Telegram Passport"
+    },
+    {
+      "name": "passport_subtitle",
+      "value": "您的安全数字身份"
+    },
+    {
+      "name": "passport_personal_details",
+      "value": "个人信息"
+    },
+    {
+      "name": "passport_id_document",
+      "value": "身份证件"
+    },
+    {
+      "name": "passport_address",
+      "value": "地址"
+    },
+    {
+      "name": "passport_phone",
+      "value": "手机号码"
+    },
+    {
+      "name": "passport_email",
+      "value": "电子邮箱"
+    },
+    {
+      "name": "nearby_people",
+      "value": "附近的人"
+    },
+    {
+      "name": "nearby_subtitle",
+      "value": "发现附近的 Telegram 用户和群组"
+    },
+    {
+      "name": "nearby_make_visible",
+      "value": "让我可见"
+    },
+    {
+      "name": "nearby_users",
+      "value": "附近的用户"
+    },
+    {
+      "name": "nearby_groups",
+      "value": "附近的群组"
+    },
+    {
+      "name": "nearby_create_group",
+      "value": "创建本地群组"
+    },
+    {
+      "name": "business_account",
+      "value": "商业账户"
+    },
+    {
+      "name": "business_subtitle",
+      "value": "在 Telegram 上管理您的业务"
+    },
+    {
+      "name": "business_location",
+      "value": "营业地址"
+    },
+    {
+      "name": "business_hours",
+      "value": "营业时间"
+    },
+    {
+      "name": "business_greeting",
+      "value": "欢迎消息"
+    },
+    {
+      "name": "business_away",
+      "value": "离开消息"
+    },
+    {
+      "name": "business_quick_replies",
+      "value": "快捷回复"
+    },
+    {
+      "name": "business_chatbots",
+      "value": "聊天机器人"
     }
   ]
 }

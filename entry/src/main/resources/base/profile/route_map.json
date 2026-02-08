@@ -154,6 +154,36 @@
       "name": "SavedMessages",
       "pageSourceFile": "src/main/ets/pages/Chat/SavedMessagesPage.ets",
       "buildFunction": "SavedMessagesBuilder"
+    },
+    {
+      "name": "StoryViewer",
+      "pageSourceFile": "src/main/ets/pages/Chat/StoryViewerPage.ets",
+      "buildFunction": "StoryViewerBuilder"
+    },
+    {
+      "name": "MultiAccount",
+      "pageSourceFile": "src/main/ets/pages/Settings/MultiAccountPage.ets",
+      "buildFunction": "MultiAccountBuilder"
+    },
+    {
+      "name": "Premium",
+      "pageSourceFile": "src/main/ets/pages/Settings/PremiumPage.ets",
+      "buildFunction": "PremiumBuilder"
+    },
+    {
+      "name": "Passport",
+      "pageSourceFile": "src/main/ets/pages/Settings/PassportPage.ets",
+      "buildFunction": "PassportBuilder"
+    },
+    {
+      "name": "NearbyPeople",
+      "pageSourceFile": "src/main/ets/pages/Settings/NearbyPeoplePage.ets",
+      "buildFunction": "NearbyPeopleBuilder"
+    },
+    {
+      "name": "BusinessAccount",
+      "pageSourceFile": "src/main/ets/pages/Settings/BusinessAccountPage.ets",
+      "buildFunction": "BusinessAccountBuilder"
     }
   ]
 }

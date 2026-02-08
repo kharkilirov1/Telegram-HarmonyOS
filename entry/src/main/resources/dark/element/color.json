@@ -199,6 +199,14 @@
     {
       "name": "icon_on_primary",
       "value": "#FFFFFF"
+    },
+    {
+      "name": "story_ring_unread",
+      "value": "#30D158"
+    },
+    {
+      "name": "story_ring_read",
+      "value": "#555555"
     }
   ]
 }

@@ -219,6 +219,14 @@
     {
       "name": "search_sender_input_bg",
       "value": "#F5F5F5"
+    },
+    {
+      "name": "story_ring_unread",
+      "value": "#34C759"
+    },
+    {
+      "name": "story_ring_read",
+      "value": "#C8C8C8"
     }
   ]
 }
