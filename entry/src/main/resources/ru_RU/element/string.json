@@ -1139,6 +1139,130 @@
     {
       "name": "schedule_tomorrow_evening",
       "value": "Завтра вечером"
+    },
+    {
+      "name": "question_label",
+      "value": "Вопрос"
+    },
+    {
+      "name": "ask_a_question",
+      "value": "Задайте вопрос"
+    },
+    {
+      "name": "options_label",
+      "value": "Варианты"
+    },
+    {
+      "name": "sending",
+      "value": "Отправка..."
+    },
+    {
+      "name": "quiz_correct_hint",
+      "value": "Нажмите на переключатель рядом с правильным ответом."
+    },
+    {
+      "name": "save",
+      "value": "Сохранить"
+    },
+    {
+      "name": "manage_group_subtitle",
+      "value": "Управление настройками и правами группы"
+    },
+    {
+      "name": "group_type",
+      "value": "Тип группы"
+    },
+    {
+      "name": "public_group",
+      "value": "Публичная группа"
+    },
+    {
+      "name": "public_group_hint",
+      "value": "Любой может найти эту группу через поиск"
+    },
+    {
+      "name": "no_banned_users",
+      "value": "Нет заблокированных"
+    },
+    {
+      "name": "view_recent_actions",
+      "value": "Последние действия"
+    },
+    {
+      "name": "owner_role",
+      "value": "Владелец"
+    },
+    {
+      "name": "primary_link_label",
+      "value": "Основная ссылка"
+    },
+    {
+      "name": "all_links_label",
+      "value": "Все ссылки"
+    },
+    {
+      "name": "no_invite_links",
+      "value": "Нет пригласительных ссылок"
+    },
+    {
+      "name": "primary_badge",
+      "value": "Основная"
+    },
+    {
+      "name": "revoked_badge",
+      "value": "Отозвана"
+    },
+    {
+      "name": "no_expiration",
+      "value": "Без срока"
+    },
+    {
+      "name": "creating_link",
+      "value": "Создание..."
+    },
+    {
+      "name": "quiz_type_label",
+      "value": "Викторина"
+    },
+    {
+      "name": "one_vote",
+      "value": "1 голос"
+    },
+    {
+      "name": "closed_label",
+      "value": "Завершён"
+    },
+    {
+      "name": "failed_secret_chat",
+      "value": "Не удалось создать секретный чат. Пользователь может быть офлайн."
+    },
+    {
+      "name": "key_not_available",
+      "value": "Ключ ещё не доступен"
+    },
+    {
+      "name": "self_destruct_hint",
+      "value": "Сообщения будут автоматически удалены с обоих устройств по истечении таймера."
+    },
+    {
+      "name": "secret_chat_info_1",
+      "value": "Секретные чаты используют сквозное шифрование. Это означает, что только вы и собеседник можете читать эти сообщения. Никто другой не сможет их расшифровать, включая Telegram."
+    },
+    {
+      "name": "secret_chat_info_2",
+      "value": "Сообщения в секретных чатах нельзя пересылать. Когда вы удаляете сообщение, оно также удаляется у собеседника."
+    },
+    {
+      "name": "secret_chat_info_3",
+      "value": "Секретные чаты привязаны к устройству и не являются частью облака Telegram. Вы можете получить доступ к секретному чату только с устройства, на котором он был создан."
+    },
+    {
+      "name": "timer_off",
+      "value": "Выкл"
+    },
+    {
+      "name": "joined_count",
+      "value": "%d присоединились"
     }
   ]
 }

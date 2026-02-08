@@ -178,10 +178,10 @@ export struct InviteLinksPage {
           Image($r('app.media.ic_back'))
             .width(24).height(24)
             .fillColor($r('app.color.telegram_blue'))
-            .accessibilityText('Back')
+            .accessibilityText($r('app.string.accessibility_back'))
             .onClick(() => this.navPathStack.pop())
 
-          Text('Invite Links')
+          Text($r('app.string.invite_links'))
             .fontSize(17)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
@@ -212,7 +212,7 @@ export struct InviteLinksPage {
             Column() {
               // --- Primary Invite Link ---
               Column() {
-                Text('PRIMARY LINK')
+                Text($r('app.string.primary_link_label'))
                   .fontSize(13)
                   .fontColor($r('app.color.text_secondary'))
                   .textTransform(TextTransform.Uppercase)
@@ -238,7 +238,7 @@ export struct InviteLinksPage {
                   Row() {
                     // Copy button
                     Row() {
-                      Text(this.copiedLink === this.primaryLink ? 'Copied!' : 'Copy Link')
+                      Text(this.copiedLink === this.primaryLink ? $r('app.string.copied') : $r('app.string.copy_link'))
                         .fontSize(15)
                         .fontColor($r('app.color.telegram_blue'))
                         .fontWeight(FontWeight.Medium)
@@ -256,7 +256,7 @@ export struct InviteLinksPage {
 
                     // Share button
                     Row() {
-                      Text('Share')
+                      Text($r('app.string.share'))
                         .fontSize(15)
                         .fontColor($r('app.color.telegram_blue'))
                         .fontWeight(FontWeight.Medium)
@@ -289,7 +289,7 @@ export struct InviteLinksPage {
                       .color($r('app.color.telegram_blue'))
                       .margin({ right: 12 })
                   }
-                  Text(this.isCreating ? 'Creating...' : 'Create New Link')
+                  Text(this.isCreating ? $r('app.string.creating_link') : $r('app.string.create_new_link'))
                     .fontSize(16)
                     .fontColor($r('app.color.telegram_blue'))
                     .fontWeight(FontWeight.Medium)
@@ -310,7 +310,7 @@ export struct InviteLinksPage {
 
               // --- All Invite Links ---
               Column() {
-                Text('ALL LINKS')
+                Text($r('app.string.all_links_label'))
                   .fontSize(13)
                   .fontColor($r('app.color.text_secondary'))
                   .textTransform(TextTransform.Uppercase)
@@ -318,7 +318,7 @@ export struct InviteLinksPage {
 
                 Column() {
                   if (this.inviteLinks.length === 0) {
-                    Text('No invite links yet')
+                    Text($r('app.string.no_invite_links'))
                       .fontSize(15)
                       .fontColor($r('app.color.text_secondary'))
                       .width('100%')
@@ -376,7 +376,7 @@ export struct InviteLinksPage {
                 : { type: TextDecorationType.None })
 
             if (item.isPrimary) {
-              Text('Primary')
+              Text($r('app.string.primary_badge'))
                 .fontSize(12)
                 .fontColor(Color.White)
                 .backgroundColor($r('app.color.telegram_blue'))
@@ -386,7 +386,7 @@ export struct InviteLinksPage {
             }
 
             if (item.isRevoked) {
-              Text('Revoked')
+              Text($r('app.string.revoked_badge'))
                 .fontSize(12)
                 .fontColor(Color.White)
                 .backgroundColor($r('app.color.error_red'))
@@ -416,13 +416,13 @@ export struct InviteLinksPage {
       if (!item.isRevoked) {
         Row({ space: 12 }) {
           // Copy button
-          Text(this.copiedLink === item.link ? 'Copied!' : 'Copy')
+          Text(this.copiedLink === item.link ? $r('app.string.copied') : $r('app.string.copy'))
             .fontSize(14)
             .fontColor($r('app.color.telegram_blue'))
             .onClick(() => { this.copyToClipboard(item.link); })
 
           if (!item.isPrimary) {
-            Text('Revoke')
+            Text($r('app.string.revoke'))
               .fontSize(14)
               .fontColor($r('app.color.error_red'))
               .onClick(() => { this.revokeLink(item.link); })

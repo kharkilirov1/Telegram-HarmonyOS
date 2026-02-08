@@ -1139,6 +1139,130 @@
     {
       "name": "schedule_tomorrow_evening",
       "value": "Tomorrow evening"
+    },
+    {
+      "name": "question_label",
+      "value": "Question"
+    },
+    {
+      "name": "ask_a_question",
+      "value": "Ask a question"
+    },
+    {
+      "name": "options_label",
+      "value": "Options"
+    },
+    {
+      "name": "sending",
+      "value": "Sending..."
+    },
+    {
+      "name": "quiz_correct_hint",
+      "value": "Tap the radio button next to the correct answer."
+    },
+    {
+      "name": "save",
+      "value": "Save"
+    },
+    {
+      "name": "manage_group_subtitle",
+      "value": "Manage group settings and permissions"
+    },
+    {
+      "name": "group_type",
+      "value": "Group Type"
+    },
+    {
+      "name": "public_group",
+      "value": "Public Group"
+    },
+    {
+      "name": "public_group_hint",
+      "value": "Anyone can find this group via search"
+    },
+    {
+      "name": "no_banned_users",
+      "value": "No banned users"
+    },
+    {
+      "name": "view_recent_actions",
+      "value": "View Recent Actions"
+    },
+    {
+      "name": "owner_role",
+      "value": "Owner"
+    },
+    {
+      "name": "primary_link_label",
+      "value": "Primary Link"
+    },
+    {
+      "name": "all_links_label",
+      "value": "All Links"
+    },
+    {
+      "name": "no_invite_links",
+      "value": "No invite links yet"
+    },
+    {
+      "name": "primary_badge",
+      "value": "Primary"
+    },
+    {
+      "name": "revoked_badge",
+      "value": "Revoked"
+    },
+    {
+      "name": "no_expiration",
+      "value": "No expiration"
+    },
+    {
+      "name": "creating_link",
+      "value": "Creating..."
+    },
+    {
+      "name": "quiz_type_label",
+      "value": "Quiz"
+    },
+    {
+      "name": "one_vote",
+      "value": "1 vote"
+    },
+    {
+      "name": "closed_label",
+      "value": "Closed"
+    },
+    {
+      "name": "failed_secret_chat",
+      "value": "Failed to create secret chat. The user may be offline."
+    },
+    {
+      "name": "key_not_available",
+      "value": "Key not yet available"
+    },
+    {
+      "name": "self_destruct_hint",
+      "value": "Messages will be automatically deleted from both devices once the timer expires."
+    },
+    {
+      "name": "secret_chat_info_1",
+      "value": "Secret chats use end-to-end encryption. This means only you and the other person can read these messages. Nobody else can decrypt them, including Telegram."
+    },
+    {
+      "name": "secret_chat_info_2",
+      "value": "Messages in secret chats cannot be forwarded. When you delete a message, it is also deleted on the other side."
+    },
+    {
+      "name": "secret_chat_info_3",
+      "value": "Secret chats are device-specific and are not part of the Telegram cloud. This means you can only access a secret chat from its device of origin."
+    },
+    {
+      "name": "timer_off",
+      "value": "Off"
+    },
+    {
+      "name": "joined_count",
+      "value": "%d joined"
     }
   ]
 }

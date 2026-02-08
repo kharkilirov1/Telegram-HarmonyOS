@@ -226,10 +226,10 @@ export struct GroupAdminPage {
           Image($r('app.media.ic_back'))
             .width(24).height(24)
             .fillColor($r('app.color.telegram_blue'))
-            .accessibilityText('Back')
+            .accessibilityText($r('app.string.accessibility_back'))
             .onClick(() => this.navPathStack.pop())
 
-          Text('Admin Settings')
+          Text($r('app.string.admin_settings'))
             .fontSize(17)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
@@ -241,7 +241,7 @@ export struct GroupAdminPage {
               .width(20).height(20)
               .color($r('app.color.telegram_blue'))
           } else {
-            Text('Save')
+            Text($r('app.string.save'))
               .fontSize(16)
               .fontColor($r('app.color.telegram_blue'))
               .onClick(() => { this.savePermissions(); })
@@ -265,7 +265,7 @@ export struct GroupAdminPage {
                 .fontSize(20)
                 .fontWeight(FontWeight.Bold)
                 .fontColor($r('app.color.text_primary'))
-              Text('Manage group settings and permissions')
+              Text($r('app.string.manage_group_subtitle'))
                 .fontSize(14)
                 .fontColor($r('app.color.text_secondary'))
                 .margin({ top: 4 })
@@ -276,7 +276,7 @@ export struct GroupAdminPage {
 
             // --- Group Type ---
             Column() {
-              Text('GROUP TYPE')
+              Text($r('app.string.group_type'))
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
                 .textTransform(TextTransform.Uppercase)
@@ -284,10 +284,10 @@ export struct GroupAdminPage {
 
               Row() {
                 Column() {
-                  Text('Public Group')
+                  Text($r('app.string.public_group'))
                     .fontSize(16)
                     .fontColor($r('app.color.text_primary'))
-                  Text('Anyone can find this group via search')
+                  Text($r('app.string.public_group_hint'))
                     .fontSize(13)
                     .fontColor($r('app.color.text_secondary'))
                     .margin({ top: 2 })
@@ -315,44 +315,44 @@ export struct GroupAdminPage {
 
             // --- Permissions ---
             Column() {
-              Text('PERMISSIONS')
+              Text($r('app.string.permissions_label'))
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
                 .textTransform(TextTransform.Uppercase)
                 .margin({ bottom: 8 })
 
               Column() {
-                this.permissionRow('Send Messages', this.canSendMessages, (isOn: boolean) => {
+                this.permissionRow($r('app.string.send_messages'), this.canSendMessages, (isOn: boolean) => {
                   this.canSendMessages = isOn;
                 })
                 Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
 
-                this.permissionRow('Send Media', this.canSendMedia, (isOn: boolean) => {
+                this.permissionRow($r('app.string.send_media'), this.canSendMedia, (isOn: boolean) => {
                   this.canSendMedia = isOn;
                 })
                 Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
 
-                this.permissionRow('Send Polls', this.canSendPolls, (isOn: boolean) => {
+                this.permissionRow($r('app.string.send_polls'), this.canSendPolls, (isOn: boolean) => {
                   this.canSendPolls = isOn;
                 })
                 Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
 
-                this.permissionRow('Send Stickers & GIFs', this.canSendStickers, (isOn: boolean) => {
+                this.permissionRow($r('app.string.send_stickers_gifs'), this.canSendStickers, (isOn: boolean) => {
                   this.canSendStickers = isOn;
                 })
                 Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
 
-                this.permissionRow('Add Members', this.canAddMembers, (isOn: boolean) => {
+                this.permissionRow($r('app.string.add_members'), this.canAddMembers, (isOn: boolean) => {
                   this.canAddMembers = isOn;
                 })
                 Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
 
-                this.permissionRow('Pin Messages', this.canPinMessages, (isOn: boolean) => {
+                this.permissionRow($r('app.string.pin_messages'), this.canPinMessages, (isOn: boolean) => {
                   this.canPinMessages = isOn;
                 })
                 Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
 
-                this.permissionRow('Change Group Info', this.canChangeInfo, (isOn: boolean) => {
+                this.permissionRow($r('app.string.change_group_info'), this.canChangeInfo, (isOn: boolean) => {
                   this.canChangeInfo = isOn;
                 })
               }
@@ -370,7 +370,7 @@ export struct GroupAdminPage {
 
             // --- Administrators ---
             Column() {
-              Text('ADMINISTRATORS')
+              Text($r('app.string.administrators_label'))
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
                 .textTransform(TextTransform.Uppercase)
@@ -398,7 +398,7 @@ export struct GroupAdminPage {
 
             // --- Banned Users ---
             Column() {
-              Text('BANNED USERS')
+              Text($r('app.string.banned_users_label'))
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
                 .textTransform(TextTransform.Uppercase)
@@ -406,7 +406,7 @@ export struct GroupAdminPage {
 
               Column() {
                 if (this.bannedUsers.length === 0) {
-                  Text('No banned users')
+                  Text($r('app.string.no_banned_users'))
                     .fontSize(15)
                     .fontColor($r('app.color.text_secondary'))
                     .width('100%')
@@ -435,7 +435,7 @@ export struct GroupAdminPage {
 
             // --- Recent Actions ---
             Column() {
-              Text('RECENT ACTIONS')
+              Text($r('app.string.recent_actions'))
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
                 .textTransform(TextTransform.Uppercase)
@@ -447,7 +447,7 @@ export struct GroupAdminPage {
                     .width(20).height(20)
                     .fillColor($r('app.color.text_secondary'))
                     .margin({ right: 12 })
-                  Text('View Recent Actions')
+                  Text($r('app.string.view_recent_actions'))
                     .fontSize(16)
                     .fontColor($r('app.color.text_primary'))
                     .layoutWeight(1)
@@ -485,7 +485,7 @@ export struct GroupAdminPage {
   }
 
   @Builder
-  permissionRow(label: string, isOn: boolean, onChange: (isOn: boolean) => void) {
+  permissionRow(label: string | Resource, isOn: boolean, onChange: (isOn: boolean) => void) {
     Row() {
       Text(label)
         .fontSize(16)

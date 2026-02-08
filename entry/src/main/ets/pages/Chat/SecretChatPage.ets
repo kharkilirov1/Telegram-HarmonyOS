@@ -98,7 +98,7 @@ export struct SecretChatPage {
         await this.fetchSecretChatInfo();
       }
     } catch (e) {
-      this.errorMessage = 'Failed to create secret chat. The user may be offline.';
+      this.errorMessage = getContext(this).resourceManager.getStringSync($r('app.string.failed_secret_chat'));
       this.chatState = 'closed';
     }
   }
@@ -210,7 +210,7 @@ export struct SecretChatPage {
             .onClick(() => this.navPathStack.pop())
 
           Column() {
-            Text('Secret Chat')
+            Text($r('app.string.secret_chat'))
               .fontSize(17)
               .fontWeight(FontWeight.Bold)
               .fontColor($r('app.color.text_primary'))
@@ -283,7 +283,7 @@ export struct SecretChatPage {
           .width(48).height(48)
           .color($r('app.color.telegram_blue'))
 
-        Text('Creating Secret Chat...')
+        Text($r('app.string.secret_chat_creating'))
           .fontSize(16)
           .fontColor($r('app.color.text_secondary'))
           .margin({ top: 12 })
@@ -298,7 +298,7 @@ export struct SecretChatPage {
           .width(48).height(48)
           .fillColor($r('app.color.secret_green'))
 
-        Text('Secret Chat Active')
+        Text($r('app.string.secret_chat_active'))
           .fontSize(16)
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.secret_green'))
@@ -309,7 +309,7 @@ export struct SecretChatPage {
           .width(48).height(48)
           .fillColor($r('app.color.error_red'))
 
-        Text('Secret Chat Closed')
+        Text($r('app.string.secret_chat_closed'))
           .fontSize(16)
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.error_red'))
@@ -335,7 +335,7 @@ export struct SecretChatPage {
   buildEncryptionKeySection() {
     Column() {
       // Section header
-      Text('Encryption Key')
+      Text($r('app.string.encryption_key'))
         .fontSize(14)
         .fontWeight(FontWeight.Medium)
         .fontColor($r('app.color.telegram_blue'))
@@ -367,7 +367,7 @@ export struct SecretChatPage {
         .padding({ left: 16, right: 16, bottom: 14 })
         .alignItems(HorizontalAlign.Center)
       } else {
-        Text('Key not yet available')
+        Text($r('app.string.key_not_available'))
           .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .padding({ left: 16, bottom: 14 })
@@ -401,7 +401,7 @@ export struct SecretChatPage {
           .fillColor($r('app.color.text_secondary'))
           .margin({ right: 12 })
 
-        Text('Self-Destruct Timer')
+        Text($r('app.string.self_destruct_timer'))
           .fontSize(16)
           .fontColor($r('app.color.text_primary'))
           .layoutWeight(1)
@@ -455,7 +455,7 @@ export struct SecretChatPage {
 
       Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 48 })
 
-      Text('Messages will be automatically deleted from both devices once the timer expires.')
+      Text($r('app.string.self_destruct_hint'))
         .fontSize(13)
         .fontColor($r('app.color.text_secondary'))
         .padding({ left: 16, right: 16, top: 10, bottom: 14 })
@@ -479,7 +479,7 @@ export struct SecretChatPage {
           .fillColor($r('app.color.secret_green'))
           .margin({ right: 12 })
 
-        Text('End-to-End Encryption')
+        Text($r('app.string.end_to_end_encryption'))
           .fontSize(16)
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.text_primary'))
@@ -488,21 +488,17 @@ export struct SecretChatPage {
       .padding({ left: 16, right: 16, top: 14 })
 
       Column({ space: 12 }) {
-        Text('Secret chats use end-to-end encryption. This means only you and ' +
-          `${this.userName} can read these messages. Nobody else can decrypt them, ` +
-          'including Telegram.')
+        Text($r('app.string.secret_chat_info_1'))
           .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .lineHeight(20)
 
-        Text('Messages in secret chats cannot be forwarded. When you delete a ' +
-          'message, it is also deleted on the other side.')
+        Text($r('app.string.secret_chat_info_2'))
           .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .lineHeight(20)
 
-        Text('Secret chats are device-specific and are not part of the Telegram cloud. ' +
-          'This means you can only access a secret chat from its device of origin.')
+        Text($r('app.string.secret_chat_info_3'))
           .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .lineHeight(20)

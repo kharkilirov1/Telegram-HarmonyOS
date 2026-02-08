@@ -1139,6 +1139,130 @@
     {
       "name": "schedule_tomorrow_evening",
       "value": "明天晚上"
+    },
+    {
+      "name": "question_label",
+      "value": "问题"
+    },
+    {
+      "name": "ask_a_question",
+      "value": "提一个问题"
+    },
+    {
+      "name": "options_label",
+      "value": "选项"
+    },
+    {
+      "name": "sending",
+      "value": "发送中..."
+    },
+    {
+      "name": "quiz_correct_hint",
+      "value": "点击正确答案旁边的单选按钮。"
+    },
+    {
+      "name": "save",
+      "value": "保存"
+    },
+    {
+      "name": "manage_group_subtitle",
+      "value": "管理群组设置和权限"
+    },
+    {
+      "name": "group_type",
+      "value": "群组类型"
+    },
+    {
+      "name": "public_group",
+      "value": "公开群组"
+    },
+    {
+      "name": "public_group_hint",
+      "value": "任何人都可以通过搜索找到此群组"
+    },
+    {
+      "name": "no_banned_users",
+      "value": "暂无被封禁用户"
+    },
+    {
+      "name": "view_recent_actions",
+      "value": "查看最近操作"
+    },
+    {
+      "name": "owner_role",
+      "value": "群主"
+    },
+    {
+      "name": "primary_link_label",
+      "value": "主链接"
+    },
+    {
+      "name": "all_links_label",
+      "value": "所有链接"
+    },
+    {
+      "name": "no_invite_links",
+      "value": "暂无邀请链接"
+    },
+    {
+      "name": "primary_badge",
+      "value": "主要"
+    },
+    {
+      "name": "revoked_badge",
+      "value": "已撤销"
+    },
+    {
+      "name": "no_expiration",
+      "value": "永久有效"
+    },
+    {
+      "name": "creating_link",
+      "value": "创建中..."
+    },
+    {
+      "name": "quiz_type_label",
+      "value": "测验"
+    },
+    {
+      "name": "one_vote",
+      "value": "1票"
+    },
+    {
+      "name": "closed_label",
+      "value": "已结束"
+    },
+    {
+      "name": "failed_secret_chat",
+      "value": "无法创建加密对话。对方可能不在线。"
+    },
+    {
+      "name": "key_not_available",
+      "value": "密钥尚不可用"
+    },
+    {
+      "name": "self_destruct_hint",
+      "value": "消息将在定时器到期后从双方设备上自动删除。"
+    },
+    {
+      "name": "secret_chat_info_1",
+      "value": "加密对话使用端到端加密。这意味着只有您和对方可以阅读这些消息。包括Telegram在内的任何人都无法解密它们。"
+    },
+    {
+      "name": "secret_chat_info_2",
+      "value": "加密对话中的消息不能转发。当您删除一条消息时，对方的消息也会被删除。"
+    },
+    {
+      "name": "secret_chat_info_3",
+      "value": "加密对话绑定于特定设备，不属于Telegram云端。您只能在创建对话的设备上访问加密对话。"
+    },
+    {
+      "name": "timer_off",
+      "value": "关闭"
+    },
+    {
+      "name": "joined_count",
+      "value": "%d人加入"
     }
   ]
 }

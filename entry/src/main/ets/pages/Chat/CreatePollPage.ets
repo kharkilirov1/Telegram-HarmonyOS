@@ -68,7 +68,7 @@ export struct CreatePollPage {
         .fillColor($r('app.color.telegram_blue'))
         .onClick(() => this.navPathStack.pop())
 
-      Text('New Poll')
+      Text($r('app.string.new_poll'))
         .fontSize(17)
         .fontWeight(FontWeight.Bold)
         .fontColor($r('app.color.text_primary'))
@@ -89,7 +89,7 @@ export struct CreatePollPage {
   @Builder
   buildQuestionSection() {
     Column() {
-      Text('QUESTION')
+      Text($r('app.string.question_label'))
         .fontSize(13)
         .fontColor($r('app.color.text_secondary'))
         .textTransform(TextTransform.Uppercase)
@@ -97,7 +97,7 @@ export struct CreatePollPage {
         .width('100%')
 
       Column() {
-        TextInput({ placeholder: 'Ask a question', text: this.question })
+        TextInput({ placeholder: $r('app.string.ask_a_question'), text: this.question })
           .fontSize(16)
           .fontColor($r('app.color.text_primary'))
           .backgroundColor(Color.Transparent)
@@ -120,7 +120,7 @@ export struct CreatePollPage {
   @Builder
   buildOptionsSection() {
     Column() {
-      Text('OPTIONS')
+      Text($r('app.string.options_label'))
         .fontSize(13)
         .fontColor($r('app.color.text_secondary'))
         .textTransform(TextTransform.Uppercase)
@@ -189,7 +189,7 @@ export struct CreatePollPage {
               .fontColor($r('app.color.telegram_blue'))
               .margin({ right: 12 })
 
-            Text('Add Option')
+            Text($r('app.string.add_option'))
               .fontSize(16)
               .fontColor($r('app.color.telegram_blue'))
           }
@@ -208,7 +208,7 @@ export struct CreatePollPage {
       .margin({ left: 16, right: 16 })
 
       if (this.isQuiz) {
-        Text('Tap the radio button next to the correct answer.')
+        Text($r('app.string.quiz_correct_hint'))
           .fontSize(13)
           .fontColor($r('app.color.text_secondary'))
           .margin({ left: 16, right: 16, top: 8 })
@@ -221,7 +221,7 @@ export struct CreatePollPage {
   @Builder
   buildSettingsSection() {
     Column() {
-      Text('SETTINGS')
+      Text($r('app.string.settings'))
         .fontSize(13)
         .fontColor($r('app.color.text_secondary'))
         .textTransform(TextTransform.Uppercase)
@@ -231,7 +231,7 @@ export struct CreatePollPage {
       Column() {
         // Anonymous toggle
         Row() {
-          Text('Anonymous Voting')
+          Text($r('app.string.anonymous_voting'))
             .fontSize(16)
             .fontColor($r('app.color.text_primary'))
             .layoutWeight(1)
@@ -251,11 +251,11 @@ export struct CreatePollPage {
         // Quiz mode toggle
         Row() {
           Column() {
-            Text('Quiz Mode')
+            Text($r('app.string.quiz_mode'))
               .fontSize(16)
               .fontColor($r('app.color.text_primary'))
 
-            Text('One correct answer, scores are tracked')
+            Text($r('app.string.quiz_hint'))
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ top: 2 })
@@ -289,7 +289,7 @@ export struct CreatePollPage {
   @Builder
   buildCreateButton() {
     Column() {
-      Button(this.isSending ? 'Sending...' : 'Create Poll')
+      Button(this.isSending ? $r('app.string.sending') : $r('app.string.create_poll'))
         .type(ButtonType.Capsule)
         .width('100%')
         .height(48)

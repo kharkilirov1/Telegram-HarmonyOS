@@ -18,23 +18,23 @@ export struct PollBubble {
     return this.hasVoted || this.message.pollIsClosed;
   }
 
-  private get pollTypeLabel(): string {
+  private get pollTypeLabel(): ResourceStr {
     if (this.message.pollType === 'quiz') {
-      return 'Quiz';
+      return $r('app.string.quiz_type_label');
     }
-    return this.message.pollIsAnonymous ? 'Anonymous poll' : 'Poll';
+    return this.message.pollIsAnonymous ? $r('app.string.anonymous_poll') : $r('app.string.poll');
   }
 
-  private get statusLabel(): string {
+  private get statusLabel(): ResourceStr {
     if (this.message.pollIsClosed) {
-      return 'Final results';
+      return $r('app.string.final_results');
     }
     const count = this.message.pollTotalVoterCount;
     if (count === 0) {
-      return 'No votes yet';
+      return $r('app.string.no_votes_yet');
     }
     if (count === 1) {
-      return '1 vote';
+      return $r('app.string.one_vote');
     }
     return `${count} votes`;
   }
@@ -83,7 +83,7 @@ export struct PollBubble {
         Blank().layoutWeight(1)
 
         if (this.message.pollIsClosed) {
-          Text('Closed')
+          Text($r('app.string.closed_label'))
             .fontSize(13)
             .fontColor($r('app.color.text_secondary'))
             .fontWeight(FontWeight.Medium)

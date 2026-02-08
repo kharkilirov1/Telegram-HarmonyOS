@@ -522,24 +522,24 @@ export struct ChatInputBar {
   @Builder
   schedulePickerPanel() {
     Column() {
-      Text('Schedule Message')
+      Text($r('app.string.schedule_message'))
         .fontSize(17)
         .fontWeight(FontWeight.Bold)
         .fontColor($r('app.color.text_primary'))
         .margin({ top: 16, bottom: 12 })
 
       // Quick schedule options (like Telegram)
-      this.scheduleOption('In 1 hour', 1)
+      this.scheduleOption($r('app.string.schedule_in_1h'), 1)
       Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
-      this.scheduleOption('In 2 hours', 2)
+      this.scheduleOption($r('app.string.schedule_in_2h'), 2)
       Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
-      this.scheduleOption('In 4 hours', 4)
+      this.scheduleOption($r('app.string.schedule_in_4h'), 4)
       Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
-      this.scheduleOption('Tomorrow morning', 18) // ~18h from now
+      this.scheduleOption($r('app.string.schedule_tomorrow_morning'), 18) // ~18h from now
       Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
-      this.scheduleOption('Tomorrow evening', 30) // ~30h from now
+      this.scheduleOption($r('app.string.schedule_tomorrow_evening'), 30) // ~30h from now
 
-      Button('Cancel')
+      Button($r('app.string.cancel'))
         .width('90%')
         .height(44)
         .fontSize(17)
@@ -555,7 +555,7 @@ export struct ChatInputBar {
   }
 
   @Builder
-  scheduleOption(label: string, hoursFromNow: number) {
+  scheduleOption(label: ResourceStr, hoursFromNow: number) {
     Row() {
       Image($r('app.media.ic_clock'))
         .width(20).height(20)
