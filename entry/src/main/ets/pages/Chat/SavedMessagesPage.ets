@@ -71,14 +71,14 @@ export struct SavedMessagesPage {
   };
 
   aboutToAppear(): void {
-    NotificationCenter.getInstance().observe(EventId.NEW_MESSAGE, this.newMessageHandler);
-    NotificationCenter.getInstance().observe(EventId.MESSAGE_DELETED, this.messageDeletedHandler);
+    NotificationCenter.getInstance().addObserver(EventId.NEW_MESSAGE, this.newMessageHandler);
+    NotificationCenter.getInstance().addObserver(EventId.MESSAGE_DELETED, this.messageDeletedHandler);
     this.initSavedChat();
   }
 
   aboutToDisappear(): void {
-    NotificationCenter.getInstance().remove(EventId.NEW_MESSAGE, this.newMessageHandler);
-    NotificationCenter.getInstance().remove(EventId.MESSAGE_DELETED, this.messageDeletedHandler);
+    NotificationCenter.getInstance().removeObserver(EventId.NEW_MESSAGE, this.newMessageHandler);
+    NotificationCenter.getInstance().removeObserver(EventId.MESSAGE_DELETED, this.messageDeletedHandler);
   }
 
   private async initSavedChat(): Promise<void> {
