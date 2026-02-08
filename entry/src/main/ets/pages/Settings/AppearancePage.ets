@@ -107,6 +107,36 @@ export struct AppearancePage {
               .margin({ left: 16, right: 16 })
             }
 
+            Blank().height(16)
+
+            // --- Chat Background (like Telegram iOS/Android) ---
+            Column() {
+              Row() {
+                Image($r('app.media.ic_photo'))
+                  .width(20).height(20)
+                  .fillColor($r('app.color.text_secondary'))
+                  .margin({ right: 12 })
+                Text('Chat Background')
+                  .fontSize(16)
+                  .fontColor($r('app.color.text_primary'))
+                  .layoutWeight(1)
+                Image($r('app.media.ic_forward'))
+                  .width(14).height(14)
+                  .fillColor($r('app.color.text_secondary'))
+              }
+              .width('100%').height(48)
+              .padding({ left: 16, right: 16 })
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'Wallpaper' });
+              })
+            }
+            .width('100%')
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
+            .margin({ left: 16, right: 16 })
+
             Blank().height(24)
 
             // --- Theme section ---

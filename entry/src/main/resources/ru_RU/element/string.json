@@ -671,6 +671,66 @@
     {
       "name": "pinned_message",
       "value": "Закреплённое сообщение"
+    },
+    {
+      "name": "block_user",
+      "value": "Заблокировать"
+    },
+    {
+      "name": "unblock_user",
+      "value": "Разблокировать"
+    },
+    {
+      "name": "groups_in_common",
+      "value": "%d общих групп"
+    },
+    {
+      "name": "leave_group",
+      "value": "Покинуть группу"
+    },
+    {
+      "name": "leave_channel",
+      "value": "Покинуть канал"
+    },
+    {
+      "name": "report",
+      "value": "Пожаловаться"
+    },
+    {
+      "name": "call_connecting",
+      "value": "Соединение..."
+    },
+    {
+      "name": "call_ringing",
+      "value": "Звонок..."
+    },
+    {
+      "name": "call_ended",
+      "value": "Звонок завершён"
+    },
+    {
+      "name": "incoming_call",
+      "value": "Входящий звонок"
+    },
+    {
+      "name": "accept",
+      "value": "Принять"
+    },
+    {
+      "name": "decline",
+      "value": "Отклонить"
+    },
+    {
+      "name": "archive",
+      "value": "Архив"
+    },
+    {
+      "name": "chat_background",
+      "value": "Фон чата"
+    },
+    {
+      "name": "selected_count",
+      "value": "%d выбрано"
     }
   ]
 }

@@ -1,5 +1,6 @@
 import { TDLibClient } from '../services/TDLibClient';
 import { NotificationCenter, EventId } from '../controllers/NotificationCenter';
+import { MessagesController } from '../controllers/MessagesController';
 import { PhoneNumberPage } from './Login/PhoneNumberPage';
 import { ChatListPage } from './Chat/ChatListPage';
 import { ContactsPage } from './Contacts/ContactsPage';
@@ -11,6 +12,7 @@ struct Index {
   @Local isAuthorized: boolean = false;
   @Provider('navPathStack') navPathStack: NavPathStack = new NavPathStack();
   @Local currentTabIndex: number = 2;
+  @Local totalUnreadCount: number = 0;
 
   // Auth state handler — driven by NotificationCenter, not raw TDLib
   private authHandler = (args?: Record<string, Object>): void => {
@@ -39,15 +41,32 @@ struct Index {
     }
   };
 
+  private unreadHandler = (): void => {
+    this.updateUnreadCount();
+  };
+
   aboutToAppear(): void {
     NotificationCenter.getInstance()
       .addObserver(EventId.AUTH_STATE_CHANGED, this.authHandler);
+    NotificationCenter.getInstance()
+      .addObserver(EventId.DIALOGS_UPDATED, this.unreadHandler);
   }
 
   aboutToDisappear(): void {
     NotificationCenter.getInstance()
       .removeObserver(EventId.AUTH_STATE_CHANGED, this.authHandler);
+    NotificationCenter.getInstance()
+      .removeObserver(EventId.DIALOGS_UPDATED, this.unreadHandler);
     TDLibClient.getInstance().destroy();
+  }
+
+  private updateUnreadCount(): void {
+    const chats = MessagesController.getInstance().getSortedDialogs();
+    let total = 0;
+    for (const chat of chats) {
+      total += chat.unreadCount;
+    }
+    this.totalUnreadCount = total;
   }
 
   build() {
@@ -102,12 +121,28 @@ struct Index {
   @Builder
   tabBarItem(index: number, icon: Resource, title: Resource) {
     Column() {
-      Image(icon)
-        .width(24)
-        .height(24)
-        .fillColor(this.currentTabIndex === index
-          ? $r('app.color.telegram_blue')
-          : $r('app.color.text_secondary'))
+      // Badge for Chats tab (index 2) — like iOS/Android Telegram
+      Stack({ alignContent: Alignment.TopEnd }) {
+        Image(icon)
+          .width(24)
+          .height(24)
+          .fillColor(this.currentTabIndex === index
+            ? $r('app.color.telegram_blue')
+            : $r('app.color.text_secondary'))
+
+        if (index === 2 && this.totalUnreadCount > 0) {
+          Text(this.totalUnreadCount > 99 ? '99+' : this.totalUnreadCount.toString())
+            .fontSize(10)
+            .fontColor(Color.White)
+            .backgroundColor($r('app.color.unread_badge'))
+            .borderRadius(8)
+            .padding({ left: 4, right: 4 })
+            .constraintSize({ minWidth: 16 })
+            .textAlign(TextAlign.Center)
+            .translate({ x: 8, y: -4 })
+        }
+      }
+
       Text(title)
         .fontSize(10)
         .fontColor(this.currentTabIndex === index

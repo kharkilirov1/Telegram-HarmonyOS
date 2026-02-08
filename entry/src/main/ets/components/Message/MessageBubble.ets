@@ -17,10 +17,25 @@ export struct MessageBubble {
   @Param onEdit: (message: Message) => void = () => {};
   @Param onMediaTap: (url: string) => void = () => {};
   @Param onReactionTap: (message: Message, emoji: string) => void = () => {};
+  @Param isSelectionMode: boolean = false;
+  @Param isSelected: boolean = false;
+  @Param onSelect: (message: Message) => void = () => {};
+
+  @Local swipeOffsetX: number = 0;
 
   build() {
     Column() {
       Row() {
+        // Selection checkbox (multi-select mode like iOS/Android)
+        if (this.isSelectionMode) {
+          Checkbox()
+            .select(this.isSelected)
+            .selectedColor($r('app.color.telegram_blue'))
+            .width(22).height(22)
+            .margin({ right: 8 })
+            .onChange((value: boolean) => { this.onSelect(this.message); })
+        }
+
         // Avatar space for incoming messages
         if (!this.message.isOutgoing) {
           if (this.isLastInGroup && this.showSenderName) {
@@ -120,15 +135,50 @@ export struct MessageBubble {
         .backgroundColor(this.getBubbleColor())
         .constraintSize({ maxWidth: '75%' })
         .gesture(
-          LongPressGesture()
-            .onAction(() => {
-              this.showMessageActions();
-            })
+          GestureGroup(GestureMode.Exclusive,
+            LongPressGesture()
+              .onAction(() => {
+                if (this.isSelectionMode) {
+                  this.onSelect(this.message);
+                } else {
+                  this.showMessageActions();
+                }
+              }),
+            // Swipe-to-reply: horizontal pan gesture (like Telegram iOS/Android)
+            PanGesture({ direction: PanDirection.Left, distance: 20 })
+              .onActionUpdate((event: GestureEvent) => {
+                const offsetX = event.offsetX;
+                if (offsetX < 0) {
+                  this.swipeOffsetX = Math.max(offsetX, -80);
+                }
+              })
+              .onActionEnd(() => {
+                if (this.swipeOffsetX < -50) {
+                  this.onReply(this.message);
+                }
+                this.swipeOffsetX = 0;
+              })
+          )
         )
+        .translate({ x: this.swipeOffsetX })
       }
       .width('100%')
       .justifyContent(this.message.isOutgoing ? FlexAlign.End : FlexAlign.Start)
       .padding({ left: 8, right: 8 })
+
+      // Swipe reply indicator arrow
+      if (this.swipeOffsetX < -20) {
+        Row() {
+          Blank()
+          Image($r('app.media.ic_reply'))
+            .width(20).height(20)
+            .fillColor($r('app.color.telegram_blue'))
+            .opacity(Math.min(1, Math.abs(this.swipeOffsetX) / 50))
+        }
+        .width('100%')
+        .padding({ right: 16 })
+        .position({ y: 0 })
+      }
 
       // Reaction bar below bubble (like Telegram iOS/Android)
       if (this.message.reactions.length > 0) {

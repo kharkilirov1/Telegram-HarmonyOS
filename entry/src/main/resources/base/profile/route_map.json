@@ -89,6 +89,26 @@
       "name": "NotificationsSettings",
       "pageSourceFile": "src/main/ets/pages/Settings/NotificationsSettingsPage.ets",
       "buildFunction": "NotificationsSettingsBuilder"
+    },
+    {
+      "name": "UserInfo",
+      "pageSourceFile": "src/main/ets/pages/Chat/UserInfoPage.ets",
+      "buildFunction": "UserInfoBuilder"
+    },
+    {
+      "name": "GroupInfo",
+      "pageSourceFile": "src/main/ets/pages/Chat/GroupInfoPage.ets",
+      "buildFunction": "GroupInfoBuilder"
+    },
+    {
+      "name": "CallUI",
+      "pageSourceFile": "src/main/ets/pages/Calls/CallUIPage.ets",
+      "buildFunction": "CallUIBuilder"
+    },
+    {
+      "name": "Wallpaper",
+      "pageSourceFile": "src/main/ets/pages/Settings/WallpaperPage.ets",
+      "buildFunction": "WallpaperBuilder"
     }
   ]
 }

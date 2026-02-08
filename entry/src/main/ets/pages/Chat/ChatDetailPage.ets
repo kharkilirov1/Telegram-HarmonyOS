@@ -50,6 +50,9 @@ export struct ChatDetailPage {
   @Local chatInitial: string = '';
   @Local pinnedMessage: Message | null = null;
   @Local showPinnedBar: boolean = true;
+  @Local isSelectionMode: boolean = false;
+  @Local selectedMessageIds: number[] = [];
+  @Local isChannelChat: boolean = false;
 
   private listScroller: Scroller = new Scroller();
   private messageDataSource: BasicDataSource<ChatDetailListItem> = new BasicDataSource<ChatDetailListItem>();
@@ -100,69 +103,127 @@ export struct ChatDetailPage {
   build() {
     NavDestination() {
       Column() {
-        // --- Top bar ---
-        Row() {
-          Image($r('app.media.ic_back'))
-            .width(24)
-            .height(24)
-            .fillColor($r('app.color.telegram_blue'))
-            .onClick(() => this.navPathStack.pop())
+        // --- Top bar (selection mode or normal) ---
+        if (this.isSelectionMode) {
+          Row() {
+            Text($r('app.string.cancel'))
+              .fontSize(16)
+              .fontColor($r('app.color.telegram_blue'))
+              .onClick(() => {
+                this.isSelectionMode = false;
+                this.selectedMessageIds = [];
+              })
 
-          // Chat avatar (like both iOS and Android Telegram)
-          if (this.chatPhoto) {
-            Image(this.chatPhoto)
-              .alt($r('app.media.app_icon'))
-              .autoResize(true)
-              .onError(() => {})
-              .width(36)
-              .height(36)
-              .borderRadius(18)
-              .margin({ left: 8 })
-          } else {
-            Text(this.chatInitial)
-              .fontSize(15)
-              .fontWeight(FontWeight.Medium)
-              .fontColor(Color.White)
-              .width(36)
-              .height(36)
-              .borderRadius(18)
-              .backgroundColor($r('app.color.telegram_blue'))
-              .textAlign(TextAlign.Center)
-              .margin({ left: 8 })
-          }
+            Blank()
 
-          Column() {
-            Text(this.chatTitle)
+            Text(`${this.selectedMessageIds.length} selected`)
               .fontSize(17)
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.text_primary'))
-              .maxLines(1)
 
-            if (this.isTyping) {
-              TypingIndicator({ typingText: $r('app.string.typing') })
-            } else {
-              Text(this.lastSeenText)
-                .fontSize(13)
-                .fontColor(this.lastSeenText === 'online'
-                  ? $r('app.color.online_indicator')
-                  : $r('app.color.text_secondary'))
-            }
+            Blank()
+
+            // Selection actions: Forward, Delete
+            Image($r('app.media.ic_forward'))
+              .width(22).height(22)
+              .fillColor($r('app.color.telegram_blue'))
+              .margin({ right: 16 })
+              .onClick(() => {
+                if (this.selectedMessageIds.length > 0) {
+                  this.navPathStack.pushPath({
+                    name: 'ForwardPicker',
+                    param: { messageId: this.selectedMessageIds[0], chatId: this.chatId } as Record<string, number>
+                  });
+                  this.isSelectionMode = false;
+                  this.selectedMessageIds = [];
+                }
+              })
+
+            Image($r('app.media.ic_delete'))
+              .width(22).height(22)
+              .fillColor($r('app.color.error_red'))
+              .onClick(() => {
+                for (const msgId of this.selectedMessageIds) {
+                  MessagesController.getInstance().deleteMessage(this.chatId, msgId);
+                }
+                this.messages = this.messages.filter(m => !this.selectedMessageIds.includes(m.id));
+                this.isSelectionMode = false;
+                this.selectedMessageIds = [];
+                this.rebuildFlatList();
+              })
           }
-          .margin({ left: 10 })
-          .alignItems(HorizontalAlign.Start)
-          .layoutWeight(1)
+        } else {
+          Row() {
+            Image($r('app.media.ic_back'))
+              .width(24)
+              .height(24)
+              .fillColor($r('app.color.telegram_blue'))
+              .onClick(() => this.navPathStack.pop())
 
-          // Call and more buttons
-          Image($r('app.media.ic_phone_call'))
-            .width(22)
-            .height(22)
-            .fillColor($r('app.color.telegram_blue'))
-            .margin({ right: 16 })
+            // Chat avatar — clickable to open info (like Telegram iOS/Android)
+            if (this.chatPhoto) {
+              Image(this.chatPhoto)
+                .alt($r('app.media.app_icon'))
+                .autoResize(true)
+                .onError(() => {})
+                .width(36)
+                .height(36)
+                .borderRadius(18)
+                .margin({ left: 8 })
+            } else {
+              Text(this.chatInitial)
+                .fontSize(15)
+                .fontWeight(FontWeight.Medium)
+                .fontColor(Color.White)
+                .width(36)
+                .height(36)
+                .borderRadius(18)
+                .backgroundColor($r('app.color.telegram_blue'))
+                .textAlign(TextAlign.Center)
+                .margin({ left: 8 })
+            }
 
-          Image($r('app.media.ic_more'))
-            .width(22)
-            .height(22)
-            .fillColor($r('app.color.telegram_blue'))
+            Column() {
+              Text(this.chatTitle)
+                .fontSize(17)
+                .fontWeight(FontWeight.Medium)
+                .fontColor($r('app.color.text_primary'))
+                .maxLines(1)
+
+              if (this.isTyping) {
+                TypingIndicator({ typingText: $r('app.string.typing') })
+              } else {
+                Text(this.lastSeenText)
+                  .fontSize(13)
+                  .fontColor(this.lastSeenText === 'online'
+                    ? $r('app.color.online_indicator')
+                    : $r('app.color.text_secondary'))
+              }
+            }
+            .margin({ left: 10 })
+            .alignItems(HorizontalAlign.Start)
+            .layoutWeight(1)
+            .onClick(() => { this.openChatInfo(); })
+
+            // Call and more buttons
+            Image($r('app.media.ic_phone_call'))
+              .width(22)
+              .height(22)
+              .fillColor($r('app.color.telegram_blue'))
+              .margin({ right: 16 })
+              .onClick(() => {
+                this.navPathStack.pushPath({
+                  name: 'CallUI',
+                  param: { userId: this.chatId, userName: this.chatTitle, isVideo: false, isIncoming: false }
+                    as Record<string, Object>
+                });
+              })
+
+            Image($r('app.media.ic_more'))
+              .width(22)
+              .height(22)
+              .fillColor($r('app.color.telegram_blue'))
+          }
         }
         .width('100%')
         .height(56)
@@ -236,6 +297,9 @@ export struct ChatDetailPage {
                       isFirstInGroup: item.groupedMessage.isFirstInGroup,
                       isLastInGroup: item.groupedMessage.isLastInGroup,
                       showSenderName: this.isGroupChat,
+                      isSelectionMode: this.isSelectionMode,
+                      isSelected: this.selectedMessageIds.includes(item.groupedMessage.message.id),
+                      onSelect: (msg: Message) => { this.toggleMessageSelection(msg); },
                       onReply: (msg: Message) => { this.replyMessage = msg; },
                       onForward: (msg: Message) => { this.forwardMessage(msg); },
                       onCopy: (msg: Message) => { this.copyMessageText(msg); },
@@ -331,6 +395,7 @@ export struct ChatDetailPage {
     if (chat) {
       this.chatTitle = chat.title;
       this.isGroupChat = chat.isGroup;
+      this.isChannelChat = chat.isChannel;
       this.chatPhoto = chat.photo;
       this.chatInitial = chat.title.length > 0 ? chat.title.charAt(0) : '?';
       this.lastSeenText = chat.isGroup
@@ -438,6 +503,37 @@ export struct ChatDetailPage {
       const pasteData = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, msg.text);
       const systemPasteboard = pasteboard.getSystemPasteboard();
       systemPasteboard.setDataSync(pasteData);
+    }
+  }
+
+  private openChatInfo(): void {
+    if (this.isGroupChat || this.isChannelChat) {
+      this.navPathStack.pushPath({
+        name: 'GroupInfo',
+        param: { chatId: this.chatId } as Record<string, number>
+      });
+    } else {
+      this.navPathStack.pushPath({
+        name: 'UserInfo',
+        param: { userId: this.chatId } as Record<string, number>
+      });
+    }
+  }
+
+  private toggleMessageSelection(msg: Message): void {
+    if (!this.isSelectionMode) {
+      this.isSelectionMode = true;
+      this.selectedMessageIds = [msg.id];
+    } else {
+      const idx = this.selectedMessageIds.indexOf(msg.id);
+      if (idx >= 0) {
+        this.selectedMessageIds = this.selectedMessageIds.filter(id => id !== msg.id);
+        if (this.selectedMessageIds.length === 0) {
+          this.isSelectionMode = false;
+        }
+      } else {
+        this.selectedMessageIds = [...this.selectedMessageIds, msg.id];
+      }
     }
   }
 

@@ -671,6 +671,66 @@
     {
       "name": "pinned_message",
       "value": "Pinned Message"
+    },
+    {
+      "name": "block_user",
+      "value": "Block User"
+    },
+    {
+      "name": "unblock_user",
+      "value": "Unblock User"
+    },
+    {
+      "name": "groups_in_common",
+      "value": "%d Groups in Common"
+    },
+    {
+      "name": "leave_group",
+      "value": "Leave Group"
+    },
+    {
+      "name": "leave_channel",
+      "value": "Leave Channel"
+    },
+    {
+      "name": "report",
+      "value": "Report"
+    },
+    {
+      "name": "call_connecting",
+      "value": "Connecting..."
+    },
+    {
+      "name": "call_ringing",
+      "value": "Ringing..."
+    },
+    {
+      "name": "call_ended",
+      "value": "Call Ended"
+    },
+    {
+      "name": "incoming_call",
+      "value": "Incoming call"
+    },
+    {
+      "name": "accept",
+      "value": "Accept"
+    },
+    {
+      "name": "decline",
+      "value": "Decline"
+    },
+    {
+      "name": "archive",
+      "value": "Archive"
+    },
+    {
+      "name": "chat_background",
+      "value": "Chat Background"
+    },
+    {
+      "name": "selected_count",
+      "value": "%d selected"
     }
   ]
 }

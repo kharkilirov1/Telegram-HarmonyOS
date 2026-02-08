@@ -1,4 +1,5 @@
 import { MessagesController } from '../../controllers/MessagesController';
+import { TDLibClient } from '../../services/TDLibClient';
 import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
 import { Chat } from '../../models/Chat';
 import { ChatListItem } from '../../components/Chat/ChatListItem';
@@ -200,7 +201,7 @@ export struct ChatListPage {
     .height('100%')
   }
 
-  // Leading swipe: mute/unmute (like iOS Telegram)
+  // Leading swipe: mute + archive (like iOS Telegram)
   @Builder
   swipeStartBuilder(chat: Chat) {
     Row() {
@@ -215,6 +216,30 @@ export struct ChatListPage {
       .width(72)
       .height('100%')
       .backgroundColor(chat.isMuted ? $r('app.color.swipe_unmute') : $r('app.color.swipe_mute'))
+
+      // Archive button (like iOS/Android Telegram)
+      Button() {
+        Column() {
+          Image($r('app.media.ic_saved'))
+            .width(22).height(22).fillColor(Color.White)
+          Text('Archive')
+            .fontSize(11).fontColor(Color.White)
+        }
+      }
+      .width(72)
+      .height('100%')
+      .backgroundColor($r('app.color.telegram_blue'))
+      .onClick(() => {
+        // Move chat to archive — TDLib: addChatToList(chatListArchive)
+        TDLibClient.getInstance().send('addChatToList', {
+          chat_id: chat.id,
+          chat_list: { '@type': 'chatListArchive' }
+        });
+        // Remove from visible list
+        const allChats = MessagesController.getInstance().getSortedDialogs();
+        const filtered = allChats.filter(c => c.id !== chat.id);
+        this.chatDataSource.setData(filtered);
+      })
     }
   }
 

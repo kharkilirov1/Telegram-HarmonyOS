@@ -421,6 +421,83 @@ static void stub_handle_send(const std::string& request) {
         }
         stub_enqueue("{\"@type\":\"ok\",\"@extra\":" + extra_str + "}");
     }
+    else if (request.find("\"getUser\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        stub_enqueue("{\"@type\":\"user\",\"id\":1001,\"first_name\":\"Alex\",\"last_name\":\"Johnson\",\"username\":\"alexj\",\"phone_number\":\"+1 555 123 4567\",\"status\":{\"@type\":\"userStatusRecently\"},\"@extra\":" + extra_str + "}");
+    }
+    else if (request.find("\"getUserFullInfo\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        stub_enqueue("{\"@type\":\"userFullInfo\",\"bio\":\"Life is what happens when you are busy making other plans.\",\"group_in_common_count\":3,\"@extra\":" + extra_str + "}");
+    }
+    else if (request.find("\"getSupergroupFullInfo\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        stub_enqueue("{\"@type\":\"supergroupFullInfo\",\"description\":\"A group for friends and colleagues\",\"member_count\":15,\"@extra\":" + extra_str + "}");
+    }
+    else if (request.find("\"addChatToList\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        stub_enqueue("{\"@type\":\"ok\",\"@extra\":" + extra_str + "}");
+    }
+    else if (request.find("\"createCall\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        static int stub_call_id = 5000;
+        int call_id = ++stub_call_id;
+        stub_enqueue("{\"@type\":\"callId\",\"id\":" + std::to_string(call_id) + ",\"@extra\":" + extra_str + "}");
+        // Simulate call state transitions
+        stub_enqueue("{\"@type\":\"updateCall\",\"call\":{\"@type\":\"call\",\"id\":" + std::to_string(call_id) +
+            ",\"state\":{\"@type\":\"callStatePending\"},\"is_outgoing\":true,\"is_video\":false}}");
+    }
+    else if (request.find("\"discardCall\"") != std::string::npos) {
+        std::string extra_str;
+        auto pos = request.find("\"@extra\"");
+        if (pos != std::string::npos) {
+            auto colon = request.find(':', pos);
+            auto comma = request.find(',', colon);
+            auto brace = request.find('}', colon);
+            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
+            extra_str = request.substr(colon + 1, end - colon - 1);
+        }
+        stub_enqueue("{\"@type\":\"ok\",\"@extra\":" + extra_str + "}");
+    }
     else if (request.find("\"searchCallMessages\"") != std::string::npos) {
         std::string extra_str;
         auto pos = request.find("\"@extra\"");
