@@ -102,7 +102,9 @@ export struct GroupAdminPage {
         for (const m of rawMembers) {
           const memberId = (m['member_id'] as Record<string, number>)?.['user_id'] || 0;
           const status = (m['status'] as Record<string, string>)?.['@type'] || '';
-          const role = status === 'chatMemberStatusCreator' ? 'Owner' : 'Admin';
+          const role = status === 'chatMemberStatusCreator'
+            ? getContext(this).resourceManager.getStringByNameSync('owner_role')
+            : getContext(this).resourceManager.getStringByNameSync('admin_label');
 
           let name = '';
           let photoUrl: string | null = null;
@@ -120,7 +122,8 @@ export struct GroupAdminPage {
               }
             }
           } catch {
-            name = `User ${memberId}`;
+            const fallback = getContext(this).resourceManager.getStringByNameSync('user_fallback');
+            name = `${fallback} ${memberId}`;
           }
 
           this.administrators.push({ userId: memberId, name, role, photoUrl });
@@ -131,9 +134,11 @@ export struct GroupAdminPage {
       // Fallback stub data
     }
 
+    const ownerLabel = getContext(this).resourceManager.getStringByNameSync('owner_role');
+    const adminLabel = getContext(this).resourceManager.getStringByNameSync('admin_label');
     this.administrators = [
-      { userId: 1, name: 'Alex Johnson', role: 'Owner', photoUrl: null },
-      { userId: 2, name: 'Maria Garcia', role: 'Admin', photoUrl: null },
+      { userId: 1, name: 'Alex Johnson', role: ownerLabel, photoUrl: null },
+      { userId: 2, name: 'Maria Garcia', role: adminLabel, photoUrl: null },
     ];
   }
 
@@ -157,12 +162,13 @@ export struct GroupAdminPage {
             const lastName = (user['last_name'] as string) || '';
             name = `${firstName} ${lastName}`.trim();
           } catch {
-            name = `User ${memberId}`;
+            const fallback = getContext(this).resourceManager.getStringByNameSync('user_fallback');
+            name = `${fallback} ${memberId}`;
           }
 
           const bannedUntil = ((m['status'] as Record<string, number>)?.['banned_until_date'] || 0) === 0
-            ? 'Forever'
-            : 'Temporary';
+            ? getContext(this).resourceManager.getStringByNameSync('forever_ban')
+            : getContext(this).resourceManager.getStringByNameSync('temporary_ban');
           this.bannedUsers.push({ userId: memberId, name, bannedUntil });
         }
         return;

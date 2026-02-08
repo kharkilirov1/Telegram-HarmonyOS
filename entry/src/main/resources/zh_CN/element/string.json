@@ -1263,6 +1263,30 @@
     {
       "name": "joined_count",
       "value": "%d人加入"
+    },
+    {
+      "name": "user_fallback",
+      "value": "用户"
+    },
+    {
+      "name": "forever_ban",
+      "value": "永久"
+    },
+    {
+      "name": "temporary_ban",
+      "value": "临时"
+    },
+    {
+      "name": "expires_date",
+      "value": "到期 %s"
+    },
+    {
+      "name": "compare_key_hint",
+      "value": "将此图像与%s设备上显示的图像进行比较。如果相同，您的对话是100%%安全的。"
+    },
+    {
+      "name": "waiting_for_user",
+      "value": "等待%s上线"
     }
   ]
 }

@@ -162,12 +162,24 @@ export struct InviteLinksPage {
   }
 
   private formatExpiration(timestamp: number): string {
-    if (timestamp === 0) return 'No expiration';
+    if (timestamp === 0) {
+      try {
+        return getContext(this).resourceManager.getStringByNameSync('no_expiration');
+      } catch {
+        return 'No expiration';
+      }
+    }
     const date = new Date(timestamp * 1000);
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
-    return `Expires ${year}-${month}-${day}`;
+    const dateStr = `${year}-${month}-${day}`;
+    try {
+      const template = getContext(this).resourceManager.getStringByNameSync('expires_date');
+      return template.replace('%s', dateStr);
+    } catch {
+      return `Expires ${dateStr}`;
+    }
   }
 
   build() {

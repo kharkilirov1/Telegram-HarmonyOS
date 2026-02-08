@@ -1263,6 +1263,30 @@
     {
       "name": "joined_count",
       "value": "%d присоединились"
+    },
+    {
+      "name": "user_fallback",
+      "value": "Пользователь"
+    },
+    {
+      "name": "forever_ban",
+      "value": "Навсегда"
+    },
+    {
+      "name": "temporary_ban",
+      "value": "Временно"
+    },
+    {
+      "name": "expires_date",
+      "value": "Истекает %s"
+    },
+    {
+      "name": "compare_key_hint",
+      "value": "Сравните это изображение с тем, что показано на устройстве %s. Если они совпадают, ваш чат полностью защищён."
+    },
+    {
+      "name": "waiting_for_user",
+      "value": "Ожидание, когда %s будет онлайн"
     }
   ]
 }

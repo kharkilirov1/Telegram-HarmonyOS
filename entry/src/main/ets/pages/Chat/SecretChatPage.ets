@@ -38,7 +38,7 @@ export struct SecretChatPage {
   @Local errorMessage: string = '';
 
   private timerOptions: TimerOption[] = [
-    { label: 'Off', seconds: 0 },
+    { label: '', seconds: 0 },
     { label: '1s', seconds: 1 },
     { label: '5s', seconds: 5 },
     { label: '15s', seconds: 15 },
@@ -56,6 +56,12 @@ export struct SecretChatPage {
   };
 
   aboutToAppear(): void {
+    // Resolve 'Off' label from resources at runtime
+    try {
+      this.timerOptions[0].label = getContext(this).resourceManager.getStringByNameSync('timer_off');
+    } catch {
+      this.timerOptions[0].label = 'Off';
+    }
     TDLibClient.getInstance().on('updateSecretChat', this.secretChatUpdateHandler);
     this.loadUserName();
     this.createSecretChat();
@@ -65,6 +71,32 @@ export struct SecretChatPage {
     TDLibClient.getInstance().off('updateSecretChat', this.secretChatUpdateHandler);
   }
 
+  private getUserFallback(): string {
+    try {
+      return getContext(this).resourceManager.getStringByNameSync('user_fallback');
+    } catch {
+      return 'User';
+    }
+  }
+
+  private formatWaitingMessage(): string {
+    try {
+      const template = getContext(this).resourceManager.getStringByNameSync('waiting_for_user');
+      return template.replace('%s', this.userName);
+    } catch {
+      return `Waiting for ${this.userName} to come online`;
+    }
+  }
+
+  private formatCompareKeyHint(): string {
+    try {
+      const template = getContext(this).resourceManager.getStringByNameSync('compare_key_hint');
+      return template.replace('%s', this.userName);
+    } catch {
+      return `Compare this image with the one shown on ${this.userName}'s device. If they are the same, your chat is 100% secure.`;
+    }
+  }
+
   private async loadUserName(): Promise<void> {
     try {
       const result = await TDLibClient.getInstance().send('getUser', {
@@ -72,9 +104,9 @@ export struct SecretChatPage {
       }) as Record<string, string>;
       const first = result['first_name'] || '';
       const last = result['last_name'] || '';
-      this.userName = `${first} ${last}`.trim() || 'User';
+      this.userName = `${first} ${last}`.trim() || this.getUserFallback();
     } catch (e) {
-      this.userName = 'User';
+      this.userName = this.getUserFallback();
     }
   }
 
@@ -288,7 +320,7 @@ export struct SecretChatPage {
           .fontColor($r('app.color.text_secondary'))
           .margin({ top: 12 })
 
-        Text(`Waiting for ${this.userName} to come online`)
+        Text(this.formatWaitingMessage())
           .fontSize(13)
           .fontColor($r('app.color.text_secondary'))
           .margin({ top: 4 })
@@ -376,8 +408,7 @@ export struct SecretChatPage {
       Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
 
       // Verification hint
-      Text('Compare this image with the one shown on ' +
-        `${this.userName}'s device. If they are the same, your chat is 100% secure.`)
+      Text(this.formatCompareKeyHint())
         .fontSize(13)
         .fontColor($r('app.color.text_secondary'))
         .padding({ left: 16, right: 16, top: 10, bottom: 14 })

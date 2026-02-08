@@ -1263,6 +1263,30 @@
     {
       "name": "joined_count",
       "value": "%d joined"
+    },
+    {
+      "name": "user_fallback",
+      "value": "User"
+    },
+    {
+      "name": "forever_ban",
+      "value": "Forever"
+    },
+    {
+      "name": "temporary_ban",
+      "value": "Temporary"
+    },
+    {
+      "name": "expires_date",
+      "value": "Expires %s"
+    },
+    {
+      "name": "compare_key_hint",
+      "value": "Compare this image with the one shown on %s's device. If they are the same, your chat is 100%% secure."
+    },
+    {
+      "name": "waiting_for_user",
+      "value": "Waiting for %s to come online"
     }
   ]
 }
