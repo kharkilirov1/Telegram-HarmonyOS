@@ -1,4 +1,5 @@
 import { AuthController } from '../../controllers/AuthController';
+import { TDLibClient } from '../../services/TDLibClient';
 import { TelegramMascot, MascotState } from '../../components/Common/TelegramMascot';
 
 @Builder
@@ -15,6 +16,10 @@ export struct PasswordPage {
   @Local passwordHint: string = '';
   @Local showPassword: boolean = false;
   @Local mascotState: MascotState = MascotState.CLOSE;
+  @Local showRecoveryView: boolean = false;
+  @Local recoveryCode: string = '';
+  @Local recoveryEmailPattern: string = '';
+  @Local recoveryMessage: string = '';
 
   aboutToAppear(): void {
     this.passwordHint = AuthController.getInstance().getPasswordHint();
@@ -143,9 +148,7 @@ export struct PasswordPage {
           .fontSize(14)
           .fontColor($r('app.color.telegram_blue'))
           .margin({ top: 24 })
-          .onClick(() => {
-            // TODO: password recovery flow
-          })
+          .onClick(() => { this.requestPasswordRecovery(); })
 
         Blank()
       }
@@ -153,6 +156,109 @@ export struct PasswordPage {
       .height('100%')
       .backgroundColor($r('app.color.background_primary'))
       .alignItems(HorizontalAlign.Center)
+
+      // --- Password recovery overlay ---
+      if (this.showRecoveryView) {
+        Column() {
+          // Top bar
+          Row() {
+            Image($r('app.media.ic_back'))
+              .width(24).height(24)
+              .fillColor($r('app.color.telegram_blue'))
+              .onClick(() => {
+                this.showRecoveryView = false;
+                this.recoveryCode = '';
+                this.errorMessage = '';
+              })
+
+            Blank()
+
+            if (this.recoveryCode.length > 0 && !this.isLoading) {
+              Text($r('app.string.next_button'))
+                .fontSize(17)
+                .fontWeight(FontWeight.Medium)
+                .fontColor($r('app.color.telegram_blue'))
+                .onClick(() => { this.submitRecoveryCode(); })
+            }
+          }
+          .width('100%')
+          .height(44)
+          .padding({ left: 16, right: 16 })
+
+          Blank().height(40)
+
+          // Email icon
+          Image($r('app.media.ic_email'))
+            .width(80).height(80)
+            .fillColor($r('app.color.telegram_blue'))
+            .margin({ bottom: 24 })
+
+          Text('Check Your Email')
+            .fontSize(24)
+            .fontWeight(FontWeight.Bold)
+            .fontColor($r('app.color.text_primary'))
+            .margin({ bottom: 8 })
+
+          Text(this.recoveryMessage.length > 0
+            ? this.recoveryMessage
+            : 'We have sent a recovery code to your email.')
+            .fontSize(14)
+            .fontColor($r('app.color.text_secondary'))
+            .textAlign(TextAlign.Center)
+            .padding({ left: 40, right: 40 })
+            .margin({ bottom: 8 })
+
+          if (this.recoveryEmailPattern.length > 0) {
+            Text(this.recoveryEmailPattern)
+              .fontSize(15)
+              .fontWeight(FontWeight.Medium)
+              .fontColor($r('app.color.text_primary'))
+              .margin({ bottom: 32 })
+          }
+
+          // Recovery code input
+          TextInput({ placeholder: 'Recovery code', text: this.recoveryCode })
+            .type(InputType.Number)
+            .fontSize(17)
+            .width('70%')
+            .height(48)
+            .backgroundColor($r('app.color.background_secondary'))
+            .borderRadius(10)
+            .textAlign(TextAlign.Center)
+            .caretColor($r('app.color.telegram_blue'))
+            .onChange((value: string) => {
+              this.recoveryCode = value;
+              this.errorMessage = '';
+            })
+            .onSubmit(() => {
+              if (this.recoveryCode.length > 0) {
+                this.submitRecoveryCode();
+              }
+            })
+
+          // Error
+          if (this.errorMessage.length > 0) {
+            Text(this.errorMessage)
+              .fontSize(13)
+              .fontColor($r('app.color.error_red'))
+              .margin({ top: 12 })
+          }
+
+          if (this.isLoading) {
+            LoadingProgress()
+              .width(32).height(32)
+              .margin({ top: 20 })
+              .color($r('app.color.telegram_blue'))
+          }
+
+          Blank()
+        }
+        .width('100%')
+        .height('100%')
+        .backgroundColor($r('app.color.background_primary'))
+        .alignItems(HorizontalAlign.Center)
+        .transition(TransitionEffect.OPACITY.animation({ duration: 200 }))
+      }
     }
     .hideTitleBar(true)
   }
@@ -165,6 +271,49 @@ export struct PasswordPage {
       await AuthController.getInstance().submitPassword(this.password);
     } catch (e) {
       this.errorMessage = 'Wrong password. Please try again.';
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  private async requestPasswordRecovery(): Promise<void> {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    try {
+      const result = await TDLibClient.getInstance().send('requestAuthenticationPasswordRecovery') as Record<string, string>;
+      // TDLib responds with emailAddressAuthenticationCodeInfo
+      this.recoveryEmailPattern = result['email_address_pattern'] || '';
+      this.recoveryMessage = this.recoveryEmailPattern.length > 0
+        ? `We sent a recovery code to ${this.recoveryEmailPattern}`
+        : 'We have sent a recovery code to your email.';
+      this.showRecoveryView = true;
+    } catch (e) {
+      // If no recovery email is set, TDLib will return error
+      AlertDialog.show({
+        title: 'No Recovery Email',
+        message: 'You did not set up a recovery email address when enabling 2FA. You can reset your account if you cannot remember your password.',
+        buttons: [
+          { value: 'OK', action: () => {} }
+        ]
+      });
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  private async submitRecoveryCode(): Promise<void> {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    try {
+      await TDLibClient.getInstance().send('recoverAuthenticationPassword', {
+        recovery_code: this.recoveryCode
+      });
+      // On success, auth state transitions to Ready
+      this.showRecoveryView = false;
+    } catch (e) {
+      this.errorMessage = 'Invalid recovery code. Please try again.';
     } finally {
       this.isLoading = false;
     }

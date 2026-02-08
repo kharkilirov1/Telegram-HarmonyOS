@@ -731,6 +731,38 @@
     {
       "name": "selected_count",
       "value": "%d selected"
+    },
+    {
+      "name": "recovery_title",
+      "value": "Check Your Email"
+    },
+    {
+      "name": "recovery_subtitle",
+      "value": "We have sent a recovery code to your email."
+    },
+    {
+      "name": "recovery_code_placeholder",
+      "value": "Recovery code"
+    },
+    {
+      "name": "recovery_no_email_title",
+      "value": "No Recovery Email"
+    },
+    {
+      "name": "recovery_no_email_message",
+      "value": "You did not set up a recovery email when enabling 2FA."
+    },
+    {
+      "name": "recovery_invalid_code",
+      "value": "Invalid recovery code. Please try again."
+    },
+    {
+      "name": "downloading",
+      "value": "Downloading..."
+    },
+    {
+      "name": "download_complete",
+      "value": "Downloaded"
     }
   ]
 }

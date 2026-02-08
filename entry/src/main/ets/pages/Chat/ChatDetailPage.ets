@@ -379,7 +379,8 @@ export struct ChatDetailPage {
           onCancelReply: () => { this.replyMessage = null; },
           onCancelEdit: () => { this.editMessage = null; },
           onSendSticker: (emoji: string) => { this.sendStickerMessage(emoji); },
-          onSendGif: (gifId: number) => { this.sendGifMessage(gifId); }
+          onSendGif: (gifId: number) => { this.sendGifMessage(gifId); },
+          onSendVoice: (duration: number) => { this.sendVoiceMessage(duration); }
         })
       }
       .width('100%')
@@ -556,6 +557,22 @@ export struct ChatDetailPage {
         '@type': 'inputMessageSticker',
         sticker: { '@type': 'inputFileId', id: 0 },
         emoji: emoji
+      }
+    });
+  }
+
+  private async sendVoiceMessage(duration: number): Promise<void> {
+    // Send voice note via TDLib (AudioCapturer would supply the actual file)
+    const replyId = this.replyMessage?.id || 0;
+    this.replyMessage = null;
+    await TDLibClient.getInstance().send('sendMessage', {
+      chat_id: this.chatId,
+      reply_to_message_id: replyId,
+      input_message_content: {
+        '@type': 'inputMessageVoiceNote',
+        voice_note: { '@type': 'inputFileLocal', path: '' },
+        duration: duration,
+        waveform: ''
       }
     });
   }

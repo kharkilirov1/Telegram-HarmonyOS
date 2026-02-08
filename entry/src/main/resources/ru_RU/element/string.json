@@ -731,6 +731,38 @@
     {
       "name": "selected_count",
       "value": "%d выбрано"
+    },
+    {
+      "name": "recovery_title",
+      "value": "Проверьте почту"
+    },
+    {
+      "name": "recovery_subtitle",
+      "value": "Мы отправили код восстановления на вашу почту."
+    },
+    {
+      "name": "recovery_code_placeholder",
+      "value": "Код восстановления"
+    },
+    {
+      "name": "recovery_no_email_title",
+      "value": "Нет почты для восстановления"
+    },
+    {
+      "name": "recovery_no_email_message",
+      "value": "Вы не указали адрес электронной почты при включении двухэтапной аутентификации."
+    },
+    {
+      "name": "recovery_invalid_code",
+      "value": "Неверный код восстановления. Попробуйте ещё раз."
+    },
+    {
+      "name": "downloading",
+      "value": "Загрузка..."
+    },
+    {
+      "name": "download_complete",
+      "value": "Загружено"
     }
   ]
 }

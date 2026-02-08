@@ -12,6 +12,10 @@ export struct ChatInputBar {
   @Local inputText: string = '';
   @Local isRecording: boolean = false;
   @Local recordingDuration: number = 0;
+  @Local recordingLocked: boolean = false;
+  @Local recordingCancelled: boolean = false;
+  @Local slideOffsetX: number = 0;
+  @Local slideOffsetY: number = 0;
   @Local showEmojiPicker: boolean = false;
   @Local showAttachPanel: boolean = false;
   @Local showStickerPicker: boolean = false;
@@ -26,6 +30,7 @@ export struct ChatInputBar {
   @Param onCancelEdit: () => void = () => {};
   @Param onSendSticker: (emoji: string) => void = () => {};
   @Param onSendGif: (gifId: number) => void = () => {};
+  @Param onSendVoice: (duration: number) => void = () => {};
 
   private recordingTimerId: number = -1;
 
@@ -188,10 +193,13 @@ export struct ChatInputBar {
               .fillColor($r('app.color.text_secondary'))
               .margin({ left: 6 })
               .gesture(
-                LongPressGesture({ repeat: false, duration: 200 })
-                  .onAction(() => { this.startRecording(); })
+                GestureGroup(GestureMode.Exclusive,
+                  LongPressGesture({ repeat: false, duration: 200 })
+                    .onAction(() => { this.startRecording(); }),
+                  TapGesture()
+                    .onAction(() => { this.startRecording(); })
+                )
               )
-              .onClick(() => { this.startRecording(); })
           }
         }
       }
@@ -293,37 +301,118 @@ export struct ChatInputBar {
 
   @Builder
   buildRecordingUI() {
-    Row() {
-      Circle()
-        .width(10).height(10)
-        .fill($r('app.color.recording_red'))
-
-      Text(this.formatRecordingDuration())
-        .fontSize(16)
-        .fontColor($r('app.color.text_primary'))
-        .margin({ left: 8 })
-
-      Blank().layoutWeight(1)
-
+    if (this.recordingLocked) {
+      // Locked recording mode — shows waveform preview + delete/send
       Row() {
-        Image($r('app.media.ic_back'))
-          .width(14).height(14)
-          .fillColor($r('app.color.text_secondary'))
-        Text($r('app.string.slide_to_cancel'))
-          .fontSize(14)
-          .fontColor($r('app.color.text_secondary'))
-          .margin({ left: 4 })
+        // Delete (trash) button
+        Image($r('app.media.ic_delete'))
+          .width(24).height(24)
+          .fillColor($r('app.color.error_red'))
+          .onClick(() => { this.cancelRecording(); })
+
+        // Recording indicator + timer
+        Row() {
+          Circle()
+            .width(8).height(8)
+            .fill($r('app.color.recording_red'))
+
+          Text(this.formatRecordingDuration())
+            .fontSize(16)
+            .fontColor($r('app.color.text_primary'))
+            .margin({ left: 6 })
+        }
+        .margin({ left: 12 })
+
+        // Waveform preview bars
+        Row({ space: 1 }) {
+          ForEach(this.generateLiveWaveform(), (amp: number) => {
+            Column()
+              .width(3)
+              .height(amp * 20)
+              .borderRadius(1.5)
+              .backgroundColor($r('app.color.telegram_blue'))
+          })
+        }
+        .height(22)
+        .alignItems(VerticalAlign.Center)
+        .margin({ left: 12 })
+        .layoutWeight(1)
+
+        // Send button
+        Image($r('app.media.ic_send'))
+          .width(28).height(28)
+          .fillColor($r('app.color.telegram_blue'))
+          .margin({ left: 8 })
+          .onClick(() => { this.stopRecording(); })
       }
+      .width('100%')
+    } else {
+      // Slide-to-cancel mode — finger is held down
+      Row() {
+        Circle()
+          .width(10).height(10)
+          .fill($r('app.color.recording_red'))
 
-      Blank().layoutWeight(1)
+        Text(this.formatRecordingDuration())
+          .fontSize(16)
+          .fontColor($r('app.color.text_primary'))
+          .margin({ left: 8 })
 
-      // Stop recording button
-      Image($r('app.media.ic_send'))
+        Blank().layoutWeight(1)
+
+        Row() {
+          Image($r('app.media.ic_back'))
+            .width(14).height(14)
+            .fillColor($r('app.color.text_secondary'))
+            .opacity(Math.min(1, Math.abs(this.slideOffsetX) / 60 + 0.4))
+          Text($r('app.string.slide_to_cancel'))
+            .fontSize(14)
+            .fontColor($r('app.color.text_secondary'))
+            .margin({ left: 4 })
+        }
+        .translate({ x: this.slideOffsetX * 0.5 })
+
+        Blank().layoutWeight(1)
+
+        // Lock indicator (slide up to lock)
+        Column() {
+          Image($r('app.media.ic_pin'))
+            .width(16).height(16)
+            .fillColor($r('app.color.text_secondary'))
+        }
         .width(28).height(28)
-        .fillColor($r('app.color.telegram_blue'))
-        .onClick(() => { this.stopRecording(); })
+        .borderRadius(14)
+        .backgroundColor($r('app.color.background_secondary'))
+        .justifyContent(FlexAlign.Center)
+        .opacity(this.slideOffsetY < -20 ? 1 : 0.5)
+        .margin({ right: 4 })
+
+        // Stop/send recording button
+        Image($r('app.media.ic_send'))
+          .width(28).height(28)
+          .fillColor($r('app.color.telegram_blue'))
+          .onClick(() => { this.stopRecording(); })
+      }
+      .width('100%')
+      .gesture(
+        PanGesture({ direction: PanDirection.Horizontal | PanDirection.Vertical })
+          .onActionUpdate((event: GestureEvent) => {
+            this.slideOffsetX = Math.min(0, event.offsetX);
+            this.slideOffsetY = Math.min(0, event.offsetY);
+          })
+          .onActionEnd(() => {
+            if (this.slideOffsetX < -100) {
+              // Slid far enough left → cancel
+              this.cancelRecording();
+            } else if (this.slideOffsetY < -60) {
+              // Slid far enough up → lock recording
+              this.recordingLocked = true;
+            }
+            this.slideOffsetX = 0;
+            this.slideOffsetY = 0;
+          })
+      )
     }
-    .width('100%')
   }
 
   private formatRecordingDuration(): string {
@@ -335,6 +424,10 @@ export struct ChatInputBar {
   private startRecording(): void {
     this.isRecording = true;
     this.recordingDuration = 0;
+    this.recordingLocked = false;
+    this.recordingCancelled = false;
+    this.slideOffsetX = 0;
+    this.slideOffsetY = 0;
     this.closeAllPanels();
 
     // Timer for recording duration display
@@ -344,13 +437,40 @@ export struct ChatInputBar {
   }
 
   private stopRecording(): void {
+    const duration = this.recordingDuration;
+    this.resetRecordingState();
+
+    // Send voice message via callback (AudioCapturer would provide actual audio data)
+    if (duration > 0) {
+      this.onSendVoice(duration);
+    }
+  }
+
+  private cancelRecording(): void {
+    this.recordingCancelled = true;
+    this.resetRecordingState();
+  }
+
+  private resetRecordingState(): void {
     this.isRecording = false;
+    this.recordingLocked = false;
+    this.slideOffsetX = 0;
+    this.slideOffsetY = 0;
     if (this.recordingTimerId >= 0) {
       clearInterval(this.recordingTimerId);
       this.recordingTimerId = -1;
     }
-    // Voice message would be sent here with actual AudioCapturer
-    // For stub mode, just stop the recording UI
+  }
+
+  private generateLiveWaveform(): number[] {
+    // Generate dynamic waveform bars based on recording duration for visual feedback
+    const bars: number[] = [];
+    const count = 20;
+    for (let i = 0; i < count; i++) {
+      const base = 0.3 + 0.4 * Math.sin((this.recordingDuration * 2 + i) * 0.8);
+      bars.push(Math.min(1, Math.max(0.15, base)));
+    }
+    return bars;
   }
 
   private closeAllPanels(): void {
