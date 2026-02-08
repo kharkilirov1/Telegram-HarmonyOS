@@ -1,5 +1,6 @@
-import { Message, MessageContentType, MessageReaction } from '../../models/Message';
+import { Message, MessageContentType, MessageReaction, PollOption } from '../../models/Message';
 import { ReactionBar } from './ReactionBar';
+import { PollBubble } from './PollBubble';
 
 // URL detection regex
 const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/gi;
@@ -17,6 +18,7 @@ export struct MessageBubble {
   @Param onEdit: (message: Message) => void = () => {};
   @Param onMediaTap: (url: string) => void = () => {};
   @Param onReactionTap: (message: Message, emoji: string) => void = () => {};
+  @Param onPollVote: (message: Message, optionIndex: number) => void = () => {};
   @Param isSelectionMode: boolean = false;
   @Param isSelected: boolean = false;
   @Param onSelect: (message: Message) => void = () => {};
@@ -125,13 +127,21 @@ export struct MessageBubble {
             this.buildVideo()
           } else if (this.message.contentType === MessageContentType.DOCUMENT) {
             this.buildDocument()
+          } else if (this.message.contentType === MessageContentType.VIDEO_NOTE) {
+            this.buildVideoNote()
+          } else if (this.message.contentType === MessageContentType.POLL) {
+            PollBubble({
+              message: this.message,
+              onVote: (msg: Message, optionIndex: number) => { this.onPollVote(msg, optionIndex); }
+            })
           } else {
             this.buildText()
           }
         }
         .padding(this.message.contentType === MessageContentType.STICKER ? 0 :
           this.message.contentType === MessageContentType.PHOTO ? 2 :
-            { left: 10, right: 10, top: 6, bottom: 6 })
+            this.message.contentType === MessageContentType.VIDEO_NOTE ? 0 :
+              { left: 10, right: 10, top: 6, bottom: 6 })
         .borderRadius(this.getBubbleRadii())
         .backgroundColor(this.getBubbleColor())
         .constraintSize({ maxWidth: '75%' })
@@ -646,6 +656,48 @@ export struct MessageBubble {
       .height(16)
       .fillColor(this.message.isRead ? $r('app.color.telegram_blue') : tint)
       .margin({ left: 3 })
+  }
+
+  @Builder
+  buildVideoNote() {
+    // Round video message (Telegram "video circles")
+    Column() {
+      Stack({ alignContent: Alignment.Center }) {
+        // Round video thumbnail or placeholder
+        Column()
+          .width(this.message.videoNoteLength > 0
+            ? Math.min(this.message.videoNoteLength, 240)
+            : 240)
+          .height(this.message.videoNoteLength > 0
+            ? Math.min(this.message.videoNoteLength, 240)
+            : 240)
+          .borderRadius(120)
+          .backgroundColor('#333333')
+          .clip(true)
+
+        // Play button overlay
+        Column() {
+          Image($r('app.media.ic_play'))
+            .width(24).height(24)
+            .fillColor(Color.White)
+        }
+        .width(44).height(44)
+        .borderRadius(22)
+        .backgroundColor($r('app.color.play_overlay'))
+        .justifyContent(FlexAlign.Center)
+      }
+
+      // Duration badge
+      if (this.message.videoNoteDuration > 0) {
+        Text(this.formatDuration(this.message.videoNoteDuration))
+          .fontSize(11)
+          .fontColor(Color.White)
+          .backgroundColor($r('app.color.time_overlay'))
+          .borderRadius(8)
+          .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+          .margin({ top: -24 })
+      }
+    }
   }
 
   // --- Helpers ---

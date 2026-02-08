@@ -20,10 +20,13 @@ export struct ChatInputBar {
   @Local showAttachPanel: boolean = false;
   @Local showStickerPicker: boolean = false;
   @Local showGifPicker: boolean = false;
+  @Local showSchedulePicker: boolean = false;
   @Param replyMessage: Message | null = null;
   @Param editMessage: Message | null = null;
+  @Param chatId: number = 0;
 
   @Param onSendMessage: (text: string) => void = () => {};
+  @Param onSendScheduled: (text: string, sendDate: number) => void = () => {};
   @Param onEditMessage: (messageId: number, text: string) => void = () => {};
   @Param onAttachTap: () => void = () => {};
   @Param onCancelReply: () => void = () => {};
@@ -31,6 +34,8 @@ export struct ChatInputBar {
   @Param onSendSticker: (emoji: string) => void = () => {};
   @Param onSendGif: (gifId: number) => void = () => {};
   @Param onSendVoice: (duration: number) => void = () => {};
+  @Param onDraftChange: (text: string) => void = () => {};
+  @Param onCreatePoll: () => void = () => {};
 
   private recordingTimerId: number = -1;
 
@@ -169,7 +174,10 @@ export struct ChatInputBar {
             .backgroundColor($r('app.color.background_secondary'))
             .borderRadius(18)
             .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-            .onChange((value: string) => { this.inputText = value; })
+            .onChange((value: string) => {
+              this.inputText = value;
+              this.onDraftChange(value);
+            })
             .onFocus(() => { this.closeAllPanels(); })
 
           // Send / Mic toggle
@@ -179,17 +187,28 @@ export struct ChatInputBar {
               .fillColor($r('app.color.telegram_blue'))
               .margin({ left: 6 })
               .accessibilityText($r('app.string.accessibility_send'))
-              .onClick(() => {
-                const text = this.inputText.trim();
-                if (text.length > 0) {
-                  if (this.editMessage !== null) {
-                    this.onEditMessage(this.editMessage.id, text);
-                  } else {
-                    this.onSendMessage(text);
-                  }
-                  this.inputText = '';
-                }
-              })
+              .gesture(
+                GestureGroup(GestureMode.Exclusive,
+                  // Long press → schedule message
+                  LongPressGesture({ repeat: false, duration: 500 })
+                    .onAction(() => {
+                      this.showSchedulePicker = true;
+                    }),
+                  // Tap → send immediately
+                  TapGesture()
+                    .onAction(() => {
+                      const text = this.inputText.trim();
+                      if (text.length > 0) {
+                        if (this.editMessage !== null) {
+                          this.onEditMessage(this.editMessage.id, text);
+                        } else {
+                          this.onSendMessage(text);
+                        }
+                        this.inputText = '';
+                      }
+                    })
+                )
+              )
           } else {
             Image($r('app.media.ic_mic'))
               .width(24).height(24)
@@ -275,9 +294,14 @@ export struct ChatInputBar {
           onFile: () => { this.showAttachPanel = false; },
           onLocation: () => { this.showAttachPanel = false; },
           onContact: () => { this.showAttachPanel = false; },
-          onPoll: () => { this.showAttachPanel = false; },
+          onPoll: () => { this.showAttachPanel = false; this.onCreatePoll(); },
           onClose: () => { this.showAttachPanel = false; }
         })
+      }
+
+      // Schedule picker panel
+      if (this.showSchedulePicker) {
+        this.schedulePickerPanel()
       }
     }
     .width('100%')
@@ -482,5 +506,69 @@ export struct ChatInputBar {
     this.showStickerPicker = false;
     this.showGifPicker = false;
     this.showAttachPanel = false;
+    this.showSchedulePicker = false;
+  }
+
+  private sendScheduled(hoursFromNow: number): void {
+    const text = this.inputText.trim();
+    if (text.length > 0) {
+      const sendDate = Math.floor(Date.now() / 1000) + hoursFromNow * 3600;
+      this.onSendScheduled(text, sendDate);
+      this.inputText = '';
+      this.showSchedulePicker = false;
+    }
+  }
+
+  @Builder
+  schedulePickerPanel() {
+    Column() {
+      Text('Schedule Message')
+        .fontSize(17)
+        .fontWeight(FontWeight.Bold)
+        .fontColor($r('app.color.text_primary'))
+        .margin({ top: 16, bottom: 12 })
+
+      // Quick schedule options (like Telegram)
+      this.scheduleOption('In 1 hour', 1)
+      Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
+      this.scheduleOption('In 2 hours', 2)
+      Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
+      this.scheduleOption('In 4 hours', 4)
+      Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
+      this.scheduleOption('Tomorrow morning', 18) // ~18h from now
+      Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
+      this.scheduleOption('Tomorrow evening', 30) // ~30h from now
+
+      Button('Cancel')
+        .width('90%')
+        .height(44)
+        .fontSize(17)
+        .fontColor($r('app.color.telegram_blue'))
+        .backgroundColor($r('app.color.background_secondary'))
+        .borderRadius(12)
+        .margin({ top: 12, bottom: 16 })
+        .onClick(() => { this.showSchedulePicker = false; })
+    }
+    .width('100%')
+    .backgroundColor($r('app.color.background_primary'))
+    .borderRadius({ topLeft: 16, topRight: 16 })
+  }
+
+  @Builder
+  scheduleOption(label: string, hoursFromNow: number) {
+    Row() {
+      Image($r('app.media.ic_clock'))
+        .width(20).height(20)
+        .fillColor($r('app.color.telegram_blue'))
+        .margin({ right: 12 })
+      Text(label)
+        .fontSize(16)
+        .fontColor($r('app.color.text_primary'))
+        .layoutWeight(1)
+    }
+    .width('100%')
+    .height(48)
+    .padding({ left: 16, right: 16 })
+    .onClick(() => { this.sendScheduled(hoursFromNow); })
   }
 }

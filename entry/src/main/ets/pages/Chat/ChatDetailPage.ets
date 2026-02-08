@@ -315,6 +315,9 @@ export struct ChatDetailPage {
                       },
                       onReactionTap: (msg: Message, emoji: string) => {
                         this.toggleReaction(msg, emoji);
+                      },
+                      onPollVote: (msg: Message, optionIndex: number) => {
+                        this.votePoll(msg, optionIndex);
                       }
                     })
                   }
@@ -377,13 +380,22 @@ export struct ChatDetailPage {
         ChatInputBar({
           replyMessage: this.replyMessage,
           editMessage: this.editMessage,
+          chatId: this.chatId,
           onSendMessage: (text: string) => this.sendMessage(text),
+          onSendScheduled: (text: string, sendDate: number) => { this.sendScheduledMessage(text, sendDate); },
           onEditMessage: (messageId: number, text: string) => this.editMessageText(messageId, text),
           onCancelReply: () => { this.replyMessage = null; },
           onCancelEdit: () => { this.editMessage = null; },
           onSendSticker: (emoji: string) => { this.sendStickerMessage(emoji); },
           onSendGif: (gifId: number) => { this.sendGifMessage(gifId); },
-          onSendVoice: (duration: number) => { this.sendVoiceMessage(duration); }
+          onSendVoice: (duration: number) => { this.sendVoiceMessage(duration); },
+          onDraftChange: (text: string) => { this.saveDraft(text); },
+          onCreatePoll: () => {
+            this.navPathStack.pushPath({
+              name: 'CreatePoll',
+              param: { chatId: this.chatId } as Record<string, number>
+            });
+          }
         })
       }
       .width('100%')
@@ -578,6 +590,21 @@ export struct ChatDetailPage {
         waveform: ''
       }
     });
+  }
+
+  private async sendScheduledMessage(text: string, sendDate: number): Promise<void> {
+    const replyId = this.replyMessage?.id || 0;
+    this.replyMessage = null;
+    await MessagesController.getInstance()
+      .sendScheduledMessage(this.chatId, text, sendDate, replyId);
+  }
+
+  private saveDraft(text: string): void {
+    MessagesController.getInstance().setDraft(this.chatId, text, 0);
+  }
+
+  private async votePoll(msg: Message, optionIndex: number): Promise<void> {
+    await MessagesController.getInstance().votePoll(this.chatId, msg.id, [optionIndex]);
   }
 
   private toggleReaction(msg: Message, emoji: string): void {

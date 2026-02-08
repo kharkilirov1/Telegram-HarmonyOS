@@ -983,6 +983,162 @@
     {
       "name": "calls_missed_label",
       "value": "Missed"
+    },
+    {
+      "name": "admin_settings",
+      "value": "Admin Settings"
+    },
+    {
+      "name": "invite_links",
+      "value": "Invite Links"
+    },
+    {
+      "name": "schedule_message",
+      "value": "Schedule Message"
+    },
+    {
+      "name": "new_poll",
+      "value": "New Poll"
+    },
+    {
+      "name": "anonymous_voting",
+      "value": "Anonymous Voting"
+    },
+    {
+      "name": "quiz_mode",
+      "value": "Quiz Mode"
+    },
+    {
+      "name": "quiz_hint",
+      "value": "One correct answer, scores are tracked"
+    },
+    {
+      "name": "create_poll",
+      "value": "Create Poll"
+    },
+    {
+      "name": "add_option",
+      "value": "Add Option"
+    },
+    {
+      "name": "encryption_key",
+      "value": "Encryption Key"
+    },
+    {
+      "name": "self_destruct_timer",
+      "value": "Self-Destruct Timer"
+    },
+    {
+      "name": "secret_chat_creating",
+      "value": "Creating Secret Chat..."
+    },
+    {
+      "name": "secret_chat_active",
+      "value": "Secret Chat Active"
+    },
+    {
+      "name": "secret_chat_closed",
+      "value": "Secret Chat Closed"
+    },
+    {
+      "name": "end_to_end_encryption",
+      "value": "End-to-End Encryption"
+    },
+    {
+      "name": "video_note",
+      "value": "Video message"
+    },
+    {
+      "name": "permissions_label",
+      "value": "Permissions"
+    },
+    {
+      "name": "administrators_label",
+      "value": "Administrators"
+    },
+    {
+      "name": "banned_users_label",
+      "value": "Banned Users"
+    },
+    {
+      "name": "recent_actions",
+      "value": "Recent Actions"
+    },
+    {
+      "name": "send_messages",
+      "value": "Send Messages"
+    },
+    {
+      "name": "send_media",
+      "value": "Send Media"
+    },
+    {
+      "name": "send_polls",
+      "value": "Send Polls"
+    },
+    {
+      "name": "send_stickers_gifs",
+      "value": "Send Stickers & GIFs"
+    },
+    {
+      "name": "pin_messages",
+      "value": "Pin Messages"
+    },
+    {
+      "name": "change_group_info",
+      "value": "Change Group Info"
+    },
+    {
+      "name": "copy_link",
+      "value": "Copy Link"
+    },
+    {
+      "name": "share",
+      "value": "Share"
+    },
+    {
+      "name": "create_new_link",
+      "value": "Create New Link"
+    },
+    {
+      "name": "revoke",
+      "value": "Revoke"
+    },
+    {
+      "name": "copied",
+      "value": "Copied!"
+    },
+    {
+      "name": "no_votes_yet",
+      "value": "No votes yet"
+    },
+    {
+      "name": "final_results",
+      "value": "Final results"
+    },
+    {
+      "name": "anonymous_poll",
+      "value": "Anonymous poll"
+    },
+    {
+      "name": "schedule_in_1h",
+      "value": "In 1 hour"
+    },
+    {
+      "name": "schedule_in_2h",
+      "value": "In 2 hours"
+    },
+    {
+      "name": "schedule_in_4h",
+      "value": "In 4 hours"
+    },
+    {
+      "name": "schedule_tomorrow_morning",
+      "value": "Tomorrow morning"
+    },
+    {
+      "name": "schedule_tomorrow_evening",
+      "value": "Tomorrow evening"
     }
   ]
 }

@@ -111,6 +111,87 @@ export class MessagesController {
     );
   }
 
+  async sendPoll(chatId: number, question: string, options: string[],
+    isAnonymous: boolean = true, isQuiz: boolean = false,
+    correctOptionId: number = -1): Promise<void> {
+
+    const pollType: Record<string, object> = isQuiz
+      ? { '@type': 'pollTypeQuiz', correct_option_id: correctOptionId }
+      : { '@type': 'pollTypeRegular', allow_multiple_answers: false };
+
+    await TDLibClient.getInstance().send('sendMessage', {
+      chat_id: chatId,
+      input_message_content: {
+        '@type': 'inputMessagePoll',
+        question: { '@type': 'formattedText', text: question },
+        options: options.map(o => ({ '@type': 'formattedText', text: o })),
+        is_anonymous: isAnonymous,
+        type: pollType
+      }
+    });
+  }
+
+  async sendScheduledMessage(chatId: number, text: string, sendDate: number,
+    replyToMessageId: number = 0): Promise<void> {
+    const params: Record<string, object> = {
+      chat_id: chatId,
+      reply_to: replyToMessageId > 0
+        ? { '@type': 'inputMessageReplyToMessage', message_id: replyToMessageId }
+        : undefined,
+      input_message_content: {
+        '@type': 'inputMessageText',
+        text: { '@type': 'formattedText', text: text }
+      },
+      scheduling_state: {
+        '@type': 'messageSchedulingStateSendAtDate',
+        send_date: sendDate
+      }
+    } as Record<string, object>;
+    await TDLibClient.getInstance().send('sendMessage', params);
+  }
+
+  async votePoll(chatId: number, messageId: number, optionIds: number[]): Promise<void> {
+    await TDLibClient.getInstance().send('setPollAnswer', {
+      chat_id: chatId,
+      message_id: messageId,
+      option_ids: optionIds
+    });
+  }
+
+  async getScheduledMessages(chatId: number): Promise<Message[]> {
+    const result = await TDLibClient.getInstance().send('getChatScheduledMessages', {
+      chat_id: chatId
+    }) as Record<string, object>;
+    const rawMessages = result['messages'] as Record<string, object>[];
+    if (!rawMessages) return [];
+    return rawMessages.map(raw => this.parseMessage(raw));
+  }
+
+  // --- Drafts ---
+
+  async setDraft(chatId: number, text: string, replyToMessageId: number = 0): Promise<void> {
+    if (text.length === 0 && replyToMessageId === 0) {
+      await TDLibClient.getInstance().send('setChatDraftMessage', {
+        chat_id: chatId,
+        draft_message: null
+      });
+    } else {
+      await TDLibClient.getInstance().send('setChatDraftMessage', {
+        chat_id: chatId,
+        draft_message: {
+          '@type': 'draftMessage',
+          reply_to: replyToMessageId > 0
+            ? { '@type': 'inputMessageReplyToMessage', message_id: replyToMessageId }
+            : undefined,
+          input_message_text: {
+            '@type': 'inputMessageText',
+            text: { '@type': 'formattedText', text: text }
+          }
+        }
+      });
+    }
+  }
+
   // --- TDLib update subscriptions ---
 
   private subscribeToUpdates(): void {
@@ -362,6 +443,27 @@ export class MessagesController {
       }
     }
 
+    // Media album grouping
+    const albumId = raw['media_album_id'] as string;
+    if (albumId && albumId !== '0') {
+      msg.mediaAlbumId = albumId;
+    }
+
+    // Scheduling state
+    const scheduling = raw['scheduling_state'] as Record<string, object>;
+    if (scheduling) {
+      const schedType = scheduling['@type'] as string;
+      if (schedType === 'messageSchedulingStateSendAtDate') {
+        msg.schedulingState = (scheduling['send_date'] as number) || 0;
+      }
+    }
+
+    // Self-destruct
+    const selfDestruct = raw['self_destruct_type'] as Record<string, object>;
+    if (selfDestruct) {
+      msg.selfDestructIn = (selfDestruct['self_destruct_time'] as number) || 0;
+    }
+
     // Content
     if (content) {
       this.applyContent(msg, content);
@@ -423,6 +525,42 @@ export class MessagesController {
         msg.text = 'GIF';
         break;
       }
+      case 'messageVideoNote': {
+        msg.contentType = MessageContentType.VIDEO_NOTE;
+        const videoNote = content['video_note'] as Record<string, object>;
+        msg.videoNoteDuration = (videoNote?.['duration'] as number) || 0;
+        msg.videoNoteLength = (videoNote?.['length'] as number) || 240;
+        const vnFile = videoNote?.['video'] as Record<string, object>;
+        if (vnFile) {
+          msg.videoNoteFileId = (vnFile['id'] as number) || 0;
+        }
+        break;
+      }
+      case 'messagePoll': {
+        msg.contentType = MessageContentType.POLL;
+        const poll = content['poll'] as Record<string, object>;
+        if (poll) {
+          msg.pollId = (poll['id'] as string) || '';
+          msg.pollQuestion = ((poll['question'] as Record<string, string>)?.['text']) || '';
+          msg.pollTotalVoterCount = (poll['total_voter_count'] as number) || 0;
+          msg.pollIsClosed = (poll['is_closed'] as boolean) || false;
+          msg.pollIsAnonymous = (poll['is_anonymous'] as boolean) || true;
+
+          const pollType = poll['type'] as Record<string, object>;
+          msg.pollType = pollType?.['@type'] === 'pollTypeQuiz' ? 'quiz' : 'regular';
+
+          const options = poll['options'] as Record<string, object>[];
+          if (options) {
+            msg.pollOptions = options.map(opt => ({
+              text: ((opt['text'] as Record<string, string>)?.['text']) || '',
+              voterCount: (opt['voter_count'] as number) || 0,
+              votePercentage: (opt['vote_percentage'] as number) || 0,
+              isChosen: (opt['is_chosen'] as boolean) || false
+            }));
+          }
+        }
+        break;
+      }
       default: {
         msg.contentType = MessageContentType.UNSUPPORTED;
         msg.text = `[${type.replace('message', '')}]`;
@@ -453,6 +591,12 @@ export class MessagesController {
         return `${sticker?.['emoji'] || ''} Sticker`;
       }
       case 'messageAnimation': return 'GIF';
+      case 'messageVideoNote': return 'Video message';
+      case 'messagePoll': {
+        const poll = content['poll'] as Record<string, object>;
+        const question = (poll?.['question'] as Record<string, string>)?.['text'] || '';
+        return `📊 ${question}`;
+      }
       default: return type.replace('message', '');
     }
   }

@@ -983,6 +983,162 @@
     {
       "name": "calls_missed_label",
       "value": "未接"
+    },
+    {
+      "name": "admin_settings",
+      "value": "管理设置"
+    },
+    {
+      "name": "invite_links",
+      "value": "邀请链接"
+    },
+    {
+      "name": "schedule_message",
+      "value": "定时发送消息"
+    },
+    {
+      "name": "new_poll",
+      "value": "新投票"
+    },
+    {
+      "name": "anonymous_voting",
+      "value": "匿名投票"
+    },
+    {
+      "name": "quiz_mode",
+      "value": "测验模式"
+    },
+    {
+      "name": "quiz_hint",
+      "value": "一个正确答案，记录得分"
+    },
+    {
+      "name": "create_poll",
+      "value": "创建投票"
+    },
+    {
+      "name": "add_option",
+      "value": "添加选项"
+    },
+    {
+      "name": "encryption_key",
+      "value": "加密密钥"
+    },
+    {
+      "name": "self_destruct_timer",
+      "value": "自毁定时器"
+    },
+    {
+      "name": "secret_chat_creating",
+      "value": "正在创建加密对话..."
+    },
+    {
+      "name": "secret_chat_active",
+      "value": "加密对话已激活"
+    },
+    {
+      "name": "secret_chat_closed",
+      "value": "加密对话已关闭"
+    },
+    {
+      "name": "end_to_end_encryption",
+      "value": "端到端加密"
+    },
+    {
+      "name": "video_note",
+      "value": "视频消息"
+    },
+    {
+      "name": "permissions_label",
+      "value": "权限"
+    },
+    {
+      "name": "administrators_label",
+      "value": "管理员"
+    },
+    {
+      "name": "banned_users_label",
+      "value": "被封禁用户"
+    },
+    {
+      "name": "recent_actions",
+      "value": "最近操作"
+    },
+    {
+      "name": "send_messages",
+      "value": "发送消息"
+    },
+    {
+      "name": "send_media",
+      "value": "发送媒体"
+    },
+    {
+      "name": "send_polls",
+      "value": "发送投票"
+    },
+    {
+      "name": "send_stickers_gifs",
+      "value": "贴纸和GIF"
+    },
+    {
+      "name": "pin_messages",
+      "value": "置顶消息"
+    },
+    {
+      "name": "change_group_info",
+      "value": "修改群组信息"
+    },
+    {
+      "name": "copy_link",
+      "value": "复制链接"
+    },
+    {
+      "name": "share",
+      "value": "分享"
+    },
+    {
+      "name": "create_new_link",
+      "value": "创建新链接"
+    },
+    {
+      "name": "revoke",
+      "value": "撤销"
+    },
+    {
+      "name": "copied",
+      "value": "已复制！"
+    },
+    {
+      "name": "no_votes_yet",
+      "value": "暂无投票"
+    },
+    {
+      "name": "final_results",
+      "value": "最终结果"
+    },
+    {
+      "name": "anonymous_poll",
+      "value": "匿名投票"
+    },
+    {
+      "name": "schedule_in_1h",
+      "value": "1小时后"
+    },
+    {
+      "name": "schedule_in_2h",
+      "value": "2小时后"
+    },
+    {
+      "name": "schedule_in_4h",
+      "value": "4小时后"
+    },
+    {
+      "name": "schedule_tomorrow_morning",
+      "value": "明天早上"
+    },
+    {
+      "name": "schedule_tomorrow_evening",
+      "value": "明天晚上"
     }
   ]
 }

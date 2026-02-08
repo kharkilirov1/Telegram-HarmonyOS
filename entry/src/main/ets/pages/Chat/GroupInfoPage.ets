@@ -287,6 +287,63 @@ export struct GroupInfoPage {
 
             Blank().height(16)
 
+            // --- Admin & Invite Links ---
+            Column() {
+              Row() {
+                Image($r('app.media.ic_edit'))
+                  .width(20).height(20)
+                  .fillColor($r('app.color.text_secondary'))
+                  .margin({ right: 12 })
+                Text($r('app.string.admin_settings'))
+                  .fontSize(16)
+                  .fontColor($r('app.color.text_primary'))
+                  .layoutWeight(1)
+                Image($r('app.media.ic_forward'))
+                  .width(14).height(14)
+                  .fillColor($r('app.color.text_secondary'))
+              }
+              .width('100%').height(48)
+              .padding({ left: 16, right: 16 })
+              .onClick(() => {
+                this.navPathStack.pushPath({
+                  name: 'GroupAdmin',
+                  param: { chatId: this.chatId } as Record<string, number>
+                });
+              })
+
+              Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 48 })
+
+              Row() {
+                Image($r('app.media.ic_forward'))
+                  .width(20).height(20)
+                  .fillColor($r('app.color.text_secondary'))
+                  .margin({ right: 12 })
+                Text($r('app.string.invite_links'))
+                  .fontSize(16)
+                  .fontColor($r('app.color.text_primary'))
+                  .layoutWeight(1)
+                Image($r('app.media.ic_forward'))
+                  .width(14).height(14)
+                  .fillColor($r('app.color.text_secondary'))
+              }
+              .width('100%').height(48)
+              .padding({ left: 16, right: 16 })
+              .onClick(() => {
+                this.navPathStack.pushPath({
+                  name: 'InviteLinks',
+                  param: { chatId: this.chatId } as Record<string, number>
+                });
+              })
+            }
+            .width('100%')
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
+            .margin({ left: 16, right: 16 })
+
+            Blank().height(16)
+
             // --- Members list ---
             if (!this.isChannel) {
               Column() {

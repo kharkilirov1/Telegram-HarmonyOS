@@ -109,6 +109,26 @@
       "name": "Wallpaper",
       "pageSourceFile": "src/main/ets/pages/Settings/WallpaperPage.ets",
       "buildFunction": "WallpaperBuilder"
+    },
+    {
+      "name": "CreatePoll",
+      "pageSourceFile": "src/main/ets/pages/Chat/CreatePollPage.ets",
+      "buildFunction": "CreatePollBuilder"
+    },
+    {
+      "name": "SecretChat",
+      "pageSourceFile": "src/main/ets/pages/Chat/SecretChatPage.ets",
+      "buildFunction": "SecretChatBuilder"
+    },
+    {
+      "name": "GroupAdmin",
+      "pageSourceFile": "src/main/ets/pages/Chat/GroupAdminPage.ets",
+      "buildFunction": "GroupAdminBuilder"
+    },
+    {
+      "name": "InviteLinks",
+      "pageSourceFile": "src/main/ets/pages/Chat/InviteLinksPage.ets",
+      "buildFunction": "InviteLinksBuilder"
     }
   ]
 }

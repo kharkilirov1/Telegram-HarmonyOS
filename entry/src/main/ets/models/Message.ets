@@ -4,6 +4,13 @@ export interface MessageReaction {
   isMine: boolean;
 }
 
+export interface PollOption {
+  text: string;
+  voterCount: number;
+  votePercentage: number;
+  isChosen: boolean;
+}
+
 @ObservedV2
 export class Message {
   @Trace id: number;
@@ -30,6 +37,27 @@ export class Message {
   @Trace videoDuration: number;
   @Trace stickerUrl: string | null;
   @Trace stickerFileId: number;
+
+  // Video note (round video)
+  @Trace videoNoteLength: number;
+  @Trace videoNoteDuration: number;
+  @Trace videoNoteFileId: number;
+
+  // Poll
+  @Trace pollId: string;
+  @Trace pollQuestion: string;
+  @Trace pollOptions: PollOption[];
+  @Trace pollTotalVoterCount: number;
+  @Trace pollIsClosed: boolean;
+  @Trace pollIsAnonymous: boolean;
+  @Trace pollType: string; // 'regular' | 'quiz'
+
+  // Album
+  @Trace mediaAlbumId: string;
+
+  // Scheduling
+  @Trace schedulingState: number; // 0 = none, timestamp = scheduled date
+  @Trace selfDestructIn: number; // seconds, 0 = no self-destruct
 
   // Reactions
   @Trace reactions: MessageReaction[];
@@ -70,6 +98,19 @@ export class Message {
     this.videoDuration = 0;
     this.stickerUrl = null;
     this.stickerFileId = 0;
+    this.videoNoteLength = 0;
+    this.videoNoteDuration = 0;
+    this.videoNoteFileId = 0;
+    this.pollId = '';
+    this.pollQuestion = '';
+    this.pollOptions = [];
+    this.pollTotalVoterCount = 0;
+    this.pollIsClosed = false;
+    this.pollIsAnonymous = true;
+    this.pollType = 'regular';
+    this.mediaAlbumId = '';
+    this.schedulingState = 0;
+    this.selfDestructIn = 0;
     this.reactions = [];
   }
 }
@@ -82,6 +123,8 @@ export enum MessageContentType {
   VOICE = 'voice',
   STICKER = 'sticker',
   ANIMATION = 'animation',
+  VIDEO_NOTE = 'video_note',
+  POLL = 'poll',
   UNSUPPORTED = 'unsupported'
 }
 

@@ -983,6 +983,162 @@
     {
       "name": "calls_missed_label",
       "value": "Пропущен"
+    },
+    {
+      "name": "admin_settings",
+      "value": "Управление группой"
+    },
+    {
+      "name": "invite_links",
+      "value": "Пригласительные ссылки"
+    },
+    {
+      "name": "schedule_message",
+      "value": "Запланировать сообщение"
+    },
+    {
+      "name": "new_poll",
+      "value": "Новый опрос"
+    },
+    {
+      "name": "anonymous_voting",
+      "value": "Анонимное голосование"
+    },
+    {
+      "name": "quiz_mode",
+      "value": "Режим викторины"
+    },
+    {
+      "name": "quiz_hint",
+      "value": "Один правильный ответ, баллы учитываются"
+    },
+    {
+      "name": "create_poll",
+      "value": "Создать опрос"
+    },
+    {
+      "name": "add_option",
+      "value": "Добавить вариант"
+    },
+    {
+      "name": "encryption_key",
+      "value": "Ключ шифрования"
+    },
+    {
+      "name": "self_destruct_timer",
+      "value": "Таймер самоуничтожения"
+    },
+    {
+      "name": "secret_chat_creating",
+      "value": "Создание секретного чата..."
+    },
+    {
+      "name": "secret_chat_active",
+      "value": "Секретный чат активен"
+    },
+    {
+      "name": "secret_chat_closed",
+      "value": "Секретный чат закрыт"
+    },
+    {
+      "name": "end_to_end_encryption",
+      "value": "Сквозное шифрование"
+    },
+    {
+      "name": "video_note",
+      "value": "Видеосообщение"
+    },
+    {
+      "name": "permissions_label",
+      "value": "Разрешения"
+    },
+    {
+      "name": "administrators_label",
+      "value": "Администраторы"
+    },
+    {
+      "name": "banned_users_label",
+      "value": "Заблокированные"
+    },
+    {
+      "name": "recent_actions",
+      "value": "Последние действия"
+    },
+    {
+      "name": "send_messages",
+      "value": "Отправка сообщений"
+    },
+    {
+      "name": "send_media",
+      "value": "Отправка медиа"
+    },
+    {
+      "name": "send_polls",
+      "value": "Отправка опросов"
+    },
+    {
+      "name": "send_stickers_gifs",
+      "value": "Стикеры и GIF"
+    },
+    {
+      "name": "pin_messages",
+      "value": "Закрепление сообщений"
+    },
+    {
+      "name": "change_group_info",
+      "value": "Изменение информации"
+    },
+    {
+      "name": "copy_link",
+      "value": "Копировать ссылку"
+    },
+    {
+      "name": "share",
+      "value": "Поделиться"
+    },
+    {
+      "name": "create_new_link",
+      "value": "Создать новую ссылку"
+    },
+    {
+      "name": "revoke",
+      "value": "Отозвать"
+    },
+    {
+      "name": "copied",
+      "value": "Скопировано!"
+    },
+    {
+      "name": "no_votes_yet",
+      "value": "Ещё нет голосов"
+    },
+    {
+      "name": "final_results",
+      "value": "Окончательные результаты"
+    },
+    {
+      "name": "anonymous_poll",
+      "value": "Анонимный опрос"
+    },
+    {
+      "name": "schedule_in_1h",
+      "value": "Через 1 час"
+    },
+    {
+      "name": "schedule_in_2h",
+      "value": "Через 2 часа"
+    },
+    {
+      "name": "schedule_in_4h",
+      "value": "Через 4 часа"
+    },
+    {
+      "name": "schedule_tomorrow_morning",
+      "value": "Завтра утром"
+    },
+    {
+      "name": "schedule_tomorrow_evening",
+      "value": "Завтра вечером"
     }
   ]
 }
