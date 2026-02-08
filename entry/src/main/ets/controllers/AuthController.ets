@@ -42,7 +42,7 @@ export class AuthController {
   async fetchMyUserId(): Promise<number> {
     if (this.myUserId > 0) return this.myUserId;
     try {
-      const result = await TDLibClient.getInstance().send('getMe') as Record<string, object>;
+      const result = await TDLibClient.getInstance().send('getMe') as Record<string, Object>;
       this.myUserId = (result['id'] as number) || 0;
     } catch (_e) {
       hilog.warn(DOMAIN, TAG, 'Failed to fetch my user ID');
@@ -69,10 +69,9 @@ export class AuthController {
   private subscribeToUpdates(): void {
     const client = TDLibClient.getInstance();
 
-    client.on('updateAuthorizationState', (update: object) => {
-      const data = update as Record<string, object>;
-      const authState = data['authorization_state'] as Record<string, object>;
-      const stateType = (authState?.['@type'] as string) || '';
+    client.on('updateAuthorizationState', (update: Record<string, Object>) => {
+      const authState = update['authorization_state'] as Record<string, Object>;
+      const stateType = (authState['@type'] as string) || '';
 
       hilog.info(DOMAIN, TAG, 'Auth state: %{public}s', stateType);
       this.currentState = stateType;
@@ -80,7 +79,8 @@ export class AuthController {
       // Handle states that need automatic responses
       if (stateType === 'authorizationStateWaitEncryptionKey') {
         const dbKey = SecurityService.getInstance().getDatabaseEncryptionKey();
-        client.send('checkDatabaseEncryptionKey', { encryption_key: dbKey });
+        const params: Record<string, Object> = { encryption_key: dbKey };
+        client.send('checkDatabaseEncryptionKey', params);
         return;
       }
 

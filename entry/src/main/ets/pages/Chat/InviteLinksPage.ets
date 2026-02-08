@@ -38,14 +38,13 @@ export struct InviteLinksPage {
 
     // Get primary invite link from chat info
     try {
-      const chatResult = await TDLibClient.getInstance().send('getChat', {
-        chat_id: this.chatId
-      }) as Record<string, object>;
+      const getChatParams: Record<string, Object> = { chat_id: this.chatId };
+      const chatResult = await TDLibClient.getInstance().send('getChat', getChatParams);
       const inviteLinkObj = chatResult['invite_link'] as Record<string, string>;
       if (inviteLinkObj) {
         this.primaryLink = inviteLinkObj['invite_link'] || '';
       }
-    } catch {
+    } catch (_e) {
       this.primaryLink = '';
     }
 
@@ -56,15 +55,9 @@ export struct InviteLinksPage {
 
   private async loadLinks(): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('getChatInviteLinks', {
-        chat_id: this.chatId,
-        creator_user_id: 0,
-        is_revoked: false,
-        offset_date: 0,
-        offset_invite_link: '',
-        limit: 100
-      }) as Record<string, object>;
-      const rawLinks = result['invite_links'] as Record<string, object>[];
+      const getLinksParams: Record<string, Object> = { chat_id: this.chatId, creator_user_id: 0, is_revoked: false, offset_date: 0, offset_invite_link: '', limit: 100 };
+      const result = await TDLibClient.getInstance().send('getChatInviteLinks', getLinksParams);
+      const rawLinks = result['invite_links'] as Record<string, Object>[];
       if (rawLinks && rawLinks.length > 0) {
         this.inviteLinks = [];
         for (const link of rawLinks) {
@@ -86,7 +79,7 @@ export struct InviteLinksPage {
         }
         return;
       }
-    } catch {
+    } catch (_e) {
       // Fallback stub data
     }
 
@@ -104,13 +97,8 @@ export struct InviteLinksPage {
     this.isCreating = true;
 
     try {
-      const result = await TDLibClient.getInstance().send('createChatInviteLink', {
-        chat_id: this.chatId,
-        name: '',
-        expiration_date: 0,
-        member_limit: 0,
-        creates_join_request: false
-      }) as Record<string, object>;
+      const createLinkParams: Record<string, Object> = { chat_id: this.chatId, name: '', expiration_date: 0, member_limit: 0, creates_join_request: false };
+      const result = await TDLibClient.getInstance().send('createChatInviteLink', createLinkParams);
       const newLink: InviteLink = {
         link: (result['invite_link'] as string) || '',
         memberCount: 0,
@@ -119,7 +107,7 @@ export struct InviteLinksPage {
         isPrimary: false,
       };
       this.inviteLinks = [...this.inviteLinks, newLink];
-    } catch {
+    } catch (_e) {
       // Handle creation error silently
     }
     this.isCreating = false;
@@ -127,10 +115,8 @@ export struct InviteLinksPage {
 
   private async revokeLink(link: string): Promise<void> {
     try {
-      await TDLibClient.getInstance().send('revokeChatInviteLink', {
-        chat_id: this.chatId,
-        invite_link: link
-      });
+      const revokeParams: Record<string, Object> = { chat_id: this.chatId, invite_link: link };
+      await TDLibClient.getInstance().send('revokeChatInviteLink', revokeParams);
       this.inviteLinks = this.inviteLinks.map(l => {
         if (l.link === link) {
           const revoked: InviteLink = {
@@ -144,7 +130,7 @@ export struct InviteLinksPage {
         }
         return l;
       });
-    } catch {
+    } catch (_e) {
       // Handle revoke error silently
     }
   }
@@ -165,7 +151,7 @@ export struct InviteLinksPage {
     if (timestamp === 0) {
       try {
         return getContext(this).resourceManager.getStringByNameSync('no_expiration');
-      } catch {
+      } catch (_e) {
         return 'No expiration';
       }
     }
@@ -177,7 +163,7 @@ export struct InviteLinksPage {
     try {
       const template = getContext(this).resourceManager.getStringByNameSync('expires_date');
       return template.replace('%s', dateStr);
-    } catch {
+    } catch (_e) {
       return `Expires ${dateStr}`;
     }
   }
@@ -227,7 +213,7 @@ export struct InviteLinksPage {
                 Text($r('app.string.primary_link_label'))
                   .fontSize(13)
                   .fontColor($r('app.color.text_secondary'))
-                  .textTransform(TextTransform.Uppercase)
+
                   .margin({ bottom: 8 })
 
                 Column() {
@@ -325,7 +311,7 @@ export struct InviteLinksPage {
                 Text($r('app.string.all_links_label'))
                   .fontSize(13)
                   .fontColor($r('app.color.text_secondary'))
-                  .textTransform(TextTransform.Uppercase)
+
                   .margin({ bottom: 8 })
 
                 Column() {

@@ -95,7 +95,7 @@ export struct PhoneNumberPage {
           Blank().height(20)
 
           // Animated mascot — the Telegram monkey (like real Telegram login)
-          TelegramMascot({ mascotState: MascotState.IDLE, size: 120 })
+          TelegramMascot({ mascotState: MascotState.IDLE, mascotSize: 120 })
             .margin({ bottom: 16 })
 
           // Title — "Your Phone Number"

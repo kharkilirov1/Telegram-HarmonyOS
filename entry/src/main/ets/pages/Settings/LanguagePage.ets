@@ -100,7 +100,6 @@ export struct LanguagePage {
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, top: 8, bottom: 6 })
-              .textTransform(TextTransform.Uppercase)
 
             Column() {
               ForEach(this.getFilteredLanguages(true), (lang: LanguageItem, index: number) => {
@@ -124,7 +123,6 @@ export struct LanguagePage {
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
-              .textTransform(TextTransform.Uppercase)
 
             Column() {
               ForEach(this.getFilteredLanguages(false), (lang: LanguageItem, index: number) => {

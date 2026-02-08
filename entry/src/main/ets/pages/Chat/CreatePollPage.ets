@@ -92,7 +92,6 @@ export struct CreatePollPage {
       Text($r('app.string.question_label'))
         .fontSize(13)
         .fontColor($r('app.color.text_secondary'))
-        .textTransform(TextTransform.Uppercase)
         .margin({ left: 16, top: 16, bottom: 8 })
         .width('100%')
 
@@ -123,7 +122,6 @@ export struct CreatePollPage {
       Text($r('app.string.options_label'))
         .fontSize(13)
         .fontColor($r('app.color.text_secondary'))
-        .textTransform(TextTransform.Uppercase)
         .margin({ left: 16, top: 20, bottom: 8 })
         .width('100%')
 
@@ -224,7 +222,6 @@ export struct CreatePollPage {
       Text($r('app.string.settings'))
         .fontSize(13)
         .fontColor($r('app.color.text_secondary'))
-        .textTransform(TextTransform.Uppercase)
         .margin({ left: 16, top: 20, bottom: 8 })
         .width('100%')
 

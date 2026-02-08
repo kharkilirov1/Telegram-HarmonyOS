@@ -35,7 +35,7 @@ export struct BusinessAccountPage {
 
   private async checkBusinessStatus(): Promise<void> {
     try {
-      const me = await TDLibClient.getInstance().send('getMe') as Record<string, object>;
+      const me: Record<string, Object> = await TDLibClient.getInstance().send('getMe');
       // Business features require premium
       this.isBusiness = (me['is_premium'] as boolean) || false;
     } catch (_e) {
@@ -107,7 +107,7 @@ export struct BusinessAccountPage {
                     .margin({ left: 14 })
                     .layoutWeight(1)
 
-                  Image($r('app.media.ic_arrow_right'))
+                  Image($r('app.media.ic_settings'))
                     .width(16).height(16)
                     .fillColor($r('app.color.text_secondary'))
                 }

@@ -43,11 +43,11 @@ export struct SessionManagementPage {
   private async loadSessions(): Promise<void> {
     this.isLoading = true;
     try {
-      const result = await this.tdlib.send('getActiveSessions') as Record<string, object>;
-      const sessions = result['sessions'] as object[];
+      const result: Record<string, Object> = await this.tdlib.send('getActiveSessions');
+      const sessions = result['sessions'] as Object[];
       if (sessions) {
         const parsed: SessionInfo[] = sessions.map((s): SessionInfo => {
-          const session = s as Record<string, object>;
+          const session = s as Record<string, Object>;
           return {
             id: session['id'] as number,
             isCurrent: session['is_current'] as boolean,
@@ -77,7 +77,8 @@ export struct SessionManagementPage {
   private async terminateSession(sessionId: number): Promise<void> {
     this.terminatingSessionId = sessionId;
     try {
-      await this.tdlib.send('terminateSession', { session_id: sessionId } as object);
+      const terminateParams: Record<string, Object> = { session_id: sessionId };
+      await this.tdlib.send('terminateSession', terminateParams);
       this.otherSessions = this.otherSessions.filter((s: SessionInfo) => s.id !== sessionId);
     } catch (e) {
       // Termination failed silently
@@ -106,7 +107,7 @@ export struct SessionManagementPage {
     if (diff < 60) {
       try {
         return getContext(this).resourceManager.getStringByNameSync('online');
-      } catch {
+      } catch (_e) {
         return 'online';
       }
     } else if (diff < 3600) {
@@ -114,7 +115,7 @@ export struct SessionManagementPage {
       try {
         const template = getContext(this).resourceManager.getStringByNameSync('last_active_minutes');
         return template.replace('%d', minutes.toString());
-      } catch {
+      } catch (_e) {
         return `${minutes}m ago`;
       }
     } else if (diff < 86400) {
@@ -122,7 +123,7 @@ export struct SessionManagementPage {
       try {
         const template = getContext(this).resourceManager.getStringByNameSync('last_active_hours');
         return template.replace('%d', hours.toString());
-      } catch {
+      } catch (_e) {
         return `${hours}h ago`;
       }
     } else {
@@ -130,7 +131,7 @@ export struct SessionManagementPage {
       try {
         const template = getContext(this).resourceManager.getStringByNameSync('last_active_days');
         return template.replace('%d', days.toString());
-      } catch {
+      } catch (_e) {
         return `${days}d ago`;
       }
     }
@@ -291,8 +292,7 @@ export struct SessionManagementPage {
       .bindSheet($$this.showTerminateAllDialog, this.terminateAllConfirmSheet(), {
         height: SheetSize.FIT_CONTENT,
         dragBar: true,
-        backgroundColor: $r('app.color.glass_card_bg'),
-        backgroundBlurStyle: BlurStyle.COMPONENT_REGULAR
+        backgroundColor: $r('app.color.glass_card_bg')
       })
     }
     .hideTitleBar(true)

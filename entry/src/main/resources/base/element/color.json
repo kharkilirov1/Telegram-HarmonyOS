@@ -227,6 +227,22 @@
     {
       "name": "story_ring_read",
       "value": "#C8C8C8"
+    },
+    {
+      "name": "unread_badge",
+      "value": "#FF3B30"
+    },
+    {
+      "name": "secret_green",
+      "value": "#00B12C"
+    },
+    {
+      "name": "premium_gradient_start",
+      "value": "#6B93FF"
+    },
+    {
+      "name": "premium_gradient_end",
+      "value": "#976FFF"
     }
   ]
 }

@@ -402,10 +402,8 @@ export struct SearchPage {
 
   private async searchChats(query: string): Promise<Chat[]> {
     try {
-      const result = await TDLibClient.getInstance().send('searchChats', {
-        query: query,
-        limit: 20
-      }) as Record<string, object>;
+      const searchChatsParams: Record<string, Object> = { query: query, limit: 20 };
+      const result = await TDLibClient.getInstance().send('searchChats', searchChatsParams);
 
       const chatIds = result['chat_ids'] as number[];
       const chats: Chat[] = [];
@@ -428,16 +426,11 @@ export struct SearchPage {
 
   private async searchMessages(query: string): Promise<Message[]> {
     try {
-      const result = await TDLibClient.getInstance().send('searchMessages', {
-        chat_list: { '@type': 'chatListMain' },
-        query: query,
-        offset: '',
-        offset_chat_id: 0,
-        offset_message_id: 0,
-        limit: 50
-      }) as Record<string, object>;
+      const chatListMain: Record<string, Object> = { '@type': 'chatListMain' };
+      const searchMsgParams: Record<string, Object> = { chat_list: chatListMain, query: query, offset: '', offset_chat_id: 0, offset_message_id: 0, limit: 50 };
+      const result = await TDLibClient.getInstance().send('searchMessages', searchMsgParams);
 
-      const rawMessages = result['messages'] as Record<string, object>[];
+      const rawMessages = result['messages'] as Record<string, Object>[];
       const parsed: Message[] = [];
 
       if (rawMessages) {
@@ -458,10 +451,8 @@ export struct SearchPage {
 
   private async openPrivateChat(userId: number): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('createPrivateChat', {
-        user_id: userId,
-        force: false
-      }) as Record<string, object>;
+      const privateChatParams: Record<string, Object> = { user_id: userId, force: false };
+      const result = await TDLibClient.getInstance().send('createPrivateChat', privateChatParams);
 
       const chatId = result['id'] as number;
       if (chatId) {

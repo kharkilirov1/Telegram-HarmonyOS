@@ -88,7 +88,7 @@ export struct CallUIPage {
           .height('100%')
           .backgroundColor('#1A1A2E')
           .linearGradient({
-            direction: GradientDirection.TopStart,
+            direction: GradientDirection.LeftTop,
             colors: [['#1A1A2E', 0.0], ['#16213E', 0.5], ['#0F3460', 1.0]]
           })
 
@@ -182,7 +182,7 @@ export struct CallUIPage {
                 this.isSpeaker, () => { this.isSpeaker = !this.isSpeaker; })
 
               // Video
-              this.controlButton($r('app.media.ic_video'), 'Video',
+              this.controlButton($r('app.media.ic_settings'), 'Video',
                 this.isVideoEnabled, () => { this.isVideoEnabled = !this.isVideoEnabled; })
 
               // Flip camera (when video)

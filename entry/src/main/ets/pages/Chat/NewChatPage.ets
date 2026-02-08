@@ -175,7 +175,7 @@ export struct NewChatPage {
         photoUrl: user.photoUrl || '',
         initials: this.getInitials(user),
         avatarColor: this.getAvatarColor(user.id),
-        size: 50,
+        avatarSize: 50,
         isOnline: user.isOnline,
         showOnlineDot: true
       })
@@ -209,10 +209,8 @@ export struct NewChatPage {
 
   private async openPrivateChat(userId: number): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('createPrivateChat', {
-        user_id: userId,
-        force: false
-      }) as Record<string, number>;
+      const privateChatParams: Record<string, Object> = { user_id: userId, force: false };
+      const result = await TDLibClient.getInstance().send('createPrivateChat', privateChatParams) as Record<string, number>;
 
       const chatId = result['id'] || -userId;
       this.navPathStack.pop();

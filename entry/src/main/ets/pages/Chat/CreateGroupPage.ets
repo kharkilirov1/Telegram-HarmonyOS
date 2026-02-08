@@ -275,7 +275,7 @@ export struct CreateGroupPage {
         photoUrl: user.photoUrl || '',
         initials: this.getUserInitials(user),
         avatarColor: this.getAvatarColor(user.id),
-        size: 44,
+        avatarSize: 44,
         isOnline: user.isOnline,
         showOnlineDot: true
       })
@@ -349,10 +349,8 @@ export struct CreateGroupPage {
     this.isCreating = true;
 
     try {
-      const result = await TDLibClient.getInstance().send('createNewBasicGroupChat', {
-        user_ids: this.selectedUserIds,
-        title: this.groupName.trim()
-      }) as Record<string, number>;
+      const createGroupParams: Record<string, Object> = { user_ids: this.selectedUserIds, title: this.groupName.trim() };
+      const result = await TDLibClient.getInstance().send('createNewBasicGroupChat', createGroupParams) as Record<string, number>;
 
       const chatId = result['id'] || 0;
       this.navPathStack.pop();

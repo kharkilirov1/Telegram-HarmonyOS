@@ -14,7 +14,7 @@ export struct ChatListItem {
         photoUrl: this.chat.photo || '',
         initials: this.getInitials(),
         avatarColor: this.getAvatarColor(),
-        size: 54,
+        avatarSize: 54,
         isOnline: this.chat.isUserOnline,
         showOnlineDot: !this.chat.isGroup && !this.chat.isChannel
       })
@@ -88,7 +88,7 @@ export struct ChatListItem {
                 : $r('app.color.telegram_blue'))
               .borderRadius(10)
               .padding({ left: 6, right: 6, top: 2, bottom: 2 })
-              .minWidth(20)
+              .constraintSize({ minWidth: 20 })
               .height(20)
               .textAlign(TextAlign.Center)
           } else if (this.chat.isPinned) {

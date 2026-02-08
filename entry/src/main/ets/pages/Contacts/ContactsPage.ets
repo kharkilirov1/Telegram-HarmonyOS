@@ -188,7 +188,7 @@ export struct ContactsPage {
         photoUrl: user.photoUrl || '',
         initials: this.getInitials(user),
         avatarColor: this.getAvatarColor(user.id),
-        size: 50,
+        avatarSize: 50,
         isOnline: user.isOnline,
         showOnlineDot: true
       })

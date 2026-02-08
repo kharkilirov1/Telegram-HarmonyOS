@@ -3,7 +3,7 @@ export struct AvatarWithStatus {
   @Param photoUrl: string = '';
   @Param initials: string = '';
   @Param avatarColor: string = '#2196F3';
-  @Param size: number = 54;
+  @Param avatarSize: number = 54;
   @Param isOnline: boolean = false;
   @Param showOnlineDot: boolean = true;
 
@@ -14,32 +14,32 @@ export struct AvatarWithStatus {
           .alt($r('app.media.app_icon'))
           .autoResize(true)
           .onError(() => {})
-          .width(this.size)
-          .height(this.size)
-          .borderRadius(this.size / 2)
+          .width(this.avatarSize)
+          .height(this.avatarSize)
+          .borderRadius(this.avatarSize / 2)
       } else {
         Text(this.initials)
-          .fontSize(this.size * 0.37)
+          .fontSize(this.avatarSize * 0.37)
           .fontWeight(FontWeight.Medium)
           .fontColor(Color.White)
-          .width(this.size)
-          .height(this.size)
-          .borderRadius(this.size / 2)
+          .width(this.avatarSize)
+          .height(this.avatarSize)
+          .borderRadius(this.avatarSize / 2)
           .backgroundColor(this.avatarColor)
           .textAlign(TextAlign.Center)
       }
 
       if (this.showOnlineDot && this.isOnline) {
         Circle()
-          .width(this.size * 0.26)
-          .height(this.size * 0.26)
+          .width(this.avatarSize * 0.26)
+          .height(this.avatarSize * 0.26)
           .fill($r('app.color.online_indicator'))
           .stroke(Color.White)
           .strokeWidth(2)
       }
     }
-    .width(this.size)
-    .height(this.size)
+    .width(this.avatarSize)
+    .height(this.avatarSize)
   }
 }
 

@@ -34,18 +34,16 @@ export struct UserInfoPage {
 
   private async loadUserInfo(): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('getUser', {
-        user_id: this.userId
-      }) as Record<string, object>;
+      const getUserParams: Record<string, Object> = { user_id: this.userId };
+      const result = await TDLibClient.getInstance().send('getUser', getUserParams);
       this.firstName = (result['first_name'] as string) || 'User';
       this.lastName = (result['last_name'] as string) || '';
       this.username = (result['username'] as string) || '';
       this.phoneNumber = (result['phone_number'] as string) || '';
 
       // Get user full info (bio, common groups)
-      const fullInfo = await TDLibClient.getInstance().send('getUserFullInfo', {
-        user_id: this.userId
-      }) as Record<string, object>;
+      const getFullInfoParams: Record<string, Object> = { user_id: this.userId };
+      const fullInfo = await TDLibClient.getInstance().send('getUserFullInfo', getFullInfoParams);
       this.bio = (fullInfo['bio'] as string) || '';
       this.commonGroupsCount = (fullInfo['group_in_common_count'] as number) || 0;
     } catch (e) {
@@ -132,7 +130,7 @@ export struct UserInfoPage {
               this.actionButton($r('app.media.ic_phone_call'), 'Call', () => {
                 CallsController.getInstance().startCall(this.userId, false);
               })
-              this.actionButton($r('app.media.ic_video'), 'Video', () => {
+              this.actionButton($r('app.media.ic_settings'), 'Video', () => {
                 CallsController.getInstance().startCall(this.userId, true);
               })
               this.actionButton($r('app.media.ic_unmute'), 'Mute', () => {})

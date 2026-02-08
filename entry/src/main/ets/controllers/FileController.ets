@@ -58,13 +58,14 @@ export class FileController {
     this.downloadCallbacks.set(fileId, existing);
 
     // Request download from TDLib
-    TDLibClient.getInstance().send('downloadFile', {
+    const downloadParams: Record<string, Object> = {
       file_id: fileId,
       priority: priority,
       offset: 0,
       limit: 0,
       synchronous: false
-    });
+    };
+    TDLibClient.getInstance().send('downloadFile', downloadParams);
   }
 
   /**
@@ -72,20 +73,20 @@ export class FileController {
    */
   cancelDownload(fileId: number): void {
     this.downloadCallbacks.delete(fileId);
-    TDLibClient.getInstance().send('cancelDownloadFile', {
+    const cancelParams: Record<string, Object> = {
       file_id: fileId,
       only_if_pending: true
-    });
+    };
+    TDLibClient.getInstance().send('cancelDownloadFile', cancelParams);
   }
 
   private subscribeToUpdates(): void {
-    TDLibClient.getInstance().on('updateFile', (update: object) => {
-      const data = update as Record<string, object>;
-      const file = data['file'] as Record<string, object>;
+    TDLibClient.getInstance().on('updateFile', (update: Record<string, Object>) => {
+      const file = update['file'] as Record<string, Object>;
       if (!file) return;
 
       const fileId = file['id'] as number;
-      const local = file['local'] as Record<string, object>;
+      const local = file['local'] as Record<string, Object>;
       if (!local) return;
 
       const isComplete = local['is_downloading_completed'] as boolean;

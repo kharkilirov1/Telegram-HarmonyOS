@@ -36,18 +36,18 @@ export struct MultiAccountPage {
 
     // Get current user info
     try {
-      const meResult = await TDLibClient.getInstance().send('getMe') as Record<string, object>;
+      const meResult: Record<string, Object> = await TDLibClient.getInstance().send('getMe');
       const userId = (meResult['id'] as number) || 0;
       const firstName = (meResult['first_name'] as string) || '';
       const lastName = (meResult['last_name'] as string) || '';
       const phoneNumber = (meResult['phone_number'] as string) || '';
 
       let photoUrl = '';
-      const profilePhoto = meResult['profile_photo'] as Record<string, object>;
+      const profilePhoto = meResult['profile_photo'] as Record<string, Object>;
       if (profilePhoto) {
-        const small = profilePhoto['small'] as Record<string, object>;
+        const small = profilePhoto['small'] as Record<string, Object>;
         if (small) {
-          const localFile = small['local'] as Record<string, object>;
+          const localFile = small['local'] as Record<string, Object>;
           if (localFile && (localFile['is_downloading_completed'] as boolean)) {
             photoUrl = (localFile['path'] as string) || '';
           }

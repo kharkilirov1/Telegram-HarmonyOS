@@ -29,12 +29,12 @@ function getAnimationFile(state: MascotState): string {
 }
 
 // Cache parsed animation data to avoid repeated file reads
-const animationDataCache = new Map<string, object>();
+const animationDataCache = new Map<string, Object>();
 
 @ComponentV2
 export struct TelegramMascot {
   @Param mascotState: MascotState = MascotState.IDLE;
-  @Param size: number = 120;
+  @Param mascotSize: number = 120;
 
   private renderingSettings: RenderingContextSettings = new RenderingContextSettings(true);
   private canvasCtx: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.renderingSettings);
@@ -52,8 +52,8 @@ export struct TelegramMascot {
 
   build() {
     Canvas(this.canvasCtx)
-      .width(this.size)
-      .height(this.size)
+      .width(this.mascotSize)
+      .height(this.mascotSize)
       .backgroundColor(Color.Transparent)
       .onReady(() => {
         this.canvasCtx.imageSmoothingEnabled = true;
@@ -67,7 +67,7 @@ export struct TelegramMascot {
     this.playAnimation(this.mascotState);
   }
 
-  private loadAnimationData(fileName: string): object | null {
+  private loadAnimationData(fileName: string): Object | null {
     // Return from cache if already loaded
     const cached = animationDataCache.get(fileName);
     if (cached) {
@@ -78,7 +78,7 @@ export struct TelegramMascot {
       const rawData = getContext(this).resourceManager.getRawFileContentSync(fileName);
       const decoder = new util.TextDecoder('utf-8');
       const jsonStr = decoder.decodeToString(rawData);
-      const data = JSON.parse(jsonStr) as object;
+      const data: Object = JSON.parse(jsonStr) as Object;
       animationDataCache.set(fileName, data);
       return data;
     } catch (e) {

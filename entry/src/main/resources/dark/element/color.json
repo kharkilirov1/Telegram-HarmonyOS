@@ -207,6 +207,42 @@
     {
       "name": "story_ring_read",
       "value": "#555555"
+    },
+    {
+      "name": "unread_badge",
+      "value": "#FF453A"
+    },
+    {
+      "name": "secret_green",
+      "value": "#30D158"
+    },
+    {
+      "name": "premium_gradient_start",
+      "value": "#6B93FF"
+    },
+    {
+      "name": "premium_gradient_end",
+      "value": "#976FFF"
+    },
+    {
+      "name": "overlay_dark",
+      "value": "#88000000"
+    },
+    {
+      "name": "overlay_gradient_start",
+      "value": "#CC000000"
+    },
+    {
+      "name": "overlay_gradient_end",
+      "value": "#00000000"
+    },
+    {
+      "name": "text_on_overlay",
+      "value": "#B3FFFFFF"
+    },
+    {
+      "name": "slider_track_dark",
+      "value": "#4DFFFFFF"
     }
   ]
 }

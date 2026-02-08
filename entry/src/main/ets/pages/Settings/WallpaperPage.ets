@@ -84,7 +84,6 @@ export struct WallpaperPage {
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
                 .margin({ left: 16, bottom: 8, top: 16 })
-                .textTransform(TextTransform.Uppercase)
 
               Column() {
                 // Sample messages on selected background
@@ -127,7 +126,6 @@ export struct WallpaperPage {
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 8 })
-              .textTransform(TextTransform.Uppercase)
 
             Grid() {
               ForEach(this.wallpapers.filter(w => !w.isPattern), (w: WallpaperItem) => {
@@ -168,7 +166,6 @@ export struct WallpaperPage {
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 8 })
-              .textTransform(TextTransform.Uppercase)
 
             Grid() {
               ForEach(this.wallpapers.filter(w => w.isPattern), (w: WallpaperItem) => {

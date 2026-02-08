@@ -55,7 +55,7 @@ export struct VerifyCodePage {
         Blank().height(20)
 
         // Animated mascot — tracks code input (like real Telegram)
-        TelegramMascot({ mascotState: this.mascotState, size: 120 })
+        TelegramMascot({ mascotState: this.mascotState, mascotSize: 120 })
           .margin({ bottom: 12 })
 
         // Title

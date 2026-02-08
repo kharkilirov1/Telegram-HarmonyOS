@@ -782,14 +782,10 @@ export struct ChatDetailPage {
 
   private async editMessageText(messageId: number, text: string): Promise<void> {
     this.editMessage = null;
-    await TDLibClient.getInstance().send('editMessageText', {
-      chat_id: this.chatId,
-      message_id: messageId,
-      input_message_content: {
-        '@type': 'inputMessageText',
-        text: { '@type': 'formattedText', text: text }
-      }
-    });
+    const formattedText: Record<string, Object> = { '@type': 'formattedText', text: text };
+    const inputContent: Record<string, Object> = { '@type': 'inputMessageText', text: formattedText };
+    const editParams: Record<string, Object> = { chat_id: this.chatId, message_id: messageId, input_message_content: inputContent };
+    await TDLibClient.getInstance().send('editMessageText', editParams);
     // Update local message
     const msg = this.messages.find(m => m.id === messageId);
     if (msg) {
@@ -848,41 +844,28 @@ export struct ChatDetailPage {
 
   private async sendGifMessage(gifId: number): Promise<void> {
     // Send GIF animation as a message via TDLib
-    await TDLibClient.getInstance().send('sendMessage', {
-      chat_id: this.chatId,
-      input_message_content: {
-        '@type': 'inputMessageAnimation',
-        animation: { '@type': 'inputFileId', id: gifId }
-      }
-    });
+    const animation: Record<string, Object> = { '@type': 'inputFileId', id: gifId };
+    const gifContent: Record<string, Object> = { '@type': 'inputMessageAnimation', animation: animation };
+    const gifParams: Record<string, Object> = { chat_id: this.chatId, input_message_content: gifContent };
+    await TDLibClient.getInstance().send('sendMessage', gifParams);
   }
 
   private async sendStickerMessage(emoji: string): Promise<void> {
     // Send sticker as a message via TDLib
-    await TDLibClient.getInstance().send('sendMessage', {
-      chat_id: this.chatId,
-      input_message_content: {
-        '@type': 'inputMessageSticker',
-        sticker: { '@type': 'inputFileId', id: 0 },
-        emoji: emoji
-      }
-    });
+    const sticker: Record<string, Object> = { '@type': 'inputFileId', id: 0 };
+    const stickerContent: Record<string, Object> = { '@type': 'inputMessageSticker', sticker: sticker, emoji: emoji };
+    const stickerParams: Record<string, Object> = { chat_id: this.chatId, input_message_content: stickerContent };
+    await TDLibClient.getInstance().send('sendMessage', stickerParams);
   }
 
   private async sendVoiceMessage(duration: number): Promise<void> {
     // Send voice note via TDLib (AudioCapturer would supply the actual file)
     const replyId = this.replyMessage?.id || 0;
     this.replyMessage = null;
-    await TDLibClient.getInstance().send('sendMessage', {
-      chat_id: this.chatId,
-      reply_to_message_id: replyId,
-      input_message_content: {
-        '@type': 'inputMessageVoiceNote',
-        voice_note: { '@type': 'inputFileLocal', path: '' },
-        duration: duration,
-        waveform: ''
-      }
-    });
+    const voiceNote: Record<string, Object> = { '@type': 'inputFileLocal', path: '' };
+    const voiceContent: Record<string, Object> = { '@type': 'inputMessageVoiceNote', voice_note: voiceNote, duration: duration, waveform: '' };
+    const voiceParams: Record<string, Object> = { chat_id: this.chatId, reply_to_message_id: replyId, input_message_content: voiceContent };
+    await TDLibClient.getInstance().send('sendMessage', voiceParams);
   }
 
   private async sendScheduledMessage(text: string, sendDate: number): Promise<void> {
@@ -1016,7 +999,7 @@ export struct ChatDetailPage {
         if (results.length > 0) {
           this.scrollToMessage(results[0].id);
         }
-      } catch {
+      } catch (_e) {
         this.searchResults = [];
         this.currentSearchIndex = -1;
       }
@@ -1044,10 +1027,8 @@ export struct ChatDetailPage {
 
   private async jumpToDate(timestamp: number): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('getChatMessageByDate', {
-        chat_id: this.chatId,
-        date: timestamp
-      }) as Record<string, object>;
+      const jumpParams: Record<string, Object> = { chat_id: this.chatId, date: timestamp };
+      const result = await TDLibClient.getInstance().send('getChatMessageByDate', jumpParams);
 
       if (result && result['id']) {
         const messageId = result['id'] as number;
@@ -1067,7 +1048,7 @@ export struct ChatDetailPage {
           }
         }
       }
-    } catch {
+    } catch (_e) {
       // Failed to jump to date, silently ignore
     }
   }
@@ -1079,17 +1060,14 @@ export struct ChatDetailPage {
     }
     try {
       // Use TDLib searchChatMembers to find matching users in this chat
-      const result = await TDLibClient.getInstance().send('searchChatMembers', {
-        chat_id: this.chatId,
-        query: name,
-        limit: 10,
-        filter: { '@type': 'chatMembersFilterMembers' }
-      }) as Record<string, object>;
+      const memberFilter: Record<string, Object> = { '@type': 'chatMembersFilterMembers' };
+      const searchMemberParams: Record<string, Object> = { chat_id: this.chatId, query: name, limit: 10, filter: memberFilter };
+      const result = await TDLibClient.getInstance().send('searchChatMembers', searchMemberParams);
 
-      const members = result['members'] as Record<string, object>[];
+      const members = result['members'] as Record<string, Object>[];
       if (members && members.length > 0) {
         const firstMember = members[0];
-        const memberId = firstMember['member_id'] as Record<string, object>;
+        const memberId = firstMember['member_id'] as Record<string, Object>;
         if (memberId && memberId['@type'] === 'messageSenderUser') {
           this.searchSenderId = memberId['user_id'] as number || 0;
           this.showSenderInput = false;
@@ -1099,7 +1077,7 @@ export struct ChatDetailPage {
           }
         }
       }
-    } catch {
+    } catch (_e) {
       // Failed to look up sender, keep input visible
     }
   }

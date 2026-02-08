@@ -7,7 +7,7 @@ export function MediaViewerBuilder(name: string, param: Object) {
 export struct MediaViewerPage {
   @Consumer('navPathStack') navPathStack: NavPathStack = new NavPathStack();
   @Param mediaUrl: string = '';
-  @Local scale: number = 1;
+  @Local zoomScale: number = 1;
   @Local offsetX: number = 0;
   @Local offsetY: number = 0;
   @Local isToolbarVisible: boolean = true;
@@ -35,30 +35,30 @@ export struct MediaViewerPage {
             .width('100%')
             .height('100%')
             .objectFit(ImageFit.Contain)
-            .scale({ x: this.scale, y: this.scale })
+            .scale({ x: this.zoomScale, y: this.zoomScale })
             .translate({ x: this.offsetX, y: this.offsetY })
             .gesture(
               GestureGroup(GestureMode.Parallel,
                 PinchGesture({ fingers: 2 })
                   .onActionUpdate((event: GestureEvent) => {
-                    this.scale = Math.max(0.5, Math.min(event.scale, 5));
+                    this.zoomScale = Math.max(0.5, Math.min(event.scale, 5));
                   })
                   .onActionEnd(() => {
-                    if (this.scale < 1) {
-                      this.scale = 1;
+                    if (this.zoomScale < 1) {
+                      this.zoomScale = 1;
                       this.offsetX = 0;
                       this.offsetY = 0;
                     }
                   }),
                 PanGesture()
                   .onActionUpdate((event: GestureEvent) => {
-                    if (this.scale > 1) {
+                    if (this.zoomScale > 1) {
                       this.offsetX = event.offsetX;
                       this.offsetY = event.offsetY;
                     }
                   })
                   .onActionEnd(() => {
-                    if (this.scale <= 1) {
+                    if (this.zoomScale <= 1) {
                       this.offsetX = 0;
                       this.offsetY = 0;
                     }

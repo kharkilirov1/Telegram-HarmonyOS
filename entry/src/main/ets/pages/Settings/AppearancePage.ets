@@ -64,7 +64,6 @@ export struct AppearancePage {
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
                 .margin({ left: 16, bottom: 8, top: 16 })
-                .textTransform(TextTransform.Uppercase)
 
               Column() {
                 // Sample incoming message
@@ -144,7 +143,6 @@ export struct AppearancePage {
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
-              .textTransform(TextTransform.Uppercase)
 
             Column() {
               this.themeOption('system', $r('app.string.settings_theme_system'), $r('app.string.appearance_theme_system_hint'))
@@ -167,7 +165,6 @@ export struct AppearancePage {
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
-              .textTransform(TextTransform.Uppercase)
 
             Column() {
               Row() {
@@ -205,7 +202,6 @@ export struct AppearancePage {
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
-              .textTransform(TextTransform.Uppercase)
 
             Column() {
               Row() {
@@ -249,7 +245,6 @@ export struct AppearancePage {
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
-              .textTransform(TextTransform.Uppercase)
 
             Column() {
               Row() {
@@ -295,7 +290,6 @@ export struct AppearancePage {
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
-              .textTransform(TextTransform.Uppercase)
 
             Column() {
               Row({ space: 16 }) {

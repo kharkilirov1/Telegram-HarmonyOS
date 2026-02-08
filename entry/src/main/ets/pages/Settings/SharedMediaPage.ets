@@ -51,18 +51,20 @@ export struct SharedMediaPage {
 
   private async loadMediaItems(): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('searchChatMessages', {
+      const mediaFilter: Record<string, Object> = { '@type': 'searchMessagesFilterPhotoAndVideo' };
+      const mediaParams: Record<string, Object> = {
         chat_id: this.chatId,
         query: '',
-        filter: { '@type': 'searchMessagesFilterPhotoAndVideo' },
+        filter: mediaFilter,
         from_message_id: 0,
         offset: 0,
         limit: 50
-      }) as Record<string, object>;
-      const messages = result['messages'] as Record<string, object>[];
+      };
+      const result: Record<string, Object> = await TDLibClient.getInstance().send('searchChatMessages', mediaParams);
+      const messages = result['messages'] as Record<string, Object>[];
       if (messages && messages.length > 0) {
         this.mediaItems = messages.map((msg, index) => {
-          const content = msg['content'] as Record<string, object>;
+          const content = msg['content'] as Record<string, Object>;
           const contentType = (content['@type'] as string) || '';
           const isVideo = contentType === 'messageVideo';
           const date = (msg['date'] as number) || 0;
@@ -77,7 +79,7 @@ export struct SharedMediaPage {
         });
         return;
       }
-    } catch {
+    } catch (_e) {
       // Fallback to stub data
     }
     this.mediaItems = [
@@ -92,19 +94,21 @@ export struct SharedMediaPage {
 
   private async loadFileItems(): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('searchChatMessages', {
+      const docFilter: Record<string, Object> = { '@type': 'searchMessagesFilterDocument' };
+      const docParams: Record<string, Object> = {
         chat_id: this.chatId,
         query: '',
-        filter: { '@type': 'searchMessagesFilterDocument' },
+        filter: docFilter,
         from_message_id: 0,
         offset: 0,
         limit: 50
-      }) as Record<string, object>;
-      const messages = result['messages'] as Record<string, object>[];
+      };
+      const result: Record<string, Object> = await TDLibClient.getInstance().send('searchChatMessages', docParams);
+      const messages = result['messages'] as Record<string, Object>[];
       if (messages && messages.length > 0) {
         this.fileItems = messages.map((msg, index) => {
-          const content = msg['content'] as Record<string, object>;
-          const doc = content['document'] as Record<string, object>;
+          const content = msg['content'] as Record<string, Object>;
+          const doc = content['document'] as Record<string, Object>;
           const fileName = (doc?.['file_name'] as string) || 'Document';
           const size = (doc?.['size'] as number) || 0;
           return {
@@ -118,7 +122,7 @@ export struct SharedMediaPage {
         });
         return;
       }
-    } catch {
+    } catch (_e) {
       // Fallback to stub data
     }
     this.fileItems = [
@@ -130,20 +134,22 @@ export struct SharedMediaPage {
 
   private async loadLinkItems(): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('searchChatMessages', {
+      const urlFilter: Record<string, Object> = { '@type': 'searchMessagesFilterUrl' };
+      const urlParams: Record<string, Object> = {
         chat_id: this.chatId,
         query: '',
-        filter: { '@type': 'searchMessagesFilterUrl' },
+        filter: urlFilter,
         from_message_id: 0,
         offset: 0,
         limit: 50
-      }) as Record<string, object>;
-      const messages = result['messages'] as Record<string, object>[];
+      };
+      const result: Record<string, Object> = await TDLibClient.getInstance().send('searchChatMessages', urlParams);
+      const messages = result['messages'] as Record<string, Object>[];
       if (messages && messages.length > 0) {
         this.linkItems = messages.map((msg, index) => {
-          const content = msg['content'] as Record<string, object>;
-          const webPage = content['web_page'] as Record<string, object>;
-          const text = content['text'] as Record<string, string>;
+          const content = msg['content'] as Record<string, Object>;
+          const webPage = content['web_page'] as Record<string, Object>;
+          const text = content['text'] as Record<string, Object>;
           return {
             id: (msg['id'] as number) || index,
             type: 'link',
@@ -155,7 +161,7 @@ export struct SharedMediaPage {
         });
         return;
       }
-    } catch {
+    } catch (_e) {
       // Fallback to stub data
     }
     this.linkItems = [

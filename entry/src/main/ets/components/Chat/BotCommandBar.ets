@@ -31,27 +31,32 @@ export struct BotCommandBar {
 
     try {
       // Get full bot info via TDLib
-      const result = await TDLibClient.getInstance().send('getUserFullInfo', {
-        user_id: this.botUserId
-      }) as Record<string, object>;
+      const sendParams: Record<string, Object> = { user_id: this.botUserId };
+      const result: Record<string, Object> = await TDLibClient.getInstance().send('getUserFullInfo', sendParams);
 
-      const botInfo = result['bot_info'] as Record<string, object>;
+      const botInfo: Record<string, Object> | undefined = result['bot_info'] as Record<string, Object>;
       if (botInfo) {
-        this.botDescription = ((botInfo['short_description'] as Record<string, string>)?.['text']) || '';
+        const shortDesc: Record<string, Object> | undefined = botInfo['short_description'] as Record<string, Object>;
+        this.botDescription = shortDesc !== undefined ? ((shortDesc['text'] as string) || '') : '';
 
         // Commands
-        const rawCommands = botInfo['commands'] as Record<string, string>[];
+        const rawCommands: Record<string, Object>[] | undefined = botInfo['commands'] as Record<string, Object>[];
         if (rawCommands) {
-          this.commands = rawCommands.map((cmd: Record<string, string>) => ({
-            command: `/${cmd['command'] || ''}`,
-            description: cmd['description'] || ''
-          }));
+          const parsed: BotCommand[] = [];
+          for (const cmd of rawCommands) {
+            const cmdObj: BotCommand = {
+              command: `/${(cmd['command'] as string) || ''}`,
+              description: (cmd['description'] as string) || ''
+            };
+            parsed.push(cmdObj);
+          }
+          this.commands = parsed;
         }
 
         // Menu button (Mini App)
-        const menuButton = botInfo['menu_button'] as Record<string, object>;
+        const menuButton: Record<string, Object> | undefined = botInfo['menu_button'] as Record<string, Object>;
         if (menuButton) {
-          const btnType = (menuButton['@type'] as string) || '';
+          const btnType: string = (menuButton['@type'] as string) || '';
           if (btnType === 'botMenuButton') {
             this.hasMenuButton = true;
             this.menuButtonText = (menuButton['text'] as string) || '';

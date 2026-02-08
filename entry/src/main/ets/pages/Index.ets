@@ -213,11 +213,13 @@ struct Index {
 
           // --- Glass Card 1: Quick actions ---
           Column() {
-            this.settingsRow($r('app.media.ic_saved'), $r('app.color.settings_icon_blue'),
-              $r('app.string.saved_messages'))
-              .onClick(() => {
-                this.navPathStack.pushPath({ name: 'SavedMessages' });
-              })
+            Column() {
+              this.settingsRow($r('app.media.ic_saved'), $r('app.color.settings_icon_blue'),
+                $r('app.string.saved_messages'))
+            }
+            .onClick(() => {
+              this.navPathStack.pushPath({ name: 'SavedMessages' });
+            })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             this.settingsRow($r('app.media.ic_phone_call'), $r('app.color.settings_icon_green'),
               $r('app.string.settings_recent_calls'))
@@ -225,11 +227,13 @@ struct Index {
             this.settingsRow($r('app.media.ic_channel'), $r('app.color.settings_icon_orange'),
               $r('app.string.settings_devices'))
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
-            this.settingsRow($r('app.media.ic_group'), $r('app.color.settings_icon_blue'),
-              $r('app.string.settings_chat_folders'))
-              .onClick(() => {
-                this.navPathStack.pushPath({ name: 'ChatFolders' });
-              })
+            Column() {
+              this.settingsRow($r('app.media.ic_group'), $r('app.color.settings_icon_blue'),
+                $r('app.string.settings_chat_folders'))
+            }
+            .onClick(() => {
+              this.navPathStack.pushPath({ name: 'ChatFolders' });
+            })
           }
           .width('100%')
           .backgroundColor($r('app.color.glass_card_bg'))
@@ -242,35 +246,45 @@ struct Index {
 
           // --- Glass Card 2: Settings ---
           Column() {
-            this.settingsRow($r('app.media.ic_unmute'), $r('app.color.settings_icon_red'),
-              $r('app.string.settings_notifications_sounds'))
-              .onClick(() => {
-                this.navPathStack.pushPath({ name: 'NotificationsSettings' });
-              })
+            Column() {
+              this.settingsRow($r('app.media.ic_unmute'), $r('app.color.settings_icon_red'),
+                $r('app.string.settings_notifications_sounds'))
+            }
+            .onClick(() => {
+              this.navPathStack.pushPath({ name: 'NotificationsSettings' });
+            })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
-            this.settingsRow($r('app.media.ic_lock'), $r('app.color.settings_icon_blue'),
-              $r('app.string.settings_privacy_security'))
-              .onClick(() => {
-                this.navPathStack.pushPath({ name: 'PrivacySettings' });
-              })
+            Column() {
+              this.settingsRow($r('app.media.ic_lock'), $r('app.color.settings_icon_blue'),
+                $r('app.string.settings_privacy_security'))
+            }
+            .onClick(() => {
+              this.navPathStack.pushPath({ name: 'PrivacySettings' });
+            })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
-            this.settingsRow($r('app.media.ic_document'), $r('app.color.settings_icon_green'),
-              $r('app.string.settings_data_storage'))
-              .onClick(() => {
-                this.navPathStack.pushPath({ name: 'DataStorage' });
-              })
+            Column() {
+              this.settingsRow($r('app.media.ic_document'), $r('app.color.settings_icon_green'),
+                $r('app.string.settings_data_storage'))
+            }
+            .onClick(() => {
+              this.navPathStack.pushPath({ name: 'DataStorage' });
+            })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
-            this.settingsRow($r('app.media.ic_sticker'), $r('app.color.settings_icon_blue'),
-              $r('app.string.settings_appearance'))
-              .onClick(() => {
-                this.navPathStack.pushPath({ name: 'Appearance' });
-              })
+            Column() {
+              this.settingsRow($r('app.media.ic_sticker'), $r('app.color.settings_icon_blue'),
+                $r('app.string.settings_appearance'))
+            }
+            .onClick(() => {
+              this.navPathStack.pushPath({ name: 'Appearance' });
+            })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
-            this.settingsRow($r('app.media.ic_location'), $r('app.color.settings_icon_purple'),
-              $r('app.string.settings_language'))
-              .onClick(() => {
-                this.navPathStack.pushPath({ name: 'Language' });
-              })
+            Column() {
+              this.settingsRow($r('app.media.ic_location'), $r('app.color.settings_icon_purple'),
+                $r('app.string.settings_language'))
+            }
+            .onClick(() => {
+              this.navPathStack.pushPath({ name: 'Language' });
+            })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             this.settingsRow($r('app.media.ic_emoji'), $r('app.color.settings_icon_orange'),
               $r('app.string.settings_stickers'))
@@ -286,23 +300,29 @@ struct Index {
 
           // --- Glass Card 3: Premium & Features ---
           Column() {
-            this.settingsRow($r('app.media.ic_sticker'), $r('app.color.settings_icon_purple'),
-              $r('app.string.telegram_premium'))
-              .onClick(() => {
-                this.navPathStack.pushPath({ name: 'Premium' });
-              })
+            Column() {
+              this.settingsRow($r('app.media.ic_sticker'), $r('app.color.settings_icon_purple'),
+                $r('app.string.telegram_premium'))
+            }
+            .onClick(() => {
+              this.navPathStack.pushPath({ name: 'Premium' });
+            })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
-            this.settingsRow($r('app.media.ic_contact'), $r('app.color.settings_icon_blue'),
-              $r('app.string.nearby_people'))
-              .onClick(() => {
-                this.navPathStack.pushPath({ name: 'NearbyPeople' });
-              })
+            Column() {
+              this.settingsRow($r('app.media.ic_contact'), $r('app.color.settings_icon_blue'),
+                $r('app.string.nearby_people'))
+            }
+            .onClick(() => {
+              this.navPathStack.pushPath({ name: 'NearbyPeople' });
+            })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
-            this.settingsRow($r('app.media.ic_settings'), $r('app.color.settings_icon_green'),
-              $r('app.string.business_account'))
-              .onClick(() => {
-                this.navPathStack.pushPath({ name: 'BusinessAccount' });
-              })
+            Column() {
+              this.settingsRow($r('app.media.ic_settings'), $r('app.color.settings_icon_green'),
+                $r('app.string.business_account'))
+            }
+            .onClick(() => {
+              this.navPathStack.pushPath({ name: 'BusinessAccount' });
+            })
           }
           .width('100%')
           .backgroundColor($r('app.color.glass_card_bg'))

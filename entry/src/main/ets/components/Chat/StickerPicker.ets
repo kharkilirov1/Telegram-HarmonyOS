@@ -51,11 +51,12 @@ export struct StickerPicker {
 
   private async loadRecentStickers(): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('getRecentStickers', {
+      const recentParams: Record<string, Object> = {
         is_attached: false
-      });
-      const data = result as Record<string, object>;
-      const stickersRaw = data['stickers'] as Record<string, object>[];
+      };
+      const result = await TDLibClient.getInstance().send('getRecentStickers', recentParams);
+      const data = result as Record<string, Object>;
+      const stickersRaw = data['stickers'] as Record<string, Object>[];
       if (stickersRaw) {
         const parsed: TelegramSticker[] = [];
         for (const raw of stickersRaw) {
@@ -77,11 +78,13 @@ export struct StickerPicker {
   private async loadInstalledSets(): Promise<void> {
     this.isLoading = true;
     try {
-      const result = await TDLibClient.getInstance().send('getInstalledStickerSets', {
-        sticker_type: { '@type': 'stickerTypeRegular' }
-      });
-      const data = result as Record<string, object>;
-      const setsRaw = data['sets'] as Record<string, object>[];
+      const stickerType: Record<string, Object> = { '@type': 'stickerTypeRegular' };
+      const installedParams: Record<string, Object> = {
+        sticker_type: stickerType
+      };
+      const result = await TDLibClient.getInstance().send('getInstalledStickerSets', installedParams);
+      const data = result as Record<string, Object>;
+      const setsRaw = data['sets'] as Record<string, Object>[];
       if (setsRaw) {
         const sets: StickerSetInfo[] = [];
         for (const raw of setsRaw) {
@@ -110,11 +113,12 @@ export struct StickerPicker {
       return;
     }
     try {
-      const result = await TDLibClient.getInstance().send('getStickerSet', {
+      const getSetParams: Record<string, Object> = {
         set_id: setInfo.id
-      });
-      const data = result as Record<string, object>;
-      const stickersRaw = data['stickers'] as Record<string, object>[];
+      };
+      const result = await TDLibClient.getInstance().send('getStickerSet', getSetParams);
+      const data = result as Record<string, Object>;
+      const stickersRaw = data['stickers'] as Record<string, Object>[];
       if (stickersRaw) {
         const stickers: TelegramSticker[] = [];
         for (const raw of stickersRaw) {
@@ -146,13 +150,15 @@ export struct StickerPicker {
 
   private async loadTrendingSets(): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('getTrendingStickerSets', {
-        sticker_type: { '@type': 'stickerTypeRegular' },
+      const trendingType: Record<string, Object> = { '@type': 'stickerTypeRegular' };
+      const trendingParams: Record<string, Object> = {
+        sticker_type: trendingType,
         offset: 0,
         limit: 20
-      });
-      const data = result as Record<string, object>;
-      const setsRaw = data['sets'] as Record<string, object>[];
+      };
+      const result = await TDLibClient.getInstance().send('getTrendingStickerSets', trendingParams);
+      const data = result as Record<string, Object>;
+      const setsRaw = data['sets'] as Record<string, Object>[];
       if (setsRaw) {
         const sets: StickerSetInfo[] = [];
         for (const raw of setsRaw) {
@@ -168,10 +174,11 @@ export struct StickerPicker {
 
   private async installStickerSet(setId: string): Promise<void> {
     try {
-      await TDLibClient.getInstance().send('changeStickerSet', {
+      const installParams: Record<string, Object> = {
         set_id: setId,
         is_installed: true
-      });
+      };
+      await TDLibClient.getInstance().send('changeStickerSet', installParams);
       // Reload installed sets to reflect changes
       this.showTrending = false;
       this.loadInstalledSets();
@@ -182,10 +189,11 @@ export struct StickerPicker {
 
   private async removeStickerSet(setId: string): Promise<void> {
     try {
-      await TDLibClient.getInstance().send('changeStickerSet', {
+      const removeParams: Record<string, Object> = {
         set_id: setId,
         is_installed: false
-      });
+      };
+      await TDLibClient.getInstance().send('changeStickerSet', removeParams);
       // Reload installed sets
       this.loadInstalledSets();
       this.activeTabIndex = 0;
@@ -196,19 +204,19 @@ export struct StickerPicker {
 
   // --- Parsing helpers ---
 
-  private parseStickerObject(raw: Record<string, object>): TelegramSticker {
+  private parseStickerObject(raw: Record<string, Object>): TelegramSticker {
     const stickerId = (raw['id'] as number) || 0;
     const emoji = (raw['emoji'] as string) || '';
-    const stickerFile = raw['sticker'] as Record<string, object>;
+    const stickerFile = raw['sticker'] as Record<string, Object>;
     let fileId = 0;
     let localPath = '';
     let isAnimated = false;
 
     if (stickerFile) {
-      const file = stickerFile['file'] as Record<string, object>;
+      const file = stickerFile['file'] as Record<string, Object>;
       if (file) {
         fileId = (file['id'] as number) || 0;
-        const local = file['local'] as Record<string, object>;
+        const local = file['local'] as Record<string, Object>;
         if (local) {
           const isComplete = local['is_downloading_completed'] as boolean;
           if (isComplete) {
@@ -218,7 +226,7 @@ export struct StickerPicker {
       }
     }
 
-    const format = raw['format'] as Record<string, object>;
+    const format = raw['format'] as Record<string, Object>;
     if (format) {
       const formatType = format['@type'] as string;
       if (formatType === 'stickerFormatTgs' || formatType === 'stickerFormatWebm') {
@@ -227,7 +235,7 @@ export struct StickerPicker {
     }
 
     // Also check the type field which some TDLib versions use
-    const typeField = raw['type'] as Record<string, object>;
+    const typeField = raw['type'] as Record<string, Object>;
     if (typeField) {
       const typeStr = typeField['@type'] as string;
       if (typeStr === 'stickerTypeAnimated' || typeStr === 'stickerTypeVideo') {
@@ -244,7 +252,7 @@ export struct StickerPicker {
     } as TelegramSticker;
   }
 
-  private parseStickerSetInfoObject(raw: Record<string, object>): StickerSetInfo {
+  private parseStickerSetInfoObject(raw: Record<string, Object>): StickerSetInfo {
     const id = String(raw['id'] || '0');
     const title = (raw['title'] as string) || '';
     const name = (raw['name'] as string) || '';
@@ -252,7 +260,7 @@ export struct StickerPicker {
 
     // Extract thumbnail emoji from covers or first sticker
     let thumbnailEmoji = '';
-    const covers = raw['covers'] as Record<string, object>[];
+    const covers = raw['covers'] as Record<string, Object>[];
     if (covers && covers.length > 0) {
       thumbnailEmoji = (covers[0]['emoji'] as string) || '';
     }

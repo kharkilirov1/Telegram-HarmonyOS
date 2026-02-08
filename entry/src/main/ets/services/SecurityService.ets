@@ -62,7 +62,7 @@ export class SecurityService {
         hilog.info(DOMAIN, TAG, 'HUKS key already exists');
         return;
       }
-    } catch {
+    } catch (_e) {
       // Key doesn't exist — will create below
     }
 
@@ -130,17 +130,17 @@ export class SecurityService {
         },
         {
           tag: huks.HuksTag.HUKS_TAG_IV,
-          value: iv.buffer as ArrayBuffer
+          value: iv
         }
       ],
-      inData: plainData.buffer as ArrayBuffer
+      inData: plainData
     };
 
     // Init → Finish (single-block operation)
     const sessionHandle = await huks.initSession(DB_KEY_ALIAS, encryptOptions);
     const finishOptions: huks.HuksOptions = {
       properties: [],
-      inData: plainData.buffer as ArrayBuffer
+      inData: plainData
     };
     const result = await huks.finishSession(sessionHandle.handle, finishOptions);
 

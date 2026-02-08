@@ -51,7 +51,7 @@ export struct SecretChatPage {
   ];
 
   // TDLib update handler references for cleanup
-  private secretChatUpdateHandler = (update: object): void => {
+  private secretChatUpdateHandler = (update: Record<string, Object>): void => {
     this.handleSecretChatUpdate(update);
   };
 
@@ -59,7 +59,7 @@ export struct SecretChatPage {
     // Resolve 'Off' label from resources at runtime
     try {
       this.timerOptions[0].label = getContext(this).resourceManager.getStringByNameSync('timer_off');
-    } catch {
+    } catch (_e) {
       this.timerOptions[0].label = 'Off';
     }
     TDLibClient.getInstance().on('updateSecretChat', this.secretChatUpdateHandler);
@@ -74,7 +74,7 @@ export struct SecretChatPage {
   private getUserFallback(): string {
     try {
       return getContext(this).resourceManager.getStringByNameSync('user_fallback');
-    } catch {
+    } catch (_e) {
       return 'User';
     }
   }
@@ -83,7 +83,7 @@ export struct SecretChatPage {
     try {
       const template = getContext(this).resourceManager.getStringByNameSync('waiting_for_user');
       return template.replace('%s', this.userName);
-    } catch {
+    } catch (_e) {
       return `Waiting for ${this.userName} to come online`;
     }
   }
@@ -92,16 +92,15 @@ export struct SecretChatPage {
     try {
       const template = getContext(this).resourceManager.getStringByNameSync('compare_key_hint');
       return template.replace('%s', this.userName);
-    } catch {
+    } catch (_e) {
       return `Compare this image with the one shown on ${this.userName}'s device. If they are the same, your chat is 100% secure.`;
     }
   }
 
   private async loadUserName(): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('getUser', {
-        user_id: this.userId
-      }) as Record<string, string>;
+      const getUserParams: Record<string, Object> = { user_id: this.userId };
+      const result = await TDLibClient.getInstance().send('getUser', getUserParams) as Record<string, string>;
       const first = result['first_name'] || '';
       const last = result['last_name'] || '';
       this.userName = `${first} ${last}`.trim() || this.getUserFallback();
@@ -115,9 +114,8 @@ export struct SecretChatPage {
     this.errorMessage = '';
 
     try {
-      const result = await TDLibClient.getInstance().send('createNewSecretChat', {
-        user_id: this.userId
-      }) as Record<string, object>;
+      const createSecretParams: Record<string, Object> = { user_id: this.userId };
+      const result = await TDLibClient.getInstance().send('createNewSecretChat', createSecretParams);
 
       const chatType = result['type'] as Record<string, number> | undefined;
       if (chatType) {
@@ -137,9 +135,8 @@ export struct SecretChatPage {
 
   private async fetchSecretChatInfo(): Promise<void> {
     try {
-      const secretChat = await TDLibClient.getInstance().send('getSecretChat', {
-        secret_chat_id: this.secretChatId
-      }) as Record<string, object>;
+      const getSecretParams: Record<string, Object> = { secret_chat_id: this.secretChatId };
+      const secretChat = await TDLibClient.getInstance().send('getSecretChat', getSecretParams);
 
       const state = secretChat['state'] as Record<string, string> | undefined;
       const stateType = state ? state['@type'] : '';
@@ -166,9 +163,9 @@ export struct SecretChatPage {
     }
   }
 
-  private handleSecretChatUpdate(update: object): void {
-    const record = update as Record<string, object>;
-    const secretChat = record['secret_chat'] as Record<string, object> | undefined;
+  private handleSecretChatUpdate(update: Record<string, Object>): void {
+    const record = update as Record<string, Object>;
+    const secretChat = record['secret_chat'] as Record<string, Object> | undefined;
     if (!secretChat) {
       return;
     }
@@ -207,10 +204,8 @@ export struct SecretChatPage {
     }
     this.isSettingTimer = true;
     try {
-      await TDLibClient.getInstance().send('setChatMessageAutoDeleteTime', {
-        chat_id: this.chatId,
-        message_auto_delete_time: seconds
-      });
+      const timerParams: Record<string, Object> = { chat_id: this.chatId, message_auto_delete_time: seconds };
+      await TDLibClient.getInstance().send('setChatMessageAutoDeleteTime', timerParams);
     } catch (e) {
       // Timer setting failed silently; user can retry
     }
@@ -259,7 +254,7 @@ export struct SecretChatPage {
           // Lock icon to indicate E2E encryption
           Image($r('app.media.ic_lock'))
             .width(20).height(20)
-            .fillColor($r('app.color.secret_green'))
+            .fillColor($r('app.color.settings_icon_green'))
         }
         .width('100%')
         .height(56)
@@ -328,12 +323,12 @@ export struct SecretChatPage {
       } else if (this.chatState === 'active') {
         Image($r('app.media.ic_lock'))
           .width(48).height(48)
-          .fillColor($r('app.color.secret_green'))
+          .fillColor($r('app.color.settings_icon_green'))
 
         Text($r('app.string.secret_chat_active'))
           .fontSize(16)
           .fontWeight(FontWeight.Medium)
-          .fontColor($r('app.color.secret_green'))
+          .fontColor($r('app.color.settings_icon_green'))
           .margin({ top: 12 })
       } else {
         // closed
@@ -427,7 +422,7 @@ export struct SecretChatPage {
   buildTimerSection() {
     Column() {
       Row() {
-        Image($r('app.media.ic_timer'))
+        Image($r('app.media.ic_settings'))
           .width(20).height(20)
           .fillColor($r('app.color.text_secondary'))
           .margin({ right: 12 })
@@ -507,7 +502,7 @@ export struct SecretChatPage {
       Row() {
         Image($r('app.media.ic_lock'))
           .width(20).height(20)
-          .fillColor($r('app.color.secret_green'))
+          .fillColor($r('app.color.settings_icon_green'))
           .margin({ right: 12 })
 
         Text($r('app.string.end_to_end_encryption'))

@@ -25,7 +25,7 @@ export struct PremiumPage {
     { icon: $r('app.media.ic_sticker'), title: $r('app.string.premium_feature_stickers'), color: $r('app.color.settings_icon_blue') },
     { icon: $r('app.media.ic_document'), title: $r('app.string.premium_feature_upload'), color: $r('app.color.settings_icon_green') },
     { icon: $r('app.media.ic_arrow_down'), title: $r('app.string.premium_feature_speed'), color: $r('app.color.telegram_blue') },
-    { icon: $r('app.media.ic_voice'), title: $r('app.string.premium_feature_voice_text'), color: $r('app.color.settings_icon_purple') },
+    { icon: $r('app.media.ic_mute'), title: $r('app.string.premium_feature_voice_text'), color: $r('app.color.settings_icon_purple') },
     { icon: $r('app.media.ic_unmute'), title: $r('app.string.premium_feature_no_ads'), color: $r('app.color.settings_icon_red') },
   ];
 
@@ -35,7 +35,7 @@ export struct PremiumPage {
 
   private async checkPremiumStatus(): Promise<void> {
     try {
-      const me = await TDLibClient.getInstance().send('getMe') as Record<string, object>;
+      const me: Record<string, Object> = await TDLibClient.getInstance().send('getMe');
       this.isPremium = (me['is_premium'] as boolean) || false;
     } catch (_e) {
       this.isPremium = false;
@@ -109,7 +109,7 @@ export struct PremiumPage {
                     .margin({ left: 14 })
                     .layoutWeight(1)
 
-                  Image($r('app.media.ic_arrow_right'))
+                  Image($r('app.media.ic_settings'))
                     .width(16).height(16)
                     .fillColor($r('app.color.text_secondary'))
                 }

@@ -31,10 +31,10 @@ export class ContactsController {
   }
 
   getContacts(): User[] {
-    return this.contactIds
-      .map(id => this.usersById.get(id))
-      .filter((u): u is User => u !== undefined)
-      .sort((a, b) => {
+    return (this.contactIds
+      .map((id: number) => this.usersById.get(id))
+      .filter((u: User | undefined): boolean => u !== undefined) as User[])
+      .sort((a: User, b: User) => {
         const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
         const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
         return nameA.localeCompare(nameB);
@@ -52,7 +52,7 @@ export class ContactsController {
 
     try {
       const result = await TDLibClient.getInstance()
-        .send('getContacts') as Record<string, object>;
+        .send('getContacts') as Record<string, Object>;
       const userIds = result['user_ids'] as number[];
 
       if (userIds) {
@@ -74,8 +74,9 @@ export class ContactsController {
   }
 
   async searchContacts(query: string, limit: number = 50): Promise<User[]> {
+    const searchParams: Record<string, Object> = { query: query, limit: limit };
     const result = await TDLibClient.getInstance()
-      .send('searchContacts', { query: query, limit: limit }) as Record<string, object>;
+      .send('searchContacts', searchParams) as Record<string, Object>;
     const userIds = result['user_ids'] as number[];
     const users: User[] = [];
 
@@ -96,21 +97,21 @@ export class ContactsController {
 
   async addContact(userId: number, firstName: string, lastName: string,
     phoneNumber: string): Promise<void> {
-    await TDLibClient.getInstance().send('addContact', {
-      contact: {
-        '@type': 'contact',
-        phone_number: phoneNumber,
-        first_name: firstName,
-        last_name: lastName,
-        user_id: userId
-      }
-    });
+    const contact: Record<string, Object> = {
+      '@type': 'contact',
+      phone_number: phoneNumber,
+      first_name: firstName,
+      last_name: lastName,
+      user_id: userId
+    };
+    const addParams: Record<string, Object> = { contact: contact };
+    await TDLibClient.getInstance().send('addContact', addParams);
   }
 
   async deleteContact(userId: number): Promise<void> {
-    await TDLibClient.getInstance().send('removeContacts', {
-      user_ids: [userId]
-    });
+    const removeIds: number[] = [userId];
+    const removeParams: Record<string, Object> = { user_ids: removeIds };
+    await TDLibClient.getInstance().send('removeContacts', removeParams);
 
     const idx = this.contactIds.indexOf(userId);
     if (idx >= 0) {
@@ -123,8 +124,9 @@ export class ContactsController {
 
   private async loadUser(userId: number): Promise<User | undefined> {
     try {
+      const userParams: Record<string, Object> = { user_id: userId };
       const result = await TDLibClient.getInstance()
-        .send('getUser', { user_id: userId }) as Record<string, object>;
+        .send('getUser', userParams) as Record<string, Object>;
       const user = this.parseUser(result);
       this.usersById.set(user.id, user);
       return user;
@@ -134,8 +136,8 @@ export class ContactsController {
     }
   }
 
-  private parseUser(raw: Record<string, object>): User {
-    const status = raw['status'] as Record<string, object>;
+  private parseUser(raw: Record<string, Object>): User {
+    const status = raw['status'] as Record<string, Object>;
     let isOnline = false;
     let lastSeenDate = 0;
 
@@ -148,14 +150,14 @@ export class ContactsController {
       }
     }
 
-    const profilePhoto = raw['profile_photo'] as Record<string, object>;
+    const profilePhoto = raw['profile_photo'] as Record<string, Object>;
     let photoUrl: string | null = null;
     if (profilePhoto) {
-      const small = profilePhoto['small'] as Record<string, object>;
+      const small = profilePhoto['small'] as Record<string, Object>;
       if (small) {
-        const localPath = small['local'] as Record<string, string>;
+        const localPath = small['local'] as Record<string, Object>;
         if (localPath && localPath['path']) {
-          photoUrl = localPath['path'];
+          photoUrl = localPath['path'] as string;
         }
       }
     }
@@ -164,7 +166,7 @@ export class ContactsController {
       (raw['id'] as number) || 0,
       (raw['first_name'] as string) || '',
       (raw['last_name'] as string) || '',
-      (raw['username'] as string) || (raw['usernames'] as Record<string, string>)?.['editable_username'] || '',
+      (raw['username'] as string) || ((raw['usernames'] as Record<string, Object>)?.['editable_username'] as string) || '',
       (raw['phone_number'] as string) || '',
       photoUrl,
       isOnline,
@@ -175,9 +177,8 @@ export class ContactsController {
   private subscribeToUpdates(): void {
     const client = TDLibClient.getInstance();
 
-    client.on('updateUser', (update: object) => {
-      const data = update as Record<string, object>;
-      const rawUser = data['user'] as Record<string, object>;
+    client.on('updateUser', (update: Record<string, Object>) => {
+      const rawUser = update['user'] as Record<string, Object>;
       if (!rawUser) return;
 
       const user = this.parseUser(rawUser);
@@ -189,10 +190,9 @@ export class ContactsController {
       );
     });
 
-    client.on('updateUserStatus', (update: object) => {
-      const data = update as Record<string, object>;
-      const userId = data['user_id'] as number;
-      const status = data['status'] as Record<string, object>;
+    client.on('updateUserStatus', (update: Record<string, Object>) => {
+      const userId = update['user_id'] as number;
+      const status = update['status'] as Record<string, Object>;
       const user = this.usersById.get(userId);
 
       if (user && status) {

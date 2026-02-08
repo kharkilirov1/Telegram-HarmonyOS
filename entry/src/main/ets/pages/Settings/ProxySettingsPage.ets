@@ -98,9 +98,8 @@ export struct ProxySettingsPage {
   private async pingProxy(index: number): Promise<void> {
     try {
       const proxy = this.proxies[index];
-      const result = await this.tdlib.send('pingProxy', {
-        proxy_id: proxy.id
-      } as object) as Record<string, Object>;
+      const pingParams: Record<string, Object> = { proxy_id: proxy.id };
+      const result: Record<string, Object> = await this.tdlib.send('pingProxy', pingParams);
       const seconds = result['seconds'] as number;
       const updated = this.proxies.slice();
       updated[index] = {
@@ -156,7 +155,8 @@ export struct ProxySettingsPage {
 
   private async enableProxy(index: number): Promise<void> {
     const proxy = this.proxies[index];
-    await this.tdlib.send('enableProxy', { proxy_id: proxy.id } as object);
+    const enableParams: Record<string, Object> = { proxy_id: proxy.id };
+    await this.tdlib.send('enableProxy', enableParams);
     this.useProxy = true;
     const updated: ProxyInfo[] = [];
     for (let i = 0; i < this.proxies.length; i++) {
@@ -176,7 +176,8 @@ export struct ProxySettingsPage {
 
   private async deleteProxy(index: number): Promise<void> {
     const proxy = this.proxies[index];
-    await this.tdlib.send('removeProxy', { proxy_id: proxy.id } as object);
+    const removeParams: Record<string, Object> = { proxy_id: proxy.id };
+    await this.tdlib.send('removeProxy', removeParams);
     const updated = this.proxies.slice();
     updated.splice(index, 1);
     this.proxies = updated;
@@ -208,25 +209,28 @@ export struct ProxySettingsPage {
     this.showAddDialog = true;
   }
 
-  private buildProxyTypeParam(): object {
+  private buildProxyTypeParam(): Record<string, Object> {
     if (this.formType === 'socks5') {
-      return {
+      const socks5Type: Record<string, Object> = {
         '@type': 'proxyTypeSocks5',
         username: this.formUsername,
         password: this.formPassword
-      } as object;
+      };
+      return socks5Type;
     } else if (this.formType === 'http') {
-      return {
+      const httpType: Record<string, Object> = {
         '@type': 'proxyTypeHttp',
         username: this.formUsername,
         password: this.formPassword,
         http_only: false
-      } as object;
+      };
+      return httpType;
     } else {
-      return {
+      const mtprotoType: Record<string, Object> = {
         '@type': 'proxyTypeMtproto',
         secret: this.formSecret
-      } as object;
+      };
+      return mtprotoType;
     }
   }
 
@@ -238,15 +242,17 @@ export struct ProxySettingsPage {
 
     if (this.editingProxy) {
       // Remove old proxy then add updated one
-      await this.tdlib.send('removeProxy', { proxy_id: this.editingProxy.id } as object);
+      const removeEditParams: Record<string, Object> = { proxy_id: this.editingProxy.id };
+      await this.tdlib.send('removeProxy', removeEditParams);
     }
 
-    await this.tdlib.send('addProxy', {
+    const addProxyParams: Record<string, Object> = {
       server: this.formServer,
       port: portNum,
       enable: true,
       type: this.buildProxyTypeParam()
-    } as object);
+    };
+    await this.tdlib.send('addProxy', addProxyParams);
 
     this.showAddDialog = false;
     this.editingProxy = null;

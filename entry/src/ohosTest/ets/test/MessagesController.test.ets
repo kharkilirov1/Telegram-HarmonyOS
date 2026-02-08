@@ -78,13 +78,13 @@ function decodeWaveform(base64: string): number[] {
     }
 
     return result.length > 0 ? result : fallbackWaveform();
-  } catch {
+  } catch (_e) {
     return fallbackWaveform();
   }
 }
 
-function extractTextPreview(rawMsg: Record<string, object>): string {
-  const content = rawMsg['content'] as Record<string, object>;
+function extractTextPreview(rawMsg: Record<string, Object>): string {
+  const content = rawMsg['content'] as Record<string, Object>;
   if (!content) return '';
 
   const type = (content['@type'] as string) || '';
@@ -193,84 +193,67 @@ export default function messagesControllerTest() {
     describe('extractTextPreview', () => {
 
       it('should extract text from messageText', 0, () => {
-        const raw: Record<string, object> = {
-          'content': {
-            '@type': 'messageText',
-            'text': { 'text': 'Hello world' }
-          } as object
-        };
+        const textInner: Record<string, Object> = { 'text': 'Hello world' };
+        const content: Record<string, Object> = { '@type': 'messageText', 'text': textInner };
+        const raw: Record<string, Object> = { 'content': content };
         expect(extractTextPreview(raw)).assertEqual('Hello world');
       });
 
       it('should return "Photo" for messagePhoto', 0, () => {
-        const raw: Record<string, object> = {
-          'content': { '@type': 'messagePhoto' } as object
-        };
+        const content: Record<string, Object> = { '@type': 'messagePhoto' };
+        const raw: Record<string, Object> = { 'content': content };
         expect(extractTextPreview(raw)).assertEqual('Photo');
       });
 
       it('should return "Video" for messageVideo', 0, () => {
-        const raw: Record<string, object> = {
-          'content': { '@type': 'messageVideo' } as object
-        };
+        const content: Record<string, Object> = { '@type': 'messageVideo' };
+        const raw: Record<string, Object> = { 'content': content };
         expect(extractTextPreview(raw)).assertEqual('Video');
       });
 
       it('should return file name for messageDocument', 0, () => {
-        const raw: Record<string, object> = {
-          'content': {
-            '@type': 'messageDocument',
-            'document': { 'file_name': 'report.pdf' }
-          } as object
-        };
+        const doc: Record<string, Object> = { 'file_name': 'report.pdf' };
+        const content: Record<string, Object> = { '@type': 'messageDocument', 'document': doc };
+        const raw: Record<string, Object> = { 'content': content };
         expect(extractTextPreview(raw)).assertEqual('report.pdf');
       });
 
       it('should return "Document" when document has no file_name', 0, () => {
-        const raw: Record<string, object> = {
-          'content': {
-            '@type': 'messageDocument',
-            'document': {}
-          } as object
-        };
+        const doc: Record<string, Object> = {};
+        const content: Record<string, Object> = { '@type': 'messageDocument', 'document': doc };
+        const raw: Record<string, Object> = { 'content': content };
         expect(extractTextPreview(raw)).assertEqual('Document');
       });
 
       it('should return "Voice message" for messageVoiceNote', 0, () => {
-        const raw: Record<string, object> = {
-          'content': { '@type': 'messageVoiceNote' } as object
-        };
+        const content: Record<string, Object> = { '@type': 'messageVoiceNote' };
+        const raw: Record<string, Object> = { 'content': content };
         expect(extractTextPreview(raw)).assertEqual('Voice message');
       });
 
       it('should return emoji + Sticker for messageSticker', 0, () => {
-        const raw: Record<string, object> = {
-          'content': {
-            '@type': 'messageSticker',
-            'sticker': { 'emoji': '\u{1F600}' }
-          } as object
-        };
+        const sticker: Record<string, Object> = { 'emoji': '\u{1F600}' };
+        const content: Record<string, Object> = { '@type': 'messageSticker', 'sticker': sticker };
+        const raw: Record<string, Object> = { 'content': content };
         const preview = extractTextPreview(raw);
         expect(preview.indexOf('Sticker') >= 0).assertTrue();
         expect(preview.indexOf('\u{1F600}') >= 0).assertTrue();
       });
 
       it('should return "GIF" for messageAnimation', 0, () => {
-        const raw: Record<string, object> = {
-          'content': { '@type': 'messageAnimation' } as object
-        };
+        const content: Record<string, Object> = { '@type': 'messageAnimation' };
+        const raw: Record<string, Object> = { 'content': content };
         expect(extractTextPreview(raw)).assertEqual('GIF');
       });
 
       it('should return empty string when content is missing', 0, () => {
-        const raw: Record<string, object> = {};
+        const raw: Record<string, Object> = {};
         expect(extractTextPreview(raw)).assertEqual('');
       });
 
       it('should strip "message" prefix for unknown types', 0, () => {
-        const raw: Record<string, object> = {
-          'content': { '@type': 'messageContact' } as object
-        };
+        const content: Record<string, Object> = { '@type': 'messageContact' };
+        const raw: Record<string, Object> = { 'content': content };
         expect(extractTextPreview(raw)).assertEqual('Contact');
       });
     });

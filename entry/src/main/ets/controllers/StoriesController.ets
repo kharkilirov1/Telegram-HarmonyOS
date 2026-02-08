@@ -41,10 +41,10 @@ export class StoriesController {
   async loadActiveStories(): Promise<void> {
     try {
       // Load story list from TDLib
-      const result = await TDLibClient.getInstance().send('getStoryList', {
-        story_list: { '@type': 'storyListMain' },
-        limit: 50
-      }) as Record<string, object>;
+      const storyList: Record<string, Object> = { '@type': 'storyListMain' };
+      const storyListParams: Record<string, Object> = { story_list: storyList, limit: 50 };
+      const result = await TDLibClient.getInstance()
+        .send('getStoryList', storyListParams) as Record<string, Object>;
 
       // TDLib sends updateChatActiveStories for each chat via subscription
       hilog.info(DOMAIN, TAG, 'Story list loaded');
@@ -52,10 +52,9 @@ export class StoriesController {
       hilog.warn(DOMAIN, TAG, 'Failed to load story list, trying fallback');
       // Fallback: load chats and check for stories
       try {
-        await TDLibClient.getInstance().send('loadChats', {
-          chat_list: { '@type': 'chatListMain' },
-          limit: 30
-        });
+        const chatList: Record<string, Object> = { '@type': 'chatListMain' };
+        const fallbackParams: Record<string, Object> = { chat_list: chatList, limit: 30 };
+        await TDLibClient.getInstance().send('loadChats', fallbackParams);
       } catch (_e2) {
         // Silently fail
       }
@@ -67,11 +66,13 @@ export class StoriesController {
     if (cached) return cached;
 
     try {
-      const result = await TDLibClient.getInstance().send('getStory', {
+      const getStoryParams: Record<string, Object> = {
         story_sender_chat_id: chatId,
         story_id: storyId,
         only_local: false
-      }) as Record<string, object>;
+      };
+      const result = await TDLibClient.getInstance()
+        .send('getStory', getStoryParams) as Record<string, Object>;
 
       const story = this.parseStory(result, chatId);
       this.storiesCache.set(`${chatId}_${storyId}`, story);
@@ -84,10 +85,11 @@ export class StoriesController {
 
   async openStory(chatId: number, storyId: number): Promise<void> {
     try {
-      await TDLibClient.getInstance().send('openStory', {
+      const openParams: Record<string, Object> = {
         story_sender_chat_id: chatId,
         story_id: storyId
-      });
+      };
+      await TDLibClient.getInstance().send('openStory', openParams);
 
       // Mark as viewed locally
       const active = this.activeStoriesByChat.get(chatId);
@@ -105,10 +107,11 @@ export class StoriesController {
 
   async closeStory(chatId: number, storyId: number): Promise<void> {
     try {
-      await TDLibClient.getInstance().send('closeStory', {
+      const closeParams: Record<string, Object> = {
         story_sender_chat_id: chatId,
         story_id: storyId
-      });
+      };
+      await TDLibClient.getInstance().send('closeStory', closeParams);
     } catch (_e) {
       // Silently fail
     }
@@ -119,20 +122,19 @@ export class StoriesController {
   private subscribeToUpdates(): void {
     const client = TDLibClient.getInstance();
 
-    client.on('updateChatActiveStories', (update: object) => {
-      const data = update as Record<string, object>;
-      const activeStories = data['active_stories'] as Record<string, object>;
+    client.on('updateChatActiveStories', (update: Record<string, Object>) => {
+      const activeStories = update['active_stories'] as Record<string, Object>;
       if (!activeStories) return;
 
       const chatId = activeStories['chat_id'] as number || 0;
       if (chatId === 0) return;
 
-      const storyList = activeStories['list'] as Record<string, string>;
+      const storyList = activeStories['list'] as Record<string, Object>;
       // Only handle main story list
-      if (storyList && storyList['@type'] !== 'storyListMain') return;
+      if (storyList && (storyList['@type'] as string) !== 'storyListMain') return;
 
       const maxReadId = (activeStories['max_read_story_id'] as number) || 0;
-      const rawStories = activeStories['stories'] as Record<string, object>[];
+      const rawStories = activeStories['stories'] as Record<string, Object>[];
       const storyIds: number[] = [];
 
       if (rawStories) {
@@ -152,10 +154,9 @@ export class StoriesController {
       this.resolveChatInfo(chatId, storyIds, maxReadId, order);
     });
 
-    client.on('updateStoryDeleted', (update: object) => {
-      const data = update as Record<string, object>;
-      const chatId = data['story_sender_chat_id'] as number || 0;
-      const storyId = data['story_id'] as number || 0;
+    client.on('updateStoryDeleted', (update: Record<string, Object>) => {
+      const chatId = update['story_sender_chat_id'] as number || 0;
+      const storyId = update['story_id'] as number || 0;
 
       this.storiesCache.delete(`${chatId}_${storyId}`);
 
@@ -179,18 +180,18 @@ export class StoriesController {
     let initial = '';
 
     try {
-      const chatResult = await TDLibClient.getInstance().send('getChat', {
-        chat_id: chatId
-      }) as Record<string, object>;
+      const chatParams: Record<string, Object> = { chat_id: chatId };
+      const chatResult = await TDLibClient.getInstance()
+        .send('getChat', chatParams) as Record<string, Object>;
 
       title = (chatResult['title'] as string) || '';
       initial = title.length > 0 ? title.charAt(0).toUpperCase() : '?';
 
-      const photo = chatResult['photo'] as Record<string, object>;
+      const photo = chatResult['photo'] as Record<string, Object>;
       if (photo) {
-        const small = photo['small'] as Record<string, object>;
+        const small = photo['small'] as Record<string, Object>;
         if (small) {
-          const localFile = small['local'] as Record<string, object>;
+          const localFile = small['local'] as Record<string, Object>;
           if (localFile && (localFile['is_downloading_completed'] as boolean)) {
             photoUrl = (localFile['path'] as string) || '';
           }
@@ -228,7 +229,7 @@ export class StoriesController {
     this.sortedActiveStories = list;
   }
 
-  private parseStory(raw: Record<string, object>, chatId: number): Story {
+  private parseStory(raw: Record<string, Object>, chatId: number): Story {
     const id = (raw['id'] as number) || 0;
     const date = (raw['date'] as number) || 0;
     const expirationDate = (raw['expiration_date'] as number) || 0;
@@ -239,16 +240,16 @@ export class StoriesController {
     let videoUrl = '';
     let caption = '';
 
-    const content = raw['content'] as Record<string, object>;
+    const content = raw['content'] as Record<string, Object>;
     if (content) {
       const type = (content['@type'] as string) || '';
       if (type === 'storyContentVideo') {
         contentType = StoryContentType.VIDEO;
-        const video = content['video'] as Record<string, object>;
+        const video = content['video'] as Record<string, Object>;
         if (video) {
-          const videoFile = video['video'] as Record<string, object>;
+          const videoFile = video['video'] as Record<string, Object>;
           if (videoFile) {
-            const localFile = videoFile['local'] as Record<string, object>;
+            const localFile = videoFile['local'] as Record<string, Object>;
             if (localFile && (localFile['is_downloading_completed'] as boolean)) {
               videoUrl = (localFile['path'] as string) || '';
             }
@@ -256,14 +257,14 @@ export class StoriesController {
         }
       } else {
         // storyContentPhoto
-        const photo = content['photo'] as Record<string, object>;
+        const photo = content['photo'] as Record<string, Object>;
         if (photo) {
-          const sizes = photo['sizes'] as Record<string, object>[];
+          const sizes = photo['sizes'] as Record<string, Object>[];
           if (sizes && sizes.length > 0) {
             const lastSize = sizes[sizes.length - 1];
-            const photoFile = lastSize['photo'] as Record<string, object>;
+            const photoFile = lastSize['photo'] as Record<string, Object>;
             if (photoFile) {
-              const localFile = photoFile['local'] as Record<string, object>;
+              const localFile = photoFile['local'] as Record<string, Object>;
               if (localFile && (localFile['is_downloading_completed'] as boolean)) {
                 photoUrl = (localFile['path'] as string) || '';
               }
@@ -272,7 +273,7 @@ export class StoriesController {
         }
       }
 
-      const captionObj = content['caption'] as Record<string, object>;
+      const captionObj = content['caption'] as Record<string, Object>;
       if (captionObj) {
         caption = (captionObj['text'] as string) || '';
       }

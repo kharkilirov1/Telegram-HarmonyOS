@@ -40,18 +40,18 @@ export struct NearbyPeoplePage {
     this.isLoading = true;
 
     try {
-      const result = await TDLibClient.getInstance().send('searchChatsNearby', {
-        location: {
-          '@type': 'location',
-          latitude: 0.0,
-          longitude: 0.0
-        }
-      }) as Record<string, object>;
+      const location: Record<string, Object> = {
+        '@type': 'location',
+        latitude: 0.0,
+        longitude: 0.0
+      };
+      const nearbyParams: Record<string, Object> = { location: location };
+      const result: Record<string, Object> = await TDLibClient.getInstance().send('searchChatsNearby', nearbyParams);
 
       // Parse nearby users
-      const rawUsers = result['users_nearby'] as Record<string, object>[];
+      const rawUsers = result['users_nearby'] as Record<string, Object>[];
       if (rawUsers) {
-        this.nearbyUsers = rawUsers.map((u: Record<string, object>) => ({
+        this.nearbyUsers = rawUsers.map((u: Record<string, Object>) => ({
           userId: (u['user_id'] as number) || 0,
           name: '',
           initial: '?',
@@ -60,9 +60,9 @@ export struct NearbyPeoplePage {
       }
 
       // Parse nearby groups
-      const rawGroups = result['supergroups_nearby'] as Record<string, object>[];
+      const rawGroups = result['supergroups_nearby'] as Record<string, Object>[];
       if (rawGroups) {
-        this.nearbyGroups = rawGroups.map((g: Record<string, object>) => ({
+        this.nearbyGroups = rawGroups.map((g: Record<string, Object>) => ({
           chatId: (g['chat_id'] as number) || 0,
           title: '',
           initial: '?',

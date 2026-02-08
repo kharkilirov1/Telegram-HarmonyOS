@@ -53,7 +53,7 @@ export struct PasswordPage {
         Blank().height(20)
 
         // Animated mascot — closes eyes for password, peeks when toggled
-        TelegramMascot({ mascotState: this.mascotState, size: 120 })
+        TelegramMascot({ mascotState: this.mascotState, mascotSize: 120 })
           .margin({ bottom: 12 })
 
         // Title
@@ -281,9 +281,9 @@ export struct PasswordPage {
     this.errorMessage = '';
 
     try {
-      const result = await TDLibClient.getInstance().send('requestAuthenticationPasswordRecovery') as Record<string, string>;
+      const result: Record<string, Object> = await TDLibClient.getInstance().send('requestAuthenticationPasswordRecovery');
       // TDLib responds with emailAddressAuthenticationCodeInfo
-      this.recoveryEmailPattern = result['email_address_pattern'] || '';
+      this.recoveryEmailPattern = (result['email_address_pattern'] as string) || '';
       this.recoveryMessage = this.recoveryEmailPattern.length > 0
         ? `We sent a recovery code to ${this.recoveryEmailPattern}`
         : 'We have sent a recovery code to your email.';
@@ -307,9 +307,10 @@ export struct PasswordPage {
     this.errorMessage = '';
 
     try {
-      await TDLibClient.getInstance().send('recoverAuthenticationPassword', {
+      const recoveryParams: Record<string, Object> = {
         recovery_code: this.recoveryCode
-      });
+      };
+      await TDLibClient.getInstance().send('recoverAuthenticationPassword', recoveryParams);
       // On success, auth state transitions to Ready
       this.showRecoveryView = false;
     } catch (e) {

@@ -588,7 +588,6 @@ export struct SettingsPage {
       .fontSize(13)
       .fontColor($r('app.color.text_secondary'))
       .margin({ left: 32, bottom: 6, top: 2 })
-      .textTransform(TextTransform.Uppercase)
   }
 
   @Builder

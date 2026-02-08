@@ -91,10 +91,8 @@ export struct SavedMessagesPage {
 
     // Create private chat with self (TDLib returns existing if already created)
     try {
-      const chatResult = await TDLibClient.getInstance().send('createPrivateChat', {
-        user_id: userId,
-        force: false
-      }) as Record<string, object>;
+      const privateChatParams: Record<string, Object> = { user_id: userId, force: false };
+      const chatResult = await TDLibClient.getInstance().send('createPrivateChat', privateChatParams);
       this.chatId = (chatResult['id'] as number) || 0;
     } catch (_e) {
       this.isLoading = false;
@@ -254,7 +252,7 @@ export struct SavedMessagesPage {
             LazyForEach(this.messageDataSource, (item: SavedListItem) => {
               ListItem() {
                 if (item.isDateSeparator) {
-                  DateSeparator({ dateLabel: item.dateLabel })
+                  DateSeparator({ dateText: item.dateLabel })
                 } else if (item.groupedMessage) {
                   this.savedMessageRow(item.groupedMessage)
                 }

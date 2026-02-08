@@ -10,21 +10,27 @@ const DOMAIN = 0x0001;
 
 // --- TDLib response interfaces for ArkTS strict typing ---
 
-interface TdObject {
-  '@type': string;
+function tdType(obj: Record<string, Object>): string {
+  return (obj['@type'] as string) || '';
 }
 
-interface TdMessageSender extends TdObject {
+interface PollOptionDisplay {
+  text: string;
+  voterCount: number;
+  votePercentage: number;
+  isChosen: boolean;
+}
+
+interface TdMessageSender {
   user_id?: number;
   chat_id?: number;
 }
 
 interface TdFormattedText {
-  '@type': string;
   text: string;
 }
 
-interface TdFile extends TdObject {
+interface TdFile {
   id: number;
   local?: TdLocalFile;
 }
@@ -34,17 +40,17 @@ interface TdLocalFile {
   is_downloading_completed: boolean;
 }
 
-interface TdPhoto extends TdObject {
+interface TdPhoto {
   sizes?: TdPhotoSize[];
 }
 
-interface TdPhotoSize extends TdObject {
+interface TdPhotoSize {
   photo?: TdFile;
   width?: number;
   height?: number;
 }
 
-interface TdMessageContent extends TdObject {
+interface TdMessageContent {
   text?: TdFormattedText;
   caption?: TdFormattedText;
   photo?: TdPhoto;
@@ -57,28 +63,28 @@ interface TdMessageContent extends TdObject {
   has_spoiler?: boolean;
 }
 
-interface TdVideo extends TdObject {
+interface TdVideo {
   duration: number;
   video?: TdFile;
 }
 
-interface TdDocument extends TdObject {
+interface TdDocument {
   file_name: string;
   document?: TdFile;
 }
 
-interface TdVoiceNote extends TdObject {
+interface TdVoiceNote {
   duration: number;
   waveform: string;
 }
 
-interface TdVideoNote extends TdObject {
+interface TdVideoNote {
   duration: number;
   length: number;
   video?: TdFile;
 }
 
-interface TdSticker extends TdObject {
+interface TdSticker {
   emoji: string;
   sticker?: TdFile;
 }
@@ -90,12 +96,12 @@ interface TdPollOption {
   is_chosen: boolean;
 }
 
-interface TdPollType extends TdObject {
+interface TdPollType {
   allow_multiple_answers?: boolean;
   correct_option_id?: number;
 }
 
-interface TdPoll extends TdObject {
+interface TdPoll {
   id: string;
   question?: TdFormattedText;
   options?: TdPollOption[];
@@ -105,7 +111,7 @@ interface TdPoll extends TdObject {
   type?: TdPollType;
 }
 
-interface TdReplyTo extends TdObject {
+interface TdReplyTo {
   message_id?: number;
 }
 
@@ -113,38 +119,38 @@ interface TdForwardInfo {
   origin?: TdMessageOrigin;
 }
 
-interface TdMessageOrigin extends TdObject {
+interface TdMessageOrigin {
   sender_name?: string;
 }
 
-interface TdSchedulingState extends TdObject {
+interface TdSchedulingState {
   send_date?: number;
 }
 
-interface TdSelfDestructType extends TdObject {
+interface TdSelfDestructType {
   self_destruct_time?: number;
 }
 
-interface TdChatPosition extends TdObject {
-  list?: TdObject;
+interface TdChatPosition {
+  list?: Record<string, Object>;
   order?: string;
   is_pinned?: boolean;
 }
 
-interface TdChatType extends TdObject {
+interface TdChatType {
   is_channel?: boolean;
 }
 
-interface TdNotificationSettings extends TdObject {
+interface TdNotificationSettings {
   mute_for?: number;
 }
 
-interface TdChatAction extends TdObject {
+interface TdChatAction {
   // empty - identified by @type
 }
 
 // --- TDLib raw message ---
-interface TdMessage extends TdObject {
+interface TdMessage {
   id: number;
   chat_id: number;
   sender_id?: TdMessageSender;
@@ -159,7 +165,7 @@ interface TdMessage extends TdObject {
 }
 
 // --- TDLib raw chat ---
-interface TdChat extends TdObject {
+interface TdChat {
   id: number;
   title: string;
   last_message?: TdMessage;
@@ -170,66 +176,66 @@ interface TdChat extends TdObject {
 }
 
 // --- TDLib update interfaces ---
-interface TdUpdateNewChat extends TdObject {
+interface TdUpdateNewChat {
   chat?: TdChat;
 }
 
-interface TdUpdateChatLastMessage extends TdObject {
+interface TdUpdateChatLastMessage {
   chat_id: number;
   last_message?: TdMessage;
   positions?: TdChatPosition[];
 }
 
-interface TdUpdateChatPosition extends TdObject {
+interface TdUpdateChatPosition {
   chat_id: number;
   position?: TdChatPosition;
 }
 
-interface TdUpdateNewMessage extends TdObject {
+interface TdUpdateNewMessage {
   message?: TdMessage;
 }
 
-interface TdUpdateMessageContent extends TdObject {
+interface TdUpdateMessageContent {
   chat_id: number;
   message_id: number;
   new_content?: TdMessageContent;
 }
 
-interface TdUpdateChatReadInbox extends TdObject {
+interface TdUpdateChatReadInbox {
   chat_id: number;
   unread_count: number;
 }
 
-interface TdUpdateChatNotificationSettings extends TdObject {
+interface TdUpdateChatNotificationSettings {
   chat_id: number;
   notification_settings?: TdNotificationSettings;
 }
 
-interface TdUpdateChatAction extends TdObject {
+interface TdUpdateChatAction {
   chat_id: number;
   action?: TdChatAction;
 }
 
 // --- TDLib response wrappers ---
-interface TdMessages extends TdObject {
+interface TdMessages {
   messages?: TdMessage[];
 }
 
 // --- Safe accessor helpers ---
 
-function safeNumber(value: object | undefined | null): number {
+function safeNumber(value: Object | undefined | null): number {
   if (value === undefined || value === null) return 0;
   if (typeof value === 'number') return value as number;
   return 0;
 }
 
-function safeString(value: object | undefined | null): string {
+function safeString(value: Object | undefined | null): string {
   if (value === undefined || value === null) return '';
   if (typeof value === 'string') return value as string;
   return '';
 }
 
-function safeBool(value: object | undefined | null): boolean {
+function safeBool(value: Object | undefined | null): boolean {
   if (value === undefined || value === null) return false;
   if (typeof value === 'boolean') return value as boolean;
   return false;
@@ -317,11 +323,12 @@ export class MessagesController {
   }
 
   async deleteMessage(chatId: number, messageId: number): Promise<void> {
-    await TDLibClient.getInstance().send('deleteMessages', {
+    const deleteParams: Record<string, Object> = {
       chat_id: chatId,
       message_ids: [messageId],
       revoke: true
-    });
+    };
+    await TDLibClient.getInstance().send('deleteMessages', deleteParams);
 
     // Remove from local cache
     const messages = this.messagesByChat.get(chatId);
@@ -340,54 +347,71 @@ export class MessagesController {
     isAnonymous: boolean = true, isQuiz: boolean = false,
     correctOptionId: number = -1): Promise<void> {
 
-    const pollType: object = isQuiz
-      ? { '@type': 'pollTypeQuiz', correct_option_id: correctOptionId }
-      : { '@type': 'pollTypeRegular', allow_multiple_answers: false };
+    let pollTypeRecord: Record<string, Object>;
+    if (isQuiz) {
+      pollTypeRecord = { '@type': 'pollTypeQuiz', correct_option_id: correctOptionId };
+    } else {
+      pollTypeRecord = { '@type': 'pollTypeRegular', allow_multiple_answers: false };
+    }
 
-    await TDLibClient.getInstance().send('sendMessage', {
-      chat_id: chatId,
-      input_message_content: {
-        '@type': 'inputMessagePoll',
-        question: { '@type': 'formattedText', text: question },
-        options: options.map((o: string): object => ({ '@type': 'formattedText', text: o })),
-        is_anonymous: isAnonymous,
-        type: pollType
-      }
+    const formattedQuestion: Record<string, Object> = { '@type': 'formattedText', text: question };
+    const formattedOptions: Record<string, Object>[] = options.map((o: string): Record<string, Object> => {
+      const opt: Record<string, Object> = { '@type': 'formattedText', text: o };
+      return opt;
     });
+    const inputMessageContent: Record<string, Object> = {
+      '@type': 'inputMessagePoll',
+      question: formattedQuestion,
+      options: formattedOptions,
+      is_anonymous: isAnonymous,
+      type: pollTypeRecord
+    };
+    const sendPollParams: Record<string, Object> = {
+      chat_id: chatId,
+      input_message_content: inputMessageContent
+    };
+    await TDLibClient.getInstance().send('sendMessage', sendPollParams);
   }
 
   async sendScheduledMessage(chatId: number, text: string, sendDate: number,
     replyToMessageId: number = 0): Promise<void> {
-    const replyTo: object | undefined = replyToMessageId > 0
-      ? { '@type': 'inputMessageReplyToMessage', message_id: replyToMessageId }
-      : undefined;
+    let replyToParam: Record<string, Object> | undefined = undefined;
+    if (replyToMessageId > 0) {
+      replyToParam = { '@type': 'inputMessageReplyToMessage', message_id: replyToMessageId };
+    }
 
-    await TDLibClient.getInstance().send('sendMessage', {
+    const formattedText: Record<string, Object> = { '@type': 'formattedText', text: text };
+    const inputContent: Record<string, Object> = {
+      '@type': 'inputMessageText',
+      text: formattedText
+    };
+    const schedulingState: Record<string, Object> = {
+      '@type': 'messageSchedulingStateSendAtDate',
+      send_date: sendDate
+    };
+    const sendScheduledParams: Record<string, Object> = {
       chat_id: chatId,
-      reply_to: replyTo,
-      input_message_content: {
-        '@type': 'inputMessageText',
-        text: { '@type': 'formattedText', text: text }
-      },
-      scheduling_state: {
-        '@type': 'messageSchedulingStateSendAtDate',
-        send_date: sendDate
-      }
-    });
+      reply_to: replyToParam as Object,
+      input_message_content: inputContent,
+      scheduling_state: schedulingState
+    };
+    await TDLibClient.getInstance().send('sendMessage', sendScheduledParams);
   }
 
   async votePoll(chatId: number, messageId: number, optionIds: number[]): Promise<void> {
-    await TDLibClient.getInstance().send('setPollAnswer', {
+    const voteParams: Record<string, Object> = {
       chat_id: chatId,
       message_id: messageId,
       option_ids: optionIds
-    });
+    };
+    await TDLibClient.getInstance().send('setPollAnswer', voteParams);
   }
 
   async getScheduledMessages(chatId: number): Promise<Message[]> {
-    const result: TdMessages = await TDLibClient.getInstance().send('getChatScheduledMessages', {
+    const scheduledParams: Record<string, Object> = {
       chat_id: chatId
-    }) as TdMessages;
+    };
+    const result: TdMessages = await TDLibClient.getInstance().send('getChatScheduledMessages', scheduledParams) as TdMessages;
     const rawMessages: TdMessage[] | undefined = result.messages;
     if (!rawMessages) return [];
     return rawMessages.map((raw: TdMessage): Message => this.parseMessage(raw));
@@ -399,12 +423,13 @@ export class MessagesController {
     limit: number = 50, senderId: number = 0, filter: string = ''): Promise<Message[]> {
     try {
       // Build sender_id parameter for TDLib
-      const senderParam: object | undefined = senderId > 0
-        ? { '@type': 'messageSenderUser', user_id: senderId }
-        : undefined;
+      let senderParam: Record<string, Object> | undefined = undefined;
+      if (senderId > 0) {
+        senderParam = { '@type': 'messageSenderUser', user_id: senderId };
+      }
 
       // Map filter string to TDLib searchMessagesFilter type
-      let filterParam: object | undefined = undefined;
+      let filterParam: Record<string, Object> | undefined = undefined;
       switch (filter) {
         case 'photo':
           filterParam = { '@type': 'searchMessagesFilterPhoto' };
@@ -422,16 +447,17 @@ export class MessagesController {
           break;
       }
 
-      const result: TdMessages = await TDLibClient.getInstance().send('searchChatMessages', {
+      const searchParams: Record<string, Object> = {
         chat_id: chatId,
         query: query,
-        sender_id: senderParam,
+        sender_id: senderParam as Object,
         from_message_id: fromMessageId,
         offset: 0,
         limit: limit,
-        filter: filterParam,
+        filter: filterParam as Object,
         message_thread_id: 0
-      }) as TdMessages;
+      };
+      const result: TdMessages = await TDLibClient.getInstance().send('searchChatMessages', searchParams) as TdMessages;
       const rawMessages: TdMessage[] | undefined = result.messages;
       if (!rawMessages) return [];
       return rawMessages.map((raw: TdMessage): Message => this.parseMessage(raw));
@@ -444,26 +470,32 @@ export class MessagesController {
 
   async setDraft(chatId: number, text: string, replyToMessageId: number = 0): Promise<void> {
     if (text.length === 0 && replyToMessageId === 0) {
-      await TDLibClient.getInstance().send('setChatDraftMessage', {
+      const clearDraftParams: Record<string, Object> = {
         chat_id: chatId,
-        draft_message: undefined
-      });
+        draft_message: undefined as Object
+      };
+      await TDLibClient.getInstance().send('setChatDraftMessage', clearDraftParams);
     } else {
-      const replyTo: object | undefined = replyToMessageId > 0
-        ? { '@type': 'inputMessageReplyToMessage', message_id: replyToMessageId }
-        : undefined;
+      let draftReplyTo: Record<string, Object> | undefined = undefined;
+      if (replyToMessageId > 0) {
+        draftReplyTo = { '@type': 'inputMessageReplyToMessage', message_id: replyToMessageId };
+      }
 
-      await TDLibClient.getInstance().send('setChatDraftMessage', {
+      const draftFormattedText: Record<string, Object> = { '@type': 'formattedText', text: text };
+      const draftInputMessageText: Record<string, Object> = {
+        '@type': 'inputMessageText',
+        text: draftFormattedText
+      };
+      const draftMessage: Record<string, Object> = {
+        '@type': 'draftMessage',
+        reply_to: draftReplyTo as Object,
+        input_message_text: draftInputMessageText
+      };
+      const setDraftParams: Record<string, Object> = {
         chat_id: chatId,
-        draft_message: {
-          '@type': 'draftMessage',
-          reply_to: replyTo,
-          input_message_text: {
-            '@type': 'inputMessageText',
-            text: { '@type': 'formattedText', text: text }
-          }
-        }
-      });
+        draft_message: draftMessage
+      };
+      await TDLibClient.getInstance().send('setChatDraftMessage', setDraftParams);
     }
   }
 
@@ -472,7 +504,7 @@ export class MessagesController {
   private subscribeToUpdates(): void {
     const client = TDLibClient.getInstance();
 
-    client.on('updateNewChat', (update: object) => {
+    client.on('updateNewChat', (update: Record<string, Object>) => {
       const data: TdUpdateNewChat = update as TdUpdateNewChat;
       const rawChat: TdChat | undefined = data.chat;
       if (!rawChat) return;
@@ -485,7 +517,7 @@ export class MessagesController {
       NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
     });
 
-    client.on('updateChatLastMessage', (update: object) => {
+    client.on('updateChatLastMessage', (update: Record<string, Object>) => {
       const data: TdUpdateChatLastMessage = update as TdUpdateChatLastMessage;
       const chatId: number = data.chat_id || 0;
       const chat = this.chatsById.get(chatId);
@@ -497,7 +529,7 @@ export class MessagesController {
         chat.lastMessageDate = rawMsg.date || 0;
 
         const sender: TdMessageSender | undefined = rawMsg.sender_id;
-        if (sender && sender['@type'] === 'messageSenderUser') {
+        if (sender && tdType(sender as Record<string, Object>) === 'messageSenderUser') {
           chat.lastMessageSenderId = sender.user_id || 0;
         }
       }
@@ -512,7 +544,7 @@ export class MessagesController {
       NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
     });
 
-    client.on('updateChatPosition', (update: object) => {
+    client.on('updateChatPosition', (update: Record<string, Object>) => {
       const data: TdUpdateChatPosition = update as TdUpdateChatPosition;
       const chatId: number = data.chat_id || 0;
       const chat = this.chatsById.get(chatId);
@@ -526,7 +558,7 @@ export class MessagesController {
       }
     });
 
-    client.on('updateNewMessage', (update: object) => {
+    client.on('updateNewMessage', (update: Record<string, Object>) => {
       const data: TdUpdateNewMessage = update as TdUpdateNewMessage;
       const rawMsg: TdMessage | undefined = data.message;
       if (!rawMsg) return;
@@ -558,7 +590,7 @@ export class MessagesController {
       }
     });
 
-    client.on('updateMessageContent', (update: object) => {
+    client.on('updateMessageContent', (update: Record<string, Object>) => {
       const data: TdUpdateMessageContent = update as TdUpdateMessageContent;
       const chatId: number = data.chat_id || 0;
       const messageId: number = data.message_id || 0;
@@ -575,7 +607,7 @@ export class MessagesController {
       }
     });
 
-    client.on('updateChatReadInbox', (update: object) => {
+    client.on('updateChatReadInbox', (update: Record<string, Object>) => {
       const data: TdUpdateChatReadInbox = update as TdUpdateChatReadInbox;
       const chatId: number = data.chat_id || 0;
       const unreadCount: number = data.unread_count || 0;
@@ -586,7 +618,7 @@ export class MessagesController {
       }
     });
 
-    client.on('updateChatNotificationSettings', (update: object) => {
+    client.on('updateChatNotificationSettings', (update: Record<string, Object>) => {
       const data: TdUpdateChatNotificationSettings = update as TdUpdateChatNotificationSettings;
       const chatId: number = data.chat_id || 0;
       const settings: TdNotificationSettings | undefined = data.notification_settings;
@@ -598,14 +630,14 @@ export class MessagesController {
       }
     });
 
-    client.on('updateChatAction', (update: object) => {
+    client.on('updateChatAction', (update: Record<string, Object>) => {
       const data: TdUpdateChatAction = update as TdUpdateChatAction;
       const chatId: number = data.chat_id || 0;
       const action: TdChatAction | undefined = data.action;
       const chat = this.chatsById.get(chatId);
 
       if (chat && action) {
-        const actionType: string = action['@type'] || '';
+        const actionType: string = tdType(action as Record<string, Object>);
         if (actionType === 'chatActionTyping') {
           chat.isTyping = true;
           chat.typingDescription = 'typing...';
@@ -650,7 +682,7 @@ export class MessagesController {
     // Determine type
     const chatType: TdChatType | undefined = raw.type;
     if (chatType) {
-      const t: string = chatType['@type'] || '';
+      const t: string = tdType(chatType as Record<string, Object>);
       chat.isGroup = t === 'chatTypeSupergroup' || t === 'chatTypeBasicGroup';
       chat.isChannel = t === 'chatTypeSupergroup' && (chatType.is_channel === true);
     }
@@ -671,8 +703,8 @@ export class MessagesController {
 
   private updateChatPositions(chat: Chat, positions: TdChatPosition[]): void {
     for (const pos of positions) {
-      const list: TdObject | undefined = pos.list;
-      if (list && list['@type'] === 'chatListMain') {
+      const list: Record<string, Object> | undefined = pos.list;
+      if (list && tdType(list) === 'chatListMain') {
         chat.order = pos.order || '0';
         chat.isPinned = pos.is_pinned || false;
       }
@@ -700,7 +732,7 @@ export class MessagesController {
 
     // Reply
     const replyTo: TdReplyTo | undefined = raw.reply_to;
-    if (replyTo && replyTo['@type'] === 'messageReplyToMessage') {
+    if (replyTo && tdType(replyTo as Record<string, Object>) === 'messageReplyToMessage') {
       msg.replyToMessageId = replyTo.message_id || 0;
     }
 
@@ -722,7 +754,7 @@ export class MessagesController {
     // Scheduling state
     const scheduling: TdSchedulingState | undefined = raw.scheduling_state;
     if (scheduling) {
-      const schedType: string = scheduling['@type'] || '';
+      const schedType: string = tdType(scheduling as Record<string, Object>);
       if (schedType === 'messageSchedulingStateSendAtDate') {
         msg.schedulingState = scheduling.send_date || 0;
       }
@@ -732,7 +764,7 @@ export class MessagesController {
     const selfDestruct: TdSelfDestructType | undefined = raw.self_destruct_type;
     if (selfDestruct) {
       msg.selfDestructIn = selfDestruct.self_destruct_time || 0;
-      const sdType: string = selfDestruct['@type'] || '';
+      const sdType: string = tdType(selfDestruct as Record<string, Object>);
       if (sdType === 'messageSelfDestructTypeImmediately') {
         msg.isViewOnce = true;
       }
@@ -750,7 +782,7 @@ export class MessagesController {
   }
 
   private applyContent(msg: Message, content: TdMessageContent): void {
-    const type: string = content['@type'] || '';
+    const type: string = tdType(content as Record<string, Object>);
 
     switch (type) {
       case 'messageText': {
@@ -824,16 +856,19 @@ export class MessagesController {
           msg.pollIsAnonymous = poll.is_anonymous !== false;
 
           const pt: TdPollType | undefined = poll.type;
-          msg.pollType = pt?.['@type'] === 'pollTypeQuiz' ? 'quiz' : 'regular';
+          msg.pollType = (pt ? tdType(pt as Record<string, Object>) : '') === 'pollTypeQuiz' ? 'quiz' : 'regular';
 
           const opts: TdPollOption[] | undefined = poll.options;
           if (opts) {
-            msg.pollOptions = opts.map((opt: TdPollOption) => ({
-              text: opt.text?.text || '',
-              voterCount: opt.voter_count || 0,
-              votePercentage: opt.vote_percentage || 0,
-              isChosen: opt.is_chosen || false
-            }));
+            msg.pollOptions = opts.map((opt: TdPollOption): PollOptionDisplay => {
+              const displayOpt: PollOptionDisplay = {
+                text: opt.text?.text || '',
+                voterCount: opt.voter_count || 0,
+                votePercentage: opt.vote_percentage || 0,
+                isChosen: opt.is_chosen || false
+              };
+              return displayOpt;
+            });
           }
         }
         break;
@@ -850,7 +885,7 @@ export class MessagesController {
     const content: TdMessageContent | undefined = rawMsg.content;
     if (!content) return '';
 
-    const type: string = content['@type'] || '';
+    const type: string = tdType(content as Record<string, Object>);
     switch (type) {
       case 'messageText': {
         return content.text?.text || '';

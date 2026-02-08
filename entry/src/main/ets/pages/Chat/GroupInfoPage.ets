@@ -52,9 +52,8 @@ export struct GroupInfoPage {
 
     try {
       // Get supergroup/basic group info from TDLib
-      const fullInfo = await TDLibClient.getInstance().send('getSupergroupFullInfo', {
-        supergroup_id: Math.abs(this.chatId)
-      }) as Record<string, object>;
+      const fullInfoParams: Record<string, Object> = { supergroup_id: Math.abs(this.chatId) };
+      const fullInfo = await TDLibClient.getInstance().send('getSupergroupFullInfo', fullInfoParams);
       this.description = (fullInfo['description'] as string) || '';
       this.memberCount = (fullInfo['member_count'] as number) || 0;
     } catch (e) {
@@ -72,13 +71,10 @@ export struct GroupInfoPage {
 
   private async loadMembers(): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('getSupergroupMembers', {
-        supergroup_id: Math.abs(this.chatId),
-        filter: { '@type': 'supergroupMembersFilterRecent' },
-        offset: 0,
-        limit: 50
-      }) as Record<string, object>;
-      const rawMembers = result['members'] as Record<string, object>[];
+      const recentFilter: Record<string, Object> = { '@type': 'supergroupMembersFilterRecent' };
+      const membersParams: Record<string, Object> = { supergroup_id: Math.abs(this.chatId), filter: recentFilter, offset: 0, limit: 50 };
+      const result = await TDLibClient.getInstance().send('getSupergroupMembers', membersParams);
+      const rawMembers = result['members'] as Record<string, Object>[];
       if (rawMembers && rawMembers.length > 0) {
         this.members = [];
         for (const m of rawMembers) {
@@ -91,14 +87,15 @@ export struct GroupInfoPage {
           let photoUrl: string | null = null;
           let userStatus = 'last seen recently';
           try {
-            const user = await TDLibClient.getInstance().send('getUser', { user_id: memberId }) as Record<string, object>;
+            const getUserParams: Record<string, Object> = { user_id: memberId };
+            const user = await TDLibClient.getInstance().send('getUser', getUserParams);
             const firstName = (user['first_name'] as string) || '';
             const lastName = (user['last_name'] as string) || '';
             name = `${firstName} ${lastName}`.trim();
-            const photo = user['profile_photo'] as Record<string, object>;
+            const photo = user['profile_photo'] as Record<string, Object>;
             if (photo) {
-              const small = photo['small'] as Record<string, object>;
-              const localFile = small?.['local'] as Record<string, object>;
+              const small = photo['small'] as Record<string, Object>;
+              const localFile = small?.['local'] as Record<string, Object>;
               if (localFile?.['is_downloading_completed']) {
                 photoUrl = localFile['path'] as string;
               }
@@ -112,7 +109,7 @@ export struct GroupInfoPage {
               else if (statusType === 'userStatusLastMonth') userStatus = 'last seen within a month';
               else userStatus = 'last seen a long time ago';
             }
-          } catch {
+          } catch (_e) {
             name = `User ${memberId}`;
           }
 
@@ -120,7 +117,7 @@ export struct GroupInfoPage {
         }
         return;
       }
-    } catch {
+    } catch (_e) {
       // Fallback to stub data if TDLib call fails
     }
 
@@ -352,7 +349,7 @@ export struct GroupInfoPage {
                   Text(`Members (${this.members.length})`)
                     .fontSize(13)
                     .fontColor($r('app.color.text_secondary'))
-                    .textTransform(TextTransform.Uppercase)
+
                     .layoutWeight(1)
 
                   Text($r('app.string.add'))

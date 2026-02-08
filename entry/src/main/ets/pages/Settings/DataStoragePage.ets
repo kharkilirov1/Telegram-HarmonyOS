@@ -135,21 +135,24 @@ export struct DataStoragePage {
     const isEnabled = photosEnabled || videosEnabled || filesEnabled;
 
     try {
-      await TDLibClient.getInstance().send('setAutoDownloadSettings', {
-        settings: {
-          '@type': 'autoDownloadSettings',
-          is_auto_download_enabled: isEnabled,
-          max_photo_file_size: photosEnabled ? 1048576 : 0,
-          max_video_file_size: videosEnabled ? this.videosMaxSize : 0,
-          max_other_file_size: filesEnabled ? this.filesMaxSize : 0,
-          video_upload_bitrate: 0,
-          preload_large_videos: false,
-          preload_next_audio: true,
-          preload_stories: true,
-          use_less_data_for_calls: false
-        },
-        type: { '@type': tdlibNetworkType }
-      });
+      const autoDownloadSettings: Record<string, Object> = {
+        '@type': 'autoDownloadSettings',
+        is_auto_download_enabled: isEnabled,
+        max_photo_file_size: photosEnabled ? 1048576 : 0,
+        max_video_file_size: videosEnabled ? this.videosMaxSize : 0,
+        max_other_file_size: filesEnabled ? this.filesMaxSize : 0,
+        video_upload_bitrate: 0,
+        preload_large_videos: false,
+        preload_next_audio: true,
+        preload_stories: true,
+        use_less_data_for_calls: false
+      };
+      const networkType: Record<string, Object> = { '@type': tdlibNetworkType };
+      const syncParams: Record<string, Object> = {
+        settings: autoDownloadSettings,
+        type: networkType
+      };
+      await TDLibClient.getInstance().send('setAutoDownloadSettings', syncParams);
     } catch (e) {
       // Silently ignore if TDLib is not connected
     }

@@ -129,7 +129,6 @@ export struct CreateChannelPage {
             .fontSize(13)
             .fontColor($r('app.color.text_secondary'))
             .margin({ left: 16, top: 16, bottom: 8 })
-            .textTransform(TextTransform.Uppercase)
 
           Column() {
             Row() {
@@ -195,7 +194,6 @@ export struct CreateChannelPage {
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 16, top: 16, bottom: 8 })
-              .textTransform(TextTransform.Uppercase)
 
             Row() {
               Text('t.me/')
@@ -291,7 +289,7 @@ export struct CreateChannelPage {
                 photoUrl: user.photoUrl || '',
                 initials: this.getUserInitials(user),
                 avatarColor: this.getAvatarColor(user.id),
-                size: 44,
+                avatarSize: 44,
                 isOnline: user.isOnline,
                 showOnlineDot: true
               })
@@ -350,11 +348,8 @@ export struct CreateChannelPage {
     this.isCreating = true;
 
     try {
-      const result = await TDLibClient.getInstance().send('createNewSupergroupChat', {
-        title: this.channelName.trim(),
-        is_channel: true,
-        description: this.channelDescription
-      }) as Record<string, number>;
+      const createChannelParams: Record<string, Object> = { title: this.channelName.trim(), is_channel: true, description: this.channelDescription };
+      const result = await TDLibClient.getInstance().send('createNewSupergroupChat', createChannelParams) as Record<string, number>;
 
       const chatId = result['id'] || 0;
       this.navPathStack.pop();

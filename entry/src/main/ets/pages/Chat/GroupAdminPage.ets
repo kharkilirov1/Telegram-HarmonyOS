@@ -59,9 +59,8 @@ export struct GroupAdminPage {
 
     // Load current permissions
     try {
-      const chatResult = await TDLibClient.getInstance().send('getChat', {
-        chat_id: this.chatId
-      }) as Record<string, object>;
+      const getChatParams: Record<string, Object> = { chat_id: this.chatId };
+      const chatResult = await TDLibClient.getInstance().send('getChat', getChatParams);
       const permissions = chatResult['permissions'] as Record<string, boolean>;
       if (permissions) {
         this.canSendMessages = permissions['can_send_basic_messages'] ?? true;
@@ -75,12 +74,11 @@ export struct GroupAdminPage {
 
       // Determine public/private from supergroup info
       const supergroupId = Math.abs(this.chatId);
-      const sgInfo = await TDLibClient.getInstance().send('getSupergroup', {
-        supergroup_id: supergroupId
-      }) as Record<string, object>;
-      const hasUsername = ((sgInfo['usernames'] as Record<string, object>)?.['editable_username'] as string || '').length > 0;
+      const getSgParams: Record<string, Object> = { supergroup_id: supergroupId };
+      const sgInfo = await TDLibClient.getInstance().send('getSupergroup', getSgParams);
+      const hasUsername = ((sgInfo['usernames'] as Record<string, Object>)?.['editable_username'] as string || '').length > 0;
       this.isPublic = hasUsername;
-    } catch {
+    } catch (_e) {
       // Use defaults on failure
     }
 
@@ -90,13 +88,10 @@ export struct GroupAdminPage {
 
   private async loadAdministrators(): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('getSupergroupMembers', {
-        supergroup_id: Math.abs(this.chatId),
-        filter: { '@type': 'supergroupMembersFilterAdministrators' },
-        offset: 0,
-        limit: 100
-      }) as Record<string, object>;
-      const rawMembers = result['members'] as Record<string, object>[];
+      const adminFilter: Record<string, Object> = { '@type': 'supergroupMembersFilterAdministrators' };
+      const adminMembersParams: Record<string, Object> = { supergroup_id: Math.abs(this.chatId), filter: adminFilter, offset: 0, limit: 100 };
+      const result = await TDLibClient.getInstance().send('getSupergroupMembers', adminMembersParams);
+      const rawMembers = result['members'] as Record<string, Object>[];
       if (rawMembers && rawMembers.length > 0) {
         this.administrators = [];
         for (const m of rawMembers) {
@@ -109,19 +104,20 @@ export struct GroupAdminPage {
           let name = '';
           let photoUrl: string | null = null;
           try {
-            const user = await TDLibClient.getInstance().send('getUser', { user_id: memberId }) as Record<string, object>;
+            const getUserParams: Record<string, Object> = { user_id: memberId };
+            const user = await TDLibClient.getInstance().send('getUser', getUserParams);
             const firstName = (user['first_name'] as string) || '';
             const lastName = (user['last_name'] as string) || '';
             name = `${firstName} ${lastName}`.trim();
-            const photo = user['profile_photo'] as Record<string, object>;
+            const photo = user['profile_photo'] as Record<string, Object>;
             if (photo) {
-              const small = photo['small'] as Record<string, object>;
-              const localFile = small?.['local'] as Record<string, object>;
+              const small = photo['small'] as Record<string, Object>;
+              const localFile = small?.['local'] as Record<string, Object>;
               if (localFile?.['is_downloading_completed']) {
                 photoUrl = localFile['path'] as string;
               }
             }
-          } catch {
+          } catch (_e) {
             const fallback = getContext(this).resourceManager.getStringByNameSync('user_fallback');
             name = `${fallback} ${memberId}`;
           }
@@ -130,7 +126,7 @@ export struct GroupAdminPage {
         }
         return;
       }
-    } catch {
+    } catch (_e) {
       // Fallback stub data
     }
 
@@ -144,24 +140,22 @@ export struct GroupAdminPage {
 
   private async loadBannedUsers(): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('getSupergroupMembers', {
-        supergroup_id: Math.abs(this.chatId),
-        filter: { '@type': 'supergroupMembersFilterBanned' },
-        offset: 0,
-        limit: 100
-      }) as Record<string, object>;
-      const rawMembers = result['members'] as Record<string, object>[];
+      const bannedFilter: Record<string, Object> = { '@type': 'supergroupMembersFilterBanned' };
+      const bannedMembersParams: Record<string, Object> = { supergroup_id: Math.abs(this.chatId), filter: bannedFilter, offset: 0, limit: 100 };
+      const result = await TDLibClient.getInstance().send('getSupergroupMembers', bannedMembersParams);
+      const rawMembers = result['members'] as Record<string, Object>[];
       if (rawMembers && rawMembers.length > 0) {
         this.bannedUsers = [];
         for (const m of rawMembers) {
           const memberId = (m['member_id'] as Record<string, number>)?.['user_id'] || 0;
           let name = '';
           try {
-            const user = await TDLibClient.getInstance().send('getUser', { user_id: memberId }) as Record<string, object>;
+            const getBannedUserParams: Record<string, Object> = { user_id: memberId };
+            const user = await TDLibClient.getInstance().send('getUser', getBannedUserParams);
             const firstName = (user['first_name'] as string) || '';
             const lastName = (user['last_name'] as string) || '';
             name = `${firstName} ${lastName}`.trim();
-          } catch {
+          } catch (_e) {
             const fallback = getContext(this).resourceManager.getStringByNameSync('user_fallback');
             name = `${fallback} ${memberId}`;
           }
@@ -173,7 +167,7 @@ export struct GroupAdminPage {
         }
         return;
       }
-    } catch {
+    } catch (_e) {
       // Fallback stub data
     }
 
@@ -185,11 +179,9 @@ export struct GroupAdminPage {
   private async toggleGroupType(): Promise<void> {
     this.isPublic = !this.isPublic;
     try {
-      await TDLibClient.getInstance().send('toggleSupergroupIsAllHistoryAvailable', {
-        supergroup_id: Math.abs(this.chatId),
-        is_all_history_available: this.isPublic
-      });
-    } catch {
+      const toggleHistoryParams: Record<string, Object> = { supergroup_id: Math.abs(this.chatId), is_all_history_available: this.isPublic };
+      await TDLibClient.getInstance().send('toggleSupergroupIsAllHistoryAvailable', toggleHistoryParams);
+    } catch (_e) {
       // Revert on failure
       this.isPublic = !this.isPublic;
     }
@@ -200,25 +192,24 @@ export struct GroupAdminPage {
     this.isSaving = true;
 
     try {
-      await TDLibClient.getInstance().send('setChatPermissions', {
-        chat_id: this.chatId,
-        permissions: {
-          '@type': 'chatPermissions',
-          can_send_basic_messages: this.canSendMessages,
-          can_send_audios: this.canSendMedia,
-          can_send_documents: this.canSendMedia,
-          can_send_photos: this.canSendMedia,
-          can_send_videos: this.canSendMedia,
-          can_send_video_notes: this.canSendMedia,
-          can_send_voice_notes: this.canSendMedia,
-          can_send_polls: this.canSendPolls,
-          can_send_other_messages: this.canSendStickers,
-          can_invite_users: this.canAddMembers,
-          can_pin_messages: this.canPinMessages,
-          can_change_info: this.canChangeInfo
-        }
-      });
-    } catch {
+      const permissions: Record<string, Object> = {
+        '@type': 'chatPermissions',
+        can_send_basic_messages: this.canSendMessages,
+        can_send_audios: this.canSendMedia,
+        can_send_documents: this.canSendMedia,
+        can_send_photos: this.canSendMedia,
+        can_send_videos: this.canSendMedia,
+        can_send_video_notes: this.canSendMedia,
+        can_send_voice_notes: this.canSendMedia,
+        can_send_polls: this.canSendPolls,
+        can_send_other_messages: this.canSendStickers,
+        can_invite_users: this.canAddMembers,
+        can_pin_messages: this.canPinMessages,
+        can_change_info: this.canChangeInfo
+      };
+      const setPermissionsParams: Record<string, Object> = { chat_id: this.chatId, permissions: permissions };
+      await TDLibClient.getInstance().send('setChatPermissions', setPermissionsParams);
+    } catch (_e) {
       // Handle save error silently
     }
     this.isSaving = false;
@@ -285,7 +276,7 @@ export struct GroupAdminPage {
               Text($r('app.string.group_type'))
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
-                .textTransform(TextTransform.Uppercase)
+
                 .margin({ bottom: 8 })
 
               Row() {
@@ -324,7 +315,7 @@ export struct GroupAdminPage {
               Text($r('app.string.permissions_label'))
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
-                .textTransform(TextTransform.Uppercase)
+
                 .margin({ bottom: 8 })
 
               Column() {
@@ -379,7 +370,7 @@ export struct GroupAdminPage {
               Text($r('app.string.administrators_label'))
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
-                .textTransform(TextTransform.Uppercase)
+
                 .margin({ bottom: 8 })
 
               Column() {
@@ -407,7 +398,7 @@ export struct GroupAdminPage {
               Text($r('app.string.banned_users_label'))
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
-                .textTransform(TextTransform.Uppercase)
+
                 .margin({ bottom: 8 })
 
               Column() {
@@ -444,7 +435,7 @@ export struct GroupAdminPage {
               Text($r('app.string.recent_actions'))
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
-                .textTransform(TextTransform.Uppercase)
+
                 .margin({ bottom: 8 })
 
               Column() {

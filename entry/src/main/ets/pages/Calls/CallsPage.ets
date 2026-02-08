@@ -172,7 +172,7 @@ export struct CallsPage {
         photoUrl: call.userPhotoUrl || '',
         initials: call.userName.length > 0 ? call.userName.charAt(0) : '?',
         avatarColor: this.getAvatarColor(call.userId),
-        size: 50,
+        avatarSize: 50,
         isOnline: false,
         showOnlineDot: false
       })
@@ -276,7 +276,7 @@ export struct CallsPage {
     if (date.toDateString() === yesterday.toDateString()) {
       try {
         return getContext(this).resourceManager.getStringByNameSync('yesterday');
-      } catch {
+      } catch (_e) {
         return 'Yesterday';
       }
     }

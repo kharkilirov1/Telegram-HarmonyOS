@@ -33,12 +33,13 @@ export struct PassportPage {
 
   private async loadPassportData(): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('getPassportAuthorizationForm', {
+      const params: Record<string, Object> = {
         bot_user_id: 0,
         scope: '',
         public_key: '',
         nonce: ''
-      }) as Record<string, object>;
+      };
+      const result: Record<string, Object> = await TDLibClient.getInstance().send('getPassportAuthorizationForm', params);
       this.hasPassport = result !== null;
     } catch (_e) {
       this.hasPassport = false;

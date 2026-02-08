@@ -84,7 +84,7 @@ class TestablePreferencesService {
     if (!this.store) return defaultValue;
     try {
       return this.store.getSync(key, defaultValue) as string;
-    } catch {
+    } catch (_e) {
       return defaultValue;
     }
   }
@@ -99,7 +99,7 @@ class TestablePreferencesService {
     if (!this.store) return defaultValue;
     try {
       return this.store.getSync(key, defaultValue) as boolean;
-    } catch {
+    } catch (_e) {
       return defaultValue;
     }
   }
@@ -114,7 +114,7 @@ class TestablePreferencesService {
     if (!this.store) return defaultValue;
     try {
       return this.store.getSync(key, defaultValue) as number;
-    } catch {
+    } catch (_e) {
       return defaultValue;
     }
   }

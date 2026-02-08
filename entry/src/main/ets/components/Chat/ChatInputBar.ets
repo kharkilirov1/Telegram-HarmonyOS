@@ -557,7 +557,7 @@ export struct ChatInputBar {
   @Builder
   scheduleOption(label: ResourceStr, hoursFromNow: number) {
     Row() {
-      Image($r('app.media.ic_clock'))
+      Image($r('app.media.ic_settings'))
         .width(20).height(20)
         .fillColor($r('app.color.telegram_blue'))
         .margin({ right: 12 })
