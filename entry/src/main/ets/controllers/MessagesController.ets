@@ -170,16 +170,41 @@ export class MessagesController {
   // --- Per-chat search ---
 
   async searchChatMessages(chatId: number, query: string, fromMessageId: number = 0,
-    limit: number = 50): Promise<Message[]> {
+    limit: number = 50, senderId: number = 0, filter: string = ''): Promise<Message[]> {
     try {
+      // Build sender_id parameter for TDLib
+      const senderParam: object | null = senderId > 0
+        ? { '@type': 'messageSenderUser', user_id: senderId }
+        : null;
+
+      // Map filter string to TDLib searchMessagesFilter type
+      let filterParam: object | null = null;
+      switch (filter) {
+        case 'photo':
+          filterParam = { '@type': 'searchMessagesFilterPhoto' };
+          break;
+        case 'video':
+          filterParam = { '@type': 'searchMessagesFilterVideo' };
+          break;
+        case 'document':
+          filterParam = { '@type': 'searchMessagesFilterDocument' };
+          break;
+        case 'url':
+          filterParam = { '@type': 'searchMessagesFilterUrl' };
+          break;
+        default:
+          filterParam = null;
+          break;
+      }
+
       const result = await TDLibClient.getInstance().send('searchChatMessages', {
         chat_id: chatId,
         query: query,
-        sender_id: null,
+        sender_id: senderParam,
         from_message_id: fromMessageId,
         offset: 0,
         limit: limit,
-        filter: null,
+        filter: filterParam,
         message_thread_id: 0
       }) as Record<string, object>;
       const rawMessages = result['messages'] as Record<string, object>[];

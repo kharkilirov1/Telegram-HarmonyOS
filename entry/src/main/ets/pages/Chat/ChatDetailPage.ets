@@ -60,6 +60,12 @@ export struct ChatDetailPage {
   @Local searchResults: Message[] = [];
   @Local currentSearchIndex: number = -1;
   @Local isSearching: boolean = false;
+  @Local searchSenderId: number = 0;
+  @Local searchSenderName: string = '';
+  @Local searchFilter: string = ''; // '', 'photo', 'video', 'document', 'url'
+  @Local showSearchFilters: boolean = false;
+  @Local showSenderInput: boolean = false;
+  @Local searchFromDate: number = 0; // unix timestamp for date jump
 
   private listScroller: Scroller = new Scroller();
   private messageDataSource: BasicDataSource<ChatDetailListItem> = new BasicDataSource<ChatDetailListItem>();
@@ -253,59 +259,265 @@ export struct ChatDetailPage {
 
         // --- Per-chat search bar ---
         if (this.isSearchMode) {
-          Row() {
-            Image($r('app.media.ic_back'))
-              .width(20).height(20)
-              .fillColor($r('app.color.text_secondary'))
-              .onClick(() => {
-                this.isSearchMode = false;
-                this.searchQuery = '';
-                this.searchResults = [];
-                this.currentSearchIndex = -1;
-              })
-
-            TextInput({ text: this.searchQuery, placeholder: $r('app.string.search_in_chat') })
-              .layoutWeight(1)
-              .height(36)
-              .margin({ left: 8, right: 8 })
-              .backgroundColor($r('app.color.search_bar_bg'))
-              .borderRadius(18)
-              .fontSize(15)
-              .onChange((value: string) => {
-                this.searchQuery = value;
-                if (value.length > 0) {
-                  this.performChatSearch(value);
-                } else {
+          Column() {
+            // Search input row
+            Row() {
+              Image($r('app.media.ic_back'))
+                .width(20).height(20)
+                .fillColor($r('app.color.text_secondary'))
+                .accessibilityText($r('app.string.accessibility_back'))
+                .onClick(() => {
+                  this.isSearchMode = false;
+                  this.searchQuery = '';
                   this.searchResults = [];
                   this.currentSearchIndex = -1;
-                }
-              })
+                  this.searchSenderId = 0;
+                  this.searchSenderName = '';
+                  this.searchFilter = '';
+                  this.showSearchFilters = false;
+                  this.showSenderInput = false;
+                  this.searchFromDate = 0;
+                })
 
-            if (this.isSearching) {
-              LoadingProgress()
-                .width(20).height(20)
-                .color($r('app.color.telegram_blue'))
-            } else if (this.searchResults.length > 0) {
-              Text(`${this.currentSearchIndex + 1}/${this.searchResults.length}`)
-                .fontSize(13)
-                .fontColor($r('app.color.text_secondary'))
-                .margin({ right: 4 })
+              TextInput({ text: this.searchQuery, placeholder: $r('app.string.search_in_chat') })
+                .layoutWeight(1)
+                .height(36)
+                .margin({ left: 8, right: 8 })
+                .backgroundColor($r('app.color.search_bar_bg'))
+                .borderRadius(18)
+                .fontSize(15)
+                .onChange((value: string) => {
+                  this.searchQuery = value;
+                  if (value.length > 0) {
+                    this.performChatSearch(value);
+                  } else {
+                    this.searchResults = [];
+                    this.currentSearchIndex = -1;
+                  }
+                })
 
-              Image($r('app.media.ic_arrow_up'))
-                .width(20).height(20)
-                .fillColor($r('app.color.telegram_blue'))
-                .onClick(() => { this.navigateSearchResult(-1); })
+              if (this.isSearching) {
+                LoadingProgress()
+                  .width(20).height(20)
+                  .color($r('app.color.telegram_blue'))
+              } else if (this.searchResults.length > 0) {
+                Text(`${this.currentSearchIndex + 1}/${this.searchResults.length}`)
+                  .fontSize(13)
+                  .fontColor($r('app.color.text_secondary'))
+                  .margin({ right: 4 })
 
-              Image($r('app.media.ic_arrow_down'))
+                Image($r('app.media.ic_arrow_up'))
+                  .width(20).height(20)
+                  .fillColor($r('app.color.telegram_blue'))
+                  .accessibilityText('Previous result')
+                  .onClick(() => { this.navigateSearchResult(-1); })
+
+                Image($r('app.media.ic_arrow_down'))
+                  .width(20).height(20)
+                  .fillColor($r('app.color.telegram_blue'))
+                  .margin({ left: 4 })
+                  .accessibilityText('Next result')
+                  .onClick(() => { this.navigateSearchResult(1); })
+              }
+
+              // Toggle filter chips visibility
+              Image($r('app.media.ic_more'))
                 .width(20).height(20)
-                .fillColor($r('app.color.telegram_blue'))
+                .fillColor(this.showSearchFilters
+                  ? $r('app.color.telegram_blue')
+                  : $r('app.color.text_secondary'))
                 .margin({ left: 4 })
-                .onClick(() => { this.navigateSearchResult(1); })
+                .accessibilityText($r('app.string.accessibility_more'))
+                .onClick(() => {
+                  this.showSearchFilters = !this.showSearchFilters;
+                  if (!this.showSearchFilters) {
+                    this.showSenderInput = false;
+                  }
+                })
+            }
+            .width('100%')
+            .height(48)
+            .padding({ left: 12, right: 12 })
+
+            // Filter chips row
+            if (this.showSearchFilters) {
+              Scroll() {
+                Row({ space: 8 }) {
+                  // "All" chip
+                  Text($r('app.string.search_filter_all'))
+                    .fontSize(13)
+                    .fontColor(this.searchFilter === ''
+                      ? $r('app.color.search_chip_active_text')
+                      : $r('app.color.search_chip_text'))
+                    .backgroundColor(this.searchFilter === ''
+                      ? $r('app.color.search_chip_active_bg')
+                      : $r('app.color.search_chip_bg'))
+                    .borderRadius(14)
+                    .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+                    .accessibilityText($r('app.string.search_filter_all'))
+                    .onClick(() => {
+                      this.searchFilter = '';
+                      this.searchSenderId = 0;
+                      this.searchSenderName = '';
+                      this.showSenderInput = false;
+                      if (this.searchQuery.length > 0) {
+                        this.performChatSearch(this.searchQuery);
+                      }
+                    })
+
+                  // "From: [sender]" chip
+                  Text(this.searchSenderName.length > 0
+                    ? `${this.searchSenderName}`
+                    : $r('app.string.search_filter_from'))
+                    .fontSize(13)
+                    .fontColor(this.searchSenderId > 0
+                      ? $r('app.color.search_chip_active_text')
+                      : $r('app.color.search_chip_text'))
+                    .backgroundColor(this.searchSenderId > 0
+                      ? $r('app.color.search_chip_active_bg')
+                      : $r('app.color.search_chip_bg'))
+                    .borderRadius(14)
+                    .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+                    .accessibilityText($r('app.string.search_filter_from'))
+                    .onClick(() => {
+                      this.showSenderInput = !this.showSenderInput;
+                    })
+
+                  // "Photos" chip
+                  Text($r('app.string.search_filter_photos'))
+                    .fontSize(13)
+                    .fontColor(this.searchFilter === 'photo'
+                      ? $r('app.color.search_chip_active_text')
+                      : $r('app.color.search_chip_text'))
+                    .backgroundColor(this.searchFilter === 'photo'
+                      ? $r('app.color.search_chip_active_bg')
+                      : $r('app.color.search_chip_bg'))
+                    .borderRadius(14)
+                    .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+                    .accessibilityText($r('app.string.search_filter_photos'))
+                    .onClick(() => {
+                      this.searchFilter = this.searchFilter === 'photo' ? '' : 'photo';
+                      this.performChatSearch(this.searchQuery);
+                    })
+
+                  // "Videos" chip
+                  Text($r('app.string.search_filter_videos'))
+                    .fontSize(13)
+                    .fontColor(this.searchFilter === 'video'
+                      ? $r('app.color.search_chip_active_text')
+                      : $r('app.color.search_chip_text'))
+                    .backgroundColor(this.searchFilter === 'video'
+                      ? $r('app.color.search_chip_active_bg')
+                      : $r('app.color.search_chip_bg'))
+                    .borderRadius(14)
+                    .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+                    .accessibilityText($r('app.string.search_filter_videos'))
+                    .onClick(() => {
+                      this.searchFilter = this.searchFilter === 'video' ? '' : 'video';
+                      this.performChatSearch(this.searchQuery);
+                    })
+
+                  // "Files" chip
+                  Text($r('app.string.search_filter_files'))
+                    .fontSize(13)
+                    .fontColor(this.searchFilter === 'document'
+                      ? $r('app.color.search_chip_active_text')
+                      : $r('app.color.search_chip_text'))
+                    .backgroundColor(this.searchFilter === 'document'
+                      ? $r('app.color.search_chip_active_bg')
+                      : $r('app.color.search_chip_bg'))
+                    .borderRadius(14)
+                    .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+                    .accessibilityText($r('app.string.search_filter_files'))
+                    .onClick(() => {
+                      this.searchFilter = this.searchFilter === 'document' ? '' : 'document';
+                      this.performChatSearch(this.searchQuery);
+                    })
+
+                  // "Links" chip
+                  Text($r('app.string.search_filter_links'))
+                    .fontSize(13)
+                    .fontColor(this.searchFilter === 'url'
+                      ? $r('app.color.search_chip_active_text')
+                      : $r('app.color.search_chip_text'))
+                    .backgroundColor(this.searchFilter === 'url'
+                      ? $r('app.color.search_chip_active_bg')
+                      : $r('app.color.search_chip_bg'))
+                    .borderRadius(14)
+                    .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+                    .accessibilityText($r('app.string.search_filter_links'))
+                    .onClick(() => {
+                      this.searchFilter = this.searchFilter === 'url' ? '' : 'url';
+                      this.performChatSearch(this.searchQuery);
+                    })
+
+                  // Calendar / date jump chip
+                  Text($r('app.string.search_jump_to_date'))
+                    .fontSize(13)
+                    .fontColor(this.searchFromDate > 0
+                      ? $r('app.color.search_chip_active_text')
+                      : $r('app.color.search_chip_text'))
+                    .backgroundColor(this.searchFromDate > 0
+                      ? $r('app.color.search_chip_active_bg')
+                      : $r('app.color.search_chip_bg'))
+                    .borderRadius(14)
+                    .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+                    .accessibilityText($r('app.string.search_jump_to_date'))
+                    .onClick(() => {
+                      this.showDatePickerForJump();
+                    })
+                }
+                .padding({ left: 12, right: 12 })
+              }
+              .scrollable(ScrollDirection.Horizontal)
+              .scrollBar(BarState.Off)
+              .width('100%')
+              .height(40)
+
+              // Sender name input (shown when "From" chip is tapped)
+              if (this.showSenderInput) {
+                Row() {
+                  TextInput({
+                    text: this.searchSenderName,
+                    placeholder: $r('app.string.search_from_sender')
+                  })
+                    .layoutWeight(1)
+                    .height(36)
+                    .backgroundColor($r('app.color.search_sender_input_bg'))
+                    .borderRadius(18)
+                    .fontSize(14)
+                    .onChange((value: string) => {
+                      this.searchSenderName = value;
+                    })
+                    .onSubmit(() => {
+                      // For now, sender lookup by name requires TDLib searchChatMembers
+                      // We set the name and trigger search; senderId resolves via lookupSenderByName
+                      this.lookupSenderByName(this.searchSenderName);
+                    })
+
+                  if (this.searchSenderId > 0) {
+                    Image($r('app.media.ic_close'))
+                      .width(18).height(18)
+                      .fillColor($r('app.color.text_secondary'))
+                      .margin({ left: 8 })
+                      .accessibilityText($r('app.string.cancel'))
+                      .onClick(() => {
+                        this.searchSenderId = 0;
+                        this.searchSenderName = '';
+                        this.showSenderInput = false;
+                        if (this.searchQuery.length > 0) {
+                          this.performChatSearch(this.searchQuery);
+                        }
+                      })
+                  }
+                }
+                .width('100%')
+                .height(44)
+                .padding({ left: 12, right: 12 })
+              }
             }
           }
           .width('100%')
-          .height(48)
-          .padding({ left: 12, right: 12 })
           .backgroundColor($r('app.color.glass_nav_bg'))
         }
 
@@ -788,7 +1000,14 @@ export struct ChatDetailPage {
       this.isSearching = true;
       try {
         const results = await MessagesController.getInstance()
-          .searchChatMessages(this.chatId, query, 0, 50);
+          .searchChatMessages(
+            this.chatId,
+            query,
+            0,
+            50,
+            this.searchSenderId,
+            this.searchFilter
+          );
         this.searchResults = results;
         this.currentSearchIndex = results.length > 0 ? 0 : -1;
         if (results.length > 0) {
@@ -800,6 +1019,86 @@ export struct ChatDetailPage {
       }
       this.isSearching = false;
     }, 300) as number;
+  }
+
+  private showDatePickerForJump(): void {
+    DatePickerDialog.show({
+      start: new Date(2013, 0, 1),
+      end: new Date(),
+      selected: this.searchFromDate > 0
+        ? new Date(this.searchFromDate * 1000)
+        : new Date(),
+      lunar: false,
+      onDateAccept: (value: Date) => {
+        // Convert selected date to unix timestamp (start of selected day)
+        const selectedDate = new Date(value.getFullYear(), value.getMonth(), value.getDate());
+        const timestamp = Math.floor(selectedDate.getTime() / 1000);
+        this.searchFromDate = timestamp;
+        this.jumpToDate(timestamp);
+      }
+    });
+  }
+
+  private async jumpToDate(timestamp: number): Promise<void> {
+    try {
+      const result = await TDLibClient.getInstance().send('getChatMessageByDate', {
+        chat_id: this.chatId,
+        date: timestamp
+      }) as Record<string, object>;
+
+      if (result && result['id']) {
+        const messageId = result['id'] as number;
+        // Try scrolling to the message if it exists in local list
+        const localIdx = this.messages.findIndex(m => m.id === messageId);
+        if (localIdx >= 0) {
+          this.scrollToMessage(messageId);
+        } else {
+          // Message is not in the loaded range; load messages around this date
+          const msgs = await MessagesController.getInstance()
+            .loadMessages(this.chatId, messageId, 50);
+          if (msgs.length > 0) {
+            this.messages = msgs.reverse();
+            this.rebuildFlatList();
+            // Scroll to the target message after rebuild
+            this.scrollToMessage(messageId);
+          }
+        }
+      }
+    } catch {
+      // Failed to jump to date, silently ignore
+    }
+  }
+
+  private async lookupSenderByName(name: string): Promise<void> {
+    if (name.length === 0) {
+      this.searchSenderId = 0;
+      return;
+    }
+    try {
+      // Use TDLib searchChatMembers to find matching users in this chat
+      const result = await TDLibClient.getInstance().send('searchChatMembers', {
+        chat_id: this.chatId,
+        query: name,
+        limit: 10,
+        filter: { '@type': 'chatMembersFilterMembers' }
+      }) as Record<string, object>;
+
+      const members = result['members'] as Record<string, object>[];
+      if (members && members.length > 0) {
+        const firstMember = members[0];
+        const memberId = firstMember['member_id'] as Record<string, object>;
+        if (memberId && memberId['@type'] === 'messageSenderUser') {
+          this.searchSenderId = memberId['user_id'] as number || 0;
+          this.showSenderInput = false;
+          // Re-trigger search with sender filter
+          if (this.searchQuery.length > 0) {
+            this.performChatSearch(this.searchQuery);
+          }
+        }
+      }
+    } catch {
+      // Failed to look up sender, keep input visible
+    }
   }
 
   private navigateSearchResult(direction: number): void {

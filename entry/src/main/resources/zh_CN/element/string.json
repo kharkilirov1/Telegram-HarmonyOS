@@ -1531,6 +1531,150 @@
     {
       "name": "accessibility_terminate_all",
       "value": "终止所有其他会话"
+    },
+    {
+      "name": "search_filter_all",
+      "value": "全部"
+    },
+    {
+      "name": "search_filter_from",
+      "value": "来自"
+    },
+    {
+      "name": "search_filter_photos",
+      "value": "照片"
+    },
+    {
+      "name": "search_filter_videos",
+      "value": "视频"
+    },
+    {
+      "name": "search_filter_files",
+      "value": "文件"
+    },
+    {
+      "name": "search_filter_links",
+      "value": "链接"
+    },
+    {
+      "name": "search_jump_to_date",
+      "value": "跳转到日期"
+    },
+    {
+      "name": "search_from_sender",
+      "value": "发送者..."
+    },
+    {
+      "name": "sticker_packs_recent",
+      "value": "最近"
+    },
+    {
+      "name": "sticker_packs_trending",
+      "value": "热门"
+    },
+    {
+      "name": "sticker_packs_add",
+      "value": "添加贴纸"
+    },
+    {
+      "name": "sticker_pack_install",
+      "value": "添加"
+    },
+    {
+      "name": "sticker_pack_remove",
+      "value": "删除"
+    },
+    {
+      "name": "sticker_pack_count",
+      "value": "%d个贴纸"
+    },
+    {
+      "name": "sticker_search_placeholder",
+      "value": "搜索贴纸..."
+    },
+    {
+      "name": "data_storage_usage",
+      "value": "存储使用"
+    },
+    {
+      "name": "data_network_usage",
+      "value": "网络使用"
+    },
+    {
+      "name": "data_auto_download",
+      "value": "自动下载媒体"
+    },
+    {
+      "name": "data_auto_download_photos",
+      "value": "照片"
+    },
+    {
+      "name": "data_auto_download_videos",
+      "value": "视频"
+    },
+    {
+      "name": "data_auto_download_files",
+      "value": "文件"
+    },
+    {
+      "name": "data_mobile_data",
+      "value": "移动数据"
+    },
+    {
+      "name": "data_wifi",
+      "value": "Wi-Fi"
+    },
+    {
+      "name": "data_roaming",
+      "value": "漫游时"
+    },
+    {
+      "name": "data_auto_download_hint",
+      "value": "连接时自动下载媒体"
+    },
+    {
+      "name": "data_auto_play",
+      "value": "自动播放"
+    },
+    {
+      "name": "data_auto_play_gifs",
+      "value": "GIF动图"
+    },
+    {
+      "name": "data_auto_play_videos",
+      "value": "视频"
+    },
+    {
+      "name": "data_save_gallery",
+      "value": "保存到相册"
+    },
+    {
+      "name": "data_save_incoming",
+      "value": "保存收到的照片"
+    },
+    {
+      "name": "data_save_edited",
+      "value": "保存编辑的照片"
+    },
+    {
+      "name": "data_clear_cache",
+      "value": "清除缓存"
+    },
+    {
+      "name": "data_max_size",
+      "value": "最大 %s"
+    },
+    {
+      "name": "data_reset_settings",
+      "value": "重置下载设置"
+    },
+    {
+      "name": "data_storage_usage_section",
+      "value": "存储使用"
+    },
+    {
+      "name": "accessibility_toggle_auto_download",
+      "value": "切换自动下载设置"
     }
   ]
 }

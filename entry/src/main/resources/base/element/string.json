@@ -1531,6 +1531,150 @@
     {
       "name": "accessibility_terminate_all",
       "value": "Terminate all other sessions"
+    },
+    {
+      "name": "search_filter_all",
+      "value": "All"
+    },
+    {
+      "name": "search_filter_from",
+      "value": "From"
+    },
+    {
+      "name": "search_filter_photos",
+      "value": "Photos"
+    },
+    {
+      "name": "search_filter_videos",
+      "value": "Videos"
+    },
+    {
+      "name": "search_filter_files",
+      "value": "Files"
+    },
+    {
+      "name": "search_filter_links",
+      "value": "Links"
+    },
+    {
+      "name": "search_jump_to_date",
+      "value": "Jump to Date"
+    },
+    {
+      "name": "search_from_sender",
+      "value": "From sender..."
+    },
+    {
+      "name": "sticker_packs_recent",
+      "value": "Recent"
+    },
+    {
+      "name": "sticker_packs_trending",
+      "value": "Trending"
+    },
+    {
+      "name": "sticker_packs_add",
+      "value": "Add Stickers"
+    },
+    {
+      "name": "sticker_pack_install",
+      "value": "Add"
+    },
+    {
+      "name": "sticker_pack_remove",
+      "value": "Remove"
+    },
+    {
+      "name": "sticker_pack_count",
+      "value": "%d stickers"
+    },
+    {
+      "name": "sticker_search_placeholder",
+      "value": "Search stickers..."
+    },
+    {
+      "name": "data_storage_usage",
+      "value": "Storage Usage"
+    },
+    {
+      "name": "data_network_usage",
+      "value": "Network Usage"
+    },
+    {
+      "name": "data_auto_download",
+      "value": "Auto-Download Media"
+    },
+    {
+      "name": "data_auto_download_photos",
+      "value": "Photos"
+    },
+    {
+      "name": "data_auto_download_videos",
+      "value": "Videos"
+    },
+    {
+      "name": "data_auto_download_files",
+      "value": "Files"
+    },
+    {
+      "name": "data_mobile_data",
+      "value": "Mobile Data"
+    },
+    {
+      "name": "data_wifi",
+      "value": "Wi-Fi"
+    },
+    {
+      "name": "data_roaming",
+      "value": "When Roaming"
+    },
+    {
+      "name": "data_auto_download_hint",
+      "value": "Media will be auto-downloaded when connected"
+    },
+    {
+      "name": "data_auto_play",
+      "value": "Auto-Play Media"
+    },
+    {
+      "name": "data_auto_play_gifs",
+      "value": "GIFs"
+    },
+    {
+      "name": "data_auto_play_videos",
+      "value": "Videos"
+    },
+    {
+      "name": "data_save_gallery",
+      "value": "Save to Gallery"
+    },
+    {
+      "name": "data_save_incoming",
+      "value": "Save Incoming Photos"
+    },
+    {
+      "name": "data_save_edited",
+      "value": "Save Edited Photos"
+    },
+    {
+      "name": "data_clear_cache",
+      "value": "Clear Cache"
+    },
+    {
+      "name": "data_max_size",
+      "value": "Up to %s"
+    },
+    {
+      "name": "data_reset_settings",
+      "value": "Reset Auto-Download Settings"
+    },
+    {
+      "name": "data_storage_usage_section",
+      "value": "STORAGE USAGE"
+    },
+    {
+      "name": "accessibility_toggle_auto_download",
+      "value": "Toggle auto-download setting"
     }
   ]
 }

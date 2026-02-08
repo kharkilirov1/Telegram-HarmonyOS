@@ -195,6 +195,30 @@
     {
       "name": "slider_track_dark",
       "value": "#4DFFFFFF"
+    },
+    {
+      "name": "search_chip_bg",
+      "value": "#F0F0F0"
+    },
+    {
+      "name": "search_chip_active_bg",
+      "value": "#0088CC"
+    },
+    {
+      "name": "search_chip_text",
+      "value": "#333333"
+    },
+    {
+      "name": "search_chip_active_text",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "search_bar_bg",
+      "value": "#F0F0F0"
+    },
+    {
+      "name": "search_sender_input_bg",
+      "value": "#F5F5F5"
     }
   ]
 }

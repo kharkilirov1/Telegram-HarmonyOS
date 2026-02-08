@@ -90,6 +90,62 @@ export class PreferencesService {
     await this.putString('last_seen_visibility', visibility);
   }
 
+  // --- Auto-download settings ---
+
+  async getAutoDownloadEnabled(mediaType: string, networkType: string): Promise<boolean> {
+    const key = `auto_download_${mediaType}_${networkType}`;
+    const defaultValue = networkType === 'wifi';
+    return this.getBoolean(key, defaultValue);
+  }
+
+  async setAutoDownloadEnabled(mediaType: string, networkType: string, enabled: boolean): Promise<void> {
+    const key = `auto_download_${mediaType}_${networkType}`;
+    await this.putBoolean(key, enabled);
+  }
+
+  async getAutoDownloadMaxSize(mediaType: string): Promise<number> {
+    const key = `auto_download_${mediaType}_max_size`;
+    const defaultValue = mediaType === 'videos' ? 15728640 : 1048576;
+    return this.getNumber(key, defaultValue);
+  }
+
+  async setAutoDownloadMaxSize(mediaType: string, size: number): Promise<void> {
+    const key = `auto_download_${mediaType}_max_size`;
+    await this.putNumber(key, size);
+  }
+
+  async getAutoPlayGifs(): Promise<boolean> {
+    return this.getBoolean('auto_play_gifs', true);
+  }
+
+  async setAutoPlayGifs(enabled: boolean): Promise<void> {
+    await this.putBoolean('auto_play_gifs', enabled);
+  }
+
+  async getAutoPlayVideos(): Promise<boolean> {
+    return this.getBoolean('auto_play_videos', true);
+  }
+
+  async setAutoPlayVideos(enabled: boolean): Promise<void> {
+    await this.putBoolean('auto_play_videos', enabled);
+  }
+
+  async getSaveIncomingPhotos(): Promise<boolean> {
+    return this.getBoolean('save_incoming_photos', false);
+  }
+
+  async setSaveIncomingPhotos(enabled: boolean): Promise<void> {
+    await this.putBoolean('save_incoming_photos', enabled);
+  }
+
+  async getSaveEditedPhotos(): Promise<boolean> {
+    return this.getBoolean('save_edited_photos', false);
+  }
+
+  async setSaveEditedPhotos(enabled: boolean): Promise<void> {
+    await this.putBoolean('save_edited_photos', enabled);
+  }
+
   // --- Generic accessors ---
 
   private async getString(key: string, defaultValue: string): Promise<string> {

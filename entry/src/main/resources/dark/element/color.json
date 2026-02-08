@@ -171,6 +171,34 @@
     {
       "name": "glass_card_shadow",
       "value": "#20000000"
+    },
+    {
+      "name": "search_chip_bg",
+      "value": "#3A3A3C"
+    },
+    {
+      "name": "search_chip_active_bg",
+      "value": "#3390EC"
+    },
+    {
+      "name": "search_chip_text",
+      "value": "#CCCCCC"
+    },
+    {
+      "name": "search_chip_active_text",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "search_bar_bg",
+      "value": "#3A3A3C"
+    },
+    {
+      "name": "search_sender_input_bg",
+      "value": "#2C2C2E"
+    },
+    {
+      "name": "icon_on_primary",
+      "value": "#FFFFFF"
     }
   ]
 }
