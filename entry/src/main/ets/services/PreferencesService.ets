@@ -90,6 +90,40 @@ export class PreferencesService {
     await this.putString('last_seen_visibility', visibility);
   }
 
+  // --- Passcode / Biometric Lock ---
+
+  async getPasscodeEnabled(): Promise<boolean> {
+    return this.getBoolean('passcode_enabled', false);
+  }
+
+  async setPasscodeEnabled(enabled: boolean): Promise<void> {
+    await this.putBoolean('passcode_enabled', enabled);
+  }
+
+  async getBiometricEnabled(): Promise<boolean> {
+    return this.getBoolean('biometric_enabled', false);
+  }
+
+  async setBiometricEnabled(enabled: boolean): Promise<void> {
+    await this.putBoolean('biometric_enabled', enabled);
+  }
+
+  async getAutoLockTimeout(): Promise<number> {
+    return this.getNumber('auto_lock_timeout', 0);
+  }
+
+  async setAutoLockTimeout(seconds: number): Promise<void> {
+    await this.putNumber('auto_lock_timeout', seconds);
+  }
+
+  async getPasscodeHash(): Promise<string> {
+    return this.getString('passcode_hash', '');
+  }
+
+  async setPasscodeHash(hash: string): Promise<void> {
+    await this.putString('passcode_hash', hash);
+  }
+
   // --- Auto-download settings ---
 
   async getAutoDownloadEnabled(mediaType: string, networkType: string): Promise<boolean> {
@@ -152,7 +186,7 @@ export class PreferencesService {
     if (!this.store) return defaultValue;
     try {
       return this.store.getSync(key, defaultValue) as string;
-    } catch {
+    } catch (_e) {
       return defaultValue;
     }
   }
@@ -167,7 +201,7 @@ export class PreferencesService {
     if (!this.store) return defaultValue;
     try {
       return this.store.getSync(key, defaultValue) as boolean;
-    } catch {
+    } catch (_e) {
       return defaultValue;
     }
   }
@@ -182,7 +216,7 @@ export class PreferencesService {
     if (!this.store) return defaultValue;
     try {
       return this.store.getSync(key, defaultValue) as number;
-    } catch {
+    } catch (_e) {
       return defaultValue;
     }
   }
