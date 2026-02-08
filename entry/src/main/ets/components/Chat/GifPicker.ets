@@ -9,7 +9,7 @@ interface GifItem {
 
 @ComponentV2
 export struct GifPicker {
-  @Param onGifSelected: (gifId: number) => void = () => {};
+  @Event onGifSelected: (gifId: number) => void = () => {};
   @Local searchText: string = '';
   @Local isSearching: boolean = false;
 

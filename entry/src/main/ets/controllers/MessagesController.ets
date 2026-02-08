@@ -493,16 +493,11 @@ export class MessagesController {
     }
 
     // Spoiler (has_spoiler flag on photo/video content)
-    const content = raw['content'] as Record<string, object>;
     if (content) {
       const hasSpoiler = content['has_spoiler'] as boolean;
       if (hasSpoiler) {
         msg.hasSpoiler = true;
       }
-    }
-
-    // Content
-    if (content) {
       this.applyContent(msg, content);
     }
 

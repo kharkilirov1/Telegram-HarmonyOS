@@ -25,17 +25,17 @@ export struct ChatInputBar {
   @Param editMessage: Message | null = null;
   @Param chatId: number = 0;
 
-  @Param onSendMessage: (text: string) => void = () => {};
-  @Param onSendScheduled: (text: string, sendDate: number) => void = () => {};
-  @Param onEditMessage: (messageId: number, text: string) => void = () => {};
-  @Param onAttachTap: () => void = () => {};
-  @Param onCancelReply: () => void = () => {};
-  @Param onCancelEdit: () => void = () => {};
-  @Param onSendSticker: (emoji: string) => void = () => {};
-  @Param onSendGif: (gifId: number) => void = () => {};
-  @Param onSendVoice: (duration: number) => void = () => {};
-  @Param onDraftChange: (text: string) => void = () => {};
-  @Param onCreatePoll: () => void = () => {};
+  @Event onSendMessage: (text: string) => void = () => {};
+  @Event onSendScheduled: (text: string, sendDate: number) => void = () => {};
+  @Event onEditMessage: (messageId: number, text: string) => void = () => {};
+  @Event onAttachTap: () => void = () => {};
+  @Event onCancelReply: () => void = () => {};
+  @Event onCancelEdit: () => void = () => {};
+  @Event onSendSticker: (emoji: string) => void = () => {};
+  @Event onSendGif: (gifId: number) => void = () => {};
+  @Event onSendVoice: (duration: number) => void = () => {};
+  @Event onDraftChange: (text: string) => void = () => {};
+  @Event onCreatePoll: () => void = () => {};
 
   private recordingTimerId: number = -1;
 

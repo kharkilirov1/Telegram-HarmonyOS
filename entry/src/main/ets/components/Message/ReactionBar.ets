@@ -6,8 +6,8 @@ import { MessageReaction } from '../../models/Message';
 @ComponentV2
 export struct ReactionBar {
   @Param reactions: MessageReaction[] = [];
-  @Param onReactionTap: (emoji: string) => void = () => {};
-  @Param onAddReaction: () => void = () => {};
+  @Event onReactionTap: (emoji: string) => void = () => {};
+  @Event onAddReaction: () => void = () => {};
   @Param isOutgoing: boolean = false;
 
   build() {

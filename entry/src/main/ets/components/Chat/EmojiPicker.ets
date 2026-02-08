@@ -102,7 +102,7 @@ interface EmojiCategory {
 
 @ComponentV2
 export struct EmojiPicker {
-  @Param onEmojiSelected: (emoji: string) => void = () => {};
+  @Event onEmojiSelected: (emoji: string) => void = () => {};
   @Local activeCategory: number = 0;
 
   build() {

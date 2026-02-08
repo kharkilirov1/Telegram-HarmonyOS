@@ -1495,6 +1495,10 @@
     {
       "name": "last_active_days",
       "value": "%dd ago"
+    },
+    {
+      "name": "language_english",
+      "value": "English"
     }
   ]
 }

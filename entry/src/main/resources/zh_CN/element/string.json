@@ -1495,6 +1495,10 @@
     {
       "name": "last_active_days",
       "value": "%d天前"
+    },
+    {
+      "name": "language_english",
+      "value": "English"
     }
   ]
 }

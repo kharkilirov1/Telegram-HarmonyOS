@@ -11,18 +11,18 @@ export struct MessageBubble {
   @Param isFirstInGroup: boolean = true;
   @Param isLastInGroup: boolean = true;
   @Param showSenderName: boolean = false;
-  @Param onReply: (message: Message) => void = () => {};
-  @Param onForward: (message: Message) => void = () => {};
-  @Param onCopy: (message: Message) => void = () => {};
-  @Param onDelete: (message: Message) => void = () => {};
-  @Param onEdit: (message: Message) => void = () => {};
-  @Param onMediaTap: (url: string) => void = () => {};
-  @Param onVideoPlay: (url: string, duration: number) => void = () => {};
-  @Param onReactionTap: (message: Message, emoji: string) => void = () => {};
-  @Param onPollVote: (message: Message, optionIndex: number) => void = () => {};
+  @Event onReply: (message: Message) => void = () => {};
+  @Event onForward: (message: Message) => void = () => {};
+  @Event onCopy: (message: Message) => void = () => {};
+  @Event onDelete: (message: Message) => void = () => {};
+  @Event onEdit: (message: Message) => void = () => {};
+  @Event onMediaTap: (url: string) => void = () => {};
+  @Event onVideoPlay: (url: string, duration: number) => void = () => {};
+  @Event onReactionTap: (message: Message, emoji: string) => void = () => {};
+  @Event onPollVote: (message: Message, optionIndex: number) => void = () => {};
   @Param isSelectionMode: boolean = false;
   @Param isSelected: boolean = false;
-  @Param onSelect: (message: Message) => void = () => {};
+  @Event onSelect: (message: Message) => void = () => {};
 
   @Local swipeOffsetX: number = 0;
   @Local downloadProgress: number = -1; // -1 = not downloading, 0..100 = progress

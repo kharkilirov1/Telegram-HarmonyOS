@@ -6,7 +6,7 @@ import { Message, PollOption } from '../../models/Message';
 @ComponentV2
 export struct PollBubble {
   @Param message: Message = new Message();
-  @Param onVote: (message: Message, optionIndex: number) => void = () => {};
+  @Event onVote: (message: Message, optionIndex: number) => void = () => {};
 
   @Local selectedIndex: number = -1;
 

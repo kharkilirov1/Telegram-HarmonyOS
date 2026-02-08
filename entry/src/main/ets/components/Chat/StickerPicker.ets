@@ -16,7 +16,7 @@ interface StickerItem {
 
 @ComponentV2
 export struct StickerPicker {
-  @Param onStickerSelected: (emoji: string) => void = () => {};
+  @Event onStickerSelected: (emoji: string) => void = () => {};
   @Local activePack: number = 0;
   @Local searchText: string = '';
 

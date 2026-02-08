@@ -8,13 +8,13 @@ interface AttachOption {
 
 @ComponentV2
 export struct AttachmentPanel {
-  @Param onCamera: () => void = () => {};
-  @Param onGallery: () => void = () => {};
-  @Param onFile: () => void = () => {};
-  @Param onLocation: () => void = () => {};
-  @Param onContact: () => void = () => {};
-  @Param onPoll: () => void = () => {};
-  @Param onClose: () => void = () => {};
+  @Event onCamera: () => void = () => {};
+  @Event onGallery: () => void = () => {};
+  @Event onFile: () => void = () => {};
+  @Event onLocation: () => void = () => {};
+  @Event onContact: () => void = () => {};
+  @Event onPoll: () => void = () => {};
+  @Event onClose: () => void = () => {};
 
   build() {
     Column() {

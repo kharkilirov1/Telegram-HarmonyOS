@@ -348,7 +348,7 @@ export struct SettingsPage {
                   .fontColor($r('app.color.text_primary'))
                   .layoutWeight(1)
 
-                Text('English')
+                Text($r('app.string.language_english'))
                   .fontSize(15)
                   .fontColor($r('app.color.text_secondary'))
 
