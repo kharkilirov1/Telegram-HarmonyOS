@@ -82,6 +82,7 @@ export struct BiometricLockPage {
             Image($r('app.media.ic_back'))
               .width(24).height(24)
               .fillColor($r('app.color.telegram_blue'))
+              .accessibilityText($r('app.string.accessibility_back'))
               .onClick(() => this.navPathStack.pop())
 
             Text($r('app.string.passcode_lock'))
@@ -116,6 +117,7 @@ export struct BiometricLockPage {
 
                   Toggle({ type: ToggleType.Switch, isOn: this.passcodeEnabled })
                     .selectedColor($r('app.color.telegram_blue'))
+                    .accessibilityText($r('app.string.accessibility_toggle_passcode'))
                     .onChange((isOn: boolean) => {
                       if (isOn) {
                         this.firstPasscode = '';
@@ -153,6 +155,7 @@ export struct BiometricLockPage {
 
                     Toggle({ type: ToggleType.Switch, isOn: this.biometricEnabled })
                       .selectedColor($r('app.color.telegram_blue'))
+                      .accessibilityText($r('app.string.accessibility_toggle_biometric'))
                       .onChange((isOn: boolean) => {
                         this.biometricEnabled = isOn;
                         this.saveBiometricEnabled(isOn);
@@ -307,7 +310,8 @@ export struct BiometricLockPage {
                     : Color.Transparent)
                   .stroke($r('app.color.telegram_blue'))
                   .strokeWidth(1.5)
-              })
+                  .accessibilityText($r('app.string.accessibility_passcode_dot'))
+              }, (index: number) => index.toString())
             }
             .margin({ bottom: 12 })
 
@@ -387,7 +391,7 @@ export struct BiometricLockPage {
             Column()
               .width('100%')
               .layoutWeight(1)
-              .backgroundColor('#66000000')
+              .backgroundColor($r('app.color.overlay_dark'))
               .onClick(() => {
                 this.showAutoLockPicker = false;
               })
@@ -426,6 +430,7 @@ export struct BiometricLockPage {
                 }
                 .width('100%').height(48)
                 .padding({ left: 16, right: 16 })
+                .accessibilityText(option.labelRes)
                 .onClick(() => {
                   this.autoLockTimeout = option.seconds;
                   this.saveAutoLockTimeout(option.seconds);
@@ -435,7 +440,7 @@ export struct BiometricLockPage {
                 if (index < this.autoLockOptions.length - 1) {
                   Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
                 }
-              })
+              }, (option: AutoLockOption) => option.seconds.toString())
 
               Blank().height(34)
             }

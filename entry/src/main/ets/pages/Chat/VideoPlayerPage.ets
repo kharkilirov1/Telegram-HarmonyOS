@@ -44,7 +44,7 @@ export struct VideoPlayerPage {
         Column()
           .width('100%')
           .height('100%')
-          .backgroundColor(Color.Black)
+          .backgroundColor($r('app.color.media_viewer_bg'))
 
         // Video component
         if (this.videoUrl.length > 0) {
@@ -95,11 +95,11 @@ export struct VideoPlayerPage {
             LoadingProgress()
               .width(48)
               .height(48)
-              .color(Color.White)
+              .color($r('app.color.icon_on_primary'))
 
             Text($r('app.string.loading'))
               .fontSize(14)
-              .fontColor('#B3FFFFFF')
+              .fontColor($r('app.color.text_on_overlay'))
               .margin({ top: 12 })
           }
           .width('100%')
@@ -118,24 +118,25 @@ export struct VideoPlayerPage {
               Image($r('app.media.ic_back'))
                 .width(20)
                 .height(20)
-                .fillColor(Color.White)
+                .fillColor($r('app.color.icon_on_primary'))
             }
             .width(36)
             .height(36)
             .borderRadius(18)
-            .backgroundColor('#66000000')
+            .backgroundColor($r('app.color.overlay_dark'))
             .backgroundBlurStyle(BlurStyle.COMPONENT_THIN, {
               colorMode: ThemeColorMode.DARK,
               adaptiveColor: AdaptiveColor.DEFAULT,
               scale: 1.0
             })
             .justifyContent(FlexAlign.Center)
+            .accessibilityText($r('app.string.accessibility_back'))
             .onClick(() => this.navPathStack.pop())
 
             Text($r('app.string.video_player'))
               .fontSize(17)
               .fontWeight(FontWeight.Medium)
-              .fontColor(Color.White)
+              .fontColor($r('app.color.icon_on_primary'))
               .margin({ left: 12 })
               .layoutWeight(1)
               .maxLines(1)
@@ -148,7 +149,7 @@ export struct VideoPlayerPage {
           .padding({ left: 16, right: 16 })
           .linearGradient({
             direction: GradientDirection.Top,
-            colors: [['#99000000', 0.0], ['#00000000', 1.0]]
+            colors: [[$r('app.color.overlay_gradient_start'), 0.0], [$r('app.color.overlay_gradient_end'), 1.0]]
           })
           .position({ x: 0, y: 0 })
 
@@ -159,7 +160,7 @@ export struct VideoPlayerPage {
               // Current time
               Text(this.formatTime(this.isSeeking ? this.seekPosition : this.currentTime))
                 .fontSize(13)
-                .fontColor(Color.White)
+                .fontColor($r('app.color.icon_on_primary'))
                 .fontWeight(FontWeight.Medium)
                 .width(52)
                 .textAlign(TextAlign.Center)
@@ -172,10 +173,11 @@ export struct VideoPlayerPage {
               })
                 .layoutWeight(1)
                 .trackThickness(3)
-                .trackColor('#4DFFFFFF')
-                .selectedColor(Color.White)
+                .trackColor($r('app.color.slider_track_dark'))
+                .selectedColor($r('app.color.icon_on_primary'))
                 .blockSize({ width: 14, height: 14 })
-                .blockColor(Color.White)
+                .blockColor($r('app.color.icon_on_primary'))
+                .accessibilityText($r('app.string.accessibility_seek_slider'))
                 .onChange((value: number, mode: SliderChangeMode) => {
                   if (mode === SliderChangeMode.Begin) {
                     this.isSeeking = true;
@@ -193,7 +195,7 @@ export struct VideoPlayerPage {
               // Total duration
               Text(this.formatTime(this.totalDuration))
                 .fontSize(13)
-                .fontColor('#B3FFFFFF')
+                .fontColor($r('app.color.text_on_overlay'))
                 .width(52)
                 .textAlign(TextAlign.Center)
             }
@@ -209,12 +211,12 @@ export struct VideoPlayerPage {
                 Image(this.isPlaying ? $r('app.media.ic_pause') : $r('app.media.ic_play'))
                   .width(28)
                   .height(28)
-                  .fillColor(Color.White)
+                  .fillColor($r('app.color.icon_on_primary'))
               }
               .width(56)
               .height(56)
               .borderRadius(28)
-              .backgroundColor('#66000000')
+              .backgroundColor($r('app.color.overlay_dark'))
               .justifyContent(FlexAlign.Center)
               .accessibilityText(this.isPlaying ? $r('app.string.pause') : $r('app.string.play'))
               .onClick(() => {
@@ -227,8 +229,9 @@ export struct VideoPlayerPage {
               Image($r('app.media.ic_fullscreen'))
                 .width(24)
                 .height(24)
-                .fillColor(Color.White)
+                .fillColor($r('app.color.icon_on_primary'))
                 .margin({ right: 8 })
+                .accessibilityText($r('app.string.accessibility_fullscreen'))
                 .onClick(() => {
                   this.isFullscreen = !this.isFullscreen;
                   this.scheduleHideControls();
@@ -242,7 +245,7 @@ export struct VideoPlayerPage {
           .padding({ left: 12, right: 12, bottom: 24, top: 12 })
           .linearGradient({
             direction: GradientDirection.Bottom,
-            colors: [['#99000000', 0.0], ['#00000000', 1.0]]
+            colors: [[$r('app.color.overlay_gradient_start'), 0.0], [$r('app.color.overlay_gradient_end'), 1.0]]
           })
           .position({ x: 0, bottom: 0 })
         }
@@ -253,7 +256,7 @@ export struct VideoPlayerPage {
             Image($r('app.media.ic_play'))
               .width(48)
               .height(48)
-              .fillColor(Color.White)
+              .fillColor($r('app.color.icon_on_primary'))
               .opacity(0.8)
           }
           .width('100%')
@@ -269,7 +272,7 @@ export struct VideoPlayerPage {
       .height('100%')
     }
     .hideTitleBar(true)
-    .backgroundColor(Color.Black)
+    .backgroundColor($r('app.color.media_viewer_bg'))
   }
 
   // --- Playback control ---

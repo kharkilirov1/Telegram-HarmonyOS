@@ -155,6 +155,7 @@ export struct SessionManagementPage {
           Image($r('app.media.ic_back'))
             .width(24).height(24)
             .fillColor($r('app.color.telegram_blue'))
+            .accessibilityText($r('app.string.accessibility_back'))
             .onClick(() => this.navPathStack.pop())
 
           Text($r('app.string.active_sessions'))
@@ -218,6 +219,7 @@ export struct SessionManagementPage {
                   .width('100%')
                   .height(48)
                   .justifyContent(FlexAlign.Center)
+                  .accessibilityText($r('app.string.accessibility_terminate_all'))
                   .onClick(() => {
                     this.showTerminateAllDialog = true;
                   })
@@ -409,7 +411,7 @@ export struct SessionManagementPage {
         .width('80%')
         .height(44)
         .backgroundColor($r('app.color.logout_red'))
-        .fontColor(Color.White)
+        .fontColor($r('app.color.icon_on_primary'))
         .fontSize(16)
         .margin({ top: 24 })
         .onClick(() => {
@@ -422,7 +424,7 @@ export struct SessionManagementPage {
         .type(ButtonType.Capsule)
         .width('80%')
         .height(44)
-        .backgroundColor(Color.Transparent)
+        .backgroundColor($r('app.color.overlay_gradient_end'))
         .fontColor($r('app.color.telegram_blue'))
         .fontSize(16)
         .margin({ top: 8, bottom: 24 })

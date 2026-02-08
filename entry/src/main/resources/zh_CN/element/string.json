@@ -1499,6 +1499,38 @@
     {
       "name": "language_english",
       "value": "English"
+    },
+    {
+      "name": "accessibility_fullscreen",
+      "value": "切换全屏"
+    },
+    {
+      "name": "accessibility_seek_slider",
+      "value": "视频进度条"
+    },
+    {
+      "name": "accessibility_toggle_passcode",
+      "value": "开关密码锁"
+    },
+    {
+      "name": "accessibility_toggle_biometric",
+      "value": "开关生物识别"
+    },
+    {
+      "name": "accessibility_passcode_dot",
+      "value": "密码位"
+    },
+    {
+      "name": "accessibility_toggle_proxy",
+      "value": "开关代理"
+    },
+    {
+      "name": "accessibility_add_proxy",
+      "value": "添加代理服务器"
+    },
+    {
+      "name": "accessibility_terminate_all",
+      "value": "终止所有其他会话"
     }
   ]
 }

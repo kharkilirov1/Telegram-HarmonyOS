@@ -1499,6 +1499,38 @@
     {
       "name": "language_english",
       "value": "English"
+    },
+    {
+      "name": "accessibility_fullscreen",
+      "value": "Полноэкранный режим"
+    },
+    {
+      "name": "accessibility_seek_slider",
+      "value": "Перемотка видео"
+    },
+    {
+      "name": "accessibility_toggle_passcode",
+      "value": "Включить/выключить код-пароль"
+    },
+    {
+      "name": "accessibility_toggle_biometric",
+      "value": "Включить/выключить биометрию"
+    },
+    {
+      "name": "accessibility_passcode_dot",
+      "value": "Цифра кода"
+    },
+    {
+      "name": "accessibility_toggle_proxy",
+      "value": "Включить/выключить прокси"
+    },
+    {
+      "name": "accessibility_add_proxy",
+      "value": "Добавить прокси-сервер"
+    },
+    {
+      "name": "accessibility_terminate_all",
+      "value": "Завершить все другие сеансы"
     }
   ]
 }

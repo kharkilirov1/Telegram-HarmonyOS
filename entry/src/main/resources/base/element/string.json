@@ -1499,6 +1499,38 @@
     {
       "name": "language_english",
       "value": "English"
+    },
+    {
+      "name": "accessibility_fullscreen",
+      "value": "Toggle fullscreen"
+    },
+    {
+      "name": "accessibility_seek_slider",
+      "value": "Seek video position"
+    },
+    {
+      "name": "accessibility_toggle_passcode",
+      "value": "Toggle passcode lock"
+    },
+    {
+      "name": "accessibility_toggle_biometric",
+      "value": "Toggle biometric unlock"
+    },
+    {
+      "name": "accessibility_passcode_dot",
+      "value": "Passcode digit"
+    },
+    {
+      "name": "accessibility_toggle_proxy",
+      "value": "Toggle proxy usage"
+    },
+    {
+      "name": "accessibility_add_proxy",
+      "value": "Add proxy server"
+    },
+    {
+      "name": "accessibility_terminate_all",
+      "value": "Terminate all other sessions"
     }
   ]
 }

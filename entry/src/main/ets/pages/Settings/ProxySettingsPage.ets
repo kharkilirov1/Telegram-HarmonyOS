@@ -283,6 +283,7 @@ export struct ProxySettingsPage {
           Image($r('app.media.ic_back'))
             .width(24).height(24)
             .fillColor($r('app.color.telegram_blue'))
+            .accessibilityText($r('app.string.accessibility_back'))
             .onClick(() => this.navPathStack.pop())
 
           Text($r('app.string.proxy_settings'))
@@ -313,6 +314,7 @@ export struct ProxySettingsPage {
 
                 Toggle({ type: ToggleType.Switch, isOn: this.useProxy })
                   .selectedColor($r('app.color.telegram_blue'))
+                  .accessibilityText($r('app.string.accessibility_toggle_proxy'))
                   .onChange((isOn: boolean) => {
                     this.toggleUseProxy(isOn);
                   })
@@ -360,6 +362,7 @@ export struct ProxySettingsPage {
                   }
 
                   Row() {
+
                     // Status indicator dot
                     Circle()
                       .width(10).height(10)
@@ -439,7 +442,8 @@ export struct ProxySettingsPage {
                   .onClick(() => {
                     this.enableProxy(index);
                   })
-                })
+                  .accessibilityText(`${proxy.server}:${proxy.port}`)
+                }, (proxy: ProxyInfo) => proxy.id.toString())
               }
               .width('100%')
               .backgroundColor($r('app.color.glass_card_bg'))
@@ -472,6 +476,7 @@ export struct ProxySettingsPage {
             .borderRadius(16)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
+            .accessibilityText($r('app.string.accessibility_add_proxy'))
             .onClick(() => {
               this.openAddDialog();
             })
@@ -511,7 +516,7 @@ export struct ProxySettingsPage {
       Column()
         .width('100%')
         .height('100%')
-        .backgroundColor('#66000000')
+        .backgroundColor($r('app.color.overlay_dark'))
         .onClick(() => {
           this.showAddDialog = false;
         })
@@ -668,7 +673,7 @@ export struct ProxySettingsPage {
         Button($r('app.string.save'))
           .type(ButtonType.Capsule)
           .fontSize(16)
-          .fontColor(Color.White)
+          .fontColor($r('app.color.icon_on_primary'))
           .backgroundColor($r('app.color.telegram_blue'))
           .height(40)
           .padding({ left: 24, right: 24 })
@@ -692,7 +697,7 @@ export struct ProxySettingsPage {
   typeButton(type: string, label: Resource) {
     Text(label)
       .fontSize(14)
-      .fontColor(this.formType === type ? Color.White : $r('app.color.telegram_blue'))
+      .fontColor(this.formType === type ? $r('app.color.icon_on_primary') : $r('app.color.telegram_blue'))
       .backgroundColor(this.formType === type ? $r('app.color.telegram_blue') : $r('app.color.background_secondary'))
       .borderRadius(8)
       .height(36)
