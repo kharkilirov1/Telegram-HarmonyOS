@@ -10,6 +10,7 @@ export struct ChatListPage {
   @Consumer('navPathStack') navPathStack: NavPathStack = new NavPathStack();
   @Local searchText: string = '';
   @Local isLoading: boolean = true;
+  @Local isRefreshing: boolean = false;
   @Local activeFolderIndex: number = 0;
 
   private chatDataSource: BasicDataSource<Chat> = new BasicDataSource<Chat>();
@@ -150,32 +151,41 @@ export struct ChatListPage {
           .layoutWeight(1)
           .justifyContent(FlexAlign.Center)
         } else {
-          List() {
-            LazyForEach(this.chatDataSource, (chat: Chat) => {
-              ListItem() {
-                ChatListItem({
-                  chat: chat,
-                  onChatClick: (chatId: number) => {
-                    this.navPathStack.pushPath({ name: 'ChatDetail', param: chatId });
-                  }
+          Refresh({ refreshing: $$this.isRefreshing }) {
+            List() {
+              LazyForEach(this.chatDataSource, (chat: Chat) => {
+                ListItem() {
+                  ChatListItem({
+                    chat: chat,
+                    onChatClick: (chatId: number) => {
+                      this.navPathStack.pushPath({ name: 'ChatDetail', param: chatId });
+                    }
+                  })
+                }
+                .swipeAction({
+                  start: this.swipeStartBuilder(chat),
+                  end: this.swipeEndBuilder(chat)
                 })
-              }
-              .swipeAction({
-                start: this.swipeStartBuilder(chat),
-                end: this.swipeEndBuilder(chat)
-              })
-            }, (chat: Chat) => chat.id.toString())
+              }, (chat: Chat) => chat.id.toString())
+            }
+            .width('100%')
+            .layoutWeight(1)
+            .cachedCount(5)
+            .edgeEffect(EdgeEffect.Spring)
+            .divider({
+              strokeWidth: 0.5,
+              color: $r('app.color.separator'),
+              startMargin: 82,
+              endMargin: 0
+            })
           }
-          .width('100%')
-          .layoutWeight(1)
-          .cachedCount(5)
-          .edgeEffect(EdgeEffect.Spring)
-          .divider({
-            strokeWidth: 0.5,
-            color: $r('app.color.separator'),
-            startMargin: 82,
-            endMargin: 0
+          .onRefreshing(() => {
+            MessagesController.getInstance().loadDialogs(30);
+            setTimeout(() => {
+              this.isRefreshing = false;
+            }, 1500);
           })
+          .layoutWeight(1)
         }
       }
       .width('100%')

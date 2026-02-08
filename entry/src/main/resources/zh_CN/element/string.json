@@ -2,11 +2,11 @@
   "string": [
     {
       "name": "module_desc",
-      "value": "Telegram HarmonyOS client"
+      "value": "Telegram HarmonyOS 客户端"
     },
     {
       "name": "ability_desc",
-      "value": "Telegram main ability"
+      "value": "Telegram 主功能"
     },
     {
       "name": "ability_label",
@@ -14,167 +14,167 @@
     },
     {
       "name": "login_title",
-      "value": "Sign in to Telegram"
+      "value": "登录 Telegram"
     },
     {
       "name": "login_subtitle",
-      "value": "Please enter your phone number"
+      "value": "请输入您的手机号码"
     },
     {
       "name": "phone_placeholder",
-      "value": "Phone number"
+      "value": "手机号码"
     },
     {
       "name": "code_placeholder",
-      "value": "Verification code"
+      "value": "验证码"
     },
     {
       "name": "password_placeholder",
-      "value": "Password"
+      "value": "密码"
     },
     {
       "name": "next_button",
-      "value": "Next"
+      "value": "下一步"
     },
     {
       "name": "chats_title",
-      "value": "Chats"
+      "value": "聊天"
     },
     {
       "name": "search_placeholder",
-      "value": "Search"
+      "value": "搜索"
     },
     {
       "name": "enter_code_title",
-      "value": "Enter Code"
+      "value": "输入验证码"
     },
     {
       "name": "code_sent_to",
-      "value": "We've sent a code to %s"
+      "value": "验证码已发送至 %s"
     },
     {
       "name": "two_step_title",
-      "value": "Two-Step Verification"
+      "value": "两步验证"
     },
     {
       "name": "two_step_subtitle",
-      "value": "Your account is protected with an additional password."
+      "value": "您的账户已设置额外密码保护。"
     },
     {
       "name": "hint_prefix",
-      "value": "Hint: %s"
+      "value": "提示：%s"
     },
     {
       "name": "error_send_code",
-      "value": "Failed to send code. Please try again."
+      "value": "发送验证码失败，请重试。"
     },
     {
       "name": "error_invalid_code",
-      "value": "Invalid code. Please try again."
+      "value": "验证码无效，请重试。"
     },
     {
       "name": "error_wrong_password",
-      "value": "Wrong password. Please try again."
+      "value": "密码错误，请重试。"
     },
     {
       "name": "message_placeholder",
-      "value": "Message"
+      "value": "消息"
     },
     {
       "name": "slide_to_cancel",
-      "value": "Slide to cancel"
+      "value": "滑动取消"
     },
     {
       "name": "forwarded_from",
-      "value": "Forwarded from %s"
+      "value": "转发自 %s"
     },
     {
       "name": "document_label",
-      "value": "Document"
+      "value": "文档"
     },
     {
       "name": "file_label",
-      "value": "File"
+      "value": "文件"
     },
     {
       "name": "typing",
-      "value": "typing"
+      "value": "正在输入"
     },
     {
       "name": "online",
-      "value": "online"
+      "value": "在线"
     },
     {
       "name": "last_seen_recently",
-      "value": "last seen recently"
+      "value": "最近上线"
     },
     {
       "name": "last_seen_within_week",
-      "value": "last seen within a week"
+      "value": "一周内上线过"
     },
     {
       "name": "last_seen_within_month",
-      "value": "last seen within a month"
+      "value": "一个月内上线过"
     },
     {
       "name": "last_seen_long_ago",
-      "value": "last seen a long time ago"
+      "value": "很久以前上线"
     },
     {
       "name": "members_count",
-      "value": "%d members"
+      "value": "%d 位成员"
     },
     {
       "name": "mute",
-      "value": "Mute"
+      "value": "静音"
     },
     {
       "name": "unmute",
-      "value": "Unmute"
+      "value": "取消静音"
     },
     {
       "name": "read",
-      "value": "Read"
+      "value": "已读"
     },
     {
       "name": "unread",
-      "value": "Unread"
+      "value": "未读"
     },
     {
       "name": "pin",
-      "value": "Pin"
+      "value": "置顶"
     },
     {
       "name": "unpin",
-      "value": "Unpin"
+      "value": "取消置顶"
     },
     {
       "name": "delete",
-      "value": "Delete"
+      "value": "删除"
     },
     {
       "name": "today",
-      "value": "Today"
+      "value": "今天"
     },
     {
       "name": "yesterday",
-      "value": "Yesterday"
+      "value": "昨天"
     },
     {
       "name": "photo",
-      "value": "Photo"
+      "value": "照片"
     },
     {
       "name": "video",
-      "value": "Video"
+      "value": "视频"
     },
     {
       "name": "voice_message",
-      "value": "Voice message"
+      "value": "语音消息"
     },
     {
       "name": "sticker",
-      "value": "Sticker"
+      "value": "贴纸"
     },
     {
       "name": "gif",
@@ -182,807 +182,807 @@
     },
     {
       "name": "contact_label",
-      "value": "Contact"
+      "value": "联系人"
     },
     {
       "name": "location_label",
-      "value": "Location"
+      "value": "位置"
     },
     {
       "name": "poll",
-      "value": "Poll"
+      "value": "投票"
     },
     {
       "name": "loading",
-      "value": "Loading..."
+      "value": "加载中..."
     },
     {
       "name": "no_messages",
-      "value": "No messages yet"
+      "value": "暂无消息"
     },
     {
       "name": "reply",
-      "value": "Reply"
+      "value": "回复"
     },
     {
       "name": "forward",
-      "value": "Forward"
+      "value": "转发"
     },
     {
       "name": "copy",
-      "value": "Copy"
+      "value": "复制"
     },
     {
       "name": "edit",
-      "value": "Edit"
+      "value": "编辑"
     },
     {
       "name": "cancel",
-      "value": "Cancel"
+      "value": "取消"
     },
     {
       "name": "done",
-      "value": "Done"
+      "value": "完成"
     },
     {
       "name": "settings",
-      "value": "Settings"
+      "value": "设置"
     },
     {
       "name": "contacts",
-      "value": "Contacts"
+      "value": "联系人"
     },
     {
       "name": "saved_messages",
-      "value": "Saved Messages"
+      "value": "收藏夹"
     },
     {
       "name": "new_message",
-      "value": "New Message"
+      "value": "新建消息"
     },
     {
       "name": "new_group",
-      "value": "New Group"
+      "value": "新建群组"
     },
     {
       "name": "new_channel",
-      "value": "New Channel"
+      "value": "新建频道"
     },
     {
       "name": "secret_chat",
-      "value": "Secret Chat"
+      "value": "加密对话"
     },
     {
       "name": "settings_theme",
-      "value": "Theme"
+      "value": "主题"
     },
     {
       "name": "settings_theme_system",
-      "value": "System"
+      "value": "跟随系统"
     },
     {
       "name": "settings_theme_light",
-      "value": "Light"
+      "value": "浅色"
     },
     {
       "name": "settings_theme_dark",
-      "value": "Dark"
+      "value": "深色"
     },
     {
       "name": "settings_notifications",
-      "value": "Notifications"
+      "value": "通知"
     },
     {
       "name": "settings_notifications_enabled",
-      "value": "Notifications"
+      "value": "通知"
     },
     {
       "name": "settings_notification_sound",
-      "value": "Notification Sound"
+      "value": "通知提示音"
     },
     {
       "name": "settings_notification_sound_default",
-      "value": "Default"
+      "value": "默认"
     },
     {
       "name": "settings_chat",
-      "value": "Chat Settings"
+      "value": "聊天设置"
     },
     {
       "name": "settings_send_by_enter",
-      "value": "Send by Enter"
+      "value": "回车键发送"
     },
     {
       "name": "settings_font_size",
-      "value": "Font Size"
+      "value": "字体大小"
     },
     {
       "name": "settings_privacy",
-      "value": "Privacy"
+      "value": "隐私"
     },
     {
       "name": "settings_last_seen",
-      "value": "Last Seen"
+      "value": "最后上线时间"
     },
     {
       "name": "settings_everybody",
-      "value": "Everybody"
+      "value": "所有人"
     },
     {
       "name": "settings_my_contacts",
-      "value": "My Contacts"
+      "value": "我的联系人"
     },
     {
       "name": "settings_nobody",
-      "value": "Nobody"
+      "value": "不允许任何人"
     },
     {
       "name": "settings_about",
-      "value": "About"
+      "value": "关于"
     },
     {
       "name": "settings_version",
-      "value": "Version"
+      "value": "版本"
     },
     {
       "name": "settings_log_out",
-      "value": "Log Out"
+      "value": "退出登录"
     },
     {
       "name": "profile_title",
-      "value": "Profile"
+      "value": "个人资料"
     },
     {
       "name": "profile_phone",
-      "value": "Phone"
+      "value": "手机号"
     },
     {
       "name": "profile_username",
-      "value": "Username"
+      "value": "用户名"
     },
     {
       "name": "profile_bio",
-      "value": "Bio"
+      "value": "个人简介"
     },
     {
       "name": "profile_no_bio",
-      "value": "None"
+      "value": "无"
     },
     {
       "name": "profile_edit",
-      "value": "Edit"
+      "value": "编辑"
     },
     {
       "name": "media_save",
-      "value": "Save"
+      "value": "保存"
     },
     {
       "name": "media_share",
-      "value": "Share"
+      "value": "分享"
     },
     {
       "name": "message_copied",
-      "value": "Message copied"
+      "value": "消息已复制"
     },
     {
       "name": "select_message",
-      "value": "Select"
+      "value": "选择"
     },
     {
       "name": "login_your_phone",
-      "value": "Your Phone Number"
+      "value": "您的手机号码"
     },
     {
       "name": "login_confirm_text",
-      "value": "Please confirm your country code and enter your phone number."
+      "value": "请确认您的国家代码并输入手机号码。"
     },
     {
       "name": "login_choose_country",
-      "value": "Choose a country"
+      "value": "选择国家"
     },
     {
       "name": "login_wrong_number",
-      "value": "Wrong number?"
+      "value": "号码有误？"
     },
     {
       "name": "login_resend_code",
-      "value": "You can request the code again in %s"
+      "value": "您可以在 %s 后重新获取验证码"
     },
     {
       "name": "login_forgot_password",
-      "value": "Forgot password?"
+      "value": "忘记密码？"
     },
     {
       "name": "folder_all",
-      "value": "All"
+      "value": "全部"
     },
     {
       "name": "folder_personal",
-      "value": "Personal"
+      "value": "私聊"
     },
     {
       "name": "folder_groups",
-      "value": "Groups"
+      "value": "群组"
     },
     {
       "name": "folder_channels",
-      "value": "Channels"
+      "value": "频道"
     },
     {
       "name": "folder_bots",
-      "value": "Bots"
+      "value": "机器人"
     },
     {
       "name": "folder_unread",
-      "value": "Unread"
+      "value": "未读"
     },
     {
       "name": "contacts_title",
-      "value": "Contacts"
+      "value": "联系人"
     },
     {
       "name": "calls_title",
-      "value": "Calls"
+      "value": "通话"
     },
     {
       "name": "settings_recent_calls",
-      "value": "Recent Calls"
+      "value": "最近通话"
     },
     {
       "name": "settings_devices",
-      "value": "Devices"
+      "value": "设备"
     },
     {
       "name": "settings_chat_folders",
-      "value": "Chat Folders"
+      "value": "聊天文件夹"
     },
     {
       "name": "settings_notifications_sounds",
-      "value": "Notifications and Sounds"
+      "value": "通知和声音"
     },
     {
       "name": "settings_privacy_security",
-      "value": "Privacy and Security"
+      "value": "隐私和安全"
     },
     {
       "name": "settings_data_storage",
-      "value": "Data and Storage"
+      "value": "数据和存储"
     },
     {
       "name": "settings_appearance",
-      "value": "Appearance"
+      "value": "外观"
     },
     {
       "name": "settings_language",
-      "value": "Language"
+      "value": "语言"
     },
     {
       "name": "settings_stickers",
-      "value": "Stickers and Emoji"
+      "value": "贴纸和表情"
     },
     {
       "name": "settings_power_saving",
-      "value": "Power Saving"
+      "value": "省电模式"
     },
     {
       "name": "settings_ask_question",
-      "value": "Ask a Question"
+      "value": "咨询问题"
     },
     {
       "name": "settings_telegram_faq",
-      "value": "Telegram FAQ"
+      "value": "Telegram 常见问题"
     },
     {
       "name": "settings_telegram_features",
-      "value": "Telegram Features"
+      "value": "Telegram 功能介绍"
     },
     {
       "name": "profile_set_photo",
-      "value": "Set Profile Photo"
+      "value": "设置头像"
     },
     {
       "name": "profile_shared_media",
-      "value": "Shared Media"
+      "value": "共享媒体"
     },
     {
       "name": "profile_change_number",
-      "value": "Change Number"
+      "value": "更换号码"
     },
     {
       "name": "contacts_sort",
-      "value": "Sort"
+      "value": "排序"
     },
     {
       "name": "contacts_invite_friends",
-      "value": "Invite Friends"
+      "value": "邀请好友"
     },
     {
       "name": "contacts_find_nearby",
-      "value": "Find People Nearby"
+      "value": "查找附近的人"
     },
     {
       "name": "calls_all",
-      "value": "All"
+      "value": "全部"
     },
     {
       "name": "calls_missed",
-      "value": "Missed"
+      "value": "未接"
     },
     {
       "name": "calls_no_recent",
-      "value": "No recent calls"
+      "value": "暂无最近通话"
     },
     {
       "name": "calls_no_missed",
-      "value": "No missed calls"
+      "value": "暂无未接来电"
     },
     {
       "name": "calls_unknown",
-      "value": "Unknown"
+      "value": "未知"
     },
     {
       "name": "calls_voice",
-      "value": "Voice Call"
+      "value": "语音通话"
     },
     {
       "name": "calls_video",
-      "value": "Video Call"
+      "value": "视频通话"
     },
     {
       "name": "editing_message",
-      "value": "Editing"
+      "value": "编辑中"
     },
     {
       "name": "search_messages_placeholder",
-      "value": "Search messages..."
+      "value": "搜索消息..."
     },
     {
       "name": "search_no_results",
-      "value": "No results found"
+      "value": "未找到结果"
     },
     {
       "name": "attach_camera",
-      "value": "Camera"
+      "value": "相机"
     },
     {
       "name": "attach_gallery",
-      "value": "Gallery"
+      "value": "相册"
     },
     {
       "name": "attach_file",
-      "value": "File"
+      "value": "文件"
     },
     {
       "name": "attach_location",
-      "value": "Location"
+      "value": "位置"
     },
     {
       "name": "attach_contact",
-      "value": "Contact"
+      "value": "联系人"
     },
     {
       "name": "attach_poll",
-      "value": "Poll"
+      "value": "投票"
     },
     {
       "name": "create",
-      "value": "Create"
+      "value": "创建"
     },
     {
       "name": "forward_to",
-      "value": "Forward to..."
+      "value": "转发至..."
     },
     {
       "name": "channel_name",
-      "value": "Channel Name"
+      "value": "频道名称"
     },
     {
       "name": "channel_description",
-      "value": "Description"
+      "value": "描述"
     },
     {
       "name": "public_channel",
-      "value": "Public Channel"
+      "value": "公开频道"
     },
     {
       "name": "private_channel",
-      "value": "Private Channel"
+      "value": "私有频道"
     },
     {
       "name": "public_link",
-      "value": "Public Link"
+      "value": "公开链接"
     },
     {
       "name": "group_name",
-      "value": "Group Name"
+      "value": "群组名称"
     },
     {
       "name": "add_members",
-      "value": "Add Members"
+      "value": "添加成员"
     },
     {
       "name": "invite_to_channel",
-      "value": "Invite Members"
+      "value": "邀请成员"
     },
     {
       "name": "passcode_lock",
-      "value": "Passcode Lock"
+      "value": "密码锁"
     },
     {
       "name": "two_step_verification",
-      "value": "Two-Step Verification"
+      "value": "两步验证"
     },
     {
       "name": "active_sessions",
-      "value": "Active Sessions"
+      "value": "活跃会话"
     },
     {
       "name": "auto_delete_messages",
-      "value": "Auto-Delete Messages"
+      "value": "自动删除消息"
     },
     {
       "name": "delete_my_account",
-      "value": "Delete My Account"
+      "value": "删除我的账户"
     },
     {
       "name": "storage_usage",
-      "value": "Storage Usage"
+      "value": "存储用量"
     },
     {
       "name": "network_usage",
-      "value": "Network Usage"
+      "value": "流量用量"
     },
     {
       "name": "auto_download_media",
-      "value": "Auto-Download Media"
+      "value": "自动下载媒体"
     },
     {
       "name": "auto_play_media",
-      "value": "Auto-Play Media"
+      "value": "自动播放媒体"
     },
     {
       "name": "save_to_gallery",
-      "value": "Save to Gallery"
+      "value": "保存到相册"
     },
     {
       "name": "clear_cache",
-      "value": "Clear Cache"
+      "value": "清除缓存"
     },
     {
       "name": "create_new_folder",
-      "value": "Create New Folder"
+      "value": "新建文件夹"
     },
     {
       "name": "recommended_folders",
-      "value": "Recommended"
+      "value": "推荐"
     },
     {
       "name": "shared_media_files",
-      "value": "Files"
+      "value": "文件"
     },
     {
       "name": "shared_media_links",
-      "value": "Links"
+      "value": "链接"
     },
     {
       "name": "shared_media_voice",
-      "value": "Voice"
+      "value": "语音"
     },
     {
       "name": "pinned_message",
-      "value": "Pinned Message"
+      "value": "置顶消息"
     },
     {
       "name": "block_user",
-      "value": "Block User"
+      "value": "屏蔽用户"
     },
     {
       "name": "unblock_user",
-      "value": "Unblock User"
+      "value": "解除屏蔽"
     },
     {
       "name": "groups_in_common",
-      "value": "%d Groups in Common"
+      "value": "%d 个共同群组"
     },
     {
       "name": "leave_group",
-      "value": "Leave Group"
+      "value": "退出群组"
     },
     {
       "name": "leave_channel",
-      "value": "Leave Channel"
+      "value": "退出频道"
     },
     {
       "name": "report",
-      "value": "Report"
+      "value": "举报"
     },
     {
       "name": "call_connecting",
-      "value": "Connecting..."
+      "value": "连接中..."
     },
     {
       "name": "call_ringing",
-      "value": "Ringing..."
+      "value": "响铃中..."
     },
     {
       "name": "call_ended",
-      "value": "Call Ended"
+      "value": "通话已结束"
     },
     {
       "name": "incoming_call",
-      "value": "Incoming call"
+      "value": "来电"
     },
     {
       "name": "accept",
-      "value": "Accept"
+      "value": "接听"
     },
     {
       "name": "decline",
-      "value": "Decline"
+      "value": "拒绝"
     },
     {
       "name": "archive",
-      "value": "Archive"
+      "value": "归档"
     },
     {
       "name": "chat_background",
-      "value": "Chat Background"
+      "value": "聊天背景"
     },
     {
       "name": "selected_count",
-      "value": "%d selected"
+      "value": "已选择 %d 项"
     },
     {
       "name": "recovery_title",
-      "value": "Check Your Email"
+      "value": "检查您的邮箱"
     },
     {
       "name": "recovery_subtitle",
-      "value": "We have sent a recovery code to your email."
+      "value": "我们已向您的邮箱发送了恢复代码。"
     },
     {
       "name": "recovery_code_placeholder",
-      "value": "Recovery code"
+      "value": "恢复代码"
     },
     {
       "name": "recovery_no_email_title",
-      "value": "No Recovery Email"
+      "value": "未设置恢复邮箱"
     },
     {
       "name": "recovery_no_email_message",
-      "value": "You did not set up a recovery email when enabling 2FA."
+      "value": "您在启用两步验证时未设置恢复邮箱。"
     },
     {
       "name": "recovery_invalid_code",
-      "value": "Invalid recovery code. Please try again."
+      "value": "恢复代码无效，请重试。"
     },
     {
       "name": "downloading",
-      "value": "Downloading..."
+      "value": "下载中..."
     },
     {
       "name": "download_complete",
-      "value": "Downloaded"
+      "value": "已下载"
     },
     {
       "name": "wallpaper_preview",
-      "value": "Preview"
+      "value": "预览"
     },
     {
       "name": "wallpaper_colors",
-      "value": "Colors"
+      "value": "颜色"
     },
     {
       "name": "wallpaper_patterns",
-      "value": "Patterns"
+      "value": "图案"
     },
     {
       "name": "wallpaper_reset",
-      "value": "Reset to Default"
+      "value": "恢复默认"
     },
     {
       "name": "wallpaper_preview_incoming",
-      "value": "How about this background?"
+      "value": "这个背景怎么样？"
     },
     {
       "name": "wallpaper_preview_outgoing",
-      "value": "Looks great!"
+      "value": "看起来不错！"
     },
     {
       "name": "shared_media_tab_media",
-      "value": "Media"
+      "value": "媒体"
     },
     {
       "name": "shared_media_no_items",
-      "value": "No items yet"
+      "value": "暂无内容"
     },
     {
       "name": "your_folders",
-      "value": "YOUR FOLDERS"
+      "value": "我的文件夹"
     },
     {
       "name": "folders_hint",
-      "value": "You can organize your chats into folders. Tap to reorder."
+      "value": "您可以将聊天整理到文件夹中。点击可重新排序。"
     },
     {
       "name": "add",
-      "value": "Add"
+      "value": "添加"
     },
     {
       "name": "notifications_label",
-      "value": "Notifications"
+      "value": "通知"
     },
     {
       "name": "call_action",
-      "value": "Call"
+      "value": "通话"
     },
     {
       "name": "more_action",
-      "value": "More"
+      "value": "更多"
     },
     {
       "name": "search_members",
-      "value": "Search Members"
+      "value": "搜索成员"
     },
     {
       "name": "admin_label",
-      "value": "admin"
+      "value": "管理员"
     },
     {
       "name": "emoji_tab",
-      "value": "Emoji"
+      "value": "表情"
     },
     {
       "name": "stickers_tab",
-      "value": "Stickers"
+      "value": "贴纸"
     },
     {
       "name": "gifs_tab",
-      "value": "GIFs"
+      "value": "GIF"
     },
     {
       "name": "search_gifs",
-      "value": "Search GIFs"
+      "value": "搜索 GIF"
     },
     {
       "name": "accessibility_search",
-      "value": "Search"
+      "value": "搜索"
     },
     {
       "name": "accessibility_compose",
-      "value": "Compose new message"
+      "value": "撰写新消息"
     },
     {
       "name": "accessibility_back",
-      "value": "Go back"
+      "value": "返回"
     },
     {
       "name": "accessibility_call",
-      "value": "Make a call"
+      "value": "拨打电话"
     },
     {
       "name": "accessibility_more",
-      "value": "More options"
+      "value": "更多选项"
     },
     {
       "name": "accessibility_send",
-      "value": "Send message"
+      "value": "发送消息"
     },
     {
       "name": "accessibility_attach",
-      "value": "Attach file"
+      "value": "添加附件"
     },
     {
       "name": "accessibility_record",
-      "value": "Record voice message"
+      "value": "录制语音消息"
     },
     {
       "name": "accessibility_emoji",
-      "value": "Open emoji picker"
+      "value": "打开表情面板"
     },
     {
       "name": "accessibility_scroll_bottom",
-      "value": "Scroll to bottom"
+      "value": "滚动到底部"
     },
     {
       "name": "accessibility_download",
-      "value": "Download file"
+      "value": "下载文件"
     },
     {
       "name": "accessibility_mute_toggle",
-      "value": "Toggle notifications"
+      "value": "切换通知"
     },
     {
       "name": "accessibility_add_reaction",
-      "value": "Add reaction"
+      "value": "添加回应"
     },
     {
       "name": "appearance_chat_preview",
-      "value": "Chat Preview"
+      "value": "聊天预览"
     },
     {
       "name": "appearance_preview_incoming",
-      "value": "Hey! How are you doing?"
+      "value": "嗨！你最近怎么样？"
     },
     {
       "name": "appearance_preview_outgoing",
-      "value": "I'm doing great, thanks!"
+      "value": "我很好，谢谢！"
     },
     {
       "name": "appearance_color_theme",
-      "value": "Color Theme"
+      "value": "颜色主题"
     },
     {
       "name": "appearance_theme_system_hint",
-      "value": "Auto-switch based on system"
+      "value": "根据系统自动切换"
     },
     {
       "name": "appearance_theme_light_hint",
-      "value": "Always light theme"
+      "value": "始终使用浅色主题"
     },
     {
       "name": "appearance_theme_dark_hint",
-      "value": "Always dark theme"
+      "value": "始终使用深色主题"
     },
     {
       "name": "appearance_night_mode",
-      "value": "Night Mode"
+      "value": "夜间模式"
     },
     {
       "name": "appearance_auto_night",
-      "value": "Automatic Night Mode"
+      "value": "自动夜间模式"
     },
     {
       "name": "appearance_auto_night_hint",
-      "value": "Automatically switch to dark theme at night"
+      "value": "夜间自动切换为深色主题"
     },
     {
       "name": "appearance_text_size",
-      "value": "Text Size"
+      "value": "文字大小"
     },
     {
       "name": "appearance_bubble_style",
-      "value": "Chat Bubble Style"
+      "value": "气泡样式"
     },
     {
       "name": "appearance_corner_radius",
-      "value": "Corner Radius"
+      "value": "圆角半径"
     },
     {
       "name": "appearance_app_icon",
-      "value": "App Icon"
+      "value": "应用图标"
     },
     {
       "name": "search_contacts_section",
-      "value": "Contacts"
+      "value": "联系人"
     },
     {
       "name": "search_chats_section",
-      "value": "Chats"
+      "value": "聊天"
     },
     {
       "name": "search_messages_section",
-      "value": "Messages"
+      "value": "消息"
     },
     {
       "name": "search_global_placeholder",
-      "value": "Search for chats, contacts, messages..."
+      "value": "搜索聊天、联系人、消息..."
     },
     {
       "name": "calls_voice_label",
-      "value": "Voice"
+      "value": "语音"
     },
     {
       "name": "calls_video_label",
-      "value": "Video"
+      "value": "视频"
     },
     {
       "name": "calls_cancelled",
-      "value": "Cancelled"
+      "value": "已取消"
     },
     {
       "name": "calls_missed_label",
-      "value": "Missed"
+      "value": "未接"
     }
   ]
 }

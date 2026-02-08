@@ -60,7 +60,7 @@ export struct AppearancePage {
           Column() {
             // --- Chat preview ---
             Column() {
-              Text('Chat Preview')
+              Text($r('app.string.appearance_chat_preview'))
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
                 .margin({ left: 16, bottom: 8, top: 16 })
@@ -71,7 +71,7 @@ export struct AppearancePage {
                 Row() {
                   Blank().width(8)
                   Column() {
-                    Text('Hey! How are you doing?')
+                    Text($r('app.string.appearance_preview_incoming'))
                       .fontSize(this.fontSize)
                       .fontColor($r('app.color.text_primary'))
                       .padding({ left: 10, right: 10, top: 6, bottom: 6 })
@@ -88,7 +88,7 @@ export struct AppearancePage {
                 Row() {
                   Blank()
                   Column() {
-                    Text("I'm doing great, thanks!")
+                    Text($r('app.string.appearance_preview_outgoing'))
                       .fontSize(this.fontSize)
                       .fontColor($r('app.color.text_primary'))
                       .padding({ left: 10, right: 10, top: 6, bottom: 6 })
@@ -116,7 +116,7 @@ export struct AppearancePage {
                   .width(20).height(20)
                   .fillColor($r('app.color.text_secondary'))
                   .margin({ right: 12 })
-                Text('Chat Background')
+                Text($r('app.string.chat_background'))
                   .fontSize(16)
                   .fontColor($r('app.color.text_primary'))
                   .layoutWeight(1)
@@ -140,18 +140,18 @@ export struct AppearancePage {
             Blank().height(24)
 
             // --- Theme section ---
-            Text('Color Theme')
+            Text($r('app.string.appearance_color_theme'))
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
               .textTransform(TextTransform.Uppercase)
 
             Column() {
-              this.themeOption('system', $r('app.string.settings_theme_system'), 'Auto-switch based on system')
+              this.themeOption('system', $r('app.string.settings_theme_system'), $r('app.string.appearance_theme_system_hint'))
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
-              this.themeOption('light', $r('app.string.settings_theme_light'), 'Always light theme')
+              this.themeOption('light', $r('app.string.settings_theme_light'), $r('app.string.appearance_theme_light_hint'))
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
-              this.themeOption('dark', $r('app.string.settings_theme_dark'), 'Always dark theme')
+              this.themeOption('dark', $r('app.string.settings_theme_dark'), $r('app.string.appearance_theme_dark_hint'))
             }
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
@@ -163,7 +163,7 @@ export struct AppearancePage {
             Blank().height(24)
 
             // --- Auto Night Mode ---
-            Text('Night Mode')
+            Text($r('app.string.appearance_night_mode'))
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
@@ -171,7 +171,7 @@ export struct AppearancePage {
 
             Column() {
               Row() {
-                Text('Automatic Night Mode')
+                Text($r('app.string.appearance_auto_night'))
                   .fontSize(16)
                   .fontColor($r('app.color.text_primary'))
                   .layoutWeight(1)
@@ -186,7 +186,7 @@ export struct AppearancePage {
               .height(48)
               .padding({ left: 16, right: 16 })
 
-              Text('Automatically switch to dark theme at night')
+              Text($r('app.string.appearance_auto_night_hint'))
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
                 .padding({ left: 16, right: 16, bottom: 12 })
@@ -201,7 +201,7 @@ export struct AppearancePage {
             Blank().height(24)
 
             // --- Text Size ---
-            Text('Text Size')
+            Text($r('app.string.appearance_text_size'))
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
@@ -245,7 +245,7 @@ export struct AppearancePage {
             Blank().height(24)
 
             // --- Bubble corners ---
-            Text('Chat Bubble Style')
+            Text($r('app.string.appearance_bubble_style'))
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
@@ -253,7 +253,7 @@ export struct AppearancePage {
 
             Column() {
               Row() {
-                Text('Corner Radius')
+                Text($r('app.string.appearance_corner_radius'))
                   .fontSize(16)
                   .fontColor($r('app.color.text_primary'))
                   .layoutWeight(1)
@@ -291,7 +291,7 @@ export struct AppearancePage {
             // --- App Icon ---
             Blank().height(24)
 
-            Text('App Icon')
+            Text($r('app.string.appearance_app_icon'))
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
@@ -333,7 +333,7 @@ export struct AppearancePage {
   }
 
   @Builder
-  themeOption(mode: string, label: Resource, subtitle: string) {
+  themeOption(mode: string, label: Resource, subtitle: ResourceStr) {
     Row() {
       Radio({ value: mode, group: 'theme' })
         .checked(this.themeMode === mode)

@@ -229,14 +229,19 @@ export struct CallsPage {
 
   private getCallDescription(call: Call): string {
     const dateStr = this.formatCallDate(call.date);
-    const typeStr = call.isVideo ? 'Video' : 'Voice';
+    const rm = getContext(this).resourceManager;
+    const typeStr = call.isVideo
+      ? rm.getStringByNameSync('calls_video_label')
+      : rm.getStringByNameSync('calls_voice_label');
 
     if (call.duration > 0) {
       return `${typeStr} (${this.formatDuration(call.duration)}), ${dateStr}`;
     }
 
     if (call.isMissed) {
-      return call.isOutgoing ? `Cancelled, ${dateStr}` : `Missed, ${dateStr}`;
+      const cancelled = rm.getStringByNameSync('calls_cancelled');
+      const missed = rm.getStringByNameSync('calls_missed_label');
+      return call.isOutgoing ? `${cancelled}, ${dateStr}` : `${missed}, ${dateStr}`;
     }
 
     return `${typeStr}, ${dateStr}`;
@@ -269,14 +274,17 @@ export struct CallsPage {
 
     const yesterday = new Date(now.getTime() - 86400000);
     if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
+      try {
+        return getContext(this).resourceManager.getStringByNameSync('yesterday');
+      } catch {
+        return 'Yesterday';
+      }
     }
 
     const diff = now.getTime() - date.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     if (days < 7) {
-      const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      return weekdays[date.getDay()];
+      return date.toLocaleDateString([], { weekday: 'short' } as Intl.DateTimeFormatOptions);
     }
 
     return `${date.getDate()}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;

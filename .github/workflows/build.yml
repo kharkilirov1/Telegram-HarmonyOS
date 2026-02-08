@@ -1,0 +1,133 @@
+name: HarmonyOS Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  OHOS_SDK_VERSION: "6.0.2(22)"
+  NODE_VERSION: "18"
+
+jobs:
+  build:
+    name: Build Debug HAP
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      # ------------------------------------------------------------------
+      # HarmonyOS SDK setup
+      # In a production pipeline, install or restore the SDK from cache.
+      # The OHOS_SDK secret/variable must point to the SDK root directory.
+      # ------------------------------------------------------------------
+      - name: Configure HarmonyOS SDK path
+        run: |
+          if [ -n "${OHOS_SDK:-}" ]; then
+            echo "OHOS_SDK is set to: ${OHOS_SDK}"
+          else
+            echo "::warning::OHOS_SDK is not set. Build may fail if hvigorw requires it."
+            echo "Set the OHOS_SDK repository variable to the SDK install path."
+          fi
+        env:
+          OHOS_SDK: ${{ vars.OHOS_SDK }}
+
+      # ------------------------------------------------------------------
+      # Install dependencies
+      # ------------------------------------------------------------------
+      - name: Install root dependencies
+        working-directory: ${{ github.workspace }}
+        run: npm install --legacy-peer-deps
+
+      - name: Install entry module dependencies
+        working-directory: ${{ github.workspace }}/entry
+        run: |
+          if [ -f package.json ]; then
+            npm install --legacy-peer-deps
+          else
+            echo "No package.json in entry/; skipping npm install."
+          fi
+
+      - name: Install ohpm dependencies (if ohpm available)
+        run: |
+          if command -v ohpm &>/dev/null; then
+            ohpm install
+            (cd entry && ohpm install)
+          else
+            echo "ohpm not available; skipping oh-package dependency install."
+          fi
+
+      # ------------------------------------------------------------------
+      # Lint (best-effort; hvigor lint may not be available in all setups)
+      # ------------------------------------------------------------------
+      - name: Run hvigor lint
+        continue-on-error: true
+        run: |
+          if [ -x "./hvigorw" ]; then
+            HVIGOR_CMD="./hvigorw"
+          elif command -v hvigorw &>/dev/null; then
+            HVIGOR_CMD="hvigorw"
+          elif [ -x "./node_modules/.bin/hvigor" ]; then
+            HVIGOR_CMD="./node_modules/.bin/hvigor"
+          else
+            echo "::warning::hvigorw not found; skipping lint."
+            exit 0
+          fi
+          echo "Running lint with: ${HVIGOR_CMD}"
+          ${HVIGOR_CMD} lint --no-daemon || echo "::warning::Lint task failed or is not available."
+
+      # ------------------------------------------------------------------
+      # Build
+      # ------------------------------------------------------------------
+      - name: Build debug HAP
+        env:
+          OHOS_SDK: ${{ vars.OHOS_SDK }}
+        run: |
+          if [ -x "./hvigorw" ]; then
+            HVIGOR_CMD="./hvigorw"
+          elif command -v hvigorw &>/dev/null; then
+            HVIGOR_CMD="hvigorw"
+          elif [ -x "./node_modules/.bin/hvigor" ]; then
+            HVIGOR_CMD="./node_modules/.bin/hvigor"
+          else
+            echo "::error::hvigorw not found. Cannot build."
+            exit 1
+          fi
+          echo "Building with: ${HVIGOR_CMD}"
+          ${HVIGOR_CMD} assembleHap --mode debug --no-daemon
+
+      # ------------------------------------------------------------------
+      # Upload artifact
+      # ------------------------------------------------------------------
+      - name: Find HAP output
+        id: find-hap
+        run: |
+          HAP_PATH=$(find entry/build -name "*.hap" -type f 2>/dev/null | head -1 || true)
+          if [ -n "${HAP_PATH}" ]; then
+            HAP_DIR=$(dirname "${HAP_PATH}")
+            echo "hap_dir=${HAP_DIR}" >> "$GITHUB_OUTPUT"
+            echo "hap_file=${HAP_PATH}" >> "$GITHUB_OUTPUT"
+            echo "Found HAP: ${HAP_PATH}"
+          else
+            echo "::warning::No .hap file found under entry/build/"
+            echo "hap_dir=entry/build" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload HAP artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: telegram-harmonyos-debug-hap
+          path: ${{ steps.find-hap.outputs.hap_dir || 'entry/build' }}/**/*.hap
+          if-no-files-found: warn
+          retention-days: 14

@@ -16,6 +16,13 @@ const DOMAIN = 0x0001;
 
 type TDLibUpdateHandler = (update: object) => void;
 
+/**
+ * Telegram API credentials — obtain from https://my.telegram.org/apps
+ * Set these before building the app. DO NOT commit real values to VCS.
+ */
+const TELEGRAM_API_ID: number = 0;        // Replace with your api_id
+const TELEGRAM_API_HASH: string = '';      // Replace with your api_hash
+
 export class TDLibClient {
   private static instance: TDLibClient | null = null;
   private clientId: number = 0;
@@ -207,8 +214,8 @@ export class TDLibClient {
       use_chat_info_database: true,
       use_message_database: true,
       use_secret_chats: true,
-      api_id: 0,        // TODO: Replace with real API ID from my.telegram.org
-      api_hash: '',      // TODO: Replace with real API hash
+      api_id: TELEGRAM_API_ID,
+      api_hash: TELEGRAM_API_HASH,
       system_language_code: 'en',
       device_model: 'HarmonyOS Device',
       system_version: 'HarmonyOS 6.0',

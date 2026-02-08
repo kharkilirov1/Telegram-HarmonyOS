@@ -458,11 +458,68 @@ export class MessagesController {
   }
 
   private decodeWaveform(base64: string): number[] {
-    // TDLib sends waveform as base64-encoded 5-bit values
-    // Simplified: generate normalized 0-1 values
+    // TDLib sends waveform as base64-encoded packed 5-bit amplitude values
+    // Each 5 bits encode a value 0-31, normalized to 0.0-1.0
+    try {
+      const raw = this.base64ToBytes(base64);
+      if (raw.length === 0) return this.fallbackWaveform();
+
+      const result: number[] = [];
+      let bitIndex = 0;
+      const totalBits = raw.length * 8;
+
+      while (bitIndex + 5 <= totalBits) {
+        const byteOffset = Math.floor(bitIndex / 8);
+        const bitOffset = bitIndex % 8;
+
+        let value: number;
+        if (bitOffset <= 3) {
+          value = (raw[byteOffset] >> bitOffset) & 0x1F;
+        } else {
+          const bitsFromFirst = 8 - bitOffset;
+          const bitsFromSecond = 5 - bitsFromFirst;
+          value = ((raw[byteOffset] >> bitOffset) & ((1 << bitsFromFirst) - 1))
+            | (((raw[byteOffset + 1] || 0) & ((1 << bitsFromSecond) - 1)) << bitsFromFirst);
+        }
+
+        result.push(value / 31.0);
+        bitIndex += 5;
+      }
+
+      return result.length > 0 ? result : this.fallbackWaveform();
+    } catch {
+      return this.fallbackWaveform();
+    }
+  }
+
+  private base64ToBytes(base64: string): number[] {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    const bytes: number[] = [];
+    let buffer = 0;
+    let bitsCollected = 0;
+
+    for (let i = 0; i < base64.length; i++) {
+      const c = base64.charAt(i);
+      if (c === '=') break;
+      const idx = chars.indexOf(c);
+      if (idx < 0) continue;
+
+      buffer = (buffer << 6) | idx;
+      bitsCollected += 6;
+
+      while (bitsCollected >= 8) {
+        bitsCollected -= 8;
+        bytes.push((buffer >> bitsCollected) & 0xFF);
+      }
+    }
+
+    return bytes;
+  }
+
+  private fallbackWaveform(): number[] {
     const result: number[] = [];
     for (let i = 0; i < 32; i++) {
-      result.push(Math.random() * 0.6 + 0.2); // placeholder until proper decode
+      result.push(0.3);
     }
     return result;
   }

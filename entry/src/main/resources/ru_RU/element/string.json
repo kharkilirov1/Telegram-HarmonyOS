@@ -895,6 +895,94 @@
     {
       "name": "accessibility_add_reaction",
       "value": "Добавить реакцию"
+    },
+    {
+      "name": "appearance_chat_preview",
+      "value": "Предпросмотр чата"
+    },
+    {
+      "name": "appearance_preview_incoming",
+      "value": "Привет! Как дела?"
+    },
+    {
+      "name": "appearance_preview_outgoing",
+      "value": "Отлично, спасибо!"
+    },
+    {
+      "name": "appearance_color_theme",
+      "value": "Цветовая тема"
+    },
+    {
+      "name": "appearance_theme_system_hint",
+      "value": "Автопереключение по системе"
+    },
+    {
+      "name": "appearance_theme_light_hint",
+      "value": "Всегда светлая тема"
+    },
+    {
+      "name": "appearance_theme_dark_hint",
+      "value": "Всегда тёмная тема"
+    },
+    {
+      "name": "appearance_night_mode",
+      "value": "Ночной режим"
+    },
+    {
+      "name": "appearance_auto_night",
+      "value": "Автоматический ночной режим"
+    },
+    {
+      "name": "appearance_auto_night_hint",
+      "value": "Автоматическое переключение на тёмную тему ночью"
+    },
+    {
+      "name": "appearance_text_size",
+      "value": "Размер текста"
+    },
+    {
+      "name": "appearance_bubble_style",
+      "value": "Стиль пузырей чата"
+    },
+    {
+      "name": "appearance_corner_radius",
+      "value": "Радиус скругления"
+    },
+    {
+      "name": "appearance_app_icon",
+      "value": "Иконка приложения"
+    },
+    {
+      "name": "search_contacts_section",
+      "value": "Контакты"
+    },
+    {
+      "name": "search_chats_section",
+      "value": "Чаты"
+    },
+    {
+      "name": "search_messages_section",
+      "value": "Сообщения"
+    },
+    {
+      "name": "search_global_placeholder",
+      "value": "Поиск чатов, контактов, сообщений..."
+    },
+    {
+      "name": "calls_voice_label",
+      "value": "Голосовой"
+    },
+    {
+      "name": "calls_video_label",
+      "value": "Видео"
+    },
+    {
+      "name": "calls_cancelled",
+      "value": "Отменён"
+    },
+    {
+      "name": "calls_missed_label",
+      "value": "Пропущен"
     }
   ]
 }

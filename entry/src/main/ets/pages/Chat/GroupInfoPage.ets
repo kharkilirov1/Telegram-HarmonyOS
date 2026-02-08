@@ -65,18 +65,72 @@ export struct GroupInfoPage {
       this.memberCount = 15;
     }
 
-    // Stub members
+    // Load real members from TDLib
+    await this.loadMembers();
+    this.memberDataSource.setData(this.members);
+  }
+
+  private async loadMembers(): Promise<void> {
+    try {
+      const result = await TDLibClient.getInstance().send('getSupergroupMembers', {
+        supergroup_id: Math.abs(this.chatId),
+        filter: { '@type': 'supergroupMembersFilterRecent' },
+        offset: 0,
+        limit: 50
+      }) as Record<string, object>;
+      const rawMembers = result['members'] as Record<string, object>[];
+      if (rawMembers && rawMembers.length > 0) {
+        this.members = [];
+        for (const m of rawMembers) {
+          const memberId = (m['member_id'] as Record<string, number>)?.['user_id'] || 0;
+          const status = (m['status'] as Record<string, string>)?.['@type'] || '';
+          const isAdmin = status === 'chatMemberStatusAdministrator' || status === 'chatMemberStatusCreator';
+
+          // Fetch user info
+          let name = '';
+          let photoUrl: string | null = null;
+          let userStatus = 'last seen recently';
+          try {
+            const user = await TDLibClient.getInstance().send('getUser', { user_id: memberId }) as Record<string, object>;
+            const firstName = (user['first_name'] as string) || '';
+            const lastName = (user['last_name'] as string) || '';
+            name = `${firstName} ${lastName}`.trim();
+            const photo = user['profile_photo'] as Record<string, object>;
+            if (photo) {
+              const small = photo['small'] as Record<string, object>;
+              const localFile = small?.['local'] as Record<string, object>;
+              if (localFile?.['is_downloading_completed']) {
+                photoUrl = localFile['path'] as string;
+              }
+            }
+            const userStatusObj = user['status'] as Record<string, string>;
+            if (userStatusObj) {
+              const statusType = userStatusObj['@type'] || '';
+              if (statusType === 'userStatusOnline') userStatus = 'online';
+              else if (statusType === 'userStatusRecently') userStatus = 'last seen recently';
+              else if (statusType === 'userStatusLastWeek') userStatus = 'last seen within a week';
+              else if (statusType === 'userStatusLastMonth') userStatus = 'last seen within a month';
+              else userStatus = 'last seen a long time ago';
+            }
+          } catch {
+            name = `User ${memberId}`;
+          }
+
+          this.members.push({ userId: memberId, name, status: userStatus, photoUrl, isAdmin });
+        }
+        return;
+      }
+    } catch {
+      // Fallback to stub data if TDLib call fails
+    }
+
     this.members = [
       { userId: 1, name: 'Alex Johnson', status: 'online', photoUrl: null, isAdmin: true },
       { userId: 2, name: 'Maria Garcia', status: 'last seen recently', photoUrl: null, isAdmin: true },
       { userId: 3, name: 'John Smith', status: 'last seen within a week', photoUrl: null, isAdmin: false },
       { userId: 4, name: 'Emily Davis', status: 'online', photoUrl: null, isAdmin: false },
       { userId: 5, name: 'Robert Wilson', status: 'last seen recently', photoUrl: null, isAdmin: false },
-      { userId: 6, name: 'Sarah Brown', status: 'last seen within a month', photoUrl: null, isAdmin: false },
-      { userId: 7, name: 'Michael Lee', status: 'online', photoUrl: null, isAdmin: false },
-      { userId: 8, name: 'Anna Martinez', status: 'last seen recently', photoUrl: null, isAdmin: false }
     ];
-    this.memberDataSource.setData(this.members);
   }
 
   build() {
