@@ -189,7 +189,7 @@ export struct SavedMessagesPage {
       items.push(new SavedListItem(false, '', gm));
     }
 
-    this.messageDataSource.replaceAll(items);
+    this.messageDataSource.setData(items);
   }
 
   private groupMessages(msgs: Message[]): GroupedMessage[] {

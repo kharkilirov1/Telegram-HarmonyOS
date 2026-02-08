@@ -33,6 +33,10 @@ export enum EventId {
 
   // Connection
   CONNECTION_STATE_CHANGED = 50,
+
+  // Stories
+  STORIES_UPDATED = 55,
+  STORY_DELETED = 56,
 }
 
 type EventHandler = (args?: Record<string, Object>) => void;
