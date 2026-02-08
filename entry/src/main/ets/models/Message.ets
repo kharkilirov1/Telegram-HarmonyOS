@@ -1,3 +1,9 @@
+export interface MessageReaction {
+  emoji: string;
+  count: number;
+  isMine: boolean;
+}
+
 @ObservedV2
 export class Message {
   @Trace id: number;
@@ -24,6 +30,9 @@ export class Message {
   @Trace videoDuration: number;
   @Trace stickerUrl: string | null;
   @Trace stickerFileId: number;
+
+  // Reactions
+  @Trace reactions: MessageReaction[];
 
   constructor(
     id: number = 0,
@@ -61,6 +70,7 @@ export class Message {
     this.videoDuration = 0;
     this.stickerUrl = null;
     this.stickerFileId = 0;
+    this.reactions = [];
   }
 }
 

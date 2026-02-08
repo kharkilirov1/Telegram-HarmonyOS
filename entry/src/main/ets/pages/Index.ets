@@ -206,6 +206,9 @@ struct Index {
           Column() {
             this.settingsRow($r('app.media.ic_unmute'), $r('app.color.settings_icon_red'),
               $r('app.string.settings_notifications_sounds'))
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'NotificationsSettings' });
+              })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             this.settingsRow($r('app.media.ic_lock'), $r('app.color.settings_icon_blue'),
               $r('app.string.settings_privacy_security'))
@@ -222,11 +225,14 @@ struct Index {
             this.settingsRow($r('app.media.ic_sticker'), $r('app.color.settings_icon_blue'),
               $r('app.string.settings_appearance'))
               .onClick(() => {
-                this.navPathStack.pushPath({ name: 'Settings' });
+                this.navPathStack.pushPath({ name: 'Appearance' });
               })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             this.settingsRow($r('app.media.ic_location'), $r('app.color.settings_icon_purple'),
               $r('app.string.settings_language'))
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'Language' });
+              })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             this.settingsRow($r('app.media.ic_emoji'), $r('app.color.settings_icon_orange'),
               $r('app.string.settings_stickers'))

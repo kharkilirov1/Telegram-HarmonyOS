@@ -1,7 +1,7 @@
 import { MessagesController } from '../../controllers/MessagesController';
 import { TDLibClient } from '../../services/TDLibClient';
 import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
-import { Message, GroupedMessage, MessageDateGroup } from '../../models/Message';
+import { Message, GroupedMessage, MessageDateGroup, MessageReaction } from '../../models/Message';
 import { Chat } from '../../models/Chat';
 import { MessageBubble } from '../../components/Message/MessageBubble';
 import { DateSeparator, formatDateSeparator } from '../../components/Common/DateSeparator';
@@ -246,6 +246,9 @@ export struct ChatDetailPage {
                           name: 'MediaViewer',
                           param: { url: url } as Record<string, string>
                         });
+                      },
+                      onReactionTap: (msg: Message, emoji: string) => {
+                        this.toggleReaction(msg, emoji);
                       }
                     })
                   }
@@ -310,7 +313,9 @@ export struct ChatDetailPage {
           onSendMessage: (text: string) => this.sendMessage(text),
           onEditMessage: (messageId: number, text: string) => this.editMessageText(messageId, text),
           onCancelReply: () => { this.replyMessage = null; },
-          onCancelEdit: () => { this.editMessage = null; }
+          onCancelEdit: () => { this.editMessage = null; },
+          onSendSticker: (emoji: string) => { this.sendStickerMessage(emoji); },
+          onSendGif: (gifId: number) => { this.sendGifMessage(gifId); }
         })
       }
       .width('100%')
@@ -349,6 +354,18 @@ export struct ChatDetailPage {
         if (candidate) {
           this.pinnedMessage = candidate;
         }
+      }
+      // Add stub reactions to some messages for demo purposes
+      if (this.messages.length > 3) {
+        this.messages[1].reactions = [
+          { emoji: '\u{1F44D}', count: 3, isMine: false },
+          { emoji: '\u{2764}\u{FE0F}', count: 1, isMine: true }
+        ];
+      }
+      if (this.messages.length > 5) {
+        this.messages[4].reactions = [
+          { emoji: '\u{1F602}', count: 2, isMine: false }
+        ];
       }
       this.rebuildFlatList();
       this.scrollToBottom();
@@ -422,6 +439,59 @@ export struct ChatDetailPage {
       const systemPasteboard = pasteboard.getSystemPasteboard();
       systemPasteboard.setDataSync(pasteData);
     }
+  }
+
+  private async sendGifMessage(gifId: number): Promise<void> {
+    // Send GIF animation as a message via TDLib
+    await TDLibClient.getInstance().send('sendMessage', {
+      chat_id: this.chatId,
+      input_message_content: {
+        '@type': 'inputMessageAnimation',
+        animation: { '@type': 'inputFileId', id: gifId }
+      }
+    });
+  }
+
+  private async sendStickerMessage(emoji: string): Promise<void> {
+    // Send sticker as a message via TDLib
+    await TDLibClient.getInstance().send('sendMessage', {
+      chat_id: this.chatId,
+      input_message_content: {
+        '@type': 'inputMessageSticker',
+        sticker: { '@type': 'inputFileId', id: 0 },
+        emoji: emoji
+      }
+    });
+  }
+
+  private toggleReaction(msg: Message, emoji: string): void {
+    // If empty emoji, add a default reaction
+    if (emoji.length === 0) {
+      const defaultEmoji = '\u{1F44D}'; // thumbs up
+      const existing = msg.reactions.find(r => r.emoji === defaultEmoji);
+      if (existing) {
+        existing.count++;
+        existing.isMine = true;
+      } else {
+        msg.reactions.push({ emoji: defaultEmoji, count: 1, isMine: true });
+      }
+    } else {
+      // Toggle the specific reaction
+      const existing = msg.reactions.find(r => r.emoji === emoji);
+      if (existing && existing.isMine) {
+        existing.isMine = false;
+        existing.count = Math.max(0, existing.count - 1);
+        if (existing.count === 0) {
+          msg.reactions = msg.reactions.filter(r => r.emoji !== emoji);
+        }
+      } else if (existing) {
+        existing.count++;
+        existing.isMine = true;
+      } else {
+        msg.reactions.push({ emoji: emoji, count: 1, isMine: true });
+      }
+    }
+    this.rebuildFlatList();
   }
 
   private async deleteMessage(msg: Message): Promise<void> {

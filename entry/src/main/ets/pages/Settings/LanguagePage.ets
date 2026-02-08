@@ -1,0 +1,198 @@
+// Language settings page — select app language
+// Reference: Telegram iOS LanguageSelectionController, Android LanguageSelectActivity
+
+@Builder
+export function LanguageBuilder(name: string, param: Object) {
+  LanguagePage()
+}
+
+interface LanguageItem {
+  code: string;
+  name: string;
+  nativeName: string;
+  isOfficial: boolean;
+}
+
+@ComponentV2
+export struct LanguagePage {
+  @Consumer('navPathStack') navPathStack: NavPathStack = new NavPathStack();
+  @Local searchText: string = '';
+  @Local selectedLanguage: string = 'en';
+
+  private languages: LanguageItem[] = [
+    { code: 'en', name: 'English', nativeName: 'English', isOfficial: true },
+    { code: 'ru', name: 'Russian', nativeName: 'Русский', isOfficial: true },
+    { code: 'zh', name: 'Chinese (Simplified)', nativeName: '简体中文', isOfficial: true },
+    { code: 'es', name: 'Spanish', nativeName: 'Español', isOfficial: true },
+    { code: 'de', name: 'German', nativeName: 'Deutsch', isOfficial: true },
+    { code: 'fr', name: 'French', nativeName: 'Français', isOfficial: true },
+    { code: 'it', name: 'Italian', nativeName: 'Italiano', isOfficial: true },
+    { code: 'pt', name: 'Portuguese (Brazil)', nativeName: 'Português (Brasil)', isOfficial: true },
+    { code: 'ko', name: 'Korean', nativeName: '한국어', isOfficial: true },
+    { code: 'ja', name: 'Japanese', nativeName: '日本語', isOfficial: true },
+    { code: 'ar', name: 'Arabic', nativeName: 'العربية', isOfficial: true },
+    { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', isOfficial: true },
+    { code: 'tr', name: 'Turkish', nativeName: 'Türkçe', isOfficial: true },
+    { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', isOfficial: true },
+    { code: 'pl', name: 'Polish', nativeName: 'Polski', isOfficial: true },
+    { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', isOfficial: true },
+    { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', isOfficial: false },
+    { code: 'ms', name: 'Malay', nativeName: 'Bahasa Melayu', isOfficial: false },
+    { code: 'th', name: 'Thai', nativeName: 'ภาษาไทย', isOfficial: false },
+    { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', isOfficial: false },
+    { code: 'fa', name: 'Persian', nativeName: 'فارسی', isOfficial: false },
+    { code: 'uz', name: 'Uzbek', nativeName: 'O\'zbekcha', isOfficial: false }
+  ];
+
+  build() {
+    NavDestination() {
+      Column() {
+        // Top bar
+        Row() {
+          Image($r('app.media.ic_back'))
+            .width(24).height(24)
+            .fillColor($r('app.color.telegram_blue'))
+            .onClick(() => this.navPathStack.pop())
+
+          Text($r('app.string.settings_language'))
+            .fontSize(20)
+            .fontWeight(FontWeight.Bold)
+            .fontColor($r('app.color.text_primary'))
+            .margin({ left: 16 })
+
+          Blank()
+        }
+        .width('100%')
+        .height(56)
+        .padding({ left: 16, right: 16 })
+        .backgroundColor($r('app.color.glass_nav_bg'))
+        .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
+          colorMode: ThemeColorMode.SYSTEM,
+          adaptiveColor: AdaptiveColor.DEFAULT,
+          scale: 1.0
+        })
+
+        // Search bar
+        Row() {
+          Image($r('app.media.ic_search'))
+            .width(18).height(18)
+            .fillColor($r('app.color.text_secondary'))
+            .margin({ right: 8 })
+
+          TextInput({ placeholder: $r('app.string.search_placeholder'), text: this.searchText })
+            .fontSize(16)
+            .layoutWeight(1)
+            .backgroundColor(Color.Transparent)
+            .onChange((value: string) => { this.searchText = value; })
+        }
+        .width('100%')
+        .height(40)
+        .padding({ left: 12, right: 12 })
+        .margin({ left: 16, right: 16, top: 8, bottom: 8 })
+        .backgroundColor($r('app.color.search_bar_bg'))
+        .borderRadius(10)
+
+        // Language list
+        Scroll() {
+          Column() {
+            // Official languages section
+            Text('Official Languages')
+              .fontSize(13)
+              .fontColor($r('app.color.text_secondary'))
+              .margin({ left: 32, top: 8, bottom: 6 })
+              .textTransform(TextTransform.Uppercase)
+
+            Column() {
+              ForEach(this.getFilteredLanguages(true), (lang: LanguageItem, index: number) => {
+                if (index > 0) {
+                  Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
+                }
+                this.languageRow(lang)
+              })
+            }
+            .width('100%')
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
+            .margin({ left: 16, right: 16 })
+
+            Blank().height(24)
+
+            // Unofficial languages section
+            Text('Unofficial Languages')
+              .fontSize(13)
+              .fontColor($r('app.color.text_secondary'))
+              .margin({ left: 32, bottom: 6 })
+              .textTransform(TextTransform.Uppercase)
+
+            Column() {
+              ForEach(this.getFilteredLanguages(false), (lang: LanguageItem, index: number) => {
+                if (index > 0) {
+                  Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
+                }
+                this.languageRow(lang)
+              })
+            }
+            .width('100%')
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
+            .margin({ left: 16, right: 16 })
+
+            Blank().height(40)
+          }
+          .width('100%')
+        }
+        .width('100%')
+        .layoutWeight(1)
+        .scrollBar(BarState.Off)
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor($r('app.color.background_secondary'))
+    }
+    .hideTitleBar(true)
+  }
+
+  @Builder
+  languageRow(lang: LanguageItem) {
+    Row() {
+      Column() {
+        Text(lang.nativeName)
+          .fontSize(16)
+          .fontColor($r('app.color.text_primary'))
+        Text(lang.name)
+          .fontSize(13)
+          .fontColor($r('app.color.text_secondary'))
+          .margin({ top: 1 })
+      }
+      .alignItems(HorizontalAlign.Start)
+      .layoutWeight(1)
+
+      if (lang.code === this.selectedLanguage) {
+        Image($r('app.media.ic_check_single'))
+          .width(20).height(20)
+          .fillColor($r('app.color.telegram_blue'))
+      }
+    }
+    .width('100%')
+    .height(52)
+    .padding({ left: 16, right: 16 })
+    .onClick(() => {
+      this.selectedLanguage = lang.code;
+    })
+  }
+
+  private getFilteredLanguages(official: boolean): LanguageItem[] {
+    const query = this.searchText.toLowerCase();
+    return this.languages.filter(lang =>
+      lang.isOfficial === official &&
+      (query.length === 0 ||
+       lang.name.toLowerCase().includes(query) ||
+       lang.nativeName.toLowerCase().includes(query) ||
+       lang.code.includes(query))
+    );
+  }
+}

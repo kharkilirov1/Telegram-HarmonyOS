@@ -1,0 +1,369 @@
+// Appearance settings page — theme, chat background, font, icon color
+// Reference: Telegram iOS AppearanceViewController, Android ThemeActivity
+
+import { PreferencesService } from '../../services/PreferencesService';
+import { ConfigurationConstant } from '@kit.AbilityKit';
+
+@Builder
+export function AppearanceBuilder(name: string, param: Object) {
+  AppearancePage()
+}
+
+@ComponentV2
+export struct AppearancePage {
+  @Consumer('navPathStack') navPathStack: NavPathStack = new NavPathStack();
+
+  @Local themeMode: string = 'system';
+  @Local fontSize: number = 16;
+  @Local chatCornerRadius: number = 17;
+  @Local autoNightMode: boolean = true;
+
+  aboutToAppear(): void {
+    this.loadSettings();
+  }
+
+  private async loadSettings(): Promise<void> {
+    const prefs = PreferencesService.getInstance();
+    this.themeMode = await prefs.getThemeMode();
+    this.fontSize = await prefs.getFontSize();
+  }
+
+  build() {
+    NavDestination() {
+      Column() {
+        // Top bar
+        Row() {
+          Image($r('app.media.ic_back'))
+            .width(24).height(24)
+            .fillColor($r('app.color.telegram_blue'))
+            .onClick(() => this.navPathStack.pop())
+
+          Text($r('app.string.settings_appearance'))
+            .fontSize(20)
+            .fontWeight(FontWeight.Bold)
+            .fontColor($r('app.color.text_primary'))
+            .margin({ left: 16 })
+
+          Blank()
+        }
+        .width('100%')
+        .height(56)
+        .padding({ left: 16, right: 16 })
+        .backgroundColor($r('app.color.glass_nav_bg'))
+        .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
+          colorMode: ThemeColorMode.SYSTEM,
+          adaptiveColor: AdaptiveColor.DEFAULT,
+          scale: 1.0
+        })
+
+        Scroll() {
+          Column() {
+            // --- Chat preview ---
+            Column() {
+              Text('Chat Preview')
+                .fontSize(13)
+                .fontColor($r('app.color.text_secondary'))
+                .margin({ left: 16, bottom: 8, top: 16 })
+                .textTransform(TextTransform.Uppercase)
+
+              Column() {
+                // Sample incoming message
+                Row() {
+                  Blank().width(8)
+                  Column() {
+                    Text('Hey! How are you doing?')
+                      .fontSize(this.fontSize)
+                      .fontColor($r('app.color.text_primary'))
+                      .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+                  }
+                  .backgroundColor($r('app.color.chat_bubble_incoming'))
+                  .borderRadius(this.chatCornerRadius)
+                  .constraintSize({ maxWidth: '70%' })
+                  Blank()
+                }
+                .width('100%')
+                .margin({ bottom: 4 })
+
+                // Sample outgoing message
+                Row() {
+                  Blank()
+                  Column() {
+                    Text("I'm doing great, thanks!")
+                      .fontSize(this.fontSize)
+                      .fontColor($r('app.color.text_primary'))
+                      .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+                  }
+                  .backgroundColor($r('app.color.chat_bubble_outgoing'))
+                  .borderRadius(this.chatCornerRadius)
+                  .constraintSize({ maxWidth: '70%' })
+                  Blank().width(8)
+                }
+                .width('100%')
+              }
+              .width('100%')
+              .padding(12)
+              .backgroundColor($r('app.color.background_secondary'))
+              .borderRadius(16)
+              .margin({ left: 16, right: 16 })
+            }
+
+            Blank().height(24)
+
+            // --- Theme section ---
+            Text('Color Theme')
+              .fontSize(13)
+              .fontColor($r('app.color.text_secondary'))
+              .margin({ left: 32, bottom: 6 })
+              .textTransform(TextTransform.Uppercase)
+
+            Column() {
+              this.themeOption('system', $r('app.string.settings_theme_system'), 'Auto-switch based on system')
+              Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
+              this.themeOption('light', $r('app.string.settings_theme_light'), 'Always light theme')
+              Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
+              this.themeOption('dark', $r('app.string.settings_theme_dark'), 'Always dark theme')
+            }
+            .width('100%')
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
+            .margin({ left: 16, right: 16 })
+
+            Blank().height(24)
+
+            // --- Auto Night Mode ---
+            Text('Night Mode')
+              .fontSize(13)
+              .fontColor($r('app.color.text_secondary'))
+              .margin({ left: 32, bottom: 6 })
+              .textTransform(TextTransform.Uppercase)
+
+            Column() {
+              Row() {
+                Text('Automatic Night Mode')
+                  .fontSize(16)
+                  .fontColor($r('app.color.text_primary'))
+                  .layoutWeight(1)
+
+                Toggle({ type: ToggleType.Switch, isOn: this.autoNightMode })
+                  .selectedColor($r('app.color.telegram_blue'))
+                  .onChange((isOn: boolean) => {
+                    this.autoNightMode = isOn;
+                  })
+              }
+              .width('100%')
+              .height(48)
+              .padding({ left: 16, right: 16 })
+
+              Text('Automatically switch to dark theme at night')
+                .fontSize(13)
+                .fontColor($r('app.color.text_secondary'))
+                .padding({ left: 16, right: 16, bottom: 12 })
+            }
+            .width('100%')
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
+            .margin({ left: 16, right: 16 })
+
+            Blank().height(24)
+
+            // --- Text Size ---
+            Text('Text Size')
+              .fontSize(13)
+              .fontColor($r('app.color.text_secondary'))
+              .margin({ left: 32, bottom: 6 })
+              .textTransform(TextTransform.Uppercase)
+
+            Column() {
+              Row() {
+                Text('A')
+                  .fontSize(12)
+                  .fontColor($r('app.color.text_secondary'))
+                  .margin({ right: 8 })
+
+                Slider({
+                  value: this.fontSize,
+                  min: 12,
+                  max: 24,
+                  step: 1
+                })
+                  .layoutWeight(1)
+                  .selectedColor($r('app.color.telegram_blue'))
+                  .onChange((value: number) => {
+                    this.fontSize = Math.round(value);
+                    PreferencesService.getInstance().setFontSize(this.fontSize);
+                  })
+
+                Text('A')
+                  .fontSize(22)
+                  .fontColor($r('app.color.text_secondary'))
+                  .margin({ left: 8 })
+              }
+              .width('100%')
+              .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+            }
+            .width('100%')
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
+            .margin({ left: 16, right: 16 })
+
+            Blank().height(24)
+
+            // --- Bubble corners ---
+            Text('Chat Bubble Style')
+              .fontSize(13)
+              .fontColor($r('app.color.text_secondary'))
+              .margin({ left: 32, bottom: 6 })
+              .textTransform(TextTransform.Uppercase)
+
+            Column() {
+              Row() {
+                Text('Corner Radius')
+                  .fontSize(16)
+                  .fontColor($r('app.color.text_primary'))
+                  .layoutWeight(1)
+
+                Text(this.chatCornerRadius.toString())
+                  .fontSize(15)
+                  .fontColor($r('app.color.text_secondary'))
+              }
+              .width('100%')
+              .padding({ left: 16, right: 16, top: 12 })
+
+              Row() {
+                Slider({
+                  value: this.chatCornerRadius,
+                  min: 4,
+                  max: 24,
+                  step: 1
+                })
+                  .layoutWeight(1)
+                  .selectedColor($r('app.color.telegram_blue'))
+                  .onChange((value: number) => {
+                    this.chatCornerRadius = Math.round(value);
+                  })
+              }
+              .width('100%')
+              .padding({ left: 16, right: 16, bottom: 12 })
+            }
+            .width('100%')
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
+            .margin({ left: 16, right: 16 })
+
+            // --- App Icon ---
+            Blank().height(24)
+
+            Text('App Icon')
+              .fontSize(13)
+              .fontColor($r('app.color.text_secondary'))
+              .margin({ left: 32, bottom: 6 })
+              .textTransform(TextTransform.Uppercase)
+
+            Column() {
+              Row({ space: 16 }) {
+                this.appIconOption('#3390EC', true) // Default blue
+                this.appIconOption('#34C759', false) // Green
+                this.appIconOption('#AF52DE', false) // Purple
+                this.appIconOption('#FF9500', false) // Orange
+                this.appIconOption('#FF3B30', false) // Red
+                this.appIconOption('#1C1C1E', false) // Black
+              }
+              .width('100%')
+              .padding(16)
+              .justifyContent(FlexAlign.Center)
+            }
+            .width('100%')
+            .backgroundColor($r('app.color.glass_card_bg'))
+            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+            .borderRadius(16)
+            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
+            .margin({ left: 16, right: 16 })
+
+            Blank().height(40)
+          }
+          .width('100%')
+        }
+        .width('100%')
+        .layoutWeight(1)
+        .scrollBar(BarState.Off)
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor($r('app.color.background_secondary'))
+    }
+    .hideTitleBar(true)
+  }
+
+  @Builder
+  themeOption(mode: string, label: Resource, subtitle: string) {
+    Row() {
+      Radio({ value: mode, group: 'theme' })
+        .checked(this.themeMode === mode)
+        .onChange((isChecked: boolean) => {
+          if (isChecked) {
+            this.themeMode = mode;
+            PreferencesService.getInstance().setThemeMode(mode);
+            this.applyTheme(mode);
+          }
+        })
+        .margin({ right: 12 })
+
+      Column() {
+        Text(label)
+          .fontSize(16)
+          .fontColor($r('app.color.text_primary'))
+        Text(subtitle)
+          .fontSize(13)
+          .fontColor($r('app.color.text_secondary'))
+          .margin({ top: 1 })
+      }
+      .alignItems(HorizontalAlign.Start)
+    }
+    .width('100%')
+    .height(52)
+    .padding({ left: 16, right: 16 })
+  }
+
+  @Builder
+  appIconOption(color: string, isSelected: boolean) {
+    Column() {
+      Column() {
+        Image($r('app.media.app_icon'))
+          .width(28).height(28)
+      }
+      .width(48).height(48)
+      .borderRadius(12)
+      .backgroundColor(color)
+      .justifyContent(FlexAlign.Center)
+      .borderWidth(isSelected ? 2 : 0)
+      .borderColor($r('app.color.telegram_blue'))
+    }
+  }
+
+  private applyTheme(mode: string): void {
+    try {
+      const ctx = getContext(this).getApplicationContext();
+      switch (mode) {
+        case 'light':
+          ctx.setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT);
+          break;
+        case 'dark':
+          ctx.setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_DARK);
+          break;
+        default:
+          ctx.setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
+          break;
+      }
+    } catch (e) {
+      // Fallback: some environments may not support setColorMode
+    }
+  }
+}

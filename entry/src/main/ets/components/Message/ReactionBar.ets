@@ -1,11 +1,7 @@
 // Message reaction bar — quick emoji reactions below a message bubble
 // Reference: Telegram iOS MessageReactionListView, Android ReactionsContainerLayout
 
-export interface MessageReaction {
-  emoji: string;
-  count: number;
-  isMine: boolean;
-}
+import { MessageReaction } from '../../models/Message';
 
 @ComponentV2
 export struct ReactionBar {

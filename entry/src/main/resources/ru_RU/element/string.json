@@ -487,6 +487,190 @@
     {
       "name": "profile_change_number",
       "value": "Сменить номер"
+    },
+    {
+      "name": "contacts_sort",
+      "value": "Сортировка"
+    },
+    {
+      "name": "contacts_invite_friends",
+      "value": "Пригласить друзей"
+    },
+    {
+      "name": "contacts_find_nearby",
+      "value": "Найти людей поблизости"
+    },
+    {
+      "name": "calls_all",
+      "value": "Все"
+    },
+    {
+      "name": "calls_missed",
+      "value": "Пропущенные"
+    },
+    {
+      "name": "calls_no_recent",
+      "value": "Нет недавних звонков"
+    },
+    {
+      "name": "calls_no_missed",
+      "value": "Нет пропущенных звонков"
+    },
+    {
+      "name": "calls_unknown",
+      "value": "Неизвестный"
+    },
+    {
+      "name": "calls_voice",
+      "value": "Голосовой звонок"
+    },
+    {
+      "name": "calls_video",
+      "value": "Видеозвонок"
+    },
+    {
+      "name": "editing_message",
+      "value": "Редактирование"
+    },
+    {
+      "name": "search_messages_placeholder",
+      "value": "Поиск сообщений..."
+    },
+    {
+      "name": "search_no_results",
+      "value": "Ничего не найдено"
+    },
+    {
+      "name": "attach_camera",
+      "value": "Камера"
+    },
+    {
+      "name": "attach_gallery",
+      "value": "Галерея"
+    },
+    {
+      "name": "attach_file",
+      "value": "Файл"
+    },
+    {
+      "name": "attach_location",
+      "value": "Геопозиция"
+    },
+    {
+      "name": "attach_contact",
+      "value": "Контакт"
+    },
+    {
+      "name": "attach_poll",
+      "value": "Опрос"
+    },
+    {
+      "name": "create",
+      "value": "Создать"
+    },
+    {
+      "name": "forward_to",
+      "value": "Переслать..."
+    },
+    {
+      "name": "channel_name",
+      "value": "Название канала"
+    },
+    {
+      "name": "channel_description",
+      "value": "Описание"
+    },
+    {
+      "name": "public_channel",
+      "value": "Публичный канал"
+    },
+    {
+      "name": "private_channel",
+      "value": "Частный канал"
+    },
+    {
+      "name": "public_link",
+      "value": "Публичная ссылка"
+    },
+    {
+      "name": "group_name",
+      "value": "Название группы"
+    },
+    {
+      "name": "add_members",
+      "value": "Добавить участников"
+    },
+    {
+      "name": "invite_to_channel",
+      "value": "Пригласить участников"
+    },
+    {
+      "name": "passcode_lock",
+      "value": "Код-пароль"
+    },
+    {
+      "name": "two_step_verification",
+      "value": "Двухэтапная аутентификация"
+    },
+    {
+      "name": "active_sessions",
+      "value": "Активные сеансы"
+    },
+    {
+      "name": "auto_delete_messages",
+      "value": "Автоудаление сообщений"
+    },
+    {
+      "name": "delete_my_account",
+      "value": "Удалить мой аккаунт"
+    },
+    {
+      "name": "storage_usage",
+      "value": "Использование памяти"
+    },
+    {
+      "name": "network_usage",
+      "value": "Использование сети"
+    },
+    {
+      "name": "auto_download_media",
+      "value": "Автозагрузка медиа"
+    },
+    {
+      "name": "auto_play_media",
+      "value": "Автовоспроизведение медиа"
+    },
+    {
+      "name": "save_to_gallery",
+      "value": "Сохранять в галерею"
+    },
+    {
+      "name": "clear_cache",
+      "value": "Очистить кэш"
+    },
+    {
+      "name": "create_new_folder",
+      "value": "Создать новую папку"
+    },
+    {
+      "name": "recommended_folders",
+      "value": "Рекомендуемые"
+    },
+    {
+      "name": "shared_media_files",
+      "value": "Файлы"
+    },
+    {
+      "name": "shared_media_links",
+      "value": "Ссылки"
+    },
+    {
+      "name": "shared_media_voice",
+      "value": "Голосовые"
+    },
+    {
+      "name": "pinned_message",
+      "value": "Закреплённое сообщение"
     }
   ]
 }

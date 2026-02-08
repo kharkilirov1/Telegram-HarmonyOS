@@ -74,6 +74,21 @@
       "name": "SharedMedia",
       "pageSourceFile": "src/main/ets/pages/Settings/SharedMediaPage.ets",
       "buildFunction": "SharedMediaBuilder"
+    },
+    {
+      "name": "Appearance",
+      "pageSourceFile": "src/main/ets/pages/Settings/AppearancePage.ets",
+      "buildFunction": "AppearanceBuilder"
+    },
+    {
+      "name": "Language",
+      "pageSourceFile": "src/main/ets/pages/Settings/LanguagePage.ets",
+      "buildFunction": "LanguageBuilder"
+    },
+    {
+      "name": "NotificationsSettings",
+      "pageSourceFile": "src/main/ets/pages/Settings/NotificationsSettingsPage.ets",
+      "buildFunction": "NotificationsSettingsBuilder"
     }
   ]
 }

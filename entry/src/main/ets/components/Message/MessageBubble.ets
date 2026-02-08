@@ -1,4 +1,5 @@
-import { Message, MessageContentType } from '../../models/Message';
+import { Message, MessageContentType, MessageReaction } from '../../models/Message';
+import { ReactionBar } from './ReactionBar';
 
 // URL detection regex
 const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/gi;
@@ -15,6 +16,7 @@ export struct MessageBubble {
   @Param onDelete: (message: Message) => void = () => {};
   @Param onEdit: (message: Message) => void = () => {};
   @Param onMediaTap: (url: string) => void = () => {};
+  @Param onReactionTap: (message: Message, emoji: string) => void = () => {};
 
   build() {
     Column() {
@@ -127,6 +129,20 @@ export struct MessageBubble {
       .width('100%')
       .justifyContent(this.message.isOutgoing ? FlexAlign.End : FlexAlign.Start)
       .padding({ left: 8, right: 8 })
+
+      // Reaction bar below bubble (like Telegram iOS/Android)
+      if (this.message.reactions.length > 0) {
+        ReactionBar({
+          reactions: this.message.reactions,
+          isOutgoing: this.message.isOutgoing,
+          onReactionTap: (emoji: string) => {
+            this.onReactionTap(this.message, emoji);
+          },
+          onAddReaction: () => {
+            this.onReactionTap(this.message, '');
+          }
+        })
+      }
     }
     .width('100%')
     .margin({

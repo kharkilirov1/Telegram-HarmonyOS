@@ -25,6 +25,7 @@ export struct ChatInputBar {
   @Param onCancelReply: () => void = () => {};
   @Param onCancelEdit: () => void = () => {};
   @Param onSendSticker: (emoji: string) => void = () => {};
+  @Param onSendGif: (gifId: number) => void = () => {};
 
   private recordingTimerId: number = -1;
 
@@ -248,6 +249,7 @@ export struct ChatInputBar {
       if (this.showGifPicker) {
         GifPicker({
           onGifSelected: (gifId: number) => {
+            this.onSendGif(gifId);
             this.closeAllPanels();
           }
         })
