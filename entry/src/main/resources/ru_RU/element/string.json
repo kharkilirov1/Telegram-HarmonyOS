@@ -1675,6 +1675,22 @@
     {
       "name": "accessibility_toggle_auto_download",
       "value": "Переключить автозагрузку"
+    },
+    {
+      "name": "data_summary_mobile",
+      "value": "Мобильные"
+    },
+    {
+      "name": "data_summary_wifi",
+      "value": "Wi-Fi"
+    },
+    {
+      "name": "data_summary_roaming",
+      "value": "Роуминг"
+    },
+    {
+      "name": "data_summary_off",
+      "value": "Выкл"
     }
   ]
 }

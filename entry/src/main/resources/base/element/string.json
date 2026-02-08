@@ -1675,6 +1675,22 @@
     {
       "name": "accessibility_toggle_auto_download",
       "value": "Toggle auto-download setting"
+    },
+    {
+      "name": "data_summary_mobile",
+      "value": "Mobile"
+    },
+    {
+      "name": "data_summary_wifi",
+      "value": "Wi-Fi"
+    },
+    {
+      "name": "data_summary_roaming",
+      "value": "Roaming"
+    },
+    {
+      "name": "data_summary_off",
+      "value": "Off"
     }
   ]
 }

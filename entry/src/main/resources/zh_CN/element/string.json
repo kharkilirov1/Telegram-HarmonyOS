@@ -1675,6 +1675,22 @@
     {
       "name": "accessibility_toggle_auto_download",
       "value": "切换自动下载设置"
+    },
+    {
+      "name": "data_summary_mobile",
+      "value": "移动数据"
+    },
+    {
+      "name": "data_summary_wifi",
+      "value": "Wi-Fi"
+    },
+    {
+      "name": "data_summary_roaming",
+      "value": "漫游"
+    },
+    {
+      "name": "data_summary_off",
+      "value": "关闭"
     }
   ]
 }

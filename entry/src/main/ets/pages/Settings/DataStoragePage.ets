@@ -169,18 +169,19 @@ export struct DataStoragePage {
   }
 
   private getMediaSummary(mobile: boolean, wifi: boolean, roaming: boolean): string {
+    const rm = getContext(this).resourceManager;
     const parts: string[] = [];
     if (mobile) {
-      parts.push('Mobile');
+      parts.push(rm.getStringByNameSync('data_summary_mobile'));
     }
     if (wifi) {
-      parts.push('Wi-Fi');
+      parts.push(rm.getStringByNameSync('data_summary_wifi'));
     }
     if (roaming) {
-      parts.push('Roaming');
+      parts.push(rm.getStringByNameSync('data_summary_roaming'));
     }
     if (parts.length === 0) {
-      return 'Off';
+      return rm.getStringByNameSync('data_summary_off');
     }
     return parts.join(', ');
   }
