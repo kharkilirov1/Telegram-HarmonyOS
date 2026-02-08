@@ -215,6 +215,9 @@ struct Index {
           Column() {
             this.settingsRow($r('app.media.ic_saved'), $r('app.color.settings_icon_blue'),
               $r('app.string.saved_messages'))
+              .onClick(() => {
+                this.navPathStack.pushPath({ name: 'SavedMessages' });
+              })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             this.settingsRow($r('app.media.ic_phone_call'), $r('app.color.settings_icon_green'),
               $r('app.string.settings_recent_calls'))

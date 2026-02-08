@@ -1533,6 +1533,26 @@
       "value": "Завершить все другие сеансы"
     },
     {
+      "name": "search_previous_result",
+      "value": "Предыдущий результат"
+    },
+    {
+      "name": "search_next_result",
+      "value": "Следующий результат"
+    },
+    {
+      "name": "group_members_count",
+      "value": "%s участников"
+    },
+    {
+      "name": "sticker_pack_count_format",
+      "value": "%s стикеров"
+    },
+    {
+      "name": "saved_messages_hint",
+      "value": "Пересылайте сюда сообщения, чтобы сохранить их. Также можно делать заметки для себя."
+    },
+    {
       "name": "search_filter_all",
       "value": "Все"
     },

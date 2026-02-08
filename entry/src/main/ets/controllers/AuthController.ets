@@ -10,6 +10,7 @@ export class AuthController {
   private static instance: AuthController | null = null;
   private currentState: string = '';
   private passwordHint: string = '';
+  private myUserId: number = 0;
 
   private constructor() {
     this.subscribeToUpdates();
@@ -32,6 +33,21 @@ export class AuthController {
 
   isAuthorized(): boolean {
     return this.currentState === 'authorizationStateReady';
+  }
+
+  getMyUserId(): number {
+    return this.myUserId;
+  }
+
+  async fetchMyUserId(): Promise<number> {
+    if (this.myUserId > 0) return this.myUserId;
+    try {
+      const result = await TDLibClient.getInstance().send('getMe') as Record<string, object>;
+      this.myUserId = (result['id'] as number) || 0;
+    } catch (_e) {
+      hilog.warn(DOMAIN, TAG, 'Failed to fetch my user ID');
+    }
+    return this.myUserId;
   }
 
   async submitPhoneNumber(phoneNumber: string): Promise<void> {
@@ -71,6 +87,11 @@ export class AuthController {
       // Extract password hint if waiting for password
       if (stateType === 'authorizationStateWaitPassword') {
         this.passwordHint = (authState['password_hint'] as string) || '';
+      }
+
+      // Fetch user ID once authorized
+      if (stateType === 'authorizationStateReady') {
+        this.fetchMyUserId();
       }
 
       NotificationCenter.getInstance().post(

@@ -149,6 +149,11 @@
       "name": "ProxySettings",
       "pageSourceFile": "src/main/ets/pages/Settings/ProxySettingsPage.ets",
       "buildFunction": "ProxySettingsBuilder"
+    },
+    {
+      "name": "SavedMessages",
+      "pageSourceFile": "src/main/ets/pages/Chat/SavedMessagesPage.ets",
+      "buildFunction": "SavedMessagesBuilder"
     }
   ]
 }

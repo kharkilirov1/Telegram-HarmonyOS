@@ -1533,6 +1533,26 @@
       "value": "终止所有其他会话"
     },
     {
+      "name": "search_previous_result",
+      "value": "上一个结果"
+    },
+    {
+      "name": "search_next_result",
+      "value": "下一个结果"
+    },
+    {
+      "name": "group_members_count",
+      "value": "%s 位成员"
+    },
+    {
+      "name": "sticker_pack_count_format",
+      "value": "%s个贴纸"
+    },
+    {
+      "name": "saved_messages_hint",
+      "value": "将消息转发到此处以保存。您也可以在此给自己写备忘。"
+    },
+    {
       "name": "search_filter_all",
       "value": "全部"
     },

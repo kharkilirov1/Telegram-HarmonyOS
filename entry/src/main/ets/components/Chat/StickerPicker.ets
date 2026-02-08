@@ -401,7 +401,7 @@ export struct StickerPicker {
           .backgroundColor($r('app.color.background_secondary'))
           .padding({ left: 12, right: 12 })
           .fontSize(14)
-          .accessibilityText('Search stickers')
+          .accessibilityText($r('app.string.sticker_search_placeholder'))
       }
       .width('100%')
       .padding({ left: 12, right: 12, top: 6, bottom: 6 })
@@ -613,7 +613,7 @@ export struct StickerPicker {
                   .maxLines(1)
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
 
-                Text(`${set.count} stickers`)
+                Text(getContext(this).resourceManager.getStringByNameSync('sticker_pack_count_format').replace('%s', set.count.toString()))
                   .fontSize(13)
                   .fontColor($r('app.color.text_secondary'))
                   .margin({ top: 2 })
@@ -625,7 +625,7 @@ export struct StickerPicker {
               // Install button
               Button($r('app.string.sticker_pack_install'))
                 .fontSize(14)
-                .fontColor(Color.White)
+                .fontColor($r('app.color.icon_on_primary'))
                 .backgroundColor($r('app.color.telegram_blue'))
                 .borderRadius(16)
                 .height(32)
@@ -660,7 +660,7 @@ export struct StickerPicker {
             .fontColor($r('app.color.text_primary'))
             .margin({ bottom: 12 })
 
-          Text(`${this.installedSets[this.longPressSetIndex].count} stickers`)
+          Text(getContext(this).resourceManager.getStringByNameSync('sticker_pack_count_format').replace('%s', this.installedSets[this.longPressSetIndex].count.toString()))
             .fontSize(13)
             .fontColor($r('app.color.text_secondary'))
             .margin({ bottom: 16 })
@@ -681,7 +681,7 @@ export struct StickerPicker {
 
             Button($r('app.string.sticker_pack_remove'))
               .fontSize(14)
-              .fontColor(Color.White)
+              .fontColor($r('app.color.icon_on_primary'))
               .backgroundColor($r('app.color.error_red'))
               .borderRadius(16)
               .height(36)

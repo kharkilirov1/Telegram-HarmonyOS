@@ -189,7 +189,7 @@ export struct ChatDetailPage {
               Text(this.chatInitial)
                 .fontSize(15)
                 .fontWeight(FontWeight.Medium)
-                .fontColor(Color.White)
+                .fontColor($r('app.color.icon_on_primary'))
                 .width(36)
                 .height(36)
                 .borderRadius(18)
@@ -309,14 +309,14 @@ export struct ChatDetailPage {
                 Image($r('app.media.ic_arrow_up'))
                   .width(20).height(20)
                   .fillColor($r('app.color.telegram_blue'))
-                  .accessibilityText('Previous result')
+                  .accessibilityText($r('app.string.search_previous_result'))
                   .onClick(() => { this.navigateSearchResult(-1); })
 
                 Image($r('app.media.ic_arrow_down'))
                   .width(20).height(20)
                   .fillColor($r('app.color.telegram_blue'))
                   .margin({ left: 4 })
-                  .accessibilityText('Next result')
+                  .accessibilityText($r('app.string.search_next_result'))
                   .onClick(() => { this.navigateSearchResult(1); })
               }
 
@@ -641,7 +641,7 @@ export struct ChatDetailPage {
                 if (this.newMessageCount > 0) {
                   Text(this.newMessageCount.toString())
                     .fontSize(12)
-                    .fontColor(Color.White)
+                    .fontColor($r('app.color.icon_on_primary'))
                     .backgroundColor($r('app.color.telegram_blue'))
                     .borderRadius(10)
                     .padding({ left: 6, right: 6, top: 2, bottom: 2 })
@@ -650,7 +650,7 @@ export struct ChatDetailPage {
                 Image($r('app.media.ic_arrow_down'))
                   .width(36).height(36)
                   .fillColor($r('app.color.text_secondary'))
-                  .backgroundColor(Color.White)
+                  .backgroundColor($r('app.color.background_primary'))
                   .borderRadius(18)
                   .shadow({ radius: 4, color: $r('app.color.shadow_color') })
                   .accessibilityText($r('app.string.accessibility_scroll_bottom'))
@@ -704,9 +704,12 @@ export struct ChatDetailPage {
       this.isChannelChat = chat.isChannel;
       this.chatPhoto = chat.photo;
       this.chatInitial = chat.title.length > 0 ? chat.title.charAt(0) : '?';
-      this.lastSeenText = chat.isGroup
-        ? `${chat.unreadCount} members`
-        : formatLastSeen(chat.isUserOnline, 0);
+      if (chat.isGroup) {
+        const memberStr = getContext(this).resourceManager.getStringByNameSync('group_members_count');
+        this.lastSeenText = memberStr.replace('%s', chat.unreadCount.toString());
+      } else {
+        this.lastSeenText = formatLastSeen(chat.isUserOnline, 0);
+      }
     }
   }
 

@@ -1533,6 +1533,26 @@
       "value": "Terminate all other sessions"
     },
     {
+      "name": "search_previous_result",
+      "value": "Previous result"
+    },
+    {
+      "name": "search_next_result",
+      "value": "Next result"
+    },
+    {
+      "name": "group_members_count",
+      "value": "%s members"
+    },
+    {
+      "name": "sticker_pack_count_format",
+      "value": "%s stickers"
+    },
+    {
+      "name": "saved_messages_hint",
+      "value": "Forward messages here to save them for later. You can also write notes to yourself."
+    },
+    {
       "name": "search_filter_all",
       "value": "All"
     },
