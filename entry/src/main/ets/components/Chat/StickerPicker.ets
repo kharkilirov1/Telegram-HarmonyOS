@@ -101,7 +101,7 @@ export struct StickerPicker {
                 .width('80%')
             }
             .onClick(() => { this.activePack = index; })
-          })
+          }, (pack: StickerPack) => pack.id.toString())
         }
       }
       .scrollable(ScrollDirection.Horizontal)
@@ -133,7 +133,7 @@ export struct StickerPicker {
               this.onStickerSelected(sticker.emoji);
             })
           }
-        })
+        }, (sticker: StickerItem) => sticker.id.toString())
       }
       .columnsTemplate('1fr 1fr 1fr 1fr 1fr')
       .rowsGap(4)

@@ -763,6 +763,138 @@
     {
       "name": "download_complete",
       "value": "Downloaded"
+    },
+    {
+      "name": "wallpaper_preview",
+      "value": "Preview"
+    },
+    {
+      "name": "wallpaper_colors",
+      "value": "Colors"
+    },
+    {
+      "name": "wallpaper_patterns",
+      "value": "Patterns"
+    },
+    {
+      "name": "wallpaper_reset",
+      "value": "Reset to Default"
+    },
+    {
+      "name": "wallpaper_preview_incoming",
+      "value": "How about this background?"
+    },
+    {
+      "name": "wallpaper_preview_outgoing",
+      "value": "Looks great!"
+    },
+    {
+      "name": "shared_media_tab_media",
+      "value": "Media"
+    },
+    {
+      "name": "shared_media_no_items",
+      "value": "No items yet"
+    },
+    {
+      "name": "your_folders",
+      "value": "YOUR FOLDERS"
+    },
+    {
+      "name": "folders_hint",
+      "value": "You can organize your chats into folders. Tap to reorder."
+    },
+    {
+      "name": "add",
+      "value": "Add"
+    },
+    {
+      "name": "notifications_label",
+      "value": "Notifications"
+    },
+    {
+      "name": "call_action",
+      "value": "Call"
+    },
+    {
+      "name": "more_action",
+      "value": "More"
+    },
+    {
+      "name": "search_members",
+      "value": "Search Members"
+    },
+    {
+      "name": "admin_label",
+      "value": "admin"
+    },
+    {
+      "name": "emoji_tab",
+      "value": "Emoji"
+    },
+    {
+      "name": "stickers_tab",
+      "value": "Stickers"
+    },
+    {
+      "name": "gifs_tab",
+      "value": "GIFs"
+    },
+    {
+      "name": "search_gifs",
+      "value": "Search GIFs"
+    },
+    {
+      "name": "accessibility_search",
+      "value": "Search"
+    },
+    {
+      "name": "accessibility_compose",
+      "value": "Compose new message"
+    },
+    {
+      "name": "accessibility_back",
+      "value": "Go back"
+    },
+    {
+      "name": "accessibility_call",
+      "value": "Make a call"
+    },
+    {
+      "name": "accessibility_more",
+      "value": "More options"
+    },
+    {
+      "name": "accessibility_send",
+      "value": "Send message"
+    },
+    {
+      "name": "accessibility_attach",
+      "value": "Attach file"
+    },
+    {
+      "name": "accessibility_record",
+      "value": "Record voice message"
+    },
+    {
+      "name": "accessibility_emoji",
+      "value": "Open emoji picker"
+    },
+    {
+      "name": "accessibility_scroll_bottom",
+      "value": "Scroll to bottom"
+    },
+    {
+      "name": "accessibility_download",
+      "value": "Download file"
+    },
+    {
+      "name": "accessibility_mute_toggle",
+      "value": "Toggle notifications"
+    },
+    {
+      "name": "accessibility_add_reaction",
+      "value": "Add reaction"
     }
   ]
 }

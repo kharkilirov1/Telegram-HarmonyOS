@@ -149,7 +149,7 @@ export struct ContactsPage {
                   .onClick(() => {
                     this.scrollToLetter(letter);
                   })
-              })
+              }, (letter: string) => letter)
             }
             .justifyContent(FlexAlign.Center)
             .padding({ right: 2 })

@@ -47,9 +47,10 @@ export struct WallpaperPage {
           Image($r('app.media.ic_back'))
             .width(24).height(24)
             .fillColor($r('app.color.telegram_blue'))
+            .accessibilityText($r('app.string.accessibility_back'))
             .onClick(() => this.navPathStack.pop())
 
-          Text('Chat Background')
+          Text($r('app.string.chat_background'))
             .fontSize(20)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
@@ -79,7 +80,7 @@ export struct WallpaperPage {
           Column() {
             // --- Chat preview with selected wallpaper ---
             Column() {
-              Text('Preview')
+              Text($r('app.string.wallpaper_preview'))
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
                 .margin({ left: 16, bottom: 8, top: 16 })
@@ -89,7 +90,7 @@ export struct WallpaperPage {
                 // Sample messages on selected background
                 Row() {
                   Blank().width(8)
-                  Text('How about this background?')
+                  Text($r('app.string.wallpaper_preview_incoming'))
                     .fontSize(15)
                     .fontColor($r('app.color.text_primary'))
                     .padding({ left: 10, right: 10, top: 6, bottom: 6 })
@@ -101,7 +102,7 @@ export struct WallpaperPage {
 
                 Row() {
                   Blank()
-                  Text('Looks great!')
+                  Text($r('app.string.wallpaper_preview_outgoing'))
                     .fontSize(15)
                     .fontColor($r('app.color.text_primary'))
                     .padding({ left: 10, right: 10, top: 6, bottom: 6 })
@@ -122,7 +123,7 @@ export struct WallpaperPage {
             Blank().height(24)
 
             // --- Solid Colors ---
-            Text('Colors')
+            Text($r('app.string.wallpaper_colors'))
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 8 })
@@ -152,7 +153,7 @@ export struct WallpaperPage {
                   .borderRadius(12)
                 }
                 .onClick(() => { this.selectedId = w.id; })
-              })
+              }, (w: WallpaperItem) => w.id.toString())
             }
             .columnsTemplate('1fr 1fr 1fr 1fr')
             .rowsGap(12)
@@ -163,7 +164,7 @@ export struct WallpaperPage {
             Blank().height(24)
 
             // --- Patterns ---
-            Text('Patterns')
+            Text($r('app.string.wallpaper_patterns'))
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 8 })
@@ -200,7 +201,7 @@ export struct WallpaperPage {
                   .borderRadius(12)
                 }
                 .onClick(() => { this.selectedId = w.id; })
-              })
+              }, (w: WallpaperItem) => w.id.toString())
             }
             .columnsTemplate('1fr 1fr 1fr 1fr')
             .rowsGap(12)
@@ -212,7 +213,7 @@ export struct WallpaperPage {
 
             // --- Reset button ---
             Column() {
-              Text('Reset to Default')
+              Text($r('app.string.wallpaper_reset'))
                 .fontSize(16)
                 .fontColor($r('app.color.telegram_blue'))
                 .textAlign(TextAlign.Center)

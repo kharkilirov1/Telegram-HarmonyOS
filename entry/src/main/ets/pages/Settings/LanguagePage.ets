@@ -108,7 +108,7 @@ export struct LanguagePage {
                   Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
                 }
                 this.languageRow(lang)
-              })
+              }, (lang: LanguageItem) => lang.code)
             }
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
@@ -132,7 +132,7 @@ export struct LanguagePage {
                   Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
                 }
                 this.languageRow(lang)
-              })
+              }, (lang: LanguageItem) => lang.code)
             }
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))

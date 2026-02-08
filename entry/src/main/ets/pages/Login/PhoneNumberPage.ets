@@ -269,7 +269,7 @@ export struct PhoneNumberPage {
                     this.showCountryPicker = false;
                   })
                 }
-              }, (country: CountryEntry) => country.name + country.code)
+              }, (country: CountryEntry) => country.code)
             }
             .width('100%')
             .layoutWeight(1)

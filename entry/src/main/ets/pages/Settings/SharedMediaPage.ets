@@ -21,7 +21,13 @@ export struct SharedMediaPage {
   @Param chatId: number = 0;
 
   @Local activeTab: number = 0;
-  private readonly tabLabels: string[] = ['Media', 'Files', 'Links', 'Voice', 'GIF'];
+  private readonly tabLabels: Resource[] = [
+    $r('app.string.shared_media_tab_media'),
+    $r('app.string.shared_media_files'),
+    $r('app.string.shared_media_links'),
+    $r('app.string.shared_media_voice'),
+    $r('app.string.gif')
+  ];
 
   // Stub data for shared media
   @Local mediaItems: SharedMediaItem[] = [
@@ -52,6 +58,7 @@ export struct SharedMediaPage {
           Image($r('app.media.ic_back'))
             .width(24).height(24)
             .fillColor($r('app.color.telegram_blue'))
+            .accessibilityText($r('app.string.accessibility_back'))
             .onClick(() => this.navPathStack.pop())
 
           Text($r('app.string.profile_shared_media'))
@@ -73,7 +80,7 @@ export struct SharedMediaPage {
         // Tabs
         Scroll() {
           Row({ space: 0 }) {
-            ForEach(this.tabLabels, (label: string, index: number) => {
+            ForEach(this.tabLabels, (label: Resource, index: number) => {
               Column() {
                 Text(label)
                   .fontSize(14)
@@ -91,7 +98,7 @@ export struct SharedMediaPage {
                   .width('80%')
               }
               .onClick(() => { this.activeTab = index; })
-            })
+            }, (_label: Resource, index: number) => index.toString())
           }
         }
         .scrollable(ScrollDirection.Horizontal)
@@ -159,7 +166,7 @@ export struct SharedMediaPage {
             param: { url: item.url } as Record<string, string>
           });
         })
-      })
+      }, (item: SharedMediaItem) => item.id.toString())
     }
     .columnsTemplate('1fr 1fr 1fr')
     .columnsGap(2)
@@ -204,12 +211,13 @@ export struct SharedMediaPage {
             Image($r('app.media.ic_download'))
               .width(22).height(22)
               .fillColor($r('app.color.telegram_blue'))
+              .accessibilityText($r('app.string.accessibility_download'))
           }
           .width('100%')
           .height(64)
           .padding({ left: 16, right: 16 })
         }
-      })
+      }, (item: SharedMediaItem) => item.id.toString())
     }
     .width('100%')
     .layoutWeight(1)
@@ -264,7 +272,7 @@ export struct SharedMediaPage {
           .height(72)
           .padding({ left: 16, right: 16 })
         }
-      })
+      }, (item: SharedMediaItem) => item.id.toString())
     }
     .width('100%')
     .layoutWeight(1)
@@ -279,7 +287,7 @@ export struct SharedMediaPage {
   @Builder
   buildEmptyState() {
     Column() {
-      Text('No items yet')
+      Text($r('app.string.shared_media_no_items'))
         .fontSize(16)
         .fontColor($r('app.color.text_secondary'))
     }

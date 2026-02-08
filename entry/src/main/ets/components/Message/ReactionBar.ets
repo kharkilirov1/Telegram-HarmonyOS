@@ -14,13 +14,14 @@ export struct ReactionBar {
     Row({ space: 4 }) {
       ForEach(this.reactions, (reaction: MessageReaction) => {
         this.reactionChip(reaction)
-      })
+      }, (reaction: MessageReaction) => reaction.emoji)
 
       // Add reaction button
       Column() {
         Image($r('app.media.ic_emoji'))
           .width(14).height(14)
           .fillColor($r('app.color.text_secondary'))
+          .accessibilityText($r('app.string.accessibility_add_reaction'))
       }
       .width(28).height(24)
       .borderRadius(12)

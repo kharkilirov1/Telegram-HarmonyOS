@@ -38,6 +38,7 @@ export struct ChatFoldersPage {
           Image($r('app.media.ic_back'))
             .width(24).height(24)
             .fillColor($r('app.color.telegram_blue'))
+            .accessibilityText($r('app.string.accessibility_back'))
             .onClick(() => this.navPathStack.pop())
 
           Text($r('app.string.settings_chat_folders'))
@@ -64,7 +65,7 @@ export struct ChatFoldersPage {
         Scroll() {
           Column() {
             // --- Your Folders ---
-            this.sectionHeader('YOUR FOLDERS')
+            this.sectionHeader($r('app.string.your_folders'))
 
             Column() {
               // Create new folder button
@@ -74,7 +75,7 @@ export struct ChatFoldersPage {
                   .fillColor($r('app.color.telegram_blue'))
                   .margin({ right: 12 })
 
-                Text('Create New Folder')
+                Text($r('app.string.create_new_folder'))
                   .fontSize(16)
                   .fontColor($r('app.color.telegram_blue'))
               }
@@ -110,7 +111,7 @@ export struct ChatFoldersPage {
                 if (index < this.folders.length - 1) {
                   Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
                 }
-              })
+              }, (folder: ChatFolder) => folder.id.toString())
             }
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
@@ -119,7 +120,7 @@ export struct ChatFoldersPage {
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
-            Text('You can organize your chats into folders. Tap to reorder.')
+            Text($r('app.string.folders_hint'))
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, top: 6 })
@@ -127,7 +128,7 @@ export struct ChatFoldersPage {
             Blank().height(24)
 
             // --- Recommended ---
-            this.sectionHeader('RECOMMENDED')
+            this.sectionHeader($r('app.string.recommended_folders'))
 
             Column() {
               ForEach(this.recommendedFolders, (folder: ChatFolder, index: number) => {
@@ -141,7 +142,7 @@ export struct ChatFoldersPage {
                     .fontColor($r('app.color.text_primary'))
                     .layoutWeight(1)
 
-                  Button('Add')
+                  Button($r('app.string.add'))
                     .fontSize(14)
                     .fontColor($r('app.color.telegram_blue'))
                     .backgroundColor(Color.Transparent)
@@ -159,7 +160,7 @@ export struct ChatFoldersPage {
                 if (index < this.recommendedFolders.length - 1) {
                   Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
                 }
-              })
+              }, (folder: ChatFolder) => folder.id.toString())
             }
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
@@ -184,7 +185,7 @@ export struct ChatFoldersPage {
   }
 
   @Builder
-  sectionHeader(title: string) {
+  sectionHeader(title: ResourceStr) {
     Text(title)
       .fontSize(13)
       .fontColor($r('app.color.text_secondary'))

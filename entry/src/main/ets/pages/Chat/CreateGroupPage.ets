@@ -97,7 +97,7 @@ export struct CreateGroupPage {
           Row({ space: 6 }) {
             ForEach(this.selectedUserIds, (userId: number) => {
               this.memberChip(userId)
-            })
+            }, (userId: number) => userId.toString())
           }
           .padding({ left: 16, right: 16, top: 6, bottom: 6 })
         }
@@ -214,7 +214,7 @@ export struct CreateGroupPage {
           ListItem() {
             this.memberRow(userId)
           }
-        })
+        }, (userId: number) => userId.toString())
       }
       .width('100%')
       .layoutWeight(1)

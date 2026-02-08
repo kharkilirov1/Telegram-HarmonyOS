@@ -68,6 +68,7 @@ export struct ChatListPage {
               .width(22)
               .height(22)
               .fillColor($r('app.color.telegram_blue'))
+              .accessibilityText($r('app.string.accessibility_search'))
               .onClick(() => {
                 this.navPathStack.pushPath({ name: 'Search' });
               })
@@ -76,6 +77,7 @@ export struct ChatListPage {
               .width(22)
               .height(22)
               .fillColor($r('app.color.telegram_blue'))
+              .accessibilityText($r('app.string.accessibility_compose'))
               .onClick(() => {
                 this.navPathStack.pushPath({ name: 'NewChat' });
               })
@@ -127,7 +129,7 @@ export struct ChatListPage {
                 const allChats = MessagesController.getInstance().getSortedDialogs();
                 this.applyFolderFilter(allChats);
               })
-            })
+            }, (_label: Resource, index: number) => index.toString())
           }
         }
         .scrollable(ScrollDirection.Horizontal)
@@ -186,6 +188,7 @@ export struct ChatListPage {
           .width(24)
           .height(24)
           .fillColor(Color.White)
+          .accessibilityText($r('app.string.accessibility_compose'))
       }
       .width(56)
       .height(56)
@@ -222,7 +225,7 @@ export struct ChatListPage {
         Column() {
           Image($r('app.media.ic_saved'))
             .width(22).height(22).fillColor(Color.White)
-          Text('Archive')
+          Text($r('app.string.archive'))
             .fontSize(11).fontColor(Color.White)
         }
       }

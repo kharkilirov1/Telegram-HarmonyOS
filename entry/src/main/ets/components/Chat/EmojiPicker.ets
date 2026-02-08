@@ -115,7 +115,7 @@ export struct EmojiPicker {
             .padding({ left: 8, right: 8, top: 6, bottom: 6 })
             .opacity(this.activeCategory === index ? 1.0 : 0.4)
             .onClick(() => { this.activeCategory = index; })
-        })
+        }, (cat: EmojiCategory) => cat.name)
       }
       .width('100%')
       .justifyContent(FlexAlign.SpaceAround)
@@ -134,7 +134,7 @@ export struct EmojiPicker {
               .height('100%')
               .onClick(() => { this.onEmojiSelected(emoji); })
           }
-        })
+        }, (emoji: string) => emoji)
       }
       .columnsTemplate('1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr')
       .rowsGap(4)

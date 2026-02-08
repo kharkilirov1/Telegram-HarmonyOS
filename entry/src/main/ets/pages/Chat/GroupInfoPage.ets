@@ -87,6 +87,7 @@ export struct GroupInfoPage {
           Image($r('app.media.ic_back'))
             .width(24).height(24)
             .fillColor($r('app.color.telegram_blue'))
+            .accessibilityText($r('app.string.accessibility_back'))
             .onClick(() => this.navPathStack.pop())
 
           Blank()
@@ -147,16 +148,16 @@ export struct GroupInfoPage {
             // --- Action buttons ---
             Row({ space: 12 }) {
               this.actionButton($r('app.media.ic_unmute'),
-                this.isMuted ? 'Unmute' : 'Mute', () => {
+                this.isMuted ? $r('app.string.unmute') : $r('app.string.mute'), () => {
                 this.isMuted = !this.isMuted;
               })
-              this.actionButton($r('app.media.ic_search'), 'Search', () => {
+              this.actionButton($r('app.media.ic_search'), $r('app.string.search_placeholder'), () => {
                 this.navPathStack.pushPath({ name: 'Search' });
               })
               if (!this.isChannel) {
-                this.actionButton($r('app.media.ic_phone_call'), 'Call', () => {})
+                this.actionButton($r('app.media.ic_phone_call'), $r('app.string.call_action'), () => {})
               }
-              this.actionButton($r('app.media.ic_more'), 'More', () => {})
+              this.actionButton($r('app.media.ic_more'), $r('app.string.more_action'), () => {})
             }
             .width('100%')
             .justifyContent(FlexAlign.Center)
@@ -188,7 +189,7 @@ export struct GroupInfoPage {
                   .width(20).height(20)
                   .fillColor($r('app.color.text_secondary'))
                   .margin({ right: 12 })
-                Text('Notifications')
+                Text($r('app.string.notifications_label'))
                   .fontSize(16)
                   .fontColor($r('app.color.text_primary'))
                   .layoutWeight(1)
@@ -243,7 +244,7 @@ export struct GroupInfoPage {
                     .textTransform(TextTransform.Uppercase)
                     .layoutWeight(1)
 
-                  Text('Add')
+                  Text($r('app.string.add'))
                     .fontSize(14)
                     .fontColor($r('app.color.telegram_blue'))
                 }
@@ -256,7 +257,7 @@ export struct GroupInfoPage {
                     .width(16).height(16)
                     .fillColor($r('app.color.text_secondary'))
                     .margin({ right: 8 })
-                  Text('Search Members')
+                  Text($r('app.string.search_members'))
                     .fontSize(14)
                     .fontColor($r('app.color.text_secondary'))
                 }
@@ -273,7 +274,7 @@ export struct GroupInfoPage {
                     Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 68 })
                   }
                   this.memberRow(member)
-                })
+                }, (member: GroupMember) => member.userId.toString())
               }
               .width('100%')
               .backgroundColor($r('app.color.glass_card_bg'))
@@ -287,7 +288,7 @@ export struct GroupInfoPage {
 
             // --- Leave / Report ---
             Column() {
-              Text(this.isChannel ? 'Leave Channel' : 'Leave Group')
+              Text(this.isChannel ? $r('app.string.leave_channel') : $r('app.string.leave_group'))
                 .fontSize(16)
                 .fontColor($r('app.color.error_red'))
                 .textAlign(TextAlign.Center)
@@ -296,7 +297,7 @@ export struct GroupInfoPage {
 
               Divider().strokeWidth(0.5).color($r('app.color.separator'))
 
-              Text('Report')
+              Text($r('app.string.report'))
                 .fontSize(16)
                 .fontColor($r('app.color.error_red'))
                 .textAlign(TextAlign.Center)
@@ -326,7 +327,7 @@ export struct GroupInfoPage {
   }
 
   @Builder
-  actionButton(icon: Resource, label: string, onTap: () => void) {
+  actionButton(icon: Resource, label: ResourceStr, onTap: () => void) {
     Column() {
       Column() {
         Image(icon)
@@ -369,7 +370,7 @@ export struct GroupInfoPage {
             .layoutWeight(1)
 
           if (member.isAdmin) {
-            Text('admin')
+            Text($r('app.string.admin_label'))
               .fontSize(12)
               .fontColor($r('app.color.telegram_blue'))
           }

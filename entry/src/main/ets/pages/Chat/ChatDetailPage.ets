@@ -116,10 +116,11 @@ export struct ChatDetailPage {
 
             Blank()
 
-            Text(`${this.selectedMessageIds.length} selected`)
+            Text(`${this.selectedMessageIds.length}`)
               .fontSize(17)
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.text_primary'))
+              .accessibilityText($r('app.string.selected_count'))
 
             Blank()
 
@@ -158,6 +159,7 @@ export struct ChatDetailPage {
               .width(24)
               .height(24)
               .fillColor($r('app.color.telegram_blue'))
+              .accessibilityText($r('app.string.accessibility_back'))
               .onClick(() => this.navPathStack.pop())
 
             // Chat avatar — clickable to open info (like Telegram iOS/Android)
@@ -245,7 +247,7 @@ export struct ChatDetailPage {
               .height('100%')
 
             Column() {
-              Text('Pinned Message')
+              Text($r('app.string.pinned_message'))
                 .fontSize(12)
                 .fontWeight(FontWeight.Medium)
                 .fontColor($r('app.color.telegram_blue'))
@@ -358,6 +360,7 @@ export struct ChatDetailPage {
                   .backgroundColor(Color.White)
                   .borderRadius(18)
                   .shadow({ radius: 4, color: $r('app.color.shadow_color') })
+                  .accessibilityText($r('app.string.accessibility_scroll_bottom'))
               }
               .position({ right: 16, bottom: 16 })
               .onClick(() => {

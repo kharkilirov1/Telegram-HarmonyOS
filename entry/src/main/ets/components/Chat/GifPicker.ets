@@ -39,7 +39,7 @@ export struct GifPicker {
     Column() {
       // Search bar
       Row() {
-        Search({ placeholder: 'Search GIFs', value: this.searchText })
+        Search({ placeholder: $r('app.string.search_gifs'), value: this.searchText })
           .layoutWeight(1)
           .height(32)
           .onChange((value: string) => {
@@ -64,7 +64,7 @@ export struct GifPicker {
                 .onClick(() => {
                   this.searchText = suggestion;
                 })
-            })
+            }, (suggestion: string) => suggestion)
           }
           .padding({ left: 12, right: 12 })
         }
@@ -98,7 +98,7 @@ export struct GifPicker {
               this.onGifSelected(gif.id);
             })
           }
-        })
+        }, (gif: GifItem) => gif.id.toString())
       }
       .columnsTemplate('1fr 1fr')
       .columnsGap(4)

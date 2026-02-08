@@ -143,6 +143,7 @@ export struct ChatInputBar {
             .width(24).height(24)
             .fillColor($r('app.color.text_secondary'))
             .margin({ right: 6 })
+            .accessibilityText($r('app.string.accessibility_emoji'))
             .onClick(() => {
               this.closeAllPanels();
               this.showEmojiPicker = !this.showEmojiPicker;
@@ -152,6 +153,7 @@ export struct ChatInputBar {
           Image($r('app.media.ic_attach'))
             .width(24).height(24)
             .fillColor($r('app.color.text_secondary'))
+            .accessibilityText($r('app.string.accessibility_attach'))
             .onClick(() => {
               const wasOpen = this.showAttachPanel;
               this.closeAllPanels();
@@ -176,6 +178,7 @@ export struct ChatInputBar {
               .width(28).height(28)
               .fillColor($r('app.color.telegram_blue'))
               .margin({ left: 6 })
+              .accessibilityText($r('app.string.accessibility_send'))
               .onClick(() => {
                 const text = this.inputText.trim();
                 if (text.length > 0) {
@@ -192,6 +195,7 @@ export struct ChatInputBar {
               .width(24).height(24)
               .fillColor($r('app.color.text_secondary'))
               .margin({ left: 6 })
+              .accessibilityText($r('app.string.accessibility_record'))
               .gesture(
                 GestureGroup(GestureMode.Exclusive,
                   LongPressGesture({ repeat: false, duration: 200 })
@@ -215,17 +219,17 @@ export struct ChatInputBar {
       // Panel selector tabs (emoji / stickers / gifs) — like Telegram Android
       if (this.showEmojiPicker || this.showStickerPicker || this.showGifPicker) {
         Row({ space: 0 }) {
-          this.panelTab('Emoji', this.showEmojiPicker, () => {
+          this.panelTab($r('app.string.emoji_tab'), this.showEmojiPicker, () => {
             this.showEmojiPicker = true;
             this.showStickerPicker = false;
             this.showGifPicker = false;
           })
-          this.panelTab('Stickers', this.showStickerPicker, () => {
+          this.panelTab($r('app.string.stickers_tab'), this.showStickerPicker, () => {
             this.showEmojiPicker = false;
             this.showStickerPicker = true;
             this.showGifPicker = false;
           })
-          this.panelTab('GIFs', this.showGifPicker, () => {
+          this.panelTab($r('app.string.gifs_tab'), this.showGifPicker, () => {
             this.showEmojiPicker = false;
             this.showStickerPicker = false;
             this.showGifPicker = true;
@@ -280,7 +284,7 @@ export struct ChatInputBar {
   }
 
   @Builder
-  panelTab(label: string, isActive: boolean, onTap: () => void) {
+  panelTab(label: ResourceStr, isActive: boolean, onTap: () => void) {
     Column() {
       Text(label)
         .fontSize(14)
@@ -325,13 +329,13 @@ export struct ChatInputBar {
 
         // Waveform preview bars
         Row({ space: 1 }) {
-          ForEach(this.generateLiveWaveform(), (amp: number) => {
+          ForEach(this.generateLiveWaveform(), (amp: number, index: number) => {
             Column()
               .width(3)
               .height(amp * 20)
               .borderRadius(1.5)
               .backgroundColor($r('app.color.telegram_blue'))
-          })
+          }, (_amp: number, index: number) => index.toString())
         }
         .height(22)
         .alignItems(VerticalAlign.Center)

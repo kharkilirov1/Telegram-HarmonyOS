@@ -206,15 +206,15 @@ export struct MessageBubble {
     // Build action list — Edit only for own messages (like Telegram)
     const buttons: Array<AlertDialogButtonOptions> = [
       {
-        value: 'Reply',
+        value: $r('app.string.reply'),
         action: () => { this.onReply(this.message); }
       },
       {
-        value: 'Forward',
+        value: $r('app.string.forward'),
         action: () => { this.onForward(this.message); }
       },
       {
-        value: 'Copy',
+        value: $r('app.string.copy'),
         action: () => { this.onCopy(this.message); }
       }
     ];
@@ -222,13 +222,13 @@ export struct MessageBubble {
     // Edit is only available for outgoing text messages (like Telegram)
     if (this.message.isOutgoing && this.message.contentType === MessageContentType.TEXT) {
       buttons.push({
-        value: 'Edit',
+        value: $r('app.string.edit'),
         action: () => { this.onEdit(this.message); }
       });
     }
 
     buttons.push({
-      value: 'Delete',
+      value: $r('app.string.delete'),
       fontColor: $r('app.color.error_red'),
       action: () => { this.onDelete(this.message); }
     });
@@ -292,7 +292,7 @@ export struct MessageBubble {
   @Builder
   buildRichText() {
     Text() {
-      ForEach(this.splitByUrls(this.message.text), (part: TextPart) => {
+      ForEach(this.splitByUrls(this.message.text), (part: TextPart, index: number) => {
         if (part.isUrl) {
           Span(part.text)
             .fontColor($r('app.color.telegram_blue'))
@@ -301,7 +301,7 @@ export struct MessageBubble {
           Span(part.text)
             .fontColor($r('app.color.text_primary'))
         }
-      })
+      }, (_part: TextPart, index: number) => index.toString())
     }
     .fontSize(16)
     .lineHeight(21)
@@ -439,7 +439,7 @@ export struct MessageBubble {
                   .height(amp * 24)
                   .borderRadius(1.5)
                   .backgroundColor($r('app.color.telegram_blue'))
-              })
+              }, (_amp: number, index: number) => index.toString())
           }
           .height(28)
           .alignItems(VerticalAlign.Center)

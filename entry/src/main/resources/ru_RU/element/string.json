@@ -763,6 +763,138 @@
     {
       "name": "download_complete",
       "value": "Загружено"
+    },
+    {
+      "name": "wallpaper_preview",
+      "value": "Предпросмотр"
+    },
+    {
+      "name": "wallpaper_colors",
+      "value": "Цвета"
+    },
+    {
+      "name": "wallpaper_patterns",
+      "value": "Узоры"
+    },
+    {
+      "name": "wallpaper_reset",
+      "value": "Сбросить по умолчанию"
+    },
+    {
+      "name": "wallpaper_preview_incoming",
+      "value": "Как тебе этот фон?"
+    },
+    {
+      "name": "wallpaper_preview_outgoing",
+      "value": "Отлично выглядит!"
+    },
+    {
+      "name": "shared_media_tab_media",
+      "value": "Медиа"
+    },
+    {
+      "name": "shared_media_no_items",
+      "value": "Пока пусто"
+    },
+    {
+      "name": "your_folders",
+      "value": "ВАШИ ПАПКИ"
+    },
+    {
+      "name": "folders_hint",
+      "value": "Вы можете организовать чаты по папкам. Нажмите для изменения порядка."
+    },
+    {
+      "name": "add",
+      "value": "Добавить"
+    },
+    {
+      "name": "notifications_label",
+      "value": "Уведомления"
+    },
+    {
+      "name": "call_action",
+      "value": "Позвонить"
+    },
+    {
+      "name": "more_action",
+      "value": "Ещё"
+    },
+    {
+      "name": "search_members",
+      "value": "Поиск участников"
+    },
+    {
+      "name": "admin_label",
+      "value": "админ"
+    },
+    {
+      "name": "emoji_tab",
+      "value": "Эмодзи"
+    },
+    {
+      "name": "stickers_tab",
+      "value": "Стикеры"
+    },
+    {
+      "name": "gifs_tab",
+      "value": "GIF"
+    },
+    {
+      "name": "search_gifs",
+      "value": "Поиск GIF"
+    },
+    {
+      "name": "accessibility_search",
+      "value": "Поиск"
+    },
+    {
+      "name": "accessibility_compose",
+      "value": "Написать сообщение"
+    },
+    {
+      "name": "accessibility_back",
+      "value": "Назад"
+    },
+    {
+      "name": "accessibility_call",
+      "value": "Позвонить"
+    },
+    {
+      "name": "accessibility_more",
+      "value": "Ещё"
+    },
+    {
+      "name": "accessibility_send",
+      "value": "Отправить сообщение"
+    },
+    {
+      "name": "accessibility_attach",
+      "value": "Прикрепить файл"
+    },
+    {
+      "name": "accessibility_record",
+      "value": "Записать голосовое сообщение"
+    },
+    {
+      "name": "accessibility_emoji",
+      "value": "Открыть панель эмодзи"
+    },
+    {
+      "name": "accessibility_scroll_bottom",
+      "value": "Прокрутить вниз"
+    },
+    {
+      "name": "accessibility_download",
+      "value": "Скачать файл"
+    },
+    {
+      "name": "accessibility_mute_toggle",
+      "value": "Вкл/выкл уведомления"
+    },
+    {
+      "name": "accessibility_add_reaction",
+      "value": "Добавить реакцию"
     }
   ]
 }
