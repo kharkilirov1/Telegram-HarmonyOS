@@ -25,10 +25,10 @@ struct Index {
         this.navPathStack.clear();
         break;
       case 'authorizationStateWaitCode':
-        this.navPathStack.pushPath({ name: 'LoginCode' });
+        this.navPathStack.pushPath(new NavPathInfo('LoginCode'));
         break;
       case 'authorizationStateWaitPassword':
-        this.navPathStack.pushPath({ name: 'LoginPassword' });
+        this.navPathStack.pushPath(new NavPathInfo('LoginPassword'));
         break;
       case 'authorizationStateReady':
         this.isAuthorized = true;
@@ -206,7 +206,7 @@ struct Index {
           .width('100%')
           .padding({ left: 16, right: 16, top: 12, bottom: 12 })
           .onClick(() => {
-            this.navPathStack.pushPath({ name: 'Profile' });
+            this.navPathStack.pushPath(new NavPathInfo('Profile'));
           })
 
           Blank().height(16)
@@ -218,7 +218,7 @@ struct Index {
                 $r('app.string.saved_messages'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath({ name: 'SavedMessages' });
+              this.navPathStack.pushPath(new NavPathInfo('SavedMessages'));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             this.settingsRow($r('app.media.ic_phone_call'), $r('app.color.settings_icon_green'),
@@ -232,7 +232,7 @@ struct Index {
                 $r('app.string.settings_chat_folders'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath({ name: 'ChatFolders' });
+              this.navPathStack.pushPath(new NavPathInfo('ChatFolders'));
             })
           }
           .width('100%')
@@ -251,7 +251,7 @@ struct Index {
                 $r('app.string.settings_notifications_sounds'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath({ name: 'NotificationsSettings' });
+              this.navPathStack.pushPath(new NavPathInfo('NotificationsSettings'));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             Column() {
@@ -259,7 +259,7 @@ struct Index {
                 $r('app.string.settings_privacy_security'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath({ name: 'PrivacySettings' });
+              this.navPathStack.pushPath(new NavPathInfo('PrivacySettings'));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             Column() {
@@ -267,7 +267,7 @@ struct Index {
                 $r('app.string.settings_data_storage'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath({ name: 'DataStorage' });
+              this.navPathStack.pushPath(new NavPathInfo('DataStorage'));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             Column() {
@@ -275,7 +275,7 @@ struct Index {
                 $r('app.string.settings_appearance'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath({ name: 'Appearance' });
+              this.navPathStack.pushPath(new NavPathInfo('Appearance'));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             Column() {
@@ -283,7 +283,7 @@ struct Index {
                 $r('app.string.settings_language'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath({ name: 'Language' });
+              this.navPathStack.pushPath(new NavPathInfo('Language'));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             this.settingsRow($r('app.media.ic_emoji'), $r('app.color.settings_icon_orange'),
@@ -305,7 +305,7 @@ struct Index {
                 $r('app.string.telegram_premium'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath({ name: 'Premium' });
+              this.navPathStack.pushPath(new NavPathInfo('Premium'));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             Column() {
@@ -313,7 +313,7 @@ struct Index {
                 $r('app.string.nearby_people'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath({ name: 'NearbyPeople' });
+              this.navPathStack.pushPath(new NavPathInfo('NearbyPeople'));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             Column() {
@@ -321,7 +321,7 @@ struct Index {
                 $r('app.string.business_account'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath({ name: 'BusinessAccount' });
+              this.navPathStack.pushPath(new NavPathInfo('BusinessAccount'));
             })
           }
           .width('100%')

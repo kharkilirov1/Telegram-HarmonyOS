@@ -357,7 +357,7 @@ export struct CreateChannelPage {
       const chatId = result['id'] || 0;
       this.navPathStack.pop();
       if (chatId !== 0) {
-        this.navPathStack.pushPath({ name: 'ChatDetail', param: chatId });
+        this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
       }
     } catch (e) {
       this.isCreating = false;

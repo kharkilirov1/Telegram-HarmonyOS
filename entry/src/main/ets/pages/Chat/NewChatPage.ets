@@ -79,11 +79,11 @@ export struct NewChatPage {
 
         // Quick action rows — navigate to create pages
         this.quickActionClickable($r('app.media.ic_group'), $r('app.string.new_group'), () => {
-          this.navPathStack.pushPath({ name: 'CreateGroup' });
+          this.navPathStack.pushPath(new NavPathInfo('CreateGroup'));
         })
         Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
         this.quickActionClickable($r('app.media.ic_channel'), $r('app.string.new_channel'), () => {
-          this.navPathStack.pushPath({ name: 'CreateChannel' });
+          this.navPathStack.pushPath(new NavPathInfo('CreateChannel'));
         })
         Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
         this.quickAction($r('app.media.ic_lock'), $r('app.string.secret_chat'))
@@ -216,11 +216,11 @@ export struct NewChatPage {
 
       const chatId = result['id'] || -userId;
       this.navPathStack.pop();
-      this.navPathStack.pushPath({ name: 'ChatDetail', param: chatId });
+      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
     } catch (e) {
       // Fallback: use negative userId as chatId convention
       this.navPathStack.pop();
-      this.navPathStack.pushPath({ name: 'ChatDetail', param: -userId });
+      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', -userId));
     }
   }
 

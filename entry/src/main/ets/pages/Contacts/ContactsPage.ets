@@ -217,7 +217,7 @@ export struct ContactsPage {
     .padding({ right: 16 })
     .onClick(() => {
       // Navigate to private chat with this user
-      this.navPathStack.pushPath({ name: 'ChatDetail', param: user.id });
+      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', user.id));
     })
   }
 

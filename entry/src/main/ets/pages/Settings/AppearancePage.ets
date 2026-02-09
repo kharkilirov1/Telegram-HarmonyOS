@@ -126,7 +126,7 @@ export struct AppearancePage {
               .width('100%').height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath({ name: 'Wallpaper' });
+                this.navPathStack.pushPath(new NavPathInfo('Wallpaper'));
               })
             }
             .width('100%')

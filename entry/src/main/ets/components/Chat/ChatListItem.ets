@@ -5,7 +5,7 @@ import { TypingIndicator } from '../Common/TypingIndicator';
 @ComponentV2
 export struct ChatListItem {
   @Param chat: Chat = new Chat();
-  @Event onChatClick: (chatId: number) => void = () => {};
+  @Event onChatClick: (chatId: number) => void;
 
   build() {
     Row() {

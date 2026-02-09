@@ -297,7 +297,7 @@ export struct SearchPage {
     .padding({ left: 16, right: 16 })
     .onClick(() => {
       this.navPathStack.pop();
-      this.navPathStack.pushPath({ name: 'ChatDetail', param: chat.id });
+      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chat.id));
     })
   }
 
@@ -356,7 +356,7 @@ export struct SearchPage {
     .padding({ left: 16, right: 16 })
     .onClick(() => {
       this.navPathStack.pop();
-      this.navPathStack.pushPath({ name: 'ChatDetail', param: msg.chatId });
+      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', msg.chatId));
     })
   }
 
@@ -468,7 +468,7 @@ export struct SearchPage {
       const chatId = result['id'] as number;
       if (chatId) {
         this.navPathStack.pop();
-        this.navPathStack.pushPath({ name: 'ChatDetail', param: chatId });
+        this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
       }
     } catch (e) {
       // Failed to open private chat

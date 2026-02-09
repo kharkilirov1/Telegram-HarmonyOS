@@ -72,7 +72,7 @@ export struct ChatListPage {
               .fillColor($r('app.color.telegram_blue'))
               .accessibilityText($r('app.string.accessibility_search'))
               .onClick(() => {
-                this.navPathStack.pushPath({ name: 'Search' });
+                this.navPathStack.pushPath(new NavPathInfo('Search'));
               })
 
             Image($r('app.media.ic_edit'))
@@ -81,7 +81,7 @@ export struct ChatListPage {
               .fillColor($r('app.color.telegram_blue'))
               .accessibilityText($r('app.string.accessibility_compose'))
               .onClick(() => {
-                this.navPathStack.pushPath({ name: 'NewChat' });
+                this.navPathStack.pushPath(new NavPathInfo('NewChat'));
               })
           }
         }
@@ -143,7 +143,7 @@ export struct ChatListPage {
         // Stories bar — horizontal scrollable circles (like iOS/Android Telegram)
         StoriesBar({
           onStoryClick: (chatId: number) => {
-            this.navPathStack.pushPath({ name: 'StoryViewer', param: chatId });
+            this.navPathStack.pushPath(new NavPathInfo('StoryViewer', chatId));
           }
         })
 
@@ -166,7 +166,7 @@ export struct ChatListPage {
                   ChatListItem({
                     chat: chat,
                     onChatClick: (chatId: number) => {
-                      this.navPathStack.pushPath({ name: 'ChatDetail', param: chatId });
+                      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
                     }
                   })
                 }
@@ -215,7 +215,7 @@ export struct ChatListPage {
       .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: 4 })
       .margin({ right: 16, bottom: 16 })
       .onClick(() => {
-        this.navPathStack.pushPath({ name: 'NewChat' });
+        this.navPathStack.pushPath(new NavPathInfo('NewChat'));
       })
     }
     .width('100%')

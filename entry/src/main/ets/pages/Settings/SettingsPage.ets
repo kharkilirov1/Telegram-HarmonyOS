@@ -59,7 +59,7 @@ export struct SettingsPage {
             .fontSize(16)
             .fontColor($r('app.color.telegram_blue'))
             .onClick(() => {
-              this.navPathStack.pushPath({ name: 'Profile' });
+              this.navPathStack.pushPath(new NavPathInfo('Profile'));
             })
         }
         .width('100%')
@@ -105,7 +105,7 @@ export struct SettingsPage {
             .padding(16)
             .backgroundColor($r('app.color.settings_section_bg'))
             .onClick(() => {
-              this.navPathStack.pushPath({ name: 'Profile' });
+              this.navPathStack.pushPath(new NavPathInfo('Profile'));
             })
 
             this.sectionGap()
@@ -130,7 +130,7 @@ export struct SettingsPage {
               .padding({ left: 16, right: 16 })
               .onClick(() => {
                 // Open Saved Messages chat (userId = own user → chatId convention)
-                this.navPathStack.pushPath({ name: 'ChatDetail', param: 0 });
+                this.navPathStack.pushPath(new NavPathInfo('ChatDetail', 0));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
@@ -171,7 +171,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath({ name: 'SessionManagement' });
+                this.navPathStack.pushPath(new NavPathInfo('SessionManagement'));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
@@ -193,7 +193,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath({ name: 'ChatFolders' });
+                this.navPathStack.pushPath(new NavPathInfo('ChatFolders'));
               })
             }
             .width('100%')
@@ -224,7 +224,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath({ name: 'NotificationsSettings' });
+                this.navPathStack.pushPath(new NavPathInfo('NotificationsSettings'));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
@@ -246,7 +246,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath({ name: 'PrivacySettings' });
+                this.navPathStack.pushPath(new NavPathInfo('PrivacySettings'));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
@@ -268,7 +268,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath({ name: 'BiometricLock' });
+                this.navPathStack.pushPath(new NavPathInfo('BiometricLock'));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
@@ -290,7 +290,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath({ name: 'DataStorage' });
+                this.navPathStack.pushPath(new NavPathInfo('DataStorage'));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
@@ -312,7 +312,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath({ name: 'ProxySettings' });
+                this.navPathStack.pushPath(new NavPathInfo('ProxySettings'));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
@@ -334,7 +334,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath({ name: 'Appearance' });
+                this.navPathStack.pushPath(new NavPathInfo('Appearance'));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
@@ -361,7 +361,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath({ name: 'Language' });
+                this.navPathStack.pushPath(new NavPathInfo('Language'));
               })
             }
             .width('100%')

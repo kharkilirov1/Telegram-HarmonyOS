@@ -159,7 +159,7 @@ export struct ForwardPickerPage {
 
       // Navigate to forwarded chat
       this.navPathStack.pop();
-      this.navPathStack.pushPath({ name: 'ChatDetail', param: targetChatId });
+      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', targetChatId));
     } catch (e) {
       this.isForwarding = false;
     }

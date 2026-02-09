@@ -327,7 +327,7 @@ export struct ProfilePage {
       .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
       .margin({ left: 16, right: 16 })
       .onClick(() => {
-        this.navPathStack.pushPath({ name: 'SharedMedia' });
+        this.navPathStack.pushPath(new NavPathInfo('SharedMedia'));
       })
 
       Blank().height(24)

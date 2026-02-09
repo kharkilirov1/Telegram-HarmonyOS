@@ -210,7 +210,7 @@ export struct GroupInfoPage {
                 this.isMuted = !this.isMuted;
               })
               this.actionButton($r('app.media.ic_search'), $r('app.string.search_placeholder'), () => {
-                this.navPathStack.pushPath({ name: 'Search' });
+                this.navPathStack.pushPath(new NavPathInfo('Search'));
               })
               if (!this.isChannel) {
                 this.actionButton($r('app.media.ic_phone_call'), $r('app.string.call_action'), () => {})
