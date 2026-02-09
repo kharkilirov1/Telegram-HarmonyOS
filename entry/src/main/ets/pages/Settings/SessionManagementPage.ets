@@ -1,23 +1,11 @@
 // Active Sessions / Devices management page
 // Reference: Telegram iOS SessionsController, Android SessionsActivity
 
-import { TDLibClient } from '../../services/TDLibClient';
+import { SessionService, SessionInfo } from '../../services/SessionService';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
-interface SessionInfo {
-  id: number;
-  isCurrent: boolean;
-  deviceModel: string;
-  platform: string;
-  systemVersion: string;
-  apiId: number;
-  applicationName: string;
-  applicationVersion: string;
-  logInDate: number;
-  lastActiveDate: number;
-  ip: string;
-  country: string;
-  region: string;
-}
+const TAG = 'SessionManagementPage';
+const DOMAIN = 0x0001;
 
 @Builder
 export function SessionManagementBuilder(name: string, param: Object) {
@@ -34,7 +22,7 @@ export struct SessionManagementPage {
   @Local showTerminateAllDialog: boolean = false;
   @Local terminatingSessionId: number = 0;
 
-  private tdlib: TDLibClient = TDLibClient.getInstance();
+  private sessionService: SessionService = SessionService.getInstance();
 
   aboutToAppear(): void {
     this.loadSessions();
@@ -43,57 +31,29 @@ export struct SessionManagementPage {
   private async loadSessions(): Promise<void> {
     this.isLoading = true;
     try {
-      const result: Record<string, Object> = await this.tdlib.send('getActiveSessions');
-      const sessions = result['sessions'] as Object[];
-      if (sessions) {
-        const parsed: SessionInfo[] = sessions.map((s): SessionInfo => {
-          const session = s as Record<string, Object>;
-          return {
-            id: session['id'] as number,
-            isCurrent: session['is_current'] as boolean,
-            deviceModel: session['device_model'] as string,
-            platform: session['platform'] as string,
-            systemVersion: session['system_version'] as string,
-            apiId: session['api_id'] as number,
-            applicationName: session['application_name'] as string,
-            applicationVersion: session['application_version'] as string,
-            logInDate: session['log_in_date'] as number,
-            lastActiveDate: session['last_active_date'] as number,
-            ip: session['ip'] as string,
-            country: session['country'] as string,
-            region: session['region'] as string,
-          };
-        });
-
-        this.currentSession = parsed.find((s: SessionInfo) => s.isCurrent) ?? null;
-        this.otherSessions = parsed.filter((s: SessionInfo) => !s.isCurrent);
-      }
+      const parsed = await this.sessionService.getActiveSessions();
+      this.currentSession = parsed.find((s: SessionInfo) => s.isCurrent) ?? null;
+      this.otherSessions = parsed.filter((s: SessionInfo) => !s.isCurrent);
     } catch (e) {
-      // Session loading failed; list will remain empty
+      hilog.warn(DOMAIN, TAG, 'Failed to load sessions: %{public}s', String(e));
     }
     this.isLoading = false;
   }
 
   private async terminateSession(sessionId: number): Promise<void> {
     this.terminatingSessionId = sessionId;
-    try {
-      const terminateParams: Record<string, Object> = {};
-      terminateParams['session_id'] = sessionId;
-      await this.tdlib.send('terminateSession', terminateParams);
+    const error = await this.sessionService.terminateSession(sessionId);
+    if (!error) {
       this.otherSessions = this.otherSessions.filter((s: SessionInfo) => s.id !== sessionId);
-    } catch (e) {
-      // Termination failed silently
     }
     this.terminatingSessionId = 0;
   }
 
   private async terminateAllOtherSessions(): Promise<void> {
     this.isLoading = true;
-    try {
-      await this.tdlib.send('terminateAllOtherSessions');
+    const error = await this.sessionService.terminateAllOtherSessions();
+    if (!error) {
       this.otherSessions = [];
-    } catch (e) {
-      // Termination failed silently
     }
     this.isLoading = false;
   }
@@ -108,7 +68,8 @@ export struct SessionManagementPage {
     if (diff < 60) {
       try {
         return getContext(this).resourceManager.getStringByNameSync('online');
-      } catch (_e) {
+      } catch (e) {
+        hilog.debug(DOMAIN, TAG, 'Resource "online" unavailable: %{public}s', String(e));
         return 'online';
       }
     } else if (diff < 3600) {
@@ -116,7 +77,8 @@ export struct SessionManagementPage {
       try {
         const template = getContext(this).resourceManager.getStringByNameSync('last_active_minutes');
         return template.replace('%d', minutes.toString());
-      } catch (_e) {
+      } catch (e) {
+        hilog.debug(DOMAIN, TAG, 'Resource "last_active_minutes" unavailable: %{public}s', String(e));
         return `${minutes}m ago`;
       }
     } else if (diff < 86400) {
@@ -124,7 +86,8 @@ export struct SessionManagementPage {
       try {
         const template = getContext(this).resourceManager.getStringByNameSync('last_active_hours');
         return template.replace('%d', hours.toString());
-      } catch (_e) {
+      } catch (e) {
+        hilog.debug(DOMAIN, TAG, 'Resource "last_active_hours" unavailable: %{public}s', String(e));
         return `${hours}h ago`;
       }
     } else {
@@ -132,7 +95,8 @@ export struct SessionManagementPage {
       try {
         const template = getContext(this).resourceManager.getStringByNameSync('last_active_days');
         return template.replace('%d', days.toString());
-      } catch (_e) {
+      } catch (e) {
+        hilog.debug(DOMAIN, TAG, 'Resource "last_active_days" unavailable: %{public}s', String(e));
         return `${days}d ago`;
       }
     }

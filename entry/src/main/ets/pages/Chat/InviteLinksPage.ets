@@ -150,7 +150,7 @@ export struct InviteLinksPage {
     if (timestamp === 0) {
       try {
         return getContext(this).resourceManager.getStringByNameSync('no_expiration');
-      } catch (_e) {
+      } catch (e) {
         return 'No expiration';
       }
     }
@@ -162,7 +162,7 @@ export struct InviteLinksPage {
     try {
       const template = getContext(this).resourceManager.getStringByNameSync('expires_date');
       return template.replace('%s', dateStr);
-    } catch (_e) {
+    } catch (e) {
       return `Expires ${dateStr}`;
     }
   }

@@ -417,6 +417,28 @@ export interface TdSessions {
   sessions?: TdSession[];
 }
 
+// --- TDLib proxy ---
+
+export interface TdProxyType {
+  username?: string;
+  password?: string;
+  http_only?: boolean;
+  secret?: string;
+}
+
+export interface TdProxy {
+  id: number;
+  server?: string;
+  port?: number;
+  last_used_date?: number;
+  is_enabled?: boolean;
+  type?: TdProxyType;
+}
+
+export interface TdProxies {
+  proxies?: TdProxy[];
+}
+
 // --- TDLib response wrappers ---
 
 export interface TdMessages {

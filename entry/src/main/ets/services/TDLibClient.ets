@@ -382,8 +382,8 @@ export class TDLibClient {
       if (handlers.length === 0 && wildcardHandlers.length === 0 && type.startsWith('update')) {
         TdFallbackRegistry.getInstance().recordUnhandled(type, 'update');
       }
-    } catch (_e) {
-      this.logError('Failed to parse response');
+    } catch (e) {
+      this.logError('Failed to parse response: %{public}s', String(e));
     }
   }
 

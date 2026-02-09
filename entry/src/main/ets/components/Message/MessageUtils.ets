@@ -21,7 +21,7 @@ export function extractDomain(text: string): string {
       const url = match[0];
       const domainMatch = url.match(/https?:\/\/([^/]+)/);
       return domainMatch ? domainMatch[1] : url;
-    } catch (_e) {
+    } catch (e) {
       return '';
     }
   }

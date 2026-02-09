@@ -62,8 +62,8 @@ export class SecurityService {
         hilog.info(DOMAIN, TAG, 'HUKS key already exists');
         return;
       }
-    } catch (_e) {
-      // Key doesn't exist — will create below
+    } catch (e) {
+      hilog.debug(DOMAIN, TAG, 'HUKS key not found, will create: %{public}s', String(e));
     }
 
     hilog.info(DOMAIN, TAG, 'Generating HUKS AES-256 key');

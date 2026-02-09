@@ -230,7 +230,8 @@ export struct ChatSearchBar {
         if (results.length > 0) {
           this.onScrollToMessage(results[0].id);
         }
-      } catch (_e) {
+      } catch (e) {
+        hilog.warn(0x0001, 'ChatSearchBar', 'Chat search failed: %{public}s', String(e));
         this.searchResults = [];
         this.currentSearchIndex = -1;
       }

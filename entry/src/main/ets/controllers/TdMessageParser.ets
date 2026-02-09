@@ -5,6 +5,10 @@
 import { Chat } from '../models/Chat';
 import { Message, MessageContentType } from '../models/Message';
 import { TdFallbackRegistry } from '../services/TdFallbackRegistry';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const TAG = 'TdMessageParser';
+const DOMAIN = 0x0001;
 import {
   tdType,
   TdMessage,
@@ -323,7 +327,8 @@ export function decodeWaveform(base64: string): number[] {
     }
 
     return result.length > 0 ? result : fallbackWaveform();
-  } catch (_e) {
+  } catch (e) {
+    hilog.debug(DOMAIN, TAG, 'Waveform decode failed: %{public}s', String(e));
     return fallbackWaveform();
   }
 }

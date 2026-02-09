@@ -1,17 +1,11 @@
 // Proxy settings page
 // Reference: Telegram iOS ProxyListController, Android ProxyListActivity
 
-import { TDLibClient } from '../../services/TDLibClient';
+import { ProxyService, ProxyInfo } from '../../services/ProxyService';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
-interface ProxyInfo {
-  id: number;
-  server: string;
-  port: number;
-  type: string;
-  isEnabled: boolean;
-  lastPingMs: number;
-  username: string;
-}
+const TAG = 'ProxySettingsPage';
+const DOMAIN = 0x0001;
 
 @Builder
 export function ProxySettingsBuilder(name: string, param: Object) {
@@ -36,7 +30,7 @@ export struct ProxySettingsPage {
   @Local formPassword: string = '';
   @Local formSecret: string = '';
 
-  private tdlib: TDLibClient = TDLibClient.getInstance();
+  private proxyService: ProxyService = ProxyService.getInstance();
 
   aboutToAppear(): void {
     this.loadProxies();
@@ -45,94 +39,43 @@ export struct ProxySettingsPage {
   private async loadProxies(): Promise<void> {
     this.isLoading = true;
     try {
-      const result = await this.tdlib.send('getProxies') as Record<string, Object>;
-      const rawProxies = result['proxies'] as Record<string, Object>[];
-      if (rawProxies) {
-        const parsed: ProxyInfo[] = [];
-        for (const raw of rawProxies) {
-          const proxyType = raw['type'] as Record<string, Object>;
-          const typeStr = this.parseProxyType(proxyType);
-          const proxy: ProxyInfo = {
-            id: raw['id'] as number,
-            server: raw['server'] as string,
-            port: raw['port'] as number,
-            type: typeStr,
-            isEnabled: raw['is_enabled'] as boolean,
-            lastPingMs: -1,
-            username: this.parseUsername(proxyType)
-          };
-          parsed.push(proxy);
-          if (proxy.isEnabled) {
-            this.useProxy = true;
-          }
-        }
-        this.proxies = parsed;
-        // Ping all proxies to get latency
-        for (let i = 0; i < this.proxies.length; i++) {
-          this.pingProxy(i);
+      const parsed = await this.proxyService.getProxies();
+      this.proxies = parsed;
+      for (const proxy of parsed) {
+        if (proxy.isEnabled) {
+          this.useProxy = true;
         }
       }
+      // Ping all proxies to get latency
+      for (let i = 0; i < this.proxies.length; i++) {
+        this.pingProxy(i);
+      }
     } catch (e) {
-      // Failed to load proxies
+      hilog.warn(DOMAIN, TAG, 'Failed to load proxies: %{public}s', String(e));
     }
     this.isLoading = false;
   }
 
-  private parseProxyType(proxyType: Record<string, Object>): string {
-    const typeName = proxyType['@type'] as string;
-    if (typeName === 'proxyTypeSocks5') {
-      return 'socks5';
-    } else if (typeName === 'proxyTypeHttp') {
-      return 'http';
-    } else if (typeName === 'proxyTypeMtproto') {
-      return 'mtproto';
-    }
-    return 'socks5';
-  }
-
-  private parseUsername(proxyType: Record<string, Object>): string {
-    const username = proxyType['username'] as string;
-    return username ? username : '';
-  }
-
   private async pingProxy(index: number): Promise<void> {
-    try {
-      const proxy = this.proxies[index];
-      const pingParams: Record<string, Object> = {};
-      pingParams['proxy_id'] = proxy.id;
-      const result: Record<string, Object> = await this.tdlib.send('pingProxy', pingParams);
-      const seconds = result['seconds'] as number;
-      const updated = this.proxies.slice();
-      updated[index] = {
-        id: proxy.id,
-        server: proxy.server,
-        port: proxy.port,
-        type: proxy.type,
-        isEnabled: proxy.isEnabled,
-        lastPingMs: Math.round(seconds * 1000),
-        username: proxy.username
-      };
-      this.proxies = updated;
-    } catch (e) {
-      const proxy = this.proxies[index];
-      const updated = this.proxies.slice();
-      updated[index] = {
-        id: proxy.id,
-        server: proxy.server,
-        port: proxy.port,
-        type: proxy.type,
-        isEnabled: proxy.isEnabled,
-        lastPingMs: -2,
-        username: proxy.username
-      };
-      this.proxies = updated;
-    }
+    const proxy = this.proxies[index];
+    const pingMs = await this.proxyService.pingProxy(proxy.id);
+    const updated = this.proxies.slice();
+    updated[index] = {
+      id: proxy.id,
+      server: proxy.server,
+      port: proxy.port,
+      type: proxy.type,
+      isEnabled: proxy.isEnabled,
+      lastPingMs: pingMs,
+      username: proxy.username
+    };
+    this.proxies = updated;
   }
 
   private async toggleUseProxy(enable: boolean): Promise<void> {
     this.useProxy = enable;
     if (!enable) {
-      await this.tdlib.send('disableProxy');
+      await this.proxyService.disableProxy();
       const updated: ProxyInfo[] = [];
       for (const p of this.proxies) {
         updated.push({
@@ -156,9 +99,7 @@ export struct ProxySettingsPage {
 
   private async enableProxy(index: number): Promise<void> {
     const proxy = this.proxies[index];
-    const enableParams: Record<string, Object> = {};
-    enableParams['proxy_id'] = proxy.id;
-    await this.tdlib.send('enableProxy', enableParams);
+    await this.proxyService.enableProxy(proxy.id);
     this.useProxy = true;
     const updated: ProxyInfo[] = [];
     for (let i = 0; i < this.proxies.length; i++) {
@@ -178,9 +119,7 @@ export struct ProxySettingsPage {
 
   private async deleteProxy(index: number): Promise<void> {
     const proxy = this.proxies[index];
-    const removeParams: Record<string, Object> = {};
-    removeParams['proxy_id'] = proxy.id;
-    await this.tdlib.send('removeProxy', removeParams);
+    await this.proxyService.removeProxy(proxy.id);
     const updated = this.proxies.slice();
     updated.splice(index, 1);
     this.proxies = updated;
@@ -212,28 +151,6 @@ export struct ProxySettingsPage {
     this.showAddDialog = true;
   }
 
-  private buildProxyTypeParam(): Record<string, Object> {
-    if (this.formType === 'socks5') {
-      const socks5Type: Record<string, Object> = {};
-      socks5Type['@type'] = 'proxyTypeSocks5';
-      socks5Type['username'] = this.formUsername;
-      socks5Type['password'] = this.formPassword;
-      return socks5Type;
-    } else if (this.formType === 'http') {
-      const httpType: Record<string, Object> = {};
-      httpType['@type'] = 'proxyTypeHttp';
-      httpType['username'] = this.formUsername;
-      httpType['password'] = this.formPassword;
-      httpType['http_only'] = false;
-      return httpType;
-    } else {
-      const mtprotoType: Record<string, Object> = {};
-      mtprotoType['@type'] = 'proxyTypeMtproto';
-      mtprotoType['secret'] = this.formSecret;
-      return mtprotoType;
-    }
-  }
-
   private async saveProxy(): Promise<void> {
     const portNum = parseInt(this.formPort);
     if (!this.formServer || isNaN(portNum) || portNum <= 0 || portNum > 65535) {
@@ -242,17 +159,12 @@ export struct ProxySettingsPage {
 
     if (this.editingProxy) {
       // Remove old proxy then add updated one
-      const removeEditParams: Record<string, Object> = {};
-      removeEditParams['proxy_id'] = this.editingProxy.id;
-      await this.tdlib.send('removeProxy', removeEditParams);
+      await this.proxyService.removeProxy(this.editingProxy.id);
     }
 
-    const addProxyParams: Record<string, Object> = {};
-    addProxyParams['server'] = this.formServer;
-    addProxyParams['port'] = portNum;
-    addProxyParams['enable'] = true;
-    addProxyParams['type'] = this.buildProxyTypeParam();
-    await this.tdlib.send('addProxy', addProxyParams);
+    const proxyType = ProxyService.buildProxyTypeParam(
+      this.formType, this.formUsername, this.formPassword, this.formSecret);
+    await this.proxyService.addProxy(this.formServer, portNum, true, proxyType);
 
     this.showAddDialog = false;
     this.editingProxy = null;

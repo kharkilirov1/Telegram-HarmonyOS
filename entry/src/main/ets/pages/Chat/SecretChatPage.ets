@@ -62,7 +62,7 @@ export struct SecretChatPage {
     // Resolve 'Off' label from resources at runtime
     try {
       this.timerOptions[0].label = getContext(this).resourceManager.getStringByNameSync('timer_off');
-    } catch (_e) {
+    } catch (e) {
       this.timerOptions[0].label = 'Off';
     }
     TDLibClient.getInstance().on('updateSecretChat', this.secretChatUpdateHandler);
@@ -77,7 +77,7 @@ export struct SecretChatPage {
   private getUserFallback(): string {
     try {
       return getContext(this).resourceManager.getStringByNameSync('user_fallback');
-    } catch (_e) {
+    } catch (e) {
       return 'User';
     }
   }
@@ -86,7 +86,7 @@ export struct SecretChatPage {
     try {
       const template = getContext(this).resourceManager.getStringByNameSync('waiting_for_user');
       return template.replace('%s', this.userName);
-    } catch (_e) {
+    } catch (e) {
       return `Waiting for ${this.userName} to come online`;
     }
   }
@@ -95,7 +95,7 @@ export struct SecretChatPage {
     try {
       const template = getContext(this).resourceManager.getStringByNameSync('compare_key_hint');
       return template.replace('%s', this.userName);
-    } catch (_e) {
+    } catch (e) {
       return `Compare this image with the one shown on ${this.userName}'s device. If they are the same, your chat is 100% secure.`;
     }
   }

@@ -276,7 +276,7 @@ export struct CallsPage {
     if (date.toDateString() === yesterday.toDateString()) {
       try {
         return getContext(this).resourceManager.getStringByNameSync('yesterday');
-      } catch (_e) {
+      } catch (e) {
         return 'Yesterday';
       }
     }

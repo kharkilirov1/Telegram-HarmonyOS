@@ -44,8 +44,8 @@ export class AuthController {
     try {
       const result = await TDLibClient.getInstance().send('getMe') as Record<string, Object>;
       this.myUserId = (result['id'] as number) || 0;
-    } catch (_e) {
-      hilog.warn(DOMAIN, TAG, 'Failed to fetch my user ID');
+    } catch (e) {
+      hilog.warn(DOMAIN, TAG, 'Failed to fetch my user ID: %{public}s', String(e));
     }
     return this.myUserId;
   }

@@ -186,7 +186,8 @@ export class PreferencesService {
     if (!this.store) return defaultValue;
     try {
       return this.store.getSync(key, defaultValue) as string;
-    } catch (_e) {
+    } catch (e) {
+      hilog.debug(DOMAIN, TAG, 'getString(%{public}s) failed: %{public}s', key, String(e));
       return defaultValue;
     }
   }
@@ -201,7 +202,8 @@ export class PreferencesService {
     if (!this.store) return defaultValue;
     try {
       return this.store.getSync(key, defaultValue) as boolean;
-    } catch (_e) {
+    } catch (e) {
+      hilog.debug(DOMAIN, TAG, 'getBoolean(%{public}s) failed: %{public}s', key, String(e));
       return defaultValue;
     }
   }
@@ -216,7 +218,8 @@ export class PreferencesService {
     if (!this.store) return defaultValue;
     try {
       return this.store.getSync(key, defaultValue) as number;
-    } catch (_e) {
+    } catch (e) {
+      hilog.debug(DOMAIN, TAG, 'getNumber(%{public}s) failed: %{public}s', key, String(e));
       return defaultValue;
     }
   }

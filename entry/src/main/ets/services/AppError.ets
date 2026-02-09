@@ -150,7 +150,7 @@ export function showAppError(error: AppError): void {
       duration: error.kind === AppErrorKind.RATE_LIMIT ? 5000 : 3000,
       bottom: 80
     });
-  } catch (_e) {
+  } catch (e) {
     // promptAction may not be available in all contexts
     hilog.error(DOMAIN, TAG, 'Failed to show toast for error: %{public}s', error.userMessage);
   }
