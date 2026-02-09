@@ -149,7 +149,12 @@ export struct ForwardPickerPage {
     this.isForwarding = true;
 
     try {
-      const forwardParams: Record<string, Object> = { chat_id: targetChatId, from_chat_id: this.sourceChatId, message_ids: [this.messageId], send_copy: false, remove_caption: false };
+      const forwardParams: Record<string, Object> = {};
+      forwardParams['chat_id'] = targetChatId;
+      forwardParams['from_chat_id'] = this.sourceChatId;
+      forwardParams['message_ids'] = [this.messageId];
+      forwardParams['send_copy'] = false;
+      forwardParams['remove_caption'] = false;
       await TDLibClient.getInstance().send('forwardMessages', forwardParams);
 
       // Navigate to forwarded chat

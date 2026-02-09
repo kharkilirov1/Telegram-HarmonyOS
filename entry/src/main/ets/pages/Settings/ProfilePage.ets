@@ -443,21 +443,22 @@ export struct ProfilePage {
     this.isSaving = true;
     try {
       if (this.editFirstName !== this.firstName || this.editLastName !== this.lastName) {
-        const nameParams: Record<string, Object> = {
-          first_name: this.editFirstName.trim(),
-          last_name: this.editLastName.trim()
-        };
+        const nameParams: Record<string, Object> = {};
+        nameParams['first_name'] = this.editFirstName.trim();
+        nameParams['last_name'] = this.editLastName.trim();
         await TDLibClient.getInstance().send('setName', nameParams);
         this.firstName = this.editFirstName.trim();
         this.lastName = this.editLastName.trim();
       }
       if (this.editBio !== this.bio) {
-        const bioParams: Record<string, Object> = { bio: this.editBio.trim() };
+        const bioParams: Record<string, Object> = {};
+        bioParams['bio'] = this.editBio.trim();
         await TDLibClient.getInstance().send('setBio', bioParams);
         this.bio = this.editBio.trim();
       }
       if (this.editUsername !== this.username) {
-        const usernameParams: Record<string, Object> = { username: this.editUsername.trim() };
+        const usernameParams: Record<string, Object> = {};
+        usernameParams['username'] = this.editUsername.trim();
         await TDLibClient.getInstance().send('setUsername', usernameParams);
         this.username = this.editUsername.trim();
       }

@@ -349,7 +349,9 @@ export struct CreateGroupPage {
     this.isCreating = true;
 
     try {
-      const createGroupParams: Record<string, Object> = { user_ids: this.selectedUserIds, title: this.groupName.trim() };
+      const createGroupParams: Record<string, Object> = {};
+      createGroupParams['user_ids'] = this.selectedUserIds;
+      createGroupParams['title'] = this.groupName.trim();
       const result = await TDLibClient.getInstance().send('createNewBasicGroupChat', createGroupParams) as Record<string, number>;
 
       const chatId = result['id'] || 0;

@@ -74,7 +74,9 @@ export class ContactsController {
   }
 
   async searchContacts(query: string, limit: number = 50): Promise<User[]> {
-    const searchParams: Record<string, Object> = { query: query, limit: limit };
+    const searchParams: Record<string, Object> = {};
+    searchParams['query'] = query;
+    searchParams['limit'] = limit;
     const result = await TDLibClient.getInstance()
       .send('searchContacts', searchParams) as Record<string, Object>;
     const userIds = result['user_ids'] as number[];
@@ -97,20 +99,21 @@ export class ContactsController {
 
   async addContact(userId: number, firstName: string, lastName: string,
     phoneNumber: string): Promise<void> {
-    const contact: Record<string, Object> = {
-      '@type': 'contact',
-      phone_number: phoneNumber,
-      first_name: firstName,
-      last_name: lastName,
-      user_id: userId
-    };
-    const addParams: Record<string, Object> = { contact: contact };
+    const contact: Record<string, Object> = {};
+    contact['@type'] = 'contact';
+    contact['phone_number'] = phoneNumber;
+    contact['first_name'] = firstName;
+    contact['last_name'] = lastName;
+    contact['user_id'] = userId;
+    const addParams: Record<string, Object> = {};
+    addParams['contact'] = contact;
     await TDLibClient.getInstance().send('addContact', addParams);
   }
 
   async deleteContact(userId: number): Promise<void> {
     const removeIds: number[] = [userId];
-    const removeParams: Record<string, Object> = { user_ids: removeIds };
+    const removeParams: Record<string, Object> = {};
+    removeParams['user_ids'] = removeIds;
     await TDLibClient.getInstance().send('removeContacts', removeParams);
 
     const idx = this.contactIds.indexOf(userId);
@@ -124,7 +127,8 @@ export class ContactsController {
 
   private async loadUser(userId: number): Promise<User | undefined> {
     try {
-      const userParams: Record<string, Object> = { user_id: userId };
+      const userParams: Record<string, Object> = {};
+      userParams['user_id'] = userId;
       const result = await TDLibClient.getInstance()
         .send('getUser', userParams) as Record<string, Object>;
       const user = this.parseUser(result);
@@ -184,9 +188,11 @@ export class ContactsController {
       const user = this.parseUser(rawUser);
       this.usersById.set(user.id, user);
 
+      const userInfoArgs: Record<string, Object> = {};
+      userInfoArgs['userId'] = user.id;
       NotificationCenter.getInstance().post(
         EventId.USER_INFO_UPDATED,
-        { userId: user.id } as Record<string, Object>
+        userInfoArgs
       );
     });
 
@@ -202,9 +208,11 @@ export class ContactsController {
           user.lastSeenDate = (status['was_online'] as number) || 0;
         }
 
+        const statusArgs: Record<string, Object> = {};
+        statusArgs['userId'] = userId;
         NotificationCenter.getInstance().post(
           EventId.USER_STATUS_UPDATED,
-          { userId: userId } as Record<string, Object>
+          statusArgs
         );
       }
     });

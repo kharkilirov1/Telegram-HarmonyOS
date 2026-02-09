@@ -79,7 +79,8 @@ export class AuthController {
       // Handle states that need automatic responses
       if (stateType === 'authorizationStateWaitEncryptionKey') {
         const dbKey = SecurityService.getInstance().getDatabaseEncryptionKey();
-        const params: Record<string, Object> = { encryption_key: dbKey };
+        const params: Record<string, Object> = {};
+        params['encryption_key'] = dbKey;
         client.send('checkDatabaseEncryptionKey', params);
         return;
       }
@@ -94,9 +95,11 @@ export class AuthController {
         this.fetchMyUserId();
       }
 
+      const eventArgs: Record<string, Object> = {};
+      eventArgs['state'] = stateType;
       NotificationCenter.getInstance().post(
         EventId.AUTH_STATE_CHANGED,
-        { state: stateType } as Record<string, Object>
+        eventArgs
       );
     });
   }

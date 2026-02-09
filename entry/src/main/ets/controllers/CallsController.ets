@@ -47,11 +47,10 @@ export class CallsController {
   async loadCallHistory(limit: number = 50): Promise<void> {
     try {
       // TDLib: searchCallMessages to get call history
-      const searchParams: Record<string, Object> = {
-        offset: '',
-        limit: limit,
-        only_missed: false
-      };
+      const searchParams: Record<string, Object> = {};
+      searchParams['offset'] = '';
+      searchParams['limit'] = limit;
+      searchParams['only_missed'] = false;
       const result = await TDLibClient.getInstance()
         .send('searchCallMessages', searchParams) as Record<string, Object>;
 
@@ -75,30 +74,27 @@ export class CallsController {
 
   async startCall(userId: number, isVideo: boolean = false): Promise<void> {
     const libraryVersions: string[] = ['5.0.0'];
-    const protocol: Record<string, Object> = {
-      '@type': 'callProtocol',
-      udp_p2p: true,
-      udp_reflector: true,
-      min_layer: 65,
-      max_layer: 92,
-      library_versions: libraryVersions
-    };
-    const callParams: Record<string, Object> = {
-      user_id: userId,
-      protocol: protocol,
-      is_video: isVideo
-    };
+    const protocol: Record<string, Object> = {};
+    protocol['@type'] = 'callProtocol';
+    protocol['udp_p2p'] = true;
+    protocol['udp_reflector'] = true;
+    protocol['min_layer'] = 65;
+    protocol['max_layer'] = 92;
+    protocol['library_versions'] = libraryVersions;
+    const callParams: Record<string, Object> = {};
+    callParams['user_id'] = userId;
+    callParams['protocol'] = protocol;
+    callParams['is_video'] = isVideo;
     await TDLibClient.getInstance().send('createCall', callParams);
   }
 
   async discardCall(callId: number): Promise<void> {
-    const discardParams: Record<string, Object> = {
-      call_id: callId,
-      is_disconnected: false,
-      duration: 0,
-      is_video: false,
-      connection_id: 0
-    };
+    const discardParams: Record<string, Object> = {};
+    discardParams['call_id'] = callId;
+    discardParams['is_disconnected'] = false;
+    discardParams['duration'] = 0;
+    discardParams['is_video'] = false;
+    discardParams['connection_id'] = 0;
     await TDLibClient.getInstance().send('discardCall', discardParams);
   }
 
@@ -175,9 +171,12 @@ export class CallsController {
         this.loadCallHistory();
       }
 
+      const callStateArgs: Record<string, Object> = {};
+      callStateArgs['callId'] = callId;
+      callStateArgs['state'] = stateType;
       NotificationCenter.getInstance().post(
         EventId.CALL_STATE_UPDATED,
-        { callId: callId, state: stateType } as Record<string, Object>
+        callStateArgs
       );
     });
   }

@@ -34,7 +34,8 @@ export struct UserInfoPage {
 
   private async loadUserInfo(): Promise<void> {
     try {
-      const getUserParams: Record<string, Object> = { user_id: this.userId };
+      const getUserParams: Record<string, Object> = {};
+      getUserParams['user_id'] = this.userId;
       const result = await TDLibClient.getInstance().send('getUser', getUserParams);
       this.firstName = (result['first_name'] as string) || 'User';
       this.lastName = (result['last_name'] as string) || '';
@@ -42,7 +43,8 @@ export struct UserInfoPage {
       this.phoneNumber = (result['phone_number'] as string) || '';
 
       // Get user full info (bio, common groups)
-      const getFullInfoParams: Record<string, Object> = { user_id: this.userId };
+      const getFullInfoParams: Record<string, Object> = {};
+      getFullInfoParams['user_id'] = this.userId;
       const fullInfo = await TDLibClient.getInstance().send('getUserFullInfo', getFullInfoParams);
       this.bio = (fullInfo['bio'] as string) || '';
       this.commonGroupsCount = (fullInfo['group_in_common_count'] as number) || 0;
@@ -213,10 +215,9 @@ export struct UserInfoPage {
               .width('100%').height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath({
-                  name: 'SharedMedia',
-                  param: { chatId: this.userId } as Record<string, number>
-                });
+                const navParam: Record<string, Object> = {};
+                navParam['chatId'] = this.userId;
+                this.navPathStack.pushPath(new NavPathInfo('SharedMedia', navParam));
               })
 
               // Common groups

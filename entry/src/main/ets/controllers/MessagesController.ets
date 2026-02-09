@@ -150,7 +150,7 @@ interface TdChatAction {
 }
 
 // --- TDLib raw message ---
-interface TdMessage {
+export interface TdMessage {
   id: number;
   chat_id: number;
   sender_id?: TdMessageSender;
@@ -294,7 +294,7 @@ export class MessagesController {
   async loadMessages(chatId: number, fromMessageId: number = 0,
     limit: number = 50): Promise<Message[]> {
     const result: TdMessages = await TDLibClient.getInstance()
-      .getChatHistory(chatId, fromMessageId, limit) as TdMessages;
+      .getChatHistory(chatId, fromMessageId, limit) as unknown as TdMessages;
     const rawMessages: TdMessage[] | undefined = result.messages;
     const parsed: Message[] = [];
 
@@ -323,11 +323,10 @@ export class MessagesController {
   }
 
   async deleteMessage(chatId: number, messageId: number): Promise<void> {
-    const deleteParams: Record<string, Object> = {
-      chat_id: chatId,
-      message_ids: [messageId],
-      revoke: true
-    };
+    const deleteParams: Record<string, Object> = {};
+    deleteParams['chat_id'] = chatId;
+    deleteParams['message_ids'] = [messageId];
+    deleteParams['revoke'] = true;
     await TDLibClient.getInstance().send('deleteMessages', deleteParams);
 
     // Remove from local cache
@@ -339,7 +338,9 @@ export class MessagesController {
       }
     }
 
-    const eventArgs: Record<string, Object> = { chatId: chatId, messageId: messageId };
+    const eventArgs: Record<string, Object> = {};
+    eventArgs['chatId'] = chatId;
+    eventArgs['messageId'] = messageId;
     NotificationCenter.getInstance().post(EventId.MESSAGE_DELETED, eventArgs);
   }
 
@@ -347,29 +348,33 @@ export class MessagesController {
     isAnonymous: boolean = true, isQuiz: boolean = false,
     correctOptionId: number = -1): Promise<void> {
 
-    let pollTypeRecord: Record<string, Object>;
+    let pollTypeRecord: Record<string, Object> = {};
     if (isQuiz) {
-      pollTypeRecord = { '@type': 'pollTypeQuiz', correct_option_id: correctOptionId };
+      pollTypeRecord['@type'] = 'pollTypeQuiz';
+      pollTypeRecord['correct_option_id'] = correctOptionId;
     } else {
-      pollTypeRecord = { '@type': 'pollTypeRegular', allow_multiple_answers: false };
+      pollTypeRecord['@type'] = 'pollTypeRegular';
+      pollTypeRecord['allow_multiple_answers'] = false;
     }
 
-    const formattedQuestion: Record<string, Object> = { '@type': 'formattedText', text: question };
+    const formattedQuestion: Record<string, Object> = {};
+    formattedQuestion['@type'] = 'formattedText';
+    formattedQuestion['text'] = question;
     const formattedOptions: Record<string, Object>[] = options.map((o: string): Record<string, Object> => {
-      const opt: Record<string, Object> = { '@type': 'formattedText', text: o };
+      const opt: Record<string, Object> = {};
+      opt['@type'] = 'formattedText';
+      opt['text'] = o;
       return opt;
     });
-    const inputMessageContent: Record<string, Object> = {
-      '@type': 'inputMessagePoll',
-      question: formattedQuestion,
-      options: formattedOptions,
-      is_anonymous: isAnonymous,
-      type: pollTypeRecord
-    };
-    const sendPollParams: Record<string, Object> = {
-      chat_id: chatId,
-      input_message_content: inputMessageContent
-    };
+    const inputMessageContent: Record<string, Object> = {};
+    inputMessageContent['@type'] = 'inputMessagePoll';
+    inputMessageContent['question'] = formattedQuestion;
+    inputMessageContent['options'] = formattedOptions;
+    inputMessageContent['is_anonymous'] = isAnonymous;
+    inputMessageContent['type'] = pollTypeRecord;
+    const sendPollParams: Record<string, Object> = {};
+    sendPollParams['chat_id'] = chatId;
+    sendPollParams['input_message_content'] = inputMessageContent;
     await TDLibClient.getInstance().send('sendMessage', sendPollParams);
   }
 
@@ -377,41 +382,42 @@ export class MessagesController {
     replyToMessageId: number = 0): Promise<void> {
     let replyToParam: Record<string, Object> | undefined = undefined;
     if (replyToMessageId > 0) {
-      replyToParam = { '@type': 'inputMessageReplyToMessage', message_id: replyToMessageId };
+      replyToParam = {};
+      replyToParam['@type'] = 'inputMessageReplyToMessage';
+      replyToParam['message_id'] = replyToMessageId;
     }
 
-    const formattedText: Record<string, Object> = { '@type': 'formattedText', text: text };
-    const inputContent: Record<string, Object> = {
-      '@type': 'inputMessageText',
-      text: formattedText
-    };
-    const schedulingState: Record<string, Object> = {
-      '@type': 'messageSchedulingStateSendAtDate',
-      send_date: sendDate
-    };
-    const sendScheduledParams: Record<string, Object> = {
-      chat_id: chatId,
-      reply_to: replyToParam as Object,
-      input_message_content: inputContent,
-      scheduling_state: schedulingState
-    };
+    const formattedText: Record<string, Object> = {};
+    formattedText['@type'] = 'formattedText';
+    formattedText['text'] = text;
+    const inputContent: Record<string, Object> = {};
+    inputContent['@type'] = 'inputMessageText';
+    inputContent['text'] = formattedText;
+    const schedulingState: Record<string, Object> = {};
+    schedulingState['@type'] = 'messageSchedulingStateSendAtDate';
+    schedulingState['send_date'] = sendDate;
+    const sendScheduledParams: Record<string, Object> = {};
+    sendScheduledParams['chat_id'] = chatId;
+    if (replyToParam !== undefined) {
+      sendScheduledParams['reply_to'] = replyToParam;
+    }
+    sendScheduledParams['input_message_content'] = inputContent;
+    sendScheduledParams['scheduling_state'] = schedulingState;
     await TDLibClient.getInstance().send('sendMessage', sendScheduledParams);
   }
 
   async votePoll(chatId: number, messageId: number, optionIds: number[]): Promise<void> {
-    const voteParams: Record<string, Object> = {
-      chat_id: chatId,
-      message_id: messageId,
-      option_ids: optionIds
-    };
+    const voteParams: Record<string, Object> = {};
+    voteParams['chat_id'] = chatId;
+    voteParams['message_id'] = messageId;
+    voteParams['option_ids'] = optionIds;
     await TDLibClient.getInstance().send('setPollAnswer', voteParams);
   }
 
   async getScheduledMessages(chatId: number): Promise<Message[]> {
-    const scheduledParams: Record<string, Object> = {
-      chat_id: chatId
-    };
-    const result: TdMessages = await TDLibClient.getInstance().send('getChatScheduledMessages', scheduledParams) as TdMessages;
+    const scheduledParams: Record<string, Object> = {};
+    scheduledParams['chat_id'] = chatId;
+    const result: TdMessages = await TDLibClient.getInstance().send('getChatScheduledMessages', scheduledParams) as unknown as TdMessages;
     const rawMessages: TdMessage[] | undefined = result.messages;
     if (!rawMessages) return [];
     return rawMessages.map((raw: TdMessage): Message => this.parseMessage(raw));
@@ -425,39 +431,48 @@ export class MessagesController {
       // Build sender_id parameter for TDLib
       let senderParam: Record<string, Object> | undefined = undefined;
       if (senderId > 0) {
-        senderParam = { '@type': 'messageSenderUser', user_id: senderId };
+        senderParam = {};
+        senderParam['@type'] = 'messageSenderUser';
+        senderParam['user_id'] = senderId;
       }
 
       // Map filter string to TDLib searchMessagesFilter type
       let filterParam: Record<string, Object> | undefined = undefined;
       switch (filter) {
         case 'photo':
-          filterParam = { '@type': 'searchMessagesFilterPhoto' };
+          filterParam = {};
+          filterParam['@type'] = 'searchMessagesFilterPhoto';
           break;
         case 'video':
-          filterParam = { '@type': 'searchMessagesFilterVideo' };
+          filterParam = {};
+          filterParam['@type'] = 'searchMessagesFilterVideo';
           break;
         case 'document':
-          filterParam = { '@type': 'searchMessagesFilterDocument' };
+          filterParam = {};
+          filterParam['@type'] = 'searchMessagesFilterDocument';
           break;
         case 'url':
-          filterParam = { '@type': 'searchMessagesFilterUrl' };
+          filterParam = {};
+          filterParam['@type'] = 'searchMessagesFilterUrl';
           break;
         default:
           break;
       }
 
-      const searchParams: Record<string, Object> = {
-        chat_id: chatId,
-        query: query,
-        sender_id: senderParam as Object,
-        from_message_id: fromMessageId,
-        offset: 0,
-        limit: limit,
-        filter: filterParam as Object,
-        message_thread_id: 0
-      };
-      const result: TdMessages = await TDLibClient.getInstance().send('searchChatMessages', searchParams) as TdMessages;
+      const searchParams: Record<string, Object> = {};
+      searchParams['chat_id'] = chatId;
+      searchParams['query'] = query;
+      if (senderParam !== undefined) {
+        searchParams['sender_id'] = senderParam;
+      }
+      searchParams['from_message_id'] = fromMessageId;
+      searchParams['offset'] = 0;
+      searchParams['limit'] = limit;
+      if (filterParam !== undefined) {
+        searchParams['filter'] = filterParam;
+      }
+      searchParams['message_thread_id'] = 0;
+      const result: TdMessages = await TDLibClient.getInstance().send('searchChatMessages', searchParams) as unknown as TdMessages;
       const rawMessages: TdMessage[] | undefined = result.messages;
       if (!rawMessages) return [];
       return rawMessages.map((raw: TdMessage): Message => this.parseMessage(raw));
@@ -470,31 +485,32 @@ export class MessagesController {
 
   async setDraft(chatId: number, text: string, replyToMessageId: number = 0): Promise<void> {
     if (text.length === 0 && replyToMessageId === 0) {
-      const clearDraftParams: Record<string, Object> = {
-        chat_id: chatId,
-        draft_message: undefined as Object
-      };
+      const clearDraftParams: Record<string, Object> = {};
+      clearDraftParams['chat_id'] = chatId;
       await TDLibClient.getInstance().send('setChatDraftMessage', clearDraftParams);
     } else {
       let draftReplyTo: Record<string, Object> | undefined = undefined;
       if (replyToMessageId > 0) {
-        draftReplyTo = { '@type': 'inputMessageReplyToMessage', message_id: replyToMessageId };
+        draftReplyTo = {};
+        draftReplyTo['@type'] = 'inputMessageReplyToMessage';
+        draftReplyTo['message_id'] = replyToMessageId;
       }
 
-      const draftFormattedText: Record<string, Object> = { '@type': 'formattedText', text: text };
-      const draftInputMessageText: Record<string, Object> = {
-        '@type': 'inputMessageText',
-        text: draftFormattedText
-      };
-      const draftMessage: Record<string, Object> = {
-        '@type': 'draftMessage',
-        reply_to: draftReplyTo as Object,
-        input_message_text: draftInputMessageText
-      };
-      const setDraftParams: Record<string, Object> = {
-        chat_id: chatId,
-        draft_message: draftMessage
-      };
+      const draftFormattedText: Record<string, Object> = {};
+      draftFormattedText['@type'] = 'formattedText';
+      draftFormattedText['text'] = text;
+      const draftInputMessageText: Record<string, Object> = {};
+      draftInputMessageText['@type'] = 'inputMessageText';
+      draftInputMessageText['text'] = draftFormattedText;
+      const draftMessage: Record<string, Object> = {};
+      draftMessage['@type'] = 'draftMessage';
+      if (draftReplyTo !== undefined) {
+        draftMessage['reply_to'] = draftReplyTo;
+      }
+      draftMessage['input_message_text'] = draftInputMessageText;
+      const setDraftParams: Record<string, Object> = {};
+      setDraftParams['chat_id'] = chatId;
+      setDraftParams['draft_message'] = draftMessage;
       await TDLibClient.getInstance().send('setChatDraftMessage', setDraftParams);
     }
   }
@@ -505,7 +521,7 @@ export class MessagesController {
     const client = TDLibClient.getInstance();
 
     client.on('updateNewChat', (update: Record<string, Object>) => {
-      const data: TdUpdateNewChat = update as TdUpdateNewChat;
+      const data: TdUpdateNewChat = update as unknown as TdUpdateNewChat;
       const rawChat: TdChat | undefined = data.chat;
       if (!rawChat) return;
 
@@ -518,7 +534,7 @@ export class MessagesController {
     });
 
     client.on('updateChatLastMessage', (update: Record<string, Object>) => {
-      const data: TdUpdateChatLastMessage = update as TdUpdateChatLastMessage;
+      const data: TdUpdateChatLastMessage = update as unknown as TdUpdateChatLastMessage;
       const chatId: number = data.chat_id || 0;
       const chat = this.chatsById.get(chatId);
       if (!chat) return;
@@ -529,7 +545,7 @@ export class MessagesController {
         chat.lastMessageDate = rawMsg.date || 0;
 
         const sender: TdMessageSender | undefined = rawMsg.sender_id;
-        if (sender && tdType(sender as Record<string, Object>) === 'messageSenderUser') {
+        if (sender && tdType(sender as unknown as Record<string, Object>) === 'messageSenderUser') {
           chat.lastMessageSenderId = sender.user_id || 0;
         }
       }
@@ -545,7 +561,7 @@ export class MessagesController {
     });
 
     client.on('updateChatPosition', (update: Record<string, Object>) => {
-      const data: TdUpdateChatPosition = update as TdUpdateChatPosition;
+      const data: TdUpdateChatPosition = update as unknown as TdUpdateChatPosition;
       const chatId: number = data.chat_id || 0;
       const chat = this.chatsById.get(chatId);
       if (!chat) return;
@@ -559,7 +575,7 @@ export class MessagesController {
     });
 
     client.on('updateNewMessage', (update: Record<string, Object>) => {
-      const data: TdUpdateNewMessage = update as TdUpdateNewMessage;
+      const data: TdUpdateNewMessage = update as unknown as TdUpdateNewMessage;
       const rawMsg: TdMessage | undefined = data.message;
       if (!rawMsg) return;
 
@@ -573,8 +589,10 @@ export class MessagesController {
         this.messagesByChat.set(msg.chatId, chatMessages);
       }
 
-      const eventArgs: Record<string, Object> = { chatId: msg.chatId, message: msg };
-      NotificationCenter.getInstance().post(EventId.NEW_MESSAGE, eventArgs);
+      const newMsgEventArgs: Record<string, Object> = {};
+      newMsgEventArgs['chatId'] = msg.chatId;
+      newMsgEventArgs['message'] = msg;
+      NotificationCenter.getInstance().post(EventId.NEW_MESSAGE, newMsgEventArgs);
 
       // Trigger push notification for incoming messages
       if (!msg.isOutgoing) {
@@ -591,7 +609,7 @@ export class MessagesController {
     });
 
     client.on('updateMessageContent', (update: Record<string, Object>) => {
-      const data: TdUpdateMessageContent = update as TdUpdateMessageContent;
+      const data: TdUpdateMessageContent = update as unknown as TdUpdateMessageContent;
       const chatId: number = data.chat_id || 0;
       const messageId: number = data.message_id || 0;
       const newContent: TdMessageContent | undefined = data.new_content;
@@ -601,14 +619,16 @@ export class MessagesController {
         const msg = messages.find((m: Message): boolean => m.id === messageId);
         if (msg) {
           this.applyContent(msg, newContent);
-          const eventArgs: Record<string, Object> = { chatId: chatId, messageId: messageId };
-          NotificationCenter.getInstance().post(EventId.MESSAGE_EDITED, eventArgs);
+          const editedEventArgs: Record<string, Object> = {};
+          editedEventArgs['chatId'] = chatId;
+          editedEventArgs['messageId'] = messageId;
+          NotificationCenter.getInstance().post(EventId.MESSAGE_EDITED, editedEventArgs);
         }
       }
     });
 
     client.on('updateChatReadInbox', (update: Record<string, Object>) => {
-      const data: TdUpdateChatReadInbox = update as TdUpdateChatReadInbox;
+      const data: TdUpdateChatReadInbox = update as unknown as TdUpdateChatReadInbox;
       const chatId: number = data.chat_id || 0;
       const unreadCount: number = data.unread_count || 0;
       const chat = this.chatsById.get(chatId);
@@ -619,7 +639,7 @@ export class MessagesController {
     });
 
     client.on('updateChatNotificationSettings', (update: Record<string, Object>) => {
-      const data: TdUpdateChatNotificationSettings = update as TdUpdateChatNotificationSettings;
+      const data: TdUpdateChatNotificationSettings = update as unknown as TdUpdateChatNotificationSettings;
       const chatId: number = data.chat_id || 0;
       const settings: TdNotificationSettings | undefined = data.notification_settings;
       const chat = this.chatsById.get(chatId);
@@ -631,13 +651,13 @@ export class MessagesController {
     });
 
     client.on('updateChatAction', (update: Record<string, Object>) => {
-      const data: TdUpdateChatAction = update as TdUpdateChatAction;
+      const data: TdUpdateChatAction = update as unknown as TdUpdateChatAction;
       const chatId: number = data.chat_id || 0;
       const action: TdChatAction | undefined = data.action;
       const chat = this.chatsById.get(chatId);
 
       if (chat && action) {
-        const actionType: string = tdType(action as Record<string, Object>);
+        const actionType: string = tdType(action as unknown as Record<string, Object>);
         if (actionType === 'chatActionTyping') {
           chat.isTyping = true;
           chat.typingDescription = 'typing...';
@@ -646,16 +666,18 @@ export class MessagesController {
           setTimeout(() => {
             chat.isTyping = false;
             chat.typingDescription = '';
-            const eventArgs: Record<string, Object> = { chatId: chatId };
-            NotificationCenter.getInstance().post(EventId.CHAT_ACTION_UPDATED, eventArgs);
+            const timeoutEventArgs: Record<string, Object> = {};
+            timeoutEventArgs['chatId'] = chatId;
+            NotificationCenter.getInstance().post(EventId.CHAT_ACTION_UPDATED, timeoutEventArgs);
           }, 5000);
         } else if (actionType === 'chatActionCancel') {
           chat.isTyping = false;
           chat.typingDescription = '';
         }
 
-        const eventArgs: Record<string, Object> = { chatId: chatId };
-        NotificationCenter.getInstance().post(EventId.CHAT_ACTION_UPDATED, eventArgs);
+        const actionEventArgs: Record<string, Object> = {};
+        actionEventArgs['chatId'] = chatId;
+        NotificationCenter.getInstance().post(EventId.CHAT_ACTION_UPDATED, actionEventArgs);
       }
     });
   }
@@ -682,7 +704,7 @@ export class MessagesController {
     // Determine type
     const chatType: TdChatType | undefined = raw.type;
     if (chatType) {
-      const t: string = tdType(chatType as Record<string, Object>);
+      const t: string = tdType(chatType as unknown as Record<string, Object>);
       chat.isGroup = t === 'chatTypeSupergroup' || t === 'chatTypeBasicGroup';
       chat.isChannel = t === 'chatTypeSupergroup' && (chatType.is_channel === true);
     }
@@ -732,7 +754,7 @@ export class MessagesController {
 
     // Reply
     const replyTo: TdReplyTo | undefined = raw.reply_to;
-    if (replyTo && tdType(replyTo as Record<string, Object>) === 'messageReplyToMessage') {
+    if (replyTo && tdType(replyTo as unknown as Record<string, Object>) === 'messageReplyToMessage') {
       msg.replyToMessageId = replyTo.message_id || 0;
     }
 
@@ -754,7 +776,7 @@ export class MessagesController {
     // Scheduling state
     const scheduling: TdSchedulingState | undefined = raw.scheduling_state;
     if (scheduling) {
-      const schedType: string = tdType(scheduling as Record<string, Object>);
+      const schedType: string = tdType(scheduling as unknown as Record<string, Object>);
       if (schedType === 'messageSchedulingStateSendAtDate') {
         msg.schedulingState = scheduling.send_date || 0;
       }
@@ -764,7 +786,7 @@ export class MessagesController {
     const selfDestruct: TdSelfDestructType | undefined = raw.self_destruct_type;
     if (selfDestruct) {
       msg.selfDestructIn = selfDestruct.self_destruct_time || 0;
-      const sdType: string = tdType(selfDestruct as Record<string, Object>);
+      const sdType: string = tdType(selfDestruct as unknown as Record<string, Object>);
       if (sdType === 'messageSelfDestructTypeImmediately') {
         msg.isViewOnce = true;
       }
@@ -782,7 +804,7 @@ export class MessagesController {
   }
 
   private applyContent(msg: Message, content: TdMessageContent): void {
-    const type: string = tdType(content as Record<string, Object>);
+    const type: string = tdType(content as unknown as Record<string, Object>);
 
     switch (type) {
       case 'messageText': {
@@ -856,7 +878,7 @@ export class MessagesController {
           msg.pollIsAnonymous = poll.is_anonymous !== false;
 
           const pt: TdPollType | undefined = poll.type;
-          msg.pollType = (pt ? tdType(pt as Record<string, Object>) : '') === 'pollTypeQuiz' ? 'quiz' : 'regular';
+          msg.pollType = (pt ? tdType(pt as unknown as Record<string, Object>) : '') === 'pollTypeQuiz' ? 'quiz' : 'regular';
 
           const opts: TdPollOption[] | undefined = poll.options;
           if (opts) {
@@ -885,7 +907,7 @@ export class MessagesController {
     const content: TdMessageContent | undefined = rawMsg.content;
     if (!content) return '';
 
-    const type: string = tdType(content as Record<string, Object>);
+    const type: string = tdType(content as unknown as Record<string, Object>);
     switch (type) {
       case 'messageText': {
         return content.text?.text || '';

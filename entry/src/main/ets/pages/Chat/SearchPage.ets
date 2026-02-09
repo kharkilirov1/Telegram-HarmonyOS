@@ -2,7 +2,7 @@
 // Reference: Telegram Android SearchActivity, iOS ChatSearchController
 
 import { TDLibClient } from '../../services/TDLibClient';
-import { MessagesController } from '../../controllers/MessagesController';
+import { MessagesController, TdMessage } from '../../controllers/MessagesController';
 import { ContactsController } from '../../controllers/ContactsController';
 import { Message, MessageContentType } from '../../models/Message';
 import { User } from '../../models/User';
@@ -402,7 +402,9 @@ export struct SearchPage {
 
   private async searchChats(query: string): Promise<Chat[]> {
     try {
-      const searchChatsParams: Record<string, Object> = { query: query, limit: 20 };
+      const searchChatsParams: Record<string, Object> = {};
+      searchChatsParams['query'] = query;
+      searchChatsParams['limit'] = 20;
       const result = await TDLibClient.getInstance().send('searchChats', searchChatsParams);
 
       const chatIds = result['chat_ids'] as number[];
@@ -426,8 +428,15 @@ export struct SearchPage {
 
   private async searchMessages(query: string): Promise<Message[]> {
     try {
-      const chatListMain: Record<string, Object> = { '@type': 'chatListMain' };
-      const searchMsgParams: Record<string, Object> = { chat_list: chatListMain, query: query, offset: '', offset_chat_id: 0, offset_message_id: 0, limit: 50 };
+      const chatListMain: Record<string, Object> = {};
+      chatListMain['@type'] = 'chatListMain';
+      const searchMsgParams: Record<string, Object> = {};
+      searchMsgParams['chat_list'] = chatListMain;
+      searchMsgParams['query'] = query;
+      searchMsgParams['offset'] = '';
+      searchMsgParams['offset_chat_id'] = 0;
+      searchMsgParams['offset_message_id'] = 0;
+      searchMsgParams['limit'] = 50;
       const result = await TDLibClient.getInstance().send('searchMessages', searchMsgParams);
 
       const rawMessages = result['messages'] as Record<string, Object>[];
@@ -436,7 +445,7 @@ export struct SearchPage {
       if (rawMessages) {
         const mc = MessagesController.getInstance();
         for (const raw of rawMessages) {
-          const msg = mc.parseMessage(raw);
+          const msg = mc.parseMessage(raw as unknown as TdMessage);
           parsed.push(msg);
         }
       }
@@ -451,7 +460,9 @@ export struct SearchPage {
 
   private async openPrivateChat(userId: number): Promise<void> {
     try {
-      const privateChatParams: Record<string, Object> = { user_id: userId, force: false };
+      const privateChatParams: Record<string, Object> = {};
+      privateChatParams['user_id'] = userId;
+      privateChatParams['force'] = false;
       const result = await TDLibClient.getInstance().send('createPrivateChat', privateChatParams);
 
       const chatId = result['id'] as number;

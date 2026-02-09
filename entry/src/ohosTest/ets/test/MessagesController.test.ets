@@ -193,56 +193,79 @@ export default function messagesControllerTest() {
     describe('extractTextPreview', () => {
 
       it('should extract text from messageText', 0, () => {
-        const textInner: Record<string, Object> = { 'text': 'Hello world' };
-        const content: Record<string, Object> = { '@type': 'messageText', 'text': textInner };
-        const raw: Record<string, Object> = { 'content': content };
+        const textInner: Record<string, Object> = {};
+        textInner['text'] = 'Hello world';
+        const content: Record<string, Object> = {};
+        content['@type'] = 'messageText';
+        content['text'] = textInner;
+        const raw: Record<string, Object> = {};
+        raw['content'] = content;
         expect(extractTextPreview(raw)).assertEqual('Hello world');
       });
 
       it('should return "Photo" for messagePhoto', 0, () => {
-        const content: Record<string, Object> = { '@type': 'messagePhoto' };
-        const raw: Record<string, Object> = { 'content': content };
+        const content: Record<string, Object> = {};
+        content['@type'] = 'messagePhoto';
+        const raw: Record<string, Object> = {};
+        raw['content'] = content;
         expect(extractTextPreview(raw)).assertEqual('Photo');
       });
 
       it('should return "Video" for messageVideo', 0, () => {
-        const content: Record<string, Object> = { '@type': 'messageVideo' };
-        const raw: Record<string, Object> = { 'content': content };
+        const content: Record<string, Object> = {};
+        content['@type'] = 'messageVideo';
+        const raw: Record<string, Object> = {};
+        raw['content'] = content;
         expect(extractTextPreview(raw)).assertEqual('Video');
       });
 
       it('should return file name for messageDocument', 0, () => {
-        const doc: Record<string, Object> = { 'file_name': 'report.pdf' };
-        const content: Record<string, Object> = { '@type': 'messageDocument', 'document': doc };
-        const raw: Record<string, Object> = { 'content': content };
+        const doc: Record<string, Object> = {};
+        doc['file_name'] = 'report.pdf';
+        const content: Record<string, Object> = {};
+        content['@type'] = 'messageDocument';
+        content['document'] = doc;
+        const raw: Record<string, Object> = {};
+        raw['content'] = content;
         expect(extractTextPreview(raw)).assertEqual('report.pdf');
       });
 
       it('should return "Document" when document has no file_name', 0, () => {
         const doc: Record<string, Object> = {};
-        const content: Record<string, Object> = { '@type': 'messageDocument', 'document': doc };
-        const raw: Record<string, Object> = { 'content': content };
+        const content: Record<string, Object> = {};
+        content['@type'] = 'messageDocument';
+        content['document'] = doc;
+        const raw: Record<string, Object> = {};
+        raw['content'] = content;
         expect(extractTextPreview(raw)).assertEqual('Document');
       });
 
       it('should return "Voice message" for messageVoiceNote', 0, () => {
-        const content: Record<string, Object> = { '@type': 'messageVoiceNote' };
-        const raw: Record<string, Object> = { 'content': content };
+        const content: Record<string, Object> = {};
+        content['@type'] = 'messageVoiceNote';
+        const raw: Record<string, Object> = {};
+        raw['content'] = content;
         expect(extractTextPreview(raw)).assertEqual('Voice message');
       });
 
       it('should return emoji + Sticker for messageSticker', 0, () => {
-        const sticker: Record<string, Object> = { 'emoji': '\u{1F600}' };
-        const content: Record<string, Object> = { '@type': 'messageSticker', 'sticker': sticker };
-        const raw: Record<string, Object> = { 'content': content };
+        const sticker: Record<string, Object> = {};
+        sticker['emoji'] = '\u{1F600}';
+        const content: Record<string, Object> = {};
+        content['@type'] = 'messageSticker';
+        content['sticker'] = sticker;
+        const raw: Record<string, Object> = {};
+        raw['content'] = content;
         const preview = extractTextPreview(raw);
         expect(preview.indexOf('Sticker') >= 0).assertTrue();
         expect(preview.indexOf('\u{1F600}') >= 0).assertTrue();
       });
 
       it('should return "GIF" for messageAnimation', 0, () => {
-        const content: Record<string, Object> = { '@type': 'messageAnimation' };
-        const raw: Record<string, Object> = { 'content': content };
+        const content: Record<string, Object> = {};
+        content['@type'] = 'messageAnimation';
+        const raw: Record<string, Object> = {};
+        raw['content'] = content;
         expect(extractTextPreview(raw)).assertEqual('GIF');
       });
 
@@ -252,8 +275,10 @@ export default function messagesControllerTest() {
       });
 
       it('should strip "message" prefix for unknown types', 0, () => {
-        const content: Record<string, Object> = { '@type': 'messageContact' };
-        const raw: Record<string, Object> = { 'content': content };
+        const content: Record<string, Object> = {};
+        content['@type'] = 'messageContact';
+        const raw: Record<string, Object> = {};
+        raw['content'] = content;
         expect(extractTextPreview(raw)).assertEqual('Contact');
       });
     });

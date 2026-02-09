@@ -38,7 +38,8 @@ export struct InviteLinksPage {
 
     // Get primary invite link from chat info
     try {
-      const getChatParams: Record<string, Object> = { chat_id: this.chatId };
+      const getChatParams: Record<string, Object> = {};
+      getChatParams['chat_id'] = this.chatId;
       const chatResult = await TDLibClient.getInstance().send('getChat', getChatParams);
       const inviteLinkObj = chatResult['invite_link'] as Record<string, string>;
       if (inviteLinkObj) {
@@ -55,7 +56,13 @@ export struct InviteLinksPage {
 
   private async loadLinks(): Promise<void> {
     try {
-      const getLinksParams: Record<string, Object> = { chat_id: this.chatId, creator_user_id: 0, is_revoked: false, offset_date: 0, offset_invite_link: '', limit: 100 };
+      const getLinksParams: Record<string, Object> = {};
+      getLinksParams['chat_id'] = this.chatId;
+      getLinksParams['creator_user_id'] = 0;
+      getLinksParams['is_revoked'] = false;
+      getLinksParams['offset_date'] = 0;
+      getLinksParams['offset_invite_link'] = '';
+      getLinksParams['limit'] = 100;
       const result = await TDLibClient.getInstance().send('getChatInviteLinks', getLinksParams);
       const rawLinks = result['invite_links'] as Record<string, Object>[];
       if (rawLinks && rawLinks.length > 0) {
@@ -97,7 +104,12 @@ export struct InviteLinksPage {
     this.isCreating = true;
 
     try {
-      const createLinkParams: Record<string, Object> = { chat_id: this.chatId, name: '', expiration_date: 0, member_limit: 0, creates_join_request: false };
+      const createLinkParams: Record<string, Object> = {};
+      createLinkParams['chat_id'] = this.chatId;
+      createLinkParams['name'] = '';
+      createLinkParams['expiration_date'] = 0;
+      createLinkParams['member_limit'] = 0;
+      createLinkParams['creates_join_request'] = false;
       const result = await TDLibClient.getInstance().send('createChatInviteLink', createLinkParams);
       const newLink: InviteLink = {
         link: (result['invite_link'] as string) || '',
@@ -115,7 +127,9 @@ export struct InviteLinksPage {
 
   private async revokeLink(link: string): Promise<void> {
     try {
-      const revokeParams: Record<string, Object> = { chat_id: this.chatId, invite_link: link };
+      const revokeParams: Record<string, Object> = {};
+      revokeParams['chat_id'] = this.chatId;
+      revokeParams['invite_link'] = link;
       await TDLibClient.getInstance().send('revokeChatInviteLink', revokeParams);
       this.inviteLinks = this.inviteLinks.map(l => {
         if (l.link === link) {

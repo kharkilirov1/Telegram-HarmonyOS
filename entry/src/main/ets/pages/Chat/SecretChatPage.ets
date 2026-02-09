@@ -99,7 +99,8 @@ export struct SecretChatPage {
 
   private async loadUserName(): Promise<void> {
     try {
-      const getUserParams: Record<string, Object> = { user_id: this.userId };
+      const getUserParams: Record<string, Object> = {};
+      getUserParams['user_id'] = this.userId;
       const result = await TDLibClient.getInstance().send('getUser', getUserParams) as Record<string, string>;
       const first = result['first_name'] || '';
       const last = result['last_name'] || '';
@@ -114,7 +115,8 @@ export struct SecretChatPage {
     this.errorMessage = '';
 
     try {
-      const createSecretParams: Record<string, Object> = { user_id: this.userId };
+      const createSecretParams: Record<string, Object> = {};
+      createSecretParams['user_id'] = this.userId;
       const result = await TDLibClient.getInstance().send('createNewSecretChat', createSecretParams);
 
       const chatType = result['type'] as Record<string, number> | undefined;
@@ -135,7 +137,8 @@ export struct SecretChatPage {
 
   private async fetchSecretChatInfo(): Promise<void> {
     try {
-      const getSecretParams: Record<string, Object> = { secret_chat_id: this.secretChatId };
+      const getSecretParams: Record<string, Object> = {};
+      getSecretParams['secret_chat_id'] = this.secretChatId;
       const secretChat = await TDLibClient.getInstance().send('getSecretChat', getSecretParams);
 
       const state = secretChat['state'] as Record<string, string> | undefined;
@@ -204,7 +207,9 @@ export struct SecretChatPage {
     }
     this.isSettingTimer = true;
     try {
-      const timerParams: Record<string, Object> = { chat_id: this.chatId, message_auto_delete_time: seconds };
+      const timerParams: Record<string, Object> = {};
+      timerParams['chat_id'] = this.chatId;
+      timerParams['message_auto_delete_time'] = seconds;
       await TDLibClient.getInstance().send('setChatMessageAutoDeleteTime', timerParams);
     } catch (e) {
       // Timer setting failed silently; user can retry

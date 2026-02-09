@@ -59,7 +59,8 @@ export struct GroupAdminPage {
 
     // Load current permissions
     try {
-      const getChatParams: Record<string, Object> = { chat_id: this.chatId };
+      const getChatParams: Record<string, Object> = {};
+      getChatParams['chat_id'] = this.chatId;
       const chatResult = await TDLibClient.getInstance().send('getChat', getChatParams);
       const permissions = chatResult['permissions'] as Record<string, boolean>;
       if (permissions) {
@@ -74,7 +75,8 @@ export struct GroupAdminPage {
 
       // Determine public/private from supergroup info
       const supergroupId = Math.abs(this.chatId);
-      const getSgParams: Record<string, Object> = { supergroup_id: supergroupId };
+      const getSgParams: Record<string, Object> = {};
+      getSgParams['supergroup_id'] = supergroupId;
       const sgInfo = await TDLibClient.getInstance().send('getSupergroup', getSgParams);
       const hasUsername = ((sgInfo['usernames'] as Record<string, Object>)?.['editable_username'] as string || '').length > 0;
       this.isPublic = hasUsername;
@@ -88,8 +90,13 @@ export struct GroupAdminPage {
 
   private async loadAdministrators(): Promise<void> {
     try {
-      const adminFilter: Record<string, Object> = { '@type': 'supergroupMembersFilterAdministrators' };
-      const adminMembersParams: Record<string, Object> = { supergroup_id: Math.abs(this.chatId), filter: adminFilter, offset: 0, limit: 100 };
+      const adminFilter: Record<string, Object> = {};
+      adminFilter['@type'] = 'supergroupMembersFilterAdministrators';
+      const adminMembersParams: Record<string, Object> = {};
+      adminMembersParams['supergroup_id'] = Math.abs(this.chatId);
+      adminMembersParams['filter'] = adminFilter;
+      adminMembersParams['offset'] = 0;
+      adminMembersParams['limit'] = 100;
       const result = await TDLibClient.getInstance().send('getSupergroupMembers', adminMembersParams);
       const rawMembers = result['members'] as Record<string, Object>[];
       if (rawMembers && rawMembers.length > 0) {
@@ -104,7 +111,8 @@ export struct GroupAdminPage {
           let name = '';
           let photoUrl: string | null = null;
           try {
-            const getUserParams: Record<string, Object> = { user_id: memberId };
+            const getUserParams: Record<string, Object> = {};
+            getUserParams['user_id'] = memberId;
             const user = await TDLibClient.getInstance().send('getUser', getUserParams);
             const firstName = (user['first_name'] as string) || '';
             const lastName = (user['last_name'] as string) || '';
@@ -140,8 +148,13 @@ export struct GroupAdminPage {
 
   private async loadBannedUsers(): Promise<void> {
     try {
-      const bannedFilter: Record<string, Object> = { '@type': 'supergroupMembersFilterBanned' };
-      const bannedMembersParams: Record<string, Object> = { supergroup_id: Math.abs(this.chatId), filter: bannedFilter, offset: 0, limit: 100 };
+      const bannedFilter: Record<string, Object> = {};
+      bannedFilter['@type'] = 'supergroupMembersFilterBanned';
+      const bannedMembersParams: Record<string, Object> = {};
+      bannedMembersParams['supergroup_id'] = Math.abs(this.chatId);
+      bannedMembersParams['filter'] = bannedFilter;
+      bannedMembersParams['offset'] = 0;
+      bannedMembersParams['limit'] = 100;
       const result = await TDLibClient.getInstance().send('getSupergroupMembers', bannedMembersParams);
       const rawMembers = result['members'] as Record<string, Object>[];
       if (rawMembers && rawMembers.length > 0) {
@@ -150,7 +163,8 @@ export struct GroupAdminPage {
           const memberId = (m['member_id'] as Record<string, number>)?.['user_id'] || 0;
           let name = '';
           try {
-            const getBannedUserParams: Record<string, Object> = { user_id: memberId };
+            const getBannedUserParams: Record<string, Object> = {};
+            getBannedUserParams['user_id'] = memberId;
             const user = await TDLibClient.getInstance().send('getUser', getBannedUserParams);
             const firstName = (user['first_name'] as string) || '';
             const lastName = (user['last_name'] as string) || '';
@@ -179,7 +193,9 @@ export struct GroupAdminPage {
   private async toggleGroupType(): Promise<void> {
     this.isPublic = !this.isPublic;
     try {
-      const toggleHistoryParams: Record<string, Object> = { supergroup_id: Math.abs(this.chatId), is_all_history_available: this.isPublic };
+      const toggleHistoryParams: Record<string, Object> = {};
+      toggleHistoryParams['supergroup_id'] = Math.abs(this.chatId);
+      toggleHistoryParams['is_all_history_available'] = this.isPublic;
       await TDLibClient.getInstance().send('toggleSupergroupIsAllHistoryAvailable', toggleHistoryParams);
     } catch (_e) {
       // Revert on failure
@@ -192,22 +208,23 @@ export struct GroupAdminPage {
     this.isSaving = true;
 
     try {
-      const permissions: Record<string, Object> = {
-        '@type': 'chatPermissions',
-        can_send_basic_messages: this.canSendMessages,
-        can_send_audios: this.canSendMedia,
-        can_send_documents: this.canSendMedia,
-        can_send_photos: this.canSendMedia,
-        can_send_videos: this.canSendMedia,
-        can_send_video_notes: this.canSendMedia,
-        can_send_voice_notes: this.canSendMedia,
-        can_send_polls: this.canSendPolls,
-        can_send_other_messages: this.canSendStickers,
-        can_invite_users: this.canAddMembers,
-        can_pin_messages: this.canPinMessages,
-        can_change_info: this.canChangeInfo
-      };
-      const setPermissionsParams: Record<string, Object> = { chat_id: this.chatId, permissions: permissions };
+      const permissions: Record<string, Object> = {};
+      permissions['@type'] = 'chatPermissions';
+      permissions['can_send_basic_messages'] = this.canSendMessages;
+      permissions['can_send_audios'] = this.canSendMedia;
+      permissions['can_send_documents'] = this.canSendMedia;
+      permissions['can_send_photos'] = this.canSendMedia;
+      permissions['can_send_videos'] = this.canSendMedia;
+      permissions['can_send_video_notes'] = this.canSendMedia;
+      permissions['can_send_voice_notes'] = this.canSendMedia;
+      permissions['can_send_polls'] = this.canSendPolls;
+      permissions['can_send_other_messages'] = this.canSendStickers;
+      permissions['can_invite_users'] = this.canAddMembers;
+      permissions['can_pin_messages'] = this.canPinMessages;
+      permissions['can_change_info'] = this.canChangeInfo;
+      const setPermissionsParams: Record<string, Object> = {};
+      setPermissionsParams['chat_id'] = this.chatId;
+      setPermissionsParams['permissions'] = permissions;
       await TDLibClient.getInstance().send('setChatPermissions', setPermissionsParams);
     } catch (_e) {
       // Handle save error silently
@@ -539,10 +556,9 @@ export struct GroupAdminPage {
     .height(56)
     .padding({ left: 16, right: 16 })
     .onClick(() => {
-      this.navPathStack.pushPath({
-        name: 'UserInfo',
-        param: { userId: admin.userId } as Record<string, number>
-      });
+      const navParam: Record<string, Object> = {};
+      navParam['userId'] = admin.userId;
+      this.navPathStack.pushPath(new NavPathInfo('UserInfo', navParam));
     })
   }
 

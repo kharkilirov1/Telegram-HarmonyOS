@@ -31,7 +31,8 @@ export struct BotCommandBar {
 
     try {
       // Get full bot info via TDLib
-      const sendParams: Record<string, Object> = { user_id: this.botUserId };
+      const sendParams: Record<string, Object> = {};
+      sendParams['user_id'] = this.botUserId;
       const result: Record<string, Object> = await TDLibClient.getInstance().send('getUserFullInfo', sendParams);
 
       const botInfo: Record<string, Object> | undefined = result['bot_info'] as Record<string, Object>;

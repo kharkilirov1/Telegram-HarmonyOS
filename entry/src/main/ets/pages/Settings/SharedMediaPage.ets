@@ -51,15 +51,15 @@ export struct SharedMediaPage {
 
   private async loadMediaItems(): Promise<void> {
     try {
-      const mediaFilter: Record<string, Object> = { '@type': 'searchMessagesFilterPhotoAndVideo' };
-      const mediaParams: Record<string, Object> = {
-        chat_id: this.chatId,
-        query: '',
-        filter: mediaFilter,
-        from_message_id: 0,
-        offset: 0,
-        limit: 50
-      };
+      const mediaFilter: Record<string, Object> = {};
+      mediaFilter['@type'] = 'searchMessagesFilterPhotoAndVideo';
+      const mediaParams: Record<string, Object> = {};
+      mediaParams['chat_id'] = this.chatId;
+      mediaParams['query'] = '';
+      mediaParams['filter'] = mediaFilter;
+      mediaParams['from_message_id'] = 0;
+      mediaParams['offset'] = 0;
+      mediaParams['limit'] = 50;
       const result: Record<string, Object> = await TDLibClient.getInstance().send('searchChatMessages', mediaParams);
       const messages = result['messages'] as Record<string, Object>[];
       if (messages && messages.length > 0) {
@@ -94,15 +94,15 @@ export struct SharedMediaPage {
 
   private async loadFileItems(): Promise<void> {
     try {
-      const docFilter: Record<string, Object> = { '@type': 'searchMessagesFilterDocument' };
-      const docParams: Record<string, Object> = {
-        chat_id: this.chatId,
-        query: '',
-        filter: docFilter,
-        from_message_id: 0,
-        offset: 0,
-        limit: 50
-      };
+      const docFilter: Record<string, Object> = {};
+      docFilter['@type'] = 'searchMessagesFilterDocument';
+      const docParams: Record<string, Object> = {};
+      docParams['chat_id'] = this.chatId;
+      docParams['query'] = '';
+      docParams['filter'] = docFilter;
+      docParams['from_message_id'] = 0;
+      docParams['offset'] = 0;
+      docParams['limit'] = 50;
       const result: Record<string, Object> = await TDLibClient.getInstance().send('searchChatMessages', docParams);
       const messages = result['messages'] as Record<string, Object>[];
       if (messages && messages.length > 0) {
@@ -134,15 +134,15 @@ export struct SharedMediaPage {
 
   private async loadLinkItems(): Promise<void> {
     try {
-      const urlFilter: Record<string, Object> = { '@type': 'searchMessagesFilterUrl' };
-      const urlParams: Record<string, Object> = {
-        chat_id: this.chatId,
-        query: '',
-        filter: urlFilter,
-        from_message_id: 0,
-        offset: 0,
-        limit: 50
-      };
+      const urlFilter: Record<string, Object> = {};
+      urlFilter['@type'] = 'searchMessagesFilterUrl';
+      const urlParams: Record<string, Object> = {};
+      urlParams['chat_id'] = this.chatId;
+      urlParams['query'] = '';
+      urlParams['filter'] = urlFilter;
+      urlParams['from_message_id'] = 0;
+      urlParams['offset'] = 0;
+      urlParams['limit'] = 50;
       const result: Record<string, Object> = await TDLibClient.getInstance().send('searchChatMessages', urlParams);
       const messages = result['messages'] as Record<string, Object>[];
       if (messages && messages.length > 0) {
@@ -288,10 +288,9 @@ export struct SharedMediaPage {
           }
         }
         .onClick(() => {
-          this.navPathStack.pushPath({
-            name: 'MediaViewer',
-            param: { url: item.url } as Record<string, string>
-          });
+          const navParam: Record<string, Object> = {};
+          navParam['url'] = item.url;
+          this.navPathStack.pushPath(new NavPathInfo('MediaViewer', navParam));
         })
       }, (item: SharedMediaItem) => item.id.toString())
     }

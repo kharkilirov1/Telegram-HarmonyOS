@@ -3,7 +3,7 @@ export struct TypingIndicator {
   @Local dot1Scale: number = 0.4;
   @Local dot2Scale: number = 0.4;
   @Local dot3Scale: number = 0.4;
-  @Param typingText: string = 'typing';
+  @Param typingText: ResourceStr = 'typing';
   private intervalId: number = -1;
   private phase: number = 0;
 

@@ -252,8 +252,11 @@ export struct ChatListPage {
       .backgroundColor($r('app.color.telegram_blue'))
       .onClick(() => {
         // Move chat to archive — TDLib: addChatToList(chatListArchive)
-        const chatListArchive: Record<string, Object> = { '@type': 'chatListArchive' };
-        const archiveParams: Record<string, Object> = { chat_id: chat.id, chat_list: chatListArchive };
+        const chatListArchive: Record<string, Object> = {};
+        chatListArchive['@type'] = 'chatListArchive';
+        const archiveParams: Record<string, Object> = {};
+        archiveParams['chat_id'] = chat.id;
+        archiveParams['chat_list'] = chatListArchive;
         TDLibClient.getInstance().send('addChatToList', archiveParams);
         // Remove from visible list
         const allChats = MessagesController.getInstance().getSortedDialogs();

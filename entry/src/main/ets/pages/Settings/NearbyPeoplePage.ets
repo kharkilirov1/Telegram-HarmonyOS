@@ -40,12 +40,12 @@ export struct NearbyPeoplePage {
     this.isLoading = true;
 
     try {
-      const location: Record<string, Object> = {
-        '@type': 'location',
-        latitude: 0.0,
-        longitude: 0.0
-      };
-      const nearbyParams: Record<string, Object> = { location: location };
+      const location: Record<string, Object> = {};
+      location['@type'] = 'location';
+      location['latitude'] = 0.0;
+      location['longitude'] = 0.0;
+      const nearbyParams: Record<string, Object> = {};
+      nearbyParams['location'] = location;
       const result: Record<string, Object> = await TDLibClient.getInstance().send('searchChatsNearby', nearbyParams);
 
       // Parse nearby users

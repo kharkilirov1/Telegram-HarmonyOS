@@ -307,9 +307,8 @@ export struct PasswordPage {
     this.errorMessage = '';
 
     try {
-      const recoveryParams: Record<string, Object> = {
-        recovery_code: this.recoveryCode
-      };
+      const recoveryParams: Record<string, Object> = {};
+      recoveryParams['recovery_code'] = this.recoveryCode;
       await TDLibClient.getInstance().send('recoverAuthenticationPassword', recoveryParams);
       // On success, auth state transitions to Ready
       this.showRecoveryView = false;

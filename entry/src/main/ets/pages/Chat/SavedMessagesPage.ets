@@ -91,7 +91,9 @@ export struct SavedMessagesPage {
 
     // Create private chat with self (TDLib returns existing if already created)
     try {
-      const privateChatParams: Record<string, Object> = { user_id: userId, force: false };
+      const privateChatParams: Record<string, Object> = {};
+      privateChatParams['user_id'] = userId;
+      privateChatParams['force'] = false;
       const chatResult = await TDLibClient.getInstance().send('createPrivateChat', privateChatParams);
       this.chatId = (chatResult['id'] as number) || 0;
     } catch (_e) {

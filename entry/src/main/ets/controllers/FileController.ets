@@ -58,13 +58,12 @@ export class FileController {
     this.downloadCallbacks.set(fileId, existing);
 
     // Request download from TDLib
-    const downloadParams: Record<string, Object> = {
-      file_id: fileId,
-      priority: priority,
-      offset: 0,
-      limit: 0,
-      synchronous: false
-    };
+    const downloadParams: Record<string, Object> = {};
+    downloadParams['file_id'] = fileId;
+    downloadParams['priority'] = priority;
+    downloadParams['offset'] = 0;
+    downloadParams['limit'] = 0;
+    downloadParams['synchronous'] = false;
     TDLibClient.getInstance().send('downloadFile', downloadParams);
   }
 
@@ -73,10 +72,9 @@ export class FileController {
    */
   cancelDownload(fileId: number): void {
     this.downloadCallbacks.delete(fileId);
-    const cancelParams: Record<string, Object> = {
-      file_id: fileId,
-      only_if_pending: true
-    };
+    const cancelParams: Record<string, Object> = {};
+    cancelParams['file_id'] = fileId;
+    cancelParams['only_if_pending'] = true;
     TDLibClient.getInstance().send('cancelDownloadFile', cancelParams);
   }
 
@@ -102,22 +100,25 @@ export class FileController {
         }
         this.downloadCallbacks.delete(fileId);
 
+        const completedArgs: Record<string, Object> = {};
+        completedArgs['fileId'] = fileId;
+        completedArgs['path'] = path;
         NotificationCenter.getInstance().post(
           EventId.FILE_DOWNLOAD_COMPLETED,
-          { fileId: fileId, path: path } as Record<string, Object>
+          completedArgs
         );
       } else if (!isComplete) {
         // Progress update
         const downloaded = local['downloaded_size'] as number || 0;
         const totalSize = (file['expected_size'] as number) || (file['size'] as number) || 0;
 
+        const progressArgs: Record<string, Object> = {};
+        progressArgs['fileId'] = fileId;
+        progressArgs['downloaded'] = downloaded;
+        progressArgs['total'] = totalSize;
         NotificationCenter.getInstance().post(
           EventId.FILE_DOWNLOAD_PROGRESS,
-          {
-            fileId: fileId,
-            downloaded: downloaded,
-            total: totalSize
-          } as Record<string, Object>
+          progressArgs
         );
       }
     });

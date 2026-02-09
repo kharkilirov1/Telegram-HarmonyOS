@@ -144,10 +144,10 @@ export struct ChatDetailPage {
               .margin({ right: 16 })
               .onClick(() => {
                 if (this.selectedMessageIds.length > 0) {
-                  this.navPathStack.pushPath({
-                    name: 'ForwardPicker',
-                    param: { messageId: this.selectedMessageIds[0], chatId: this.chatId } as Record<string, number>
-                  });
+                  const fwdParam: Record<string, Object> = {};
+                  fwdParam['messageId'] = this.selectedMessageIds[0];
+                  fwdParam['chatId'] = this.chatId;
+                  this.navPathStack.pushPath(new NavPathInfo('ForwardPicker', fwdParam));
                   this.isSelectionMode = false;
                   this.selectedMessageIds = [];
                 }
@@ -227,11 +227,12 @@ export struct ChatDetailPage {
               .fillColor($r('app.color.telegram_blue'))
               .margin({ right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath({
-                  name: 'CallUI',
-                  param: { userId: this.chatId, userName: this.chatTitle, isVideo: false, isIncoming: false }
-                    as Record<string, Object>
-                });
+                const callParam: Record<string, Object> = {};
+                callParam['userId'] = this.chatId;
+                callParam['userName'] = this.chatTitle;
+                callParam['isVideo'] = false;
+                callParam['isIncoming'] = false;
+                this.navPathStack.pushPath(new NavPathInfo('CallUI', callParam));
               })
 
             Image($r('app.media.ic_search'))
@@ -592,16 +593,15 @@ export struct ChatDetailPage {
                       onDelete: (msg: Message) => { this.deleteMessage(msg); },
                       onEdit: (msg: Message) => { this.editMessage = msg; },
                       onMediaTap: (url: string) => {
-                        this.navPathStack.pushPath({
-                          name: 'MediaViewer',
-                          param: { url: url } as Record<string, string>
-                        });
+                        const mediaParam: Record<string, Object> = {};
+                        mediaParam['url'] = url;
+                        this.navPathStack.pushPath(new NavPathInfo('MediaViewer', mediaParam));
                       },
                       onVideoPlay: (url: string, duration: number) => {
-                        this.navPathStack.pushPath({
-                          name: 'VideoPlayer',
-                          param: { videoUrl: url, duration: duration } as Record<string, Object>
-                        });
+                        const videoParam: Record<string, Object> = {};
+                        videoParam['videoUrl'] = url;
+                        videoParam['duration'] = duration;
+                        this.navPathStack.pushPath(new NavPathInfo('VideoPlayer', videoParam));
                       },
                       onReactionTap: (msg: Message, emoji: string) => {
                         this.toggleReaction(msg, emoji);
@@ -681,10 +681,9 @@ export struct ChatDetailPage {
           onSendVoice: (duration: number) => { this.sendVoiceMessage(duration); },
           onDraftChange: (text: string) => { this.saveDraft(text); },
           onCreatePoll: () => {
-            this.navPathStack.pushPath({
-              name: 'CreatePoll',
-              param: { chatId: this.chatId } as Record<string, number>
-            });
+            const pollParam: Record<string, Object> = {};
+            pollParam['chatId'] = this.chatId;
+            this.navPathStack.pushPath(new NavPathInfo('CreatePoll', pollParam));
           }
         })
       }
@@ -731,15 +730,13 @@ export struct ChatDetailPage {
       }
       // Add stub reactions to some messages for demo purposes
       if (this.messages.length > 3) {
-        this.messages[1].reactions = [
-          { emoji: '\u{1F44D}', count: 3, isMine: false },
-          { emoji: '\u{2764}\u{FE0F}', count: 1, isMine: true }
-        ];
+        const r1: MessageReaction = { emoji: '\u{1F44D}', count: 3, isMine: false };
+        const r2: MessageReaction = { emoji: '\u{2764}\u{FE0F}', count: 1, isMine: true };
+        this.messages[1].reactions = [r1, r2];
       }
       if (this.messages.length > 5) {
-        this.messages[4].reactions = [
-          { emoji: '\u{1F602}', count: 2, isMine: false }
-        ];
+        const r3: MessageReaction = { emoji: '\u{1F602}', count: 2, isMine: false };
+        this.messages[4].reactions = [r3];
       }
       this.rebuildFlatList();
       this.scrollToBottom();
@@ -782,9 +779,16 @@ export struct ChatDetailPage {
 
   private async editMessageText(messageId: number, text: string): Promise<void> {
     this.editMessage = null;
-    const formattedText: Record<string, Object> = { '@type': 'formattedText', text: text };
-    const inputContent: Record<string, Object> = { '@type': 'inputMessageText', text: formattedText };
-    const editParams: Record<string, Object> = { chat_id: this.chatId, message_id: messageId, input_message_content: inputContent };
+    const formattedText: Record<string, Object> = {};
+    formattedText['@type'] = 'formattedText';
+    formattedText['text'] = text;
+    const inputContent: Record<string, Object> = {};
+    inputContent['@type'] = 'inputMessageText';
+    inputContent['text'] = formattedText;
+    const editParams: Record<string, Object> = {};
+    editParams['chat_id'] = this.chatId;
+    editParams['message_id'] = messageId;
+    editParams['input_message_content'] = inputContent;
     await TDLibClient.getInstance().send('editMessageText', editParams);
     // Update local message
     const msg = this.messages.find(m => m.id === messageId);
@@ -796,10 +800,10 @@ export struct ChatDetailPage {
 
   private forwardMessage(msg: Message): void {
     // Open ForwardPicker page to select target chat
-    this.navPathStack.pushPath({
-      name: 'ForwardPicker',
-      param: { messageId: msg.id, chatId: this.chatId } as Record<string, number>
-    });
+    const fwdMsgParam: Record<string, Object> = {};
+    fwdMsgParam['messageId'] = msg.id;
+    fwdMsgParam['chatId'] = this.chatId;
+    this.navPathStack.pushPath(new NavPathInfo('ForwardPicker', fwdMsgParam));
   }
 
   private copyMessageText(msg: Message): void {
@@ -813,15 +817,13 @@ export struct ChatDetailPage {
 
   private openChatInfo(): void {
     if (this.isGroupChat || this.isChannelChat) {
-      this.navPathStack.pushPath({
-        name: 'GroupInfo',
-        param: { chatId: this.chatId } as Record<string, number>
-      });
+      const groupParam: Record<string, Object> = {};
+      groupParam['chatId'] = this.chatId;
+      this.navPathStack.pushPath(new NavPathInfo('GroupInfo', groupParam));
     } else {
-      this.navPathStack.pushPath({
-        name: 'UserInfo',
-        param: { userId: this.chatId } as Record<string, number>
-      });
+      const userParam: Record<string, Object> = {};
+      userParam['userId'] = this.chatId;
+      this.navPathStack.pushPath(new NavPathInfo('UserInfo', userParam));
     }
   }
 
@@ -844,17 +846,30 @@ export struct ChatDetailPage {
 
   private async sendGifMessage(gifId: number): Promise<void> {
     // Send GIF animation as a message via TDLib
-    const animation: Record<string, Object> = { '@type': 'inputFileId', id: gifId };
-    const gifContent: Record<string, Object> = { '@type': 'inputMessageAnimation', animation: animation };
-    const gifParams: Record<string, Object> = { chat_id: this.chatId, input_message_content: gifContent };
+    const animation: Record<string, Object> = {};
+    animation['@type'] = 'inputFileId';
+    animation['id'] = gifId;
+    const gifContent: Record<string, Object> = {};
+    gifContent['@type'] = 'inputMessageAnimation';
+    gifContent['animation'] = animation;
+    const gifParams: Record<string, Object> = {};
+    gifParams['chat_id'] = this.chatId;
+    gifParams['input_message_content'] = gifContent;
     await TDLibClient.getInstance().send('sendMessage', gifParams);
   }
 
   private async sendStickerMessage(emoji: string): Promise<void> {
     // Send sticker as a message via TDLib
-    const sticker: Record<string, Object> = { '@type': 'inputFileId', id: 0 };
-    const stickerContent: Record<string, Object> = { '@type': 'inputMessageSticker', sticker: sticker, emoji: emoji };
-    const stickerParams: Record<string, Object> = { chat_id: this.chatId, input_message_content: stickerContent };
+    const sticker: Record<string, Object> = {};
+    sticker['@type'] = 'inputFileId';
+    sticker['id'] = 0;
+    const stickerContent: Record<string, Object> = {};
+    stickerContent['@type'] = 'inputMessageSticker';
+    stickerContent['sticker'] = sticker;
+    stickerContent['emoji'] = emoji;
+    const stickerParams: Record<string, Object> = {};
+    stickerParams['chat_id'] = this.chatId;
+    stickerParams['input_message_content'] = stickerContent;
     await TDLibClient.getInstance().send('sendMessage', stickerParams);
   }
 
@@ -862,9 +877,18 @@ export struct ChatDetailPage {
     // Send voice note via TDLib (AudioCapturer would supply the actual file)
     const replyId = this.replyMessage?.id || 0;
     this.replyMessage = null;
-    const voiceNote: Record<string, Object> = { '@type': 'inputFileLocal', path: '' };
-    const voiceContent: Record<string, Object> = { '@type': 'inputMessageVoiceNote', voice_note: voiceNote, duration: duration, waveform: '' };
-    const voiceParams: Record<string, Object> = { chat_id: this.chatId, reply_to_message_id: replyId, input_message_content: voiceContent };
+    const voiceNote: Record<string, Object> = {};
+    voiceNote['@type'] = 'inputFileLocal';
+    voiceNote['path'] = '';
+    const voiceContent: Record<string, Object> = {};
+    voiceContent['@type'] = 'inputMessageVoiceNote';
+    voiceContent['voice_note'] = voiceNote;
+    voiceContent['duration'] = duration;
+    voiceContent['waveform'] = '';
+    const voiceParams: Record<string, Object> = {};
+    voiceParams['chat_id'] = this.chatId;
+    voiceParams['reply_to_message_id'] = replyId;
+    voiceParams['input_message_content'] = voiceContent;
     await TDLibClient.getInstance().send('sendMessage', voiceParams);
   }
 
@@ -892,7 +916,8 @@ export struct ChatDetailPage {
         existing.count++;
         existing.isMine = true;
       } else {
-        msg.reactions.push({ emoji: defaultEmoji, count: 1, isMine: true });
+        const newReaction: MessageReaction = { emoji: defaultEmoji, count: 1, isMine: true };
+        msg.reactions.push(newReaction);
       }
     } else {
       // Toggle the specific reaction
@@ -907,7 +932,8 @@ export struct ChatDetailPage {
         existing.count++;
         existing.isMine = true;
       } else {
-        msg.reactions.push({ emoji: emoji, count: 1, isMine: true });
+        const newReaction: MessageReaction = { emoji: emoji, count: 1, isMine: true };
+        msg.reactions.push(newReaction);
       }
     }
     this.rebuildFlatList();
@@ -1027,7 +1053,9 @@ export struct ChatDetailPage {
 
   private async jumpToDate(timestamp: number): Promise<void> {
     try {
-      const jumpParams: Record<string, Object> = { chat_id: this.chatId, date: timestamp };
+      const jumpParams: Record<string, Object> = {};
+      jumpParams['chat_id'] = this.chatId;
+      jumpParams['date'] = timestamp;
       const result = await TDLibClient.getInstance().send('getChatMessageByDate', jumpParams);
 
       if (result && result['id']) {
@@ -1060,8 +1088,13 @@ export struct ChatDetailPage {
     }
     try {
       // Use TDLib searchChatMembers to find matching users in this chat
-      const memberFilter: Record<string, Object> = { '@type': 'chatMembersFilterMembers' };
-      const searchMemberParams: Record<string, Object> = { chat_id: this.chatId, query: name, limit: 10, filter: memberFilter };
+      const memberFilter: Record<string, Object> = {};
+      memberFilter['@type'] = 'chatMembersFilterMembers';
+      const searchMemberParams: Record<string, Object> = {};
+      searchMemberParams['chat_id'] = this.chatId;
+      searchMemberParams['query'] = name;
+      searchMemberParams['limit'] = 10;
+      searchMemberParams['filter'] = memberFilter;
       const result = await TDLibClient.getInstance().send('searchChatMembers', searchMemberParams);
 
       const members = result['members'] as Record<string, Object>[];

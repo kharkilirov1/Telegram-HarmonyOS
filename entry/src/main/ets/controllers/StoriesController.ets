@@ -41,8 +41,11 @@ export class StoriesController {
   async loadActiveStories(): Promise<void> {
     try {
       // Load story list from TDLib
-      const storyList: Record<string, Object> = { '@type': 'storyListMain' };
-      const storyListParams: Record<string, Object> = { story_list: storyList, limit: 50 };
+      const storyList: Record<string, Object> = {};
+      storyList['@type'] = 'storyListMain';
+      const storyListParams: Record<string, Object> = {};
+      storyListParams['story_list'] = storyList;
+      storyListParams['limit'] = 50;
       const result = await TDLibClient.getInstance()
         .send('getStoryList', storyListParams) as Record<string, Object>;
 
@@ -52,8 +55,11 @@ export class StoriesController {
       hilog.warn(DOMAIN, TAG, 'Failed to load story list, trying fallback');
       // Fallback: load chats and check for stories
       try {
-        const chatList: Record<string, Object> = { '@type': 'chatListMain' };
-        const fallbackParams: Record<string, Object> = { chat_list: chatList, limit: 30 };
+        const chatList: Record<string, Object> = {};
+        chatList['@type'] = 'chatListMain';
+        const fallbackParams: Record<string, Object> = {};
+        fallbackParams['chat_list'] = chatList;
+        fallbackParams['limit'] = 30;
         await TDLibClient.getInstance().send('loadChats', fallbackParams);
       } catch (_e2) {
         // Silently fail
@@ -66,11 +72,10 @@ export class StoriesController {
     if (cached) return cached;
 
     try {
-      const getStoryParams: Record<string, Object> = {
-        story_sender_chat_id: chatId,
-        story_id: storyId,
-        only_local: false
-      };
+      const getStoryParams: Record<string, Object> = {};
+      getStoryParams['story_sender_chat_id'] = chatId;
+      getStoryParams['story_id'] = storyId;
+      getStoryParams['only_local'] = false;
       const result = await TDLibClient.getInstance()
         .send('getStory', getStoryParams) as Record<string, Object>;
 
@@ -85,10 +90,9 @@ export class StoriesController {
 
   async openStory(chatId: number, storyId: number): Promise<void> {
     try {
-      const openParams: Record<string, Object> = {
-        story_sender_chat_id: chatId,
-        story_id: storyId
-      };
+      const openParams: Record<string, Object> = {};
+      openParams['story_sender_chat_id'] = chatId;
+      openParams['story_id'] = storyId;
       await TDLibClient.getInstance().send('openStory', openParams);
 
       // Mark as viewed locally
@@ -107,10 +111,9 @@ export class StoriesController {
 
   async closeStory(chatId: number, storyId: number): Promise<void> {
     try {
-      const closeParams: Record<string, Object> = {
-        story_sender_chat_id: chatId,
-        story_id: storyId
-      };
+      const closeParams: Record<string, Object> = {};
+      closeParams['story_sender_chat_id'] = chatId;
+      closeParams['story_id'] = storyId;
       await TDLibClient.getInstance().send('closeStory', closeParams);
     } catch (_e) {
       // Silently fail
@@ -167,8 +170,10 @@ export class StoriesController {
           this.activeStoriesByChat.delete(chatId);
         }
         this.sortActiveStories();
-        NotificationCenter.getInstance().post(EventId.STORY_DELETED,
-          { chatId: chatId, storyId: storyId } as Record<string, Object>);
+        const deletedArgs: Record<string, Object> = {};
+        deletedArgs['chatId'] = chatId;
+        deletedArgs['storyId'] = storyId;
+        NotificationCenter.getInstance().post(EventId.STORY_DELETED, deletedArgs);
       }
     });
   }
@@ -180,7 +185,8 @@ export class StoriesController {
     let initial = '';
 
     try {
-      const chatParams: Record<string, Object> = { chat_id: chatId };
+      const chatParams: Record<string, Object> = {};
+      chatParams['chat_id'] = chatId;
       const chatResult = await TDLibClient.getInstance()
         .send('getChat', chatParams) as Record<string, Object>;
 

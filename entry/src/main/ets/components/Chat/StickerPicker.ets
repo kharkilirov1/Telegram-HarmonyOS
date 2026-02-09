@@ -51,9 +51,8 @@ export struct StickerPicker {
 
   private async loadRecentStickers(): Promise<void> {
     try {
-      const recentParams: Record<string, Object> = {
-        is_attached: false
-      };
+      const recentParams: Record<string, Object> = {};
+      recentParams['is_attached'] = false;
       const result = await TDLibClient.getInstance().send('getRecentStickers', recentParams);
       const data = result as Record<string, Object>;
       const stickersRaw = data['stickers'] as Record<string, Object>[];
@@ -78,10 +77,10 @@ export struct StickerPicker {
   private async loadInstalledSets(): Promise<void> {
     this.isLoading = true;
     try {
-      const stickerType: Record<string, Object> = { '@type': 'stickerTypeRegular' };
-      const installedParams: Record<string, Object> = {
-        sticker_type: stickerType
-      };
+      const stickerType: Record<string, Object> = {};
+      stickerType['@type'] = 'stickerTypeRegular';
+      const installedParams: Record<string, Object> = {};
+      installedParams['sticker_type'] = stickerType;
       const result = await TDLibClient.getInstance().send('getInstalledStickerSets', installedParams);
       const data = result as Record<string, Object>;
       const setsRaw = data['sets'] as Record<string, Object>[];
@@ -113,9 +112,8 @@ export struct StickerPicker {
       return;
     }
     try {
-      const getSetParams: Record<string, Object> = {
-        set_id: setInfo.id
-      };
+      const getSetParams: Record<string, Object> = {};
+      getSetParams['set_id'] = setInfo.id;
       const result = await TDLibClient.getInstance().send('getStickerSet', getSetParams);
       const data = result as Record<string, Object>;
       const stickersRaw = data['stickers'] as Record<string, Object>[];
@@ -150,12 +148,12 @@ export struct StickerPicker {
 
   private async loadTrendingSets(): Promise<void> {
     try {
-      const trendingType: Record<string, Object> = { '@type': 'stickerTypeRegular' };
-      const trendingParams: Record<string, Object> = {
-        sticker_type: trendingType,
-        offset: 0,
-        limit: 20
-      };
+      const trendingType: Record<string, Object> = {};
+      trendingType['@type'] = 'stickerTypeRegular';
+      const trendingParams: Record<string, Object> = {};
+      trendingParams['sticker_type'] = trendingType;
+      trendingParams['offset'] = 0;
+      trendingParams['limit'] = 20;
       const result = await TDLibClient.getInstance().send('getTrendingStickerSets', trendingParams);
       const data = result as Record<string, Object>;
       const setsRaw = data['sets'] as Record<string, Object>[];
@@ -174,10 +172,9 @@ export struct StickerPicker {
 
   private async installStickerSet(setId: string): Promise<void> {
     try {
-      const installParams: Record<string, Object> = {
-        set_id: setId,
-        is_installed: true
-      };
+      const installParams: Record<string, Object> = {};
+      installParams['set_id'] = setId;
+      installParams['is_installed'] = true;
       await TDLibClient.getInstance().send('changeStickerSet', installParams);
       // Reload installed sets to reflect changes
       this.showTrending = false;
@@ -189,10 +186,9 @@ export struct StickerPicker {
 
   private async removeStickerSet(setId: string): Promise<void> {
     try {
-      const removeParams: Record<string, Object> = {
-        set_id: setId,
-        is_installed: false
-      };
+      const removeParams: Record<string, Object> = {};
+      removeParams['set_id'] = setId;
+      removeParams['is_installed'] = false;
       await TDLibClient.getInstance().send('changeStickerSet', removeParams);
       // Reload installed sets
       this.loadInstalledSets();

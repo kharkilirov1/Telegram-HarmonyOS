@@ -1,6 +1,6 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { taskpool } from '@kit.ArkTS';
-import { TELEGRAM_API_ID, TELEGRAM_API_HASH } from './Config.local';
+import { TELEGRAM_API_ID, TELEGRAM_API_HASH } from './ConfigLocal';
 
 // Native NAPI module
 import tdlib from 'libtdlib_napi.so';
@@ -89,55 +89,55 @@ export class TDLibClient {
   // --- Auth methods (mirroring iOS Telegram patterns) ---
 
   async setPhoneNumber(phoneNumber: string): Promise<Record<string, Object>> {
-    const settings: Record<string, Object> = {
-      '@type': 'phoneNumberAuthenticationSettings',
-      allow_flash_call: false,
-      allow_missed_call: false,
-      is_current_phone_number: false,
-      allow_sms_retriever_api: false
-    };
-    const params: Record<string, Object> = {
-      phone_number: phoneNumber,
-      settings: settings
-    };
+    const settings: Record<string, Object> = {};
+    settings['@type'] = 'phoneNumberAuthenticationSettings';
+    settings['allow_flash_call'] = false;
+    settings['allow_missed_call'] = false;
+    settings['is_current_phone_number'] = false;
+    settings['allow_sms_retriever_api'] = false;
+    const params: Record<string, Object> = {};
+    params['phone_number'] = phoneNumber;
+    params['settings'] = settings;
     return this.send('setAuthenticationPhoneNumber', params);
   }
 
   async checkAuthCode(code: string): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = { code: code };
+    const params: Record<string, Object> = {};
+    params['code'] = code;
     return this.send('checkAuthenticationCode', params);
   }
 
   async checkAuthPassword(password: string): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = { password: password };
+    const params: Record<string, Object> = {};
+    params['password'] = password;
     return this.send('checkAuthenticationPassword', params);
   }
 
   // --- Chat methods ---
 
   async loadChats(limit: number = 20): Promise<Record<string, Object>> {
-    const chatList: Record<string, Object> = { '@type': 'chatListMain' };
-    const params: Record<string, Object> = {
-      chat_list: chatList,
-      limit: limit
-    };
+    const chatList: Record<string, Object> = {};
+    chatList['@type'] = 'chatListMain';
+    const params: Record<string, Object> = {};
+    params['chat_list'] = chatList;
+    params['limit'] = limit;
     return this.send('loadChats', params);
   }
 
   async getChat(chatId: number): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = { chat_id: chatId };
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
     return this.send('getChat', params);
   }
 
   async getChatHistory(chatId: number, fromMessageId: number = 0,
     limit: number = 50): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = {
-      chat_id: chatId,
-      from_message_id: fromMessageId,
-      offset: 0,
-      limit: limit,
-      only_local: false
-    };
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    params['from_message_id'] = fromMessageId;
+    params['offset'] = 0;
+    params['limit'] = limit;
+    params['only_local'] = false;
     return this.send('getChatHistory', params);
   }
 
@@ -148,69 +148,73 @@ export class TDLibClient {
   }
 
   async searchContacts(query: string, limit: number = 50): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = { query: query, limit: limit };
+    const params: Record<string, Object> = {};
+    params['query'] = query;
+    params['limit'] = limit;
     return this.send('searchContacts', params);
   }
 
   async getUser(userId: number): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = { user_id: userId };
+    const params: Record<string, Object> = {};
+    params['user_id'] = userId;
     return this.send('getUser', params);
   }
 
   // --- Create chat ---
 
   async createPrivateChat(userId: number): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = { user_id: userId, force: false };
+    const params: Record<string, Object> = {};
+    params['user_id'] = userId;
+    params['force'] = false;
     return this.send('createPrivateChat', params);
   }
 
   // --- Search ---
 
   async searchMessages(query: string, limit: number = 50): Promise<Record<string, Object>> {
-    const chatList: Record<string, Object> = { '@type': 'chatListMain' };
-    const params: Record<string, Object> = {
-      chat_list: chatList,
-      query: query,
-      offset: '',
-      offset_chat_id: 0,
-      offset_message_id: 0,
-      limit: limit
-    };
+    const chatList: Record<string, Object> = {};
+    chatList['@type'] = 'chatListMain';
+    const params: Record<string, Object> = {};
+    params['chat_list'] = chatList;
+    params['query'] = query;
+    params['offset'] = '';
+    params['offset_chat_id'] = 0;
+    params['offset_message_id'] = 0;
+    params['limit'] = limit;
     return this.send('searchMessages', params);
   }
 
   // --- Message methods ---
 
   async editMessageText(chatId: number, messageId: number, text: string): Promise<Record<string, Object>> {
-    const formattedText: Record<string, Object> = { '@type': 'formattedText', text: text };
-    const inputContent: Record<string, Object> = {
-      '@type': 'inputMessageText',
-      text: formattedText
-    };
-    const params: Record<string, Object> = {
-      chat_id: chatId,
-      message_id: messageId,
-      input_message_content: inputContent
-    };
+    const formattedText: Record<string, Object> = {};
+    formattedText['@type'] = 'formattedText';
+    formattedText['text'] = text;
+    const inputContent: Record<string, Object> = {};
+    inputContent['@type'] = 'inputMessageText';
+    inputContent['text'] = formattedText;
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    params['message_id'] = messageId;
+    params['input_message_content'] = inputContent;
     return this.send('editMessageText', params);
   }
 
   async sendMessage(chatId: number, text: string, replyToMessageId: number = 0): Promise<Record<string, Object>> {
-    const formattedText: Record<string, Object> = { '@type': 'formattedText', text: text };
-    const inputContent: Record<string, Object> = {
-      '@type': 'inputMessageText',
-      text: formattedText
-    };
-    const params: Record<string, Object> = {
-      chat_id: chatId,
-      input_message_content: inputContent
-    };
+    const formattedText: Record<string, Object> = {};
+    formattedText['@type'] = 'formattedText';
+    formattedText['text'] = text;
+    const inputContent: Record<string, Object> = {};
+    inputContent['@type'] = 'inputMessageText';
+    inputContent['text'] = formattedText;
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    params['input_message_content'] = inputContent;
 
     if (replyToMessageId > 0) {
-      const replyTo: Record<string, Object> = {
-        '@type': 'inputMessageReplyToMessage',
-        message_id: replyToMessageId
-      };
+      const replyTo: Record<string, Object> = {};
+      replyTo['@type'] = 'inputMessageReplyToMessage';
+      replyTo['message_id'] = replyToMessageId;
       params['reply_to'] = replyTo;
     }
 
@@ -220,20 +224,19 @@ export class TDLibClient {
   // --- Private methods ---
 
   private sendTdlibParameters(): void {
-    const params: Record<string, Object> = {
-      database_directory: '/data/storage/el2/base/tdlib',
-      files_directory: '/data/storage/el2/base/tdlib/files',
-      use_file_database: true,
-      use_chat_info_database: true,
-      use_message_database: true,
-      use_secret_chats: true,
-      api_id: TELEGRAM_API_ID,
-      api_hash: TELEGRAM_API_HASH,
-      system_language_code: 'en',
-      device_model: 'HarmonyOS Device',
-      system_version: 'HarmonyOS 6.0',
-      application_version: '1.0.0'
-    };
+    const params: Record<string, Object> = {};
+    params['database_directory'] = '/data/storage/el2/base/tdlib';
+    params['files_directory'] = '/data/storage/el2/base/tdlib/files';
+    params['use_file_database'] = true;
+    params['use_chat_info_database'] = true;
+    params['use_message_database'] = true;
+    params['use_secret_chats'] = true;
+    params['api_id'] = TELEGRAM_API_ID;
+    params['api_hash'] = TELEGRAM_API_HASH;
+    params['system_language_code'] = 'en';
+    params['device_model'] = 'HarmonyOS Device';
+    params['system_version'] = 'HarmonyOS 6.0';
+    params['application_version'] = '1.0.0';
     this.send('setTdlibParameters', params);
   }
 

@@ -52,7 +52,8 @@ export struct GroupInfoPage {
 
     try {
       // Get supergroup/basic group info from TDLib
-      const fullInfoParams: Record<string, Object> = { supergroup_id: Math.abs(this.chatId) };
+      const fullInfoParams: Record<string, Object> = {};
+      fullInfoParams['supergroup_id'] = Math.abs(this.chatId);
       const fullInfo = await TDLibClient.getInstance().send('getSupergroupFullInfo', fullInfoParams);
       this.description = (fullInfo['description'] as string) || '';
       this.memberCount = (fullInfo['member_count'] as number) || 0;
@@ -71,8 +72,13 @@ export struct GroupInfoPage {
 
   private async loadMembers(): Promise<void> {
     try {
-      const recentFilter: Record<string, Object> = { '@type': 'supergroupMembersFilterRecent' };
-      const membersParams: Record<string, Object> = { supergroup_id: Math.abs(this.chatId), filter: recentFilter, offset: 0, limit: 50 };
+      const recentFilter: Record<string, Object> = {};
+      recentFilter['@type'] = 'supergroupMembersFilterRecent';
+      const membersParams: Record<string, Object> = {};
+      membersParams['supergroup_id'] = Math.abs(this.chatId);
+      membersParams['filter'] = recentFilter;
+      membersParams['offset'] = 0;
+      membersParams['limit'] = 50;
       const result = await TDLibClient.getInstance().send('getSupergroupMembers', membersParams);
       const rawMembers = result['members'] as Record<string, Object>[];
       if (rawMembers && rawMembers.length > 0) {
@@ -87,7 +93,8 @@ export struct GroupInfoPage {
           let photoUrl: string | null = null;
           let userStatus = 'last seen recently';
           try {
-            const getUserParams: Record<string, Object> = { user_id: memberId };
+            const getUserParams: Record<string, Object> = {};
+            getUserParams['user_id'] = memberId;
             const user = await TDLibClient.getInstance().send('getUser', getUserParams);
             const firstName = (user['first_name'] as string) || '';
             const lastName = (user['last_name'] as string) || '';
@@ -269,10 +276,9 @@ export struct GroupInfoPage {
               .width('100%').height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath({
-                  name: 'SharedMedia',
-                  param: { chatId: this.chatId } as Record<string, number>
-                });
+                const navParam: Record<string, Object> = {};
+                navParam['chatId'] = this.chatId;
+                this.navPathStack.pushPath(new NavPathInfo('SharedMedia', navParam));
               })
             }
             .width('100%')
@@ -302,10 +308,9 @@ export struct GroupInfoPage {
               .width('100%').height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath({
-                  name: 'GroupAdmin',
-                  param: { chatId: this.chatId } as Record<string, number>
-                });
+                const navParam: Record<string, Object> = {};
+                navParam['chatId'] = this.chatId;
+                this.navPathStack.pushPath(new NavPathInfo('GroupAdmin', navParam));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 48 })
@@ -326,10 +331,9 @@ export struct GroupInfoPage {
               .width('100%').height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath({
-                  name: 'InviteLinks',
-                  param: { chatId: this.chatId } as Record<string, number>
-                });
+                const navParam: Record<string, Object> = {};
+                navParam['chatId'] = this.chatId;
+                this.navPathStack.pushPath(new NavPathInfo('InviteLinks', navParam));
               })
             }
             .width('100%')
@@ -500,10 +504,9 @@ export struct GroupInfoPage {
     .height(56)
     .padding({ left: 16, right: 16 })
     .onClick(() => {
-      this.navPathStack.pushPath({
-        name: 'UserInfo',
-        param: { userId: member.userId } as Record<string, number>
-      });
+      const navParam: Record<string, Object> = {};
+      navParam['userId'] = member.userId;
+      this.navPathStack.pushPath(new NavPathInfo('UserInfo', navParam));
     })
   }
 }

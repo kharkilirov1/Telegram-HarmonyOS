@@ -348,7 +348,10 @@ export struct CreateChannelPage {
     this.isCreating = true;
 
     try {
-      const createChannelParams: Record<string, Object> = { title: this.channelName.trim(), is_channel: true, description: this.channelDescription };
+      const createChannelParams: Record<string, Object> = {};
+      createChannelParams['title'] = this.channelName.trim();
+      createChannelParams['is_channel'] = true;
+      createChannelParams['description'] = this.channelDescription;
       const result = await TDLibClient.getInstance().send('createNewSupergroupChat', createChannelParams) as Record<string, number>;
 
       const chatId = result['id'] || 0;

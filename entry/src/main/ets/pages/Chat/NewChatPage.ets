@@ -209,7 +209,9 @@ export struct NewChatPage {
 
   private async openPrivateChat(userId: number): Promise<void> {
     try {
-      const privateChatParams: Record<string, Object> = { user_id: userId, force: false };
+      const privateChatParams: Record<string, Object> = {};
+      privateChatParams['user_id'] = userId;
+      privateChatParams['force'] = false;
       const result = await TDLibClient.getInstance().send('createPrivateChat', privateChatParams) as Record<string, number>;
 
       const chatId = result['id'] || -userId;

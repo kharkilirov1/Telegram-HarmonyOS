@@ -77,7 +77,8 @@ export struct SessionManagementPage {
   private async terminateSession(sessionId: number): Promise<void> {
     this.terminatingSessionId = sessionId;
     try {
-      const terminateParams: Record<string, Object> = { session_id: sessionId };
+      const terminateParams: Record<string, Object> = {};
+      terminateParams['session_id'] = sessionId;
       await this.tdlib.send('terminateSession', terminateParams);
       this.otherSessions = this.otherSessions.filter((s: SessionInfo) => s.id !== sessionId);
     } catch (e) {

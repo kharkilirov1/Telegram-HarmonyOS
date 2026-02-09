@@ -135,23 +135,22 @@ export struct DataStoragePage {
     const isEnabled = photosEnabled || videosEnabled || filesEnabled;
 
     try {
-      const autoDownloadSettings: Record<string, Object> = {
-        '@type': 'autoDownloadSettings',
-        is_auto_download_enabled: isEnabled,
-        max_photo_file_size: photosEnabled ? 1048576 : 0,
-        max_video_file_size: videosEnabled ? this.videosMaxSize : 0,
-        max_other_file_size: filesEnabled ? this.filesMaxSize : 0,
-        video_upload_bitrate: 0,
-        preload_large_videos: false,
-        preload_next_audio: true,
-        preload_stories: true,
-        use_less_data_for_calls: false
-      };
-      const networkType: Record<string, Object> = { '@type': tdlibNetworkType };
-      const syncParams: Record<string, Object> = {
-        settings: autoDownloadSettings,
-        type: networkType
-      };
+      const autoDownloadSettings: Record<string, Object> = {};
+      autoDownloadSettings['@type'] = 'autoDownloadSettings';
+      autoDownloadSettings['is_auto_download_enabled'] = isEnabled;
+      autoDownloadSettings['max_photo_file_size'] = photosEnabled ? 1048576 : 0;
+      autoDownloadSettings['max_video_file_size'] = videosEnabled ? this.videosMaxSize : 0;
+      autoDownloadSettings['max_other_file_size'] = filesEnabled ? this.filesMaxSize : 0;
+      autoDownloadSettings['video_upload_bitrate'] = 0;
+      autoDownloadSettings['preload_large_videos'] = false;
+      autoDownloadSettings['preload_next_audio'] = true;
+      autoDownloadSettings['preload_stories'] = true;
+      autoDownloadSettings['use_less_data_for_calls'] = false;
+      const networkType: Record<string, Object> = {};
+      networkType['@type'] = tdlibNetworkType;
+      const syncParams: Record<string, Object> = {};
+      syncParams['settings'] = autoDownloadSettings;
+      syncParams['type'] = networkType;
       await TDLibClient.getInstance().send('setAutoDownloadSettings', syncParams);
     } catch (e) {
       // Silently ignore if TDLib is not connected
