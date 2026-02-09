@@ -1,11 +1,13 @@
 // Chat input bar with emoji, stickers, GIF, attachments, voice recording
 // Reference: Telegram iOS ChatInputBar, Android ChatActivityEnterView
+// Voice recording UI extracted to VoiceRecordingBar.ets
 
 import { Message } from '../../models/Message';
 import { EmojiPicker } from './EmojiPicker';
 import { AttachmentPanel } from './AttachmentPanel';
 import { StickerPicker } from './StickerPicker';
 import { GifPicker } from './GifPicker';
+import { VoiceRecordingBar } from './VoiceRecordingBar';
 
 @ComponentV2
 export struct ChatInputBar {
@@ -13,9 +15,6 @@ export struct ChatInputBar {
   @Local isRecording: boolean = false;
   @Local recordingDuration: number = 0;
   @Local recordingLocked: boolean = false;
-  @Local recordingCancelled: boolean = false;
-  @Local slideOffsetX: number = 0;
-  @Local slideOffsetY: number = 0;
   @Local showEmojiPicker: boolean = false;
   @Local showAttachPanel: boolean = false;
   @Local showStickerPicker: boolean = false;
@@ -139,7 +138,13 @@ export struct ChatInputBar {
       // Main input row
       Row() {
         if (this.isRecording) {
-          this.buildRecordingUI()
+          VoiceRecordingBar({
+            recordingDuration: this.recordingDuration,
+            recordingLocked: this.recordingLocked,
+            onStop: () => { this.stopRecording(); },
+            onCancel: () => { this.cancelRecording(); },
+            onLock: () => { this.recordingLocked = true; }
+          })
         } else {
           // Emoji/Sticker toggle button
           Image(this.showEmojiPicker || this.showStickerPicker || this.showGifPicker
@@ -189,12 +194,10 @@ export struct ChatInputBar {
               .accessibilityText($r('app.string.accessibility_send'))
               .gesture(
                 GestureGroup(GestureMode.Exclusive,
-                  // Long press → schedule message
                   LongPressGesture({ repeat: false, duration: 500 })
                     .onAction(() => {
                       this.showSchedulePicker = true;
                     }),
-                  // Tap → send immediately
                   TapGesture()
                     .onAction(() => {
                       const text = this.inputText.trim();
@@ -235,7 +238,7 @@ export struct ChatInputBar {
         scale: 1.0
       })
 
-      // Panel selector tabs (emoji / stickers / gifs) — like Telegram Android
+      // Panel selector tabs (emoji / stickers / gifs)
       if (this.showEmojiPicker || this.showStickerPicker || this.showGifPicker) {
         Row({ space: 0 }) {
           this.panelTab($r('app.string.emoji_tab'), this.showEmojiPicker, () => {
@@ -327,138 +330,14 @@ export struct ChatInputBar {
     .onClick(onTap)
   }
 
-  @Builder
-  buildRecordingUI() {
-    if (this.recordingLocked) {
-      // Locked recording mode — shows waveform preview + delete/send
-      Row() {
-        // Delete (trash) button
-        Image($r('app.media.ic_delete'))
-          .width(24).height(24)
-          .fillColor($r('app.color.error_red'))
-          .onClick(() => { this.cancelRecording(); })
-
-        // Recording indicator + timer
-        Row() {
-          Circle()
-            .width(8).height(8)
-            .fill($r('app.color.recording_red'))
-
-          Text(this.formatRecordingDuration())
-            .fontSize(16)
-            .fontColor($r('app.color.text_primary'))
-            .margin({ left: 6 })
-        }
-        .margin({ left: 12 })
-
-        // Waveform preview bars
-        Row({ space: 1 }) {
-          ForEach(this.generateLiveWaveform(), (amp: number, index: number) => {
-            Column()
-              .width(3)
-              .height(amp * 20)
-              .borderRadius(1.5)
-              .backgroundColor($r('app.color.telegram_blue'))
-          }, (_amp: number, index: number) => index.toString())
-        }
-        .height(22)
-        .alignItems(VerticalAlign.Center)
-        .margin({ left: 12 })
-        .layoutWeight(1)
-
-        // Send button
-        Image($r('app.media.ic_send'))
-          .width(28).height(28)
-          .fillColor($r('app.color.telegram_blue'))
-          .margin({ left: 8 })
-          .onClick(() => { this.stopRecording(); })
-      }
-      .width('100%')
-    } else {
-      // Slide-to-cancel mode — finger is held down
-      Row() {
-        Circle()
-          .width(10).height(10)
-          .fill($r('app.color.recording_red'))
-
-        Text(this.formatRecordingDuration())
-          .fontSize(16)
-          .fontColor($r('app.color.text_primary'))
-          .margin({ left: 8 })
-
-        Blank().layoutWeight(1)
-
-        Row() {
-          Image($r('app.media.ic_back'))
-            .width(14).height(14)
-            .fillColor($r('app.color.text_secondary'))
-            .opacity(Math.min(1, Math.abs(this.slideOffsetX) / 60 + 0.4))
-          Text($r('app.string.slide_to_cancel'))
-            .fontSize(14)
-            .fontColor($r('app.color.text_secondary'))
-            .margin({ left: 4 })
-        }
-        .translate({ x: this.slideOffsetX * 0.5 })
-
-        Blank().layoutWeight(1)
-
-        // Lock indicator (slide up to lock)
-        Column() {
-          Image($r('app.media.ic_pin'))
-            .width(16).height(16)
-            .fillColor($r('app.color.text_secondary'))
-        }
-        .width(28).height(28)
-        .borderRadius(14)
-        .backgroundColor($r('app.color.background_secondary'))
-        .justifyContent(FlexAlign.Center)
-        .opacity(this.slideOffsetY < -20 ? 1 : 0.5)
-        .margin({ right: 4 })
-
-        // Stop/send recording button
-        Image($r('app.media.ic_send'))
-          .width(28).height(28)
-          .fillColor($r('app.color.telegram_blue'))
-          .onClick(() => { this.stopRecording(); })
-      }
-      .width('100%')
-      .gesture(
-        PanGesture({ direction: PanDirection.Horizontal | PanDirection.Vertical })
-          .onActionUpdate((event: GestureEvent) => {
-            this.slideOffsetX = Math.min(0, event.offsetX);
-            this.slideOffsetY = Math.min(0, event.offsetY);
-          })
-          .onActionEnd(() => {
-            if (this.slideOffsetX < -100) {
-              // Slid far enough left → cancel
-              this.cancelRecording();
-            } else if (this.slideOffsetY < -60) {
-              // Slid far enough up → lock recording
-              this.recordingLocked = true;
-            }
-            this.slideOffsetX = 0;
-            this.slideOffsetY = 0;
-          })
-      )
-    }
-  }
-
-  private formatRecordingDuration(): string {
-    const m = Math.floor(this.recordingDuration / 60);
-    const s = this.recordingDuration % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  }
+  // --- Recording control ---
 
   private startRecording(): void {
     this.isRecording = true;
     this.recordingDuration = 0;
     this.recordingLocked = false;
-    this.recordingCancelled = false;
-    this.slideOffsetX = 0;
-    this.slideOffsetY = 0;
     this.closeAllPanels();
 
-    // Timer for recording duration display
     this.recordingTimerId = setInterval(() => {
       this.recordingDuration++;
     }, 1000);
@@ -467,38 +346,22 @@ export struct ChatInputBar {
   private stopRecording(): void {
     const duration = this.recordingDuration;
     this.resetRecordingState();
-
-    // Send voice message via callback (AudioCapturer would provide actual audio data)
     if (duration > 0) {
       this.onSendVoice(duration);
     }
   }
 
   private cancelRecording(): void {
-    this.recordingCancelled = true;
     this.resetRecordingState();
   }
 
   private resetRecordingState(): void {
     this.isRecording = false;
     this.recordingLocked = false;
-    this.slideOffsetX = 0;
-    this.slideOffsetY = 0;
     if (this.recordingTimerId >= 0) {
       clearInterval(this.recordingTimerId);
       this.recordingTimerId = -1;
     }
-  }
-
-  private generateLiveWaveform(): number[] {
-    // Generate dynamic waveform bars based on recording duration for visual feedback
-    const bars: number[] = [];
-    const count = 20;
-    for (let i = 0; i < count; i++) {
-      const base = 0.3 + 0.4 * Math.sin((this.recordingDuration * 2 + i) * 0.8);
-      bars.push(Math.min(1, Math.max(0.15, base)));
-    }
-    return bars;
   }
 
   private closeAllPanels(): void {
@@ -528,16 +391,15 @@ export struct ChatInputBar {
         .fontColor($r('app.color.text_primary'))
         .margin({ top: 16, bottom: 12 })
 
-      // Quick schedule options (like Telegram)
       this.scheduleOption($r('app.string.schedule_in_1h'), 1)
       Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
       this.scheduleOption($r('app.string.schedule_in_2h'), 2)
       Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
       this.scheduleOption($r('app.string.schedule_in_4h'), 4)
       Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
-      this.scheduleOption($r('app.string.schedule_tomorrow_morning'), 18) // ~18h from now
+      this.scheduleOption($r('app.string.schedule_tomorrow_morning'), 18)
       Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
-      this.scheduleOption($r('app.string.schedule_tomorrow_evening'), 30) // ~30h from now
+      this.scheduleOption($r('app.string.schedule_tomorrow_evening'), 30)
 
       Button($r('app.string.cancel'))
         .width('90%')

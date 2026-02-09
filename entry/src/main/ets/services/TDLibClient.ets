@@ -2,6 +2,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { taskpool } from '@kit.ArkTS';
 import { TELEGRAM_API_ID, TELEGRAM_API_HASH } from './ConfigLocal';
 import { TdFallbackRegistry } from './TdFallbackRegistry';
+import { classifyTdlibError } from './AppError';
 
 // Native NAPI module
 import tdlib from 'libtdlib_napi.so';
@@ -36,6 +37,14 @@ export class TDLibError extends Error {
     super(`TDLib error ${code}: ${message}`);
     this.code = code;
     this.tdMessage = message;
+  }
+
+  /**
+   * Classify this error and get a user-facing AppError.
+   * Usage: catch (e) { if (e instanceof TDLibError) showAppError(e.classify()); }
+   */
+  classify(): import('./AppError').AppError {
+    return classifyTdlibError(this.code, this.tdMessage);
   }
 }
 
