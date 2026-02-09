@@ -2,7 +2,8 @@
 // Reference: Telegram Android ShareActivity, iOS ForwardController
 
 import { MessagesController } from '../../controllers/MessagesController';
-import { TDLibClient } from '../../services/TDLibClient';
+import { ChatService } from '../../services/ChatService';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Chat } from '../../models/Chat';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
 
@@ -149,18 +150,14 @@ export struct ForwardPickerPage {
     this.isForwarding = true;
 
     try {
-      const forwardParams: Record<string, Object> = {};
-      forwardParams['chat_id'] = targetChatId;
-      forwardParams['from_chat_id'] = this.sourceChatId;
-      forwardParams['message_ids'] = [this.messageId];
-      forwardParams['send_copy'] = false;
-      forwardParams['remove_caption'] = false;
-      await TDLibClient.getInstance().send('forwardMessages', forwardParams);
+      await ChatService.getInstance().forwardMessages(targetChatId, this.sourceChatId, [this.messageId]);
 
       // Navigate to forwarded chat
       this.navPathStack.pop();
       this.navPathStack.pushPath(new NavPathInfo('ChatDetail', targetChatId));
     } catch (e) {
+      hilog.warn(0x0001, 'ForwardPickerPage', 'Failed to forward message to chat %{public}d: %{public}s',
+        targetChatId, String(e));
       this.isForwarding = false;
     }
   }

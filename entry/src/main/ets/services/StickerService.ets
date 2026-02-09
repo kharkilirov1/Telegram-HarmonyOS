@@ -4,6 +4,10 @@
 
 import { TDLibClient } from './TDLibClient';
 import { FileController } from '../controllers/FileController';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const STICKER_TAG = 'StickerService';
+const STICKER_DOMAIN = 0x0001;
 
 // --- Data models ---
 
@@ -116,8 +120,8 @@ export async function loadRecentStickers(): Promise<TelegramSticker[]> {
       }
       return parsed;
     }
-  } catch (_e) {
-    // Recent stickers may not be available yet
+  } catch (e) {
+    hilog.warn(STICKER_DOMAIN, STICKER_TAG, 'Failed to load recent stickers');
   }
   return [];
 }
@@ -138,8 +142,8 @@ export async function loadInstalledSets(): Promise<StickerSetInfo[]> {
       }
       return sets;
     }
-  } catch (_e) {
-    // Handle error silently
+  } catch (e) {
+    hilog.warn(STICKER_DOMAIN, STICKER_TAG, 'Failed to load sticker data');
   }
   return [];
 }
@@ -159,8 +163,8 @@ export async function loadStickerSetStickers(setInfo: StickerSetInfo): Promise<T
       }
       return stickers;
     }
-  } catch (_e) {
-    // Handle error silently
+  } catch (e) {
+    hilog.warn(STICKER_DOMAIN, STICKER_TAG, 'Failed to load sticker data');
   }
   return [];
 }
@@ -183,8 +187,8 @@ export async function loadTrendingSets(): Promise<StickerSetInfo[]> {
       }
       return sets;
     }
-  } catch (_e) {
-    // Handle error silently
+  } catch (e) {
+    hilog.warn(STICKER_DOMAIN, STICKER_TAG, 'Failed to load sticker data');
   }
   return [];
 }

@@ -2,8 +2,11 @@
 // Reference: Telegram Android ChatEditActivity, iOS ChannelAdminController
 // HarmonyOS: NavDestination, @ComponentV2, V2 decorators, glass card styling
 
-import { TDLibClient } from '../../services/TDLibClient';
 import { MessagesController } from '../../controllers/MessagesController';
+import { GroupService } from '../../services/GroupService';
+import { UserService } from '../../services/UserService';
+import { ChatService } from '../../services/ChatService';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 @Builder
 export function GroupAdminBuilder(name: string, param: Object) {
@@ -59,9 +62,7 @@ export struct GroupAdminPage {
 
     // Load current permissions
     try {
-      const getChatParams: Record<string, Object> = {};
-      getChatParams['chat_id'] = this.chatId;
-      const chatResult = await TDLibClient.getInstance().send('getChat', getChatParams);
+      const chatResult = await GroupService.getInstance().getChat(this.chatId);
       const permissions = chatResult['permissions'] as Record<string, boolean>;
       if (permissions) {
         this.canSendMessages = permissions['can_send_basic_messages'] ?? true;
@@ -74,14 +75,11 @@ export struct GroupAdminPage {
       }
 
       // Determine public/private from supergroup info
-      const supergroupId = Math.abs(this.chatId);
-      const getSgParams: Record<string, Object> = {};
-      getSgParams['supergroup_id'] = supergroupId;
-      const sgInfo = await TDLibClient.getInstance().send('getSupergroup', getSgParams);
-      const hasUsername = ((sgInfo['usernames'] as Record<string, Object>)?.['editable_username'] as string || '').length > 0;
+      const sgInfo = await GroupService.getInstance().getSupergroup(Math.abs(this.chatId));
+      const hasUsername = (sgInfo.usernames?.editable_username || '').length > 0;
       this.isPublic = hasUsername;
-    } catch (_e) {
-      // Use defaults on failure
+    } catch (e) {
+      hilog.warn(0x0001, 'GroupAdminPage', 'Failed to load admin data, using defaults');
     }
 
     await this.loadAdministrators();
@@ -90,42 +88,33 @@ export struct GroupAdminPage {
 
   private async loadAdministrators(): Promise<void> {
     try {
-      const adminFilter: Record<string, Object> = {};
-      adminFilter['@type'] = 'supergroupMembersFilterAdministrators';
-      const adminMembersParams: Record<string, Object> = {};
-      adminMembersParams['supergroup_id'] = Math.abs(this.chatId);
-      adminMembersParams['filter'] = adminFilter;
-      adminMembersParams['offset'] = 0;
-      adminMembersParams['limit'] = 100;
-      const result = await TDLibClient.getInstance().send('getSupergroupMembers', adminMembersParams);
-      const rawMembers = result['members'] as Record<string, Object>[];
+      const result = await GroupService.getInstance()
+        .getSupergroupMembers(Math.abs(this.chatId), 'supergroupMembersFilterAdministrators', 0, 100);
+      const rawMembers = result.members;
       if (rawMembers && rawMembers.length > 0) {
         this.administrators = [];
         for (const m of rawMembers) {
-          const memberId = (m['member_id'] as Record<string, number>)?.['user_id'] || 0;
-          const status = (m['status'] as Record<string, string>)?.['@type'] || '';
-          const role = status === 'chatMemberStatusCreator'
+          const memberId = m.member_id?.user_id || 0;
+          const statusRecord = m.status as Record<string, string> | undefined;
+          const statusType = statusRecord?.['@type'] || '';
+          const role = statusType === 'chatMemberStatusCreator'
             ? getContext(this).resourceManager.getStringByNameSync('owner_role')
             : getContext(this).resourceManager.getStringByNameSync('admin_label');
 
           let name = '';
           let photoUrl: string | null = null;
           try {
-            const getUserParams: Record<string, Object> = {};
-            getUserParams['user_id'] = memberId;
-            const user = await TDLibClient.getInstance().send('getUser', getUserParams);
-            const firstName = (user['first_name'] as string) || '';
-            const lastName = (user['last_name'] as string) || '';
-            name = `${firstName} ${lastName}`.trim();
-            const photo = user['profile_photo'] as Record<string, Object>;
-            if (photo) {
-              const small = photo['small'] as Record<string, Object>;
-              const localFile = small?.['local'] as Record<string, Object>;
-              if (localFile?.['is_downloading_completed']) {
+            const user = await UserService.getInstance().getUser(memberId);
+            name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+            const photo = user.profile_photo;
+            if (photo?.small?.local) {
+              const localFile = photo.small.local as unknown as Record<string, Object>;
+              if (localFile['is_downloading_completed']) {
                 photoUrl = localFile['path'] as string;
               }
             }
-          } catch (_e) {
+          } catch (e) {
+            hilog.warn(0x0001, 'GroupAdminPage', 'Failed to get admin user %{public}d', memberId);
             const fallback = getContext(this).resourceManager.getStringByNameSync('user_fallback');
             name = `${fallback} ${memberId}`;
           }
@@ -134,8 +123,8 @@ export struct GroupAdminPage {
         }
         return;
       }
-    } catch (_e) {
-      // Fallback stub data
+    } catch (e) {
+      hilog.warn(0x0001, 'GroupAdminPage', 'Failed to load admins, using stub data');
     }
 
     const ownerLabel = getContext(this).resourceManager.getStringByNameSync('owner_role');
@@ -148,41 +137,33 @@ export struct GroupAdminPage {
 
   private async loadBannedUsers(): Promise<void> {
     try {
-      const bannedFilter: Record<string, Object> = {};
-      bannedFilter['@type'] = 'supergroupMembersFilterBanned';
-      const bannedMembersParams: Record<string, Object> = {};
-      bannedMembersParams['supergroup_id'] = Math.abs(this.chatId);
-      bannedMembersParams['filter'] = bannedFilter;
-      bannedMembersParams['offset'] = 0;
-      bannedMembersParams['limit'] = 100;
-      const result = await TDLibClient.getInstance().send('getSupergroupMembers', bannedMembersParams);
-      const rawMembers = result['members'] as Record<string, Object>[];
+      const result = await GroupService.getInstance()
+        .getSupergroupMembers(Math.abs(this.chatId), 'supergroupMembersFilterBanned', 0, 100);
+      const rawMembers = result.members;
       if (rawMembers && rawMembers.length > 0) {
         this.bannedUsers = [];
         for (const m of rawMembers) {
-          const memberId = (m['member_id'] as Record<string, number>)?.['user_id'] || 0;
+          const memberId = m.member_id?.user_id || 0;
           let name = '';
           try {
-            const getBannedUserParams: Record<string, Object> = {};
-            getBannedUserParams['user_id'] = memberId;
-            const user = await TDLibClient.getInstance().send('getUser', getBannedUserParams);
-            const firstName = (user['first_name'] as string) || '';
-            const lastName = (user['last_name'] as string) || '';
-            name = `${firstName} ${lastName}`.trim();
-          } catch (_e) {
+            const user = await UserService.getInstance().getUser(memberId);
+            name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+          } catch (e) {
+            hilog.warn(0x0001, 'GroupAdminPage', 'Failed to get banned user %{public}d', memberId);
             const fallback = getContext(this).resourceManager.getStringByNameSync('user_fallback');
             name = `${fallback} ${memberId}`;
           }
 
-          const bannedUntil = ((m['status'] as Record<string, number>)?.['banned_until_date'] || 0) === 0
+          const statusRecord = m.status as Record<string, number> | undefined;
+          const bannedUntil = (statusRecord?.['banned_until_date'] || 0) === 0
             ? getContext(this).resourceManager.getStringByNameSync('forever_ban')
             : getContext(this).resourceManager.getStringByNameSync('temporary_ban');
           this.bannedUsers.push({ userId: memberId, name, bannedUntil });
         }
         return;
       }
-    } catch (_e) {
-      // Fallback stub data
+    } catch (e) {
+      hilog.warn(0x0001, 'GroupAdminPage', 'Failed to load banned users, using stub data');
     }
 
     this.bannedUsers = [
@@ -193,12 +174,10 @@ export struct GroupAdminPage {
   private async toggleGroupType(): Promise<void> {
     this.isPublic = !this.isPublic;
     try {
-      const toggleHistoryParams: Record<string, Object> = {};
-      toggleHistoryParams['supergroup_id'] = Math.abs(this.chatId);
-      toggleHistoryParams['is_all_history_available'] = this.isPublic;
-      await TDLibClient.getInstance().send('toggleSupergroupIsAllHistoryAvailable', toggleHistoryParams);
-    } catch (_e) {
-      // Revert on failure
+      await GroupService.getInstance()
+        .toggleSupergroupIsAllHistoryAvailable(Math.abs(this.chatId), this.isPublic);
+    } catch (e) {
+      hilog.warn(0x0001, 'GroupAdminPage', 'Failed to toggle group type');
       this.isPublic = !this.isPublic;
     }
   }
@@ -222,12 +201,9 @@ export struct GroupAdminPage {
       permissions['can_invite_users'] = this.canAddMembers;
       permissions['can_pin_messages'] = this.canPinMessages;
       permissions['can_change_info'] = this.canChangeInfo;
-      const setPermissionsParams: Record<string, Object> = {};
-      setPermissionsParams['chat_id'] = this.chatId;
-      setPermissionsParams['permissions'] = permissions;
-      await TDLibClient.getInstance().send('setChatPermissions', setPermissionsParams);
-    } catch (_e) {
-      // Handle save error silently
+      await ChatService.getInstance().setChatPermissions(this.chatId, permissions);
+    } catch (e) {
+      hilog.warn(0x0001, 'GroupAdminPage', 'Failed to save permissions');
     }
     this.isSaving = false;
   }

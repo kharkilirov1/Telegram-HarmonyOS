@@ -44,6 +44,11 @@ export struct ChatInputBar {
     }
   }
 
+  aboutToDisappear(): void {
+    // Ensure recording timer is cleaned up when component is removed
+    this.resetRecordingState();
+  }
+
   build() {
     Column() {
       // Reply bar

@@ -2,10 +2,12 @@
 // Reference: Telegram iOS PeerInfoScreen (group mode), Android ChatActivity GroupInfo
 // HarmonyOS: NavDestination, LazyForEach, expandSafeArea
 
-import { TDLibClient } from '../../services/TDLibClient';
 import { MessagesController } from '../../controllers/MessagesController';
+import { GroupService } from '../../services/GroupService';
+import { UserService } from '../../services/UserService';
 import { Chat } from '../../models/Chat';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 @Builder
 export function GroupInfoBuilder(name: string, param: Object) {
@@ -51,12 +53,9 @@ export struct GroupInfoPage {
     }
 
     try {
-      // Get supergroup/basic group info from TDLib
-      const fullInfoParams: Record<string, Object> = {};
-      fullInfoParams['supergroup_id'] = Math.abs(this.chatId);
-      const fullInfo = await TDLibClient.getInstance().send('getSupergroupFullInfo', fullInfoParams);
-      this.description = (fullInfo['description'] as string) || '';
-      this.memberCount = (fullInfo['member_count'] as number) || 0;
+      const fullInfo = await GroupService.getInstance().getSupergroupFullInfo(Math.abs(this.chatId));
+      this.description = fullInfo.description || '';
+      this.memberCount = fullInfo.member_count || 0;
     } catch (e) {
       // Stub data
       this.description = this.isChannel
@@ -72,51 +71,41 @@ export struct GroupInfoPage {
 
   private async loadMembers(): Promise<void> {
     try {
-      const recentFilter: Record<string, Object> = {};
-      recentFilter['@type'] = 'supergroupMembersFilterRecent';
-      const membersParams: Record<string, Object> = {};
-      membersParams['supergroup_id'] = Math.abs(this.chatId);
-      membersParams['filter'] = recentFilter;
-      membersParams['offset'] = 0;
-      membersParams['limit'] = 50;
-      const result = await TDLibClient.getInstance().send('getSupergroupMembers', membersParams);
-      const rawMembers = result['members'] as Record<string, Object>[];
+      const result = await GroupService.getInstance()
+        .getSupergroupMembers(Math.abs(this.chatId), 'supergroupMembersFilterRecent', 0, 50);
+      const rawMembers = result.members;
       if (rawMembers && rawMembers.length > 0) {
         this.members = [];
         for (const m of rawMembers) {
-          const memberId = (m['member_id'] as Record<string, number>)?.['user_id'] || 0;
-          const status = (m['status'] as Record<string, string>)?.['@type'] || '';
-          const isAdmin = status === 'chatMemberStatusAdministrator' || status === 'chatMemberStatusCreator';
+          const memberId = m.member_id?.user_id || 0;
+          const statusRecord = m.status as Record<string, string> | undefined;
+          const statusType = statusRecord?.['@type'] || '';
+          const isAdmin = statusType === 'chatMemberStatusAdministrator' || statusType === 'chatMemberStatusCreator';
 
-          // Fetch user info
           let name = '';
           let photoUrl: string | null = null;
           let userStatus = 'last seen recently';
           try {
-            const getUserParams: Record<string, Object> = {};
-            getUserParams['user_id'] = memberId;
-            const user = await TDLibClient.getInstance().send('getUser', getUserParams);
-            const firstName = (user['first_name'] as string) || '';
-            const lastName = (user['last_name'] as string) || '';
-            name = `${firstName} ${lastName}`.trim();
-            const photo = user['profile_photo'] as Record<string, Object>;
-            if (photo) {
-              const small = photo['small'] as Record<string, Object>;
-              const localFile = small?.['local'] as Record<string, Object>;
-              if (localFile?.['is_downloading_completed']) {
+            const user = await UserService.getInstance().getUser(memberId);
+            name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+            const photo = user.profile_photo;
+            if (photo?.small?.local) {
+              const localFile = photo.small.local as unknown as Record<string, Object>;
+              if (localFile['is_downloading_completed']) {
                 photoUrl = localFile['path'] as string;
               }
             }
-            const userStatusObj = user['status'] as Record<string, string>;
+            const userStatusObj = user.status as unknown as Record<string, string> | undefined;
             if (userStatusObj) {
-              const statusType = userStatusObj['@type'] || '';
-              if (statusType === 'userStatusOnline') userStatus = 'online';
-              else if (statusType === 'userStatusRecently') userStatus = 'last seen recently';
-              else if (statusType === 'userStatusLastWeek') userStatus = 'last seen within a week';
-              else if (statusType === 'userStatusLastMonth') userStatus = 'last seen within a month';
+              const st = userStatusObj['@type'] || '';
+              if (st === 'userStatusOnline') userStatus = 'online';
+              else if (st === 'userStatusRecently') userStatus = 'last seen recently';
+              else if (st === 'userStatusLastWeek') userStatus = 'last seen within a week';
+              else if (st === 'userStatusLastMonth') userStatus = 'last seen within a month';
               else userStatus = 'last seen a long time ago';
             }
-          } catch (_e) {
+          } catch (e) {
+            hilog.warn(0x0001, 'GroupInfoPage', 'Failed to get user %{public}d', memberId);
             name = `User ${memberId}`;
           }
 
@@ -124,8 +113,8 @@ export struct GroupInfoPage {
         }
         return;
       }
-    } catch (_e) {
-      // Fallback to stub data if TDLib call fails
+    } catch (e) {
+      hilog.warn(0x0001, 'GroupInfoPage', 'Failed to load members, using stub data');
     }
 
     this.members = [

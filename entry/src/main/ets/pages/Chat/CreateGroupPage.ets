@@ -3,7 +3,8 @@
 
 import { ContactsController } from '../../controllers/ContactsController';
 import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
-import { TDLibClient } from '../../services/TDLibClient';
+import { ChatService } from '../../services/ChatService';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { User } from '../../models/User';
 import { AvatarWithStatus, formatLastSeen } from '../../components/Common/AvatarWithStatus';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
@@ -349,10 +350,7 @@ export struct CreateGroupPage {
     this.isCreating = true;
 
     try {
-      const createGroupParams: Record<string, Object> = {};
-      createGroupParams['user_ids'] = this.selectedUserIds;
-      createGroupParams['title'] = this.groupName.trim();
-      const result = await TDLibClient.getInstance().send('createNewBasicGroupChat', createGroupParams) as Record<string, number>;
+      const result = await ChatService.getInstance().createNewBasicGroupChat(this.selectedUserIds, this.groupName.trim()) as Record<string, number>;
 
       const chatId = result['id'] || 0;
       this.navPathStack.pop();
@@ -360,6 +358,7 @@ export struct CreateGroupPage {
         this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
       }
     } catch (e) {
+      hilog.warn(0x0001, 'CreateGroupPage', 'Failed to create group chat: %{public}s', String(e));
       this.isCreating = false;
     }
   }

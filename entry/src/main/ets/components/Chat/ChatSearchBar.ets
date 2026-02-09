@@ -2,7 +2,8 @@
 // Reference: Telegram iOS ChatSearchBar, Android ChatSearchView
 
 import { MessagesController } from '../../controllers/MessagesController';
-import { TDLibClient } from '../../services/TDLibClient';
+import { ChatService } from '../../services/ChatService';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Message } from '../../models/Message';
 
 @ComponentV2
@@ -265,16 +266,13 @@ export struct ChatSearchBar {
 
   private async jumpToDate(timestamp: number): Promise<void> {
     try {
-      const jumpParams: Record<string, Object> = {};
-      jumpParams['chat_id'] = this.chatId;
-      jumpParams['date'] = timestamp;
-      const result = await TDLibClient.getInstance().send('getChatMessageByDate', jumpParams);
+      const result = await ChatService.getInstance().getChatMessageByDate(this.chatId, timestamp);
       if (result && result['id']) {
         const messageId = result['id'] as number;
         this.onScrollToMessage(messageId);
       }
-    } catch (_e) {
-      // Failed to jump to date
+    } catch (e) {
+      hilog.warn(0x0001, 'ChatSearchBar', 'Failed to jump to date');
     }
   }
 
@@ -284,14 +282,7 @@ export struct ChatSearchBar {
       return;
     }
     try {
-      const memberFilter: Record<string, Object> = {};
-      memberFilter['@type'] = 'chatMembersFilterMembers';
-      const searchMemberParams: Record<string, Object> = {};
-      searchMemberParams['chat_id'] = this.chatId;
-      searchMemberParams['query'] = name;
-      searchMemberParams['limit'] = 10;
-      searchMemberParams['filter'] = memberFilter;
-      const result = await TDLibClient.getInstance().send('searchChatMembers', searchMemberParams);
+      const result = await ChatService.getInstance().searchChatMembers(this.chatId, name, 10);
       const members = result['members'] as Record<string, Object>[];
       if (members && members.length > 0) {
         const firstMember = members[0];
@@ -304,8 +295,8 @@ export struct ChatSearchBar {
           }
         }
       }
-    } catch (_e) {
-      // Failed to look up sender
+    } catch (e) {
+      hilog.warn(0x0001, 'ChatSearchBar', 'Failed to look up sender');
     }
   }
 }

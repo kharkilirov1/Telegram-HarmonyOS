@@ -2,7 +2,8 @@
 // Reference: Telegram iOS PeerInfoScreen, Android ProfileActivity
 // HarmonyOS: NavDestination, expandSafeArea, pageTransition
 
-import { TDLibClient } from '../../services/TDLibClient';
+import { UserService } from '../../services/UserService';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { User } from '../../models/User';
 import { CallsController } from '../../controllers/CallsController';
 import { formatLastSeen } from '../../components/Common/AvatarWithStatus';
@@ -34,21 +35,18 @@ export struct UserInfoPage {
 
   private async loadUserInfo(): Promise<void> {
     try {
-      const getUserParams: Record<string, Object> = {};
-      getUserParams['user_id'] = this.userId;
-      const result = await TDLibClient.getInstance().send('getUser', getUserParams);
+      const result = await UserService.getInstance().getUser(this.userId);
       this.firstName = (result['first_name'] as string) || 'User';
       this.lastName = (result['last_name'] as string) || '';
       this.username = (result['username'] as string) || '';
       this.phoneNumber = (result['phone_number'] as string) || '';
 
       // Get user full info (bio, common groups)
-      const getFullInfoParams: Record<string, Object> = {};
-      getFullInfoParams['user_id'] = this.userId;
-      const fullInfo = await TDLibClient.getInstance().send('getUserFullInfo', getFullInfoParams);
+      const fullInfo = await UserService.getInstance().getUserFullInfo(this.userId);
       this.bio = (fullInfo['bio'] as string) || '';
       this.commonGroupsCount = (fullInfo['group_in_common_count'] as number) || 0;
     } catch (e) {
+      hilog.warn(0x0001, 'UserInfoPage', 'Failed to load user info');
       // Stub defaults
       this.firstName = 'Alex';
       this.lastName = 'Johnson';

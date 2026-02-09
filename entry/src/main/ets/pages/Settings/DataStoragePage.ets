@@ -1,8 +1,9 @@
 // Data and Storage settings page
 // Reference: Telegram iOS DataSettingsController, Android DataSettingsActivity
 
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { PreferencesService } from '../../services/PreferencesService';
-import { TDLibClient } from '../../services/TDLibClient';
+import { ChatService } from '../../services/ChatService';
 
 // Size limit options for videos and files auto-download
 const SIZE_OPTIONS: number[] = [
@@ -95,12 +96,12 @@ export struct DataStoragePage {
 
   private async loadAutoDownloadPresets(): Promise<void> {
     try {
-      const result = await TDLibClient.getInstance().send('getAutoDownloadSettingsPresets');
+      const result = await ChatService.getInstance().getAutoDownloadSettingsPresets();
       if (result !== null && result !== undefined) {
         // Presets loaded from TDLib; local preferences take priority for UI state
       }
     } catch (e) {
-      // Silently ignore if TDLib is not connected yet
+      hilog.warn(0x0001, 'DataStoragePage', 'Failed to load auto-download presets');
     }
   }
 
@@ -148,12 +149,9 @@ export struct DataStoragePage {
       autoDownloadSettings['use_less_data_for_calls'] = false;
       const networkType: Record<string, Object> = {};
       networkType['@type'] = tdlibNetworkType;
-      const syncParams: Record<string, Object> = {};
-      syncParams['settings'] = autoDownloadSettings;
-      syncParams['type'] = networkType;
-      await TDLibClient.getInstance().send('setAutoDownloadSettings', syncParams);
+      await ChatService.getInstance().setAutoDownloadSettings(autoDownloadSettings, networkType);
     } catch (e) {
-      // Silently ignore if TDLib is not connected
+      hilog.warn(0x0001, 'DataStoragePage', 'Failed to sync auto-download settings to TDLib');
     }
   }
 

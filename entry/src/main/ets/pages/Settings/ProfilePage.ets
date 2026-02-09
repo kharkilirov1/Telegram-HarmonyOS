@@ -1,8 +1,9 @@
 // Profile page with view/edit mode
 // Reference: Telegram iOS ProfileController, Android ProfileActivity
 
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AuthController } from '../../controllers/AuthController';
-import { TDLibClient } from '../../services/TDLibClient';
+import { UserService } from '../../services/UserService';
 
 @Builder
 export function ProfileBuilder(name: string, param: Object) {
@@ -443,28 +444,21 @@ export struct ProfilePage {
     this.isSaving = true;
     try {
       if (this.editFirstName !== this.firstName || this.editLastName !== this.lastName) {
-        const nameParams: Record<string, Object> = {};
-        nameParams['first_name'] = this.editFirstName.trim();
-        nameParams['last_name'] = this.editLastName.trim();
-        await TDLibClient.getInstance().send('setName', nameParams);
+        await UserService.getInstance().setName(this.editFirstName.trim(), this.editLastName.trim());
         this.firstName = this.editFirstName.trim();
         this.lastName = this.editLastName.trim();
       }
       if (this.editBio !== this.bio) {
-        const bioParams: Record<string, Object> = {};
-        bioParams['bio'] = this.editBio.trim();
-        await TDLibClient.getInstance().send('setBio', bioParams);
+        await UserService.getInstance().setBio(this.editBio.trim());
         this.bio = this.editBio.trim();
       }
       if (this.editUsername !== this.username) {
-        const usernameParams: Record<string, Object> = {};
-        usernameParams['username'] = this.editUsername.trim();
-        await TDLibClient.getInstance().send('setUsername', usernameParams);
+        await UserService.getInstance().setUsername(this.editUsername.trim());
         this.username = this.editUsername.trim();
       }
       this.isEditing = false;
     } catch (e) {
-      // Handle error
+      hilog.warn(0x0001, 'ProfilePage', 'Failed to save profile changes');
     } finally {
       this.isSaving = false;
     }

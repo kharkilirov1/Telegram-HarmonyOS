@@ -2,7 +2,8 @@
 // Reference: Telegram iOS AccountContext, Android AccountSwitcher
 // HarmonyOS: Uses PreferencesService for persistent account data
 
-import { TDLibClient } from '../../services/TDLibClient';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { UserService } from '../../services/UserService';
 import { AuthController } from '../../controllers/AuthController';
 import { PreferencesService } from '../../services/PreferencesService';
 
@@ -36,7 +37,7 @@ export struct MultiAccountPage {
 
     // Get current user info
     try {
-      const meResult: Record<string, Object> = await TDLibClient.getInstance().send('getMe');
+      const meResult: Record<string, Object> = await UserService.getInstance().getMe();
       const userId = (meResult['id'] as number) || 0;
       const firstName = (meResult['first_name'] as string) || '';
       const lastName = (meResult['last_name'] as string) || '';
@@ -65,8 +66,8 @@ export struct MultiAccountPage {
         initial: initial,
         isActive: true
       }];
-    } catch (_e) {
-      // Fallback
+    } catch (e) {
+      hilog.warn(0x0001, 'MultiAccountPage', 'Failed to load current user info');
       this.accounts = [];
     }
 

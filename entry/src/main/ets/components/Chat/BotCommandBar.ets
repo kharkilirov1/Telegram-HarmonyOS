@@ -1,7 +1,8 @@
 // BotCommandBar — shows bot commands menu and Mini App button
 // Reference: Telegram iOS BotCommandMenu, Android BotKeyboardView
 
-import { TDLibClient } from '../../services/TDLibClient';
+import { UserService } from '../../services/UserService';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 interface BotCommand {
   command: string;
@@ -31,9 +32,7 @@ export struct BotCommandBar {
 
     try {
       // Get full bot info via TDLib
-      const sendParams: Record<string, Object> = {};
-      sendParams['user_id'] = this.botUserId;
-      const result: Record<string, Object> = await TDLibClient.getInstance().send('getUserFullInfo', sendParams);
+      const result: Record<string, Object> = await UserService.getInstance().getUserFullInfo(this.botUserId);
 
       const botInfo: Record<string, Object> | undefined = result['bot_info'] as Record<string, Object>;
       if (botInfo) {
@@ -65,8 +64,8 @@ export struct BotCommandBar {
           }
         }
       }
-    } catch (_e) {
-      // Silently fail
+    } catch (e) {
+      hilog.warn(0x0001, 'BotCommandBar', 'Failed to load bot info');
     }
 
     this.isLoading = false;

@@ -1,7 +1,8 @@
 // NearbyPeoplePage — discover users and groups nearby
 // Reference: Telegram iOS PeopleNearbyController, Android PeopleNearbyActivity
 
-import { TDLibClient } from '../../services/TDLibClient';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { ChatService } from '../../services/ChatService';
 
 @Builder
 export function NearbyPeopleBuilder(name: string, param: Object) {
@@ -40,13 +41,7 @@ export struct NearbyPeoplePage {
     this.isLoading = true;
 
     try {
-      const location: Record<string, Object> = {};
-      location['@type'] = 'location';
-      location['latitude'] = 0.0;
-      location['longitude'] = 0.0;
-      const nearbyParams: Record<string, Object> = {};
-      nearbyParams['location'] = location;
-      const result: Record<string, Object> = await TDLibClient.getInstance().send('searchChatsNearby', nearbyParams);
+      const result: Record<string, Object> = await ChatService.getInstance().searchChatsNearby(0.0, 0.0);
 
       // Parse nearby users
       const rawUsers = result['users_nearby'] as Record<string, Object>[];
@@ -70,8 +65,8 @@ export struct NearbyPeoplePage {
           distance: (g['distance'] as number) || 0
         }));
       }
-    } catch (_e) {
-      // Location permission likely not granted
+    } catch (e) {
+      hilog.warn(0x0001, 'NearbyPeoplePage', 'Failed to search chats nearby');
     }
 
     this.isLoading = false;

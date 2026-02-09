@@ -1,7 +1,8 @@
 // PassportPage — Telegram Passport identity documents
 // Reference: Telegram iOS PassportController, Android PassportActivity
 
-import { TDLibClient } from '../../services/TDLibClient';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { ChatService } from '../../services/ChatService';
 
 @Builder
 export function PassportBuilder(name: string, param: Object) {
@@ -33,14 +34,10 @@ export struct PassportPage {
 
   private async loadPassportData(): Promise<void> {
     try {
-      const params: Record<string, Object> = {};
-      params['bot_user_id'] = 0;
-      params['scope'] = '';
-      params['public_key'] = '';
-      params['nonce'] = '';
-      const result: Record<string, Object> = await TDLibClient.getInstance().send('getPassportAuthorizationForm', params);
+      const result: Record<string, Object> = await ChatService.getInstance().getPassportAuthorizationForm(0, '', '');
       this.hasPassport = result !== null;
-    } catch (_e) {
+    } catch (e) {
+      hilog.warn(0x0001, 'PassportPage', 'Failed to load passport authorization form');
       this.hasPassport = false;
     }
   }

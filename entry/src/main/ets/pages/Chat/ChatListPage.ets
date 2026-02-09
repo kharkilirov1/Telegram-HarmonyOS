@@ -1,5 +1,5 @@
 import { MessagesController } from '../../controllers/MessagesController';
-import { TDLibClient } from '../../services/TDLibClient';
+import { ChatService } from '../../services/ChatService';
 import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
 import { Chat } from '../../models/Chat';
 import { ChatListItem } from '../../components/Chat/ChatListItem';
@@ -252,12 +252,7 @@ export struct ChatListPage {
       .backgroundColor($r('app.color.telegram_blue'))
       .onClick(() => {
         // Move chat to archive — TDLib: addChatToList(chatListArchive)
-        const chatListArchive: Record<string, Object> = {};
-        chatListArchive['@type'] = 'chatListArchive';
-        const archiveParams: Record<string, Object> = {};
-        archiveParams['chat_id'] = chat.id;
-        archiveParams['chat_list'] = chatListArchive;
-        TDLibClient.getInstance().send('addChatToList', archiveParams);
+        ChatService.getInstance().addChatToList(chat.id, 'chatListArchive');
         // Remove from visible list
         const allChats = MessagesController.getInstance().getSortedDialogs();
         const filtered = allChats.filter(c => c.id !== chat.id);

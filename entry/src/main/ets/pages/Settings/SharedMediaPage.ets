@@ -1,7 +1,8 @@
 // Shared media browser — photos, videos, files, links, voice, GIFs
 // Reference: Telegram iOS SharedMediaController, Android SharedMediaLayout
 
-import { TDLibClient } from '../../services/TDLibClient';
+import { ChatService } from '../../services/ChatService';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 @Builder
 export function SharedMediaBuilder(name: string, param: Object) {
@@ -51,16 +52,7 @@ export struct SharedMediaPage {
 
   private async loadMediaItems(): Promise<void> {
     try {
-      const mediaFilter: Record<string, Object> = {};
-      mediaFilter['@type'] = 'searchMessagesFilterPhotoAndVideo';
-      const mediaParams: Record<string, Object> = {};
-      mediaParams['chat_id'] = this.chatId;
-      mediaParams['query'] = '';
-      mediaParams['filter'] = mediaFilter;
-      mediaParams['from_message_id'] = 0;
-      mediaParams['offset'] = 0;
-      mediaParams['limit'] = 50;
-      const result: Record<string, Object> = await TDLibClient.getInstance().send('searchChatMessages', mediaParams);
+      const result: Record<string, Object> = await ChatService.getInstance().searchChatMessages(this.chatId, '', 0, 50, 'searchMessagesFilterPhotoAndVideo');
       const messages = result['messages'] as Record<string, Object>[];
       if (messages && messages.length > 0) {
         this.mediaItems = messages.map((msg, index) => {
@@ -79,8 +71,8 @@ export struct SharedMediaPage {
         });
         return;
       }
-    } catch (_e) {
-      // Fallback to stub data
+    } catch (e) {
+      hilog.warn(0x0001, 'SharedMediaPage', 'Failed to load media items');
     }
     this.mediaItems = [
       { id: 1, type: 'photo', url: '', name: 'Photo 1', date: 1706000000, size: '1.2 MB' },
@@ -94,16 +86,7 @@ export struct SharedMediaPage {
 
   private async loadFileItems(): Promise<void> {
     try {
-      const docFilter: Record<string, Object> = {};
-      docFilter['@type'] = 'searchMessagesFilterDocument';
-      const docParams: Record<string, Object> = {};
-      docParams['chat_id'] = this.chatId;
-      docParams['query'] = '';
-      docParams['filter'] = docFilter;
-      docParams['from_message_id'] = 0;
-      docParams['offset'] = 0;
-      docParams['limit'] = 50;
-      const result: Record<string, Object> = await TDLibClient.getInstance().send('searchChatMessages', docParams);
+      const result: Record<string, Object> = await ChatService.getInstance().searchChatMessages(this.chatId, '', 0, 50, 'searchMessagesFilterDocument');
       const messages = result['messages'] as Record<string, Object>[];
       if (messages && messages.length > 0) {
         this.fileItems = messages.map((msg, index) => {
@@ -122,8 +105,8 @@ export struct SharedMediaPage {
         });
         return;
       }
-    } catch (_e) {
-      // Fallback to stub data
+    } catch (e) {
+      hilog.warn(0x0001, 'SharedMediaPage', 'Failed to load file items');
     }
     this.fileItems = [
       { id: 10, type: 'file', url: '', name: 'document.pdf', date: 1706000000, size: '2.4 MB' },
@@ -134,16 +117,7 @@ export struct SharedMediaPage {
 
   private async loadLinkItems(): Promise<void> {
     try {
-      const urlFilter: Record<string, Object> = {};
-      urlFilter['@type'] = 'searchMessagesFilterUrl';
-      const urlParams: Record<string, Object> = {};
-      urlParams['chat_id'] = this.chatId;
-      urlParams['query'] = '';
-      urlParams['filter'] = urlFilter;
-      urlParams['from_message_id'] = 0;
-      urlParams['offset'] = 0;
-      urlParams['limit'] = 50;
-      const result: Record<string, Object> = await TDLibClient.getInstance().send('searchChatMessages', urlParams);
+      const result: Record<string, Object> = await ChatService.getInstance().searchChatMessages(this.chatId, '', 0, 50, 'searchMessagesFilterUrl');
       const messages = result['messages'] as Record<string, Object>[];
       if (messages && messages.length > 0) {
         this.linkItems = messages.map((msg, index) => {
@@ -161,8 +135,8 @@ export struct SharedMediaPage {
         });
         return;
       }
-    } catch (_e) {
-      // Fallback to stub data
+    } catch (e) {
+      hilog.warn(0x0001, 'SharedMediaPage', 'Failed to load link items');
     }
     this.linkItems = [
       { id: 20, type: 'link', url: 'https://telegram.org', name: 'Telegram', date: 1706000000, size: '' },

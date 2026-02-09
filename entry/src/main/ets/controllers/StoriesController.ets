@@ -1,7 +1,8 @@
 // StoriesController — manages TDLib story data
 // Reference: Telegram iOS StoriesManager, Android StoriesController
 
-import { TDLibClient } from '../services/TDLibClient';
+import { TDLibClient, TDLibError } from '../services/TDLibClient';
+import { handleTdlibError } from '../services/AppError';
 import { NotificationCenter, EventId } from './NotificationCenter';
 import { Story, StoryContentType, ChatActiveStories } from '../models/Story';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -51,9 +52,11 @@ export class StoriesController {
 
       // TDLib sends updateChatActiveStories for each chat via subscription
       hilog.info(DOMAIN, TAG, 'Story list loaded');
-    } catch (_e) {
+    } catch (e) {
+      if (e instanceof TDLibError) {
+        handleTdlibError(e.code, e.tdMessage);
+      }
       hilog.warn(DOMAIN, TAG, 'Failed to load story list, trying fallback');
-      // Fallback: load chats and check for stories
       try {
         const chatList: Record<string, Object> = {};
         chatList['@type'] = 'chatListMain';
@@ -61,8 +64,8 @@ export class StoriesController {
         fallbackParams['chat_list'] = chatList;
         fallbackParams['limit'] = 30;
         await TDLibClient.getInstance().send('loadChats', fallbackParams);
-      } catch (_e2) {
-        // Silently fail
+      } catch (e2) {
+        hilog.warn(DOMAIN, TAG, 'Story list fallback also failed');
       }
     }
   }
@@ -82,8 +85,11 @@ export class StoriesController {
       const story = this.parseStory(result, chatId);
       this.storiesCache.set(`${chatId}_${storyId}`, story);
       return story;
-    } catch (_e) {
-      hilog.warn(DOMAIN, TAG, 'Failed to get story %{public}d', storyId);
+    } catch (e) {
+      if (e instanceof TDLibError) {
+        handleTdlibError(e.code, e.tdMessage);
+      }
+      hilog.warn(DOMAIN, TAG, 'Failed to get story %{public}d for chat %{public}d', storyId, chatId);
       return null;
     }
   }
@@ -104,8 +110,8 @@ export class StoriesController {
         this.sortActiveStories();
         NotificationCenter.getInstance().post(EventId.STORIES_UPDATED);
       }
-    } catch (_e) {
-      // Silently fail
+    } catch (e) {
+      hilog.debug(DOMAIN, TAG, 'openStory failed for story %{public}d', storyId);
     }
   }
 
@@ -115,8 +121,8 @@ export class StoriesController {
       closeParams['story_sender_chat_id'] = chatId;
       closeParams['story_id'] = storyId;
       await TDLibClient.getInstance().send('closeStory', closeParams);
-    } catch (_e) {
-      // Silently fail
+    } catch (e) {
+      hilog.debug(DOMAIN, TAG, 'closeStory failed for story %{public}d', storyId);
     }
   }
 
@@ -203,7 +209,8 @@ export class StoriesController {
           }
         }
       }
-    } catch (_e) {
+    } catch (e) {
+      hilog.warn(DOMAIN, TAG, 'Failed to resolve chat info for %{public}d', chatId);
       initial = '?';
     }
 

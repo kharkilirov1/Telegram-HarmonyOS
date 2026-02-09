@@ -3,7 +3,8 @@
 
 import { ContactsController } from '../../controllers/ContactsController';
 import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
-import { TDLibClient } from '../../services/TDLibClient';
+import { ChatService } from '../../services/ChatService';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { User } from '../../models/User';
 import { AvatarWithStatus, formatLastSeen } from '../../components/Common/AvatarWithStatus';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
@@ -209,15 +210,14 @@ export struct NewChatPage {
 
   private async openPrivateChat(userId: number): Promise<void> {
     try {
-      const privateChatParams: Record<string, Object> = {};
-      privateChatParams['user_id'] = userId;
-      privateChatParams['force'] = false;
-      const result = await TDLibClient.getInstance().send('createPrivateChat', privateChatParams) as Record<string, number>;
+      const result = await ChatService.getInstance().createPrivateChat(userId) as Record<string, number>;
 
       const chatId = result['id'] || -userId;
       this.navPathStack.pop();
       this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
     } catch (e) {
+      hilog.warn(0x0001, 'NewChatPage', 'Failed to create private chat for user %{public}d: %{public}s',
+        userId, String(e));
       // Fallback: use negative userId as chatId convention
       this.navPathStack.pop();
       this.navPathStack.pushPath(new NavPathInfo('ChatDetail', -userId));

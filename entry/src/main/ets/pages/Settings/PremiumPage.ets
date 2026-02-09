@@ -1,7 +1,8 @@
 // PremiumPage — Telegram Premium features showcase
 // Reference: Telegram iOS PremiumIntroScreen, Android PremiumPreviewFragment
 
-import { TDLibClient } from '../../services/TDLibClient';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { UserService } from '../../services/UserService';
 
 @Builder
 export function PremiumBuilder(name: string, param: Object) {
@@ -35,9 +36,9 @@ export struct PremiumPage {
 
   private async checkPremiumStatus(): Promise<void> {
     try {
-      const me: Record<string, Object> = await TDLibClient.getInstance().send('getMe');
-      this.isPremium = (me['is_premium'] as boolean) || false;
-    } catch (_e) {
+      this.isPremium = await UserService.getInstance().isPremium();
+    } catch (e) {
+      hilog.warn(0x0001, 'PremiumPage', 'Failed to check premium status');
       this.isPremium = false;
     }
     this.isLoading = false;

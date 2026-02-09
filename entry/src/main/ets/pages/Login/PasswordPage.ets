@@ -1,5 +1,6 @@
 import { AuthController } from '../../controllers/AuthController';
-import { TDLibClient } from '../../services/TDLibClient';
+import { ChatService } from '../../services/ChatService';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { TelegramMascot, MascotState } from '../../components/Common/TelegramMascot';
 
 @Builder
@@ -281,7 +282,7 @@ export struct PasswordPage {
     this.errorMessage = '';
 
     try {
-      const result: Record<string, Object> = await TDLibClient.getInstance().send('requestAuthenticationPasswordRecovery');
+      const result: Record<string, Object> = await ChatService.getInstance().requestAuthPasswordRecovery();
       // TDLib responds with emailAddressAuthenticationCodeInfo
       this.recoveryEmailPattern = (result['email_address_pattern'] as string) || '';
       this.recoveryMessage = this.recoveryEmailPattern.length > 0
@@ -289,6 +290,7 @@ export struct PasswordPage {
         : 'We have sent a recovery code to your email.';
       this.showRecoveryView = true;
     } catch (e) {
+      hilog.warn(0x0001, 'PasswordPage', 'Failed to request password recovery');
       // If no recovery email is set, TDLib will return error
       AlertDialog.show({
         title: 'No Recovery Email',
@@ -307,12 +309,11 @@ export struct PasswordPage {
     this.errorMessage = '';
 
     try {
-      const recoveryParams: Record<string, Object> = {};
-      recoveryParams['recovery_code'] = this.recoveryCode;
-      await TDLibClient.getInstance().send('recoverAuthenticationPassword', recoveryParams);
+      await ChatService.getInstance().recoverAuthPassword(this.recoveryCode);
       // On success, auth state transitions to Ready
       this.showRecoveryView = false;
     } catch (e) {
+      hilog.warn(0x0001, 'PasswordPage', 'Failed to recover authentication password');
       this.errorMessage = 'Invalid recovery code. Please try again.';
     } finally {
       this.isLoading = false;

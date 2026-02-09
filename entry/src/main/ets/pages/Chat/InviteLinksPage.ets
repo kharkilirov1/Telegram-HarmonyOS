@@ -2,7 +2,9 @@
 // Reference: Telegram Android ManageLinksActivity, iOS InviteLinkListController
 // HarmonyOS: NavDestination, @ComponentV2, V2 decorators, glass card styling
 
-import { TDLibClient } from '../../services/TDLibClient';
+import { GroupService } from '../../services/GroupService';
+import { ChatService } from '../../services/ChatService';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { pasteboard } from '@kit.BasicServicesKit';
 
 @Builder
@@ -38,14 +40,13 @@ export struct InviteLinksPage {
 
     // Get primary invite link from chat info
     try {
-      const getChatParams: Record<string, Object> = {};
-      getChatParams['chat_id'] = this.chatId;
-      const chatResult = await TDLibClient.getInstance().send('getChat', getChatParams);
+      const chatResult = await GroupService.getInstance().getChat(this.chatId);
       const inviteLinkObj = chatResult['invite_link'] as Record<string, string>;
       if (inviteLinkObj) {
         this.primaryLink = inviteLinkObj['invite_link'] || '';
       }
-    } catch (_e) {
+    } catch (e) {
+      hilog.warn(0x0001, 'InviteLinksPage', 'Failed to load chat info');
       this.primaryLink = '';
     }
 
@@ -56,14 +57,7 @@ export struct InviteLinksPage {
 
   private async loadLinks(): Promise<void> {
     try {
-      const getLinksParams: Record<string, Object> = {};
-      getLinksParams['chat_id'] = this.chatId;
-      getLinksParams['creator_user_id'] = 0;
-      getLinksParams['is_revoked'] = false;
-      getLinksParams['offset_date'] = 0;
-      getLinksParams['offset_invite_link'] = '';
-      getLinksParams['limit'] = 100;
-      const result = await TDLibClient.getInstance().send('getChatInviteLinks', getLinksParams);
+      const result = await ChatService.getInstance().getChatInviteLinks(this.chatId, 0, false, 100);
       const rawLinks = result['invite_links'] as Record<string, Object>[];
       if (rawLinks && rawLinks.length > 0) {
         this.inviteLinks = [];
@@ -86,8 +80,8 @@ export struct InviteLinksPage {
         }
         return;
       }
-    } catch (_e) {
-      // Fallback stub data
+    } catch (e) {
+      hilog.warn(0x0001, 'InviteLinksPage', 'Failed to load invite links');
     }
 
     if (this.primaryLink.length === 0) {
@@ -104,13 +98,7 @@ export struct InviteLinksPage {
     this.isCreating = true;
 
     try {
-      const createLinkParams: Record<string, Object> = {};
-      createLinkParams['chat_id'] = this.chatId;
-      createLinkParams['name'] = '';
-      createLinkParams['expiration_date'] = 0;
-      createLinkParams['member_limit'] = 0;
-      createLinkParams['creates_join_request'] = false;
-      const result = await TDLibClient.getInstance().send('createChatInviteLink', createLinkParams);
+      const result = await ChatService.getInstance().createChatInviteLink(this.chatId, '', 0, 0);
       const newLink: InviteLink = {
         link: (result['invite_link'] as string) || '',
         memberCount: 0,
@@ -119,18 +107,15 @@ export struct InviteLinksPage {
         isPrimary: false,
       };
       this.inviteLinks = [...this.inviteLinks, newLink];
-    } catch (_e) {
-      // Handle creation error silently
+    } catch (e) {
+      hilog.warn(0x0001, 'InviteLinksPage', 'Failed to create invite link');
     }
     this.isCreating = false;
   }
 
   private async revokeLink(link: string): Promise<void> {
     try {
-      const revokeParams: Record<string, Object> = {};
-      revokeParams['chat_id'] = this.chatId;
-      revokeParams['invite_link'] = link;
-      await TDLibClient.getInstance().send('revokeChatInviteLink', revokeParams);
+      await ChatService.getInstance().revokeChatInviteLink(this.chatId, link);
       this.inviteLinks = this.inviteLinks.map(l => {
         if (l.link === link) {
           const revoked: InviteLink = {
@@ -144,8 +129,8 @@ export struct InviteLinksPage {
         }
         return l;
       });
-    } catch (_e) {
-      // Handle revoke error silently
+    } catch (e) {
+      hilog.warn(0x0001, 'InviteLinksPage', 'Failed to revoke invite link');
     }
   }
 

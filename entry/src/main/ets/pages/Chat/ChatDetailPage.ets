@@ -1,5 +1,4 @@
 import { MessagesController } from '../../controllers/MessagesController';
-import { TDLibClient } from '../../services/TDLibClient';
 import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
 import { Message, GroupedMessage, MessageDateGroup, MessageReaction } from '../../models/Message';
 import { Chat } from '../../models/Chat';
@@ -514,18 +513,8 @@ export struct ChatDetailPage {
 
   private async editMessageText(messageId: number, text: string): Promise<void> {
     this.editMessage = null;
-    const formattedText: Record<string, Object> = {};
-    formattedText['@type'] = 'formattedText';
-    formattedText['text'] = text;
-    const inputContent: Record<string, Object> = {};
-    inputContent['@type'] = 'inputMessageText';
-    inputContent['text'] = formattedText;
-    const editParams: Record<string, Object> = {};
-    editParams['chat_id'] = this.chatId;
-    editParams['message_id'] = messageId;
-    editParams['input_message_content'] = inputContent;
-    await TDLibClient.getInstance().send('editMessageText', editParams);
-    // Update local message
+    await MessagesController.getInstance().editMessageText(this.chatId, messageId, text);
+    // Update local view
     const msg = this.messages.find(m => m.id === messageId);
     if (msg) {
       msg.text = text;
@@ -580,51 +569,17 @@ export struct ChatDetailPage {
   }
 
   private async sendGifMessage(gifId: number): Promise<void> {
-    // Send GIF animation as a message via TDLib
-    const animation: Record<string, Object> = {};
-    animation['@type'] = 'inputFileId';
-    animation['id'] = gifId;
-    const gifContent: Record<string, Object> = {};
-    gifContent['@type'] = 'inputMessageAnimation';
-    gifContent['animation'] = animation;
-    const gifParams: Record<string, Object> = {};
-    gifParams['chat_id'] = this.chatId;
-    gifParams['input_message_content'] = gifContent;
-    await TDLibClient.getInstance().send('sendMessage', gifParams);
+    await MessagesController.getInstance().sendGifMessage(this.chatId, gifId);
   }
 
   private async sendStickerMessage(emoji: string): Promise<void> {
-    // Send sticker as a message via TDLib
-    const sticker: Record<string, Object> = {};
-    sticker['@type'] = 'inputFileId';
-    sticker['id'] = 0;
-    const stickerContent: Record<string, Object> = {};
-    stickerContent['@type'] = 'inputMessageSticker';
-    stickerContent['sticker'] = sticker;
-    stickerContent['emoji'] = emoji;
-    const stickerParams: Record<string, Object> = {};
-    stickerParams['chat_id'] = this.chatId;
-    stickerParams['input_message_content'] = stickerContent;
-    await TDLibClient.getInstance().send('sendMessage', stickerParams);
+    await MessagesController.getInstance().sendStickerMessage(this.chatId, emoji);
   }
 
   private async sendVoiceMessage(duration: number): Promise<void> {
-    // Send voice note via TDLib (AudioCapturer would supply the actual file)
     const replyId = this.replyMessage?.id || 0;
     this.replyMessage = null;
-    const voiceNote: Record<string, Object> = {};
-    voiceNote['@type'] = 'inputFileLocal';
-    voiceNote['path'] = '';
-    const voiceContent: Record<string, Object> = {};
-    voiceContent['@type'] = 'inputMessageVoiceNote';
-    voiceContent['voice_note'] = voiceNote;
-    voiceContent['duration'] = duration;
-    voiceContent['waveform'] = '';
-    const voiceParams: Record<string, Object> = {};
-    voiceParams['chat_id'] = this.chatId;
-    voiceParams['reply_to_message_id'] = replyId;
-    voiceParams['input_message_content'] = voiceContent;
-    await TDLibClient.getInstance().send('sendMessage', voiceParams);
+    await MessagesController.getInstance().sendVoiceMessage(this.chatId, duration, '', replyId);
   }
 
   private async sendScheduledMessage(text: string, sendDate: number): Promise<void> {

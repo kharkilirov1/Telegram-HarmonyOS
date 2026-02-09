@@ -3,7 +3,8 @@
 
 import { ContactsController } from '../../controllers/ContactsController';
 import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
-import { TDLibClient } from '../../services/TDLibClient';
+import { ChatService } from '../../services/ChatService';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { User } from '../../models/User';
 import { AvatarWithStatus, formatLastSeen } from '../../components/Common/AvatarWithStatus';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
@@ -348,11 +349,7 @@ export struct CreateChannelPage {
     this.isCreating = true;
 
     try {
-      const createChannelParams: Record<string, Object> = {};
-      createChannelParams['title'] = this.channelName.trim();
-      createChannelParams['is_channel'] = true;
-      createChannelParams['description'] = this.channelDescription;
-      const result = await TDLibClient.getInstance().send('createNewSupergroupChat', createChannelParams) as Record<string, number>;
+      const result = await ChatService.getInstance().createNewSupergroupChat(this.channelName.trim(), true, this.channelDescription) as Record<string, number>;
 
       const chatId = result['id'] || 0;
       this.navPathStack.pop();
@@ -360,6 +357,7 @@ export struct CreateChannelPage {
         this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
       }
     } catch (e) {
+      hilog.warn(0x0001, 'CreateChannelPage', 'Failed to create channel: %{public}s', String(e));
       this.isCreating = false;
     }
   }

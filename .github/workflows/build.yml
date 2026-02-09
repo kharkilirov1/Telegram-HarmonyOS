@@ -71,7 +71,6 @@ jobs:
       # Lint (best-effort; hvigor lint may not be available in all setups)
       # ------------------------------------------------------------------
       - name: Run hvigor lint
-        continue-on-error: true
         run: |
           if [ -x "./hvigorw" ]; then
             HVIGOR_CMD="./hvigorw"
@@ -84,13 +83,12 @@ jobs:
             exit 0
           fi
           echo "Running lint with: ${HVIGOR_CMD}"
-          ${HVIGOR_CMD} lint --no-daemon || echo "::warning::Lint task failed or is not available."
+          ${HVIGOR_CMD} lint --no-daemon
 
       # ------------------------------------------------------------------
       # Test (unit tests via hvigor)
       # ------------------------------------------------------------------
       - name: Run unit tests
-        continue-on-error: true
         env:
           OHOS_SDK: ${{ vars.OHOS_SDK }}
         run: |
@@ -105,7 +103,7 @@ jobs:
             exit 0
           fi
           echo "Running tests with: ${HVIGOR_CMD}"
-          ${HVIGOR_CMD} test --mode debug --no-daemon || echo "::warning::Test task failed or is not available."
+          ${HVIGOR_CMD} test --mode debug --no-daemon
 
       # ------------------------------------------------------------------
       # Build

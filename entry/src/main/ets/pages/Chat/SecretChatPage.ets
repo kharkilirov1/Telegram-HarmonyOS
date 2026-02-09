@@ -3,6 +3,9 @@
 // HarmonyOS: NavDestination, @ComponentV2, V2 state decorators
 
 import { TDLibClient } from '../../services/TDLibClient';
+import { UserService } from '../../services/UserService';
+import { ChatService } from '../../services/ChatService';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 @Builder
 export function SecretChatBuilder(name: string, param: Object) {
@@ -99,13 +102,12 @@ export struct SecretChatPage {
 
   private async loadUserName(): Promise<void> {
     try {
-      const getUserParams: Record<string, Object> = {};
-      getUserParams['user_id'] = this.userId;
-      const result = await TDLibClient.getInstance().send('getUser', getUserParams) as Record<string, string>;
+      const result = await UserService.getInstance().getUser(this.userId) as Record<string, string>;
       const first = result['first_name'] || '';
       const last = result['last_name'] || '';
       this.userName = `${first} ${last}`.trim() || this.getUserFallback();
     } catch (e) {
+      hilog.warn(0x0001, 'SecretChatPage', 'Failed to load user name');
       this.userName = this.getUserFallback();
     }
   }
@@ -115,9 +117,7 @@ export struct SecretChatPage {
     this.errorMessage = '';
 
     try {
-      const createSecretParams: Record<string, Object> = {};
-      createSecretParams['user_id'] = this.userId;
-      const result = await TDLibClient.getInstance().send('createNewSecretChat', createSecretParams);
+      const result = await ChatService.getInstance().createNewSecretChat(this.userId);
 
       const chatType = result['type'] as Record<string, number> | undefined;
       if (chatType) {
@@ -130,6 +130,7 @@ export struct SecretChatPage {
         await this.fetchSecretChatInfo();
       }
     } catch (e) {
+      hilog.warn(0x0001, 'SecretChatPage', 'Failed to create secret chat');
       this.errorMessage = getContext(this).resourceManager.getStringSync($r('app.string.failed_secret_chat'));
       this.chatState = 'closed';
     }
@@ -137,9 +138,7 @@ export struct SecretChatPage {
 
   private async fetchSecretChatInfo(): Promise<void> {
     try {
-      const getSecretParams: Record<string, Object> = {};
-      getSecretParams['secret_chat_id'] = this.secretChatId;
-      const secretChat = await TDLibClient.getInstance().send('getSecretChat', getSecretParams);
+      const secretChat = await ChatService.getInstance().getSecretChat(this.secretChatId);
 
       const state = secretChat['state'] as Record<string, string> | undefined;
       const stateType = state ? state['@type'] : '';
@@ -162,6 +161,7 @@ export struct SecretChatPage {
         this.generatePlaceholderKeyHash();
       }
     } catch (e) {
+      hilog.warn(0x0001, 'SecretChatPage', 'Failed to fetch secret chat info');
       this.generatePlaceholderKeyHash();
     }
   }
@@ -207,12 +207,9 @@ export struct SecretChatPage {
     }
     this.isSettingTimer = true;
     try {
-      const timerParams: Record<string, Object> = {};
-      timerParams['chat_id'] = this.chatId;
-      timerParams['message_auto_delete_time'] = seconds;
-      await TDLibClient.getInstance().send('setChatMessageAutoDeleteTime', timerParams);
+      await ChatService.getInstance().setChatMessageAutoDeleteTime(this.chatId, seconds);
     } catch (e) {
-      // Timer setting failed silently; user can retry
+      hilog.warn(0x0001, 'SecretChatPage', 'Failed to set auto-delete timer');
     }
     this.isSettingTimer = false;
   }

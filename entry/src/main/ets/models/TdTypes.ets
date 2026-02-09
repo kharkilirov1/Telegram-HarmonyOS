@@ -250,8 +250,179 @@ export interface TdUpdateChatAction {
   action?: TdChatAction;
 }
 
+// --- TDLib user/profile interfaces ---
+
+export interface TdUserStatus {
+  // Identified by @type: userStatusOnline, userStatusOffline, etc.
+}
+
+export interface TdProfilePhoto {
+  small?: TdFile;
+  big?: TdFile;
+}
+
+export interface TdUsernames {
+  editable_username?: string;
+  active_usernames?: string[];
+}
+
+export interface TdUser {
+  id: number;
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+  username?: string;
+  usernames?: TdUsernames;
+  status?: TdUserStatus;
+  profile_photo?: TdProfilePhoto;
+  is_premium?: boolean;
+}
+
+export interface TdUserFullInfo {
+  bio?: TdFormattedText;
+  group_in_common_count?: number;
+}
+
+// --- TDLib supergroup interfaces ---
+
+export interface TdSupergroup {
+  id: number;
+  usernames?: TdUsernames;
+  member_count?: number;
+  is_channel?: boolean;
+}
+
+export interface TdSupergroupFullInfo {
+  member_count?: number;
+  administrator_count?: number;
+  description?: string;
+  invite_link?: TdChatInviteLink;
+}
+
+export interface TdSupergroupMember {
+  member_id?: TdMessageSender;
+  status?: Record<string, Object>;
+}
+
+export interface TdSupergroupMembers {
+  members?: TdSupergroupMember[];
+  total_count?: number;
+}
+
+// --- TDLib chat invite link ---
+
+export interface TdChatInviteLink {
+  invite_link?: string;
+  member_count?: number;
+  is_revoked?: boolean;
+  expiration_date?: number;
+  name?: string;
+  creator_user_id?: number;
+}
+
+export interface TdChatInviteLinks {
+  invite_links?: TdChatInviteLink[];
+  total_count?: number;
+}
+
+// --- TDLib secret chat ---
+
+export interface TdSecretChat {
+  id: number;
+  state?: Record<string, Object>;
+  key_hash?: string;
+  user_id?: number;
+}
+
+// --- TDLib auto-download settings ---
+
+export interface TdAutoDownloadSettings {
+  is_auto_download_enabled?: boolean;
+  max_photo_file_size?: number;
+  max_video_file_size?: number;
+  max_other_file_size?: number;
+  video_upload_bitrate?: number;
+  preload_large_videos?: boolean;
+  preload_next_audio?: boolean;
+}
+
+export interface TdAutoDownloadSettingsPresets {
+  low?: TdAutoDownloadSettings;
+  medium?: TdAutoDownloadSettings;
+  high?: TdAutoDownloadSettings;
+}
+
+// --- TDLib passport ---
+
+export interface TdPassportAuthorizationForm {
+  id?: number;
+  required_elements?: Object[];
+}
+
+// --- TDLib chats search result ---
+
+export interface TdChats {
+  chat_ids?: number[];
+  total_count?: number;
+}
+
+// --- TDLib chat permissions ---
+
+export interface TdChatPermissions {
+  can_send_basic_messages?: boolean;
+  can_send_audios?: boolean;
+  can_send_documents?: boolean;
+  can_send_photos?: boolean;
+  can_send_videos?: boolean;
+  can_send_video_notes?: boolean;
+  can_send_voice_notes?: boolean;
+  can_send_polls?: boolean;
+  can_send_other_messages?: boolean;
+  can_add_web_page_previews?: boolean;
+  can_change_info?: boolean;
+  can_invite_users?: boolean;
+  can_pin_messages?: boolean;
+}
+
+// --- TDLib nearby chat ---
+
+export interface TdNearbyChat {
+  chat_id?: number;
+  distance?: number;
+}
+
+export interface TdChatsNearby {
+  users_nearby?: TdNearbyChat[];
+  supergroups_nearby?: TdNearbyChat[];
+}
+
+// --- TDLib session ---
+
+export interface TdSession {
+  id?: number;
+  is_current?: boolean;
+  api_id?: number;
+  application_name?: string;
+  application_version?: string;
+  device_model?: string;
+  platform?: string;
+  system_version?: string;
+  log_in_date?: number;
+  last_active_date?: number;
+  ip_address?: string;
+  location?: string;
+}
+
+export interface TdSessions {
+  sessions?: TdSession[];
+}
+
 // --- TDLib response wrappers ---
 
 export interface TdMessages {
   messages?: TdMessage[];
+}
+
+export interface TdOk {
+  // empty — @type = 'ok'
 }

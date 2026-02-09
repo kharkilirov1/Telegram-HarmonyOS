@@ -93,8 +93,8 @@ export struct StickerPicker {
       await installStickerSet(setId);
       this.showTrending = false;
       this.loadInstalled();
-    } catch (_e) {
-      // Handle error silently
+    } catch (e) {
+      // Sticker set install failed — UI stays in current state
     }
   }
 
@@ -103,8 +103,8 @@ export struct StickerPicker {
       await removeStickerSet(setId);
       this.loadInstalled();
       this.activeTabIndex = 0;
-    } catch (_e) {
-      // Handle error silently
+    } catch (e) {
+      // Sticker set removal failed — UI stays in current state
     }
   }
 

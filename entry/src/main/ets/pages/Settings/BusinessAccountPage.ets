@@ -1,7 +1,8 @@
 // BusinessAccountPage — Telegram Business features
 // Reference: Telegram iOS BusinessAccountSetup, Android BusinessActivity
 
-import { TDLibClient } from '../../services/TDLibClient';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { UserService } from '../../services/UserService';
 
 @Builder
 export function BusinessAccountBuilder(name: string, param: Object) {
@@ -35,10 +36,10 @@ export struct BusinessAccountPage {
 
   private async checkBusinessStatus(): Promise<void> {
     try {
-      const me: Record<string, Object> = await TDLibClient.getInstance().send('getMe');
       // Business features require premium
-      this.isBusiness = (me['is_premium'] as boolean) || false;
-    } catch (_e) {
+      this.isBusiness = await UserService.getInstance().isPremium();
+    } catch (e) {
+      hilog.warn(0x0001, 'BusinessAccountPage', 'Failed to check business status');
       this.isBusiness = false;
     }
     this.isLoading = false;

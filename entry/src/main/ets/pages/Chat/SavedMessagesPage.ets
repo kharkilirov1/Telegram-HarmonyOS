@@ -4,7 +4,8 @@
 
 import { AuthController } from '../../controllers/AuthController';
 import { MessagesController } from '../../controllers/MessagesController';
-import { TDLibClient } from '../../services/TDLibClient';
+import { ChatService } from '../../services/ChatService';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
 import { Message, GroupedMessage, MessageContentType } from '../../models/Message';
 import { MessageBubble } from '../../components/Message/MessageBubble';
@@ -91,12 +92,10 @@ export struct SavedMessagesPage {
 
     // Create private chat with self (TDLib returns existing if already created)
     try {
-      const privateChatParams: Record<string, Object> = {};
-      privateChatParams['user_id'] = userId;
-      privateChatParams['force'] = false;
-      const chatResult = await TDLibClient.getInstance().send('createPrivateChat', privateChatParams);
+      const chatResult = await ChatService.getInstance().createPrivateChat(userId);
       this.chatId = (chatResult['id'] as number) || 0;
-    } catch (_e) {
+    } catch (e) {
+      hilog.warn(0x0001, 'SavedMessagesPage', 'Failed to create private chat');
       this.isLoading = false;
       return;
     }

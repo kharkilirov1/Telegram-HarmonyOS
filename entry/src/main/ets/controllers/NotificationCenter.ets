@@ -37,6 +37,9 @@ export enum EventId {
   // Stories
   STORIES_UPDATED = 55,
   STORY_DELETED = 56,
+
+  // Errors (for end-to-end AppError display)
+  APP_ERROR = 60,
 }
 
 type EventHandler = (args?: Record<string, Object>) => void;

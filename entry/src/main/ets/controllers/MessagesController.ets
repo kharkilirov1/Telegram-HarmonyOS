@@ -2,11 +2,13 @@
 // Parsing/mapping logic extracted to TdMessageParser.ets
 // TDLib types extracted to models/TdTypes.ets
 
-import { TDLibClient } from '../services/TDLibClient';
+import { TDLibClient, TDLibError } from '../services/TDLibClient';
+import { handleTdlibError } from '../services/AppError';
 import { NotificationCenter, EventId } from './NotificationCenter';
 import { NotificationService } from '../services/NotificationService';
 import { Chat } from '../models/Chat';
 import { Message } from '../models/Message';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
   tdType,
   TdMessage,
@@ -199,6 +201,71 @@ export class MessagesController {
     await TDLibClient.getInstance().send('sendMessage', sendScheduledParams);
   }
 
+  async editMessageText(chatId: number, messageId: number, text: string): Promise<void> {
+    await TDLibClient.getInstance().editMessageText(chatId, messageId, text);
+    // Update local cache
+    const messages = this.messagesByChat.get(chatId);
+    if (messages) {
+      const msg = messages.find((m: Message): boolean => m.id === messageId);
+      if (msg) {
+        msg.text = text;
+      }
+    }
+    const editedEventArgs: Record<string, Object> = {};
+    editedEventArgs['chatId'] = chatId;
+    editedEventArgs['messageId'] = messageId;
+    NotificationCenter.getInstance().post(EventId.MESSAGE_EDITED, editedEventArgs);
+  }
+
+  async sendGifMessage(chatId: number, gifId: number): Promise<void> {
+    const animation: Record<string, Object> = {};
+    animation['@type'] = 'inputFileId';
+    animation['id'] = gifId;
+    const gifContent: Record<string, Object> = {};
+    gifContent['@type'] = 'inputMessageAnimation';
+    gifContent['animation'] = animation;
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    params['input_message_content'] = gifContent;
+    await TDLibClient.getInstance().send('sendMessage', params);
+  }
+
+  async sendStickerMessage(chatId: number, emoji: string, stickerId: number = 0): Promise<void> {
+    const sticker: Record<string, Object> = {};
+    sticker['@type'] = 'inputFileId';
+    sticker['id'] = stickerId;
+    const stickerContent: Record<string, Object> = {};
+    stickerContent['@type'] = 'inputMessageSticker';
+    stickerContent['sticker'] = sticker;
+    stickerContent['emoji'] = emoji;
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    params['input_message_content'] = stickerContent;
+    await TDLibClient.getInstance().send('sendMessage', params);
+  }
+
+  async sendVoiceMessage(chatId: number, duration: number, filePath: string = '',
+    replyToMessageId: number = 0): Promise<void> {
+    const voiceNote: Record<string, Object> = {};
+    voiceNote['@type'] = 'inputFileLocal';
+    voiceNote['path'] = filePath;
+    const voiceContent: Record<string, Object> = {};
+    voiceContent['@type'] = 'inputMessageVoiceNote';
+    voiceContent['voice_note'] = voiceNote;
+    voiceContent['duration'] = duration;
+    voiceContent['waveform'] = '';
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    if (replyToMessageId > 0) {
+      const replyTo: Record<string, Object> = {};
+      replyTo['@type'] = 'inputMessageReplyToMessage';
+      replyTo['message_id'] = replyToMessageId;
+      params['reply_to'] = replyTo;
+    }
+    params['input_message_content'] = voiceContent;
+    await TDLibClient.getInstance().send('sendMessage', params);
+  }
+
   async votePoll(chatId: number, messageId: number, optionIds: number[]): Promise<void> {
     const voteParams: Record<string, Object> = {};
     voteParams['chat_id'] = chatId;
@@ -269,7 +336,11 @@ export class MessagesController {
       const rawMessages: TdMessage[] | undefined = result.messages;
       if (!rawMessages) return [];
       return rawMessages.map((raw: TdMessage): Message => parseMessage(raw));
-    } catch (_e) {
+    } catch (e) {
+      if (e instanceof TDLibError) {
+        handleTdlibError(e.code, e.tdMessage);
+      }
+      hilog.warn(0x0001, 'MessagesController', 'searchChatMessages failed for chat %{public}d', chatId);
       return [];
     }
   }
