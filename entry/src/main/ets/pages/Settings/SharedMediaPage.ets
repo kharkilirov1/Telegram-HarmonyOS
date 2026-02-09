@@ -267,7 +267,7 @@ export struct SharedMediaPage {
             }
             .width('100%')
             .height('100%')
-            .backgroundColor(item.type === 'video' ? '#333333' : '#E0E0E0')
+            .backgroundColor(item.type === 'video' ? $r('app.color.video_placeholder_bg') : $r('app.color.placeholder_bg'))
             .justifyContent(FlexAlign.Center)
 
             if (item.type === 'video') {

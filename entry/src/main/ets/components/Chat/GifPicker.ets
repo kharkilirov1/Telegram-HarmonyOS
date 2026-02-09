@@ -82,7 +82,7 @@ export struct GifPicker {
               Column()
                 .width('100%')
                 .height(80 + (gif.aspectRatio - 1.0) * 40)
-                .backgroundColor('#E0E0E0')
+                .backgroundColor($r('app.color.placeholder_bg'))
                 .borderRadius(8)
 
               // GIF label

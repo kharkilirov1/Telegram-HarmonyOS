@@ -1,9 +1,15 @@
 import { Message, MessageContentType, MessageReaction, PollOption } from '../../models/Message';
 import { ReactionBar } from './ReactionBar';
 import { PollBubble } from './PollBubble';
-
-// URL detection regex
-const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/gi;
+import {
+  TextPart,
+  containsUrl,
+  extractDomain,
+  splitByUrls,
+  formatMessageTime,
+  formatMediaDuration,
+  getSenderColor
+} from './MessageUtils';
 
 @ComponentV2
 export struct MessageBubble {
@@ -52,7 +58,7 @@ export struct MessageBubble {
               .width(34)
               .height(34)
               .borderRadius(17)
-              .backgroundColor(this.getSenderColor())
+              .backgroundColor(getSenderColor(this.message.senderId))
               .textAlign(TextAlign.Center)
               .margin({ right: 6 })
               .alignSelf(ItemAlign.End)
@@ -115,7 +121,7 @@ export struct MessageBubble {
             Text(this.message.senderName)
               .fontSize(13)
               .fontWeight(FontWeight.Medium)
-              .fontColor(this.getSenderColor())
+              .fontColor(getSenderColor(this.message.senderId))
               .margin({ bottom: 2 })
           }
 
@@ -286,7 +292,7 @@ export struct MessageBubble {
   buildText() {
     Column() {
       // Detect URLs and render as rich text (reference: Telegram link rendering)
-      if (this.containsUrl(this.message.text)) {
+      if (containsUrl(this.message.text)) {
         this.buildRichText()
       } else if (this.message.hasSpoiler && !this.spoilerRevealed) {
         // Spoiler text — blurred until tapped
@@ -304,7 +310,7 @@ export struct MessageBubble {
       }
 
       // Link preview card (if URL detected)
-      if (this.containsUrl(this.message.text)) {
+      if (containsUrl(this.message.text)) {
         this.buildLinkPreview()
       }
 
@@ -315,7 +321,7 @@ export struct MessageBubble {
   @Builder
   buildRichText() {
     Text() {
-      ForEach(this.splitByUrls(this.message.text), (part: TextPart, index: number) => {
+      ForEach(splitByUrls(this.message.text), (part: TextPart, index: number) => {
         if (part.isUrl) {
           Span(part.text)
             .fontColor($r('app.color.telegram_blue'))
@@ -339,14 +345,14 @@ export struct MessageBubble {
         .color($r('app.color.telegram_blue'))
         .width('100%')
 
-      Text(this.extractDomain(this.message.text))
+      Text(extractDomain(this.message.text))
         .fontSize(12)
         .fontColor($r('app.color.telegram_blue'))
         .fontWeight(FontWeight.Medium)
         .margin({ top: 4 })
         .maxLines(1)
 
-      Text(this.extractDomain(this.message.text))
+      Text(extractDomain(this.message.text))
         .fontSize(14)
         .fontColor($r('app.color.text_primary'))
         .fontWeight(FontWeight.Medium)
@@ -391,13 +397,13 @@ export struct MessageBubble {
           .width('100%')
           .height(180)
           .borderRadius(15)
-          .backgroundColor('#E0E0E0')
+          .backgroundColor($r('app.color.placeholder_bg'))
           .justifyContent(FlexAlign.Center)
         }
 
         // Time overlay on photo
         Row() {
-          Text(this.formatTime(this.message.date))
+          Text(formatMessageTime(this.message.date))
             .fontSize(11)
             .fontColor(Color.White)
           if (this.message.isOutgoing) {
@@ -471,7 +477,7 @@ export struct MessageBubble {
           .alignItems(VerticalAlign.Center)
 
           Row() {
-            Text(this.formatDuration(this.message.voiceDuration))
+            Text(formatMediaDuration(this.message.voiceDuration))
               .fontSize(12)
               .fontColor($r('app.color.text_secondary'))
             Blank().layoutWeight(1)
@@ -508,7 +514,7 @@ export struct MessageBubble {
             .width('100%')
             .height(200)
             .borderRadius(15)
-            .backgroundColor('#333333')
+            .backgroundColor($r('app.color.video_placeholder_bg'))
         }
 
         if (this.message.hasSpoiler && !this.spoilerRevealed) {
@@ -534,7 +540,7 @@ export struct MessageBubble {
 
         // Duration badge
         if (this.message.videoDuration > 0) {
-          Text(this.formatDuration(this.message.videoDuration))
+          Text(formatMediaDuration(this.message.videoDuration))
             .fontSize(11)
             .fontColor(Color.White)
             .backgroundColor($r('app.color.time_overlay'))
@@ -670,7 +676,7 @@ export struct MessageBubble {
   buildTimeRow() {
     Row() {
       Blank().layoutWeight(1)
-      Text(this.formatTime(this.message.date))
+      Text(formatMessageTime(this.message.date))
         .fontSize(11)
         .fontColor($r('app.color.text_secondary'))
       if (this.message.isOutgoing) {
@@ -704,7 +710,7 @@ export struct MessageBubble {
             ? Math.min(this.message.videoNoteLength, 240)
             : 240)
           .borderRadius(120)
-          .backgroundColor('#333333')
+          .backgroundColor($r('app.color.video_placeholder_bg'))
           .clip(true)
 
         // Play button overlay
@@ -721,7 +727,7 @@ export struct MessageBubble {
 
       // Duration badge
       if (this.message.videoNoteDuration > 0) {
-        Text(this.formatDuration(this.message.videoNoteDuration))
+        Text(formatMediaDuration(this.message.videoNoteDuration))
           .fontSize(11)
           .fontColor(Color.White)
           .backgroundColor($r('app.color.time_overlay'))
@@ -779,7 +785,7 @@ export struct MessageBubble {
     Column()
       .width('100%')
       .height('100%')
-      .backgroundColor('#88000000')
+      .backgroundColor($r('app.color.play_overlay'))
       .blur(40)
       .justifyContent(FlexAlign.Center)
       .onClick(() => { this.spoilerRevealed = true; })
@@ -787,81 +793,9 @@ export struct MessageBubble {
 
   // --- Helpers ---
 
-  private getSenderColor(): ResourceColor {
-    const colors: Resource[] = [
-      $r('app.color.sender_color_1'), $r('app.color.sender_color_2'),
-      $r('app.color.sender_color_3'), $r('app.color.sender_color_4'),
-      $r('app.color.sender_color_5'), $r('app.color.sender_color_6'),
-      $r('app.color.sender_color_7')
-    ];
-    return colors[Math.abs(this.message.senderId) % colors.length];
-  }
-
   private getInitial(): string {
     return this.message.senderName.length > 0
       ? this.message.senderName.charAt(0)
       : '?';
   }
-
-  private formatTime(timestamp: number): string {
-    if (timestamp === 0) return '';
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' } as Intl.DateTimeFormatOptions);
-  }
-
-  private formatDuration(seconds: number): string {
-    const hours = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    if (hours > 0) {
-      return `${hours}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    }
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  }
-
-  // --- URL detection ---
-
-  private containsUrl(text: string): boolean {
-    return URL_REGEX.test(text);
-  }
-
-  private extractDomain(text: string): string {
-    const match = text.match(URL_REGEX);
-    if (match && match.length > 0) {
-      try {
-        const url = match[0];
-        const domainMatch = url.match(/https?:\/\/([^/]+)/);
-        return domainMatch ? domainMatch[1] : url;
-      } catch (e) {
-        return '';
-      }
-    }
-    return '';
-  }
-
-  private splitByUrls(text: string): TextPart[] {
-    const parts: TextPart[] = [];
-    let lastIndex = 0;
-    const regex = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/gi;
-    let match: RegExpExecArray | null;
-
-    while ((match = regex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push({ text: text.substring(lastIndex, match.index), isUrl: false });
-      }
-      parts.push({ text: match[0], isUrl: true });
-      lastIndex = match.index + match[0].length;
-    }
-
-    if (lastIndex < text.length) {
-      parts.push({ text: text.substring(lastIndex), isUrl: false });
-    }
-
-    return parts.length > 0 ? parts : [{ text: text, isUrl: false }];
-  }
-}
-
-interface TextPart {
-  text: string;
-  isUrl: boolean;
 }

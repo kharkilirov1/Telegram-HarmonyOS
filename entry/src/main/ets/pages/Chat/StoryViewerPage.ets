@@ -139,7 +139,7 @@ export struct StoryViewerPage {
         Column()
           .width('100%')
           .height('100%')
-          .backgroundColor('#000000')
+          .backgroundColor($r('app.color.media_viewer_bg'))
 
         if (this.isLoading) {
           LoadingProgress()
@@ -160,13 +160,13 @@ export struct StoryViewerPage {
                     .height(2)
                     .width('100%')
                     .borderRadius(1)
-                    .backgroundColor('#4DFFFFFF')
+                    .backgroundColor($r('app.color.slider_track_dark'))
 
                   // Filled portion
                   Column()
                     .height(2)
                     .borderRadius(1)
-                    .backgroundColor('#FFFFFF')
+                    .backgroundColor($r('app.color.icon_on_primary'))
                     .width(index < this.currentIndex ? '100%' :
                       (index === this.currentIndex ? `${Math.min(this.progress * 100, 100)}%` : '0%'))
                 }
@@ -202,13 +202,13 @@ export struct StoryViewerPage {
                 Text(this.chatTitle)
                   .fontSize(14)
                   .fontWeight(FontWeight.Bold)
-                  .fontColor('#FFFFFF')
+                  .fontColor($r('app.color.icon_on_primary'))
                   .maxLines(1)
 
                 if (this.currentIndex < this.stories.length) {
                   Text(this.formatTime(this.stories[this.currentIndex].date))
                     .fontSize(12)
-                    .fontColor('#99FFFFFF')
+                    .fontColor($r('app.color.story_time_text'))
                 }
               }
               .margin({ left: 8 })
@@ -218,7 +218,7 @@ export struct StoryViewerPage {
               // Close button
               Image($r('app.media.ic_close'))
                 .width(24).height(24)
-                .fillColor('#FFFFFF')
+                .fillColor($r('app.color.icon_on_primary'))
                 .onClick(() => { this.navPathStack.pop(); })
                 .accessibilityText($r('app.string.cancel'))
             }
@@ -255,7 +255,7 @@ export struct StoryViewerPage {
             Column() {
               Text(this.stories[this.currentIndex].caption)
                 .fontSize(15)
-                .fontColor('#FFFFFF')
+                .fontColor($r('app.color.icon_on_primary'))
                 .padding({ left: 16, right: 16, bottom: 24 })
                 .maxLines(5)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -264,14 +264,14 @@ export struct StoryViewerPage {
             .position({ bottom: 0 })
             .linearGradient({
               direction: GradientDirection.Bottom,
-              colors: [['#00000000', 0.0], ['#80000000', 1.0]]
+              colors: [[$r('app.color.overlay_gradient_end'), 0.0], [$r('app.color.story_caption_overlay'), 1.0]]
             })
           }
         } else {
           // No stories
           Text($r('app.string.no_stories'))
             .fontSize(16)
-            .fontColor('#FFFFFF')
+            .fontColor($r('app.color.icon_on_primary'))
         }
       }
       .width('100%')
@@ -298,10 +298,10 @@ export struct StoryViewerPage {
         Column() {
           Image($r('app.media.ic_play'))
             .width(48).height(48)
-            .fillColor('#FFFFFF')
+            .fillColor($r('app.color.icon_on_primary'))
           Text($r('app.string.video'))
             .fontSize(14)
-            .fontColor('#FFFFFF')
+            .fontColor($r('app.color.icon_on_primary'))
             .margin({ top: 8 })
         }
         .width('100%')

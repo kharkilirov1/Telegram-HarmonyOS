@@ -90,7 +90,7 @@ export struct MediaViewerPage {
                 if (this.dateText.length > 0) {
                   Text(this.dateText)
                     .fontSize(12)
-                    .fontColor('#B3FFFFFF')
+                    .fontColor($r('app.color.text_on_overlay'))
                     .maxLines(1)
                 }
               }
@@ -111,7 +111,7 @@ export struct MediaViewerPage {
           .width('100%')
           .height(56)
           .padding({ left: 16, right: 16 })
-          .backgroundColor('#66000000')
+          .backgroundColor($r('app.color.overlay_dark'))
           .position({ x: 0, y: 0 })
         }
 
@@ -152,7 +152,7 @@ export struct MediaViewerPage {
           .width('100%')
           .height(56)
           .padding({ left: 32, right: 32 })
-          .backgroundColor('#66000000')
+          .backgroundColor($r('app.color.overlay_dark'))
           .position({ x: 0, bottom: 0 })
         }
       }

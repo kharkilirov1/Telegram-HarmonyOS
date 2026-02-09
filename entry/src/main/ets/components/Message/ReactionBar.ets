@@ -52,7 +52,7 @@ export struct ReactionBar {
     .padding({ left: 6, right: 6, top: 3, bottom: 3 })
     .borderRadius(12)
     .backgroundColor(reaction.isMine
-      ? '#1A3390EC'
+      ? $r('app.color.reaction_mine_bg')
       : $r('app.color.glass_card_bg'))
     .borderWidth(reaction.isMine ? 1 : 0)
     .borderColor(reaction.isMine ? $r('app.color.telegram_blue') : Color.Transparent)

@@ -2,7 +2,8 @@
 // Reference: Telegram Android SearchActivity, iOS ChatSearchController
 
 import { TDLibClient } from '../../services/TDLibClient';
-import { MessagesController, TdMessage } from '../../controllers/MessagesController';
+import { MessagesController } from '../../controllers/MessagesController';
+import { TdMessage } from '../../models/TdTypes';
 import { ContactsController } from '../../controllers/ContactsController';
 import { Message, MessageContentType } from '../../models/Message';
 import { User } from '../../models/User';

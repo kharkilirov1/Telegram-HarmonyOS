@@ -290,10 +290,12 @@ export struct CallsPage {
     return `${date.getDate()}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
   }
 
-  private getAvatarColor(userId: number): string {
-    const colors: string[] = [
-      '#FF5733', '#E91E63', '#9C27B0', '#673AB7',
-      '#3F51B5', '#2196F3', '#00BCD4', '#009688'
+  private getAvatarColor(userId: number): ResourceColor {
+    const colors: ResourceColor[] = [
+      $r('app.color.sender_color_1'), $r('app.color.sender_color_2'),
+      $r('app.color.sender_color_3'), $r('app.color.sender_color_8'),
+      $r('app.color.sender_color_4'), $r('app.color.sender_color_5'),
+      $r('app.color.sender_color_6'), $r('app.color.sender_color_7')
     ];
     return colors[Math.abs(userId) % colors.length];
   }

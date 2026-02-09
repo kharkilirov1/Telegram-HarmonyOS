@@ -243,6 +243,78 @@
     {
       "name": "premium_gradient_end",
       "value": "#976FFF"
+    },
+    {
+      "name": "placeholder_bg",
+      "value": "#E0E0E0"
+    },
+    {
+      "name": "video_placeholder_bg",
+      "value": "#333333"
+    },
+    {
+      "name": "reaction_mine_bg",
+      "value": "#1A3390EC"
+    },
+    {
+      "name": "call_bg_dark",
+      "value": "#1A1A2E"
+    },
+    {
+      "name": "call_bg_mid",
+      "value": "#16213E"
+    },
+    {
+      "name": "call_bg_deep",
+      "value": "#0F3460"
+    },
+    {
+      "name": "call_accept_green",
+      "value": "#34C759"
+    },
+    {
+      "name": "call_button_inactive",
+      "value": "#33FFFFFF"
+    },
+    {
+      "name": "call_status_text",
+      "value": "#BBBBBB"
+    },
+    {
+      "name": "call_ended_text",
+      "value": "#999999"
+    },
+    {
+      "name": "story_time_text",
+      "value": "#99FFFFFF"
+    },
+    {
+      "name": "story_caption_overlay",
+      "value": "#80000000"
+    },
+    {
+      "name": "sender_color_8",
+      "value": "#673AB7"
+    },
+    {
+      "name": "attach_camera_color",
+      "value": "#FF6B35"
+    },
+    {
+      "name": "attach_gallery_color",
+      "value": "#A855F7"
+    },
+    {
+      "name": "attach_file_color",
+      "value": "#3B82F6"
+    },
+    {
+      "name": "attach_location_color",
+      "value": "#22C55E"
+    },
+    {
+      "name": "attach_poll_color",
+      "value": "#F59E0B"
     }
   ]
 }

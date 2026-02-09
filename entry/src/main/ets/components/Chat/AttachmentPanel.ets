@@ -33,17 +33,17 @@ export struct AttachmentPanel {
 
       // Action grid — 2 rows x 3 columns (like Telegram Android)
       Grid() {
-        GridItem() { this.attachItem($r('app.media.ic_camera'), $r('app.string.attach_camera'), '#FF6B35') }
+        GridItem() { this.attachItem($r('app.media.ic_camera'), $r('app.string.attach_camera'), $r('app.color.attach_camera_color')) }
           .onClick(() => { this.onCamera(); })
-        GridItem() { this.attachItem($r('app.media.ic_photo'), $r('app.string.attach_gallery'), '#A855F7') }
+        GridItem() { this.attachItem($r('app.media.ic_photo'), $r('app.string.attach_gallery'), $r('app.color.attach_gallery_color')) }
           .onClick(() => { this.onGallery(); })
-        GridItem() { this.attachItem($r('app.media.ic_document'), $r('app.string.attach_file'), '#3B82F6') }
+        GridItem() { this.attachItem($r('app.media.ic_document'), $r('app.string.attach_file'), $r('app.color.attach_file_color')) }
           .onClick(() => { this.onFile(); })
-        GridItem() { this.attachItem($r('app.media.ic_location'), $r('app.string.attach_location'), '#22C55E') }
+        GridItem() { this.attachItem($r('app.media.ic_location'), $r('app.string.attach_location'), $r('app.color.attach_location_color')) }
           .onClick(() => { this.onLocation(); })
-        GridItem() { this.attachItem($r('app.media.ic_contact'), $r('app.string.attach_contact'), '#0088CC') }
+        GridItem() { this.attachItem($r('app.media.ic_contact'), $r('app.string.attach_contact'), $r('app.color.telegram_blue')) }
           .onClick(() => { this.onContact(); })
-        GridItem() { this.attachItem($r('app.media.ic_more'), $r('app.string.attach_poll'), '#F59E0B') }
+        GridItem() { this.attachItem($r('app.media.ic_more'), $r('app.string.attach_poll'), $r('app.color.attach_poll_color')) }
           .onClick(() => { this.onPoll(); })
       }
       .columnsTemplate('1fr 1fr 1fr')
@@ -72,7 +72,7 @@ export struct AttachmentPanel {
   }
 
   @Builder
-  attachItem(icon: Resource, label: Resource, bgColor: string) {
+  attachItem(icon: Resource, label: Resource, bgColor: ResourceColor) {
     Column() {
       Column() {
         Image(icon)

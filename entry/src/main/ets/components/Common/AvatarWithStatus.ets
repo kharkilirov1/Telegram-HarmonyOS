@@ -2,7 +2,7 @@
 export struct AvatarWithStatus {
   @Param photoUrl: string = '';
   @Param initials: string = '';
-  @Param avatarColor: string = '#2196F3';
+  @Param avatarColor: ResourceColor = $r('app.color.sender_color_5');
   @Param avatarSize: number = 54;
   @Param isOnline: boolean = false;
   @Param showOnlineDot: boolean = true;

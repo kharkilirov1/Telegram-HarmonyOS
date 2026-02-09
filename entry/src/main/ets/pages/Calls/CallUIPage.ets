@@ -86,10 +86,10 @@ export struct CallUIPage {
         Column()
           .width('100%')
           .height('100%')
-          .backgroundColor('#1A1A2E')
+          .backgroundColor($r('app.color.call_bg_dark'))
           .linearGradient({
             direction: GradientDirection.LeftTop,
-            colors: [['#1A1A2E', 0.0], ['#16213E', 0.5], ['#0F3460', 1.0]]
+            colors: [[$r('app.color.call_bg_dark'), 0.0], [$r('app.color.call_bg_mid'), 0.5], [$r('app.color.call_bg_deep'), 1.0]]
           })
 
         // Call UI content
@@ -105,7 +105,7 @@ export struct CallUIPage {
               .fontColor(Color.White)
               .width(120).height(120)
               .borderRadius(60)
-              .backgroundColor('#3390EC')
+              .backgroundColor($r('app.color.telegram_blue'))
               .textAlign(TextAlign.Center)
 
             Text(this.userName)
@@ -117,7 +117,7 @@ export struct CallUIPage {
             // Call status
             Text(this.getCallStatusText())
               .fontSize(16)
-              .fontColor('#BBBBBB')
+              .fontColor($r('app.color.call_status_text'))
               .margin({ top: 6 })
           }
           .alignItems(HorizontalAlign.Center)
@@ -137,7 +137,7 @@ export struct CallUIPage {
                 }
                 .width(64).height(64)
                 .borderRadius(32)
-                .backgroundColor('#FF3B30')
+                .backgroundColor($r('app.color.error_red'))
                 .justifyContent(FlexAlign.Center)
 
                 Text('Decline')
@@ -157,7 +157,7 @@ export struct CallUIPage {
                 }
                 .width(64).height(64)
                 .borderRadius(32)
-                .backgroundColor('#34C759')
+                .backgroundColor($r('app.color.call_accept_green'))
                 .justifyContent(FlexAlign.Center)
 
                 Text('Accept')
@@ -204,7 +204,7 @@ export struct CallUIPage {
               }
               .width(64).height(64)
               .borderRadius(32)
-              .backgroundColor('#FF3B30')
+              .backgroundColor($r('app.color.error_red'))
               .justifyContent(FlexAlign.Center)
               .onClick(() => { this.endCall(); })
             }
@@ -214,7 +214,7 @@ export struct CallUIPage {
             // Ended state
             Text('Call Ended')
               .fontSize(18)
-              .fontColor('#999999')
+              .fontColor($r('app.color.call_ended_text'))
           }
 
           Blank().height(60)
@@ -234,11 +234,11 @@ export struct CallUIPage {
       Column() {
         Image(icon)
           .width(22).height(22)
-          .fillColor(isActive ? '#1A1A2E' : Color.White)
+          .fillColor(isActive ? $r('app.color.call_bg_dark') : Color.White)
       }
       .width(52).height(52)
       .borderRadius(26)
-      .backgroundColor(isActive ? Color.White : '#FFFFFF33')
+      .backgroundColor(isActive ? Color.White : $r('app.color.call_button_inactive'))
       .justifyContent(FlexAlign.Center)
       .onClick(onTap)
 

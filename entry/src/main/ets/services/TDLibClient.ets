@@ -1,6 +1,7 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { taskpool } from '@kit.ArkTS';
 import { TELEGRAM_API_ID, TELEGRAM_API_HASH } from './ConfigLocal';
+import { TdFallbackRegistry } from './TdFallbackRegistry';
 
 // Native NAPI module
 import tdlib from 'libtdlib_napi.so';
@@ -14,14 +15,56 @@ function parseJsonInBackground(jsonStr: string): Object {
 const TAG = 'TDLibClient';
 const DOMAIN = 0x0001;
 
+// Default timeout for TDLib requests (30 seconds)
+const REQUEST_TIMEOUT_MS = 30000;
+
+// --- Lifecycle state machine ---
+export enum ClientState {
+  Idle = 'Idle',
+  Initializing = 'Initializing',
+  Ready = 'Ready',
+  Stopping = 'Stopping',
+  Stopped = 'Stopped'
+}
+
+// --- Unified error class for TDLib errors ---
+export class TDLibError extends Error {
+  code: number;
+  tdMessage: string;
+
+  constructor(code: number, message: string) {
+    super(`TDLib error ${code}: ${message}`);
+    this.code = code;
+    this.tdMessage = message;
+  }
+}
+
+// --- Log levels ---
+export enum LogLevel {
+  DEBUG = 0,
+  INFO = 1,
+  WARN = 2,
+  ERROR = 3,
+  NONE = 4
+}
+
 type TDLibUpdateHandler = (update: Record<string, Object>) => void;
+
+interface PendingRequest {
+  resolve: (response: Record<string, Object>) => void;
+  reject: (error: Error) => void;
+  method: string;
+  timerId: number;
+}
 
 export class TDLibClient {
   private static instance: TDLibClient | null = null;
   private clientId: number = 0;
   private requestId: number = 0;
   private handlers: Map<string, TDLibUpdateHandler[]> = new Map();
-  private pendingRequests: Map<number, (response: Record<string, Object>) => void> = new Map();
+  private pendingRequests: Map<number, PendingRequest> = new Map();
+  private _state: ClientState = ClientState.Idle;
+  private _logLevel: LogLevel = LogLevel.INFO;
 
   private constructor() {}
 
@@ -32,26 +75,59 @@ export class TDLibClient {
     return TDLibClient.instance;
   }
 
+  get state(): ClientState {
+    return this._state;
+  }
+
+  setLogLevel(level: LogLevel): void {
+    this._logLevel = level;
+  }
+
   initialize(): void {
+    if (this._state !== ClientState.Idle && this._state !== ClientState.Stopped) {
+      this.logWarn('initialize() called in invalid state: %{public}s', this._state);
+      return;
+    }
+    this._state = ClientState.Initializing;
     this.clientId = tdlib.createClient();
-    hilog.info(DOMAIN, TAG, 'Client created with id: %{public}d', this.clientId);
+    this.logInfo('Client created with id: %{public}d', this.clientId);
 
     // Start receiving updates from TDLib on a background thread
     tdlib.startReceiveLoop((responseJson: string) => {
+      if (this._state === ClientState.Stopped) return;
       this.handleResponse(responseJson);
     });
 
     // Send TDLib parameters
     this.sendTdlibParameters();
+    this._state = ClientState.Ready;
   }
 
   destroy(): void {
+    if (this._state === ClientState.Stopped) return;
+    this._state = ClientState.Stopping;
+
+    // Reject all pending requests
+    this.pendingRequests.forEach((pending: PendingRequest, id: number) => {
+      clearTimeout(pending.timerId);
+      pending.reject(new TDLibError(0, 'Client destroyed'));
+    });
+    this.pendingRequests.clear();
+
+    // Clear all event handlers
+    this.handlers.clear();
+
     tdlib.stopReceiveLoop();
-    hilog.info(DOMAIN, TAG, 'Client destroyed');
+    this._state = ClientState.Stopped;
+    this.logInfo('Client destroyed, all pending requests rejected');
   }
 
   // Send a request and get a promise for the response
   async send(method: string, inputParams?: Record<string, Object>): Promise<Record<string, Object>> {
+    if (this._state !== ClientState.Ready && this._state !== ClientState.Initializing) {
+      throw new TDLibError(0, `Cannot send '${method}' in state '${this._state}'`);
+    }
+
     const id: number = ++this.requestId;
     let request: Record<string, Object>;
     if (inputParams !== undefined) {
@@ -62,10 +138,19 @@ export class TDLibClient {
     request['@type'] = method;
     request['@extra'] = id;
 
-    return new Promise<Record<string, Object>>((resolve) => {
-      this.pendingRequests.set(id, resolve);
+    return new Promise<Record<string, Object>>((resolve, reject) => {
+      // Set timeout to auto-reject hanging requests
+      const timerId: number = setTimeout(() => {
+        if (this.pendingRequests.has(id)) {
+          this.pendingRequests.delete(id);
+          reject(new TDLibError(0, `Request '${method}' timed out after ${REQUEST_TIMEOUT_MS}ms`));
+        }
+      }, REQUEST_TIMEOUT_MS) as number;
+
+      const pending: PendingRequest = { resolve, reject, method, timerId };
+      this.pendingRequests.set(id, pending);
       tdlib.send(this.clientId, JSON.stringify(request));
-      hilog.info(DOMAIN, TAG, 'Sent: %{public}s', method);
+      this.logDebug('Sent: %{public}s', method);
     });
   }
 
@@ -249,16 +334,28 @@ export class TDLibClient {
       const type: string = (response['@type'] as string) || '';
       const extra: number = (response['@extra'] as number) || 0;
 
-      hilog.info(DOMAIN, TAG, 'Received: %{public}s', type);
+      this.logDebug('Received: %{public}s', type);
 
-      // Resolve pending request promise if this is a response
+      // Resolve or reject pending request promise
       if (extra !== undefined && this.pendingRequests.has(extra)) {
-        const resolve = this.pendingRequests.get(extra);
+        const pending = this.pendingRequests.get(extra);
         this.pendingRequests.delete(extra);
-        if (resolve) {
-          resolve(response);
+        if (pending) {
+          clearTimeout(pending.timerId);
+          // Reject on TDLib error responses
+          if (type === 'error') {
+            const code = (response['code'] as number) || 0;
+            const msg = (response['message'] as string) || 'Unknown error';
+            this.logWarn('Request %{public}s failed: [%{public}d] %{public}s', pending.method, code, msg);
+            pending.reject(new TDLibError(code, msg));
+          } else {
+            pending.resolve(response);
+          }
         }
       }
+
+      // Do not propagate error responses as updates
+      if (type === 'error') return;
 
       // Notify update handlers
       const handlers: TDLibUpdateHandler[] = this.handlers.get(type) || [];
@@ -271,8 +368,39 @@ export class TDLibClient {
       for (const handler of wildcardHandlers) {
         handler(response);
       }
+
+      // Track unhandled update types for telemetry
+      if (handlers.length === 0 && wildcardHandlers.length === 0 && type.startsWith('update')) {
+        TdFallbackRegistry.getInstance().recordUnhandled(type, 'update');
+      }
     } catch (_e) {
-      hilog.error(DOMAIN, TAG, 'Failed to parse response: %{public}s', responseJson);
+      this.logError('Failed to parse response');
+    }
+  }
+
+  // --- Logging helpers ---
+
+  private logDebug(format: string, ...args: Object[]): void {
+    if (this._logLevel <= LogLevel.DEBUG) {
+      hilog.debug(DOMAIN, TAG, format, ...args);
+    }
+  }
+
+  private logInfo(format: string, ...args: Object[]): void {
+    if (this._logLevel <= LogLevel.INFO) {
+      hilog.info(DOMAIN, TAG, format, ...args);
+    }
+  }
+
+  private logWarn(format: string, ...args: Object[]): void {
+    if (this._logLevel <= LogLevel.WARN) {
+      hilog.warn(DOMAIN, TAG, format, ...args);
+    }
+  }
+
+  private logError(format: string, ...args: Object[]): void {
+    if (this._logLevel <= LogLevel.ERROR) {
+      hilog.error(DOMAIN, TAG, format, ...args);
     }
   }
 }
