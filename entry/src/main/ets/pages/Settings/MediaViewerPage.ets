@@ -177,8 +177,9 @@ export struct MediaViewerPage {
               .height(24)
               .fillColor(Color.White)
               .onClick(() => {
-                this.navPathStack.pushPath(new NavPathInfo('ForwardPicker',
-                  { mediaUrl: this.mediaUrl } as Record<string, Object>));
+                const forwardParam: Record<string, Object> = {};
+                forwardParam['mediaUrl'] = this.mediaUrl;
+                this.navPathStack.pushPath(new NavPathInfo('ForwardPicker', forwardParam));
               })
               .accessibilityText('Share')
 

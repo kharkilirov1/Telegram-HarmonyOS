@@ -133,7 +133,7 @@ export struct BusinessAccountPage {
                 .textAlign(TextAlign.Center)
                 .margin({ top: 24 })
                 .onClick(() => {
-                  this.navPathStack.pushPath(new NavPathInfo('Premium'));
+                  this.navPathStack.pushPath(new NavPathInfo('Premium', new Object()));
                 })
             }
 

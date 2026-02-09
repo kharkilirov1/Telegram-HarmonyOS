@@ -36,15 +36,15 @@ export struct UserInfoPage {
   private async loadUserInfo(): Promise<void> {
     try {
       const result = await UserService.getInstance().getUser(this.userId);
-      this.firstName = (result['first_name'] as string) || 'User';
-      this.lastName = (result['last_name'] as string) || '';
-      this.username = (result['username'] as string) || '';
-      this.phoneNumber = (result['phone_number'] as string) || '';
+      this.firstName = result.first_name || 'User';
+      this.lastName = result.last_name || '';
+      this.username = result.username || '';
+      this.phoneNumber = result.phone_number || '';
 
       // Get user full info (bio, common groups)
       const fullInfo = await UserService.getInstance().getUserFullInfo(this.userId);
-      this.bio = (fullInfo['bio'] as string) || '';
-      this.commonGroupsCount = (fullInfo['group_in_common_count'] as number) || 0;
+      this.bio = fullInfo.bio?.text || '';
+      this.commonGroupsCount = fullInfo.group_in_common_count || 0;
     } catch (e) {
       hilog.warn(0x0001, 'UserInfoPage', 'Failed to load user info');
       // Stub defaults

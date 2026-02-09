@@ -29,6 +29,16 @@ export interface StickerSetInfo {
   stickers: TelegramSticker[];
 }
 
+interface UpdatedStickerList {
+  updated: boolean;
+  list: TelegramSticker[];
+}
+
+interface UpdatedStickerSetList {
+  updated: boolean;
+  list: StickerSetInfo[];
+}
+
 // --- Parsing helpers ---
 
 export function parseStickerObject(raw: Record<string, Object>): TelegramSticker {
@@ -220,7 +230,7 @@ export function updateStickerPathInList(
   stickers: TelegramSticker[],
   fileId: number,
   path: string
-): { updated: boolean; list: TelegramSticker[] } {
+): UpdatedStickerList {
   let updated = false;
   const newList = stickers.map((s: TelegramSticker): TelegramSticker => {
     if (s.fileId === fileId) {
@@ -235,14 +245,15 @@ export function updateStickerPathInList(
     }
     return s;
   });
-  return { updated, list: newList };
+  const result: UpdatedStickerList = { updated: updated, list: newList };
+  return result;
 }
 
 export function updateStickerPathInSets(
   sets: StickerSetInfo[],
   fileId: number,
   path: string
-): { updated: boolean; list: StickerSetInfo[] } {
+): UpdatedStickerSetList {
   let updated = false;
   const newSets = sets.map((set: StickerSetInfo): StickerSetInfo => {
     const result = updateStickerPathInList(set.stickers, fileId, path);
@@ -260,5 +271,6 @@ export function updateStickerPathInSets(
     }
     return set;
   });
-  return { updated, list: newSets };
+  const result: UpdatedStickerSetList = { updated: updated, list: newSets };
+  return result;
 }

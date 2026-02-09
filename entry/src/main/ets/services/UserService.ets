@@ -24,21 +24,21 @@ export class UserService {
 
   async getMe(): Promise<TdUser> {
     const result = await TDLibClient.getInstance().send('getMe');
-    return result as unknown as TdUser;
+    return result as TdUser;
   }
 
   async getUser(userId: number): Promise<TdUser> {
     const params: Record<string, Object> = {};
     params['user_id'] = userId;
     const result = await TDLibClient.getInstance().send('getUser', params);
-    return result as unknown as TdUser;
+    return result as TdUser;
   }
 
   async getUserFullInfo(userId: number): Promise<TdUserFullInfo> {
     const params: Record<string, Object> = {};
     params['user_id'] = userId;
     const result = await TDLibClient.getInstance().send('getUserFullInfo', params);
-    return result as unknown as TdUserFullInfo;
+    return result as TdUserFullInfo;
   }
 
   async setName(firstName: string, lastName: string): Promise<void> {

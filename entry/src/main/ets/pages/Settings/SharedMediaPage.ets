@@ -3,6 +3,7 @@
 
 import { ChatService } from '../../services/ChatService';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { Message, MessageContentType } from '../../models/Message';
 
 @Builder
 export function SharedMediaBuilder(name: string, param: Object) {
@@ -52,22 +53,22 @@ export struct SharedMediaPage {
 
   private async loadMediaItems(): Promise<void> {
     try {
-      const result: Record<string, Object> = await ChatService.getInstance().searchChatMessages(this.chatId, '', 0, 50, 'searchMessagesFilterPhotoAndVideo');
-      const messages = result['messages'] as Record<string, Object>[];
+      const messages: Message[] = await ChatService.getInstance()
+        .searchChatMessages(this.chatId, '', 0, 50, 'searchMessagesFilterPhotoAndVideo');
       if (messages && messages.length > 0) {
-        this.mediaItems = messages.map((msg, index) => {
-          const content = msg['content'] as Record<string, Object>;
-          const contentType = (content['@type'] as string) || '';
-          const isVideo = contentType === 'messageVideo';
-          const date = (msg['date'] as number) || 0;
-          return {
-            id: (msg['id'] as number) || index,
+        this.mediaItems = messages.map((msg: Message, index: number): SharedMediaItem => {
+          const isVideo = msg.contentType === MessageContentType.VIDEO
+            || msg.contentType === MessageContentType.VIDEO_NOTE
+            || msg.contentType === MessageContentType.ANIMATION;
+          const item: SharedMediaItem = {
+            id: msg.id || index,
             type: isVideo ? 'video' : 'photo',
             url: '',
             name: isVideo ? `Video ${index + 1}` : `Photo ${index + 1}`,
-            date: date,
+            date: msg.date || 0,
             size: ''
-          } as SharedMediaItem;
+          };
+          return item;
         });
         return;
       }
@@ -86,22 +87,19 @@ export struct SharedMediaPage {
 
   private async loadFileItems(): Promise<void> {
     try {
-      const result: Record<string, Object> = await ChatService.getInstance().searchChatMessages(this.chatId, '', 0, 50, 'searchMessagesFilterDocument');
-      const messages = result['messages'] as Record<string, Object>[];
+      const messages: Message[] = await ChatService.getInstance()
+        .searchChatMessages(this.chatId, '', 0, 50, 'searchMessagesFilterDocument');
       if (messages && messages.length > 0) {
-        this.fileItems = messages.map((msg, index) => {
-          const content = msg['content'] as Record<string, Object>;
-          const doc = content['document'] as Record<string, Object>;
-          const fileName = (doc?.['file_name'] as string) || 'Document';
-          const size = (doc?.['size'] as number) || 0;
-          return {
-            id: (msg['id'] as number) || index,
+        this.fileItems = messages.map((msg: Message, index: number): SharedMediaItem => {
+          const item: SharedMediaItem = {
+            id: msg.id || index,
             type: 'file',
             url: '',
-            name: fileName,
-            date: (msg['date'] as number) || 0,
-            size: this.formatSize(size)
-          } as SharedMediaItem;
+            name: msg.fileName || 'Document',
+            date: msg.date || 0,
+            size: this.formatSize(0)
+          };
+          return item;
         });
         return;
       }
@@ -117,21 +115,19 @@ export struct SharedMediaPage {
 
   private async loadLinkItems(): Promise<void> {
     try {
-      const result: Record<string, Object> = await ChatService.getInstance().searchChatMessages(this.chatId, '', 0, 50, 'searchMessagesFilterUrl');
-      const messages = result['messages'] as Record<string, Object>[];
+      const messages: Message[] = await ChatService.getInstance()
+        .searchChatMessages(this.chatId, '', 0, 50, 'searchMessagesFilterUrl');
       if (messages && messages.length > 0) {
-        this.linkItems = messages.map((msg, index) => {
-          const content = msg['content'] as Record<string, Object>;
-          const webPage = content['web_page'] as Record<string, Object>;
-          const text = content['text'] as Record<string, Object>;
-          return {
-            id: (msg['id'] as number) || index,
+        this.linkItems = messages.map((msg: Message, index: number): SharedMediaItem => {
+          const item: SharedMediaItem = {
+            id: msg.id || index,
             type: 'link',
-            url: (webPage?.['url'] as string) || (text?.['text'] as string) || '',
-            name: (webPage?.['title'] as string) || 'Link',
-            date: (msg['date'] as number) || 0,
+            url: msg.text || '',
+            name: msg.text.length > 0 ? msg.text : 'Link',
+            date: msg.date || 0,
             size: ''
-          } as SharedMediaItem;
+          };
+          return item;
         });
         return;
       }

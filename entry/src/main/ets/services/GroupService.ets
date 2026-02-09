@@ -21,14 +21,14 @@ export class GroupService {
     const params: Record<string, Object> = {};
     params['supergroup_id'] = supergroupId;
     const result = await TDLibClient.getInstance().send('getSupergroup', params);
-    return result as unknown as TdSupergroup;
+    return result as TdSupergroup;
   }
 
   async getSupergroupFullInfo(supergroupId: number): Promise<TdSupergroupFullInfo> {
     const params: Record<string, Object> = {};
     params['supergroup_id'] = supergroupId;
     const result = await TDLibClient.getInstance().send('getSupergroupFullInfo', params);
-    return result as unknown as TdSupergroupFullInfo;
+    return result as TdSupergroupFullInfo;
   }
 
   async getSupergroupMembers(supergroupId: number, filterType: string = 'supergroupMembersFilterRecent',
@@ -41,7 +41,7 @@ export class GroupService {
     params['offset'] = offset;
     params['limit'] = limit;
     const result = await TDLibClient.getInstance().send('getSupergroupMembers', params);
-    return result as unknown as TdSupergroupMembers;
+    return result as TdSupergroupMembers;
   }
 
   async toggleSupergroupIsAllHistoryAvailable(supergroupId: number,

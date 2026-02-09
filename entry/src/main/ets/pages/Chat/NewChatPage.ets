@@ -80,11 +80,11 @@ export struct NewChatPage {
 
         // Quick action rows — navigate to create pages
         this.quickActionClickable($r('app.media.ic_group'), $r('app.string.new_group'), () => {
-          this.navPathStack.pushPath(new NavPathInfo('CreateGroup'));
+          this.navPathStack.pushPath(new NavPathInfo('CreateGroup', new Object()));
         })
         Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
         this.quickActionClickable($r('app.media.ic_channel'), $r('app.string.new_channel'), () => {
-          this.navPathStack.pushPath(new NavPathInfo('CreateChannel'));
+          this.navPathStack.pushPath(new NavPathInfo('CreateChannel', new Object()));
         })
         Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
         this.quickAction($r('app.media.ic_lock'), $r('app.string.secret_chat'))
@@ -210,11 +210,9 @@ export struct NewChatPage {
 
   private async openPrivateChat(userId: number): Promise<void> {
     try {
-      const result = await ChatService.getInstance().createPrivateChat(userId) as Record<string, number>;
-
-      const chatId = result['id'] || -userId;
+      const chatId = await ChatService.getInstance().createPrivateChat(userId);
       this.navPathStack.pop();
-      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
+      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId !== 0 ? chatId : -userId));
     } catch (e) {
       hilog.warn(0x0001, 'NewChatPage', 'Failed to create private chat for user %{public}d: %{public}s',
         userId, String(e));

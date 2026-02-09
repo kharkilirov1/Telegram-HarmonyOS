@@ -108,9 +108,9 @@ export struct GroupAdminPage {
             name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
             const photo = user.profile_photo;
             if (photo?.small?.local) {
-              const localFile = photo.small.local as unknown as Record<string, Object>;
-              if (localFile['is_downloading_completed']) {
-                photoUrl = localFile['path'] as string;
+              const localFile = photo.small.local;
+              if (localFile.is_downloading_completed) {
+                photoUrl = localFile.path;
               }
             }
           } catch (e) {

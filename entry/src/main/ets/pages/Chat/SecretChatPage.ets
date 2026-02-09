@@ -6,6 +6,7 @@ import { TDLibClient } from '../../services/TDLibClient';
 import { UserService } from '../../services/UserService';
 import { ChatService } from '../../services/ChatService';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { TdSecretChat } from '../../models/TdTypes';
 
 @Builder
 export function SecretChatBuilder(name: string, param: Object) {
@@ -102,9 +103,9 @@ export struct SecretChatPage {
 
   private async loadUserName(): Promise<void> {
     try {
-      const result = await UserService.getInstance().getUser(this.userId) as Record<string, string>;
-      const first = result['first_name'] || '';
-      const last = result['last_name'] || '';
+      const result = await UserService.getInstance().getUser(this.userId);
+      const first = result.first_name || '';
+      const last = result.last_name || '';
       this.userName = `${first} ${last}`.trim() || this.getUserFallback();
     } catch (e) {
       hilog.warn(0x0001, 'SecretChatPage', 'Failed to load user name');
@@ -119,9 +120,9 @@ export struct SecretChatPage {
     try {
       const result = await ChatService.getInstance().createNewSecretChat(this.userId);
 
-      const chatType = result['type'] as Record<string, number> | undefined;
+      const chatType = result['type'] as Record<string, Object> | undefined;
       if (chatType) {
-        this.secretChatId = chatType['secret_chat_id'] || 0;
+        this.secretChatId = (chatType['secret_chat_id'] as number) || 0;
       }
       this.chatId = (result['id'] as number) || 0;
 
@@ -140,7 +141,7 @@ export struct SecretChatPage {
     try {
       const secretChat = await ChatService.getInstance().getSecretChat(this.secretChatId);
 
-      const state = secretChat['state'] as Record<string, string> | undefined;
+      const state = secretChat.state as Record<string, string> | undefined;
       const stateType = state ? state['@type'] : '';
 
       if (stateType === 'secretChatStateReady') {
@@ -152,10 +153,15 @@ export struct SecretChatPage {
         this.chatState = 'creating';
       }
 
-      // Extract key_hash (array of byte values) for visualization
-      const rawHash = secretChat['key_hash'] as number[] | undefined;
-      if (rawHash && rawHash.length > 0) {
-        this.keyHash = rawHash;
+      // TDLib returns key_hash as base64 string
+      const rawHash = secretChat.key_hash || '';
+      if (rawHash.length > 0) {
+        const decoded = this.decodeBase64ToBytes(rawHash);
+        if (decoded.length > 0) {
+          this.keyHash = decoded;
+          return;
+        }
+        this.generatePlaceholderKeyHash();
       } else {
         // Generate a deterministic placeholder from secretChatId for preview
         this.generatePlaceholderKeyHash();
@@ -168,17 +174,17 @@ export struct SecretChatPage {
 
   private handleSecretChatUpdate(update: Record<string, Object>): void {
     const record = update as Record<string, Object>;
-    const secretChat = record['secret_chat'] as Record<string, Object> | undefined;
+    const secretChat = record['secret_chat'] as TdSecretChat | undefined;
     if (!secretChat) {
       return;
     }
 
-    const id = secretChat['id'] as number;
+    const id = secretChat.id;
     if (id !== this.secretChatId) {
       return;
     }
 
-    const state = secretChat['state'] as Record<string, string> | undefined;
+    const state = secretChat.state as Record<string, string> | undefined;
     const stateType = state ? state['@type'] : '';
 
     if (stateType === 'secretChatStateReady') {
@@ -199,6 +205,32 @@ export struct SecretChatPage {
       hash.push(seed % 256);
     }
     this.keyHash = hash;
+  }
+
+  private decodeBase64ToBytes(base64: string): number[] {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    const bytes: number[] = [];
+    let buffer = 0;
+    let bitsCollected = 0;
+
+    for (let i = 0; i < base64.length; i++) {
+      const c = base64.charAt(i);
+      if (c === '=') {
+        break;
+      }
+      const idx = chars.indexOf(c);
+      if (idx < 0) {
+        continue;
+      }
+      buffer = (buffer << 6) | idx;
+      bitsCollected += 6;
+      while (bitsCollected >= 8) {
+        bitsCollected -= 8;
+        bytes.push((buffer >> bitsCollected) & 0xFF);
+      }
+    }
+
+    return bytes;
   }
 
   private async setAutoDeleteTimer(seconds: number): Promise<void> {

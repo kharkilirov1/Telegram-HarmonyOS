@@ -34,7 +34,7 @@ export struct PassportPage {
 
   private async loadPassportData(): Promise<void> {
     try {
-      const result: Record<string, Object> = await ChatService.getInstance().getPassportAuthorizationForm(0, '', '');
+      const result = await ChatService.getInstance().getPassportAuthorizationForm(0, '', '');
       this.hasPassport = result !== null;
     } catch (e) {
       hilog.warn(0x0001, 'PassportPage', 'Failed to load passport authorization form');

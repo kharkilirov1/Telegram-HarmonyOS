@@ -59,7 +59,7 @@ export struct SettingsPage {
             .fontSize(16)
             .fontColor($r('app.color.telegram_blue'))
             .onClick(() => {
-              this.navPathStack.pushPath(new NavPathInfo('Profile'));
+              this.navPathStack.pushPath(new NavPathInfo('Profile', new Object()));
             })
         }
         .width('100%')
@@ -105,7 +105,7 @@ export struct SettingsPage {
             .padding(16)
             .backgroundColor($r('app.color.settings_section_bg'))
             .onClick(() => {
-              this.navPathStack.pushPath(new NavPathInfo('Profile'));
+              this.navPathStack.pushPath(new NavPathInfo('Profile', new Object()));
             })
 
             this.sectionGap()
@@ -171,7 +171,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath(new NavPathInfo('SessionManagement'));
+                this.navPathStack.pushPath(new NavPathInfo('SessionManagement', new Object()));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
@@ -193,7 +193,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath(new NavPathInfo('ChatFolders'));
+                this.navPathStack.pushPath(new NavPathInfo('ChatFolders', new Object()));
               })
             }
             .width('100%')
@@ -224,7 +224,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath(new NavPathInfo('NotificationsSettings'));
+                this.navPathStack.pushPath(new NavPathInfo('NotificationsSettings', new Object()));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
@@ -246,7 +246,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath(new NavPathInfo('PrivacySettings'));
+                this.navPathStack.pushPath(new NavPathInfo('PrivacySettings', new Object()));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
@@ -268,7 +268,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath(new NavPathInfo('BiometricLock'));
+                this.navPathStack.pushPath(new NavPathInfo('BiometricLock', new Object()));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
@@ -290,7 +290,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath(new NavPathInfo('DataStorage'));
+                this.navPathStack.pushPath(new NavPathInfo('DataStorage', new Object()));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
@@ -312,7 +312,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath(new NavPathInfo('ProxySettings'));
+                this.navPathStack.pushPath(new NavPathInfo('ProxySettings', new Object()));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
@@ -334,7 +334,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath(new NavPathInfo('Appearance'));
+                this.navPathStack.pushPath(new NavPathInfo('Appearance', new Object()));
               })
 
               Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
@@ -361,7 +361,7 @@ export struct SettingsPage {
               .height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.navPathStack.pushPath(new NavPathInfo('Language'));
+                this.navPathStack.pushPath(new NavPathInfo('Language', new Object()));
               })
             }
             .width('100%')

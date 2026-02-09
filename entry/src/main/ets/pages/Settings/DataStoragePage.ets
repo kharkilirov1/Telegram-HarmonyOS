@@ -147,9 +147,7 @@ export struct DataStoragePage {
       autoDownloadSettings['preload_next_audio'] = true;
       autoDownloadSettings['preload_stories'] = true;
       autoDownloadSettings['use_less_data_for_calls'] = false;
-      const networkType: Record<string, Object> = {};
-      networkType['@type'] = tdlibNetworkType;
-      await ChatService.getInstance().setAutoDownloadSettings(autoDownloadSettings, networkType);
+      await ChatService.getInstance().setAutoDownloadSettings(autoDownloadSettings, tdlibNetworkType);
     } catch (e) {
       hilog.warn(0x0001, 'DataStoragePage', 'Failed to sync auto-download settings to TDLib');
     }

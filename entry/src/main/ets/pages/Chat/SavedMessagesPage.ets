@@ -92,8 +92,7 @@ export struct SavedMessagesPage {
 
     // Create private chat with self (TDLib returns existing if already created)
     try {
-      const chatResult = await ChatService.getInstance().createPrivateChat(userId);
-      this.chatId = (chatResult['id'] as number) || 0;
+      this.chatId = await ChatService.getInstance().createPrivateChat(userId);
     } catch (e) {
       hilog.warn(0x0001, 'SavedMessagesPage', 'Failed to create private chat');
       this.isLoading = false;

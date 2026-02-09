@@ -349,9 +349,8 @@ export struct CreateChannelPage {
     this.isCreating = true;
 
     try {
-      const result = await ChatService.getInstance().createNewSupergroupChat(this.channelName.trim(), true, this.channelDescription) as Record<string, number>;
-
-      const chatId = result['id'] || 0;
+      const chatId = await ChatService.getInstance()
+        .createNewSupergroupChat(this.channelName.trim(), true, this.channelDescription);
       this.navPathStack.pop();
       if (chatId !== 0) {
         this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));

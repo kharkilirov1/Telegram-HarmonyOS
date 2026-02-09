@@ -37,20 +37,20 @@ export struct MultiAccountPage {
 
     // Get current user info
     try {
-      const meResult: Record<string, Object> = await UserService.getInstance().getMe();
-      const userId = (meResult['id'] as number) || 0;
-      const firstName = (meResult['first_name'] as string) || '';
-      const lastName = (meResult['last_name'] as string) || '';
-      const phoneNumber = (meResult['phone_number'] as string) || '';
+      const meResult = await UserService.getInstance().getMe();
+      const userId = meResult.id || 0;
+      const firstName = meResult.first_name || '';
+      const lastName = meResult.last_name || '';
+      const phoneNumber = meResult.phone_number || '';
 
       let photoUrl = '';
-      const profilePhoto = meResult['profile_photo'] as Record<string, Object>;
+      const profilePhoto = meResult.profile_photo;
       if (profilePhoto) {
-        const small = profilePhoto['small'] as Record<string, Object>;
+        const small = profilePhoto.small;
         if (small) {
-          const localFile = small['local'] as Record<string, Object>;
-          if (localFile && (localFile['is_downloading_completed'] as boolean)) {
-            photoUrl = (localFile['path'] as string) || '';
+          const localFile = small.local;
+          if (localFile && localFile.is_downloading_completed) {
+            photoUrl = localFile.path || '';
           }
         }
       }

@@ -6,9 +6,6 @@ import { Chat } from '../models/Chat';
 import { Message, MessageContentType } from '../models/Message';
 import { TdFallbackRegistry } from '../services/TdFallbackRegistry';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-
-const TAG = 'TdMessageParser';
-const DOMAIN = 0x0001;
 import {
   tdType,
   TdMessage,
@@ -36,6 +33,9 @@ import {
   PollOptionDisplay
 } from '../models/TdTypes';
 
+const TAG = 'TdMessageParser';
+const DOMAIN = 0x0001;
+
 // --- Message parsing ---
 
 export function parseMessage(raw: TdMessage): Message {
@@ -59,7 +59,7 @@ export function parseMessage(raw: TdMessage): Message {
 
   // Reply
   const replyTo: TdReplyTo | undefined = raw.reply_to;
-  if (replyTo && tdType(replyTo as unknown as Record<string, Object>) === 'messageReplyToMessage') {
+  if (replyTo && tdType(replyTo as Record<string, Object>) === 'messageReplyToMessage') {
     msg.replyToMessageId = replyTo.message_id || 0;
   }
 
@@ -81,7 +81,7 @@ export function parseMessage(raw: TdMessage): Message {
   // Scheduling state
   const scheduling: TdSchedulingState | undefined = raw.scheduling_state;
   if (scheduling) {
-    const schedType: string = tdType(scheduling as unknown as Record<string, Object>);
+    const schedType: string = tdType(scheduling as Record<string, Object>);
     if (schedType === 'messageSchedulingStateSendAtDate') {
       msg.schedulingState = scheduling.send_date || 0;
     }
@@ -91,7 +91,7 @@ export function parseMessage(raw: TdMessage): Message {
   const selfDestruct: TdSelfDestructType | undefined = raw.self_destruct_type;
   if (selfDestruct) {
     msg.selfDestructIn = selfDestruct.self_destruct_time || 0;
-    const sdType: string = tdType(selfDestruct as unknown as Record<string, Object>);
+    const sdType: string = tdType(selfDestruct as Record<string, Object>);
     if (sdType === 'messageSelfDestructTypeImmediately') {
       msg.isViewOnce = true;
     }
@@ -111,7 +111,7 @@ export function parseMessage(raw: TdMessage): Message {
 // --- Content type mapping ---
 
 export function applyContent(msg: Message, content: TdMessageContent): void {
-  const type: string = tdType(content as unknown as Record<string, Object>);
+  const type: string = tdType(content as Record<string, Object>);
 
   switch (type) {
     case 'messageText': {
@@ -185,7 +185,7 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
         msg.pollIsAnonymous = poll.is_anonymous !== false;
 
         const pt: TdPollType | undefined = poll.type;
-        msg.pollType = (pt ? tdType(pt as unknown as Record<string, Object>) : '') === 'pollTypeQuiz' ? 'quiz' : 'regular';
+        msg.pollType = (pt ? tdType(pt as Record<string, Object>) : '') === 'pollTypeQuiz' ? 'quiz' : 'regular';
 
         const opts: TdPollOption[] | undefined = poll.options;
         if (opts) {
@@ -217,7 +217,7 @@ export function extractTextPreview(rawMsg: TdMessage): string {
   const content: TdMessageContent | undefined = rawMsg.content;
   if (!content) return '';
 
-  const type: string = tdType(content as unknown as Record<string, Object>);
+  const type: string = tdType(content as Record<string, Object>);
   switch (type) {
     case 'messageText': {
       return content.text?.text || '';
@@ -266,7 +266,7 @@ export function parseChat(raw: TdChat): Chat {
   // Determine type
   const chatType: TdChatType | undefined = raw.type;
   if (chatType) {
-    const t: string = tdType(chatType as unknown as Record<string, Object>);
+    const t: string = tdType(chatType as Record<string, Object>);
     chat.isGroup = t === 'chatTypeSupergroup' || t === 'chatTypeBasicGroup';
     chat.isChannel = t === 'chatTypeSupergroup' && (chatType.is_channel === true);
   }

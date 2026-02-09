@@ -72,7 +72,7 @@ export struct ChatListPage {
               .fillColor($r('app.color.telegram_blue'))
               .accessibilityText($r('app.string.accessibility_search'))
               .onClick(() => {
-                this.navPathStack.pushPath(new NavPathInfo('Search'));
+                this.navPathStack.pushPath(new NavPathInfo('Search', new Object()));
               })
 
             Image($r('app.media.ic_edit'))
@@ -81,7 +81,7 @@ export struct ChatListPage {
               .fillColor($r('app.color.telegram_blue'))
               .accessibilityText($r('app.string.accessibility_compose'))
               .onClick(() => {
-                this.navPathStack.pushPath(new NavPathInfo('NewChat'));
+                this.navPathStack.pushPath(new NavPathInfo('NewChat', new Object()));
               })
           }
         }
@@ -215,7 +215,7 @@ export struct ChatListPage {
       .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: 4 })
       .margin({ right: 16, bottom: 16 })
       .onClick(() => {
-        this.navPathStack.pushPath(new NavPathInfo('NewChat'));
+        this.navPathStack.pushPath(new NavPathInfo('NewChat', new Object()));
       })
     }
     .width('100%')

@@ -155,6 +155,15 @@ export struct ChatDetailPage {
                 this.rebuildFlatList();
               })
           }
+          .width('100%')
+          .height(56)
+          .padding({ left: 8, right: 16 })
+          .backgroundColor($r('app.color.glass_nav_bg'))
+          .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
+            colorMode: ThemeColorMode.SYSTEM,
+            adaptiveColor: AdaptiveColor.DEFAULT,
+            scale: 1.0
+          })
         } else {
           Row() {
             Image($r('app.media.ic_back'))
@@ -236,16 +245,16 @@ export struct ChatDetailPage {
               .height(22)
               .fillColor($r('app.color.telegram_blue'))
           }
+          .width('100%')
+          .height(56)
+          .padding({ left: 8, right: 16 })
+          .backgroundColor($r('app.color.glass_nav_bg'))
+          .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
+            colorMode: ThemeColorMode.SYSTEM,
+            adaptiveColor: AdaptiveColor.DEFAULT,
+            scale: 1.0
+          })
         }
-        .width('100%')
-        .height(56)
-        .padding({ left: 8, right: 16 })
-        .backgroundColor($r('app.color.glass_nav_bg'))
-        .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
-          colorMode: ThemeColorMode.SYSTEM,
-          adaptiveColor: AdaptiveColor.DEFAULT,
-          scale: 1.0
-        })
 
         // --- Per-chat search bar ---
         if (this.isSearchMode) {

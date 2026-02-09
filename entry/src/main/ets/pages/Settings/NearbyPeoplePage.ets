@@ -3,6 +3,7 @@
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ChatService } from '../../services/ChatService';
+import { TdChatsNearby, TdNearbyChat } from '../../models/TdTypes';
 
 @Builder
 export function NearbyPeopleBuilder(name: string, param: Object) {
@@ -41,29 +42,35 @@ export struct NearbyPeoplePage {
     this.isLoading = true;
 
     try {
-      const result: Record<string, Object> = await ChatService.getInstance().searchChatsNearby(0.0, 0.0);
+      const result: TdChatsNearby = await ChatService.getInstance().searchChatsNearby(0.0, 0.0);
 
       // Parse nearby users
-      const rawUsers = result['users_nearby'] as Record<string, Object>[];
+      const rawUsers = result.users_nearby;
       if (rawUsers) {
-        this.nearbyUsers = rawUsers.map((u: Record<string, Object>) => ({
-          userId: (u['user_id'] as number) || 0,
-          name: '',
-          initial: '?',
-          distance: (u['distance'] as number) || 0
-        }));
+        this.nearbyUsers = rawUsers.map((u: TdNearbyChat): NearbyUser => {
+          const user: NearbyUser = {
+            userId: u.user_id || u.chat_id || 0,
+            name: '',
+            initial: '?',
+            distance: u.distance || 0
+          };
+          return user;
+        });
       }
 
       // Parse nearby groups
-      const rawGroups = result['supergroups_nearby'] as Record<string, Object>[];
+      const rawGroups = result.supergroups_nearby;
       if (rawGroups) {
-        this.nearbyGroups = rawGroups.map((g: Record<string, Object>) => ({
-          chatId: (g['chat_id'] as number) || 0,
-          title: '',
-          initial: '?',
-          membersCount: 0,
-          distance: (g['distance'] as number) || 0
-        }));
+        this.nearbyGroups = rawGroups.map((g: TdNearbyChat): NearbyChat => {
+          const group: NearbyChat = {
+            chatId: g.chat_id || 0,
+            title: '',
+            initial: '?',
+            membersCount: 0,
+            distance: g.distance || 0
+          };
+          return group;
+        });
       }
     } catch (e) {
       hilog.warn(0x0001, 'NearbyPeoplePage', 'Failed to search chats nearby');

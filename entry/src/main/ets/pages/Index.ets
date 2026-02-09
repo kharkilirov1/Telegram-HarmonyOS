@@ -34,10 +34,10 @@ struct Index {
         this.navPathStack.clear();
         break;
       case 'authorizationStateWaitCode':
-        this.navPathStack.pushPath(new NavPathInfo('LoginCode'));
+        this.navPathStack.pushPath(new NavPathInfo('LoginCode', new Object()));
         break;
       case 'authorizationStateWaitPassword':
-        this.navPathStack.pushPath(new NavPathInfo('LoginPassword'));
+        this.navPathStack.pushPath(new NavPathInfo('LoginPassword', new Object()));
         break;
       case 'authorizationStateReady':
         this.isAuthorized = true;
@@ -207,7 +207,7 @@ struct Index {
           .fontSize(16)
           .fontColor($r('app.color.telegram_blue'))
           .onClick(() => {
-            this.navPathStack.pushPath(new NavPathInfo('Profile'));
+            this.navPathStack.pushPath(new NavPathInfo('Profile', new Object()));
           })
       }
       .width('100%')
@@ -250,7 +250,7 @@ struct Index {
           .width('100%')
           .padding({ left: 16, right: 16, top: 12, bottom: 12 })
           .onClick(() => {
-            this.navPathStack.pushPath(new NavPathInfo('Profile'));
+            this.navPathStack.pushPath(new NavPathInfo('Profile', new Object()));
           })
 
           Blank().height(16)
@@ -262,7 +262,7 @@ struct Index {
                 $r('app.string.saved_messages'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath(new NavPathInfo('SavedMessages'));
+              this.navPathStack.pushPath(new NavPathInfo('SavedMessages', new Object()));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             Column() {
@@ -278,7 +278,7 @@ struct Index {
                 $r('app.string.settings_devices'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath(new NavPathInfo('SessionManagement'));
+              this.navPathStack.pushPath(new NavPathInfo('SessionManagement', new Object()));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             Column() {
@@ -286,7 +286,7 @@ struct Index {
                 $r('app.string.settings_chat_folders'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath(new NavPathInfo('ChatFolders'));
+              this.navPathStack.pushPath(new NavPathInfo('ChatFolders', new Object()));
             })
           }
           .width('100%')
@@ -305,7 +305,7 @@ struct Index {
                 $r('app.string.settings_notifications_sounds'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath(new NavPathInfo('NotificationsSettings'));
+              this.navPathStack.pushPath(new NavPathInfo('NotificationsSettings', new Object()));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             Column() {
@@ -313,7 +313,7 @@ struct Index {
                 $r('app.string.settings_privacy_security'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath(new NavPathInfo('PrivacySettings'));
+              this.navPathStack.pushPath(new NavPathInfo('PrivacySettings', new Object()));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             Column() {
@@ -321,7 +321,7 @@ struct Index {
                 $r('app.string.settings_data_storage'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath(new NavPathInfo('DataStorage'));
+              this.navPathStack.pushPath(new NavPathInfo('DataStorage', new Object()));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             Column() {
@@ -329,7 +329,7 @@ struct Index {
                 $r('app.string.settings_appearance'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath(new NavPathInfo('Appearance'));
+              this.navPathStack.pushPath(new NavPathInfo('Appearance', new Object()));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             Column() {
@@ -337,7 +337,7 @@ struct Index {
                 $r('app.string.settings_language'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath(new NavPathInfo('Language'));
+              this.navPathStack.pushPath(new NavPathInfo('Language', new Object()));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             this.settingsRow($r('app.media.ic_emoji'), $r('app.color.settings_icon_orange'),
@@ -359,7 +359,7 @@ struct Index {
                 $r('app.string.telegram_premium'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath(new NavPathInfo('Premium'));
+              this.navPathStack.pushPath(new NavPathInfo('Premium', new Object()));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             Column() {
@@ -367,7 +367,7 @@ struct Index {
                 $r('app.string.nearby_people'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath(new NavPathInfo('NearbyPeople'));
+              this.navPathStack.pushPath(new NavPathInfo('NearbyPeople', new Object()));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             Column() {
@@ -375,7 +375,7 @@ struct Index {
                 $r('app.string.business_account'))
             }
             .onClick(() => {
-              this.navPathStack.pushPath(new NavPathInfo('BusinessAccount'));
+              this.navPathStack.pushPath(new NavPathInfo('BusinessAccount', new Object()));
             })
           }
           .width('100%')

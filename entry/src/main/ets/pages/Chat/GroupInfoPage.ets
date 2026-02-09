@@ -90,12 +90,12 @@ export struct GroupInfoPage {
             name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
             const photo = user.profile_photo;
             if (photo?.small?.local) {
-              const localFile = photo.small.local as unknown as Record<string, Object>;
-              if (localFile['is_downloading_completed']) {
-                photoUrl = localFile['path'] as string;
+              const localFile = photo.small.local;
+              if (localFile.is_downloading_completed) {
+                photoUrl = localFile.path;
               }
             }
-            const userStatusObj = user.status as unknown as Record<string, string> | undefined;
+            const userStatusObj = user.status as Record<string, string> | undefined;
             if (userStatusObj) {
               const st = userStatusObj['@type'] || '';
               if (st === 'userStatusOnline') userStatus = 'online';
@@ -199,7 +199,7 @@ export struct GroupInfoPage {
                 this.isMuted = !this.isMuted;
               })
               this.actionButton($r('app.media.ic_search'), $r('app.string.search_placeholder'), () => {
-                this.navPathStack.pushPath(new NavPathInfo('Search'));
+                this.navPathStack.pushPath(new NavPathInfo('Search', new Object()));
               })
               if (!this.isChannel) {
                 this.actionButton($r('app.media.ic_phone_call'), $r('app.string.call_action'), () => {})

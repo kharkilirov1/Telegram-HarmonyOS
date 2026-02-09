@@ -61,7 +61,7 @@ type TDLibUpdateHandler = (update: Record<string, Object>) => void;
 
 interface PendingRequest {
   resolve: (response: Record<string, Object>) => void;
-  reject: (error: Error) => void;
+  reject: (code: number, message: string) => void;
   method: string;
   timerId: number;
 }
@@ -125,7 +125,7 @@ export class TDLibClient {
     // Reject all pending requests
     this.pendingRequests.forEach((pending: PendingRequest, id: number) => {
       clearTimeout(pending.timerId);
-      pending.reject(new TDLibError(0, 'Client destroyed'));
+      pending.reject(0, 'Client destroyed');
     });
     this.pendingRequests.clear();
 
@@ -162,7 +162,14 @@ export class TDLibClient {
         }
       }, REQUEST_TIMEOUT_MS) as number;
 
-      const pending: PendingRequest = { resolve, reject, method, timerId };
+      const pending: PendingRequest = {
+        resolve,
+        reject: (code: number, message: string): void => {
+          reject(new TDLibError(code, message));
+        },
+        method,
+        timerId
+      };
       this.pendingRequests.set(id, pending);
       tdlib.send(this.clientId, JSON.stringify(request));
       this.logDebug('Sent: %{public}s', method);
@@ -498,7 +505,7 @@ export class TDLibClient {
             const code = (response['code'] as number) || 0;
             const msg = (response['message'] as string) || 'Unknown error';
             this.logWarn('Request %{public}s failed: [%{public}d] %{public}s', pending.method, code, msg);
-            pending.reject(new TDLibError(code, msg));
+            pending.reject(code, msg);
           } else {
             pending.resolve(response);
           }

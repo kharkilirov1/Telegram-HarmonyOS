@@ -6,6 +6,7 @@ import { GroupService } from '../../services/GroupService';
 import { ChatService } from '../../services/ChatService';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { pasteboard } from '@kit.BasicServicesKit';
+import { TdChatInviteLink } from '../../models/TdTypes';
 
 @Builder
 export function InviteLinksBuilder(name: string, param: Object) {
@@ -58,16 +59,16 @@ export struct InviteLinksPage {
   private async loadLinks(): Promise<void> {
     try {
       const result = await ChatService.getInstance().getChatInviteLinks(this.chatId, 0, false, 100);
-      const rawLinks = result['invite_links'] as Record<string, Object>[];
+      const rawLinks = result.invite_links;
       if (rawLinks && rawLinks.length > 0) {
         this.inviteLinks = [];
-        for (const link of rawLinks) {
+        for (const link of rawLinks as TdChatInviteLink[]) {
           this.inviteLinks.push({
-            link: (link['invite_link'] as string) || '',
-            memberCount: (link['member_count'] as number) || 0,
-            expireDate: (link['expiration_date'] as number) || 0,
-            isRevoked: (link['is_revoked'] as boolean) || false,
-            isPrimary: (link['is_primary'] as boolean) || false,
+            link: link.invite_link || '',
+            memberCount: link.member_count || 0,
+            expireDate: link.expiration_date || 0,
+            isRevoked: link.is_revoked || false,
+            isPrimary: link.is_primary || false,
           });
         }
 
@@ -100,9 +101,9 @@ export struct InviteLinksPage {
     try {
       const result = await ChatService.getInstance().createChatInviteLink(this.chatId, '', 0, 0);
       const newLink: InviteLink = {
-        link: (result['invite_link'] as string) || '',
+        link: result.invite_link || '',
         memberCount: 0,
-        expireDate: (result['expiration_date'] as number) || 0,
+        expireDate: result.expiration_date || 0,
         isRevoked: false,
         isPrimary: false,
       };

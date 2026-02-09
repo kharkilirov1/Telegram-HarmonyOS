@@ -350,9 +350,8 @@ export struct CreateGroupPage {
     this.isCreating = true;
 
     try {
-      const result = await ChatService.getInstance().createNewBasicGroupChat(this.selectedUserIds, this.groupName.trim()) as Record<string, number>;
-
-      const chatId = result['id'] || 0;
+      const chatId = await ChatService.getInstance()
+        .createNewBasicGroupChat(this.selectedUserIds, this.groupName.trim());
       this.navPathStack.pop();
       if (chatId !== 0) {
         this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));

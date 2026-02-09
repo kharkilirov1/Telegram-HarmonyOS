@@ -267,7 +267,7 @@ export interface TdUsernames {
 }
 
 export interface TdUser {
-  id: number;
+  id?: number;
   first_name?: string;
   last_name?: string;
   phone_number?: string;
@@ -286,7 +286,7 @@ export interface TdUserFullInfo {
 // --- TDLib supergroup interfaces ---
 
 export interface TdSupergroup {
-  id: number;
+  id?: number;
   usernames?: TdUsernames;
   member_count?: number;
   is_channel?: boolean;
@@ -315,6 +315,7 @@ export interface TdChatInviteLink {
   invite_link?: string;
   member_count?: number;
   is_revoked?: boolean;
+  is_primary?: boolean;
   expiration_date?: number;
   name?: string;
   creator_user_id?: number;
@@ -328,7 +329,7 @@ export interface TdChatInviteLinks {
 // --- TDLib secret chat ---
 
 export interface TdSecretChat {
-  id: number;
+  id?: number;
   state?: Record<string, Object>;
   key_hash?: string;
   user_id?: number;
@@ -387,6 +388,7 @@ export interface TdChatPermissions {
 // --- TDLib nearby chat ---
 
 export interface TdNearbyChat {
+  user_id?: number;
   chat_id?: number;
   distance?: number;
 }

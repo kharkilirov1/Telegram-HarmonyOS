@@ -85,7 +85,7 @@ export class ChatService {
     params['query'] = query;
     params['limit'] = limit;
     const result = await TDLibClient.getInstance().send('searchChats', params);
-    return result as unknown as TdChats;
+    return result as TdChats;
   }
 
   async searchChatsNearby(latitude: number, longitude: number): Promise<TdChatsNearby> {
@@ -96,7 +96,7 @@ export class ChatService {
     const params: Record<string, Object> = {};
     params['location'] = location;
     const result = await TDLibClient.getInstance().send('searchChatsNearby', params);
-    return result as unknown as TdChatsNearby;
+    return result as TdChatsNearby;
   }
 
   async searchChatMessages(chatId: number, query: string, fromMessageId: number = 0,
@@ -116,7 +116,7 @@ export class ChatService {
     }
 
     const result: TdMessages = await TDLibClient.getInstance()
-      .send('searchChatMessages', searchParams) as unknown as TdMessages;
+      .send('searchChatMessages', searchParams) as TdMessages;
     const rawMessages: TdMessage[] | undefined = result.messages;
     if (!rawMessages) return [];
     return rawMessages.map((raw: TdMessage): Message => parseMessage(raw));
@@ -162,7 +162,7 @@ export class ChatService {
     params['offset_invite_link'] = '';
     params['limit'] = limit;
     const result = await TDLibClient.getInstance().send('getChatInviteLinks', params);
-    return result as unknown as TdChatInviteLinks;
+    return result as TdChatInviteLinks;
   }
 
   async createChatInviteLink(chatId: number, name: string = '',
@@ -173,7 +173,7 @@ export class ChatService {
     if (expireDate > 0) params['expiration_date'] = expireDate;
     if (memberLimit > 0) params['member_limit'] = memberLimit;
     const result = await TDLibClient.getInstance().send('createChatInviteLink', params);
-    return result as unknown as TdChatInviteLink;
+    return result as TdChatInviteLink;
   }
 
   async revokeChatInviteLink(chatId: number, inviteLink: string): Promise<void> {
@@ -189,7 +189,7 @@ export class ChatService {
     const params: Record<string, Object> = {};
     params['secret_chat_id'] = secretChatId;
     const result = await TDLibClient.getInstance().send('getSecretChat', params);
-    return result as unknown as TdSecretChat;
+    return result as TdSecretChat;
   }
 
   async setChatMessageAutoDeleteTime(chatId: number, autoDeleteTime: number): Promise<void> {
@@ -222,7 +222,7 @@ export class ChatService {
 
   async getAutoDownloadSettingsPresets(): Promise<TdAutoDownloadSettingsPresets> {
     const result = await TDLibClient.getInstance().send('getAutoDownloadSettingsPresets');
-    return result as unknown as TdAutoDownloadSettingsPresets;
+    return result as TdAutoDownloadSettingsPresets;
   }
 
   async setAutoDownloadSettings(settings: Record<string, Object>, networkType: string): Promise<void> {
@@ -243,7 +243,7 @@ export class ChatService {
     params['scope'] = scope;
     params['public_key'] = publicKey;
     const result = await TDLibClient.getInstance().send('getPassportAuthorizationForm', params);
-    return result as unknown as TdPassportAuthorizationForm;
+    return result as TdPassportAuthorizationForm;
   }
 
   // --- Mute / unmute ---
