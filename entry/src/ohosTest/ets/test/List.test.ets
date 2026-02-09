@@ -7,6 +7,13 @@ import tdFallbackRegistryTest from './TdFallbackRegistry.test';
 import appErrorTest from './AppError.test';
 import proxyServiceTest from './ProxyService.test';
 import sessionServiceTest from './SessionService.test';
+import notificationCenterTest from './NotificationCenter.test';
+import contactsControllerTest from './ContactsController.test';
+import callsControllerTest from './CallsController.test';
+import chatServiceTest from './ChatService.test';
+import userServiceTest from './UserService.test';
+import fileControllerTest from './FileController.test';
+import storiesControllerTest from './StoriesController.test';
 
 export default function testsuite() {
   messagesControllerTest();
@@ -18,4 +25,11 @@ export default function testsuite() {
   appErrorTest();
   proxyServiceTest();
   sessionServiceTest();
+  notificationCenterTest();
+  contactsControllerTest();
+  callsControllerTest();
+  chatServiceTest();
+  userServiceTest();
+  fileControllerTest();
+  storiesControllerTest();
 }

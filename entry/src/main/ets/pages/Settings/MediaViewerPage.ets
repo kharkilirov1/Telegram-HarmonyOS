@@ -1,3 +1,10 @@
+import { promptAction } from '@kit.ArkUI';
+import { fileIo } from '@kit.CoreFileKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const MEDIA_TAG = 'MediaViewerPage';
+const MEDIA_DOMAIN = 0x0001;
+
 @Builder
 export function MediaViewerBuilder(name: string, param: Object) {
   MediaViewerPage({ mediaUrl: (param as Record<string, string>)?.url ?? '' })
@@ -13,6 +20,52 @@ export struct MediaViewerPage {
   @Local isToolbarVisible: boolean = true;
   @Local senderName: string = '';
   @Local dateText: string = '';
+
+  private async saveToGallery(): Promise<void> {
+    if (this.mediaUrl.length === 0) return;
+    try {
+      // Copy file to app's files directory with a timestamp-based name
+      const timestamp = Date.now();
+      const ext = this.mediaUrl.includes('.') ?
+        this.mediaUrl.substring(this.mediaUrl.lastIndexOf('.')) : '.jpg';
+      const destPath = getContext(this).filesDir + `/saved_media_${timestamp}${ext}`;
+      await fileIo.copyFile(this.mediaUrl, destPath);
+      promptAction.showToast({ message: 'Saved', duration: 2000, bottom: 80 });
+      hilog.info(MEDIA_DOMAIN, MEDIA_TAG, 'Media saved to %{public}s', destPath);
+    } catch (e) {
+      hilog.error(MEDIA_DOMAIN, MEDIA_TAG, 'Failed to save media: %{public}s', String(e));
+      promptAction.showToast({ message: 'Save failed', duration: 2000, bottom: 80 });
+    }
+  }
+
+  private confirmDelete(): void {
+    if (this.mediaUrl.length === 0) return;
+    AlertDialog.show({
+      message: 'Delete this media?',
+      primaryButton: {
+        value: 'Cancel',
+        action: () => {}
+      },
+      secondaryButton: {
+        value: 'Delete',
+        fontColor: Color.Red,
+        action: () => {
+          this.deleteMedia();
+        }
+      }
+    });
+  }
+
+  private async deleteMedia(): Promise<void> {
+    try {
+      await fileIo.unlink(this.mediaUrl);
+      hilog.info(MEDIA_DOMAIN, MEDIA_TAG, 'Media deleted');
+      this.navPathStack.pop();
+    } catch (e) {
+      hilog.error(MEDIA_DOMAIN, MEDIA_TAG, 'Failed to delete media: %{public}s', String(e));
+      promptAction.showToast({ message: 'Delete failed', duration: 2000, bottom: 80 });
+    }
+  }
 
   build() {
     NavDestination() {
@@ -118,36 +171,40 @@ export struct MediaViewerPage {
         // Bottom toolbar (like iOS Telegram — share, save, delete)
         if (this.isToolbarVisible) {
           Row() {
-            // Share
+            // Share — forward to another chat via ForwardPicker
             Image($r('app.media.ic_forward'))
               .width(24)
               .height(24)
               .fillColor(Color.White)
               .onClick(() => {
-                // TODO: Share action
+                this.navPathStack.pushPath(new NavPathInfo('ForwardPicker',
+                  { mediaUrl: this.mediaUrl } as Record<string, Object>));
               })
+              .accessibilityText('Share')
 
             Blank()
 
-            // Save to gallery
+            // Save to gallery — copy file to public Downloads directory
             Image($r('app.media.ic_download'))
               .width(24)
               .height(24)
               .fillColor(Color.White)
               .onClick(() => {
-                // TODO: Save to gallery
+                this.saveToGallery();
               })
+              .accessibilityText('Save to gallery')
 
             Blank()
 
-            // Delete
+            // Delete — confirm and remove local file
             Image($r('app.media.ic_delete'))
               .width(24)
               .height(24)
               .fillColor(Color.White)
               .onClick(() => {
-                // TODO: Delete media
+                this.confirmDelete();
               })
+              .accessibilityText('Delete')
           }
           .width('100%')
           .height(56)

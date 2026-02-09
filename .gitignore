@@ -24,4 +24,6 @@ oh_modules/
 Thumbs.db
 
 # Local config (API keys)
-entry/src/main/ets/services/Config.local.ets
+# ConfigLocal.ets is committed as a template with dummy values.
+# Users fill in their own API credentials locally.
+# The file with dots in the name (Config.local.ets) is avoided because hvigor breaks on dotted filenames.

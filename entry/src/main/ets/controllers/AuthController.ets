@@ -9,6 +9,7 @@ const DOMAIN = 0x0001;
 export class AuthController {
   private static instance: AuthController | null = null;
   private currentState: string = '';
+  private connectionState: string = '';
   private passwordHint: string = '';
   private myUserId: number = 0;
 
@@ -37,6 +38,14 @@ export class AuthController {
 
   getMyUserId(): number {
     return this.myUserId;
+  }
+
+  getConnectionState(): string {
+    return this.connectionState;
+  }
+
+  isConnected(): boolean {
+    return this.connectionState === 'connectionStateReady';
   }
 
   async fetchMyUserId(): Promise<number> {
@@ -100,6 +109,21 @@ export class AuthController {
       NotificationCenter.getInstance().post(
         EventId.AUTH_STATE_CHANGED,
         eventArgs
+      );
+    });
+
+    client.on('updateConnectionState', (update: Record<string, Object>) => {
+      const state = update['state'] as Record<string, Object>;
+      if (!state) return;
+      const stateType = (state['@type'] as string) || '';
+      hilog.info(DOMAIN, TAG, 'Connection state: %{public}s', stateType);
+      this.connectionState = stateType;
+
+      const connArgs: Record<string, Object> = {};
+      connArgs['state'] = stateType;
+      NotificationCenter.getInstance().post(
+        EventId.CONNECTION_STATE_CHANGED,
+        connArgs
       );
     });
   }

@@ -117,6 +117,26 @@ export class MessagesController {
     await TDLibClient.getInstance().sendMessage(chatId, text, replyToMessageId);
   }
 
+  async markMessagesAsRead(chatId: number, messageIds: number[]): Promise<void> {
+    if (messageIds.length === 0) return;
+    await TDLibClient.getInstance().viewMessages(chatId, messageIds);
+  }
+
+  async sendPhoto(chatId: number, filePath: string, caption: string = '',
+    replyToMessageId: number = 0): Promise<void> {
+    await TDLibClient.getInstance().sendPhoto(chatId, filePath, caption, replyToMessageId);
+  }
+
+  async sendDocument(chatId: number, filePath: string, caption: string = '',
+    replyToMessageId: number = 0): Promise<void> {
+    await TDLibClient.getInstance().sendDocument(chatId, filePath, caption, replyToMessageId);
+  }
+
+  async sendVideoMessage(chatId: number, filePath: string, caption: string = '',
+    duration: number = 0, replyToMessageId: number = 0): Promise<void> {
+    await TDLibClient.getInstance().sendVideo(chatId, filePath, caption, duration, replyToMessageId);
+  }
+
   async deleteMessage(chatId: number, messageId: number): Promise<void> {
     const deleteParams: Record<string, Object> = {};
     deleteParams['chat_id'] = chatId;

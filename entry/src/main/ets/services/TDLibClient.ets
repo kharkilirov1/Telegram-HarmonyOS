@@ -97,6 +97,12 @@ export class TDLibClient {
       this.logWarn('initialize() called in invalid state: %{public}s', this._state);
       return;
     }
+
+    // Validate API credentials before starting
+    if (TELEGRAM_API_ID === 0 || TELEGRAM_API_HASH.length === 0) {
+      this.logError('API credentials not configured. Copy ConfigLocal.example.ets → ConfigLocal.ets and fill in your values from https://my.telegram.org/apps');
+    }
+
     this._state = ClientState.Initializing;
     this.clientId = tdlib.createClient();
     this.logInfo('Client created with id: %{public}d', this.clientId);
@@ -312,6 +318,142 @@ export class TDLibClient {
       params['reply_to'] = replyTo;
     }
 
+    return this.send('sendMessage', params);
+  }
+
+  // --- View messages (mark as read) ---
+
+  async viewMessages(chatId: number, messageIds: number[]): Promise<Record<string, Object>> {
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    params['message_ids'] = messageIds;
+    params['force_read'] = true;
+    return this.send('viewMessages', params);
+  }
+
+  // --- Send photo ---
+
+  async sendPhoto(chatId: number, filePath: string, caption: string = '',
+    replyToMessageId: number = 0): Promise<Record<string, Object>> {
+    const inputFile: Record<string, Object> = {};
+    inputFile['@type'] = 'inputFileLocal';
+    inputFile['path'] = filePath;
+    const formattedCaption: Record<string, Object> = {};
+    formattedCaption['@type'] = 'formattedText';
+    formattedCaption['text'] = caption;
+    const inputContent: Record<string, Object> = {};
+    inputContent['@type'] = 'inputMessagePhoto';
+    inputContent['photo'] = inputFile;
+    inputContent['caption'] = formattedCaption;
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    params['input_message_content'] = inputContent;
+    if (replyToMessageId > 0) {
+      const replyTo: Record<string, Object> = {};
+      replyTo['@type'] = 'inputMessageReplyToMessage';
+      replyTo['message_id'] = replyToMessageId;
+      params['reply_to'] = replyTo;
+    }
+    return this.send('sendMessage', params);
+  }
+
+  // --- Send document ---
+
+  async sendDocument(chatId: number, filePath: string, caption: string = '',
+    replyToMessageId: number = 0): Promise<Record<string, Object>> {
+    const inputFile: Record<string, Object> = {};
+    inputFile['@type'] = 'inputFileLocal';
+    inputFile['path'] = filePath;
+    const formattedCaption: Record<string, Object> = {};
+    formattedCaption['@type'] = 'formattedText';
+    formattedCaption['text'] = caption;
+    const inputContent: Record<string, Object> = {};
+    inputContent['@type'] = 'inputMessageDocument';
+    inputContent['document'] = inputFile;
+    inputContent['caption'] = formattedCaption;
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    params['input_message_content'] = inputContent;
+    if (replyToMessageId > 0) {
+      const replyTo: Record<string, Object> = {};
+      replyTo['@type'] = 'inputMessageReplyToMessage';
+      replyTo['message_id'] = replyToMessageId;
+      params['reply_to'] = replyTo;
+    }
+    return this.send('sendMessage', params);
+  }
+
+  // --- Delete chat ---
+
+  async deleteChat(chatId: number): Promise<Record<string, Object>> {
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    return this.send('deleteChatHistory', params);
+  }
+
+  // --- Toggle mute ---
+
+  async setChatNotificationSettings(chatId: number, muteFor: number): Promise<Record<string, Object>> {
+    const settings: Record<string, Object> = {};
+    settings['@type'] = 'chatNotificationSettings';
+    settings['use_default_mute_for'] = false;
+    settings['mute_for'] = muteFor;
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    params['notification_settings'] = settings;
+    return this.send('setChatNotificationSettings', params);
+  }
+
+  // --- Pin/unpin chat ---
+
+  async toggleChatIsPinned(chatId: number, isPinned: boolean): Promise<Record<string, Object>> {
+    const chatList: Record<string, Object> = {};
+    chatList['@type'] = 'chatListMain';
+    const params: Record<string, Object> = {};
+    params['chat_list'] = chatList;
+    params['chat_id'] = chatId;
+    params['is_pinned'] = isPinned;
+    return this.send('toggleChatIsPinned', params);
+  }
+
+  // --- Read all in chat ---
+
+  async openChat(chatId: number): Promise<Record<string, Object>> {
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    return this.send('openChat', params);
+  }
+
+  async closeChat(chatId: number): Promise<Record<string, Object>> {
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    return this.send('closeChat', params);
+  }
+
+  // --- Send video ---
+
+  async sendVideo(chatId: number, filePath: string, caption: string = '',
+    duration: number = 0, replyToMessageId: number = 0): Promise<Record<string, Object>> {
+    const inputFile: Record<string, Object> = {};
+    inputFile['@type'] = 'inputFileLocal';
+    inputFile['path'] = filePath;
+    const formattedCaption: Record<string, Object> = {};
+    formattedCaption['@type'] = 'formattedText';
+    formattedCaption['text'] = caption;
+    const inputContent: Record<string, Object> = {};
+    inputContent['@type'] = 'inputMessageVideo';
+    inputContent['video'] = inputFile;
+    inputContent['caption'] = formattedCaption;
+    inputContent['duration'] = duration;
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    params['input_message_content'] = inputContent;
+    if (replyToMessageId > 0) {
+      const replyTo: Record<string, Object> = {};
+      replyTo['@type'] = 'inputMessageReplyToMessage';
+      replyTo['message_id'] = replyToMessageId;
+      params['reply_to'] = replyTo;
+    }
     return this.send('sendMessage', params);
   }
 

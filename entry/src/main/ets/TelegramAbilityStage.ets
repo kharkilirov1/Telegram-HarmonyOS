@@ -7,6 +7,7 @@ import { MessagesController } from './controllers/MessagesController';
 import { FileController } from './controllers/FileController';
 import { ContactsController } from './controllers/ContactsController';
 import { CallsController } from './controllers/CallsController';
+import { StoriesController } from './controllers/StoriesController';
 import { NotificationService } from './services/NotificationService';
 
 const TAG = 'TelegramAbilityStage';
@@ -26,6 +27,7 @@ export default class TelegramAbilityStage extends AbilityStage {
     FileController.getInstance();
     ContactsController.getInstance();
     CallsController.getInstance();
+    StoriesController.getInstance();
 
     // Request notification permission (HarmonyOS NotificationKit)
     NotificationService.getInstance().requestPermission();

@@ -1,6 +1,9 @@
 import { TDLibClient } from '../services/TDLibClient';
 import { NotificationCenter, EventId } from '../controllers/NotificationCenter';
 import { MessagesController } from '../controllers/MessagesController';
+import { AuthController } from '../controllers/AuthController';
+import { UserService } from '../services/UserService';
+import { NotificationService } from '../services/NotificationService';
 import { PhoneNumberPage } from './Login/PhoneNumberPage';
 import { ChatListPage } from './Chat/ChatListPage';
 import { ContactsPage } from './Contacts/ContactsPage';
@@ -13,6 +16,12 @@ struct Index {
   @Provider('navPathStack') navPathStack: NavPathStack = new NavPathStack();
   @Local currentTabIndex: number = 2;
   @Local totalUnreadCount: number = 0;
+
+  // User profile for settings tab header
+  @Local userFirstName: string = '';
+  @Local userLastName: string = '';
+  @Local userPhoneNumber: string = '';
+  @Local userInitial: string = '';
 
   // Auth state handler — driven by NotificationCenter, not raw TDLib
   private authHandler = (args?: Record<string, Object>): void => {
@@ -33,6 +42,7 @@ struct Index {
       case 'authorizationStateReady':
         this.isAuthorized = true;
         this.navPathStack.clear();
+        this.loadUserProfile();
         break;
       case 'authorizationStateClosed':
         this.isAuthorized = false;
@@ -45,11 +55,34 @@ struct Index {
     this.updateUnreadCount();
   };
 
+  private userInfoHandler = (args?: Record<string, Object>): void => {
+    if (!args) return;
+    const userId = args['userId'] as number;
+    if (userId === AuthController.getInstance().getMyUserId()) {
+      this.loadUserProfile();
+    }
+  };
+
+  private async loadUserProfile(): Promise<void> {
+    try {
+      const me = await UserService.getInstance().getMe();
+      this.userFirstName = me.first_name || '';
+      this.userLastName = me.last_name || '';
+      this.userPhoneNumber = me.phone_number || '';
+      const fullName = `${this.userFirstName} ${this.userLastName}`.trim();
+      this.userInitial = fullName.length > 0 ? fullName.charAt(0).toUpperCase() : 'U';
+    } catch (_e) {
+      // Profile will show defaults until loaded
+    }
+  }
+
   aboutToAppear(): void {
     NotificationCenter.getInstance()
       .addObserver(EventId.AUTH_STATE_CHANGED, this.authHandler);
     NotificationCenter.getInstance()
       .addObserver(EventId.DIALOGS_UPDATED, this.unreadHandler);
+    NotificationCenter.getInstance()
+      .addObserver(EventId.USER_INFO_UPDATED, this.userInfoHandler);
   }
 
   aboutToDisappear(): void {
@@ -57,6 +90,8 @@ struct Index {
       .removeObserver(EventId.AUTH_STATE_CHANGED, this.authHandler);
     NotificationCenter.getInstance()
       .removeObserver(EventId.DIALOGS_UPDATED, this.unreadHandler);
+    NotificationCenter.getInstance()
+      .removeObserver(EventId.USER_INFO_UPDATED, this.userInfoHandler);
     TDLibClient.getInstance().destroy();
   }
 
@@ -67,6 +102,8 @@ struct Index {
       total += chat.unreadCount;
     }
     this.totalUnreadCount = total;
+    // Sync HarmonyOS app badge with total unread count
+    NotificationService.getInstance().setBadgeNumber(total);
   }
 
   build() {
@@ -169,6 +206,9 @@ struct Index {
         Text($r('app.string.profile_edit'))
           .fontSize(16)
           .fontColor($r('app.color.telegram_blue'))
+          .onClick(() => {
+            this.navPathStack.pushPath(new NavPathInfo('Profile'));
+          })
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: 12, bottom: 8 })
@@ -180,7 +220,7 @@ struct Index {
         Column() {
           // Profile card — like Telegram iOS settings header
           Row() {
-            Text('U')
+            Text(this.userInitial.length > 0 ? this.userInitial : 'U')
               .fontSize(22)
               .fontWeight(FontWeight.Medium)
               .fontColor(Color.White)
@@ -191,14 +231,18 @@ struct Index {
               .textAlign(TextAlign.Center)
 
             Column() {
-              Text('User')
+              Text(this.userFirstName.length > 0
+                ? `${this.userFirstName} ${this.userLastName}`.trim()
+                : $r('app.string.settings'))
                 .fontSize(19)
                 .fontWeight(FontWeight.Medium)
                 .fontColor($r('app.color.text_primary'))
-              Text('+1 234 567 890')
-                .fontSize(14)
-                .fontColor($r('app.color.text_secondary'))
-                .margin({ top: 2 })
+              if (this.userPhoneNumber.length > 0) {
+                Text(`+${this.userPhoneNumber}`)
+                  .fontSize(14)
+                  .fontColor($r('app.color.text_secondary'))
+                  .margin({ top: 2 })
+              }
             }
             .margin({ left: 16 })
             .alignItems(HorizontalAlign.Start)
@@ -221,11 +265,21 @@ struct Index {
               this.navPathStack.pushPath(new NavPathInfo('SavedMessages'));
             })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
-            this.settingsRow($r('app.media.ic_phone_call'), $r('app.color.settings_icon_green'),
-              $r('app.string.settings_recent_calls'))
+            Column() {
+              this.settingsRow($r('app.media.ic_phone_call'), $r('app.color.settings_icon_green'),
+                $r('app.string.settings_recent_calls'))
+            }
+            .onClick(() => {
+              this.currentTabIndex = 1; // Switch to Calls tab
+            })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
-            this.settingsRow($r('app.media.ic_channel'), $r('app.color.settings_icon_orange'),
-              $r('app.string.settings_devices'))
+            Column() {
+              this.settingsRow($r('app.media.ic_channel'), $r('app.color.settings_icon_orange'),
+                $r('app.string.settings_devices'))
+            }
+            .onClick(() => {
+              this.navPathStack.pushPath(new NavPathInfo('SessionManagement'));
+            })
             Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 56 })
             Column() {
               this.settingsRow($r('app.media.ic_group'), $r('app.color.settings_icon_blue'),

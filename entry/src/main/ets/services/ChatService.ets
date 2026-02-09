@@ -246,6 +246,38 @@ export class ChatService {
     return result as unknown as TdPassportAuthorizationForm;
   }
 
+  // --- Mute / unmute ---
+
+  async muteChat(chatId: number, muteForSeconds: number): Promise<void> {
+    await TDLibClient.getInstance().setChatNotificationSettings(chatId, muteForSeconds);
+  }
+
+  async unmuteChat(chatId: number): Promise<void> {
+    await TDLibClient.getInstance().setChatNotificationSettings(chatId, 0);
+  }
+
+  // --- Pin / unpin ---
+
+  async pinChat(chatId: number): Promise<void> {
+    await TDLibClient.getInstance().toggleChatIsPinned(chatId, true);
+  }
+
+  async unpinChat(chatId: number): Promise<void> {
+    await TDLibClient.getInstance().toggleChatIsPinned(chatId, false);
+  }
+
+  // --- Delete chat history ---
+
+  async deleteChatHistory(chatId: number): Promise<void> {
+    await TDLibClient.getInstance().deleteChat(chatId);
+  }
+
+  // --- Mark as read ---
+
+  async markChatAsRead(chatId: number): Promise<void> {
+    await TDLibClient.getInstance().openChat(chatId);
+  }
+
   // --- Auth recovery (used by PasswordPage) ---
 
   async requestAuthPasswordRecovery(): Promise<Record<string, Object>> {
