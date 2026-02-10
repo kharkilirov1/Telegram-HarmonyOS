@@ -3,6 +3,7 @@
 // HarmonyOS: NavDestination, LazyForEach, expandSafeArea
 
 import { MessagesController } from '../../controllers/MessagesController';
+import { AuthController } from '../../controllers/AuthController';
 import { GroupService } from '../../services/GroupService';
 import { UserService } from '../../services/UserService';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
@@ -30,6 +31,7 @@ export struct GroupInfoPage {
   @Local isChannel: boolean = false;
   @Local isGroup: boolean = true;
   @Local isMuted: boolean = false;
+  @Local canOpenGroupAdmin: boolean = false;
   @Local members: GroupInfoMember[] = [];
 
   private memberDataSource: BasicDataSource<GroupInfoMember> = new BasicDataSource<GroupInfoMember>();
@@ -48,6 +50,8 @@ export struct GroupInfoPage {
       this.isMuted = chat.isMuted;
     }
 
+    await this.loadAdminAccess();
+
     try {
       const fullInfo = await GroupService.getInstance().getSupergroupFullInfo(Math.abs(this.chatId));
       this.description = fullInfo.description || '';
@@ -63,6 +67,36 @@ export struct GroupInfoPage {
     // Load real members from TDLib
     await this.loadMembers();
     this.memberDataSource.setData(this.members);
+  }
+
+  private async loadAdminAccess(): Promise<void> {
+    this.canOpenGroupAdmin = false;
+    try {
+      const myUserId = await AuthController.getInstance().fetchMyUserId();
+      if (myUserId <= 0) {
+        return;
+      }
+
+      const result = await GroupService.getInstance()
+        .getSupergroupMembers(Math.abs(this.chatId), 'supergroupMembersFilterAdministrators', 0, 200);
+      const rawMembers = result.members;
+      if (!rawMembers || rawMembers.length === 0) {
+        return;
+      }
+
+      for (const member of rawMembers) {
+        if ((member.member_id?.user_id || 0) !== myUserId) {
+          continue;
+        }
+        const statusRecord = member.status as Record<string, string> | undefined;
+        const statusType = statusRecord?.['@type'] || '';
+        this.canOpenGroupAdmin = statusType === 'chatMemberStatusCreator' ||
+          statusType === 'chatMemberStatusAdministrator';
+        return;
+      }
+    } catch (_e) {
+      hilog.warn(0x0001, 'GroupInfoPage', 'Failed to resolve admin access for chat %{public}d', this.chatId);
+    }
   }
 
   private async loadMembers(): Promise<void> {
@@ -126,10 +160,18 @@ export struct GroupInfoPage {
     NavDestination() {
       Column() {
         GroupInfoTopBar({
+          canEdit: this.canOpenGroupAdmin,
           onBack: () => {
             this.navPathStack.pop();
           },
-          onEdit: () => {}
+          onEdit: () => {
+            if (!this.canOpenGroupAdmin) {
+              return;
+            }
+            const navParam: Record<string, Object> = {};
+            navParam['chatId'] = this.chatId;
+            this.navPathStack.pushPath(new NavPathInfo('GroupAdmin', navParam));
+          }
         })
 
         Scroll() {
@@ -243,59 +285,61 @@ export struct GroupInfoPage {
             Blank().height(16)
 
             // --- Admin & Invite Links ---
-            Column() {
-              Row() {
-                Image($r('app.media.ic_edit'))
-                  .width(20).height(20)
-                  .fillColor($r('app.color.text_secondary'))
-                  .margin({ right: 12 })
-                Text($r('app.string.admin_settings'))
-                  .fontSize(16)
-                  .fontColor($r('app.color.text_primary'))
-                  .layoutWeight(1)
-                Image($r('app.media.ic_forward'))
-                  .width(14).height(14)
-                  .fillColor($r('app.color.text_secondary'))
-              }
-              .width('100%').height(48)
-              .padding({ left: 16, right: 16 })
-              .onClick(() => {
-                const navParam: Record<string, Object> = {};
-                navParam['chatId'] = this.chatId;
-                this.navPathStack.pushPath(new NavPathInfo('GroupAdmin', navParam));
-              })
+            if (this.canOpenGroupAdmin) {
+              Column() {
+                Row() {
+                  Image($r('app.media.ic_edit'))
+                    .width(20).height(20)
+                    .fillColor($r('app.color.text_secondary'))
+                    .margin({ right: 12 })
+                  Text($r('app.string.admin_settings'))
+                    .fontSize(16)
+                    .fontColor($r('app.color.text_primary'))
+                    .layoutWeight(1)
+                  Image($r('app.media.ic_forward'))
+                    .width(14).height(14)
+                    .fillColor($r('app.color.text_secondary'))
+                }
+                .width('100%').height(48)
+                .padding({ left: 16, right: 16 })
+                .onClick(() => {
+                  const navParam: Record<string, Object> = {};
+                  navParam['chatId'] = this.chatId;
+                  this.navPathStack.pushPath(new NavPathInfo('GroupAdmin', navParam));
+                })
 
-              Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 48 })
+                Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 48 })
 
-              Row() {
-                Image($r('app.media.ic_forward'))
-                  .width(20).height(20)
-                  .fillColor($r('app.color.text_secondary'))
-                  .margin({ right: 12 })
-                Text($r('app.string.invite_links'))
-                  .fontSize(16)
-                  .fontColor($r('app.color.text_primary'))
-                  .layoutWeight(1)
-                Image($r('app.media.ic_forward'))
-                  .width(14).height(14)
-                  .fillColor($r('app.color.text_secondary'))
+                Row() {
+                  Image($r('app.media.ic_forward'))
+                    .width(20).height(20)
+                    .fillColor($r('app.color.text_secondary'))
+                    .margin({ right: 12 })
+                  Text($r('app.string.invite_links'))
+                    .fontSize(16)
+                    .fontColor($r('app.color.text_primary'))
+                    .layoutWeight(1)
+                  Image($r('app.media.ic_forward'))
+                    .width(14).height(14)
+                    .fillColor($r('app.color.text_secondary'))
+                }
+                .width('100%').height(48)
+                .padding({ left: 16, right: 16 })
+                .onClick(() => {
+                  const navParam: Record<string, Object> = {};
+                  navParam['chatId'] = this.chatId;
+                  this.navPathStack.pushPath(new NavPathInfo('InviteLinks', navParam));
+                })
               }
-              .width('100%').height(48)
-              .padding({ left: 16, right: 16 })
-              .onClick(() => {
-                const navParam: Record<string, Object> = {};
-                navParam['chatId'] = this.chatId;
-                this.navPathStack.pushPath(new NavPathInfo('InviteLinks', navParam));
-              })
+              .width('100%')
+              .backgroundColor($r('app.color.glass_card_bg'))
+              .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
+              .borderRadius(16)
+              .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
+              .margin({ left: 16, right: 16 })
+
+              Blank().height(16)
             }
-            .width('100%')
-            .backgroundColor($r('app.color.glass_card_bg'))
-            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
-            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
-
-            Blank().height(16)
 
             // --- Members list ---
             if (!this.isChannel) {

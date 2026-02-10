@@ -1,5 +1,6 @@
 @ComponentV2
 export struct GroupInfoTopBar {
+  @Param canEdit: boolean = false;
   @Event onBack: () => void = () => {};
   @Event onEdit: () => void = () => {};
 
@@ -16,12 +17,17 @@ export struct GroupInfoTopBar {
 
       Blank()
 
-      Text($r('app.string.edit'))
-        .fontSize(16)
-        .fontColor($r('app.color.telegram_blue'))
-        .onClick(() => {
-          this.onEdit();
-        })
+      if (this.canEdit) {
+        Text($r('app.string.edit'))
+          .fontSize(16)
+          .fontColor($r('app.color.telegram_blue'))
+          .onClick(() => {
+            this.onEdit();
+          })
+      } else {
+        Blank()
+          .width(32)
+      }
     }
     .width('100%')
     .height(56)
