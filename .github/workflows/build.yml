@@ -19,6 +19,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guardrail: giant files
+        shell: bash
+        run: |
+          chmod +x scripts/ci/check_giant_files.sh
+          scripts/ci/check_giant_files.sh
 
       - name: Set up Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4

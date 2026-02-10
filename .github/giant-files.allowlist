@@ -1,0 +1,9 @@
+# Temporary exceptions for known legacy files.
+# Format: <relative-path> # short reason and removal target PR/issue
+
+entry/src/main/ets/controllers/MessagesController.ets # Legacy god file; split in PR-2/PR-3
+entry/src/main/ets/pages/Chat/ChatDetailPage.ets # Legacy god file; split in PR-4
+entry/src/main/ets/components/Message/MessageBubble.ets # Legacy god file; split in PR-5
+entry/src/main/ets/pages/Settings/SettingsPage.ets # Legacy god file; split in PR-6
+entry/src/main/ets/pages/Settings/DataStoragePage.ets # Legacy god file; split in PR-6
+entry/src/main/ets/pages/Settings/ProxySettingsPage.ets # Legacy god file; split in PR-6
