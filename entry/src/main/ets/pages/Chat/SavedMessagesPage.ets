@@ -7,11 +7,15 @@ import { MessagesController } from '../../controllers/MessagesController';
 import { ChatService } from '../../services/ChatService';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
-import { Message, GroupedMessage, MessageContentType } from '../../models/Message';
-import { MessageBubble } from '../../components/Message/MessageBubble';
+import { Message, GroupedMessage } from '../../models/Message';
 import { DateSeparator, formatDateSeparator } from '../../components/Common/DateSeparator';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
 import { pasteboard } from '@kit.BasicServicesKit';
+import { SavedMessageInputBar } from './components/SavedMessageInputBar';
+import { SavedMessagesEmptyState } from './components/SavedMessagesEmptyState';
+import { SavedMessagesSearchBar } from './components/SavedMessagesSearchBar';
+import { SavedMessageRow } from './components/SavedMessageRow';
+import { SavedMessagesTopBar } from './components/SavedMessagesTopBar';
 
 @Builder
 export function SavedMessagesBuilder(name: string, param: Object) {
@@ -214,24 +218,50 @@ export struct SavedMessagesPage {
     }
   }
 
-  private formatTime(timestamp: number): string {
-    const date = new Date(timestamp * 1000);
-    const h = date.getHours().toString().padStart(2, '0');
-    const m = date.getMinutes().toString().padStart(2, '0');
-    return `${h}:${m}`;
-  }
-
   build() {
     NavDestination() {
       Column() {
-        // --- Top bar ---
         if (this.isSearchMode) {
-          this.searchBar()
+          SavedMessagesSearchBar({
+            searchQuery: this.searchQuery,
+            resultsCount: this.searchResults.length,
+            currentResultIndex: this.currentSearchIndex,
+            onBack: () => {
+              this.isSearchMode = false;
+              this.searchQuery = '';
+              this.searchResults = [];
+              this.currentSearchIndex = -1;
+            },
+            onQueryChange: (value: string) => {
+              this.searchQuery = value;
+            },
+            onSubmitSearch: () => {
+              this.performSearch();
+            },
+            onPreviousResult: () => {
+              if (this.currentSearchIndex > 0) {
+                this.currentSearchIndex--;
+                this.scrollToSearchResult();
+              }
+            },
+            onNextResult: () => {
+              if (this.currentSearchIndex < this.searchResults.length - 1) {
+                this.currentSearchIndex++;
+                this.scrollToSearchResult();
+              }
+            }
+          })
         } else {
-          this.titleBar()
+          SavedMessagesTopBar({
+            onBack: () => {
+              this.navPathStack.pop();
+            },
+            onEnterSearch: () => {
+              this.isSearchMode = true;
+            }
+          })
         }
 
-        // --- Messages list ---
         if (this.isLoading) {
           Column() {
             LoadingProgress()
@@ -246,7 +276,7 @@ export struct SavedMessagesPage {
           .layoutWeight(1)
           .justifyContent(FlexAlign.Center)
         } else if (this.messages.length === 0) {
-          this.emptyState()
+          SavedMessagesEmptyState()
         } else {
           List({ scroller: this.listScroller }) {
             LazyForEach(this.messageDataSource, (item: SavedListItem) => {
@@ -254,7 +284,12 @@ export struct SavedMessagesPage {
                 if (item.isDateSeparator) {
                   DateSeparator({ dateText: item.dateLabel })
                 } else if (item.groupedMessage) {
-                  this.savedMessageRow(item.groupedMessage)
+                  SavedMessageRow({
+                    groupedMessage: item.groupedMessage,
+                    onLongPress: (message: Message) => {
+                      this.showMessageActions(message);
+                    }
+                  })
                 }
               }
             }, (item: SavedListItem, index: number) =>
@@ -273,7 +308,6 @@ export struct SavedMessagesPage {
           })
         }
 
-        // --- Scroll to bottom FAB ---
         if (this.showScrollToBottom) {
           Row() {
             Image($r('app.media.ic_arrow_down'))
@@ -290,268 +324,21 @@ export struct SavedMessagesPage {
           .accessibilityText($r('app.string.accessibility_scroll_bottom'))
         }
 
-        // --- Input bar ---
-        Row() {
-          TextInput({ placeholder: $r('app.string.message_placeholder'), text: this.inputText })
-            .onChange((value: string) => { this.inputText = value; })
-            .onSubmit(() => { this.sendMessage(); })
-            .layoutWeight(1)
-            .height(40)
-            .borderRadius(20)
-            .backgroundColor($r('app.color.background_secondary'))
-            .padding({ left: 14, right: 14 })
-            .fontSize(15)
-
-          if (this.inputText.trim().length > 0) {
-            Image($r('app.media.ic_send'))
-              .width(32).height(32)
-              .fillColor($r('app.color.telegram_blue'))
-              .margin({ left: 8 })
-              .onClick(() => { this.sendMessage(); })
-              .accessibilityText($r('app.string.accessibility_send'))
+        SavedMessageInputBar({
+          inputText: this.inputText,
+          onInputChange: (value: string) => {
+            this.inputText = value;
+          },
+          onSend: () => {
+            this.sendMessage();
           }
-        }
-        .width('100%')
-        .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-        .backgroundColor($r('app.color.background_primary'))
+        })
       }
       .width('100%')
       .height('100%')
       .backgroundColor($r('app.color.background_secondary'))
     }
     .hideTitleBar(true)
-  }
-
-  @Builder
-  titleBar() {
-    Row() {
-      Image($r('app.media.ic_back'))
-        .width(24).height(24)
-        .fillColor($r('app.color.telegram_blue'))
-        .onClick(() => this.navPathStack.pop())
-        .accessibilityText($r('app.string.accessibility_back'))
-
-      // Bookmark icon
-      Image($r('app.media.ic_saved'))
-        .width(36).height(36)
-        .fillColor($r('app.color.icon_on_primary'))
-        .backgroundColor($r('app.color.settings_icon_blue'))
-        .borderRadius(18)
-        .padding(6)
-        .margin({ left: 8 })
-
-      Column() {
-        Text($r('app.string.saved_messages'))
-          .fontSize(17)
-          .fontWeight(FontWeight.Bold)
-          .fontColor($r('app.color.text_primary'))
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-      }
-      .margin({ left: 10 })
-      .layoutWeight(1)
-      .alignItems(HorizontalAlign.Start)
-
-      Image($r('app.media.ic_search'))
-        .width(22).height(22)
-        .fillColor($r('app.color.telegram_blue'))
-        .onClick(() => { this.isSearchMode = true; })
-        .accessibilityText($r('app.string.accessibility_search'))
-    }
-    .width('100%')
-    .height(56)
-    .padding({ left: 8, right: 16 })
-    .backgroundColor($r('app.color.glass_nav_bg'))
-    .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
-      colorMode: ThemeColorMode.SYSTEM,
-      adaptiveColor: AdaptiveColor.DEFAULT,
-      scale: 1.0
-    })
-  }
-
-  @Builder
-  searchBar() {
-    Row() {
-      Image($r('app.media.ic_back'))
-        .width(24).height(24)
-        .fillColor($r('app.color.telegram_blue'))
-        .onClick(() => {
-          this.isSearchMode = false;
-          this.searchQuery = '';
-          this.searchResults = [];
-          this.currentSearchIndex = -1;
-        })
-        .accessibilityText($r('app.string.accessibility_back'))
-
-      TextInput({ placeholder: $r('app.string.search_messages_placeholder'), text: this.searchQuery })
-        .onChange((value: string) => { this.searchQuery = value; })
-        .onSubmit(() => { this.performSearch(); })
-        .layoutWeight(1)
-        .height(36)
-        .borderRadius(18)
-        .backgroundColor($r('app.color.background_secondary'))
-        .padding({ left: 12, right: 12 })
-        .fontSize(14)
-        .margin({ left: 8 })
-
-      if (this.searchResults.length > 0) {
-        Text(`${this.currentSearchIndex + 1}/${this.searchResults.length}`)
-          .fontSize(13)
-          .fontColor($r('app.color.text_secondary'))
-          .margin({ left: 8 })
-
-        Image($r('app.media.ic_arrow_up'))
-          .width(20).height(20)
-          .fillColor($r('app.color.telegram_blue'))
-          .margin({ left: 4 })
-          .accessibilityText($r('app.string.search_previous_result'))
-          .onClick(() => {
-            if (this.currentSearchIndex > 0) {
-              this.currentSearchIndex--;
-              this.scrollToSearchResult();
-            }
-          })
-
-        Image($r('app.media.ic_arrow_down'))
-          .width(20).height(20)
-          .fillColor($r('app.color.telegram_blue'))
-          .margin({ left: 4 })
-          .accessibilityText($r('app.string.search_next_result'))
-          .onClick(() => {
-            if (this.currentSearchIndex < this.searchResults.length - 1) {
-              this.currentSearchIndex++;
-              this.scrollToSearchResult();
-            }
-          })
-      }
-    }
-    .width('100%')
-    .height(56)
-    .padding({ left: 8, right: 12 })
-    .backgroundColor($r('app.color.glass_nav_bg'))
-    .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
-      colorMode: ThemeColorMode.SYSTEM,
-      adaptiveColor: AdaptiveColor.DEFAULT,
-      scale: 1.0
-    })
-  }
-
-  @Builder
-  emptyState() {
-    Column() {
-      Image($r('app.media.ic_saved'))
-        .width(64).height(64)
-        .fillColor($r('app.color.text_secondary'))
-        .opacity(0.5)
-
-      Text($r('app.string.saved_messages'))
-        .fontSize(18)
-        .fontWeight(FontWeight.Bold)
-        .fontColor($r('app.color.text_primary'))
-        .margin({ top: 16 })
-
-      Text($r('app.string.saved_messages_hint'))
-        .fontSize(14)
-        .fontColor($r('app.color.text_secondary'))
-        .textAlign(TextAlign.Center)
-        .margin({ top: 8 })
-        .padding({ left: 40, right: 40 })
-    }
-    .width('100%')
-    .layoutWeight(1)
-    .justifyContent(FlexAlign.Center)
-  }
-
-  @Builder
-  savedMessageRow(gm: GroupedMessage) {
-    Column() {
-      Row() {
-        Column() {
-          // Forward source indicator
-          if (gm.message.forwardedFrom.length > 0) {
-            Row() {
-              Text($r('app.string.forwarded_from', gm.message.forwardedFrom))
-                .fontSize(12)
-                .fontColor($r('app.color.telegram_blue'))
-                .maxLines(1)
-                .textOverflow({ overflow: TextOverflow.Ellipsis })
-            }
-            .margin({ bottom: 4 })
-          }
-
-          // Message content
-          if (gm.message.contentType === MessageContentType.TEXT) {
-            Text(gm.message.text)
-              .fontSize(15)
-              .fontColor($r('app.color.text_primary'))
-              .wordBreak(WordBreak.BREAK_ALL)
-          } else if (gm.message.contentType === MessageContentType.PHOTO) {
-            if (gm.message.photoUrl && gm.message.photoUrl.length > 0) {
-              Image(gm.message.photoUrl)
-                .width('100%')
-                .constraintSize({ maxHeight: 200 })
-                .borderRadius(8)
-                .objectFit(ImageFit.Contain)
-                .alt($r('app.string.photo'))
-                .autoResize(true)
-                .onError(() => {})
-            }
-            if (gm.message.text.length > 0) {
-              Text(gm.message.text)
-                .fontSize(15)
-                .fontColor($r('app.color.text_primary'))
-                .margin({ top: 4 })
-            }
-          } else if (gm.message.contentType === MessageContentType.DOCUMENT) {
-            Row() {
-              Image($r('app.media.ic_document'))
-                .width(20).height(20)
-                .fillColor($r('app.color.telegram_blue'))
-              Text(gm.message.fileName || $r('app.string.document_label'))
-                .fontSize(14)
-                .fontColor($r('app.color.telegram_blue'))
-                .margin({ left: 6 })
-                .maxLines(1)
-                .textOverflow({ overflow: TextOverflow.Ellipsis })
-            }
-          } else if (gm.message.contentType === MessageContentType.STICKER) {
-            Text(gm.message.text)
-              .fontSize(48)
-          } else {
-            // Fallback for other content types
-            Text(`[${gm.message.contentType}]`)
-              .fontSize(14)
-              .fontColor($r('app.color.text_secondary'))
-              .fontStyle(FontStyle.Italic)
-          }
-
-          // Timestamp
-          Row() {
-            Text(this.formatTime(gm.message.date))
-              .fontSize(11)
-              .fontColor($r('app.color.text_secondary'))
-          }
-          .width('100%')
-          .justifyContent(FlexAlign.End)
-          .margin({ top: 4 })
-        }
-        .layoutWeight(1)
-      }
-      .width('100%')
-      .padding({ left: 12, right: 12, top: 4, bottom: 4 })
-    }
-    .width('100%')
-    .padding({ left: 8, right: 8, top: gm.isFirstInGroup ? 6 : 1, bottom: gm.isLastInGroup ? 6 : 1 })
-    .backgroundColor($r('app.color.glass_card_bg'))
-    .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-    .borderRadius(gm.isFirstInGroup || gm.isLastInGroup ? 12 : 4)
-    .margin({ left: 8, right: 8, top: gm.isFirstInGroup ? 4 : 0, bottom: gm.isLastInGroup ? 4 : 0 })
-    .gesture(
-      LongPressGesture({ repeat: false, duration: 500 })
-        .onAction(() => {
-          this.showMessageActions(gm.message);
-        })
-    )
   }
 
   private showMessageActions(msg: Message): void {
