@@ -3,6 +3,12 @@
 
 import { SessionService, SessionInfo } from '../../services/SessionService';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { CurrentSessionCard } from './components/CurrentSessionCard';
+import { SessionRowItem } from './components/SessionRowItem';
+import { SessionSectionHeader } from './components/SessionSectionHeader';
+import { SessionTopBar } from './components/SessionTopBar';
+import { TerminateAllConfirmSheet } from './components/TerminateAllConfirmSheet';
+import { TerminateAllSessionsCard } from './components/TerminateAllSessionsCard';
 
 const TAG = 'SessionManagementPage';
 const DOMAIN = 0x0001;
@@ -116,28 +122,10 @@ export struct SessionManagementPage {
   build() {
     NavDestination() {
       Column() {
-        // Top bar
-        Row() {
-          Image($r('app.media.ic_back'))
-            .width(24).height(24)
-            .fillColor($r('app.color.telegram_blue'))
-            .accessibilityText($r('app.string.accessibility_back'))
-            .onClick(() => this.navPathStack.pop())
-
-          Text($r('app.string.active_sessions'))
-            .fontSize(17)
-            .fontWeight(FontWeight.Bold)
-            .fontColor($r('app.color.text_primary'))
-            .margin({ left: 16 })
-        }
-        .width('100%')
-        .height(56)
-        .padding({ left: 8, right: 16 })
-        .backgroundColor($r('app.color.glass_nav_bg'))
-        .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
-          colorMode: ThemeColorMode.SYSTEM,
-          adaptiveColor: AdaptiveColor.DEFAULT,
-          scale: 1.0
+        SessionTopBar({
+          onBack: () => {
+            this.navPathStack.pop();
+          }
         })
 
         if (this.isLoading) {
@@ -157,10 +145,16 @@ export struct SessionManagementPage {
             Column() {
               // --- Current Session ---
               if (this.currentSession !== null) {
-                this.sectionHeader($r('app.string.current_session'))
+                SessionSectionHeader({ title: $r('app.string.current_session') })
 
                 Column() {
-                  this.currentSessionCard(this.currentSession!)
+                  CurrentSessionCard({
+                    appDisplayName: `${this.currentSession!.applicationName} ${this.currentSession!.applicationVersion}`,
+                    deviceDisplayName: `${this.currentSession!.deviceModel}, ${this.currentSession!.platform} ${this.currentSession!.systemVersion}`,
+                    lastActiveLabel: this.formatLastActive(this.currentSession!.lastActiveDate),
+                    ip: this.currentSession!.ip,
+                    location: this.formatLocation(this.currentSession!)
+                  })
                 }
                 .width('100%')
                 .backgroundColor($r('app.color.glass_card_bg'))
@@ -174,28 +168,11 @@ export struct SessionManagementPage {
 
               // --- Terminate All Other Sessions ---
               if (this.otherSessions.length > 0) {
-                Column() {
-                  Row() {
-                    Text($r('app.string.terminate_all_sessions'))
-                      .fontSize(16)
-                      .fontColor($r('app.color.logout_red'))
-                      .textAlign(TextAlign.Center)
-                      .width('100%')
-                  }
-                  .width('100%')
-                  .height(48)
-                  .justifyContent(FlexAlign.Center)
-                  .accessibilityText($r('app.string.accessibility_terminate_all'))
-                  .onClick(() => {
+                TerminateAllSessionsCard({
+                  onTap: () => {
                     this.showTerminateAllDialog = true;
-                  })
-                }
-                .width('100%')
-                .backgroundColor($r('app.color.glass_card_bg'))
-                .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-                .borderRadius(16)
-                .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-                .margin({ left: 16, right: 16 })
+                  }
+                })
 
                 Text($r('app.string.terminate_all_warning'))
                   .fontSize(13)
@@ -205,7 +182,7 @@ export struct SessionManagementPage {
                 Blank().height(24)
 
                 // --- Other Sessions List ---
-                this.sectionHeader($r('app.string.other_sessions'))
+                SessionSectionHeader({ title: $r('app.string.other_sessions') })
 
                 Column() {
                   ForEach(this.otherSessions, (session: SessionInfo, index: number) => {
@@ -215,7 +192,17 @@ export struct SessionManagementPage {
                         .color($r('app.color.separator'))
                         .margin({ left: 16 })
                     }
-                    this.sessionRow(session)
+                    SessionRowItem({
+                      sessionId: session.id,
+                      appDisplayName: `${session.applicationName} ${session.applicationVersion}`,
+                      deviceDisplayName: `${session.deviceModel}, ${session.platform} ${session.systemVersion}`,
+                      lastActiveLabel: this.formatLastActive(session.lastActiveDate),
+                      ip: session.ip,
+                      location: this.formatLocation(session),
+                      onTerminate: (sessionId: number) => {
+                        this.terminateSession(sessionId);
+                      }
+                    })
                   }, (session: SessionInfo) => session.id.toString())
                 }
                 .width('100%')
@@ -264,148 +251,15 @@ export struct SessionManagementPage {
   }
 
   @Builder
-  currentSessionCard(session: SessionInfo) {
-    Column() {
-      Row() {
-        Column() {
-          Text(`${session.applicationName} ${session.applicationVersion}`)
-            .fontSize(16)
-            .fontWeight(FontWeight.Medium)
-            .fontColor($r('app.color.telegram_blue'))
-
-          Text(`${session.deviceModel}, ${session.platform} ${session.systemVersion}`)
-            .fontSize(14)
-            .fontColor($r('app.color.text_primary'))
-            .margin({ top: 4 })
-
-          Row() {
-            Text(session.ip)
-              .fontSize(13)
-              .fontColor($r('app.color.text_secondary'))
-
-            if (this.formatLocation(session).length > 0) {
-              Text(' \u2014 ')
-                .fontSize(13)
-                .fontColor($r('app.color.text_secondary'))
-
-              Text(this.formatLocation(session))
-                .fontSize(13)
-                .fontColor($r('app.color.text_secondary'))
-            }
-          }
-          .margin({ top: 4 })
-        }
-        .alignItems(HorizontalAlign.Start)
-        .layoutWeight(1)
-      }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-    }
-  }
-
-  @Builder
-  sessionRow(session: SessionInfo) {
-    Row() {
-      Column() {
-        Row() {
-          Text(`${session.applicationName} ${session.applicationVersion}`)
-            .fontSize(16)
-            .fontWeight(FontWeight.Medium)
-            .fontColor($r('app.color.text_primary'))
-            .layoutWeight(1)
-
-          Text(this.formatLastActive(session.lastActiveDate))
-            .fontSize(13)
-            .fontColor($r('app.color.telegram_blue'))
-        }
-        .width('100%')
-
-        Text(`${session.deviceModel}, ${session.platform} ${session.systemVersion}`)
-          .fontSize(14)
-          .fontColor($r('app.color.text_secondary'))
-          .margin({ top: 2 })
-
-        Row() {
-          Text(session.ip)
-            .fontSize(13)
-            .fontColor($r('app.color.text_secondary'))
-
-          if (this.formatLocation(session).length > 0) {
-            Text(' \u2014 ')
-              .fontSize(13)
-              .fontColor($r('app.color.text_secondary'))
-
-            Text(this.formatLocation(session))
-              .fontSize(13)
-              .fontColor($r('app.color.text_secondary'))
-          }
-        }
-        .margin({ top: 2 })
-      }
-      .alignItems(HorizontalAlign.Start)
-      .layoutWeight(1)
-    }
-    .width('100%')
-    .padding({ left: 16, right: 16, top: 10, bottom: 10 })
-    .gesture(
-      SwipeGesture({ direction: SwipeDirection.Horizontal })
-        .onAction(() => {
-          this.terminateSession(session.id);
-        })
-    )
-  }
-
-  @Builder
   terminateAllConfirmSheet() {
-    Column() {
-      Text($r('app.string.terminate_all_confirm'))
-        .fontSize(16)
-        .fontColor($r('app.color.text_primary'))
-        .textAlign(TextAlign.Center)
-        .margin({ top: 24, left: 24, right: 24 })
-
-      Text($r('app.string.terminate_all_warning'))
-        .fontSize(14)
-        .fontColor($r('app.color.text_secondary'))
-        .textAlign(TextAlign.Center)
-        .margin({ top: 12, left: 24, right: 24 })
-
-      // Terminate All button
-      Button($r('app.string.terminate_all_sessions'))
-        .type(ButtonType.Capsule)
-        .width('80%')
-        .height(44)
-        .backgroundColor($r('app.color.logout_red'))
-        .fontColor($r('app.color.icon_on_primary'))
-        .fontSize(16)
-        .margin({ top: 24 })
-        .onClick(() => {
-          this.showTerminateAllDialog = false;
-          this.terminateAllOtherSessions();
-        })
-
-      // Cancel button
-      Button($r('app.string.cancel'))
-        .type(ButtonType.Capsule)
-        .width('80%')
-        .height(44)
-        .backgroundColor($r('app.color.overlay_gradient_end'))
-        .fontColor($r('app.color.telegram_blue'))
-        .fontSize(16)
-        .margin({ top: 8, bottom: 24 })
-        .onClick(() => {
-          this.showTerminateAllDialog = false;
-        })
-    }
-    .width('100%')
-    .alignItems(HorizontalAlign.Center)
-  }
-
-  @Builder
-  sectionHeader(title: ResourceStr) {
-    Text(title)
-      .fontSize(13)
-      .fontColor($r('app.color.text_secondary'))
-      .margin({ left: 32, bottom: 6, top: 2 })
+    TerminateAllConfirmSheet({
+      onConfirm: () => {
+        this.showTerminateAllDialog = false;
+        this.terminateAllOtherSessions();
+      },
+      onCancel: () => {
+        this.showTerminateAllDialog = false;
+      }
+    })
   }
 }
