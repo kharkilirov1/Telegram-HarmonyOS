@@ -5,21 +5,17 @@
 import { MessagesController } from '../../controllers/MessagesController';
 import { GroupService } from '../../services/GroupService';
 import { UserService } from '../../services/UserService';
-import { Chat } from '../../models/Chat';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { GroupInfoActionButton } from './components/GroupInfoActionButton';
+import { GroupInfoHeaderSection } from './components/GroupInfoHeaderSection';
+import { GroupInfoMember } from './components/GroupInfoModels';
+import { GroupInfoMemberRow } from './components/GroupInfoMemberRow';
+import { GroupInfoTopBar } from './components/GroupInfoTopBar';
 
 @Builder
 export function GroupInfoBuilder(name: string, param: Object) {
   GroupInfoPage({ chatId: (param as Record<string, number>)['chatId'] ?? 0 })
-}
-
-interface GroupMember {
-  userId: number;
-  name: string;
-  status: string;
-  photoUrl: string | null;
-  isAdmin: boolean;
 }
 
 @ComponentV2
@@ -34,9 +30,9 @@ export struct GroupInfoPage {
   @Local isChannel: boolean = false;
   @Local isGroup: boolean = true;
   @Local isMuted: boolean = false;
-  @Local members: GroupMember[] = [];
+  @Local members: GroupInfoMember[] = [];
 
-  private memberDataSource: BasicDataSource<GroupMember> = new BasicDataSource<GroupMember>();
+  private memberDataSource: BasicDataSource<GroupInfoMember> = new BasicDataSource<GroupInfoMember>();
 
   aboutToAppear(): void {
     this.loadGroupInfo();
@@ -109,7 +105,7 @@ export struct GroupInfoPage {
             name = `User ${memberId}`;
           }
 
-          this.members.push({ userId: memberId, name, status: userStatus, photoUrl, isAdmin });
+          this.members.push(new GroupInfoMember(memberId, name, userStatus, photoUrl, isAdmin));
         }
         return;
       }
@@ -118,93 +114,60 @@ export struct GroupInfoPage {
     }
 
     this.members = [
-      { userId: 1, name: 'Alex Johnson', status: 'online', photoUrl: null, isAdmin: true },
-      { userId: 2, name: 'Maria Garcia', status: 'last seen recently', photoUrl: null, isAdmin: true },
-      { userId: 3, name: 'John Smith', status: 'last seen within a week', photoUrl: null, isAdmin: false },
-      { userId: 4, name: 'Emily Davis', status: 'online', photoUrl: null, isAdmin: false },
-      { userId: 5, name: 'Robert Wilson', status: 'last seen recently', photoUrl: null, isAdmin: false },
+      new GroupInfoMember(1, 'Alex Johnson', 'online', null, true),
+      new GroupInfoMember(2, 'Maria Garcia', 'last seen recently', null, true),
+      new GroupInfoMember(3, 'John Smith', 'last seen within a week', null, false),
+      new GroupInfoMember(4, 'Emily Davis', 'online', null, false),
+      new GroupInfoMember(5, 'Robert Wilson', 'last seen recently', null, false),
     ];
   }
 
   build() {
     NavDestination() {
       Column() {
-        // Top bar
-        Row() {
-          Image($r('app.media.ic_back'))
-            .width(24).height(24)
-            .fillColor($r('app.color.telegram_blue'))
-            .accessibilityText($r('app.string.accessibility_back'))
-            .onClick(() => this.navPathStack.pop())
-
-          Blank()
-
-          Text($r('app.string.edit'))
-            .fontSize(16)
-            .fontColor($r('app.color.telegram_blue'))
-        }
-        .width('100%')
-        .height(56)
-        .padding({ left: 16, right: 16 })
-        .backgroundColor($r('app.color.glass_nav_bg'))
-        .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
-          colorMode: ThemeColorMode.SYSTEM,
-          adaptiveColor: AdaptiveColor.DEFAULT,
-          scale: 1.0
+        GroupInfoTopBar({
+          onBack: () => {
+            this.navPathStack.pop();
+          },
+          onEdit: () => {}
         })
 
         Scroll() {
           Column() {
-            // --- Header: avatar + title + subtitle ---
-            Column() {
-              if (this.photoUrl) {
-                Image(this.photoUrl)
-                  .alt($r('app.media.app_icon'))
-                  .autoResize(true)
-                  .onError(() => {})
-                  .width(100).height(100)
-                  .borderRadius(50)
-              } else {
-                Text(this.title.length > 0 ? this.title.charAt(0) : '?')
-                  .fontSize(36)
-                  .fontWeight(FontWeight.Medium)
-                  .fontColor(Color.White)
-                  .width(100).height(100)
-                  .borderRadius(50)
-                  .backgroundColor($r('app.color.telegram_blue'))
-                  .textAlign(TextAlign.Center)
-              }
+            GroupInfoHeaderSection({
+              title: this.title,
+              photoUrl: this.photoUrl,
+              isChannel: this.isChannel,
+              memberCount: this.memberCount
+            })
 
-              Text(this.title)
-                .fontSize(22)
-                .fontWeight(FontWeight.Bold)
-                .fontColor($r('app.color.text_primary'))
-                .margin({ top: 12 })
-
-              Text(this.isChannel
-                ? `${this.memberCount} subscribers`
-                : `${this.memberCount} members`)
-                .fontSize(14)
-                .fontColor($r('app.color.text_secondary'))
-                .margin({ top: 2 })
-            }
-            .width('100%')
-            .padding({ top: 24, bottom: 24 })
-            .alignItems(HorizontalAlign.Center)
-
-            // --- Action buttons ---
             Row({ space: 12 }) {
-              this.actionButton($r('app.media.ic_unmute'),
-                this.isMuted ? $r('app.string.unmute') : $r('app.string.mute'), () => {
-                this.isMuted = !this.isMuted;
+              GroupInfoActionButton({
+                icon: $r('app.media.ic_unmute'),
+                label: this.isMuted ? $r('app.string.unmute') : $r('app.string.mute'),
+                onTap: () => {
+                  this.isMuted = !this.isMuted;
+                }
               })
-              this.actionButton($r('app.media.ic_search'), $r('app.string.search_placeholder'), () => {
-                this.navPathStack.pushPath(new NavPathInfo('Search', new Object()));
+              GroupInfoActionButton({
+                icon: $r('app.media.ic_search'),
+                label: $r('app.string.search_placeholder'),
+                onTap: () => {
+                  this.navPathStack.pushPath(new NavPathInfo('Search', new Object()));
+                }
               })
               if (!this.isChannel) {
-                this.actionButton($r('app.media.ic_phone_call'), $r('app.string.call_action'), () => {})
+                GroupInfoActionButton({
+                  icon: $r('app.media.ic_phone_call'),
+                  label: $r('app.string.call_action'),
+                  onTap: () => {}
+                })
               }
-              this.actionButton($r('app.media.ic_more'), $r('app.string.more_action'), () => {})
+              GroupInfoActionButton({
+                icon: $r('app.media.ic_more'),
+                label: $r('app.string.more_action'),
+                onTap: () => {}
+              })
             }
             .width('100%')
             .justifyContent(FlexAlign.Center)
@@ -370,12 +333,19 @@ export struct GroupInfoPage {
                 .borderRadius(10)
 
                 // Member rows
-                ForEach(this.members, (member: GroupMember, index: number) => {
+                ForEach(this.members, (member: GroupInfoMember, index: number) => {
                   if (index > 0) {
                     Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 68 })
                   }
-                  this.memberRow(member)
-                }, (member: GroupMember) => member.userId.toString())
+                  GroupInfoMemberRow({
+                    member: member,
+                    onOpenUser: (userId: number) => {
+                      const navParam: Record<string, Object> = {};
+                      navParam['userId'] = userId;
+                      this.navPathStack.pushPath(new NavPathInfo('UserInfo', navParam));
+                    }
+                  })
+                }, (member: GroupInfoMember) => member.userId.toString())
               }
               .width('100%')
               .backgroundColor($r('app.color.glass_card_bg'))
@@ -427,75 +397,4 @@ export struct GroupInfoPage {
     .hideTitleBar(true)
   }
 
-  @Builder
-  actionButton(icon: Resource, label: ResourceStr, onTap: () => void) {
-    Column() {
-      Column() {
-        Image(icon)
-          .width(22).height(22)
-          .fillColor($r('app.color.telegram_blue'))
-      }
-      .width(52).height(52)
-      .borderRadius(26)
-      .backgroundColor($r('app.color.glass_card_bg'))
-      .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-      .justifyContent(FlexAlign.Center)
-      .onClick(onTap)
-
-      Text(label)
-        .fontSize(12)
-        .fontColor($r('app.color.telegram_blue'))
-        .margin({ top: 4 })
-    }
-    .alignItems(HorizontalAlign.Center)
-  }
-
-  @Builder
-  memberRow(member: GroupMember) {
-    Row() {
-      // Avatar
-      Text(member.name.charAt(0))
-        .fontSize(16)
-        .fontWeight(FontWeight.Medium)
-        .fontColor(Color.White)
-        .width(40).height(40)
-        .borderRadius(20)
-        .backgroundColor($r('app.color.telegram_blue'))
-        .textAlign(TextAlign.Center)
-
-      Column() {
-        Row() {
-          Text(member.name)
-            .fontSize(16)
-            .fontColor($r('app.color.text_primary'))
-            .layoutWeight(1)
-
-          if (member.isAdmin) {
-            Text($r('app.string.admin_label'))
-              .fontSize(12)
-              .fontColor($r('app.color.telegram_blue'))
-          }
-        }
-        .width('100%')
-
-        Text(member.status)
-          .fontSize(13)
-          .fontColor(member.status === 'online'
-            ? $r('app.color.online_indicator')
-            : $r('app.color.text_secondary'))
-          .margin({ top: 1 })
-      }
-      .margin({ left: 12 })
-      .layoutWeight(1)
-      .alignItems(HorizontalAlign.Start)
-    }
-    .width('100%')
-    .height(56)
-    .padding({ left: 16, right: 16 })
-    .onClick(() => {
-      const navParam: Record<string, Object> = {};
-      navParam['userId'] = member.userId;
-      this.navPathStack.pushPath(new NavPathInfo('UserInfo', navParam));
-    })
-  }
 }
