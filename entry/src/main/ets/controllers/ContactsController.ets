@@ -10,6 +10,7 @@ export class ContactsController {
   private static instance: ContactsController | null = null;
 
   private usersById: Map<number, User> = new Map();
+  private userFullInfoById: Map<number, Record<string, Object>> = new Map();
   private contactIds: number[] = [];
   private contactsLoaded: boolean = false;
 
@@ -28,6 +29,10 @@ export class ContactsController {
 
   getUser(userId: number): User | undefined {
     return this.usersById.get(userId);
+  }
+
+  getUserFullInfo(userId: number): Record<string, Object> | undefined {
+    return this.userFullInfoById.get(userId);
   }
 
   getContacts(): User[] {
@@ -215,6 +220,27 @@ export class ContactsController {
           statusArgs
         );
       }
+    });
+
+    client.on('updateUserFullInfo', (update: Record<string, Object>) => {
+      const userId = (update['user_id'] as number) || 0;
+      const fullInfo = update['user_full_info'] as Record<string, Object>;
+      if (userId === 0 || !fullInfo) return;
+
+      this.userFullInfoById.set(userId, fullInfo);
+
+      // Keep lightweight user cache warm for profile pages.
+      if (!this.usersById.has(userId)) {
+        void this.loadUser(userId);
+      }
+
+      const userInfoArgs: Record<string, Object> = {};
+      userInfoArgs['userId'] = userId;
+      userInfoArgs['fullInfoUpdated'] = true;
+      NotificationCenter.getInstance().post(
+        EventId.USER_INFO_UPDATED,
+        userInfoArgs
+      );
     });
   }
 }

@@ -16,6 +16,7 @@ export class Chat {
   @Trace isTyping: boolean;
   @Trace typingDescription: string;
   @Trace isUserOnline: boolean;
+  @Trace lastSeenDate: number;
   @Trace order: string;
 
   constructor(
@@ -45,6 +46,7 @@ export class Chat {
     this.isTyping = false;
     this.typingDescription = '';
     this.isUserOnline = false;
+    this.lastSeenDate = 0;
     this.order = '0';
   }
 }

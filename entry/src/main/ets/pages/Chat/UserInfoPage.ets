@@ -7,6 +7,8 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { User } from '../../models/User';
 import { CallsController } from '../../controllers/CallsController';
 import { formatLastSeen } from '../../components/Common/AvatarWithStatus';
+import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
+import { ContactsController } from '../../controllers/ContactsController';
 
 @Builder
 export function UserInfoBuilder(name: string, param: Object) {
@@ -29,22 +31,89 @@ export struct UserInfoPage {
   @Local isBlocked: boolean = false;
   @Local commonGroupsCount: number = 0;
 
+  private userInfoUpdatedHandler = (args?: Record<string, Object>): void => {
+    const updatedUserId = args ? ((args['userId'] as number) || 0) : 0;
+    if (updatedUserId !== this.userId) return;
+    this.applyCachedUser();
+    this.applyCachedFullInfo();
+  };
+
+  private userStatusUpdatedHandler = (args?: Record<string, Object>): void => {
+    const updatedUserId = args ? ((args['userId'] as number) || 0) : 0;
+    if (updatedUserId !== this.userId) return;
+    this.applyCachedUser();
+  };
+
   aboutToAppear(): void {
+    NotificationCenter.getInstance()
+      .addObserver(EventId.USER_INFO_UPDATED, this.userInfoUpdatedHandler);
+    NotificationCenter.getInstance()
+      .addObserver(EventId.USER_STATUS_UPDATED, this.userStatusUpdatedHandler);
     this.loadUserInfo();
   }
 
-  private async loadUserInfo(): Promise<void> {
-    try {
-      const result = await UserService.getInstance().getUser(this.userId);
-      this.firstName = result.first_name || 'User';
-      this.lastName = result.last_name || '';
-      this.username = result.username || '';
-      this.phoneNumber = result.phone_number || '';
+  aboutToDisappear(): void {
+    NotificationCenter.getInstance()
+      .removeObserver(EventId.USER_INFO_UPDATED, this.userInfoUpdatedHandler);
+    NotificationCenter.getInstance()
+      .removeObserver(EventId.USER_STATUS_UPDATED, this.userStatusUpdatedHandler);
+  }
 
-      // Get user full info (bio, common groups)
-      const fullInfo = await UserService.getInstance().getUserFullInfo(this.userId);
-      this.bio = fullInfo.bio?.text || '';
-      this.commonGroupsCount = fullInfo.group_in_common_count || 0;
+  private applyCachedUser(): boolean {
+    const user: User | undefined = ContactsController.getInstance().getUser(this.userId);
+    if (!user) return false;
+
+    this.firstName = user.firstName.length > 0 ? user.firstName : 'User';
+    this.lastName = user.lastName;
+    this.username = user.username;
+    this.phoneNumber = user.phoneNumber;
+    this.photoUrl = user.photoUrl;
+    this.isOnline = user.isOnline;
+    this.lastSeenDate = user.lastSeenDate;
+    return true;
+  }
+
+  private applyCachedFullInfo(): boolean {
+    const fullInfo = ContactsController.getInstance().getUserFullInfo(this.userId);
+    if (!fullInfo) return false;
+
+    const bio = fullInfo['bio'] as Record<string, Object> | undefined;
+    this.bio = bio ? ((bio['text'] as string) || '') : '';
+    this.commonGroupsCount = (fullInfo['group_in_common_count'] as number) || 0;
+    return true;
+  }
+
+  private async loadUserInfo(): Promise<void> {
+    const hasCachedUser: boolean = this.applyCachedUser();
+    const hasCachedFullInfo: boolean = this.applyCachedFullInfo();
+
+    try {
+      if (!hasCachedUser) {
+        const result = await UserService.getInstance().getUser(this.userId);
+        this.firstName = result.first_name || 'User';
+        this.lastName = result.last_name || '';
+        this.username = result.username || '';
+        this.phoneNumber = result.phone_number || '';
+        this.photoUrl = result.profile_photo?.small?.local?.path || null;
+
+        const status = result.status as Record<string, Object> | undefined;
+        if (status) {
+          const statusType = (status['@type'] as string) || '';
+          this.isOnline = statusType === 'userStatusOnline';
+          this.lastSeenDate = statusType === 'userStatusOffline'
+            ? ((status['was_online'] as number) || 0)
+            : 0;
+        } else {
+          this.isOnline = false;
+          this.lastSeenDate = 0;
+        }
+      }
+
+      if (!hasCachedFullInfo) {
+        const fullInfo = await UserService.getInstance().getUserFullInfo(this.userId);
+        this.bio = fullInfo.bio?.text || '';
+        this.commonGroupsCount = fullInfo.group_in_common_count || 0;
+      }
     } catch (e) {
       hilog.warn(0x0001, 'UserInfoPage', 'Failed to load user info');
       // Stub defaults
@@ -52,6 +121,9 @@ export struct UserInfoPage {
       this.lastName = 'Johnson';
       this.username = 'alexj';
       this.phoneNumber = '+1 555 123 4567';
+      this.photoUrl = null;
+      this.isOnline = false;
+      this.lastSeenDate = 0;
       this.bio = 'Life is what happens when you are busy making other plans.';
       this.commonGroupsCount = 3;
     }

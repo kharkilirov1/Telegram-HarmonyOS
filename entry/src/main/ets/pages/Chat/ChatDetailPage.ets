@@ -36,6 +36,7 @@ export struct ChatDetailPage {
   @Local chatTitle: string = '';
   @Local lastSeenText: string = '';
   @Local isTyping: boolean = false;
+  @Local typingText: string = '';
   @Local isGroupChat: boolean = false;
   @Local messages: Message[] = [];
   @Local isLoading: boolean = true;
@@ -83,6 +84,16 @@ export struct ChatDetailPage {
 
     const chat = MessagesController.getInstance().getChat(this.chatId);
     this.isTyping = chat?.isTyping || false;
+    this.typingText = chat?.typingDescription || '';
+  };
+
+  private dialogsUpdatedHandler = (_args?: Record<string, Object>): void => {
+    this.loadChatInfo();
+    const chat = MessagesController.getInstance().getChat(this.chatId);
+    if (chat) {
+      this.isTyping = chat.isTyping;
+      this.typingText = chat.typingDescription;
+    }
   };
 
   aboutToAppear(): void {
@@ -90,6 +101,8 @@ export struct ChatDetailPage {
       .addObserver(EventId.NEW_MESSAGE, this.newMessageHandler);
     NotificationCenter.getInstance()
       .addObserver(EventId.CHAT_ACTION_UPDATED, this.typingHandler);
+    NotificationCenter.getInstance()
+      .addObserver(EventId.DIALOGS_UPDATED, this.dialogsUpdatedHandler);
 
     this.loadChatInfo();
     this.loadInitialMessages();
@@ -100,6 +113,8 @@ export struct ChatDetailPage {
       .removeObserver(EventId.NEW_MESSAGE, this.newMessageHandler);
     NotificationCenter.getInstance()
       .removeObserver(EventId.CHAT_ACTION_UPDATED, this.typingHandler);
+    NotificationCenter.getInstance()
+      .removeObserver(EventId.DIALOGS_UPDATED, this.dialogsUpdatedHandler);
   }
 
   build() {
@@ -204,7 +219,7 @@ export struct ChatDetailPage {
                 .maxLines(1)
 
               if (this.isTyping) {
-                TypingIndicator({ typingText: $r('app.string.typing') })
+                TypingIndicator({ typingText: this.typingText.length > 0 ? this.typingText : 'typing...' })
               } else {
                 Text(this.lastSeenText)
                   .fontSize(13)
@@ -450,7 +465,7 @@ export struct ChatDetailPage {
         const memberStr = getContext(this).resourceManager.getStringByNameSync('group_members_count');
         this.lastSeenText = memberStr.replace('%s', chat.unreadCount.toString());
       } else {
-        this.lastSeenText = formatLastSeen(chat.isUserOnline, 0);
+        this.lastSeenText = formatLastSeen(chat.isUserOnline, chat.lastSeenDate);
       }
     }
   }

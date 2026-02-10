@@ -2,7 +2,7 @@ import { TDLibClient } from '../services/TDLibClient';
 import { NotificationCenter, EventId } from './NotificationCenter';
 import { NotificationService } from '../services/NotificationService';
 import { Chat } from '../models/Chat';
-import { Message, MessageContentType } from '../models/Message';
+import { Message, MessageContentType, MessageReaction } from '../models/Message';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const TAG = 'MessagesController';
@@ -145,6 +145,11 @@ interface TdNotificationSettings {
   mute_for?: number;
 }
 
+interface TdChatPhoto {
+  small?: TdFile;
+  big?: TdFile;
+}
+
 interface TdChatAction {
   // empty - identified by @type
 }
@@ -191,6 +196,21 @@ interface TdUpdateChatPosition {
   position?: TdChatPosition;
 }
 
+interface TdUpdateChatTitle {
+  chat_id?: number;
+  title?: string;
+}
+
+interface TdUpdateChatPhoto {
+  chat_id?: number;
+  photo?: TdChatPhoto;
+}
+
+interface TdUpdateDeleteMessages {
+  chat_id?: number;
+  message_ids?: number[];
+}
+
 interface TdUpdateNewMessage {
   message?: TdMessage;
 }
@@ -214,6 +234,59 @@ interface TdUpdateChatNotificationSettings {
 interface TdUpdateChatAction {
   chat_id?: number;
   action?: TdChatAction;
+}
+
+interface ChatActionState {
+  isActive: boolean;
+  description: string;
+}
+
+interface TdUsernames {
+  editable_username?: string;
+  active_usernames?: string[];
+}
+
+interface TdUser {
+  id?: number;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+  usernames?: TdUsernames;
+  status?: Record<string, Object>;
+}
+
+interface TdUpdateUser {
+  user?: TdUser;
+}
+
+interface TdUpdateUserStatus {
+  user_id?: number;
+  status?: Record<string, Object>;
+}
+
+interface TdMessageReactionInfo {
+  reaction?: Record<string, Object>;
+  total_count?: number;
+  is_chosen?: boolean;
+}
+
+interface TdMessageInteractionInfo {
+  reactions?: TdMessageReactionInfo[];
+}
+
+interface TdUpdateMessageInteractionInfo {
+  chat_id?: number;
+  message_id?: number;
+  interaction_info?: TdMessageInteractionInfo;
+}
+
+interface CachedUser {
+  id: number;
+  firstName: string;
+  lastName: string;
+  username: string;
+  isOnline: boolean;
+  lastSeenDate: number;
 }
 
 // --- TDLib response wrappers ---
@@ -247,6 +320,10 @@ export class MessagesController {
   private chatsById: Map<number, Chat> = new Map();
   private sortedDialogs: Chat[] = [];
   private messagesByChat: Map<number, Message[]> = new Map();
+  private usersById: Map<number, CachedUser> = new Map();
+  private privateChatUserByChatId: Map<number, number> = new Map();
+  private privateChatIdsByUserId: Map<number, Set<number>> = new Map();
+  private pendingUserLoads: Set<number> = new Set();
   private dialogsLoading: boolean = false;
   private dialogsEndReached: boolean = false;
 
@@ -638,7 +715,12 @@ export class MessagesController {
 
         const sender: TdMessageSender | undefined = rawMsg.sender_id;
         if (sender && tdType(sender as Record<string, Object>) === 'messageSenderUser') {
-          chat.lastMessageSenderId = sender.user_id || 0;
+          const senderUserId: number = sender.user_id || 0;
+          chat.lastMessageSenderId = senderUserId;
+          chat.lastMessageSenderName = this.getUserDisplayName(senderUserId);
+          if (senderUserId > 0 && chat.lastMessageSenderName.length === 0) {
+            this.loadUserIfMissing(senderUserId);
+          }
         }
       }
 
@@ -664,6 +746,69 @@ export class MessagesController {
         this.sortDialogs();
         NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
       }
+    });
+
+    client.on('updateChatTitle', (update: Record<string, Object>) => {
+      const data: TdUpdateChatTitle = update as TdUpdateChatTitle;
+      const chatId: number = data.chat_id || 0;
+      const chat = this.chatsById.get(chatId);
+      if (!chat) return;
+
+      const title: string = data.title || '';
+      if (title.length === 0 || chat.title === title) return;
+
+      chat.title = title;
+      NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
+    });
+
+    client.on('updateChatPhoto', (update: Record<string, Object>) => {
+      const data: TdUpdateChatPhoto = update as TdUpdateChatPhoto;
+      const chatId: number = data.chat_id || 0;
+      const chat = this.chatsById.get(chatId);
+      if (!chat) return;
+
+      const photo: TdChatPhoto | undefined = data.photo;
+      const small: TdFile | undefined = photo?.small;
+      if (!small) {
+        chat.photo = null;
+        chat.photoFileId = 0;
+      } else {
+        chat.photoFileId = small.id || 0;
+        const local: TdLocalFile | undefined = small.local;
+        if (local && local.is_downloading_completed && local.path.length > 0) {
+          chat.photo = local.path;
+        }
+      }
+
+      NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
+    });
+
+    client.on('updateUser', (update: Record<string, Object>) => {
+      const data: TdUpdateUser = update as TdUpdateUser;
+      const rawUser: TdUser | undefined = data.user;
+      if (!rawUser) return;
+
+      const userId: number = this.upsertUser(rawUser);
+      if (userId === 0) return;
+
+      const eventArgs: Record<string, Object> = {};
+      eventArgs['userId'] = userId;
+      NotificationCenter.getInstance().post(EventId.USER_INFO_UPDATED, eventArgs);
+      NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
+    });
+
+    client.on('updateUserStatus', (update: Record<string, Object>) => {
+      const data: TdUpdateUserStatus = update as TdUpdateUserStatus;
+      const userId: number = data.user_id || 0;
+      const status: Record<string, Object> | undefined = data.status;
+      if (userId === 0 || !status) return;
+
+      this.applyUserStatus(userId, status);
+
+      const eventArgs: Record<string, Object> = {};
+      eventArgs['userId'] = userId;
+      NotificationCenter.getInstance().post(EventId.USER_STATUS_UPDATED, eventArgs);
+      NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
     });
 
     client.on('updateNewMessage', (update: Record<string, Object>) => {
@@ -719,6 +864,50 @@ export class MessagesController {
       }
     });
 
+    client.on('updateMessageInteractionInfo', (update: Record<string, Object>) => {
+      const data: TdUpdateMessageInteractionInfo = update as TdUpdateMessageInteractionInfo;
+      const chatId: number = data.chat_id || 0;
+      const messageId: number = data.message_id || 0;
+      const info: TdMessageInteractionInfo | undefined = data.interaction_info;
+      if (chatId === 0 || messageId === 0 || !info) return;
+
+      const messages = this.messagesByChat.get(chatId);
+      if (!messages) return;
+
+      const msg = messages.find((m: Message): boolean => m.id === messageId);
+      if (!msg) return;
+
+      this.applyInteractionInfo(msg, info);
+
+      const eventArgs: Record<string, Object> = {};
+      eventArgs['chatId'] = chatId;
+      eventArgs['messageId'] = messageId;
+      NotificationCenter.getInstance().post(EventId.MESSAGE_EDITED, eventArgs);
+    });
+
+    client.on('updateDeleteMessages', (update: Record<string, Object>) => {
+      const data: TdUpdateDeleteMessages = update as TdUpdateDeleteMessages;
+      const chatId: number = data.chat_id || 0;
+      const deletedIds: number[] | undefined = data.message_ids;
+      if (chatId === 0 || !deletedIds || deletedIds.length === 0) return;
+
+      const messages = this.messagesByChat.get(chatId);
+      if (messages) {
+        const deletedSet: Set<number> = new Set(deletedIds);
+        const filtered: Message[] = messages.filter((m: Message): boolean => !deletedSet.has(m.id));
+        this.messagesByChat.set(chatId, filtered);
+      }
+
+      for (const messageId of deletedIds) {
+        const eventArgs: Record<string, Object> = {};
+        eventArgs['chatId'] = chatId;
+        eventArgs['messageId'] = messageId;
+        NotificationCenter.getInstance().post(EventId.MESSAGE_DELETED, eventArgs);
+      }
+
+      NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
+    });
+
     client.on('updateChatReadInbox', (update: Record<string, Object>) => {
       const data: TdUpdateChatReadInbox = update as TdUpdateChatReadInbox;
       const chatId: number = data.chat_id || 0;
@@ -750,19 +939,21 @@ export class MessagesController {
 
       if (chat && action) {
         const actionType: string = tdType(action as Record<string, Object>);
-        if (actionType === 'chatActionTyping') {
+        const chatActionState: ChatActionState = this.mapChatActionState(actionType);
+        if (chatActionState.isActive) {
           chat.isTyping = true;
-          chat.typingDescription = 'typing...';
+          chat.typingDescription = chatActionState.description;
 
-          // Auto-clear after 5 seconds
+          // Ephemeral action state; Telegram also clears typing-like indicators quickly.
           setTimeout(() => {
+            if (!chat.isTyping) return;
             chat.isTyping = false;
             chat.typingDescription = '';
             const eventArgs: Record<string, Object> = {};
             eventArgs['chatId'] = chatId;
             NotificationCenter.getInstance().post(EventId.CHAT_ACTION_UPDATED, eventArgs);
           }, 5000);
-        } else if (actionType === 'chatActionCancel') {
+        } else {
           chat.isTyping = false;
           chat.typingDescription = '';
         }
@@ -772,6 +963,248 @@ export class MessagesController {
         NotificationCenter.getInstance().post(EventId.CHAT_ACTION_UPDATED, eventArgs);
       }
     });
+  }
+
+  private getUserDisplayName(userId: number): string {
+    const user: CachedUser | undefined = this.usersById.get(userId);
+    if (!user) return '';
+
+    const fullName: string = `${user.firstName} ${user.lastName}`.trim();
+    if (fullName.length > 0) {
+      return fullName;
+    }
+    if (user.username.length > 0) {
+      return `@${user.username}`;
+    }
+    return '';
+  }
+
+  private upsertUser(rawUser: TdUser): number {
+    const userId: number = rawUser.id || 0;
+    if (userId === 0) return 0;
+
+    const existing: CachedUser | undefined = this.usersById.get(userId);
+    const usernames: TdUsernames | undefined = rawUser.usernames;
+
+    let username: string = rawUser.username || '';
+    if (username.length === 0 && usernames) {
+      username = usernames.editable_username || '';
+      if (username.length === 0) {
+        const active: string[] | undefined = usernames.active_usernames;
+        if (active && active.length > 0) {
+          username = active[0];
+        }
+      }
+    }
+    if (username.length === 0 && existing) {
+      username = existing.username;
+    }
+
+    const user: CachedUser = {
+      id: userId,
+      firstName: rawUser.first_name || (existing ? existing.firstName : ''),
+      lastName: rawUser.last_name || (existing ? existing.lastName : ''),
+      username: username,
+      isOnline: existing ? existing.isOnline : false,
+      lastSeenDate: existing ? existing.lastSeenDate : 0
+    };
+
+    const status: Record<string, Object> | undefined = rawUser.status;
+    if (status) {
+      this.applyStatusToUser(user, status);
+    }
+
+    this.usersById.set(userId, user);
+    this.refreshUserPresentation(userId);
+    return userId;
+  }
+
+  private applyUserStatus(userId: number, status: Record<string, Object>): void {
+    let user: CachedUser | undefined = this.usersById.get(userId);
+    if (!user) {
+      user = {
+        id: userId,
+        firstName: '',
+        lastName: '',
+        username: '',
+        isOnline: false,
+        lastSeenDate: 0
+      };
+    }
+
+    this.applyStatusToUser(user, status);
+    this.usersById.set(userId, user);
+    this.refreshUserPresentation(userId);
+  }
+
+  private applyStatusToUser(user: CachedUser, status: Record<string, Object>): void {
+    const statusType: string = tdType(status);
+    if (statusType === 'userStatusOnline') {
+      user.isOnline = true;
+      return;
+    }
+
+    user.isOnline = false;
+    if (statusType === 'userStatusOffline') {
+      user.lastSeenDate = safeNumber(status['was_online']);
+    } else {
+      user.lastSeenDate = 0;
+    }
+  }
+
+  private refreshUserPresentation(userId: number): void {
+    const user: CachedUser | undefined = this.usersById.get(userId);
+    if (!user) return;
+
+    const displayName: string = this.getUserDisplayName(userId);
+
+    this.messagesByChat.forEach((messages: Message[]) => {
+      for (const message of messages) {
+        if (message.senderId === userId) {
+          message.senderName = displayName;
+        }
+      }
+    });
+
+    this.chatsById.forEach((chat: Chat) => {
+      if (chat.lastMessageSenderId === userId) {
+        chat.lastMessageSenderName = displayName;
+      }
+    });
+
+    const privateChats: Set<number> | undefined = this.privateChatIdsByUserId.get(userId);
+    if (!privateChats) return;
+
+    for (const chatId of privateChats) {
+      const privateChat: Chat | undefined = this.chatsById.get(chatId);
+      if (!privateChat) continue;
+      if (displayName.length > 0) {
+        privateChat.title = displayName;
+      }
+      privateChat.isUserOnline = user.isOnline;
+      privateChat.lastSeenDate = user.lastSeenDate;
+    }
+  }
+
+  private registerPrivateChatUser(chatId: number, userId: number): void {
+    if (chatId === 0 || userId === 0) return;
+
+    const previousUserId: number | undefined = this.privateChatUserByChatId.get(chatId);
+    if (previousUserId && previousUserId !== userId) {
+      const oldSet: Set<number> | undefined = this.privateChatIdsByUserId.get(previousUserId);
+      if (oldSet) {
+        oldSet.delete(chatId);
+      }
+    }
+
+    this.privateChatUserByChatId.set(chatId, userId);
+    let set: Set<number> | undefined = this.privateChatIdsByUserId.get(userId);
+    if (!set) {
+      set = new Set<number>();
+      this.privateChatIdsByUserId.set(userId, set);
+    }
+    set.add(chatId);
+  }
+
+  private async loadUserIfMissing(userId: number): Promise<void> {
+    if (userId === 0 || this.usersById.has(userId) || this.pendingUserLoads.has(userId)) {
+      return;
+    }
+
+    this.pendingUserLoads.add(userId);
+    try {
+      const params: Record<string, Object> = {};
+      params['user_id'] = userId;
+      const raw = await TDLibClient.getInstance().send('getUser', params) as TdUser;
+      const resolvedUserId: number = this.upsertUser(raw);
+      if (resolvedUserId > 0) {
+        const eventArgs: Record<string, Object> = {};
+        eventArgs['userId'] = resolvedUserId;
+        NotificationCenter.getInstance().post(EventId.USER_INFO_UPDATED, eventArgs);
+        NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
+      }
+    } catch (e) {
+      hilog.debug(DOMAIN, TAG, 'loadUserIfMissing failed for %{public}d: %{public}s', userId, String(e));
+    } finally {
+      this.pendingUserLoads.delete(userId);
+    }
+  }
+
+  private applyInteractionInfo(msg: Message, info: TdMessageInteractionInfo): void {
+    const reactions: TdMessageReactionInfo[] | undefined = info.reactions;
+    if (!reactions) return;
+
+    const mappedReactions: MessageReaction[] = [];
+    for (const reactionInfo of reactions) {
+      const count: number = reactionInfo.total_count || 0;
+      if (count <= 0) continue;
+
+      const emoji: string = this.resolveReactionEmoji(reactionInfo.reaction);
+      if (emoji.length === 0) continue;
+
+      const mapped: MessageReaction = {
+        emoji: emoji,
+        count: count,
+        isMine: reactionInfo.is_chosen === true
+      };
+      mappedReactions.push(mapped);
+    }
+
+    msg.reactions = mappedReactions;
+  }
+
+  private resolveReactionEmoji(reaction: Record<string, Object> | undefined): string {
+    if (!reaction) return '';
+
+    const reactionType: string = tdType(reaction);
+    if (reactionType === 'reactionTypeEmoji') {
+      return safeString(reaction['emoji']);
+    }
+    if (reactionType === 'reactionTypeCustomEmoji') {
+      return '⭐';
+    }
+    if (reactionType === 'reactionTypePaid') {
+      return '⭐';
+    }
+    return '';
+  }
+
+  private mapChatActionState(actionType: string): ChatActionState {
+    switch (actionType) {
+      case 'chatActionTyping':
+        return { isActive: true, description: 'typing...' };
+      case 'chatActionRecordingVoiceNote':
+        return { isActive: true, description: 'recording voice...' };
+      case 'chatActionUploadingVoiceNote':
+        return { isActive: true, description: 'uploading voice...' };
+      case 'chatActionRecordingVideoNote':
+        return { isActive: true, description: 'recording video message...' };
+      case 'chatActionUploadingVideoNote':
+        return { isActive: true, description: 'uploading video message...' };
+      case 'chatActionRecordingVideo':
+        return { isActive: true, description: 'recording video...' };
+      case 'chatActionUploadingVideo':
+        return { isActive: true, description: 'uploading video...' };
+      case 'chatActionUploadingPhoto':
+        return { isActive: true, description: 'uploading photo...' };
+      case 'chatActionUploadingDocument':
+        return { isActive: true, description: 'uploading file...' };
+      case 'chatActionChoosingSticker':
+        return { isActive: true, description: 'choosing sticker...' };
+      case 'chatActionChoosingLocation':
+        return { isActive: true, description: 'choosing location...' };
+      case 'chatActionChoosingContact':
+        return { isActive: true, description: 'choosing contact...' };
+      case 'chatActionStartPlayingGame':
+        return { isActive: true, description: 'playing game...' };
+      case 'chatActionWatchingAnimations':
+        return { isActive: true, description: 'watching animations...' };
+      case 'chatActionImportingMessages':
+        return { isActive: true, description: 'importing messages...' };
+      case 'chatActionCancel':
+      default:
+        return { isActive: false, description: '' };
+    }
   }
 
   // --- Parsing helpers ---
@@ -793,12 +1226,44 @@ export class MessagesController {
       false
     );
 
+    if (lastMsg) {
+      const sender: TdMessageSender | undefined = lastMsg.sender_id;
+      if (sender && tdType(sender as Record<string, Object>) === 'messageSenderUser') {
+        const senderUserId: number = sender.user_id || 0;
+        chat.lastMessageSenderId = senderUserId;
+        chat.lastMessageSenderName = this.getUserDisplayName(senderUserId);
+        if (senderUserId > 0 && chat.lastMessageSenderName.length === 0) {
+          this.loadUserIfMissing(senderUserId);
+        }
+      }
+    }
+
     // Determine type
     const chatType: TdChatType | undefined = raw.type;
     if (chatType) {
-      const t: string = tdType(chatType as Record<string, Object>);
+      const chatTypeRecord: Record<string, Object> = chatType as Record<string, Object>;
+      const t: string = tdType(chatTypeRecord);
       chat.isGroup = t === 'chatTypeSupergroup' || t === 'chatTypeBasicGroup';
       chat.isChannel = t === 'chatTypeSupergroup' && (chatType.is_channel === true);
+
+      if (t === 'chatTypePrivate') {
+        const privateUserId: number = safeNumber(chatTypeRecord['user_id']);
+        if (privateUserId > 0) {
+          this.registerPrivateChatUser(chat.id, privateUserId);
+          const displayName: string = this.getUserDisplayName(privateUserId);
+          if (displayName.length > 0) {
+            chat.title = displayName;
+          }
+
+          const cachedUser: CachedUser | undefined = this.usersById.get(privateUserId);
+          if (cachedUser) {
+            chat.isUserOnline = cachedUser.isOnline;
+            chat.lastSeenDate = cachedUser.lastSeenDate;
+          } else {
+            this.loadUserIfMissing(privateUserId);
+          }
+        }
+      }
     }
 
     // Mute status
@@ -828,12 +1293,24 @@ export class MessagesController {
   parseMessage(raw: TdMessage): Message {
     const content: TdMessageContent | undefined = raw.content;
     const sender: TdMessageSender | undefined = raw.sender_id;
+    const senderUserId: number = sender?.user_id || 0;
+    let senderName: string = senderUserId > 0 ? this.getUserDisplayName(senderUserId) : '';
+    if (senderName.length === 0) {
+      const senderChatId: number = sender?.chat_id || 0;
+      const senderChat: Chat | undefined = this.chatsById.get(senderChatId);
+      if (senderChat) {
+        senderName = senderChat.title;
+      }
+    }
+    if (senderUserId > 0 && senderName.length === 0) {
+      this.loadUserIfMissing(senderUserId);
+    }
 
     const msg = new Message(
       raw.id || 0,
       raw.chat_id || 0,
-      sender?.user_id || 0,
-      '',
+      senderUserId,
+      senderName,
       '',
       raw.date || 0,
       raw.is_outgoing || false,
@@ -988,6 +1465,12 @@ export class MessagesController {
         break;
       }
       default: {
+        const knownText: string | undefined = this.buildKnownContentText(type, content);
+        if (knownText !== undefined) {
+          msg.contentType = MessageContentType.TEXT;
+          msg.text = knownText;
+          break;
+        }
         msg.contentType = MessageContentType.UNSUPPORTED;
         msg.text = `[${type.replace('message', '')}]`;
         break;
@@ -1019,8 +1502,151 @@ export class MessagesController {
         const question: string = content.poll?.question?.text || '';
         return `📊 ${question}`;
       }
-      default: return type.replace('message', '');
+      default: {
+        const knownText: string | undefined = this.buildKnownContentText(type, content);
+        if (knownText !== undefined) {
+          return knownText;
+        }
+        return type.replace('message', '');
+      }
     }
+  }
+
+  private buildKnownContentText(type: string, content: TdMessageContent): string | undefined {
+    const payload: Record<string, Object> = content as Record<string, Object>;
+    switch (type) {
+      case 'messageContact': {
+        const contact: Record<string, Object> | undefined = this.toRecord(payload['contact']);
+        const firstName: string = safeString(contact?.['first_name']);
+        const lastName: string = safeString(contact?.['last_name']);
+        const phone: string = safeString(contact?.['phone_number']);
+        const fullName: string = `${firstName} ${lastName}`.trim();
+        if (fullName.length > 0 && phone.length > 0) return `👤 ${fullName} (${phone})`;
+        if (fullName.length > 0) return `👤 ${fullName}`;
+        if (phone.length > 0) return `👤 ${phone}`;
+        return '👤 Contact';
+      }
+      case 'messageLocation': {
+        const location: Record<string, Object> | undefined = this.toRecord(payload['location']);
+        const latitude: number = safeNumber(location?.['latitude']);
+        const longitude: number = safeNumber(location?.['longitude']);
+        if (latitude !== 0 || longitude !== 0) {
+          return `📍 ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+        }
+        return '📍 Location';
+      }
+      case 'messageLiveLocation': {
+        const location: Record<string, Object> | undefined = this.toRecord(payload['location']);
+        const latitude: number = safeNumber(location?.['latitude']);
+        const longitude: number = safeNumber(location?.['longitude']);
+        if (latitude !== 0 || longitude !== 0) {
+          return `📡 Live location ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+        }
+        return '📡 Live location';
+      }
+      case 'messageVenue': {
+        const venue: Record<string, Object> | undefined = this.toRecord(payload['venue']);
+        const title: string = safeString(venue?.['title']);
+        const address: string = safeString(venue?.['address']);
+        if (title.length > 0 && address.length > 0) return `📍 ${title} - ${address}`;
+        if (title.length > 0) return `📍 ${title}`;
+        return '📍 Venue';
+      }
+      case 'messageGame': {
+        const game: Record<string, Object> | undefined = this.toRecord(payload['game']);
+        const title: string = safeString(game?.['title']);
+        return title.length > 0 ? `🎮 ${title}` : '🎮 Game';
+      }
+      case 'messageInvoice': {
+        const invoice: Record<string, Object> | undefined = this.toRecord(payload['invoice']);
+        const title: string = safeString(invoice?.['title']);
+        return title.length > 0 ? `💳 ${title}` : '💳 Invoice';
+      }
+      case 'messageCall': {
+        return this.buildCallText(payload);
+      }
+      case 'messageDice': {
+        const dice: Record<string, Object> | undefined = this.toRecord(payload['dice']);
+        const emoji: string = safeString(dice?.['emoji']) || '🎲';
+        const value: number = safeNumber(dice?.['value']);
+        return value > 0 ? `${emoji} ${value}` : `${emoji} Dice`;
+      }
+      case 'messageProximityAlertTriggered': {
+        const distance: number = safeNumber(payload['distance']);
+        return distance > 0 ? `⚠️ Proximity alert (${distance} m)` : '⚠️ Proximity alert';
+      }
+      case 'messageScreenshotTaken': return '📷 Screenshot taken';
+      case 'messageChatSetTtl': {
+        const ttl: number = safeNumber(payload['ttl']);
+        return ttl > 0 ? `🔒 Messages auto-delete in ${this.formatDuration(ttl)}` : '🔒 Auto-delete timer changed';
+      }
+      case 'messageChatChangeTitle': {
+        const title: string = safeString(payload['title']);
+        return title.length > 0 ? `✏️ Chat title changed to "${title}"` : '✏️ Chat title changed';
+      }
+      case 'messageChatChangePhoto': return '🖼️ Chat photo changed';
+      case 'messageChatDeletePhoto': return '🗑️ Chat photo removed';
+      case 'messageChatAddMembers': {
+        const membersValue: Object | undefined = payload['member_user_ids'];
+        if (Array.isArray(membersValue)) {
+          const count: number = membersValue.length;
+          if (count > 0) return `👥 Added ${count} member${count > 1 ? 's' : ''}`;
+        }
+        return '👥 Members added';
+      }
+      case 'messageChatJoinByLink': return '🔗 Joined via invite link';
+      case 'messageChatDeleteMember': return '👤 Member removed';
+      case 'messageChatUpgradeTo': return '⬆️ Group upgraded to supergroup';
+      case 'messageChatUpgradeFrom': return '⬆️ Group upgraded';
+      case 'messagePinMessage': return '📌 Message pinned';
+      case 'messageGameScore': return '🏆 Game score updated';
+      case 'messagePaymentSuccessful': return '✅ Payment successful';
+      case 'messageContactRegistered': return '🎉 Contact joined Telegram';
+      case 'messageCustomServiceAction': {
+        const text: string = safeString(payload['text']);
+        return text.length > 0 ? text : 'ℹ️ Service message';
+      }
+      case 'messageUnsupported': return 'Unsupported message';
+      default: return undefined;
+    }
+  }
+
+  private buildCallText(payload: Record<string, Object>): string {
+    const call: Record<string, Object> | undefined = this.toRecord(payload['call']);
+    const duration: number = safeNumber(call?.['duration']);
+    const isVideo: boolean = safeBool(call?.['is_video']);
+    const discardReason: Record<string, Object> | undefined = this.toRecord(call?.['discard_reason']);
+    const reasonType: string = discardReason ? tdType(discardReason) : '';
+
+    if (reasonType === 'callDiscardReasonMissed') {
+      return isVideo ? '📹 Missed video call' : '📞 Missed call';
+    }
+    if (reasonType === 'callDiscardReasonDeclined') {
+      return isVideo ? '📹 Declined video call' : '📞 Declined call';
+    }
+    if (duration > 0) {
+      return `${isVideo ? '📹 Video call' : '📞 Call'} (${this.formatDuration(duration)})`;
+    }
+    return isVideo ? '📹 Video call' : '📞 Call';
+  }
+
+  private formatDuration(totalSeconds: number): string {
+    if (totalSeconds <= 0) return '0s';
+    const hours: number = Math.floor(totalSeconds / 3600);
+    const minutes: number = Math.floor((totalSeconds % 3600) / 60);
+    const seconds: number = totalSeconds % 60;
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    }
+    return `${seconds}s`;
+  }
+
+  private toRecord(value: Object | undefined | null): Record<string, Object> | undefined {
+    if (value === undefined || value === null) return undefined;
+    return value as Record<string, Object>;
   }
 
   private decodeWaveform(base64: string): number[] {
