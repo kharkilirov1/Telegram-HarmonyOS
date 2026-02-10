@@ -6,7 +6,6 @@ import { MessagesController } from '../../controllers/MessagesController';
 import { AuthController } from '../../controllers/AuthController';
 import { GroupService } from '../../services/GroupService';
 import { UserService } from '../../services/UserService';
-import { BasicDataSource } from '../../datasources/BasicDataSource';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { GroupInfoActionButton } from './components/GroupInfoActionButton';
 import { GroupInfoHeaderSection } from './components/GroupInfoHeaderSection';
@@ -31,10 +30,9 @@ export struct GroupInfoPage {
   @Local isChannel: boolean = false;
   @Local isGroup: boolean = true;
   @Local isMuted: boolean = false;
-  @Local canOpenGroupAdmin: boolean = false;
+  @Local canEditGroupInfo: boolean = false;
+  @Local canManageInviteLinks: boolean = false;
   @Local members: GroupInfoMember[] = [];
-
-  private memberDataSource: BasicDataSource<GroupInfoMember> = new BasicDataSource<GroupInfoMember>();
 
   aboutToAppear(): void {
     this.loadGroupInfo();
@@ -56,21 +54,21 @@ export struct GroupInfoPage {
       const fullInfo = await GroupService.getInstance().getSupergroupFullInfo(Math.abs(this.chatId));
       this.description = fullInfo.description || '';
       this.memberCount = fullInfo.member_count || 0;
-    } catch (e) {
-      // Stub data
-      this.description = this.isChannel
-        ? 'Official channel for updates and news'
-        : 'A group for friends and colleagues';
-      this.memberCount = 15;
+    } catch (_e) {
+      this.description = '';
+      this.memberCount = 0;
     }
 
     // Load real members from TDLib
     await this.loadMembers();
-    this.memberDataSource.setData(this.members);
+    if (this.memberCount <= 0) {
+      this.memberCount = this.members.length;
+    }
   }
 
   private async loadAdminAccess(): Promise<void> {
-    this.canOpenGroupAdmin = false;
+    this.canEditGroupInfo = false;
+    this.canManageInviteLinks = false;
     try {
       const myUserId = await AuthController.getInstance().fetchMyUserId();
       if (myUserId <= 0) {
@@ -88,10 +86,31 @@ export struct GroupInfoPage {
         if ((member.member_id?.user_id || 0) !== myUserId) {
           continue;
         }
-        const statusRecord = member.status as Record<string, string> | undefined;
-        const statusType = statusRecord?.['@type'] || '';
-        this.canOpenGroupAdmin = statusType === 'chatMemberStatusCreator' ||
-          statusType === 'chatMemberStatusAdministrator';
+        const statusRecord = member.status as Record<string, Object> | undefined;
+        const statusType = (statusRecord?.['@type'] as string) || '';
+        if (statusType === 'chatMemberStatusCreator') {
+          this.canEditGroupInfo = true;
+          this.canManageInviteLinks = true;
+          return;
+        }
+        if (statusType === 'chatMemberStatusAdministrator') {
+          const rightsRecord = statusRecord?.['rights'] as Record<string, Object> | undefined;
+          const hasExplicitRights = rightsRecord !== undefined ||
+            statusRecord?.['can_change_info'] !== undefined ||
+            statusRecord?.['can_invite_users'] !== undefined;
+          if (hasExplicitRights) {
+            const canChange = ((rightsRecord?.['can_change_info'] as boolean) || false) ||
+              ((statusRecord?.['can_change_info'] as boolean) || false);
+            const canInvite = ((rightsRecord?.['can_invite_users'] as boolean) || false) ||
+              ((statusRecord?.['can_invite_users'] as boolean) || false);
+            this.canEditGroupInfo = canChange;
+            this.canManageInviteLinks = canInvite;
+          } else {
+            // Old TDLib payloads can omit split rights here.
+            this.canEditGroupInfo = true;
+            this.canManageInviteLinks = true;
+          }
+        }
         return;
       }
     } catch (_e) {
@@ -144,28 +163,22 @@ export struct GroupInfoPage {
         return;
       }
     } catch (e) {
-      hilog.warn(0x0001, 'GroupInfoPage', 'Failed to load members, using stub data');
+      hilog.warn(0x0001, 'GroupInfoPage', 'Failed to load members for chat %{public}d', this.chatId);
     }
 
-    this.members = [
-      new GroupInfoMember(1, 'Alex Johnson', 'online', null, true),
-      new GroupInfoMember(2, 'Maria Garcia', 'last seen recently', null, true),
-      new GroupInfoMember(3, 'John Smith', 'last seen within a week', null, false),
-      new GroupInfoMember(4, 'Emily Davis', 'online', null, false),
-      new GroupInfoMember(5, 'Robert Wilson', 'last seen recently', null, false),
-    ];
+    this.members = [];
   }
 
   build() {
     NavDestination() {
       Column() {
         GroupInfoTopBar({
-          canEdit: this.canOpenGroupAdmin,
+          canEdit: this.canEditGroupInfo,
           onBack: () => {
             this.navPathStack.pop();
           },
           onEdit: () => {
-            if (!this.canOpenGroupAdmin) {
+            if (!this.canEditGroupInfo) {
               return;
             }
             const navParam: Record<string, Object> = {};
@@ -197,18 +210,6 @@ export struct GroupInfoPage {
                 onTap: () => {
                   this.navPathStack.pushPath(new NavPathInfo('Search', new Object()));
                 }
-              })
-              if (!this.isChannel) {
-                GroupInfoActionButton({
-                  icon: $r('app.media.ic_phone_call'),
-                  label: $r('app.string.call_action'),
-                  onTap: () => {}
-                })
-              }
-              GroupInfoActionButton({
-                icon: $r('app.media.ic_more'),
-                label: $r('app.string.more_action'),
-                onTap: () => {}
               })
             }
             .width('100%')
@@ -285,51 +286,55 @@ export struct GroupInfoPage {
             Blank().height(16)
 
             // --- Admin & Invite Links ---
-            if (this.canOpenGroupAdmin) {
+            if (this.canEditGroupInfo || this.canManageInviteLinks) {
               Column() {
-                Row() {
-                  Image($r('app.media.ic_edit'))
-                    .width(20).height(20)
-                    .fillColor($r('app.color.text_secondary'))
-                    .margin({ right: 12 })
-                  Text($r('app.string.admin_settings'))
-                    .fontSize(16)
-                    .fontColor($r('app.color.text_primary'))
-                    .layoutWeight(1)
-                  Image($r('app.media.ic_forward'))
-                    .width(14).height(14)
-                    .fillColor($r('app.color.text_secondary'))
+                if (this.canEditGroupInfo) {
+                  Row() {
+                    Image($r('app.media.ic_edit'))
+                      .width(20).height(20)
+                      .fillColor($r('app.color.text_secondary'))
+                      .margin({ right: 12 })
+                    Text($r('app.string.admin_settings'))
+                      .fontSize(16)
+                      .fontColor($r('app.color.text_primary'))
+                      .layoutWeight(1)
+                    Image($r('app.media.ic_forward'))
+                      .width(14).height(14)
+                      .fillColor($r('app.color.text_secondary'))
+                  }
+                  .width('100%').height(48)
+                  .padding({ left: 16, right: 16 })
+                  .onClick(() => {
+                    const navParam: Record<string, Object> = {};
+                    navParam['chatId'] = this.chatId;
+                    this.navPathStack.pushPath(new NavPathInfo('GroupAdmin', navParam));
+                  })
                 }
-                .width('100%').height(48)
-                .padding({ left: 16, right: 16 })
-                .onClick(() => {
-                  const navParam: Record<string, Object> = {};
-                  navParam['chatId'] = this.chatId;
-                  this.navPathStack.pushPath(new NavPathInfo('GroupAdmin', navParam));
-                })
-
-                Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 48 })
-
-                Row() {
-                  Image($r('app.media.ic_forward'))
-                    .width(20).height(20)
-                    .fillColor($r('app.color.text_secondary'))
-                    .margin({ right: 12 })
-                  Text($r('app.string.invite_links'))
-                    .fontSize(16)
-                    .fontColor($r('app.color.text_primary'))
-                    .layoutWeight(1)
-                  Image($r('app.media.ic_forward'))
-                    .width(14).height(14)
-                    .fillColor($r('app.color.text_secondary'))
+                if (this.canEditGroupInfo && this.canManageInviteLinks) {
+                  Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 48 })
                 }
-                .width('100%').height(48)
-                .padding({ left: 16, right: 16 })
-                .onClick(() => {
-                  const navParam: Record<string, Object> = {};
-                  navParam['chatId'] = this.chatId;
-                  this.navPathStack.pushPath(new NavPathInfo('InviteLinks', navParam));
-                })
+                if (this.canManageInviteLinks) {
+                  Row() {
+                    Image($r('app.media.ic_forward'))
+                      .width(20).height(20)
+                      .fillColor($r('app.color.text_secondary'))
+                      .margin({ right: 12 })
+                    Text($r('app.string.invite_links'))
+                      .fontSize(16)
+                      .fontColor($r('app.color.text_primary'))
+                      .layoutWeight(1)
+                    Image($r('app.media.ic_forward'))
+                      .width(14).height(14)
+                      .fillColor($r('app.color.text_secondary'))
+                  }
+                  .width('100%').height(48)
+                  .padding({ left: 16, right: 16 })
+                  .onClick(() => {
+                    const navParam: Record<string, Object> = {};
+                    navParam['chatId'] = this.chatId;
+                    this.navPathStack.pushPath(new NavPathInfo('InviteLinks', navParam));
+                  })
+                }
               }
               .width('100%')
               .backgroundColor($r('app.color.glass_card_bg'))
@@ -346,15 +351,17 @@ export struct GroupInfoPage {
               Column() {
                 // Header: Members (count) + Add member
                 Row() {
-                  Text(`Members (${this.members.length})`)
+                  Text(`Members (${this.memberCount > 0 ? this.memberCount : this.members.length})`)
                     .fontSize(13)
                     .fontColor($r('app.color.text_secondary'))
 
                     .layoutWeight(1)
 
-                  Text($r('app.string.add'))
-                    .fontSize(14)
-                    .fontColor($r('app.color.telegram_blue'))
+                  if (this.canManageInviteLinks) {
+                    Text($r('app.string.add'))
+                      .fontSize(14)
+                      .fontColor($r('app.color.telegram_blue'))
+                  }
                 }
                 .width('100%')
                 .padding({ left: 16, right: 16, top: 12, bottom: 8 })

@@ -12,7 +12,6 @@ import { GroupAdminBannedSection } from './components/GroupAdminBannedSection';
 import { GroupAdminHeaderSection } from './components/GroupAdminHeaderSection';
 import { GroupAdminMember, GroupBannedMember } from './components/GroupAdminModels';
 import { GroupAdminPermissionsSection } from './components/GroupAdminPermissionsSection';
-import { GroupAdminRecentActionsSection } from './components/GroupAdminRecentActionsSection';
 import { GroupAdminTopBar } from './components/GroupAdminTopBar';
 import { GroupAdminTypeSection } from './components/GroupAdminTypeSection';
 
@@ -68,7 +67,7 @@ export struct GroupAdminPage {
       const hasUsername = (sgInfo.usernames?.editable_username || '').length > 0;
       this.isPublic = hasUsername;
     } catch (e) {
-      hilog.warn(0x0001, 'GroupAdminPage', 'Failed to load admin data, using defaults');
+      hilog.warn(0x0001, 'GroupAdminPage', 'Failed to load admin data for chat %{public}d', this.chatId);
     }
 
     await this.loadAdministrators();
@@ -76,6 +75,7 @@ export struct GroupAdminPage {
   }
 
   private async loadAdministrators(): Promise<void> {
+    this.administrators = [];
     try {
       const result = await GroupService.getInstance()
         .getSupergroupMembers(Math.abs(this.chatId), 'supergroupMembersFilterAdministrators', 0, 100);
@@ -113,18 +113,12 @@ export struct GroupAdminPage {
         return;
       }
     } catch (e) {
-      hilog.warn(0x0001, 'GroupAdminPage', 'Failed to load admins, using stub data');
+      hilog.warn(0x0001, 'GroupAdminPage', 'Failed to load admins for chat %{public}d', this.chatId);
     }
-
-    const ownerLabel = getContext(this).resourceManager.getStringByNameSync('owner_role');
-    const adminLabel = getContext(this).resourceManager.getStringByNameSync('admin_label');
-    this.administrators = [
-      { userId: 1, name: 'Alex Johnson', role: ownerLabel, photoUrl: null },
-      { userId: 2, name: 'Maria Garcia', role: adminLabel, photoUrl: null }
-    ];
   }
 
   private async loadBannedUsers(): Promise<void> {
+    this.bannedUsers = [];
     try {
       const result = await GroupService.getInstance()
         .getSupergroupMembers(Math.abs(this.chatId), 'supergroupMembersFilterBanned', 0, 100);
@@ -152,12 +146,8 @@ export struct GroupAdminPage {
         return;
       }
     } catch (e) {
-      hilog.warn(0x0001, 'GroupAdminPage', 'Failed to load banned users, using stub data');
+      hilog.warn(0x0001, 'GroupAdminPage', 'Failed to load banned users for chat %{public}d', this.chatId);
     }
-
-    this.bannedUsers = [
-      { userId: 100, name: 'Spammer Bot', bannedUntil: 'Forever' }
-    ];
   }
 
   private async toggleGroupType(): Promise<void> {
@@ -271,13 +261,6 @@ export struct GroupAdminPage {
             Blank().height(24)
 
             GroupAdminBannedSection({ bannedUsers: this.bannedUsers })
-
-            Blank().height(24)
-
-            GroupAdminRecentActionsSection({
-              onOpen: () => {
-              }
-            })
 
             Blank().height(40)
           }

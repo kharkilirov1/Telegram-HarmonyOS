@@ -4,7 +4,6 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AuthController } from '../../controllers/AuthController';
 import { UserService } from '../../services/UserService';
-import { ProfileChangeNumberCard } from './components/ProfileChangeNumberCard';
 import { ProfileEditModeSection } from './components/ProfileEditModeSection';
 import { ProfileInfoRow } from './components/ProfileInfoRow';
 import { ProfileLogoutCard } from './components/ProfileLogoutCard';
@@ -22,10 +21,10 @@ export function ProfileBuilder(name: string, param: Object) {
 export struct ProfilePage {
   @Consumer('navPathStack') navPathStack: NavPathStack = new NavPathStack();
 
-  @Local firstName: string = 'User';
+  @Local firstName: string = '';
   @Local lastName: string = '';
   @Local username: string = '';
-  @Local phoneNumber: string = '+1 234 567 890';
+  @Local phoneNumber: string = '';
   @Local bio: string = '';
   @Local photoUrl: string | null = null;
   @Local isOnline: boolean = false;
@@ -38,6 +37,10 @@ export struct ProfilePage {
   @Local editBio: string = '';
   @Local editUsername: string = '';
   @Local isSaving: boolean = false;
+
+  aboutToAppear(): void {
+    this.loadProfile();
+  }
 
   build() {
     NavDestination() {
@@ -166,12 +169,6 @@ export struct ProfilePage {
 
       Blank().height(24)
 
-      ProfileChangeNumberCard({
-        onOpen: () => {}
-      })
-
-      Blank().height(24)
-
       ProfileLogoutCard({
         onLogout: () => {
           this.showLogoutConfirmation();
@@ -215,10 +212,48 @@ export struct ProfilePage {
     }
   }
 
+  private async loadProfile(): Promise<void> {
+    try {
+      const me = await UserService.getInstance().getMe();
+      this.firstName = me.first_name || '';
+      this.lastName = me.last_name || '';
+      this.phoneNumber = me.phone_number || '';
+      this.username = me.usernames?.editable_username || me.username || '';
+
+      const profilePhoto = me.profile_photo;
+      this.photoUrl = null;
+      if (profilePhoto?.small?.local && profilePhoto.small.local.is_downloading_completed) {
+        const path = profilePhoto.small.local.path || '';
+        this.photoUrl = path.length > 0 ? path : null;
+      }
+
+      const statusObj = me.status as Record<string, Object> | undefined;
+      const statusType = (statusObj?.['@type'] as string) || '';
+      this.isOnline = statusType === 'userStatusOnline';
+
+      const myUserId = me.id || 0;
+      if (myUserId > 0) {
+        const fullInfo = await UserService.getInstance().getUserFullInfo(myUserId);
+        const fullBio = fullInfo.bio?.text || '';
+        this.bio = fullBio;
+      } else {
+        this.bio = '';
+      }
+    } catch (e) {
+      hilog.warn(0x0001, 'ProfilePage', 'Failed to load profile data');
+    }
+  }
+
   private getFullName(): string {
-    return this.lastName.length > 0
-      ? `${this.firstName} ${this.lastName}`
-      : this.firstName;
+    if (this.firstName.length > 0) {
+      return this.lastName.length > 0
+        ? `${this.firstName} ${this.lastName}`
+        : this.firstName;
+    }
+    if (this.username.length > 0) {
+      return `@${this.username}`;
+    }
+    return this.phoneNumber;
   }
 
   private getInitials(): string {

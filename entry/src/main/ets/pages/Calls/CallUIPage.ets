@@ -58,18 +58,6 @@ export struct CallUIPage {
       this.callState = 'ringing';
     } else {
       this.callState = 'connecting';
-      // Simulate connection in stub mode
-      setTimeout(() => {
-        if (this.callState === 'connecting') {
-          this.callState = 'ringing';
-        }
-      }, 1000);
-      setTimeout(() => {
-        if (this.callState === 'ringing') {
-          this.callState = 'active';
-          this.startDurationTimer();
-        }
-      }, 3000);
     }
   }
 

@@ -23,6 +23,7 @@ export struct StoryViewerPage {
   @Local isPaused: boolean = false;
 
   private progressTimerId: number = -1;
+  private videoController: VideoController = new VideoController();
   private readonly STORY_DURATION_MS: number = 5000; // 5 seconds per story
   private readonly TICK_MS: number = 50;
 
@@ -294,19 +295,28 @@ export struct StoryViewerPage {
             .onError(() => {})
         }
       } else {
-        // Video story — show placeholder since Video component needs special handling
-        Column() {
-          Image($r('app.media.ic_play'))
-            .width(48).height(48)
-            .fillColor($r('app.color.icon_on_primary'))
-          Text($r('app.string.video'))
-            .fontSize(14)
-            .fontColor($r('app.color.icon_on_primary'))
-            .margin({ top: 8 })
+        if (this.stories[this.currentIndex].videoUrl.length > 0) {
+          Video({
+            src: this.stories[this.currentIndex].videoUrl,
+            controller: this.videoController
+          })
+            .width('100%')
+            .height('100%')
+            .objectFit(ImageFit.Contain)
+            .autoPlay(true)
+            .controls(false)
+            .onPrepared(() => {})
+            .onError(() => {})
+        } else {
+          Column() {
+            Text($r('app.string.video'))
+              .fontSize(14)
+              .fontColor($r('app.color.icon_on_primary'))
+          }
+          .width('100%')
+          .height('100%')
+          .justifyContent(FlexAlign.Center)
         }
-        .width('100%')
-        .height('100%')
-        .justifyContent(FlexAlign.Center)
       }
     }
   }

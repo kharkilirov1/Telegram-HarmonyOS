@@ -1185,6 +1185,10 @@
       "value": "No banned users"
     },
     {
+      "name": "no_administrators",
+      "value": "No administrators"
+    },
+    {
       "name": "view_recent_actions",
       "value": "View Recent Actions"
     },

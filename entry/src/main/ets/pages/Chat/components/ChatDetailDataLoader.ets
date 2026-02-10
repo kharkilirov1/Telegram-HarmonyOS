@@ -1,7 +1,7 @@
 import { formatLastSeen } from '../../../components/Common/AvatarWithStatus';
 import { MessagesController } from '../../../controllers/MessagesController';
 import { Chat } from '../../../models/Chat';
-import { Message, MessageReaction } from '../../../models/Message';
+import { Message } from '../../../models/Message';
 
 export interface ChatInfoSnapshot {
   title: string;
@@ -49,17 +49,6 @@ export async function loadInitialMessages(chatId: number, limit: number = 50): P
     if (candidate) {
       pinnedMessage = candidate;
     }
-  }
-
-  // TODO: remove demo-only reactions once real TDLib reactions are wired everywhere.
-  if (messages.length > 3) {
-    const r1: MessageReaction = { emoji: '\u{1F44D}', count: 3, isMine: false };
-    const r2: MessageReaction = { emoji: '\u{2764}\u{FE0F}', count: 1, isMine: true };
-    messages[1].reactions = [r1, r2];
-  }
-  if (messages.length > 5) {
-    const r3: MessageReaction = { emoji: '\u{1F602}', count: 2, isMine: false };
-    messages[4].reactions = [r3];
   }
 
   return {

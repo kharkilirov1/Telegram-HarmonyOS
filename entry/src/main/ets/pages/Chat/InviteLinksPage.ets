@@ -54,11 +54,11 @@ export struct InviteLinksPage {
   }
 
   private async loadLinks(): Promise<void> {
+    this.inviteLinks = [];
     try {
       const result = await ChatService.getInstance().getChatInviteLinks(this.chatId, 0, false, 100);
       const rawLinks = result.invite_links;
       if (rawLinks && rawLinks.length > 0) {
-        this.inviteLinks = [];
         for (const link of rawLinks as TdChatInviteLink[]) {
           this.inviteLinks.push(new InviteLinkModel(
             link.invite_link || '',
@@ -81,14 +81,6 @@ export struct InviteLinksPage {
     } catch (e) {
       hilog.warn(0x0001, 'InviteLinksPage', 'Failed to load invite links');
     }
-
-    if (this.primaryLink.length === 0) {
-      this.primaryLink = 'https://t.me/+aBcDeFgHiJkLmNo';
-    }
-    this.inviteLinks = [
-      new InviteLinkModel(this.primaryLink, 12, 0, false, true),
-      new InviteLinkModel('https://t.me/+xYzAbCdEfGhIjKl', 5, 1735689600, false, false),
-    ];
   }
 
   private async createNewLink(): Promise<void> {
@@ -133,6 +125,9 @@ export struct InviteLinksPage {
   }
 
   private copyToClipboard(link: string): void {
+    if (link.length === 0) {
+      return;
+    }
     const pasteData = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, link);
     const sysBoard = pasteboard.getSystemPasteboard();
     sysBoard.setData(pasteData);
@@ -186,18 +181,22 @@ export struct InviteLinksPage {
         } else {
           Scroll() {
             Column() {
-              PrimaryInviteLinkCard({
-                primaryLink: this.primaryLink,
-                copiedLink: this.copiedLink,
-                onCopy: () => {
-                  this.copyToClipboard(this.primaryLink);
-                },
-                onShare: () => {
-                  this.copyToClipboard(this.primaryLink);
-                }
-              })
+              if (this.primaryLink.length > 0) {
+                PrimaryInviteLinkCard({
+                  primaryLink: this.primaryLink,
+                  copiedLink: this.copiedLink,
+                  onCopy: () => {
+                    this.copyToClipboard(this.primaryLink);
+                  },
+                  onShare: () => {
+                    this.copyToClipboard(this.primaryLink);
+                  }
+                })
 
-              Blank().height(24)
+                Blank().height(24)
+              } else {
+                Blank().height(20)
+              }
 
               CreateInviteLinkCard({
                 isCreating: this.isCreating,

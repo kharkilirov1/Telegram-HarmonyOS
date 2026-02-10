@@ -13,12 +13,21 @@ export struct GroupAdminAdminsSection {
         .margin({ bottom: 8 })
 
       Column() {
-        ForEach(this.administrators, (admin: GroupAdminMember, index: number) => {
-          if (index > 0) {
-            Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 68 })
-          }
-          this.adminRow(admin)
-        }, (admin: GroupAdminMember) => admin.userId.toString())
+        if (this.administrators.length === 0) {
+          Text($r('app.string.no_administrators'))
+            .fontSize(15)
+            .fontColor($r('app.color.text_secondary'))
+            .width('100%')
+            .textAlign(TextAlign.Center)
+            .padding(20)
+        } else {
+          ForEach(this.administrators, (admin: GroupAdminMember, index: number) => {
+            if (index > 0) {
+              Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 68 })
+            }
+            this.adminRow(admin)
+          }, (admin: GroupAdminMember) => admin.userId.toString())
+        }
       }
       .width('100%')
       .backgroundColor($r('app.color.glass_card_bg'))

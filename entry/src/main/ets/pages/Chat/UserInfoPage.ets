@@ -6,6 +6,8 @@ import { UserService } from '../../services/UserService';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { User } from '../../models/User';
 import { CallsController } from '../../controllers/CallsController';
+import { ChatService } from '../../services/ChatService';
+import { GroupService } from '../../services/GroupService';
 import { formatLastSeen } from '../../components/Common/AvatarWithStatus';
 import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
 import { ContactsController } from '../../controllers/ContactsController';
@@ -28,8 +30,9 @@ export struct UserInfoPage {
   @Local photoUrl: string | null = null;
   @Local isOnline: boolean = false;
   @Local lastSeenDate: number = 0;
-  @Local isBlocked: boolean = false;
+  @Local notificationsEnabled: boolean = true;
   @Local commonGroupsCount: number = 0;
+  @Local privateChatId: number = 0;
 
   private userInfoUpdatedHandler = (args?: Record<string, Object>): void => {
     const updatedUserId = args ? ((args['userId'] as number) || 0) : 0;
@@ -63,7 +66,7 @@ export struct UserInfoPage {
     const user: User | undefined = ContactsController.getInstance().getUser(this.userId);
     if (!user) return false;
 
-    this.firstName = user.firstName.length > 0 ? user.firstName : 'User';
+    this.firstName = user.firstName;
     this.lastName = user.lastName;
     this.username = user.username;
     this.phoneNumber = user.phoneNumber;
@@ -90,7 +93,7 @@ export struct UserInfoPage {
     try {
       if (!hasCachedUser) {
         const result = await UserService.getInstance().getUser(this.userId);
-        this.firstName = result.first_name || 'User';
+        this.firstName = result.first_name || '';
         this.lastName = result.last_name || '';
         this.username = result.username || '';
         this.phoneNumber = result.phone_number || '';
@@ -114,18 +117,80 @@ export struct UserInfoPage {
         this.bio = fullInfo.bio?.text || '';
         this.commonGroupsCount = fullInfo.group_in_common_count || 0;
       }
+      await this.syncNotificationState();
     } catch (e) {
       hilog.warn(0x0001, 'UserInfoPage', 'Failed to load user info');
-      // Stub defaults
-      this.firstName = 'Alex';
-      this.lastName = 'Johnson';
-      this.username = 'alexj';
-      this.phoneNumber = '+1 555 123 4567';
-      this.photoUrl = null;
-      this.isOnline = false;
-      this.lastSeenDate = 0;
-      this.bio = 'Life is what happens when you are busy making other plans.';
-      this.commonGroupsCount = 3;
+      if (!hasCachedUser) {
+        this.firstName = '';
+        this.lastName = '';
+        this.username = '';
+        this.phoneNumber = '';
+        this.photoUrl = null;
+        this.isOnline = false;
+        this.lastSeenDate = 0;
+      }
+      if (!hasCachedFullInfo) {
+        this.bio = '';
+        this.commonGroupsCount = 0;
+      }
+    }
+  }
+
+  private async ensurePrivateChatId(): Promise<number> {
+    if (this.privateChatId > 0) {
+      return this.privateChatId;
+    }
+    try {
+      const chatId = await ChatService.getInstance().createPrivateChat(this.userId);
+      this.privateChatId = chatId > 0 ? chatId : 0;
+    } catch (_e) {
+      this.privateChatId = 0;
+    }
+    return this.privateChatId;
+  }
+
+  private async syncNotificationState(): Promise<void> {
+    try {
+      const chatId = await this.ensurePrivateChatId();
+      if (chatId <= 0) {
+        this.notificationsEnabled = true;
+        return;
+      }
+      const chatResult = await GroupService.getInstance().getChat(chatId);
+      const settings = chatResult['notification_settings'] as Record<string, Object> | undefined;
+      const muteFor = settings ? ((settings['mute_for'] as number) || 0) : 0;
+      this.notificationsEnabled = muteFor <= 0;
+    } catch (_e) {
+      this.notificationsEnabled = true;
+    }
+  }
+
+  private async openPrivateChat(): Promise<void> {
+    try {
+      const chatId = await this.ensurePrivateChatId();
+      if (chatId > 0) {
+        this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
+      }
+    } catch (_e) {
+      hilog.warn(0x0001, 'UserInfoPage', 'Failed to open private chat for %{public}d', this.userId);
+    }
+  }
+
+  private async toggleNotifications(isOn: boolean): Promise<void> {
+    this.notificationsEnabled = isOn;
+    try {
+      const chatId = await this.ensurePrivateChatId();
+      if (chatId <= 0) {
+        return;
+      }
+      if (isOn) {
+        await ChatService.getInstance().unmuteChat(chatId);
+      } else {
+        // 10 years mute like Telegram "mute forever"
+        await ChatService.getInstance().muteChat(chatId, 315360000);
+      }
+    } catch (_e) {
+      this.notificationsEnabled = !isOn;
     }
   }
 
@@ -197,7 +262,7 @@ export struct UserInfoPage {
             // --- Action buttons row (like Telegram iOS: Message, Audio, Video, More) ---
             Row({ space: 12 }) {
               this.actionButton($r('app.media.ic_group'), 'Message', () => {
-                this.navPathStack.pop();
+                this.openPrivateChat();
               })
               this.actionButton($r('app.media.ic_phone_call'), 'Call', () => {
                 CallsController.getInstance().startCall(this.userId, false);
@@ -205,7 +270,6 @@ export struct UserInfoPage {
               this.actionButton($r('app.media.ic_settings'), 'Video', () => {
                 CallsController.getInstance().startCall(this.userId, true);
               })
-              this.actionButton($r('app.media.ic_unmute'), 'Mute', () => {})
             }
             .width('100%')
             .justifyContent(FlexAlign.Center)
@@ -261,8 +325,11 @@ export struct UserInfoPage {
                   .fontSize(16)
                   .fontColor($r('app.color.text_primary'))
                   .layoutWeight(1)
-                Toggle({ type: ToggleType.Switch, isOn: true })
+                Toggle({ type: ToggleType.Switch, isOn: this.notificationsEnabled })
                   .selectedColor($r('app.color.telegram_blue'))
+                  .onChange((isOn: boolean) => {
+                    this.toggleNotifications(isOn);
+                  })
               }
               .width('100%').height(48)
               .padding({ left: 16, right: 16 })
@@ -309,27 +376,6 @@ export struct UserInfoPage {
                 .width('100%').height(48)
                 .padding({ left: 16, right: 16 })
               }
-            }
-            .width('100%')
-            .backgroundColor($r('app.color.glass_card_bg'))
-            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
-            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
-
-            Blank().height(16)
-
-            // --- Block user ---
-            Column() {
-              Text(this.isBlocked ? 'Unblock User' : 'Block User')
-                .fontSize(16)
-                .fontColor($r('app.color.error_red'))
-                .textAlign(TextAlign.Center)
-                .width('100%')
-                .height(48)
-                .onClick(() => {
-                  this.isBlocked = !this.isBlocked;
-                })
             }
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
