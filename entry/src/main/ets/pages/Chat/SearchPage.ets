@@ -7,6 +7,10 @@ import { ChatService } from '../../services/ChatService';
 import { Message, MessageContentType } from '../../models/Message';
 import { User } from '../../models/User';
 import { Chat } from '../../models/Chat';
+import { SearchChatRow } from './components/SearchChatRow';
+import { SearchContactRow } from './components/SearchContactRow';
+import { SearchMessageRow } from './components/SearchMessageRow';
+import { SearchSectionHeader } from './components/SearchSectionHeader';
 
 @Builder
 export function SearchBuilder(name: string, param: Object) {
@@ -92,12 +96,17 @@ export struct SearchPage {
             // --- Contacts Section ---
             if (this.matchingContacts.length > 0) {
               ListItem() {
-                this.sectionHeader('Contacts')
+                SearchSectionHeader({ title: 'Contacts' })
               }
 
               ForEach(this.matchingContacts, (user: User) => {
                 ListItem() {
-                  this.contactRow(user)
+                  SearchContactRow({
+                    user: user,
+                    onOpen: (userId: number) => {
+                      this.openPrivateChat(userId);
+                    }
+                  })
                 }
               }, (user: User) => `contact_${user.id}`)
             }
@@ -105,12 +114,18 @@ export struct SearchPage {
             // --- Chats Section ---
             if (this.matchingChats.length > 0) {
               ListItem() {
-                this.sectionHeader('Chats')
+                SearchSectionHeader({ title: 'Chats' })
               }
 
               ForEach(this.matchingChats, (chat: Chat) => {
                 ListItem() {
-                  this.chatRow(chat)
+                  SearchChatRow({
+                    chat: chat,
+                    onOpen: (chatId: number) => {
+                      this.navPathStack.pop();
+                      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
+                    }
+                  })
                 }
               }, (chat: Chat) => `chat_${chat.id}`)
             }
@@ -118,12 +133,22 @@ export struct SearchPage {
             // --- Messages Section ---
             if (this.matchingMessages.length > 0) {
               ListItem() {
-                this.sectionHeader('Messages')
+                SearchSectionHeader({ title: 'Messages' })
               }
 
               ForEach(this.matchingMessages, (msg: Message) => {
                 ListItem() {
-                  this.messageRow(msg)
+                  SearchMessageRow({
+                    message: msg,
+                    senderLabel: msg.senderName,
+                    dateLabel: this.formatDate(msg.date),
+                    chatTitle: this.getChatTitle(msg.chatId),
+                    previewText: msg.text.length > 0 ? msg.text : this.contentTypeLabel(msg.contentType),
+                    onOpenChat: (chatId: number) => {
+                      this.navPathStack.pop();
+                      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
+                    }
+                  })
                 }
               }, (msg: Message) => `msg_${msg.id}_${msg.chatId}`)
             }
@@ -145,219 +170,6 @@ export struct SearchPage {
       .backgroundColor($r('app.color.background_primary'))
     }
     .hideTitleBar(true)
-  }
-
-  // ---- Section header ----
-
-  @Builder
-  sectionHeader(title: string) {
-    Row() {
-      Text(title)
-        .fontSize(14)
-        .fontWeight(FontWeight.Bold)
-        .fontColor($r('app.color.telegram_blue'))
-    }
-    .width('100%')
-    .height(36)
-    .padding({ left: 16, right: 16 })
-    .alignItems(VerticalAlign.Center)
-    .backgroundColor($r('app.color.background_secondary'))
-  }
-
-  // ---- Contact row ----
-
-  @Builder
-  contactRow(user: User) {
-    Row() {
-      Text(user.firstName.length > 0 ? user.firstName.charAt(0) : '?')
-        .fontSize(16)
-        .fontWeight(FontWeight.Medium)
-        .fontColor(Color.White)
-        .width(44)
-        .height(44)
-        .borderRadius(22)
-        .backgroundColor($r('app.color.sender_color_5'))
-        .textAlign(TextAlign.Center)
-        .margin({ right: 12 })
-
-      Column() {
-        Row() {
-          Text(`${user.firstName} ${user.lastName}`.trim())
-            .fontSize(15)
-            .fontWeight(FontWeight.Medium)
-            .fontColor($r('app.color.text_primary'))
-            .layoutWeight(1)
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-
-          if (user.isOnline) {
-            Circle()
-              .width(8)
-              .height(8)
-              .fill($r('app.color.online_indicator'))
-              .margin({ left: 6 })
-          }
-        }
-        .width('100%')
-
-        if (user.username.length > 0) {
-          Text(`@${user.username}`)
-            .fontSize(13)
-            .fontColor($r('app.color.text_secondary'))
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .margin({ top: 2 })
-        } else if (user.phoneNumber.length > 0) {
-          Text(`+${user.phoneNumber}`)
-            .fontSize(13)
-            .fontColor($r('app.color.text_secondary'))
-            .maxLines(1)
-            .margin({ top: 2 })
-        }
-      }
-      .layoutWeight(1)
-      .alignItems(HorizontalAlign.Start)
-    }
-    .width('100%')
-    .height(60)
-    .padding({ left: 16, right: 16 })
-    .onClick(() => {
-      this.openPrivateChat(user.id);
-    })
-  }
-
-  // ---- Chat row ----
-
-  @Builder
-  chatRow(chat: Chat) {
-    Row() {
-      Text(chat.title.length > 0 ? chat.title.charAt(0) : '?')
-        .fontSize(16)
-        .fontWeight(FontWeight.Medium)
-        .fontColor(Color.White)
-        .width(44)
-        .height(44)
-        .borderRadius(22)
-        .backgroundColor(chat.isGroup || chat.isChannel
-          ? $r('app.color.sender_color_7')
-          : $r('app.color.telegram_blue'))
-        .textAlign(TextAlign.Center)
-        .margin({ right: 12 })
-
-      Column() {
-        Row() {
-          if (chat.isChannel) {
-            Text('Channel')
-              .fontSize(11)
-              .fontColor($r('app.color.telegram_blue'))
-              .margin({ right: 4 })
-          } else if (chat.isGroup) {
-            Text('Group')
-              .fontSize(11)
-              .fontColor($r('app.color.sender_color_7'))
-              .margin({ right: 4 })
-          }
-
-          Text(chat.title)
-            .fontSize(15)
-            .fontWeight(FontWeight.Medium)
-            .fontColor($r('app.color.text_primary'))
-            .layoutWeight(1)
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-
-          if (chat.unreadCount > 0) {
-            Text(chat.unreadCount.toString())
-              .fontSize(11)
-              .fontColor(Color.White)
-              .backgroundColor(chat.isMuted
-                ? $r('app.color.text_secondary')
-                : $r('app.color.telegram_blue'))
-              .borderRadius(10)
-              .padding({ left: 6, right: 6, top: 2, bottom: 2 })
-              .textAlign(TextAlign.Center)
-              .margin({ left: 6 })
-          }
-        }
-        .width('100%')
-
-        if (chat.lastMessage.length > 0) {
-          Text(chat.lastMessage)
-            .fontSize(14)
-            .fontColor($r('app.color.text_secondary'))
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .margin({ top: 2 })
-        }
-      }
-      .layoutWeight(1)
-    }
-    .width('100%')
-    .height(68)
-    .padding({ left: 16, right: 16 })
-    .onClick(() => {
-      this.navPathStack.pop();
-      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chat.id));
-    })
-  }
-
-  // ---- Message row ----
-
-  @Builder
-  messageRow(msg: Message) {
-    Row() {
-      Text(msg.senderName.length > 0 ? msg.senderName.charAt(0) : '?')
-        .fontSize(16)
-        .fontWeight(FontWeight.Medium)
-        .fontColor(Color.White)
-        .width(44)
-        .height(44)
-        .borderRadius(22)
-        .backgroundColor($r('app.color.telegram_blue'))
-        .textAlign(TextAlign.Center)
-        .margin({ right: 12 })
-
-      Column() {
-        Row() {
-          Text(msg.senderName.length > 0 ? msg.senderName : 'Unknown')
-            .fontSize(15)
-            .fontWeight(FontWeight.Medium)
-            .fontColor($r('app.color.text_primary'))
-            .layoutWeight(1)
-            .maxLines(1)
-
-          Text(this.formatDate(msg.date))
-            .fontSize(12)
-            .fontColor($r('app.color.text_secondary'))
-        }
-        .width('100%')
-
-        // Show chat title for context when browsing messages
-        if (this.getChatTitle(msg.chatId).length > 0) {
-          Text(`in ${this.getChatTitle(msg.chatId)}`)
-            .fontSize(12)
-            .fontColor($r('app.color.telegram_blue'))
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .margin({ top: 1 })
-        }
-
-        Text(msg.text.length > 0 ? msg.text : this.contentTypeLabel(msg.contentType))
-          .fontSize(14)
-          .fontColor($r('app.color.text_secondary'))
-          .maxLines(2)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-          .margin({ top: 2 })
-      }
-      .layoutWeight(1)
-    }
-    .width('100%')
-    .height(76)
-    .padding({ left: 16, right: 16 })
-    .onClick(() => {
-      this.navPathStack.pop();
-      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', msg.chatId));
-    })
   }
 
   // ---- Search logic ----
