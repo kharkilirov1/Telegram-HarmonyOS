@@ -3,6 +3,10 @@
 
 import { ProxyService, ProxyInfo } from '../../services/ProxyService';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { ProxyAddButtonCard } from './components/ProxyAddButtonCard';
+import { ProxyListSection } from './components/ProxyListSection';
+import { ProxyTopBar } from './components/ProxyTopBar';
+import { ProxyUseToggleCard } from './components/ProxyUseToggleCard';
 
 const TAG = 'ProxySettingsPage';
 const DOMAIN = 0x0001;
@@ -22,7 +26,6 @@ export struct ProxySettingsPage {
   @Local showAddDialog: boolean = false;
   @Local editingProxy: ProxyInfo | null = null;
 
-  // Add/Edit form fields
   @Local formServer: string = '';
   @Local formPort: string = '';
   @Local formType: string = 'socks5';
@@ -41,12 +44,13 @@ export struct ProxySettingsPage {
     try {
       const parsed = await this.proxyService.getProxies();
       this.proxies = parsed;
+      this.useProxy = false;
       for (const proxy of parsed) {
         if (proxy.isEnabled) {
           this.useProxy = true;
         }
       }
-      // Ping all proxies to get latency
+
       for (let i = 0; i < this.proxies.length; i++) {
         this.pingProxy(i);
       }
@@ -89,11 +93,11 @@ export struct ProxySettingsPage {
         });
       }
       this.proxies = updated;
-    } else {
-      // Enable the first available proxy
-      if (this.proxies.length > 0) {
-        await this.enableProxy(0);
-      }
+      return;
+    }
+
+    if (this.proxies.length > 0) {
+      await this.enableProxy(0);
     }
   }
 
@@ -101,6 +105,7 @@ export struct ProxySettingsPage {
     const proxy = this.proxies[index];
     await this.proxyService.enableProxy(proxy.id);
     this.useProxy = true;
+
     const updated: ProxyInfo[] = [];
     for (let i = 0; i < this.proxies.length; i++) {
       const p = this.proxies[i];
@@ -123,7 +128,6 @@ export struct ProxySettingsPage {
     const updated = this.proxies.slice();
     updated.splice(index, 1);
     this.proxies = updated;
-    // If no proxies remain, disable proxy usage
     if (this.proxies.length === 0) {
       this.useProxy = false;
     }
@@ -158,12 +162,16 @@ export struct ProxySettingsPage {
     }
 
     if (this.editingProxy) {
-      // Remove old proxy then add updated one
       await this.proxyService.removeProxy(this.editingProxy.id);
     }
 
     const proxyType = ProxyService.buildProxyTypeParam(
-      this.formType, this.formUsername, this.formPassword, this.formSecret);
+      this.formType,
+      this.formUsername,
+      this.formPassword,
+      this.formSecret
+    );
+
     await this.proxyService.addProxy(this.formServer, portNum, true, proxyType);
 
     this.showAddDialog = false;
@@ -171,232 +179,43 @@ export struct ProxySettingsPage {
     await this.loadProxies();
   }
 
-  private getStatusColor(proxy: ProxyInfo): ResourceColor {
-    if (proxy.isEnabled && proxy.lastPingMs >= 0) {
-      return $r('app.color.settings_icon_green');
-    } else if (proxy.lastPingMs === -1) {
-      return $r('app.color.settings_icon_orange');
-    } else if (proxy.lastPingMs === -2) {
-      return $r('app.color.settings_icon_red');
-    } else if (proxy.lastPingMs >= 0) {
-      return $r('app.color.settings_icon_green');
-    }
-    return $r('app.color.text_secondary');
-  }
-
-  private getTypeLabel(type: string): Resource {
-    if (type === 'socks5') {
-      return $r('app.string.proxy_socks5');
-    } else if (type === 'http') {
-      return $r('app.string.proxy_http');
-    }
-    return $r('app.string.proxy_mtproto');
-  }
-
   build() {
     NavDestination() {
       Column() {
-        // Top bar
-        Row() {
-          Image($r('app.media.ic_back'))
-            .width(24).height(24)
-            .fillColor($r('app.color.telegram_blue'))
-            .accessibilityText($r('app.string.accessibility_back'))
-            .onClick(() => this.navPathStack.pop())
-
-          Text($r('app.string.proxy_settings'))
-            .fontSize(17)
-            .fontWeight(FontWeight.Bold)
-            .fontColor($r('app.color.text_primary'))
-            .margin({ left: 16 })
-        }
-        .width('100%')
-        .height(56)
-        .padding({ left: 8, right: 16 })
-        .backgroundColor($r('app.color.glass_nav_bg'))
-        .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
-          colorMode: ThemeColorMode.SYSTEM,
-          adaptiveColor: AdaptiveColor.DEFAULT,
-          scale: 1.0
+        ProxyTopBar({
+          onBack: () => {
+            this.navPathStack.pop();
+          }
         })
 
         Scroll() {
           Column() {
-            // --- Use Proxy toggle ---
-            Column() {
-              Row() {
-                Text($r('app.string.use_proxy'))
-                  .fontSize(16)
-                  .fontColor($r('app.color.text_primary'))
-                  .layoutWeight(1)
-
-                Toggle({ type: ToggleType.Switch, isOn: this.useProxy })
-                  .selectedColor($r('app.color.telegram_blue'))
-                  .accessibilityText($r('app.string.accessibility_toggle_proxy'))
-                  .onChange((isOn: boolean) => {
-                    this.toggleUseProxy(isOn);
-                  })
+            ProxyUseToggleCard({
+              useProxy: this.useProxy,
+              onToggle: (isOn: boolean) => {
+                this.toggleUseProxy(isOn);
               }
-              .width('100%').height(48)
-              .padding({ left: 16, right: 16 })
-            }
-            .width('100%')
-            .backgroundColor($r('app.color.glass_card_bg'))
-            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
-            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16, top: 16 })
+            })
 
             Blank().height(24)
 
-            // --- Proxy list section ---
-            this.sectionHeader($r('app.string.proxy_settings'))
-
-            if (this.proxies.length === 0 && !this.isLoading) {
-              // Empty state
-              Column() {
-                Text($r('app.string.no_proxies'))
-                  .fontSize(15)
-                  .fontColor($r('app.color.text_secondary'))
-                  .textAlign(TextAlign.Center)
-                  .width('100%')
-                  .padding({ top: 24, bottom: 24 })
+            ProxyListSection({
+              proxies: this.proxies,
+              isLoading: this.isLoading,
+              onEnableProxy: (index: number) => {
+                this.enableProxy(index);
+              },
+              onShowProxyActions: (proxy: ProxyInfo, index: number) => {
+                this.showProxyActions(proxy, index);
               }
-              .width('100%')
-              .backgroundColor($r('app.color.glass_card_bg'))
-              .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-              .borderRadius(16)
-              .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-              .margin({ left: 16, right: 16 })
-            } else {
-              // Proxy list
-              Column() {
-                ForEach(this.proxies, (proxy: ProxyInfo, index: number) => {
-                  if (index > 0) {
-                    Divider()
-                      .strokeWidth(0.5)
-                      .color($r('app.color.separator'))
-                      .margin({ left: 16 })
-                  }
-
-                  Row() {
-
-                    // Status indicator dot
-                    Circle()
-                      .width(10).height(10)
-                      .fill(this.getStatusColor(proxy))
-                      .margin({ right: 12 })
-
-                    // Proxy info
-                    Column() {
-                      Text(`${proxy.server}:${proxy.port}`)
-                        .fontSize(16)
-                        .fontColor($r('app.color.text_primary'))
-                        .maxLines(1)
-                        .textOverflow({ overflow: TextOverflow.Ellipsis })
-
-                      Row() {
-                        Text(this.getTypeLabel(proxy.type))
-                          .fontSize(13)
-                          .fontColor($r('app.color.text_secondary'))
-
-                        if (proxy.isEnabled) {
-                          Text(' \u2022 ')
-                            .fontSize(13)
-                            .fontColor($r('app.color.text_secondary'))
-                          Text($r('app.string.proxy_connected'))
-                            .fontSize(13)
-                            .fontColor($r('app.color.settings_icon_green'))
-                        }
-
-                        if (proxy.lastPingMs >= 0) {
-                          Text(' \u2022 ')
-                            .fontSize(13)
-                            .fontColor($r('app.color.text_secondary'))
-                          Text(`${proxy.lastPingMs}`)
-                            .fontSize(13)
-                            .fontColor($r('app.color.text_secondary'))
-                          Text($r('app.string.proxy_ping_ms'))
-                            .fontSize(13)
-                            .fontColor($r('app.color.text_secondary'))
-                        } else if (proxy.lastPingMs === -1) {
-                          Text(' \u2022 ')
-                            .fontSize(13)
-                            .fontColor($r('app.color.text_secondary'))
-                          Text($r('app.string.proxy_checking'))
-                            .fontSize(13)
-                            .fontColor($r('app.color.settings_icon_orange'))
-                        } else if (proxy.lastPingMs === -2) {
-                          Text(' \u2022 ')
-                            .fontSize(13)
-                            .fontColor($r('app.color.text_secondary'))
-                          Text($r('app.string.proxy_unavailable'))
-                            .fontSize(13)
-                            .fontColor($r('app.color.settings_icon_red'))
-                        }
-                      }
-                      .margin({ top: 2 })
-                    }
-                    .alignItems(HorizontalAlign.Start)
-                    .layoutWeight(1)
-
-                    // Radio selection indicator
-                    Radio({ value: proxy.id.toString(), group: 'proxyGroup' })
-                      .checked(proxy.isEnabled)
-                      .onChange((isChecked: boolean) => {
-                        if (isChecked) {
-                          this.enableProxy(index);
-                        }
-                      })
-                  }
-                  .width('100%')
-                  .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-                  .gesture(
-                    LongPressGesture()
-                      .onAction(() => {
-                        this.showProxyActions(proxy, index);
-                      })
-                  )
-                  .onClick(() => {
-                    this.enableProxy(index);
-                  })
-                  .accessibilityText(`${proxy.server}:${proxy.port}`)
-                }, (proxy: ProxyInfo) => proxy.id.toString())
-              }
-              .width('100%')
-              .backgroundColor($r('app.color.glass_card_bg'))
-              .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-              .borderRadius(16)
-              .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-              .margin({ left: 16, right: 16 })
-            }
+            })
 
             Blank().height(24)
 
-            // --- Add Proxy button ---
-            Column() {
-              Row() {
-                Text('+')
-                  .fontSize(20)
-                  .fontColor($r('app.color.telegram_blue'))
-                  .margin({ right: 8 })
-
-                Text($r('app.string.add_proxy'))
-                  .fontSize(16)
-                  .fontColor($r('app.color.telegram_blue'))
+            ProxyAddButtonCard({
+              onAdd: () => {
+                this.openAddDialog();
               }
-              .width('100%').height(48)
-              .justifyContent(FlexAlign.Center)
-            }
-            .width('100%')
-            .backgroundColor($r('app.color.glass_card_bg'))
-            .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
-            .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
-            .accessibilityText($r('app.string.accessibility_add_proxy'))
-            .onClick(() => {
-              this.openAddDialog();
             })
 
             Blank().height(40)
@@ -411,7 +230,6 @@ export struct ProxySettingsPage {
       .height('100%')
       .backgroundColor($r('app.color.background_secondary'))
 
-      // Add/Edit proxy dialog overlay
       if (this.showAddDialog) {
         this.addProxyDialog()
       }
@@ -420,17 +238,8 @@ export struct ProxySettingsPage {
   }
 
   @Builder
-  sectionHeader(title: Resource) {
-    Text(title)
-      .fontSize(13)
-      .fontColor($r('app.color.text_secondary'))
-      .margin({ left: 32, bottom: 6, top: 2 })
-  }
-
-  @Builder
   addProxyDialog() {
     Column() {
-      // Semi-transparent backdrop
       Column()
         .width('100%')
         .height('100%')
@@ -444,16 +253,13 @@ export struct ProxySettingsPage {
     .position({ x: 0, y: 0 })
     .justifyContent(FlexAlign.Center)
 
-    // Dialog card
     Column() {
-      // Dialog title
       Text(this.editingProxy ? $r('app.string.edit_proxy') : $r('app.string.add_proxy'))
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
         .fontColor($r('app.color.text_primary'))
         .margin({ bottom: 20 })
 
-      // Server address
       Text($r('app.string.proxy_server'))
         .fontSize(13)
         .fontColor($r('app.color.text_secondary'))
@@ -473,7 +279,6 @@ export struct ProxySettingsPage {
 
       Blank().height(12)
 
-      // Port
       Text($r('app.string.proxy_port'))
         .fontSize(13)
         .fontColor($r('app.color.text_secondary'))
@@ -494,7 +299,6 @@ export struct ProxySettingsPage {
 
       Blank().height(12)
 
-      // Proxy type selector
       Text($r('app.string.proxy_type'))
         .fontSize(13)
         .fontColor($r('app.color.text_secondary'))
@@ -511,7 +315,6 @@ export struct ProxySettingsPage {
 
       Blank().height(12)
 
-      // Credentials fields (SOCKS5 / HTTP only)
       if (this.formType === 'socks5' || this.formType === 'http') {
         Text($r('app.string.proxy_username'))
           .fontSize(13)
@@ -551,7 +354,6 @@ export struct ProxySettingsPage {
           })
       }
 
-      // Secret field (MTProto only)
       if (this.formType === 'mtproto') {
         Text($r('app.string.proxy_secret'))
           .fontSize(13)
@@ -573,9 +375,7 @@ export struct ProxySettingsPage {
 
       Blank().height(20)
 
-      // Action buttons
       Row() {
-        // Cancel
         Text($r('app.string.delete_proxy'))
           .fontSize(16)
           .fontColor($r('app.color.text_secondary'))
@@ -587,7 +387,6 @@ export struct ProxySettingsPage {
 
         Blank()
 
-        // Save
         Button($r('app.string.save'))
           .type(ButtonType.Capsule)
           .fontSize(16)
