@@ -3,6 +3,39 @@ import { NotificationCenter, EventId } from './NotificationCenter';
 import { NotificationService } from '../services/NotificationService';
 import { Chat } from '../models/Chat';
 import { Message, MessageContentType, MessageReaction } from '../models/Message';
+import {
+  TdChatPhoto,
+  TdMessageInteractionInfo,
+  TdMessageReactionInfo,
+  TdUser,
+  parseUpdateChatAction,
+  parseUpdateChatLastMessage,
+  parseUpdateChatNotificationSettings,
+  parseUpdateChatPhoto,
+  parseUpdateChatPosition,
+  parseUpdateChatReadInbox,
+  parseUpdateChatTitle,
+  parseUpdateDeleteMessages,
+  parseUpdateMessageContent,
+  parseUpdateMessageInteractionInfo,
+  parseUpdateNewChat,
+  parseUpdateNewMessage,
+  parseUpdateUser,
+  parseUpdateUserStatus
+} from './messages/TdUpdateParser';
+import {
+  applyContent as parseTdMessageContent,
+  extractTextPreview as parseTdPreview,
+  parseChat as parseTdChat,
+  parseMessage as parseTdMessage,
+  updateChatPositions as parseTdUpdateChatPositions
+} from './TdMessageParser';
+import {
+  TdChat as TdModelChat,
+  TdChatPosition as TdModelChatPosition,
+  TdMessage as TdModelMessage,
+  TdMessageContent as TdModelMessageContent
+} from '../models/TdTypes';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const TAG = 'MessagesController';
@@ -145,11 +178,6 @@ interface TdNotificationSettings {
   mute_for?: number;
 }
 
-interface TdChatPhoto {
-  small?: TdFile;
-  big?: TdFile;
-}
-
 interface TdChatAction {
   // empty - identified by @type
 }
@@ -180,104 +208,9 @@ interface TdChat {
   type?: TdChatType;
 }
 
-// --- TDLib update interfaces ---
-interface TdUpdateNewChat {
-  chat?: TdChat;
-}
-
-interface TdUpdateChatLastMessage {
-  chat_id?: number;
-  last_message?: TdMessage;
-  positions?: TdChatPosition[];
-}
-
-interface TdUpdateChatPosition {
-  chat_id?: number;
-  position?: TdChatPosition;
-}
-
-interface TdUpdateChatTitle {
-  chat_id?: number;
-  title?: string;
-}
-
-interface TdUpdateChatPhoto {
-  chat_id?: number;
-  photo?: TdChatPhoto;
-}
-
-interface TdUpdateDeleteMessages {
-  chat_id?: number;
-  message_ids?: number[];
-}
-
-interface TdUpdateNewMessage {
-  message?: TdMessage;
-}
-
-interface TdUpdateMessageContent {
-  chat_id?: number;
-  message_id?: number;
-  new_content?: TdMessageContent;
-}
-
-interface TdUpdateChatReadInbox {
-  chat_id?: number;
-  unread_count?: number;
-}
-
-interface TdUpdateChatNotificationSettings {
-  chat_id?: number;
-  notification_settings?: TdNotificationSettings;
-}
-
-interface TdUpdateChatAction {
-  chat_id?: number;
-  action?: TdChatAction;
-}
-
 interface ChatActionState {
   isActive: boolean;
   description: string;
-}
-
-interface TdUsernames {
-  editable_username?: string;
-  active_usernames?: string[];
-}
-
-interface TdUser {
-  id?: number;
-  first_name?: string;
-  last_name?: string;
-  username?: string;
-  usernames?: TdUsernames;
-  status?: Record<string, Object>;
-}
-
-interface TdUpdateUser {
-  user?: TdUser;
-}
-
-interface TdUpdateUserStatus {
-  user_id?: number;
-  status?: Record<string, Object>;
-}
-
-interface TdMessageReactionInfo {
-  reaction?: Record<string, Object>;
-  total_count?: number;
-  is_chosen?: boolean;
-}
-
-interface TdMessageInteractionInfo {
-  reactions?: TdMessageReactionInfo[];
-}
-
-interface TdUpdateMessageInteractionInfo {
-  chat_id?: number;
-  message_id?: number;
-  interaction_info?: TdMessageInteractionInfo;
 }
 
 interface CachedUser {
@@ -690,9 +623,9 @@ export class MessagesController {
     const client = TDLibClient.getInstance();
 
     client.on('updateNewChat', (update: Record<string, Object>) => {
-      const data: TdUpdateNewChat = update as TdUpdateNewChat;
-      const rawChat: TdChat | undefined = data.chat;
-      if (!rawChat) return;
+      const parsed = parseUpdateNewChat(update);
+      if (!parsed) return;
+      const rawChat = parsed.chat as TdChat;
 
       const chat = this.parseChat(rawChat);
       this.chatsById.set(chat.id, chat);
@@ -703,12 +636,13 @@ export class MessagesController {
     });
 
     client.on('updateChatLastMessage', (update: Record<string, Object>) => {
-      const data: TdUpdateChatLastMessage = update as TdUpdateChatLastMessage;
-      const chatId: number = data.chat_id || 0;
+      const parsed = parseUpdateChatLastMessage(update);
+      if (!parsed) return;
+      const chatId: number = parsed.chatId;
       const chat = this.chatsById.get(chatId);
       if (!chat) return;
 
-      const rawMsg: TdMessage | undefined = data.last_message;
+      const rawMsg = parsed.lastMessage as TdMessage | undefined;
       if (rawMsg) {
         chat.lastMessage = this.extractTextPreview(rawMsg);
         chat.lastMessageDate = rawMsg.date || 0;
@@ -725,7 +659,7 @@ export class MessagesController {
       }
 
       // Update positions if provided
-      const positions: TdChatPosition[] | undefined = data.positions;
+      const positions = parsed.positions;
       if (positions) {
         this.updateChatPositions(chat, positions);
       }
@@ -735,26 +669,25 @@ export class MessagesController {
     });
 
     client.on('updateChatPosition', (update: Record<string, Object>) => {
-      const data: TdUpdateChatPosition = update as TdUpdateChatPosition;
-      const chatId: number = data.chat_id || 0;
+      const parsed = parseUpdateChatPosition(update);
+      if (!parsed) return;
+      const chatId: number = parsed.chatId;
       const chat = this.chatsById.get(chatId);
       if (!chat) return;
 
-      const position: TdChatPosition | undefined = data.position;
-      if (position) {
-        this.updateChatPositions(chat, [position]);
-        this.sortDialogs();
-        NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
-      }
+      this.updateChatPositions(chat, [parsed.position]);
+      this.sortDialogs();
+      NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
     });
 
     client.on('updateChatTitle', (update: Record<string, Object>) => {
-      const data: TdUpdateChatTitle = update as TdUpdateChatTitle;
-      const chatId: number = data.chat_id || 0;
+      const parsed = parseUpdateChatTitle(update);
+      if (!parsed) return;
+      const chatId: number = parsed.chatId;
       const chat = this.chatsById.get(chatId);
       if (!chat) return;
 
-      const title: string = data.title || '';
+      const title: string = parsed.title;
       if (title.length === 0 || chat.title === title) return;
 
       chat.title = title;
@@ -762,13 +695,14 @@ export class MessagesController {
     });
 
     client.on('updateChatPhoto', (update: Record<string, Object>) => {
-      const data: TdUpdateChatPhoto = update as TdUpdateChatPhoto;
-      const chatId: number = data.chat_id || 0;
+      const parsed = parseUpdateChatPhoto(update);
+      if (!parsed) return;
+      const chatId: number = parsed.chatId;
       const chat = this.chatsById.get(chatId);
       if (!chat) return;
 
-      const photo: TdChatPhoto | undefined = data.photo;
-      const small: TdFile | undefined = photo?.small;
+      const photo = parsed.photo as TdChatPhoto | undefined;
+      const small = photo?.small as TdFile | undefined;
       if (!small) {
         chat.photo = null;
         chat.photoFileId = 0;
@@ -784,9 +718,9 @@ export class MessagesController {
     });
 
     client.on('updateUser', (update: Record<string, Object>) => {
-      const data: TdUpdateUser = update as TdUpdateUser;
-      const rawUser: TdUser | undefined = data.user;
-      if (!rawUser) return;
+      const parsed = parseUpdateUser(update);
+      if (!parsed) return;
+      const rawUser = parsed.user;
 
       const userId: number = this.upsertUser(rawUser);
       if (userId === 0) return;
@@ -798,10 +732,10 @@ export class MessagesController {
     });
 
     client.on('updateUserStatus', (update: Record<string, Object>) => {
-      const data: TdUpdateUserStatus = update as TdUpdateUserStatus;
-      const userId: number = data.user_id || 0;
-      const status: Record<string, Object> | undefined = data.status;
-      if (userId === 0 || !status) return;
+      const parsed = parseUpdateUserStatus(update);
+      if (!parsed) return;
+      const userId: number = parsed.userId;
+      const status: Record<string, Object> = parsed.status;
 
       this.applyUserStatus(userId, status);
 
@@ -812,9 +746,9 @@ export class MessagesController {
     });
 
     client.on('updateNewMessage', (update: Record<string, Object>) => {
-      const data: TdUpdateNewMessage = update as TdUpdateNewMessage;
-      const rawMsg: TdMessage | undefined = data.message;
-      if (!rawMsg) return;
+      const parsed = parseUpdateNewMessage(update);
+      if (!parsed) return;
+      const rawMsg = parsed.message as TdMessage;
 
       const msg = this.parseMessage(rawMsg);
       const chatMessages = this.messagesByChat.get(msg.chatId) || [];
@@ -846,13 +780,14 @@ export class MessagesController {
     });
 
     client.on('updateMessageContent', (update: Record<string, Object>) => {
-      const data: TdUpdateMessageContent = update as TdUpdateMessageContent;
-      const chatId: number = data.chat_id || 0;
-      const messageId: number = data.message_id || 0;
-      const newContent: TdMessageContent | undefined = data.new_content;
+      const parsed = parseUpdateMessageContent(update);
+      if (!parsed) return;
+      const chatId: number = parsed.chatId;
+      const messageId: number = parsed.messageId;
+      const newContent = parsed.newContent as TdMessageContent;
 
       const messages = this.messagesByChat.get(chatId);
-      if (messages && newContent) {
+      if (messages) {
         const msg = messages.find((m: Message): boolean => m.id === messageId);
         if (msg) {
           this.applyContent(msg, newContent);
@@ -865,11 +800,11 @@ export class MessagesController {
     });
 
     client.on('updateMessageInteractionInfo', (update: Record<string, Object>) => {
-      const data: TdUpdateMessageInteractionInfo = update as TdUpdateMessageInteractionInfo;
-      const chatId: number = data.chat_id || 0;
-      const messageId: number = data.message_id || 0;
-      const info: TdMessageInteractionInfo | undefined = data.interaction_info;
-      if (chatId === 0 || messageId === 0 || !info) return;
+      const parsed = parseUpdateMessageInteractionInfo(update);
+      if (!parsed) return;
+      const chatId: number = parsed.chatId;
+      const messageId: number = parsed.messageId;
+      const info = parsed.interactionInfo;
 
       const messages = this.messagesByChat.get(chatId);
       if (!messages) return;
@@ -886,10 +821,10 @@ export class MessagesController {
     });
 
     client.on('updateDeleteMessages', (update: Record<string, Object>) => {
-      const data: TdUpdateDeleteMessages = update as TdUpdateDeleteMessages;
-      const chatId: number = data.chat_id || 0;
-      const deletedIds: number[] | undefined = data.message_ids;
-      if (chatId === 0 || !deletedIds || deletedIds.length === 0) return;
+      const parsed = parseUpdateDeleteMessages(update);
+      if (!parsed) return;
+      const chatId: number = parsed.chatId;
+      const deletedIds = parsed.messageIds;
 
       const messages = this.messagesByChat.get(chatId);
       if (messages) {
@@ -909,9 +844,10 @@ export class MessagesController {
     });
 
     client.on('updateChatReadInbox', (update: Record<string, Object>) => {
-      const data: TdUpdateChatReadInbox = update as TdUpdateChatReadInbox;
-      const chatId: number = data.chat_id || 0;
-      const unreadCount: number = data.unread_count || 0;
+      const parsed = parseUpdateChatReadInbox(update);
+      if (!parsed) return;
+      const chatId: number = parsed.chatId;
+      const unreadCount: number = parsed.unreadCount;
       const chat = this.chatsById.get(chatId);
       if (chat) {
         chat.unreadCount = unreadCount;
@@ -920,11 +856,12 @@ export class MessagesController {
     });
 
     client.on('updateChatNotificationSettings', (update: Record<string, Object>) => {
-      const data: TdUpdateChatNotificationSettings = update as TdUpdateChatNotificationSettings;
-      const chatId: number = data.chat_id || 0;
-      const settings: TdNotificationSettings | undefined = data.notification_settings;
+      const parsed = parseUpdateChatNotificationSettings(update);
+      if (!parsed) return;
+      const chatId: number = parsed.chatId;
+      const settings = parsed.settings;
       const chat = this.chatsById.get(chatId);
-      if (chat && settings) {
+      if (chat) {
         const muteFor: number = settings.mute_for || 0;
         chat.isMuted = muteFor > 0;
         NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
@@ -932,12 +869,13 @@ export class MessagesController {
     });
 
     client.on('updateChatAction', (update: Record<string, Object>) => {
-      const data: TdUpdateChatAction = update as TdUpdateChatAction;
-      const chatId: number = data.chat_id || 0;
-      const action: TdChatAction | undefined = data.action;
+      const parsed = parseUpdateChatAction(update);
+      if (!parsed) return;
+      const chatId: number = parsed.chatId;
+      const action = parsed.action;
       const chat = this.chatsById.get(chatId);
 
-      if (chat && action) {
+      if (chat) {
         const actionType: string = tdType(action as Record<string, Object>);
         const chatActionState: ChatActionState = this.mapChatActionState(actionType);
         if (chatActionState.isActive) {
@@ -984,7 +922,7 @@ export class MessagesController {
     if (userId === 0) return 0;
 
     const existing: CachedUser | undefined = this.usersById.get(userId);
-    const usernames: TdUsernames | undefined = rawUser.usernames;
+    const usernames = rawUser.usernames;
 
     let username: string = rawUser.username || '';
     if (username.length === 0 && usernames) {
@@ -1210,21 +1148,8 @@ export class MessagesController {
   // --- Parsing helpers ---
 
   private parseChat(raw: TdChat): Chat {
+    const chat: Chat = parseTdChat(raw as TdModelChat);
     const lastMsg: TdMessage | undefined = raw.last_message;
-    const positions: TdChatPosition[] | undefined = raw.positions;
-    const notifSettings: TdNotificationSettings | undefined = raw.notification_settings;
-
-    const chat = new Chat(
-      raw.id || 0,
-      raw.title || '',
-      lastMsg ? this.extractTextPreview(lastMsg) : '',
-      lastMsg ? (lastMsg.date || 0) : 0,
-      raw.unread_count || 0,
-      null,
-      false,
-      false,
-      false
-    );
 
     if (lastMsg) {
       const sender: TdMessageSender | undefined = lastMsg.sender_id;
@@ -1266,32 +1191,15 @@ export class MessagesController {
       }
     }
 
-    // Mute status
-    if (notifSettings) {
-      const muteFor: number = notifSettings.mute_for || 0;
-      chat.isMuted = muteFor > 0;
-    }
-
-    // Positions / pinned / order
-    if (positions) {
-      this.updateChatPositions(chat, positions);
-    }
-
     return chat;
   }
 
   private updateChatPositions(chat: Chat, positions: TdChatPosition[]): void {
-    for (const pos of positions) {
-      const list: Record<string, Object> | undefined = pos.list;
-      if (list && tdType(list) === 'chatListMain') {
-        chat.order = pos.order || '0';
-        chat.isPinned = pos.is_pinned || false;
-      }
-    }
+    parseTdUpdateChatPositions(chat, positions as TdModelChatPosition[]);
   }
 
   parseMessage(raw: TdMessage): Message {
-    const content: TdMessageContent | undefined = raw.content;
+    const msg: Message = parseTdMessage(raw as TdModelMessage);
     const sender: TdMessageSender | undefined = raw.sender_id;
     const senderUserId: number = sender?.user_id || 0;
     let senderName: string = senderUserId > 0 ? this.getUserDisplayName(senderUserId) : '';
@@ -1306,414 +1214,18 @@ export class MessagesController {
       this.loadUserIfMissing(senderUserId);
     }
 
-    const msg = new Message(
-      raw.id || 0,
-      raw.chat_id || 0,
-      senderUserId,
-      senderName,
-      '',
-      raw.date || 0,
-      raw.is_outgoing || false,
-      false,
-      0,
-      MessageContentType.TEXT,
-      null,
-      null
-    );
-
-    // Reply
-    const replyTo: TdReplyTo | undefined = raw.reply_to;
-    if (replyTo && tdType(replyTo as Record<string, Object>) === 'messageReplyToMessage') {
-      msg.replyToMessageId = replyTo.message_id || 0;
-    }
-
-    // Forward
-    const forwardInfo: TdForwardInfo | undefined = raw.forward_info;
-    if (forwardInfo) {
-      const origin: TdMessageOrigin | undefined = forwardInfo.origin;
-      if (origin) {
-        msg.forwardedFrom = origin.sender_name || '';
-      }
-    }
-
-    // Media album grouping
-    const albumId: string | undefined = raw.media_album_id;
-    if (albumId && albumId !== '0') {
-      msg.mediaAlbumId = albumId;
-    }
-
-    // Scheduling state
-    const scheduling: TdSchedulingState | undefined = raw.scheduling_state;
-    if (scheduling) {
-      const schedType: string = tdType(scheduling as Record<string, Object>);
-      if (schedType === 'messageSchedulingStateSendAtDate') {
-        msg.schedulingState = scheduling.send_date || 0;
-      }
-    }
-
-    // Self-destruct
-    const selfDestruct: TdSelfDestructType | undefined = raw.self_destruct_type;
-    if (selfDestruct) {
-      msg.selfDestructIn = selfDestruct.self_destruct_time || 0;
-      const sdType: string = tdType(selfDestruct as Record<string, Object>);
-      if (sdType === 'messageSelfDestructTypeImmediately') {
-        msg.isViewOnce = true;
-      }
-    }
-
-    // Spoiler + content
-    if (content) {
-      if (content.has_spoiler === true) {
-        msg.hasSpoiler = true;
-      }
-      this.applyContent(msg, content);
-    }
+    msg.senderId = senderUserId;
+    msg.senderName = senderName;
 
     return msg;
   }
 
   private applyContent(msg: Message, content: TdMessageContent): void {
-    const type: string = tdType(content as Record<string, Object>);
-
-    switch (type) {
-      case 'messageText': {
-        msg.contentType = MessageContentType.TEXT;
-        const textObj: TdFormattedText | undefined = content.text;
-        msg.text = textObj?.text || '';
-        break;
-      }
-      case 'messagePhoto': {
-        msg.contentType = MessageContentType.PHOTO;
-        const caption: TdFormattedText | undefined = content.caption;
-        msg.text = caption?.text || '';
-        break;
-      }
-      case 'messageVideo': {
-        msg.contentType = MessageContentType.VIDEO;
-        const video: TdVideo | undefined = content.video;
-        msg.videoDuration = video?.duration || 0;
-        const caption2: TdFormattedText | undefined = content.caption;
-        msg.text = caption2?.text || '';
-        break;
-      }
-      case 'messageDocument': {
-        msg.contentType = MessageContentType.DOCUMENT;
-        const doc: TdDocument | undefined = content.document;
-        msg.fileName = doc?.file_name || 'Document';
-        const caption3: TdFormattedText | undefined = content.caption;
-        msg.text = caption3?.text || '';
-        break;
-      }
-      case 'messageVoiceNote': {
-        msg.contentType = MessageContentType.VOICE;
-        const voice: TdVoiceNote | undefined = content.voice_note;
-        msg.voiceDuration = voice?.duration || 0;
-        const waveform: string | undefined = voice?.waveform;
-        if (waveform) {
-          msg.voiceWaveform = this.decodeWaveform(waveform);
-        }
-        break;
-      }
-      case 'messageSticker': {
-        msg.contentType = MessageContentType.STICKER;
-        const sticker: TdSticker | undefined = content.sticker;
-        msg.text = sticker?.emoji || '';
-        break;
-      }
-      case 'messageAnimation': {
-        msg.contentType = MessageContentType.ANIMATION;
-        msg.text = 'GIF';
-        break;
-      }
-      case 'messageVideoNote': {
-        msg.contentType = MessageContentType.VIDEO_NOTE;
-        const videoNote: TdVideoNote | undefined = content.video_note;
-        msg.videoNoteDuration = videoNote?.duration || 0;
-        msg.videoNoteLength = videoNote?.length || 240;
-        const vnFile: TdFile | undefined = videoNote?.video;
-        if (vnFile) {
-          msg.videoNoteFileId = vnFile.id || 0;
-        }
-        break;
-      }
-      case 'messagePoll': {
-        msg.contentType = MessageContentType.POLL;
-        const poll: TdPoll | undefined = content.poll;
-        if (poll) {
-          msg.pollId = poll.id || '';
-          msg.pollQuestion = poll.question?.text || '';
-          msg.pollTotalVoterCount = poll.total_voter_count || 0;
-          msg.pollIsClosed = poll.is_closed || false;
-          msg.pollIsAnonymous = poll.is_anonymous !== false;
-
-          const pt: TdPollType | undefined = poll.type;
-          msg.pollType = (pt ? tdType(pt as Record<string, Object>) : '') === 'pollTypeQuiz' ? 'quiz' : 'regular';
-
-          const opts: TdPollOption[] | undefined = poll.options;
-          if (opts) {
-            msg.pollOptions = opts.map((opt: TdPollOption): PollOptionDisplay => {
-              const displayOpt: PollOptionDisplay = {
-                text: opt.text?.text || '',
-                voterCount: opt.voter_count || 0,
-                votePercentage: opt.vote_percentage || 0,
-                isChosen: opt.is_chosen || false
-              };
-              return displayOpt;
-            });
-          }
-        }
-        break;
-      }
-      default: {
-        const knownText: string | undefined = this.buildKnownContentText(type, content);
-        if (knownText !== undefined) {
-          msg.contentType = MessageContentType.TEXT;
-          msg.text = knownText;
-          break;
-        }
-        msg.contentType = MessageContentType.UNSUPPORTED;
-        msg.text = `[${type.replace('message', '')}]`;
-        break;
-      }
-    }
+    parseTdMessageContent(msg, content as TdModelMessageContent);
   }
 
   private extractTextPreview(rawMsg: TdMessage): string {
-    const content: TdMessageContent | undefined = rawMsg.content;
-    if (!content) return '';
-
-    const type: string = tdType(content as Record<string, Object>);
-    switch (type) {
-      case 'messageText': {
-        return content.text?.text || '';
-      }
-      case 'messagePhoto': return 'Photo';
-      case 'messageVideo': return 'Video';
-      case 'messageDocument': {
-        return content.document?.file_name || 'Document';
-      }
-      case 'messageVoiceNote': return 'Voice message';
-      case 'messageSticker': {
-        return `${content.sticker?.emoji || ''} Sticker`;
-      }
-      case 'messageAnimation': return 'GIF';
-      case 'messageVideoNote': return 'Video message';
-      case 'messagePoll': {
-        const question: string = content.poll?.question?.text || '';
-        return `📊 ${question}`;
-      }
-      default: {
-        const knownText: string | undefined = this.buildKnownContentText(type, content);
-        if (knownText !== undefined) {
-          return knownText;
-        }
-        return type.replace('message', '');
-      }
-    }
-  }
-
-  private buildKnownContentText(type: string, content: TdMessageContent): string | undefined {
-    const payload: Record<string, Object> = content as Record<string, Object>;
-    switch (type) {
-      case 'messageContact': {
-        const contact: Record<string, Object> | undefined = this.toRecord(payload['contact']);
-        const firstName: string = safeString(contact?.['first_name']);
-        const lastName: string = safeString(contact?.['last_name']);
-        const phone: string = safeString(contact?.['phone_number']);
-        const fullName: string = `${firstName} ${lastName}`.trim();
-        if (fullName.length > 0 && phone.length > 0) return `👤 ${fullName} (${phone})`;
-        if (fullName.length > 0) return `👤 ${fullName}`;
-        if (phone.length > 0) return `👤 ${phone}`;
-        return '👤 Contact';
-      }
-      case 'messageLocation': {
-        const location: Record<string, Object> | undefined = this.toRecord(payload['location']);
-        const latitude: number = safeNumber(location?.['latitude']);
-        const longitude: number = safeNumber(location?.['longitude']);
-        if (latitude !== 0 || longitude !== 0) {
-          return `📍 ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-        }
-        return '📍 Location';
-      }
-      case 'messageLiveLocation': {
-        const location: Record<string, Object> | undefined = this.toRecord(payload['location']);
-        const latitude: number = safeNumber(location?.['latitude']);
-        const longitude: number = safeNumber(location?.['longitude']);
-        if (latitude !== 0 || longitude !== 0) {
-          return `📡 Live location ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-        }
-        return '📡 Live location';
-      }
-      case 'messageVenue': {
-        const venue: Record<string, Object> | undefined = this.toRecord(payload['venue']);
-        const title: string = safeString(venue?.['title']);
-        const address: string = safeString(venue?.['address']);
-        if (title.length > 0 && address.length > 0) return `📍 ${title} - ${address}`;
-        if (title.length > 0) return `📍 ${title}`;
-        return '📍 Venue';
-      }
-      case 'messageGame': {
-        const game: Record<string, Object> | undefined = this.toRecord(payload['game']);
-        const title: string = safeString(game?.['title']);
-        return title.length > 0 ? `🎮 ${title}` : '🎮 Game';
-      }
-      case 'messageInvoice': {
-        const invoice: Record<string, Object> | undefined = this.toRecord(payload['invoice']);
-        const title: string = safeString(invoice?.['title']);
-        return title.length > 0 ? `💳 ${title}` : '💳 Invoice';
-      }
-      case 'messageCall': {
-        return this.buildCallText(payload);
-      }
-      case 'messageDice': {
-        const dice: Record<string, Object> | undefined = this.toRecord(payload['dice']);
-        const emoji: string = safeString(dice?.['emoji']) || '🎲';
-        const value: number = safeNumber(dice?.['value']);
-        return value > 0 ? `${emoji} ${value}` : `${emoji} Dice`;
-      }
-      case 'messageProximityAlertTriggered': {
-        const distance: number = safeNumber(payload['distance']);
-        return distance > 0 ? `⚠️ Proximity alert (${distance} m)` : '⚠️ Proximity alert';
-      }
-      case 'messageScreenshotTaken': return '📷 Screenshot taken';
-      case 'messageChatSetTtl': {
-        const ttl: number = safeNumber(payload['ttl']);
-        return ttl > 0 ? `🔒 Messages auto-delete in ${this.formatDuration(ttl)}` : '🔒 Auto-delete timer changed';
-      }
-      case 'messageChatChangeTitle': {
-        const title: string = safeString(payload['title']);
-        return title.length > 0 ? `✏️ Chat title changed to "${title}"` : '✏️ Chat title changed';
-      }
-      case 'messageChatChangePhoto': return '🖼️ Chat photo changed';
-      case 'messageChatDeletePhoto': return '🗑️ Chat photo removed';
-      case 'messageChatAddMembers': {
-        const membersValue: Object | undefined = payload['member_user_ids'];
-        if (Array.isArray(membersValue)) {
-          const count: number = membersValue.length;
-          if (count > 0) return `👥 Added ${count} member${count > 1 ? 's' : ''}`;
-        }
-        return '👥 Members added';
-      }
-      case 'messageChatJoinByLink': return '🔗 Joined via invite link';
-      case 'messageChatDeleteMember': return '👤 Member removed';
-      case 'messageChatUpgradeTo': return '⬆️ Group upgraded to supergroup';
-      case 'messageChatUpgradeFrom': return '⬆️ Group upgraded';
-      case 'messagePinMessage': return '📌 Message pinned';
-      case 'messageGameScore': return '🏆 Game score updated';
-      case 'messagePaymentSuccessful': return '✅ Payment successful';
-      case 'messageContactRegistered': return '🎉 Contact joined Telegram';
-      case 'messageCustomServiceAction': {
-        const text: string = safeString(payload['text']);
-        return text.length > 0 ? text : 'ℹ️ Service message';
-      }
-      case 'messageUnsupported': return 'Unsupported message';
-      default: return undefined;
-    }
-  }
-
-  private buildCallText(payload: Record<string, Object>): string {
-    const call: Record<string, Object> | undefined = this.toRecord(payload['call']);
-    const duration: number = safeNumber(call?.['duration']);
-    const isVideo: boolean = safeBool(call?.['is_video']);
-    const discardReason: Record<string, Object> | undefined = this.toRecord(call?.['discard_reason']);
-    const reasonType: string = discardReason ? tdType(discardReason) : '';
-
-    if (reasonType === 'callDiscardReasonMissed') {
-      return isVideo ? '📹 Missed video call' : '📞 Missed call';
-    }
-    if (reasonType === 'callDiscardReasonDeclined') {
-      return isVideo ? '📹 Declined video call' : '📞 Declined call';
-    }
-    if (duration > 0) {
-      return `${isVideo ? '📹 Video call' : '📞 Call'} (${this.formatDuration(duration)})`;
-    }
-    return isVideo ? '📹 Video call' : '📞 Call';
-  }
-
-  private formatDuration(totalSeconds: number): string {
-    if (totalSeconds <= 0) return '0s';
-    const hours: number = Math.floor(totalSeconds / 3600);
-    const minutes: number = Math.floor((totalSeconds % 3600) / 60);
-    const seconds: number = totalSeconds % 60;
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    if (minutes > 0) {
-      return `${minutes}m ${seconds}s`;
-    }
-    return `${seconds}s`;
-  }
-
-  private toRecord(value: Object | undefined | null): Record<string, Object> | undefined {
-    if (value === undefined || value === null) return undefined;
-    return value as Record<string, Object>;
-  }
-
-  private decodeWaveform(base64: string): number[] {
-    // TDLib sends waveform as base64-encoded packed 5-bit amplitude values
-    // Each 5 bits encode a value 0-31, normalized to 0.0-1.0
-    try {
-      const raw: number[] = this.base64ToBytes(base64);
-      if (raw.length === 0) return this.fallbackWaveform();
-
-      const result: number[] = [];
-      let bitIndex: number = 0;
-      const totalBits: number = raw.length * 8;
-
-      while (bitIndex + 5 <= totalBits) {
-        const byteOffset: number = Math.floor(bitIndex / 8);
-        const bitOffset: number = bitIndex % 8;
-
-        let value: number;
-        if (bitOffset <= 3) {
-          value = (raw[byteOffset] >> bitOffset) & 0x1F;
-        } else {
-          const bitsFromFirst: number = 8 - bitOffset;
-          const bitsFromSecond: number = 5 - bitsFromFirst;
-          value = ((raw[byteOffset] >> bitOffset) & ((1 << bitsFromFirst) - 1))
-            | (((raw[byteOffset + 1] || 0) & ((1 << bitsFromSecond) - 1)) << bitsFromFirst);
-        }
-
-        result.push(value / 31.0);
-        bitIndex += 5;
-      }
-
-      return result.length > 0 ? result : this.fallbackWaveform();
-    } catch (_e) {
-      return this.fallbackWaveform();
-    }
-  }
-
-  private base64ToBytes(base64: string): number[] {
-    const chars: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-    const bytes: number[] = [];
-    let buffer: number = 0;
-    let bitsCollected: number = 0;
-
-    for (let i: number = 0; i < base64.length; i++) {
-      const c: string = base64.charAt(i);
-      if (c === '=') break;
-      const idx: number = chars.indexOf(c);
-      if (idx < 0) continue;
-
-      buffer = (buffer << 6) | idx;
-      bitsCollected += 6;
-
-      while (bitsCollected >= 8) {
-        bitsCollected -= 8;
-        bytes.push((buffer >> bitsCollected) & 0xFF);
-      }
-    }
-
-    return bytes;
-  }
-
-  private fallbackWaveform(): number[] {
-    const result: number[] = [];
-    for (let i: number = 0; i < 32; i++) {
-      result.push(0.3);
-    }
-    return result;
+    return parseTdPreview(rawMsg as TdModelMessage);
   }
 
   private sortDialogs(): void {
