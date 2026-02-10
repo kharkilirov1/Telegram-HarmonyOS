@@ -80,6 +80,7 @@ export struct FileBubble {
         date: this.message.date,
         isOutgoing: this.message.isOutgoing,
         isRead: this.message.isRead,
+        isEdited: this.message.isEdited,
         tint: $r('app.color.text_secondary'),
         checkTint: $r('app.color.telegram_blue')
       })

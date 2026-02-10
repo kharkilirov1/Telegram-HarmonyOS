@@ -25,7 +25,9 @@ export struct TextBubble {
           .lineHeight(21)
       }
 
-      if (containsUrl(this.message.text)) {
+      if (this.message.webPageTitle.length > 0 || this.message.webPageSiteName.length > 0) {
+        this.buildWebPagePreview()
+      } else if (containsUrl(this.message.text)) {
         this.buildLinkPreview()
       }
 
@@ -33,6 +35,7 @@ export struct TextBubble {
         date: this.message.date,
         isOutgoing: this.message.isOutgoing,
         isRead: this.message.isRead,
+        isEdited: this.message.isEdited,
         tint: $r('app.color.text_secondary'),
         checkTint: $r('app.color.telegram_blue')
       })
@@ -61,30 +64,92 @@ export struct TextBubble {
   }
 
   @Builder
-  private buildLinkPreview() {
-    Column() {
-      Divider()
-        .strokeWidth(2)
-        .color($r('app.color.telegram_blue'))
-        .width('100%')
+  private buildWebPagePreview() {
+    // iOS ChatMessageWebpageBubbleContentNode: blue left bar + content block
+    Row() {
+      // Blue vertical bar — iOS: 3pt line accent
+      Column()
+        .width(3)
+        .height('100%')
+        .borderRadius(1.5)
+        .backgroundColor($r('app.color.telegram_blue'))
 
-      Text(extractDomain(this.message.text))
-        .fontSize(12)
-        .fontColor($r('app.color.telegram_blue'))
-        .fontWeight(FontWeight.Medium)
-        .margin({ top: 4 })
-        .maxLines(1)
+      Column() {
+        // Site name — iOS: semibold 15pt, accentTextColor
+        if (this.message.webPageSiteName.length > 0) {
+          Text(this.message.webPageSiteName)
+            .fontSize(12)
+            .fontColor($r('app.color.telegram_blue'))
+            .fontWeight(FontWeight.Bold)
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+        }
 
-      Text(extractDomain(this.message.text))
-        .fontSize(14)
-        .fontColor($r('app.color.text_primary'))
-        .fontWeight(FontWeight.Medium)
-        .margin({ top: 2 })
-        .maxLines(1)
+        // Title — iOS: subtitle
+        if (this.message.webPageTitle.length > 0) {
+          Text(this.message.webPageTitle)
+            .fontSize(14)
+            .fontColor($r('app.color.text_primary'))
+            .fontWeight(FontWeight.Medium)
+            .margin({ top: this.message.webPageSiteName.length > 0 ? 2 : 0 })
+            .maxLines(3)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+        }
+
+        // Description — iOS: text with entities, max lines
+        if (this.message.webPageDescription.length > 0) {
+          Text(this.message.webPageDescription)
+            .fontSize(13)
+            .fontColor($r('app.color.text_secondary'))
+            .lineHeight(18)
+            .margin({ top: 2 })
+            .maxLines(4)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+        }
+
+        // URL hint
+        if (this.message.webPageUrl.length > 0 &&
+          this.message.webPageTitle.length === 0 && this.message.webPageSiteName.length === 0) {
+          Text(this.message.webPageUrl)
+            .fontSize(12)
+            .fontColor($r('app.color.telegram_blue'))
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+        }
+      }
+      .alignItems(HorizontalAlign.Start)
+      .layoutWeight(1)
+      .margin({ left: 8 })
     }
     .width('100%')
-    .padding({ left: 8, top: 4, bottom: 4 })
-    .margin({ top: 4 })
-    .alignItems(HorizontalAlign.Start)
+    .margin({ top: 6 })
+    .padding({ top: 2, bottom: 2 })
+    .alignItems(VerticalAlign.Top)
+  }
+
+  @Builder
+  private buildLinkPreview() {
+    // Fallback link preview when no TDLib web_page data
+    Row() {
+      Column()
+        .width(3)
+        .height('100%')
+        .borderRadius(1.5)
+        .backgroundColor($r('app.color.telegram_blue'))
+
+      Column() {
+        Text(extractDomain(this.message.text))
+          .fontSize(12)
+          .fontColor($r('app.color.telegram_blue'))
+          .fontWeight(FontWeight.Bold)
+          .maxLines(1)
+      }
+      .alignItems(HorizontalAlign.Start)
+      .margin({ left: 8 })
+    }
+    .width('100%')
+    .margin({ top: 6 })
+    .padding({ top: 4, bottom: 4 })
+    .alignItems(VerticalAlign.Top)
   }
 }

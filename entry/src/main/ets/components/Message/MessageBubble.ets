@@ -1,5 +1,10 @@
 import { Message, MessageContentType } from '../../models/Message';
+import { AudioBubble } from './AudioBubble';
+import { CallBubble } from './CallBubble';
+import { ContactBubble } from './ContactBubble';
+import { DiceBubble } from './DiceBubble';
 import { FileBubble } from './FileBubble';
+import { LocationBubble } from './LocationBubble';
 import { MediaBubble } from './MediaBubble';
 import { PollBubble } from './PollBubble';
 import { ReactionBar } from './ReactionBar';
@@ -75,6 +80,18 @@ export struct MessageBubble {
             })
           } else if (this.message.contentType === MessageContentType.DOCUMENT) {
             FileBubble({ message: this.message })
+          } else if (this.message.contentType === MessageContentType.CONTACT) {
+            ContactBubble({ message: this.message })
+          } else if (this.message.contentType === MessageContentType.LOCATION
+            || this.message.contentType === MessageContentType.LIVE_LOCATION
+            || this.message.contentType === MessageContentType.VENUE) {
+            LocationBubble({ message: this.message })
+          } else if (this.message.contentType === MessageContentType.AUDIO) {
+            AudioBubble({ message: this.message })
+          } else if (this.message.contentType === MessageContentType.CALL) {
+            CallBubble({ message: this.message })
+          } else if (this.message.contentType === MessageContentType.DICE) {
+            DiceBubble({ message: this.message })
           } else if (this.isMediaContent()) {
             MediaBubble({
               message: this.message,
@@ -88,7 +105,14 @@ export struct MessageBubble {
         .padding(this.message.contentType === MessageContentType.STICKER ? 0 :
           this.message.contentType === MessageContentType.PHOTO ? 2 :
             this.message.contentType === MessageContentType.VIDEO_NOTE ? 0 :
-              { left: 10, right: 10, top: 6, bottom: 6 })
+              this.message.contentType === MessageContentType.LOCATION ? 0 :
+                this.message.contentType === MessageContentType.LIVE_LOCATION
+                  ? { left: 0, right: 0, top: 0, bottom: 4 } :
+                  this.message.contentType === MessageContentType.VENUE
+                    ? { left: 0, right: 0, top: 0, bottom: 4 } :
+                    this.message.contentType === MessageContentType.DICE
+                      ? { left: 6, right: 6, top: 4, bottom: 4 } :
+                      { left: 10, right: 10, top: 6, bottom: 6 })
         .borderRadius(this.getBubbleRadii())
         .backgroundColor(this.getBubbleColor())
         .constraintSize({ maxWidth: '75%' })

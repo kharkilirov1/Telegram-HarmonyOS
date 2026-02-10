@@ -5,12 +5,20 @@ export struct MessageMetaRow {
   @Param date: number = 0;
   @Param isOutgoing: boolean = false;
   @Param isRead: boolean = false;
+  @Param isEdited: boolean = false;
   @Param tint: ResourceColor = $r('app.color.text_secondary');
   @Param checkTint: ResourceColor = $r('app.color.telegram_blue');
 
   build() {
     Row() {
       Blank().layoutWeight(1)
+      if (this.isEdited) {
+        Text('edited')
+          .fontSize(11)
+          .fontColor(this.tint)
+          .fontStyle(FontStyle.Italic)
+          .margin({ right: 4 })
+      }
       Text(formatMessageTime(this.date))
         .fontSize(11)
         .fontColor(this.tint)

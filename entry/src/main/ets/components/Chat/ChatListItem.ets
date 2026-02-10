@@ -61,21 +61,49 @@ export struct ChatListItem {
           if (this.chat.isTyping) {
             TypingIndicator({ typingText: this.chat.typingDescription })
               .layoutWeight(1)
-          } else {
+          } else if (this.chat.draftText.length > 0) {
             Text() {
-              // Sender prefix for groups
-              if (this.chat.isGroup && this.chat.lastMessageSenderName.length > 0) {
-                Span(this.chat.lastMessageSenderName + ': ')
-                  .fontWeight(FontWeight.Medium)
-                  .fontColor($r('app.color.text_primary'))
-              }
-              Span(this.chat.lastMessage)
+              Span('Draft: ')
+                .fontWeight(FontWeight.Medium)
+                .fontColor($r('app.color.error_red'))
+              Span(this.chat.draftText)
                 .fontColor($r('app.color.text_secondary'))
             }
             .fontSize(15)
             .maxLines(2)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .layoutWeight(1)
+          } else {
+            Row() {
+              // Outgoing check icons — iOS: proper SVG checkmarks
+              if (this.chat.lastMessageIsOutgoing && !this.chat.isChannel) {
+                Image(this.chat.lastMessageIsRead
+                  ? $r('app.media.ic_check_double')
+                  : $r('app.media.ic_check_single'))
+                  .width(16).height(16)
+                  .fillColor(this.chat.lastMessageIsRead
+                    ? $r('app.color.telegram_blue')
+                    : $r('app.color.text_secondary'))
+                  .margin({ right: 3 })
+              }
+
+              Text() {
+                // Sender prefix for groups
+                if (this.chat.isGroup && this.chat.lastMessageSenderName.length > 0) {
+                  Span(this.chat.lastMessageSenderName + ': ')
+                    .fontWeight(FontWeight.Medium)
+                    .fontColor($r('app.color.text_primary'))
+                }
+                Span(this.chat.lastMessage)
+                  .fontColor($r('app.color.text_secondary'))
+              }
+              .fontSize(15)
+              .maxLines(2)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .layoutWeight(1)
+            }
+            .layoutWeight(1)
+            .alignItems(VerticalAlign.Top)
           }
 
           // Right: unread badge OR pin icon

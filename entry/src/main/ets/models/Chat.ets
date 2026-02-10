@@ -17,6 +17,9 @@ export class Chat {
   @Trace typingDescription: string;
   @Trace isUserOnline: boolean;
   @Trace lastSeenDate: number;
+  @Trace lastMessageIsOutgoing: boolean;
+  @Trace lastMessageIsRead: boolean;
+  @Trace draftText: string;
   @Trace order: string;
 
   constructor(
@@ -47,6 +50,9 @@ export class Chat {
     this.typingDescription = '';
     this.isUserOnline = false;
     this.lastSeenDate = 0;
+    this.lastMessageIsOutgoing = false;
+    this.lastMessageIsRead = false;
+    this.draftText = '';
     this.order = '0';
   }
 }

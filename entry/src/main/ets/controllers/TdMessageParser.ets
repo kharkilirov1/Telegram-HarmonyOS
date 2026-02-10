@@ -30,7 +30,17 @@ import {
   TdChatType,
   TdNotificationSettings,
   TdFile,
-  PollOptionDisplay
+  TdWebPage,
+  TdContact,
+  TdLocation,
+  TdVenue,
+  TdAudioNote,
+  TdDice,
+  TdDraftMessage,
+  PollOptionDisplay,
+  safeBool,
+  safeNumber,
+  safeString
 } from '../models/TdTypes';
 
 const TAG = 'TdMessageParser';
@@ -97,6 +107,13 @@ export function parseMessage(raw: TdMessage): Message {
     }
   }
 
+  // Edit date
+  const editDate: number | undefined = raw.edit_date;
+  if (editDate && editDate > 0) {
+    msg.isEdited = true;
+    msg.editDate = editDate;
+  }
+
   // Spoiler + content
   if (content) {
     if (content.has_spoiler === true) {
@@ -118,6 +135,14 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
       msg.contentType = MessageContentType.TEXT;
       const textObj: TdFormattedText | undefined = content.text;
       msg.text = textObj?.text || '';
+      // Web page preview
+      const webPage: TdWebPage | undefined = content.web_page;
+      if (webPage) {
+        msg.webPageUrl = webPage.url || '';
+        msg.webPageTitle = webPage.title || '';
+        msg.webPageDescription = webPage.description?.text || '';
+        msg.webPageSiteName = webPage.site_name || '';
+      }
       break;
     }
     case 'messagePhoto': {
@@ -202,7 +227,109 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
       }
       break;
     }
+    case 'messageContact': {
+      msg.contentType = MessageContentType.CONTACT;
+      const contact: TdContact | undefined = content.contact;
+      if (contact) {
+        msg.contactFirstName = contact.first_name || '';
+        msg.contactLastName = contact.last_name || '';
+        msg.contactPhone = contact.phone_number || '';
+        msg.contactUserId = contact.user_id || 0;
+      }
+      break;
+    }
+    case 'messageLocation': {
+      msg.contentType = MessageContentType.LOCATION;
+      const location: TdLocation | undefined = content.location;
+      if (location) {
+        msg.locationLatitude = location.latitude || 0;
+        msg.locationLongitude = location.longitude || 0;
+      }
+      break;
+    }
+    case 'messageLiveLocation': {
+      msg.contentType = MessageContentType.LIVE_LOCATION;
+      const liveLocation: TdLocation | undefined = content.location;
+      if (liveLocation) {
+        msg.locationLatitude = liveLocation.latitude || 0;
+        msg.locationLongitude = liveLocation.longitude || 0;
+      }
+      msg.locationLivePeriod = content.live_period || 0;
+      break;
+    }
+    case 'messageVenue': {
+      msg.contentType = MessageContentType.VENUE;
+      const venue: TdVenue | undefined = content.venue;
+      if (venue) {
+        msg.venueTitle = venue.title || '';
+        msg.venueAddress = venue.address || '';
+        const venueLocation: TdLocation | undefined = venue.location;
+        if (venueLocation) {
+          msg.locationLatitude = venueLocation.latitude || 0;
+          msg.locationLongitude = venueLocation.longitude || 0;
+        }
+      }
+      break;
+    }
+    case 'messageCall': {
+      msg.contentType = MessageContentType.CALL;
+      const payload: Record<string, Object> = content as Record<string, Object>;
+      const call: Record<string, Object> | undefined = toRecord(payload['call']);
+      msg.callDuration = safeNumber(call?.['duration']);
+      msg.callIsVideo = safeBool(call?.['is_video']);
+      const discardReason: Record<string, Object> | undefined = toRecord(call?.['discard_reason']);
+      const reasonType: string = discardReason ? tdType(discardReason) : '';
+      if (reasonType === 'callDiscardReasonMissed') {
+        msg.callDiscardReason = 'missed';
+      } else if (reasonType === 'callDiscardReasonDeclined') {
+        msg.callDiscardReason = 'declined';
+      } else if (reasonType === 'callDiscardReasonHungUp') {
+        msg.callDiscardReason = 'hangup';
+      } else {
+        msg.callDiscardReason = '';
+      }
+      break;
+    }
+    case 'messageDice': {
+      msg.contentType = MessageContentType.DICE;
+      const dice: TdDice | undefined = content.dice;
+      if (dice) {
+        msg.diceEmoji = dice.emoji || '🎲';
+        msg.diceValue = dice.value || 0;
+      }
+      break;
+    }
+    case 'messageAudio': {
+      msg.contentType = MessageContentType.AUDIO;
+      const audio: TdAudioNote | undefined = content.audio;
+      if (audio) {
+        msg.audioTitle = audio.title || '';
+        msg.audioPerformer = audio.performer || '';
+        msg.audioDuration = audio.duration || 0;
+        const audioFile: TdFile | undefined = audio.audio;
+        if (audioFile) {
+          msg.audioFileId = audioFile.id || 0;
+        }
+      }
+      const audioCaption: TdFormattedText | undefined = content.caption;
+      msg.text = audioCaption?.text || '';
+      break;
+    }
+    case 'messageGame': {
+      msg.contentType = MessageContentType.GAME;
+      const gamePayload: Record<string, Object> = content as Record<string, Object>;
+      const game: Record<string, Object> | undefined = toRecord(gamePayload['game']);
+      const gameTitle: string = safeString(game?.['title']);
+      msg.text = gameTitle.length > 0 ? `🎮 ${gameTitle}` : '🎮 Game';
+      break;
+    }
     default: {
+      const knownText: string | undefined = buildKnownContentText(type, content);
+      if (knownText !== undefined) {
+        msg.contentType = MessageContentType.TEXT;
+        msg.text = knownText;
+        break;
+      }
       msg.contentType = MessageContentType.UNSUPPORTED;
       msg.text = `[${type.replace('message', '')}]`;
       TdFallbackRegistry.getInstance().recordUnhandled(type, 'content');
@@ -237,7 +364,45 @@ export function extractTextPreview(rawMsg: TdMessage): string {
       const question: string = content.poll?.question?.text || '';
       return `📊 ${question}`;
     }
+    case 'messageContact': {
+      const contact: Record<string, Object> | undefined = toRecord((content as Record<string, Object>)['contact']);
+      const firstName: string = safeString(contact?.['first_name']);
+      const lastName: string = safeString(contact?.['last_name']);
+      const fullName: string = `${firstName} ${lastName}`.trim();
+      return fullName.length > 0 ? `👤 ${fullName}` : '👤 Contact';
+    }
+    case 'messageLocation': return '📍 Location';
+    case 'messageLiveLocation': return '📡 Live location';
+    case 'messageVenue': {
+      const venue: Record<string, Object> | undefined = toRecord((content as Record<string, Object>)['venue']);
+      const venueTitle: string = safeString(venue?.['title']);
+      return venueTitle.length > 0 ? `📍 ${venueTitle}` : '📍 Venue';
+    }
+    case 'messageCall': {
+      const callPayload: Record<string, Object> = content as Record<string, Object>;
+      return buildCallText(callPayload);
+    }
+    case 'messageDice': {
+      const dicePayload: Record<string, Object> = content as Record<string, Object>;
+      const diceObj: Record<string, Object> | undefined = toRecord(dicePayload['dice']);
+      const diceEmoji: string = safeString(diceObj?.['emoji']) || '🎲';
+      return diceEmoji;
+    }
+    case 'messageAudio': {
+      const audioObj: Record<string, Object> | undefined = toRecord((content as Record<string, Object>)['audio']);
+      const audioTitle: string = safeString(audioObj?.['title']);
+      return audioTitle.length > 0 ? `🎵 ${audioTitle}` : '🎵 Audio';
+    }
+    case 'messageGame': {
+      const gameObj: Record<string, Object> | undefined = toRecord((content as Record<string, Object>)['game']);
+      const gameTitle: string = safeString(gameObj?.['title']);
+      return gameTitle.length > 0 ? `🎮 ${gameTitle}` : '🎮 Game';
+    }
     default: {
+      const knownText: string | undefined = buildKnownContentText(type, content);
+      if (knownText !== undefined) {
+        return knownText;
+      }
       TdFallbackRegistry.getInstance().recordUnhandled(type, 'content');
       return type.replace('message', '');
     }
@@ -262,6 +427,20 @@ export function parseChat(raw: TdChat): Chat {
     false,
     false
   );
+
+  // Last message outgoing/read status
+  if (lastMsg) {
+    chat.lastMessageIsOutgoing = lastMsg.is_outgoing || false;
+  }
+
+  // Draft message
+  const draftMsg: TdDraftMessage | undefined = raw.draft_message;
+  if (draftMsg) {
+    const draftText: string | undefined = draftMsg.input_message_text?.text?.text;
+    if (draftText) {
+      chat.draftText = draftText;
+    }
+  }
 
   // Determine type
   const chatType: TdChatType | undefined = raw.type;
@@ -293,6 +472,94 @@ export function updateChatPositions(chat: Chat, positions: TdChatPosition[]): vo
       chat.isPinned = pos.is_pinned || false;
     }
   }
+}
+
+// --- Known content fallback text ---
+
+function buildKnownContentText(type: string, content: TdMessageContent): string | undefined {
+  const payload: Record<string, Object> = content as Record<string, Object>;
+  switch (type) {
+    case 'messageInvoice': {
+      const invoice: Record<string, Object> | undefined = toRecord(payload['invoice']);
+      const title: string = safeString(invoice?.['title']);
+      return title.length > 0 ? `💳 ${title}` : '💳 Invoice';
+    }
+    case 'messageProximityAlertTriggered': {
+      const distance: number = safeNumber(payload['distance']);
+      return distance > 0 ? `⚠️ Proximity alert (${distance} m)` : '⚠️ Proximity alert';
+    }
+    case 'messageScreenshotTaken': return '📷 Screenshot taken';
+    case 'messageChatSetTtl': {
+      const ttl: number = safeNumber(payload['ttl']);
+      return ttl > 0 ? `🔒 Messages auto-delete in ${formatDuration(ttl)}` : '🔒 Auto-delete timer changed';
+    }
+    case 'messageChatChangeTitle': {
+      const title: string = safeString(payload['title']);
+      return title.length > 0 ? `✏️ Chat title changed to "${title}"` : '✏️ Chat title changed';
+    }
+    case 'messageChatChangePhoto': return '🖼️ Chat photo changed';
+    case 'messageChatDeletePhoto': return '🗑️ Chat photo removed';
+    case 'messageChatAddMembers': {
+      const membersValue: Object | undefined = payload['member_user_ids'];
+      if (Array.isArray(membersValue)) {
+        const count: number = membersValue.length;
+        if (count > 0) return `👥 Added ${count} member${count > 1 ? 's' : ''}`;
+      }
+      return '👥 Members added';
+    }
+    case 'messageChatJoinByLink': return '🔗 Joined via invite link';
+    case 'messageChatDeleteMember': return '👤 Member removed';
+    case 'messageChatUpgradeTo': return '⬆️ Group upgraded to supergroup';
+    case 'messageChatUpgradeFrom': return '⬆️ Group upgraded';
+    case 'messagePinMessage': return '📌 Message pinned';
+    case 'messageGameScore': return '🏆 Game score updated';
+    case 'messagePaymentSuccessful': return '✅ Payment successful';
+    case 'messageContactRegistered': return '🎉 Contact joined Telegram';
+    case 'messageCustomServiceAction': {
+      const text: string = safeString(payload['text']);
+      return text.length > 0 ? text : 'ℹ️ Service message';
+    }
+    case 'messageUnsupported': return 'Unsupported message';
+    default: return undefined;
+  }
+}
+
+function buildCallText(payload: Record<string, Object>): string {
+  const call: Record<string, Object> | undefined = toRecord(payload['call']);
+  const duration: number = safeNumber(call?.['duration']);
+  const isVideo: boolean = safeBool(call?.['is_video']);
+  const discardReason: Record<string, Object> | undefined = toRecord(call?.['discard_reason']);
+  const reasonType: string = discardReason ? tdType(discardReason) : '';
+
+  if (reasonType === 'callDiscardReasonMissed') {
+    return isVideo ? '📹 Missed video call' : '📞 Missed call';
+  }
+  if (reasonType === 'callDiscardReasonDeclined') {
+    return isVideo ? '📹 Declined video call' : '📞 Declined call';
+  }
+  if (duration > 0) {
+    return `${isVideo ? '📹 Video call' : '📞 Call'} (${formatDuration(duration)})`;
+  }
+  return isVideo ? '📹 Video call' : '📞 Call';
+}
+
+function formatDuration(totalSeconds: number): string {
+  if (totalSeconds <= 0) return '0s';
+  const hours: number = Math.floor(totalSeconds / 3600);
+  const minutes: number = Math.floor((totalSeconds % 3600) / 60);
+  const seconds: number = totalSeconds % 60;
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  }
+  return `${seconds}s`;
+}
+
+function toRecord(value: Object | undefined | null): Record<string, Object> | undefined {
+  if (value === undefined || value === null) return undefined;
+  return value as Record<string, Object>;
 }
 
 // --- Waveform decoding ---

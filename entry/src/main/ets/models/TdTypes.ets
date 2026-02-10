@@ -81,6 +81,56 @@ export interface TdPhotoSize {
   height?: number;
 }
 
+export interface TdWebPage {
+  url?: string;
+  display_url?: string;
+  type?: string;
+  site_name?: string;
+  title?: string;
+  description?: TdFormattedText;
+  photo?: TdPhoto;
+}
+
+export interface TdContact {
+  phone_number?: string;
+  first_name?: string;
+  last_name?: string;
+  user_id?: number;
+}
+
+export interface TdLocation {
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface TdVenue {
+  location?: TdLocation;
+  title?: string;
+  address?: string;
+}
+
+export interface TdAudioNote {
+  duration?: number;
+  title?: string;
+  performer?: string;
+  audio?: TdFile;
+}
+
+export interface TdCallDiscardReason {
+  // Identified by @type
+}
+
+export interface TdCall {
+  duration?: number;
+  is_video?: boolean;
+  discard_reason?: TdCallDiscardReason;
+}
+
+export interface TdDice {
+  emoji?: string;
+  value?: number;
+}
+
 export interface TdMessageContent {
   text?: TdFormattedText;
   caption?: TdFormattedText;
@@ -91,7 +141,14 @@ export interface TdMessageContent {
   video_note?: TdVideoNote;
   sticker?: TdSticker;
   poll?: TdPoll;
+  web_page?: TdWebPage;
+  contact?: TdContact;
+  location?: TdLocation;
+  venue?: TdVenue;
+  audio?: TdAudioNote;
+  dice?: TdDice;
   has_spoiler?: boolean;
+  live_period?: number;
 }
 
 export interface TdVideo {
@@ -188,12 +245,23 @@ export interface TdMessage {
   sender_id?: TdMessageSender;
   content?: TdMessageContent;
   date: number;
+  edit_date?: number;
   is_outgoing: boolean;
   reply_to?: TdReplyTo;
   forward_info?: TdForwardInfo;
   media_album_id?: string;
   scheduling_state?: TdSchedulingState;
   self_destruct_type?: TdSelfDestructType;
+}
+
+// --- TDLib draft message ---
+
+export interface TdDraftMessage {
+  input_message_text?: TdInputMessageText;
+}
+
+export interface TdInputMessageText {
+  text?: TdFormattedText;
 }
 
 // --- TDLib raw chat ---
@@ -206,6 +274,7 @@ export interface TdChat {
   notification_settings?: TdNotificationSettings;
   unread_count?: number;
   type?: TdChatType;
+  draft_message?: TdDraftMessage;
 }
 
 // --- TDLib update interfaces ---

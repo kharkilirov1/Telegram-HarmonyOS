@@ -65,6 +65,46 @@ export class Message {
   // Spoiler
   @Trace hasSpoiler: boolean;
 
+  // Contact
+  @Trace contactFirstName: string;
+  @Trace contactLastName: string;
+  @Trace contactPhone: string;
+  @Trace contactUserId: number;
+
+  // Location
+  @Trace locationLatitude: number;
+  @Trace locationLongitude: number;
+  @Trace locationLivePeriod: number; // 0 = static, >0 = live seconds
+
+  // Audio (music)
+  @Trace audioTitle: string;
+  @Trace audioPerformer: string;
+  @Trace audioDuration: number;
+  @Trace audioFileId: number;
+
+  // Call
+  @Trace callDuration: number;
+  @Trace callIsVideo: boolean;
+  @Trace callDiscardReason: string; // 'missed' | 'declined' | 'hangup' | ''
+
+  // Dice
+  @Trace diceEmoji: string;
+  @Trace diceValue: number;
+
+  // Venue
+  @Trace venueTitle: string;
+  @Trace venueAddress: string;
+
+  // Web page preview
+  @Trace webPageUrl: string;
+  @Trace webPageTitle: string;
+  @Trace webPageDescription: string;
+  @Trace webPageSiteName: string;
+
+  // Edit indicator
+  @Trace isEdited: boolean;
+  @Trace editDate: number;
+
   // Reactions
   @Trace reactions: MessageReaction[];
 
@@ -119,6 +159,30 @@ export class Message {
     this.selfDestructIn = 0;
     this.isViewOnce = false;
     this.hasSpoiler = false;
+    this.contactFirstName = '';
+    this.contactLastName = '';
+    this.contactPhone = '';
+    this.contactUserId = 0;
+    this.locationLatitude = 0;
+    this.locationLongitude = 0;
+    this.locationLivePeriod = 0;
+    this.audioTitle = '';
+    this.audioPerformer = '';
+    this.audioDuration = 0;
+    this.audioFileId = 0;
+    this.callDuration = 0;
+    this.callIsVideo = false;
+    this.callDiscardReason = '';
+    this.diceEmoji = '';
+    this.diceValue = 0;
+    this.venueTitle = '';
+    this.venueAddress = '';
+    this.webPageUrl = '';
+    this.webPageTitle = '';
+    this.webPageDescription = '';
+    this.webPageSiteName = '';
+    this.isEdited = false;
+    this.editDate = 0;
     this.reactions = [];
   }
 }
@@ -133,6 +197,14 @@ export enum MessageContentType {
   ANIMATION = 'animation',
   VIDEO_NOTE = 'video_note',
   POLL = 'poll',
+  CONTACT = 'contact',
+  LOCATION = 'location',
+  LIVE_LOCATION = 'live_location',
+  AUDIO = 'audio',
+  CALL = 'call',
+  DICE = 'dice',
+  VENUE = 'venue',
+  GAME = 'game',
   UNSUPPORTED = 'unsupported'
 }
 
