@@ -123,7 +123,7 @@ export class TDLibClient {
     this._state = ClientState.Stopping;
 
     // Reject all pending requests
-    this.pendingRequests.forEach((pending: PendingRequest, id: number) => {
+    this.pendingRequests.forEach((pending: PendingRequest) => {
       clearTimeout(pending.timerId);
       pending.reject(0, 'Client destroyed');
     });
