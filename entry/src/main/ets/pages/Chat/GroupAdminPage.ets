@@ -7,23 +7,18 @@ import { GroupService } from '../../services/GroupService';
 import { UserService } from '../../services/UserService';
 import { ChatService } from '../../services/ChatService';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { GroupAdminAdminsSection } from './components/GroupAdminAdminsSection';
+import { GroupAdminBannedSection } from './components/GroupAdminBannedSection';
+import { GroupAdminHeaderSection } from './components/GroupAdminHeaderSection';
+import { GroupAdminMember, GroupBannedMember } from './components/GroupAdminModels';
+import { GroupAdminPermissionsSection } from './components/GroupAdminPermissionsSection';
+import { GroupAdminRecentActionsSection } from './components/GroupAdminRecentActionsSection';
+import { GroupAdminTopBar } from './components/GroupAdminTopBar';
+import { GroupAdminTypeSection } from './components/GroupAdminTypeSection';
 
 @Builder
 export function GroupAdminBuilder(name: string, param: Object) {
   GroupAdminPage({ chatId: (param as Record<string, number>)['chatId'] ?? 0 })
-}
-
-interface AdminMember {
-  userId: number;
-  name: string;
-  role: string;
-  photoUrl: string | null;
-}
-
-interface BannedMember {
-  userId: number;
-  name: string;
-  bannedUntil: string;
 }
 
 @ComponentV2
@@ -35,7 +30,6 @@ export struct GroupAdminPage {
   @Local isPublic: boolean = false;
   @Local isSaving: boolean = false;
 
-  // Permissions
   @Local canSendMessages: boolean = true;
   @Local canSendMedia: boolean = true;
   @Local canSendPolls: boolean = true;
@@ -44,11 +38,8 @@ export struct GroupAdminPage {
   @Local canPinMessages: boolean = true;
   @Local canChangeInfo: boolean = true;
 
-  // Administrators
-  @Local administrators: AdminMember[] = [];
-
-  // Banned users
-  @Local bannedUsers: BannedMember[] = [];
+  @Local administrators: GroupAdminMember[] = [];
+  @Local bannedUsers: GroupBannedMember[] = [];
 
   aboutToAppear(): void {
     this.loadAdminData();
@@ -60,7 +51,6 @@ export struct GroupAdminPage {
       this.title = chat.title;
     }
 
-    // Load current permissions
     try {
       const chatResult = await GroupService.getInstance().getChat(this.chatId);
       const permissions = chatResult['permissions'] as Record<string, boolean>;
@@ -74,7 +64,6 @@ export struct GroupAdminPage {
         this.canChangeInfo = permissions['can_change_info'] ?? true;
       }
 
-      // Determine public/private from supergroup info
       const sgInfo = await GroupService.getInstance().getSupergroup(Math.abs(this.chatId));
       const hasUsername = (sgInfo.usernames?.editable_username || '').length > 0;
       this.isPublic = hasUsername;
@@ -131,7 +120,7 @@ export struct GroupAdminPage {
     const adminLabel = getContext(this).resourceManager.getStringByNameSync('admin_label');
     this.administrators = [
       { userId: 1, name: 'Alex Johnson', role: ownerLabel, photoUrl: null },
-      { userId: 2, name: 'Maria Garcia', role: adminLabel, photoUrl: null },
+      { userId: 2, name: 'Maria Garcia', role: adminLabel, photoUrl: null }
     ];
   }
 
@@ -167,7 +156,7 @@ export struct GroupAdminPage {
     }
 
     this.bannedUsers = [
-      { userId: 100, name: 'Spammer Bot', bannedUntil: 'Forever' },
+      { userId: 100, name: 'Spammer Bot', bannedUntil: 'Forever' }
     ];
   }
 
@@ -183,7 +172,9 @@ export struct GroupAdminPage {
   }
 
   private async savePermissions(): Promise<void> {
-    if (this.isSaving) return;
+    if (this.isSaving) {
+      return;
+    }
     this.isSaving = true;
 
     try {
@@ -205,259 +196,88 @@ export struct GroupAdminPage {
     } catch (e) {
       hilog.warn(0x0001, 'GroupAdminPage', 'Failed to save permissions');
     }
+
     this.isSaving = false;
   }
 
   build() {
     NavDestination() {
       Column() {
-        // Top bar
-        Row() {
-          Image($r('app.media.ic_back'))
-            .width(24).height(24)
-            .fillColor($r('app.color.telegram_blue'))
-            .accessibilityText($r('app.string.accessibility_back'))
-            .onClick(() => this.navPathStack.pop())
-
-          Text($r('app.string.admin_settings'))
-            .fontSize(17)
-            .fontWeight(FontWeight.Bold)
-            .fontColor($r('app.color.text_primary'))
-            .margin({ left: 16 })
-            .layoutWeight(1)
-
-          if (this.isSaving) {
-            LoadingProgress()
-              .width(20).height(20)
-              .color($r('app.color.telegram_blue'))
-          } else {
-            Text($r('app.string.save'))
-              .fontSize(16)
-              .fontColor($r('app.color.telegram_blue'))
-              .onClick(() => { this.savePermissions(); })
+        GroupAdminTopBar({
+          isSaving: this.isSaving,
+          onBack: () => {
+            this.navPathStack.pop();
+          },
+          onSave: () => {
+            this.savePermissions();
           }
-        }
-        .width('100%')
-        .height(56)
-        .padding({ left: 8, right: 16 })
-        .backgroundColor($r('app.color.glass_nav_bg'))
-        .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
-          colorMode: ThemeColorMode.SYSTEM,
-          adaptiveColor: AdaptiveColor.DEFAULT,
-          scale: 1.0
         })
 
         Scroll() {
           Column() {
-            // --- Group Title Header ---
-            Column() {
-              Text(this.title)
-                .fontSize(20)
-                .fontWeight(FontWeight.Bold)
-                .fontColor($r('app.color.text_primary'))
-              Text($r('app.string.manage_group_subtitle'))
-                .fontSize(14)
-                .fontColor($r('app.color.text_secondary'))
-                .margin({ top: 4 })
-            }
-            .width('100%')
-            .padding({ left: 16, right: 16, top: 20, bottom: 16 })
-            .alignItems(HorizontalAlign.Start)
+            GroupAdminHeaderSection({ title: this.title })
 
-            // --- Group Type ---
-            Column() {
-              Text($r('app.string.group_type'))
-                .fontSize(13)
-                .fontColor($r('app.color.text_secondary'))
-
-                .margin({ bottom: 8 })
-
-              Row() {
-                Column() {
-                  Text($r('app.string.public_group'))
-                    .fontSize(16)
-                    .fontColor($r('app.color.text_primary'))
-                  Text($r('app.string.public_group_hint'))
-                    .fontSize(13)
-                    .fontColor($r('app.color.text_secondary'))
-                    .margin({ top: 2 })
-                }
-                .alignItems(HorizontalAlign.Start)
-                .layoutWeight(1)
-
-                Toggle({ type: ToggleType.Switch, isOn: this.isPublic })
-                  .selectedColor($r('app.color.telegram_blue'))
-                  .onChange(() => { this.toggleGroupType(); })
+            GroupAdminTypeSection({
+              isPublic: this.isPublic,
+              onToggle: () => {
+                this.toggleGroupType();
               }
-              .width('100%')
-              .height(56)
-              .padding({ left: 16, right: 16 })
-              .backgroundColor($r('app.color.glass_card_bg'))
-              .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-              .borderRadius(16)
-              .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            }
-            .width('100%')
-            .padding({ left: 16, right: 16 })
-            .alignItems(HorizontalAlign.Start)
+            })
 
             Blank().height(24)
 
-            // --- Permissions ---
-            Column() {
-              Text($r('app.string.permissions_label'))
-                .fontSize(13)
-                .fontColor($r('app.color.text_secondary'))
-
-                .margin({ bottom: 8 })
-
-              Column() {
-                this.permissionRow($r('app.string.send_messages'), this.canSendMessages, (isOn: boolean) => {
-                  this.canSendMessages = isOn;
-                })
-                Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
-
-                this.permissionRow($r('app.string.send_media'), this.canSendMedia, (isOn: boolean) => {
-                  this.canSendMedia = isOn;
-                })
-                Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
-
-                this.permissionRow($r('app.string.send_polls'), this.canSendPolls, (isOn: boolean) => {
-                  this.canSendPolls = isOn;
-                })
-                Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
-
-                this.permissionRow($r('app.string.send_stickers_gifs'), this.canSendStickers, (isOn: boolean) => {
-                  this.canSendStickers = isOn;
-                })
-                Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
-
-                this.permissionRow($r('app.string.add_members'), this.canAddMembers, (isOn: boolean) => {
-                  this.canAddMembers = isOn;
-                })
-                Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
-
-                this.permissionRow($r('app.string.pin_messages'), this.canPinMessages, (isOn: boolean) => {
-                  this.canPinMessages = isOn;
-                })
-                Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
-
-                this.permissionRow($r('app.string.change_group_info'), this.canChangeInfo, (isOn: boolean) => {
-                  this.canChangeInfo = isOn;
-                })
+            GroupAdminPermissionsSection({
+              canSendMessages: this.canSendMessages,
+              canSendMedia: this.canSendMedia,
+              canSendPolls: this.canSendPolls,
+              canSendStickers: this.canSendStickers,
+              canAddMembers: this.canAddMembers,
+              canPinMessages: this.canPinMessages,
+              canChangeInfo: this.canChangeInfo,
+              onSendMessagesChange: (isOn: boolean) => {
+                this.canSendMessages = isOn;
+              },
+              onSendMediaChange: (isOn: boolean) => {
+                this.canSendMedia = isOn;
+              },
+              onSendPollsChange: (isOn: boolean) => {
+                this.canSendPolls = isOn;
+              },
+              onSendStickersChange: (isOn: boolean) => {
+                this.canSendStickers = isOn;
+              },
+              onAddMembersChange: (isOn: boolean) => {
+                this.canAddMembers = isOn;
+              },
+              onPinMessagesChange: (isOn: boolean) => {
+                this.canPinMessages = isOn;
+              },
+              onChangeInfoChange: (isOn: boolean) => {
+                this.canChangeInfo = isOn;
               }
-              .width('100%')
-              .backgroundColor($r('app.color.glass_card_bg'))
-              .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-              .borderRadius(16)
-              .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            }
-            .width('100%')
-            .padding({ left: 16, right: 16 })
-            .alignItems(HorizontalAlign.Start)
+            })
 
             Blank().height(24)
 
-            // --- Administrators ---
-            Column() {
-              Text($r('app.string.administrators_label'))
-                .fontSize(13)
-                .fontColor($r('app.color.text_secondary'))
-
-                .margin({ bottom: 8 })
-
-              Column() {
-                ForEach(this.administrators, (admin: AdminMember, index: number) => {
-                  if (index > 0) {
-                    Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 68 })
-                  }
-                  this.adminRow(admin)
-                }, (admin: AdminMember) => admin.userId.toString())
+            GroupAdminAdminsSection({
+              administrators: this.administrators,
+              onOpenUser: (userId: number) => {
+                const navParam: Record<string, Object> = {};
+                navParam['userId'] = userId;
+                this.navPathStack.pushPath(new NavPathInfo('UserInfo', navParam));
               }
-              .width('100%')
-              .backgroundColor($r('app.color.glass_card_bg'))
-              .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-              .borderRadius(16)
-              .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            }
-            .width('100%')
-            .padding({ left: 16, right: 16 })
-            .alignItems(HorizontalAlign.Start)
+            })
 
             Blank().height(24)
 
-            // --- Banned Users ---
-            Column() {
-              Text($r('app.string.banned_users_label'))
-                .fontSize(13)
-                .fontColor($r('app.color.text_secondary'))
-
-                .margin({ bottom: 8 })
-
-              Column() {
-                if (this.bannedUsers.length === 0) {
-                  Text($r('app.string.no_banned_users'))
-                    .fontSize(15)
-                    .fontColor($r('app.color.text_secondary'))
-                    .width('100%')
-                    .textAlign(TextAlign.Center)
-                    .padding(20)
-                } else {
-                  ForEach(this.bannedUsers, (banned: BannedMember, index: number) => {
-                    if (index > 0) {
-                      Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 68 })
-                    }
-                    this.bannedRow(banned)
-                  }, (banned: BannedMember) => banned.userId.toString())
-                }
-              }
-              .width('100%')
-              .backgroundColor($r('app.color.glass_card_bg'))
-              .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-              .borderRadius(16)
-              .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            }
-            .width('100%')
-            .padding({ left: 16, right: 16 })
-            .alignItems(HorizontalAlign.Start)
+            GroupAdminBannedSection({ bannedUsers: this.bannedUsers })
 
             Blank().height(24)
 
-            // --- Recent Actions ---
-            Column() {
-              Text($r('app.string.recent_actions'))
-                .fontSize(13)
-                .fontColor($r('app.color.text_secondary'))
-
-                .margin({ bottom: 8 })
-
-              Column() {
-                Row() {
-                  Image($r('app.media.ic_forward'))
-                    .width(20).height(20)
-                    .fillColor($r('app.color.text_secondary'))
-                    .margin({ right: 12 })
-                  Text($r('app.string.view_recent_actions'))
-                    .fontSize(16)
-                    .fontColor($r('app.color.text_primary'))
-                    .layoutWeight(1)
-                  Image($r('app.media.ic_forward'))
-                    .width(14).height(14)
-                    .fillColor($r('app.color.text_secondary'))
-                }
-                .width('100%')
-                .height(48)
-                .padding({ left: 16, right: 16 })
+            GroupAdminRecentActionsSection({
+              onOpen: () => {
               }
-              .width('100%')
-              .backgroundColor($r('app.color.glass_card_bg'))
-              .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-              .borderRadius(16)
-              .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            }
-            .width('100%')
-            .padding({ left: 16, right: 16 })
-            .alignItems(HorizontalAlign.Start)
+            })
 
             Blank().height(40)
           }
@@ -472,102 +292,5 @@ export struct GroupAdminPage {
       .backgroundColor($r('app.color.background_secondary'))
     }
     .hideTitleBar(true)
-  }
-
-  @Builder
-  permissionRow(label: string | Resource, isOn: boolean, onChange: (isOn: boolean) => void) {
-    Row() {
-      Text(label)
-        .fontSize(16)
-        .fontColor($r('app.color.text_primary'))
-        .layoutWeight(1)
-
-      Toggle({ type: ToggleType.Switch, isOn: isOn })
-        .selectedColor($r('app.color.telegram_blue'))
-        .onChange(onChange)
-    }
-    .width('100%')
-    .height(48)
-    .padding({ left: 16, right: 16 })
-  }
-
-  @Builder
-  adminRow(admin: AdminMember) {
-    Row() {
-      // Avatar
-      if (admin.photoUrl) {
-        Image(admin.photoUrl)
-          .alt($r('app.media.app_icon'))
-          .autoResize(true)
-          .onError(() => {})
-          .width(40).height(40)
-          .borderRadius(20)
-      } else {
-        Text(admin.name.length > 0 ? admin.name.charAt(0) : '?')
-          .fontSize(16)
-          .fontWeight(FontWeight.Medium)
-          .fontColor(Color.White)
-          .width(40).height(40)
-          .borderRadius(20)
-          .backgroundColor($r('app.color.telegram_blue'))
-          .textAlign(TextAlign.Center)
-      }
-
-      Column() {
-        Text(admin.name)
-          .fontSize(16)
-          .fontColor($r('app.color.text_primary'))
-          .maxLines(1)
-
-        Text(admin.role)
-          .fontSize(13)
-          .fontColor($r('app.color.telegram_blue'))
-          .margin({ top: 1 })
-      }
-      .margin({ left: 12 })
-      .layoutWeight(1)
-      .alignItems(HorizontalAlign.Start)
-    }
-    .width('100%')
-    .height(56)
-    .padding({ left: 16, right: 16 })
-    .onClick(() => {
-      const navParam: Record<string, Object> = {};
-      navParam['userId'] = admin.userId;
-      this.navPathStack.pushPath(new NavPathInfo('UserInfo', navParam));
-    })
-  }
-
-  @Builder
-  bannedRow(banned: BannedMember) {
-    Row() {
-      // Avatar
-      Text(banned.name.length > 0 ? banned.name.charAt(0) : '?')
-        .fontSize(16)
-        .fontWeight(FontWeight.Medium)
-        .fontColor(Color.White)
-        .width(40).height(40)
-        .borderRadius(20)
-        .backgroundColor($r('app.color.error_red'))
-        .textAlign(TextAlign.Center)
-
-      Column() {
-        Text(banned.name)
-          .fontSize(16)
-          .fontColor($r('app.color.text_primary'))
-          .maxLines(1)
-
-        Text(`Banned: ${banned.bannedUntil}`)
-          .fontSize(13)
-          .fontColor($r('app.color.error_red'))
-          .margin({ top: 1 })
-      }
-      .margin({ left: 12 })
-      .layoutWeight(1)
-      .alignItems(HorizontalAlign.Start)
-    }
-    .width('100%')
-    .height(56)
-    .padding({ left: 16, right: 16 })
   }
 }
