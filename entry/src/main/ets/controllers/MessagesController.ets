@@ -2,11 +2,9 @@ import { TDLibClient } from '../services/TDLibClient';
 import { NotificationCenter, EventId } from './NotificationCenter';
 import { NotificationService } from '../services/NotificationService';
 import { Chat } from '../models/Chat';
-import { Message, MessageContentType, MessageReaction } from '../models/Message';
+import { Message } from '../models/Message';
 import {
   TdChatPhoto,
-  TdMessageInteractionInfo,
-  TdMessageReactionInfo,
   TdUser,
   parseUpdateChatAction,
   parseUpdateChatLastMessage,
@@ -30,6 +28,8 @@ import {
   parseMessage as parseTdMessage,
   updateChatPositions as parseTdUpdateChatPositions
 } from './TdMessageParser';
+import { ChatActionState, applyInteractionInfo as mapInteractionInfo, mapChatActionState } from './messages/MessageMapper';
+import { removeMessages, sortDialogs as reduceSortDialogs, upsertIncomingMessage } from './messages/MessageStateReducer';
 import {
   TdChat as TdModelChat,
   TdChatPosition as TdModelChatPosition,
@@ -45,13 +45,6 @@ const DOMAIN = 0x0001;
 
 function tdType(obj: Record<string, Object>): string {
   return (obj['@type'] as string) || '';
-}
-
-interface PollOptionDisplay {
-  text: string;
-  voterCount: number;
-  votePercentage: number;
-  isChosen: boolean;
 }
 
 interface TdMessageSender {
@@ -206,11 +199,6 @@ interface TdChat {
   notification_settings?: TdNotificationSettings;
   unread_count?: number;
   type?: TdChatType;
-}
-
-interface ChatActionState {
-  isActive: boolean;
-  description: string;
 }
 
 interface CachedUser {
@@ -630,7 +618,7 @@ export class MessagesController {
       const chat = this.parseChat(rawChat);
       this.chatsById.set(chat.id, chat);
       this.sortedDialogs.push(chat);
-      this.sortDialogs();
+      reduceSortDialogs(this.sortedDialogs);
 
       NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
     });
@@ -664,7 +652,7 @@ export class MessagesController {
         this.updateChatPositions(chat, positions);
       }
 
-      this.sortDialogs();
+      reduceSortDialogs(this.sortedDialogs);
       NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
     });
 
@@ -676,7 +664,7 @@ export class MessagesController {
       if (!chat) return;
 
       this.updateChatPositions(chat, [parsed.position]);
-      this.sortDialogs();
+      reduceSortDialogs(this.sortedDialogs);
       NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
     });
 
@@ -751,14 +739,9 @@ export class MessagesController {
       const rawMsg = parsed.message as TdMessage;
 
       const msg = this.parseMessage(rawMsg);
-      const chatMessages = this.messagesByChat.get(msg.chatId) || [];
-
-      // Avoid duplicates
-      if (!chatMessages.find((m: Message): boolean => m.id === msg.id)) {
-        chatMessages.push(msg);
-        chatMessages.sort((a: Message, b: Message): number => a.id - b.id);
-        this.messagesByChat.set(msg.chatId, chatMessages);
-      }
+      const chatMessages: Message[] = this.messagesByChat.get(msg.chatId) || [];
+      const nextMessages: Message[] = upsertIncomingMessage(chatMessages, msg);
+      this.messagesByChat.set(msg.chatId, nextMessages);
 
       const eventArgs: Record<string, Object> = {};
       eventArgs['chatId'] = msg.chatId;
@@ -812,7 +795,7 @@ export class MessagesController {
       const msg = messages.find((m: Message): boolean => m.id === messageId);
       if (!msg) return;
 
-      this.applyInteractionInfo(msg, info);
+      mapInteractionInfo(msg, info);
 
       const eventArgs: Record<string, Object> = {};
       eventArgs['chatId'] = chatId;
@@ -828,8 +811,7 @@ export class MessagesController {
 
       const messages = this.messagesByChat.get(chatId);
       if (messages) {
-        const deletedSet: Set<number> = new Set(deletedIds);
-        const filtered: Message[] = messages.filter((m: Message): boolean => !deletedSet.has(m.id));
+        const filtered: Message[] = removeMessages(messages, deletedIds);
         this.messagesByChat.set(chatId, filtered);
       }
 
@@ -877,7 +859,7 @@ export class MessagesController {
 
       if (chat) {
         const actionType: string = tdType(action as Record<string, Object>);
-        const chatActionState: ChatActionState = this.mapChatActionState(actionType);
+        const chatActionState: ChatActionState = mapChatActionState(actionType);
         if (chatActionState.isActive) {
           chat.isTyping = true;
           chat.typingDescription = chatActionState.description;
@@ -1068,83 +1050,6 @@ export class MessagesController {
     }
   }
 
-  private applyInteractionInfo(msg: Message, info: TdMessageInteractionInfo): void {
-    const reactions: TdMessageReactionInfo[] | undefined = info.reactions;
-    if (!reactions) return;
-
-    const mappedReactions: MessageReaction[] = [];
-    for (const reactionInfo of reactions) {
-      const count: number = reactionInfo.total_count || 0;
-      if (count <= 0) continue;
-
-      const emoji: string = this.resolveReactionEmoji(reactionInfo.reaction);
-      if (emoji.length === 0) continue;
-
-      const mapped: MessageReaction = {
-        emoji: emoji,
-        count: count,
-        isMine: reactionInfo.is_chosen === true
-      };
-      mappedReactions.push(mapped);
-    }
-
-    msg.reactions = mappedReactions;
-  }
-
-  private resolveReactionEmoji(reaction: Record<string, Object> | undefined): string {
-    if (!reaction) return '';
-
-    const reactionType: string = tdType(reaction);
-    if (reactionType === 'reactionTypeEmoji') {
-      return safeString(reaction['emoji']);
-    }
-    if (reactionType === 'reactionTypeCustomEmoji') {
-      return '⭐';
-    }
-    if (reactionType === 'reactionTypePaid') {
-      return '⭐';
-    }
-    return '';
-  }
-
-  private mapChatActionState(actionType: string): ChatActionState {
-    switch (actionType) {
-      case 'chatActionTyping':
-        return { isActive: true, description: 'typing...' };
-      case 'chatActionRecordingVoiceNote':
-        return { isActive: true, description: 'recording voice...' };
-      case 'chatActionUploadingVoiceNote':
-        return { isActive: true, description: 'uploading voice...' };
-      case 'chatActionRecordingVideoNote':
-        return { isActive: true, description: 'recording video message...' };
-      case 'chatActionUploadingVideoNote':
-        return { isActive: true, description: 'uploading video message...' };
-      case 'chatActionRecordingVideo':
-        return { isActive: true, description: 'recording video...' };
-      case 'chatActionUploadingVideo':
-        return { isActive: true, description: 'uploading video...' };
-      case 'chatActionUploadingPhoto':
-        return { isActive: true, description: 'uploading photo...' };
-      case 'chatActionUploadingDocument':
-        return { isActive: true, description: 'uploading file...' };
-      case 'chatActionChoosingSticker':
-        return { isActive: true, description: 'choosing sticker...' };
-      case 'chatActionChoosingLocation':
-        return { isActive: true, description: 'choosing location...' };
-      case 'chatActionChoosingContact':
-        return { isActive: true, description: 'choosing contact...' };
-      case 'chatActionStartPlayingGame':
-        return { isActive: true, description: 'playing game...' };
-      case 'chatActionWatchingAnimations':
-        return { isActive: true, description: 'watching animations...' };
-      case 'chatActionImportingMessages':
-        return { isActive: true, description: 'importing messages...' };
-      case 'chatActionCancel':
-      default:
-        return { isActive: false, description: '' };
-    }
-  }
-
   // --- Parsing helpers ---
 
   private parseChat(raw: TdChat): Chat {
@@ -1226,13 +1131,5 @@ export class MessagesController {
 
   private extractTextPreview(rawMsg: TdMessage): string {
     return parseTdPreview(rawMsg as TdModelMessage);
-  }
-
-  private sortDialogs(): void {
-    this.sortedDialogs.sort((a: Chat, b: Chat): number => {
-      if (a.order > b.order) return -1;
-      if (a.order < b.order) return 1;
-      return 0;
-    });
   }
 }
