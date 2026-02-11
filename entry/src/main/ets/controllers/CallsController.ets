@@ -1,6 +1,7 @@
 import { TDLibClient } from '../services/TDLibClient';
 import { NotificationCenter, EventId } from './NotificationCenter';
 import { Call, CallDiscardReason } from '../models/Call';
+import { TdObject, safeNumber, safeString, safeBool, asRecord, asArray } from '../models/TdTypes';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const TAG = 'CallsController';
@@ -47,14 +48,14 @@ export class CallsController {
   async loadCallHistory(limit: number = 50): Promise<void> {
     try {
       // TDLib: searchCallMessages to get call history
-      const searchParams: Record<string, unknown> = {};
+      const searchParams: TdObject = {};
       searchParams['offset'] = '';
       searchParams['limit'] = limit;
       searchParams['only_missed'] = false;
       const result = await TDLibClient.getInstance()
-        .send('searchCallMessages', searchParams) as Record<string, unknown>;
+        .send('searchCallMessages', searchParams);
 
-      const rawMessages = result['messages'] as Record<string, unknown>[];
+      const rawMessages = asArray(result['messages']);
       if (rawMessages) {
         this.calls = [];
         for (const raw of rawMessages) {
@@ -74,14 +75,14 @@ export class CallsController {
 
   async startCall(userId: number, isVideo: boolean = false): Promise<void> {
     const libraryVersions: string[] = ['5.0.0'];
-    const protocol: Record<string, unknown> = {};
+    const protocol: TdObject = {};
     protocol['@type'] = 'callProtocol';
     protocol['udp_p2p'] = true;
     protocol['udp_reflector'] = true;
     protocol['min_layer'] = 65;
     protocol['max_layer'] = 92;
     protocol['library_versions'] = libraryVersions;
-    const callParams: Record<string, unknown> = {};
+    const callParams: TdObject = {};
     callParams['user_id'] = userId;
     callParams['protocol'] = protocol;
     callParams['is_video'] = isVideo;
@@ -89,7 +90,7 @@ export class CallsController {
   }
 
   async discardCall(callId: number): Promise<void> {
-    const discardParams: Record<string, unknown> = {};
+    const discardParams: TdObject = {};
     discardParams['call_id'] = callId;
     discardParams['is_disconnected'] = false;
     discardParams['duration'] = 0;
@@ -100,23 +101,25 @@ export class CallsController {
 
   // --- Private ---
 
-  private parseCallFromMessage(raw: Record<string, unknown>): Call | null {
-    const content = raw['content'] as Record<string, unknown>;
-    if (!content) return null;
+  private parseCallFromMessage(raw: TdObject): Call | null {
+    const contentObj = raw['content'];
+    if (!contentObj) return null;
+    const content = asRecord(contentObj);
 
-    const contentType = (content['@type'] as string) || '';
+    const contentType = safeString(content['@type']);
     if (contentType !== 'messageCall') return null;
 
-    const senderId = raw['sender_id'] as Record<string, unknown>;
-    const userId = senderId ? ((senderId['user_id'] as number) || 0) : 0;
-    const isOutgoing = (raw['is_outgoing'] as boolean) || false;
-    const isVideo = (content['is_video'] as boolean) || false;
-    const duration = (content['duration'] as number) || 0;
+    const senderId = asRecord(raw['sender_id']);
+    const userId = safeNumber(senderId['user_id']);
+    const isOutgoing = safeBool(raw['is_outgoing']);
+    const isVideo = safeBool(content['is_video']);
+    const duration = safeNumber(content['duration']);
 
-    const discardReasonObj = content['discard_reason'] as Record<string, unknown>;
+    const discardReasonVal = content['discard_reason'];
     let discardReason = CallDiscardReason.EMPTY;
-    if (discardReasonObj) {
-      const reasonType = (discardReasonObj['@type'] as string) || '';
+    if (discardReasonVal) {
+      const discardReasonObj = asRecord(discardReasonVal);
+      const reasonType = safeString(discardReasonObj['@type']);
       switch (reasonType) {
         case 'callDiscardReasonMissed':
           discardReason = CallDiscardReason.MISSED;
@@ -134,15 +137,15 @@ export class CallsController {
     }
 
     return new Call(
-      (raw['id'] as number) || 0,
-      (raw['chat_id'] as number) || 0,
+      safeNumber(raw['id']),
+      safeNumber(raw['chat_id']),
       userId,
       '',
       null,
       isOutgoing,
       isVideo,
       duration,
-      (raw['date'] as number) || 0,
+      safeNumber(raw['date']),
       discardReason
     );
   }
@@ -150,13 +153,14 @@ export class CallsController {
   private subscribeToUpdates(): void {
     const client = TDLibClient.getInstance();
 
-    client.on('updateCall', (update: Record<string, unknown>) => {
-      const rawCall = update['call'] as Record<string, unknown>;
-      if (!rawCall) return;
+    client.on('updateCall', (update: TdObject) => {
+      const rawCallVal = update['call'];
+      if (!rawCallVal) return;
+      const rawCall = asRecord(rawCallVal);
 
-      const callId = (rawCall['id'] as number) || 0;
-      const state = rawCall['state'] as Record<string, unknown>;
-      const stateType = state ? ((state['@type'] as string) || '') : '';
+      const callId = safeNumber(rawCall['id']);
+      const state = asRecord(rawCall['state']);
+      const stateType = safeString(state['@type']);
 
       hilog.info(DOMAIN, TAG, 'Call %{public}d state: %{public}s', callId, stateType);
 
@@ -171,7 +175,7 @@ export class CallsController {
         this.loadCallHistory();
       }
 
-      const callStateArgs: Record<string, unknown> = {};
+      const callStateArgs: TdObject = {};
       callStateArgs['callId'] = callId;
       callStateArgs['state'] = stateType;
       NotificationCenter.getInstance().post(

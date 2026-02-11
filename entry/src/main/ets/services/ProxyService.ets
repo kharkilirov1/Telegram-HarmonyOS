@@ -4,6 +4,7 @@
 
 import { TDLibClient, TDLibError } from './TDLibClient';
 import { handleTdlibError, AppError } from './AppError';
+import { TdObject, TdProxyType, safeNumber, safeString, safeBool, asRecord, asArray, tdType } from '../models/TdTypes';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const TAG = 'ProxyService';
@@ -36,19 +37,19 @@ export class ProxyService {
    * Fetch all configured proxy servers from TDLib.
    */
   async getProxies(): Promise<ProxyInfo[]> {
-    const result = await this.tdlib.send('getProxies') as Record<string, unknown>;
-    const rawProxies = result['proxies'] as Record<string, unknown>[];
+    const result = await this.tdlib.send('getProxies');
+    const rawProxies = asArray(result['proxies']);
     if (!rawProxies) return [];
 
     const parsed: ProxyInfo[] = [];
     for (const raw of rawProxies) {
-      const proxyType = raw['type'] as Record<string, unknown>;
+      const proxyType = asRecord(raw['type']);
       parsed.push({
-        id: raw['id'] as number,
-        server: raw['server'] as string,
-        port: raw['port'] as number,
+        id: safeNumber(raw['id']),
+        server: safeString(raw['server']),
+        port: safeNumber(raw['port']),
         type: ProxyService.parseProxyType(proxyType),
-        isEnabled: raw['is_enabled'] as boolean,
+        isEnabled: safeBool(raw['is_enabled']),
         lastPingMs: -1,
         username: ProxyService.parseUsername(proxyType)
       });
@@ -62,10 +63,10 @@ export class ProxyService {
    */
   async pingProxy(proxyId: number): Promise<number> {
     try {
-      const params: Record<string, unknown> = {};
+      const params: TdObject = {};
       params['proxy_id'] = proxyId;
       const result = await this.tdlib.send('pingProxy', params);
-      return Math.round((result['seconds'] as number) * 1000);
+      return Math.round(safeNumber(result['seconds']) * 1000);
     } catch (e) {
       hilog.debug(DOMAIN, TAG, 'Proxy ping failed for id=%{public}d: %{public}s',
         proxyId, e instanceof TDLibError ? e.tdMessage : String(e));
@@ -78,7 +79,7 @@ export class ProxyService {
    */
   async enableProxy(proxyId: number): Promise<AppError | null> {
     try {
-      const params: Record<string, unknown> = {};
+      const params: TdObject = {};
       params['proxy_id'] = proxyId;
       await this.tdlib.send('enableProxy', params);
       return null;
@@ -111,9 +112,9 @@ export class ProxyService {
    * Add a new proxy configuration.
    */
   async addProxy(server: string, port: number, enable: boolean,
-    type: Record<string, unknown>): Promise<AppError | null> {
+    type: TdObject): Promise<AppError | null> {
     try {
-      const params: Record<string, unknown> = {};
+      const params: TdObject = {};
       params['server'] = server;
       params['port'] = port;
       params['enable'] = enable;
@@ -134,7 +135,7 @@ export class ProxyService {
    */
   async removeProxy(proxyId: number): Promise<AppError | null> {
     try {
-      const params: Record<string, unknown> = {};
+      const params: TdObject = {};
       params['proxy_id'] = proxyId;
       await this.tdlib.send('removeProxy', params);
       return null;
@@ -151,37 +152,37 @@ export class ProxyService {
    * Build a TDLib proxy type parameter object.
    */
   static buildProxyTypeParam(formType: string, username: string,
-    password: string, secret: string): Record<string, unknown> {
+    password: string, secret: string): TdObject {
     if (formType === 'socks5') {
-      const t: Record<string, unknown> = {};
+      const t: TdObject = {};
       t['@type'] = 'proxyTypeSocks5';
       t['username'] = username;
       t['password'] = password;
       return t;
     } else if (formType === 'http') {
-      const t: Record<string, unknown> = {};
+      const t: TdObject = {};
       t['@type'] = 'proxyTypeHttp';
       t['username'] = username;
       t['password'] = password;
       t['http_only'] = false;
       return t;
     } else {
-      const t: Record<string, unknown> = {};
+      const t: TdObject = {};
       t['@type'] = 'proxyTypeMtproto';
       t['secret'] = secret;
       return t;
     }
   }
 
-  private static parseProxyType(proxyType: Record<string, unknown>): string {
-    const typeName = proxyType['@type'] as string;
+  private static parseProxyType(proxyType: TdObject): string {
+    const typeName = safeString(proxyType['@type']);
     if (typeName === 'proxyTypeSocks5') return 'socks5';
     if (typeName === 'proxyTypeHttp') return 'http';
     if (typeName === 'proxyTypeMtproto') return 'mtproto';
     return 'socks5';
   }
 
-  private static parseUsername(proxyType: Record<string, unknown>): string {
-    return (proxyType['username'] as string) || '';
+  private static parseUsername(proxyType: TdObject): string {
+    return safeString(proxyType['username']);
   }
 }

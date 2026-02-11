@@ -5,6 +5,7 @@ import { TDLibClient, TDLibError } from '../services/TDLibClient';
 import { handleTdlibError } from '../services/AppError';
 import { NotificationCenter, EventId } from './NotificationCenter';
 import { Story, StoryContentType, ChatActiveStories } from '../models/Story';
+import { TdObject, safeNumber, safeString, safeBool, asRecord, asArray } from '../models/TdTypes';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const TAG = 'StoriesController';

@@ -2171,6 +2171,22 @@
     {
       "name": "chat_draft_prefix",
       "value": "Черновик: "
+    },
+    {
+      "name": "permission_microphone_reason",
+      "value": "Telegram необходим доступ к микрофону для голосовых сообщений и звонков."
+    },
+    {
+      "name": "permission_camera_reason",
+      "value": "Telegram необходим доступ к камере для съёмки фото и видео."
+    },
+    {
+      "name": "permission_media_reason",
+      "value": "Telegram необходим доступ к медиафайлам для отправки и сохранения фото и видео."
+    },
+    {
+      "name": "permission_location_reason",
+      "value": "Telegram необходим доступ к местоположению для отправки геолокации в чатах."
     }
   ]
 }

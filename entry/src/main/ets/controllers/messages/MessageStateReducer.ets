@@ -24,3 +24,20 @@ export function removeMessages(existing: Message[], deletedIds: number[]): Messa
   const deletedSet: Set<number> = new Set<number>(deletedIds);
   return existing.filter((m: Message): boolean => !deletedSet.has(m.id));
 }
+
+/**
+ * Replace a temporary (local) message with the server-confirmed message.
+ * TDLib fires updateMessageSendSucceeded with the old temporary ID and the
+ * new server-assigned message. This function swaps them in the message list.
+ */
+export function replaceTemporaryMessage(existing: Message[], oldMessageId: number, confirmed: Message): Message[] {
+  const idx: number = existing.findIndex((m: Message): boolean => m.id === oldMessageId);
+  if (idx >= 0) {
+    existing[idx] = confirmed;
+  } else {
+    // Temp message already removed or never cached — just insert
+    existing.push(confirmed);
+  }
+  existing.sort((a: Message, b: Message): number => a.id - b.id);
+  return existing;
+}

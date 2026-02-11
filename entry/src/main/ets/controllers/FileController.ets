@@ -1,6 +1,7 @@
 import { TDLibClient } from '../services/TDLibClient';
 import { NotificationCenter, EventId } from './NotificationCenter';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { TdObject, safeNumber, safeString, safeBool, asRecord } from '../models/TdTypes';
 
 const TAG = 'FileController';
 const DOMAIN = 0x0001;
@@ -58,7 +59,7 @@ export class FileController {
     this.downloadCallbacks.set(fileId, existing);
 
     // Request download from TDLib
-    const downloadParams: Record<string, unknown> = {};
+    const downloadParams: TdObject = {};
     downloadParams['file_id'] = fileId;
     downloadParams['priority'] = priority;
     downloadParams['offset'] = 0;
@@ -72,23 +73,23 @@ export class FileController {
    */
   cancelDownload(fileId: number): void {
     this.downloadCallbacks.delete(fileId);
-    const cancelParams: Record<string, unknown> = {};
+    const cancelParams: TdObject = {};
     cancelParams['file_id'] = fileId;
     cancelParams['only_if_pending'] = true;
     TDLibClient.getInstance().send('cancelDownloadFile', cancelParams);
   }
 
   private subscribeToUpdates(): void {
-    TDLibClient.getInstance().on('updateFile', (update: Record<string, unknown>) => {
-      const file = update['file'] as Record<string, unknown>;
+    TDLibClient.getInstance().on('updateFile', (update: TdObject) => {
+      const file = asRecord(update['file']);
       if (!file) return;
 
-      const fileId = file['id'] as number;
-      const local = file['local'] as Record<string, unknown>;
+      const fileId = safeNumber(file['id']);
+      const local = asRecord(file['local']);
       if (!local) return;
 
-      const isComplete = local['is_downloading_completed'] as boolean;
-      const path = local['path'] as string;
+      const isComplete = safeBool(local['is_downloading_completed']);
+      const path = safeString(local['path']);
 
       if (isComplete && path && path.length > 0) {
         // Download finished — cache and notify
@@ -100,7 +101,7 @@ export class FileController {
         }
         this.downloadCallbacks.delete(fileId);
 
-        const completedArgs: Record<string, unknown> = {};
+        const completedArgs: TdObject = {};
         completedArgs['fileId'] = fileId;
         completedArgs['path'] = path;
         NotificationCenter.getInstance().post(
@@ -109,10 +110,10 @@ export class FileController {
         );
       } else if (!isComplete) {
         // Progress update
-        const downloaded = local['downloaded_size'] as number || 0;
-        const totalSize = (file['expected_size'] as number) || (file['size'] as number) || 0;
+        const downloaded = safeNumber(local['downloaded_size']);
+        const totalSize = safeNumber(file['expected_size']) || safeNumber(file['size']);
 
-        const progressArgs: Record<string, unknown> = {};
+        const progressArgs: TdObject = {};
         progressArgs['fileId'] = fileId;
         progressArgs['downloaded'] = downloaded;
         progressArgs['total'] = totalSize;

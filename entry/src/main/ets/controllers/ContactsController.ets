@@ -1,6 +1,7 @@
 import { TDLibClient } from '../services/TDLibClient';
 import { NotificationCenter, EventId } from './NotificationCenter';
 import { User } from '../models/User';
+import { TdObject, TdUserFullInfo, safeNumber, safeString, safeBool, asRecord, safeNumberArray } from '../models/TdTypes';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const TAG = 'ContactsController';
@@ -10,7 +11,7 @@ export class ContactsController {
   private static instance: ContactsController | null = null;
 
   private usersById: Map<number, User> = new Map();
-  private userFullInfoById: Map<number, Record<string, unknown>> = new Map();
+  private userFullInfoById: Map<number, TdObject> = new Map();
   private contactIds: number[] = [];
   private contactsLoaded: boolean = false;
 
@@ -31,7 +32,7 @@ export class ContactsController {
     return this.usersById.get(userId);
   }
 
-  getUserFullInfo(userId: number): Record<string, unknown> | undefined {
+  getUserFullInfo(userId: number): TdObject | undefined {
     return this.userFullInfoById.get(userId);
   }
 
@@ -57,8 +58,8 @@ export class ContactsController {
 
     try {
       const result = await TDLibClient.getInstance()
-        .send('getContacts') as Record<string, unknown>;
-      const userIds = result['user_ids'] as number[];
+        .send('getContacts');
+      const userIds = safeNumberArray(result['user_ids']);
 
       if (userIds) {
         this.contactIds = userIds;
@@ -79,12 +80,12 @@ export class ContactsController {
   }
 
   async searchContacts(query: string, limit: number = 50): Promise<User[]> {
-    const searchParams: Record<string, unknown> = {};
+    const searchParams: TdObject = {};
     searchParams['query'] = query;
     searchParams['limit'] = limit;
     const result = await TDLibClient.getInstance()
-      .send('searchContacts', searchParams) as Record<string, unknown>;
-    const userIds = result['user_ids'] as number[];
+      .send('searchContacts', searchParams);
+    const userIds = safeNumberArray(result['user_ids']);
     const users: User[] = [];
 
     if (userIds) {
@@ -104,20 +105,20 @@ export class ContactsController {
 
   async addContact(userId: number, firstName: string, lastName: string,
     phoneNumber: string): Promise<void> {
-    const contact: Record<string, unknown> = {};
+    const contact: TdObject = {};
     contact['@type'] = 'contact';
     contact['phone_number'] = phoneNumber;
     contact['first_name'] = firstName;
     contact['last_name'] = lastName;
     contact['user_id'] = userId;
-    const addParams: Record<string, unknown> = {};
+    const addParams: TdObject = {};
     addParams['contact'] = contact;
     await TDLibClient.getInstance().send('addContact', addParams);
   }
 
   async deleteContact(userId: number): Promise<void> {
     const removeIds: number[] = [userId];
-    const removeParams: Record<string, unknown> = {};
+    const removeParams: TdObject = {};
     removeParams['user_ids'] = removeIds;
     await TDLibClient.getInstance().send('removeContacts', removeParams);
 
@@ -132,10 +133,10 @@ export class ContactsController {
 
   private async loadUser(userId: number): Promise<User | undefined> {
     try {
-      const userParams: Record<string, unknown> = {};
+      const userParams: TdObject = {};
       userParams['user_id'] = userId;
       const result = await TDLibClient.getInstance()
-        .send('getUser', userParams) as Record<string, unknown>;
+        .send('getUser', userParams);
       const user = this.parseUser(result);
       this.usersById.set(user.id, user);
       return user;
@@ -145,38 +146,47 @@ export class ContactsController {
     }
   }
 
-  private parseUser(raw: Record<string, unknown>): User {
-    const status = raw['status'] as Record<string, unknown>;
+  private parseUser(raw: TdObject): User {
     let isOnline = false;
     let lastSeenDate = 0;
 
-    if (status) {
-      const statusType = (status['@type'] as string) || '';
+    const statusObj = raw['status'];
+    if (statusObj) {
+      const status = asRecord(statusObj);
+      const statusType = safeString(status['@type']);
       if (statusType === 'userStatusOnline') {
         isOnline = true;
       } else if (statusType === 'userStatusOffline') {
-        lastSeenDate = (status['was_online'] as number) || 0;
+        lastSeenDate = safeNumber(status['was_online']);
       }
     }
 
-    const profilePhoto = raw['profile_photo'] as Record<string, unknown>;
+    const profilePhotoObj = raw['profile_photo'];
     let photoUrl: string | null = null;
-    if (profilePhoto) {
-      const small = profilePhoto['small'] as Record<string, unknown>;
-      if (small) {
-        const localPath = small['local'] as Record<string, unknown>;
-        if (localPath && localPath['path']) {
-          photoUrl = localPath['path'] as string;
+    if (profilePhotoObj) {
+      const profilePhoto = asRecord(profilePhotoObj);
+      const smallObj = profilePhoto['small'];
+      if (smallObj) {
+        const small = asRecord(smallObj);
+        const localObj = small['local'];
+        if (localObj) {
+          const localPath = asRecord(localObj);
+          const pathVal = safeString(localPath['path']);
+          if (pathVal) {
+            photoUrl = pathVal;
+          }
         }
       }
     }
 
+    const username = safeString(raw['username']) || safeString(asRecord(raw['usernames'])['editable_username']);
+
     return new User(
-      (raw['id'] as number) || 0,
-      (raw['first_name'] as string) || '',
-      (raw['last_name'] as string) || '',
-      (raw['username'] as string) || ((raw['usernames'] as Record<string, unknown>)?.['editable_username'] as string) || '',
-      (raw['phone_number'] as string) || '',
+      safeNumber(raw['id']),
+      safeString(raw['first_name']),
+      safeString(raw['last_name']),
+      username,
+      safeString(raw['phone_number']),
       photoUrl,
       isOnline,
       lastSeenDate
@@ -186,14 +196,14 @@ export class ContactsController {
   private subscribeToUpdates(): void {
     const client = TDLibClient.getInstance();
 
-    client.on('updateUser', (update: Record<string, unknown>) => {
-      const rawUser = update['user'] as Record<string, unknown>;
+    client.on('updateUser', (update: Record<string, Object>) => {
+      const rawUser = update['user'] as Record<string, Object>;
       if (!rawUser) return;
 
       const user = this.parseUser(rawUser);
       this.usersById.set(user.id, user);
 
-      const userInfoArgs: Record<string, unknown> = {};
+      const userInfoArgs: Record<string, Object> = {};
       userInfoArgs['userId'] = user.id;
       NotificationCenter.getInstance().post(
         EventId.USER_INFO_UPDATED,
@@ -201,9 +211,9 @@ export class ContactsController {
       );
     });
 
-    client.on('updateUserStatus', (update: Record<string, unknown>) => {
+    client.on('updateUserStatus', (update: Record<string, Object>) => {
       const userId = update['user_id'] as number;
-      const status = update['status'] as Record<string, unknown>;
+      const status = update['status'] as Record<string, Object>;
       const user = this.usersById.get(userId);
 
       if (user && status) {
@@ -213,7 +223,7 @@ export class ContactsController {
           user.lastSeenDate = (status['was_online'] as number) || 0;
         }
 
-        const statusArgs: Record<string, unknown> = {};
+        const statusArgs: Record<string, Object> = {};
         statusArgs['userId'] = userId;
         NotificationCenter.getInstance().post(
           EventId.USER_STATUS_UPDATED,
@@ -222,9 +232,9 @@ export class ContactsController {
       }
     });
 
-    client.on('updateUserFullInfo', (update: Record<string, unknown>) => {
+    client.on('updateUserFullInfo', (update: Record<string, Object>) => {
       const userId = (update['user_id'] as number) || 0;
-      const fullInfo = update['user_full_info'] as Record<string, unknown>;
+      const fullInfo = update['user_full_info'] as Record<string, Object>;
       if (userId === 0 || !fullInfo) return;
 
       this.userFullInfoById.set(userId, fullInfo);
@@ -234,7 +244,7 @@ export class ContactsController {
         void this.loadUser(userId);
       }
 
-      const userInfoArgs: Record<string, unknown> = {};
+      const userInfoArgs: Record<string, Object> = {};
       userInfoArgs['userId'] = userId;
       userInfoArgs['fullInfoUpdated'] = true;
       NotificationCenter.getInstance().post(

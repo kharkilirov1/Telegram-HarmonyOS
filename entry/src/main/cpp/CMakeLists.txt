@@ -49,6 +49,13 @@ if(EXISTS "${TDLIB_HEADER}" AND EXISTS "${TDLIB_LIBRARY}")
     )
     message(STATUS "Using TDLib for ABI ${TDLIB_ABI}: ${TDLIB_LIBRARY}")
 else()
-    message(WARNING "TDLib not found for ABI ${TDLIB_ABI}. Using stub implementations.")
+    # Release builds MUST have real TDLib — stub is only for development
+    if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+        message(FATAL_ERROR
+            "TDLib not found for ABI ${TDLIB_ABI} in release build. "
+            "Place prebuilt TDLib at ${TDLIB_DIR}/lib/${TDLIB_ABI}/libtdjson.so "
+            "and headers at ${TDLIB_DIR}/include/td/telegram/td_json_client.h")
+    endif()
+    message(WARNING "TDLib not found for ABI ${TDLIB_ABI}. Using stub implementations (dev only).")
     target_compile_definitions(tdlib_napi PRIVATE TDLIB_STUB=1)
 endif()

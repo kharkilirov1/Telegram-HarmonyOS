@@ -1,24 +1,44 @@
 // TDLib response interfaces for ArkTS strict typing
 // Extracted from MessagesController for reuse across parsers/controllers
 
+// --- Base TDLib object type ---
+// All TDLib JSON responses/nested objects follow this shape
+
+export type TdObject = Record<string, Object>;
+
+// --- Safe object accessor (replaces 'as Record<string, Object>' casts) ---
+
+export function asRecord(value: Object | undefined | null): TdObject {
+  if (value === undefined || value === null) {
+    const empty: TdObject = {};
+    return empty;
+  }
+  return value as TdObject;
+}
+
+export function asArray(value: Object | undefined | null): TdObject[] {
+  if (value === undefined || value === null) return [];
+  return value as TdObject[];
+}
+
 // --- Type guard helper ---
 
-export function tdType(obj: Record<string, unknown>): string {
-  return (obj['@type'] as string) || '';
+export function tdType(obj: TdObject): string {
+  return safeString(obj['@type']);
 }
 
 // --- Type guard functions for TDLib responses ---
 
-export function isTdError(response: Record<string, unknown>): boolean {
+export function isTdError(response: TdObject): boolean {
   return tdType(response) === 'error';
 }
 
-export function getTdErrorCode(response: Record<string, unknown>): number {
-  return (response['code'] as number) || 0;
+export function getTdErrorCode(response: TdObject): number {
+  return safeNumber(response['code']);
 }
 
-export function getTdErrorMessage(response: Record<string, unknown>): string {
-  return (response['message'] as string) || 'Unknown error';
+export function getTdErrorMessage(response: TdObject): string {
+  return safeString(response['message']);
 }
 
 // --- Safe accessor helpers ---
@@ -27,6 +47,26 @@ export function safeNumber(value: Object | undefined | null): number {
   if (value === undefined || value === null) return 0;
   if (typeof value === 'number') return value as number;
   return 0;
+}
+
+/**
+ * Safe accessor for TDLib int64 fields that may exceed Number.MAX_SAFE_INTEGER.
+ * Returns the value as a string to prevent precision loss.
+ * Use for: session.id, any field documented as true int64 in TDLib.
+ */
+export function safeInt64(value: Object | undefined | null): string {
+  if (value === undefined || value === null) return '0';
+  if (typeof value === 'string') return value as string;
+  if (typeof value === 'number') {
+    const n = value as number;
+    // Warn-worthy: value exceeds JS safe integer range
+    if (n > Number.MAX_SAFE_INTEGER || n < Number.MIN_SAFE_INTEGER) {
+      // Already lost precision at this point, but return best-effort string
+      return n.toString();
+    }
+    return n.toString();
+  }
+  return '0';
 }
 
 export function safeString(value: Object | undefined | null): string {
@@ -39,6 +79,11 @@ export function safeBool(value: Object | undefined | null): boolean {
   if (value === undefined || value === null) return false;
   if (typeof value === 'boolean') return value as boolean;
   return false;
+}
+
+export function safeNumberArray(value: Object | undefined | null): number[] {
+  if (value === undefined || value === null) return [];
+  return value as number[];
 }
 
 // --- Poll option display ---
@@ -237,8 +282,15 @@ export interface TdSelfDestructType {
   self_destruct_time?: number;
 }
 
+// --- TDLib chat list (polymorphic: chatListMain, chatListArchive, chatListFolder) ---
+
+export interface TdChatList {
+  ['@type']?: string;
+  chat_folder_id?: number;
+}
+
 export interface TdChatPosition {
-  list?: Record<string, unknown>;
+  list?: TdChatList;
   order?: string;
   is_pinned?: boolean;
 }
@@ -394,9 +446,18 @@ export interface TdSupergroupFullInfo {
   invite_link?: TdChatInviteLink;
 }
 
+// --- TDLib member status (polymorphic: chatMemberStatusCreator, Administrator, etc.) ---
+
+export interface TdMemberStatus {
+  ['@type']?: string;
+  is_anonymous?: boolean;
+  is_member?: boolean;
+  can_be_edited?: boolean;
+}
+
 export interface TdSupergroupMember {
   member_id?: TdMessageSender;
-  status?: Record<string, unknown>;
+  status?: TdMemberStatus;
 }
 
 export interface TdSupergroupMembers {
@@ -423,9 +484,15 @@ export interface TdChatInviteLinks {
 
 // --- TDLib secret chat ---
 
+// --- TDLib secret chat state (polymorphic: secretChatStatePending, Ready, Closed) ---
+
+export interface TdSecretChatState {
+  ['@type']?: string;
+}
+
 export interface TdSecretChat {
   id?: number;
-  state?: Record<string, unknown>;
+  state?: TdSecretChatState;
   key_hash?: string;
   user_id?: number;
 }
@@ -496,7 +563,7 @@ export interface TdChatsNearby {
 // --- TDLib session ---
 
 export interface TdSession {
-  id?: number;
+  id?: string; // TDLib int64 — stored as string to prevent precision loss
   is_current?: boolean;
   api_id?: number;
   application_name?: string;
@@ -517,6 +584,7 @@ export interface TdSessions {
 // --- TDLib proxy ---
 
 export interface TdProxyType {
+  ['@type']?: string;
   username?: string;
   password?: string;
   http_only?: boolean;
@@ -544,4 +612,100 @@ export interface TdMessages {
 
 export interface TdOk {
   // empty — @type = 'ok'
+}
+
+// --- TDLib user full info ---
+
+export interface TdUserFullInfo {
+  bio?: TdFormattedText;
+  group_in_common_count?: number;
+}
+
+// --- TDLib update user/status ---
+
+export interface TdUpdateUser {
+  user?: TdUser;
+}
+
+export interface TdUpdateUserStatus {
+  user_id?: number;
+  status?: TdUserStatus;
+}
+
+export interface TdUpdateUserFullInfo {
+  user_id?: number;
+  user_full_info?: TdUserFullInfo;
+}
+
+// --- TDLib update file ---
+
+export interface TdUpdateFile {
+  file?: TdFile;
+}
+
+// --- TDLib sticker raw ---
+
+export interface TdStickerRaw {
+  id?: number;
+  emoji?: string;
+  sticker?: TdFile;
+  format?: TdTyped;
+  type?: TdTyped;
+}
+
+export interface TdTyped {
+  ['@type']?: string;
+}
+
+// --- TDLib call ---
+
+export interface TdCallState {
+  ['@type']?: string;
+}
+
+// --- TDLib story ---
+
+export interface TdStoryRaw {
+  id?: number;
+  sender_chat_id?: number;
+  date?: number;
+  content?: TdObject;
+}
+
+export interface TdChatActiveStories {
+  chat_id?: number;
+  stories?: TdStoryRaw[];
+}
+
+// --- TDLib contact user IDs ---
+
+export interface TdUserIds {
+  user_ids?: number[];
+}
+
+// --- TDLib connection state ---
+
+export interface TdConnectionState {
+  ['@type']?: string;
+}
+
+// --- TDLib authorization state ---
+
+export interface TdAuthorizationState {
+  ['@type']?: string;
+  password_hint?: string;
+}
+
+export interface TdUpdateAuthorizationState {
+  authorization_state?: TdAuthorizationState;
+}
+
+export interface TdUpdateConnectionState {
+  state?: TdConnectionState;
+}
+
+// --- Event payload interfaces (for NotificationCenter typed events) ---
+
+export interface EventArgs {
+  [key: string]: Object;
 }

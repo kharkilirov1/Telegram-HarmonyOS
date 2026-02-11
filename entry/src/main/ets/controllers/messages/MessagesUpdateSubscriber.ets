@@ -30,10 +30,12 @@ import {
   parseUpdateNewChat,
   parseUpdateNewMessage,
   parseUpdateUser,
-  parseUpdateUserStatus
+  parseUpdateUserStatus,
+  parseUpdateMessageSendSucceeded,
+  parseUpdateMessageSendFailed
 } from './TdUpdateParser';
 import { ChatActionState, applyInteractionInfo as mapInteractionInfo, mapChatActionState } from './MessageMapper';
-import { removeMessages, sortDialogs as reduceSortDialogs, upsertIncomingMessage } from './MessageStateReducer';
+import { removeMessages, replaceTemporaryMessage, sortDialogs as reduceSortDialogs, upsertIncomingMessage } from './MessageStateReducer';
 
 export interface MessagesUpdateSubscriberDeps {
   client: TDLibClient;
@@ -333,5 +335,50 @@ export function subscribeToTdUpdates(deps: MessagesUpdateSubscriberDeps): void {
       eventArgs['chatId'] = chatId;
       NotificationCenter.getInstance().post(EventId.CHAT_ACTION_UPDATED, eventArgs);
     }
+  });
+
+  // --- Message send lifecycle (critical for TDLib correctness) ---
+
+  client.on('updateMessageSendSucceeded', (update: Record<string, Object>) => {
+    const parsed = parseUpdateMessageSendSucceeded(update);
+    if (!parsed) return;
+    const rawMsg = parsed.message as TdMessage;
+    const oldMessageId: number = parsed.oldMessageId;
+
+    const confirmedMsg = deps.parseMessage(rawMsg);
+    const chatMessages: Message[] = deps.messagesByChat.get(confirmedMsg.chatId) || [];
+    const nextMessages: Message[] = replaceTemporaryMessage(chatMessages, oldMessageId, confirmedMsg);
+    deps.messagesByChat.set(confirmedMsg.chatId, nextMessages);
+
+    const eventArgs: Record<string, Object> = {};
+    eventArgs['chatId'] = confirmedMsg.chatId;
+    eventArgs['oldMessageId'] = oldMessageId;
+    eventArgs['newMessageId'] = confirmedMsg.id;
+    NotificationCenter.getInstance().post(EventId.MESSAGE_SEND_SUCCEEDED, eventArgs);
+  });
+
+  client.on('updateMessageSendFailed', (update: Record<string, Object>) => {
+    const parsed = parseUpdateMessageSendFailed(update);
+    if (!parsed) return;
+    const rawMsg = parsed.message as TdMessage;
+    const oldMessageId: number = parsed.oldMessageId;
+
+    // Update the temporary message to reflect the failure
+    const chatId: number = rawMsg.chat_id || 0;
+    const messages = deps.messagesByChat.get(chatId);
+    if (messages) {
+      const msg = messages.find((m: Message): boolean => m.id === oldMessageId);
+      if (msg) {
+        // Mark the message as failed (UI can show retry indicator)
+        msg.id = rawMsg.id || oldMessageId;
+      }
+    }
+
+    const eventArgs: Record<string, Object> = {};
+    eventArgs['chatId'] = chatId;
+    eventArgs['oldMessageId'] = oldMessageId;
+    eventArgs['errorCode'] = parsed.errorCode;
+    eventArgs['errorMessage'] = parsed.errorMessage;
+    NotificationCenter.getInstance().post(EventId.MESSAGE_SEND_FAILED, eventArgs);
   });
 }

@@ -3,6 +3,7 @@ import { taskpool } from '@kit.ArkTS';
 import { TELEGRAM_API_ID, TELEGRAM_API_HASH } from './ConfigLocal';
 import { TdFallbackRegistry } from './TdFallbackRegistry';
 import { classifyTdlibError } from './AppError';
+import { TdObject } from '../models/TdTypes';
 
 // Native NAPI module
 import tdlib from 'libtdlib_napi.so';
@@ -57,10 +58,10 @@ export enum LogLevel {
   NONE = 4
 }
 
-type TDLibUpdateHandler = (update: Record<string, unknown>) => void;
+type TDLibUpdateHandler = (update: TdObject) => void;
 
 interface PendingRequest {
-  resolve: (response: Record<string, unknown>) => void;
+  resolve: (response: TdObject) => void;
   reject: (code: number, message: string) => void;
   method: string;
   timerId: number;
@@ -138,13 +139,13 @@ export class TDLibClient {
   }
 
   // Send a request and get a promise for the response
-  async send(method: string, inputParams?: Record<string, unknown>): Promise<Record<string, unknown>> {
+  async send(method: string, inputParams?: TdObject): Promise<TdObject> {
     if (this._state !== ClientState.Ready && this._state !== ClientState.Initializing) {
       throw new TDLibError(0, `Cannot send '${method}' in state '${this._state}'`);
     }
 
     const id: number = ++this.requestId;
-    let request: Record<string, unknown>;
+    let request: TdObject;
     if (inputParams !== undefined) {
       request = inputParams;
     } else {
@@ -153,7 +154,7 @@ export class TDLibClient {
     request['@type'] = method;
     request['@extra'] = id;
 
-    return new Promise<Record<string, unknown>>((resolve, reject) => {
+    return new Promise<TdObject>((resolve, reject) => {
       // Set timeout to auto-reject hanging requests
       const timerId: number = setTimeout(() => {
         if (this.pendingRequests.has(id)) {
@@ -195,51 +196,51 @@ export class TDLibClient {
 
   // --- Auth methods (mirroring iOS Telegram patterns) ---
 
-  async setPhoneNumber(phoneNumber: string): Promise<Record<string, unknown>> {
-    const settings: Record<string, unknown> = {};
+  async setPhoneNumber(phoneNumber: string): Promise<TdObject> {
+    const settings: TdObject = {};
     settings['@type'] = 'phoneNumberAuthenticationSettings';
     settings['allow_flash_call'] = false;
     settings['allow_missed_call'] = false;
     settings['is_current_phone_number'] = false;
     settings['allow_sms_retriever_api'] = false;
-    const params: Record<string, unknown> = {};
+    const params: TdObject = {};
     params['phone_number'] = phoneNumber;
     params['settings'] = settings;
     return this.send('setAuthenticationPhoneNumber', params);
   }
 
-  async checkAuthCode(code: string): Promise<Record<string, unknown>> {
-    const params: Record<string, unknown> = {};
+  async checkAuthCode(code: string): Promise<TdObject> {
+    const params: TdObject = {};
     params['code'] = code;
     return this.send('checkAuthenticationCode', params);
   }
 
-  async checkAuthPassword(password: string): Promise<Record<string, unknown>> {
-    const params: Record<string, unknown> = {};
+  async checkAuthPassword(password: string): Promise<TdObject> {
+    const params: TdObject = {};
     params['password'] = password;
     return this.send('checkAuthenticationPassword', params);
   }
 
   // --- Chat methods ---
 
-  async loadChats(limit: number = 20): Promise<Record<string, unknown>> {
-    const chatList: Record<string, unknown> = {};
+  async loadChats(limit: number = 20): Promise<TdObject> {
+    const chatList: TdObject = {};
     chatList['@type'] = 'chatListMain';
-    const params: Record<string, unknown> = {};
+    const params: TdObject = {};
     params['chat_list'] = chatList;
     params['limit'] = limit;
     return this.send('loadChats', params);
   }
 
-  async getChat(chatId: number): Promise<Record<string, unknown>> {
-    const params: Record<string, unknown> = {};
+  async getChat(chatId: number): Promise<TdObject> {
+    const params: TdObject = {};
     params['chat_id'] = chatId;
     return this.send('getChat', params);
   }
 
   async getChatHistory(chatId: number, fromMessageId: number = 0,
-    limit: number = 50): Promise<Record<string, unknown>> {
-    const params: Record<string, unknown> = {};
+    limit: number = 50): Promise<TdObject> {
+    const params: TdObject = {};
     params['chat_id'] = chatId;
     params['from_message_id'] = fromMessageId;
     params['offset'] = 0;
@@ -250,27 +251,27 @@ export class TDLibClient {
 
   // --- Contact methods ---
 
-  async getContacts(): Promise<Record<string, unknown>> {
+  async getContacts(): Promise<TdObject> {
     return this.send('getContacts');
   }
 
-  async searchContacts(query: string, limit: number = 50): Promise<Record<string, unknown>> {
-    const params: Record<string, unknown> = {};
+  async searchContacts(query: string, limit: number = 50): Promise<TdObject> {
+    const params: TdObject = {};
     params['query'] = query;
     params['limit'] = limit;
     return this.send('searchContacts', params);
   }
 
-  async getUser(userId: number): Promise<Record<string, unknown>> {
-    const params: Record<string, unknown> = {};
+  async getUser(userId: number): Promise<TdObject> {
+    const params: TdObject = {};
     params['user_id'] = userId;
     return this.send('getUser', params);
   }
 
   // --- Create chat ---
 
-  async createPrivateChat(userId: number): Promise<Record<string, unknown>> {
-    const params: Record<string, unknown> = {};
+  async createPrivateChat(userId: number): Promise<TdObject> {
+    const params: TdObject = {};
     params['user_id'] = userId;
     params['force'] = false;
     return this.send('createPrivateChat', params);
@@ -278,10 +279,10 @@ export class TDLibClient {
 
   // --- Search ---
 
-  async searchMessages(query: string, limit: number = 50): Promise<Record<string, unknown>> {
-    const chatList: Record<string, unknown> = {};
+  async searchMessages(query: string, limit: number = 50): Promise<TdObject> {
+    const chatList: TdObject = {};
     chatList['@type'] = 'chatListMain';
-    const params: Record<string, unknown> = {};
+    const params: TdObject = {};
     params['chat_list'] = chatList;
     params['query'] = query;
     params['offset'] = '';
@@ -293,33 +294,33 @@ export class TDLibClient {
 
   // --- Message methods ---
 
-  async editMessageText(chatId: number, messageId: number, text: string): Promise<Record<string, unknown>> {
-    const formattedText: Record<string, unknown> = {};
+  async editMessageText(chatId: number, messageId: number, text: string): Promise<TdObject> {
+    const formattedText: TdObject = {};
     formattedText['@type'] = 'formattedText';
     formattedText['text'] = text;
-    const inputContent: Record<string, unknown> = {};
+    const inputContent: TdObject = {};
     inputContent['@type'] = 'inputMessageText';
     inputContent['text'] = formattedText;
-    const params: Record<string, unknown> = {};
+    const params: TdObject = {};
     params['chat_id'] = chatId;
     params['message_id'] = messageId;
     params['input_message_content'] = inputContent;
     return this.send('editMessageText', params);
   }
 
-  async sendMessage(chatId: number, text: string, replyToMessageId: number = 0): Promise<Record<string, unknown>> {
-    const formattedText: Record<string, unknown> = {};
+  async sendMessage(chatId: number, text: string, replyToMessageId: number = 0): Promise<TdObject> {
+    const formattedText: TdObject = {};
     formattedText['@type'] = 'formattedText';
     formattedText['text'] = text;
-    const inputContent: Record<string, unknown> = {};
+    const inputContent: TdObject = {};
     inputContent['@type'] = 'inputMessageText';
     inputContent['text'] = formattedText;
-    const params: Record<string, unknown> = {};
+    const params: TdObject = {};
     params['chat_id'] = chatId;
     params['input_message_content'] = inputContent;
 
     if (replyToMessageId > 0) {
-      const replyTo: Record<string, unknown> = {};
+      const replyTo: TdObject = {};
       replyTo['@type'] = 'inputMessageReplyToMessage';
       replyTo['message_id'] = replyToMessageId;
       params['reply_to'] = replyTo;
@@ -330,8 +331,8 @@ export class TDLibClient {
 
   // --- View messages (mark as read) ---
 
-  async viewMessages(chatId: number, messageIds: number[]): Promise<Record<string, unknown>> {
-    const params: Record<string, unknown> = {};
+  async viewMessages(chatId: number, messageIds: number[]): Promise<TdObject> {
+    const params: TdObject = {};
     params['chat_id'] = chatId;
     params['message_ids'] = messageIds;
     params['force_read'] = true;
@@ -341,22 +342,22 @@ export class TDLibClient {
   // --- Send photo ---
 
   async sendPhoto(chatId: number, filePath: string, caption: string = '',
-    replyToMessageId: number = 0): Promise<Record<string, unknown>> {
-    const inputFile: Record<string, unknown> = {};
+    replyToMessageId: number = 0): Promise<TdObject> {
+    const inputFile: TdObject = {};
     inputFile['@type'] = 'inputFileLocal';
     inputFile['path'] = filePath;
-    const formattedCaption: Record<string, unknown> = {};
+    const formattedCaption: TdObject = {};
     formattedCaption['@type'] = 'formattedText';
     formattedCaption['text'] = caption;
-    const inputContent: Record<string, unknown> = {};
+    const inputContent: TdObject = {};
     inputContent['@type'] = 'inputMessagePhoto';
     inputContent['photo'] = inputFile;
     inputContent['caption'] = formattedCaption;
-    const params: Record<string, unknown> = {};
+    const params: TdObject = {};
     params['chat_id'] = chatId;
     params['input_message_content'] = inputContent;
     if (replyToMessageId > 0) {
-      const replyTo: Record<string, unknown> = {};
+      const replyTo: TdObject = {};
       replyTo['@type'] = 'inputMessageReplyToMessage';
       replyTo['message_id'] = replyToMessageId;
       params['reply_to'] = replyTo;
@@ -367,22 +368,22 @@ export class TDLibClient {
   // --- Send document ---
 
   async sendDocument(chatId: number, filePath: string, caption: string = '',
-    replyToMessageId: number = 0): Promise<Record<string, unknown>> {
-    const inputFile: Record<string, unknown> = {};
+    replyToMessageId: number = 0): Promise<TdObject> {
+    const inputFile: TdObject = {};
     inputFile['@type'] = 'inputFileLocal';
     inputFile['path'] = filePath;
-    const formattedCaption: Record<string, unknown> = {};
+    const formattedCaption: TdObject = {};
     formattedCaption['@type'] = 'formattedText';
     formattedCaption['text'] = caption;
-    const inputContent: Record<string, unknown> = {};
+    const inputContent: TdObject = {};
     inputContent['@type'] = 'inputMessageDocument';
     inputContent['document'] = inputFile;
     inputContent['caption'] = formattedCaption;
-    const params: Record<string, unknown> = {};
+    const params: TdObject = {};
     params['chat_id'] = chatId;
     params['input_message_content'] = inputContent;
     if (replyToMessageId > 0) {
-      const replyTo: Record<string, unknown> = {};
+      const replyTo: TdObject = {};
       replyTo['@type'] = 'inputMessageReplyToMessage';
       replyTo['message_id'] = replyToMessageId;
       params['reply_to'] = replyTo;
@@ -392,8 +393,8 @@ export class TDLibClient {
 
   // --- Delete chat ---
 
-  async deleteChat(chatId: number): Promise<Record<string, unknown>> {
-    const params: Record<string, unknown> = {};
+  async deleteChat(chatId: number): Promise<TdObject> {
+    const params: TdObject = {};
     params['chat_id'] = chatId;
     params['remove_from_chat_list'] = true;
     params['revoke'] = false;
@@ -402,12 +403,12 @@ export class TDLibClient {
 
   // --- Toggle mute ---
 
-  async setChatNotificationSettings(chatId: number, muteFor: number): Promise<Record<string, unknown>> {
-    const settings: Record<string, unknown> = {};
+  async setChatNotificationSettings(chatId: number, muteFor: number): Promise<TdObject> {
+    const settings: TdObject = {};
     settings['@type'] = 'chatNotificationSettings';
     settings['use_default_mute_for'] = false;
     settings['mute_for'] = muteFor;
-    const params: Record<string, unknown> = {};
+    const params: TdObject = {};
     params['chat_id'] = chatId;
     params['notification_settings'] = settings;
     return this.send('setChatNotificationSettings', params);
@@ -415,10 +416,10 @@ export class TDLibClient {
 
   // --- Pin/unpin chat ---
 
-  async toggleChatIsPinned(chatId: number, isPinned: boolean): Promise<Record<string, unknown>> {
-    const chatList: Record<string, unknown> = {};
+  async toggleChatIsPinned(chatId: number, isPinned: boolean): Promise<TdObject> {
+    const chatList: TdObject = {};
     chatList['@type'] = 'chatListMain';
-    const params: Record<string, unknown> = {};
+    const params: TdObject = {};
     params['chat_list'] = chatList;
     params['chat_id'] = chatId;
     params['is_pinned'] = isPinned;
@@ -427,21 +428,21 @@ export class TDLibClient {
 
   // --- Read all in chat ---
 
-  async openChat(chatId: number): Promise<Record<string, unknown>> {
-    const params: Record<string, unknown> = {};
+  async openChat(chatId: number): Promise<TdObject> {
+    const params: TdObject = {};
     params['chat_id'] = chatId;
     return this.send('openChat', params);
   }
 
-  async toggleChatIsMarkedAsUnread(chatId: number, isMarkedAsUnread: boolean): Promise<Record<string, unknown>> {
-    const params: Record<string, unknown> = {};
+  async toggleChatIsMarkedAsUnread(chatId: number, isMarkedAsUnread: boolean): Promise<TdObject> {
+    const params: TdObject = {};
     params['chat_id'] = chatId;
     params['is_marked_as_unread'] = isMarkedAsUnread;
     return this.send('toggleChatIsMarkedAsUnread', params);
   }
 
-  async closeChat(chatId: number): Promise<Record<string, unknown>> {
-    const params: Record<string, unknown> = {};
+  async closeChat(chatId: number): Promise<TdObject> {
+    const params: TdObject = {};
     params['chat_id'] = chatId;
     return this.send('closeChat', params);
   }
@@ -449,23 +450,23 @@ export class TDLibClient {
   // --- Send video ---
 
   async sendVideo(chatId: number, filePath: string, caption: string = '',
-    duration: number = 0, replyToMessageId: number = 0): Promise<Record<string, unknown>> {
-    const inputFile: Record<string, unknown> = {};
+    duration: number = 0, replyToMessageId: number = 0): Promise<TdObject> {
+    const inputFile: TdObject = {};
     inputFile['@type'] = 'inputFileLocal';
     inputFile['path'] = filePath;
-    const formattedCaption: Record<string, unknown> = {};
+    const formattedCaption: TdObject = {};
     formattedCaption['@type'] = 'formattedText';
     formattedCaption['text'] = caption;
-    const inputContent: Record<string, unknown> = {};
+    const inputContent: TdObject = {};
     inputContent['@type'] = 'inputMessageVideo';
     inputContent['video'] = inputFile;
     inputContent['caption'] = formattedCaption;
     inputContent['duration'] = duration;
-    const params: Record<string, unknown> = {};
+    const params: TdObject = {};
     params['chat_id'] = chatId;
     params['input_message_content'] = inputContent;
     if (replyToMessageId > 0) {
-      const replyTo: Record<string, unknown> = {};
+      const replyTo: TdObject = {};
       replyTo['@type'] = 'inputMessageReplyToMessage';
       replyTo['message_id'] = replyToMessageId;
       params['reply_to'] = replyTo;
@@ -476,7 +477,7 @@ export class TDLibClient {
   // --- Private methods ---
 
   private sendTdlibParameters(): void {
-    const params: Record<string, unknown> = {};
+    const params: TdObject = {};
     params['database_directory'] = '/data/storage/el2/base/tdlib';
     params['files_directory'] = '/data/storage/el2/base/tdlib/files';
     params['use_file_database'] = true;
@@ -496,7 +497,7 @@ export class TDLibClient {
     try {
       // Parse JSON off the main thread via TaskPool
       const task: taskpool.Task = new taskpool.Task(parseJsonInBackground, responseJson);
-      const response: Record<string, unknown> = (await taskpool.execute(task)) as Record<string, unknown>;
+      const response: TdObject = (await taskpool.execute(task)) as TdObject;
 
       const type: string = (response['@type'] as string) || '';
       const extra: number = (response['@extra'] as number) || 0;

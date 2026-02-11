@@ -1,3 +1,5 @@
+import { TdObject } from '../models/TdTypes';
+
 export enum EventId {
   // Auth
   AUTH_STATE_CHANGED = 1,
@@ -12,6 +14,8 @@ export enum EventId {
   MESSAGE_EDITED = 22,
   MESSAGE_DELETED = 23,
   MESSAGES_READ = 24,
+  MESSAGE_SEND_SUCCEEDED = 25,
+  MESSAGE_SEND_FAILED = 26,
 
   // Users
   USER_STATUS_UPDATED = 30,
@@ -42,7 +46,7 @@ export enum EventId {
   APP_ERROR = 60,
 }
 
-type EventHandler = (args?: Record<string, unknown>) => void;
+export type EventHandler = (args?: TdObject) => void;
 
 export class NotificationCenter {
   private static instance: NotificationCenter | null = null;
@@ -73,7 +77,7 @@ export class NotificationCenter {
     }
   }
 
-  post(eventId: EventId, args?: Record<string, unknown>): void {
+  post(eventId: EventId, args?: TdObject): void {
     const list = this.observers.get(eventId);
     if (list) {
       for (const handler of list) {

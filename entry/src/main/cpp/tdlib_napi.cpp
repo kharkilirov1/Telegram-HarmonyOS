@@ -421,18 +421,6 @@ static void stub_handle_send(const std::string& request) {
         }
         stub_enqueue("{\"@type\":\"ok\",\"@extra\":" + extra_str + "}");
     }
-    else if (request.find("\"getUser\"") != std::string::npos) {
-        std::string extra_str;
-        auto pos = request.find("\"@extra\"");
-        if (pos != std::string::npos) {
-            auto colon = request.find(':', pos);
-            auto comma = request.find(',', colon);
-            auto brace = request.find('}', colon);
-            auto end = (comma != std::string::npos && comma < brace) ? comma : brace;
-            extra_str = request.substr(colon + 1, end - colon - 1);
-        }
-        stub_enqueue("{\"@type\":\"user\",\"id\":1001,\"first_name\":\"Alex\",\"last_name\":\"Johnson\",\"username\":\"alexj\",\"phone_number\":\"+1 555 123 4567\",\"status\":{\"@type\":\"userStatusRecently\"},\"@extra\":" + extra_str + "}");
-    }
     else if (request.find("\"getUserFullInfo\"") != std::string::npos) {
         std::string extra_str;
         auto pos = request.find("\"@extra\"");
@@ -531,7 +519,11 @@ static void stub_handle_send(const std::string& request) {
 #define LOG_TAG "TDLibNAPI"
 #define LOG_DOMAIN 0x0001
 
-static std::atomic<bool> receive_loop_running{false};
+// --- Receive loop state machine ---
+enum class LoopState { Stopped, Starting, Running, Stopping };
+static std::atomic<LoopState> loop_state{LoopState::Stopped};
+static std::thread receive_thread;
+static std::mutex loop_mutex;
 static napi_threadsafe_function threadsafe_callback = nullptr;
 
 namespace tdlib_napi {
@@ -565,7 +557,19 @@ napi_value Send(napi_env env, napi_callback_info info) {
     std::string request(str_len, '\0');
     napi_get_value_string_utf8(env, argv[1], &request[0], str_len + 1, &str_len);
 
-    OH_LOG_INFO(LogType::LOG_APP, "TDLib send: %{public}s", request.c_str());
+    // Log only the method name — never raw JSON (contains phone numbers, codes, etc.)
+    {
+        std::string method = "unknown";
+        auto type_pos = request.find("\"@type\":\"");
+        if (type_pos != std::string::npos) {
+            auto start = type_pos + 9;
+            auto end = request.find('"', start);
+            if (end != std::string::npos) {
+                method = request.substr(start, end - start);
+            }
+        }
+        OH_LOG_INFO(LogType::LOG_APP, "TDLib send: %{public}s", method.c_str());
+    }
 
 #ifndef TDLIB_STUB
     td_send(client_id, request.c_str());
@@ -648,6 +652,23 @@ static void CallJs(napi_env env, napi_value js_callback, void* context, void* da
 }
 
 napi_value StartReceiveLoop(napi_env env, napi_callback_info info) {
+    std::lock_guard<std::mutex> guard(loop_mutex);
+
+    // Prevent double-start
+    LoopState expected = LoopState::Stopped;
+    if (!loop_state.compare_exchange_strong(expected, LoopState::Starting)) {
+        OH_LOG_WARN(LogType::LOG_APP, "StartReceiveLoop called while state=%d, ignoring",
+                    static_cast<int>(loop_state.load()));
+        napi_value undefined;
+        napi_get_undefined(env, &undefined);
+        return undefined;
+    }
+
+    // Join previous thread if still joinable (defensive)
+    if (receive_thread.joinable()) {
+        receive_thread.join();
+    }
+
     size_t argc = 1;
     napi_value argv[1];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
@@ -661,9 +682,9 @@ napi_value StartReceiveLoop(napi_env env, napi_callback_info info) {
         CallJs, &threadsafe_callback
     );
 
-    receive_loop_running = true;
+    loop_state = LoopState::Running;
 
-    std::thread([]() {
+    receive_thread = std::thread([]() {
         OH_LOG_INFO(LogType::LOG_APP, "TDLib receive loop started");
 
 #ifdef TDLIB_STUB
@@ -672,7 +693,7 @@ napi_value StartReceiveLoop(napi_env env, napi_callback_info info) {
         stub_send_initial_auth();
 #endif
 
-        while (receive_loop_running) {
+        while (loop_state == LoopState::Running) {
 #ifndef TDLIB_STUB
             const char* response = td_receive(1.0);
             if (response != nullptr) {
@@ -690,9 +711,12 @@ napi_value StartReceiveLoop(napi_env env, napi_callback_info info) {
 #endif
         }
         OH_LOG_INFO(LogType::LOG_APP, "TDLib receive loop stopped");
-        napi_release_threadsafe_function(threadsafe_callback, napi_tsfn_release);
-        threadsafe_callback = nullptr;
-    }).detach();
+        if (threadsafe_callback != nullptr) {
+            napi_release_threadsafe_function(threadsafe_callback, napi_tsfn_release);
+            threadsafe_callback = nullptr;
+        }
+        loop_state = LoopState::Stopped;
+    });
 
     napi_value undefined;
     napi_get_undefined(env, &undefined);
@@ -700,8 +724,24 @@ napi_value StartReceiveLoop(napi_env env, napi_callback_info info) {
 }
 
 napi_value StopReceiveLoop(napi_env env, napi_callback_info info) {
-    receive_loop_running = false;
+    std::lock_guard<std::mutex> guard(loop_mutex);
+
+    LoopState current = loop_state.load();
+    if (current != LoopState::Running) {
+        OH_LOG_WARN(LogType::LOG_APP, "StopReceiveLoop called while state=%d, ignoring",
+                    static_cast<int>(current));
+        napi_value undefined;
+        napi_get_undefined(env, &undefined);
+        return undefined;
+    }
+
+    loop_state = LoopState::Stopping;
     OH_LOG_INFO(LogType::LOG_APP, "TDLib receive loop stop requested");
+
+    // Join the receive thread to ensure clean shutdown
+    if (receive_thread.joinable()) {
+        receive_thread.join();
+    }
 
     napi_value undefined;
     napi_get_undefined(env, &undefined);

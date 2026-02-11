@@ -1,12 +1,12 @@
 @ComponentV2
 export struct SessionRowItem {
-  @Param sessionId: number = 0;
+  @Param sessionId: string = '0';
   @Param appDisplayName: string = '';
   @Param deviceDisplayName: string = '';
   @Param lastActiveLabel: string = '';
   @Param ip: string = '';
   @Param location: string = '';
-  @Event onTerminate: (sessionId: number) => void = (_sessionId: number) => {};
+  @Event onTerminate: (sessionId: string) => void = (_sessionId: string) => {};
 
   build() {
     Row() {

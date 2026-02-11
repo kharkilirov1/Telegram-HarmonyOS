@@ -2171,6 +2171,22 @@
     {
       "name": "chat_draft_prefix",
       "value": "草稿："
+    },
+    {
+      "name": "permission_microphone_reason",
+      "value": "Telegram需要麦克风权限来发送语音消息和拨打电话。"
+    },
+    {
+      "name": "permission_camera_reason",
+      "value": "Telegram需要相机权限来拍摄照片和视频。"
+    },
+    {
+      "name": "permission_media_reason",
+      "value": "Telegram需要媒体访问权限来发送和保存照片和视频。"
+    },
+    {
+      "name": "permission_location_reason",
+      "value": "Telegram需要位置权限来在聊天中分享您的位置。"
     }
   ]
 }

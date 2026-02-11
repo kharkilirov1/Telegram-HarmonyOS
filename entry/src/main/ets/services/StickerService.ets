@@ -4,6 +4,7 @@
 
 import { TDLibClient } from './TDLibClient';
 import { FileController } from '../controllers/FileController';
+import { TdObject, safeNumber, safeString, safeBool, asRecord, asArray, tdType } from '../models/TdTypes';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const STICKER_TAG = 'StickerService';
@@ -41,39 +42,40 @@ interface UpdatedStickerSetList {
 
 // --- Parsing helpers ---
 
-export function parseStickerObject(raw: Record<string, unknown>): TelegramSticker {
-  const stickerId = (raw['id'] as number) || 0;
-  const emoji = (raw['emoji'] as string) || '';
-  const stickerFile = raw['sticker'] as Record<string, unknown>;
+export function parseStickerObject(raw: TdObject): TelegramSticker {
+  const stickerId = safeNumber(raw['id']);
+  const emoji = safeString(raw['emoji']);
   let fileId = 0;
   let localPath = '';
   let isAnimated = false;
 
-  if (stickerFile) {
-    const file = stickerFile['file'] as Record<string, unknown>;
+  const stickerFileObj = raw['sticker'];
+  if (stickerFileObj) {
+    const stickerFile = asRecord(stickerFileObj);
+    const file = asRecord(stickerFile['file']);
     if (file) {
-      fileId = (file['id'] as number) || 0;
-      const local = file['local'] as Record<string, unknown>;
+      fileId = safeNumber(file['id']);
+      const local = asRecord(file['local']);
       if (local) {
-        const isComplete = local['is_downloading_completed'] as boolean;
+        const isComplete = safeBool(local['is_downloading_completed']);
         if (isComplete) {
-          localPath = (local['path'] as string) || '';
+          localPath = safeString(local['path']);
         }
       }
     }
   }
 
-  const format = raw['format'] as Record<string, unknown>;
-  if (format) {
-    const formatType = format['@type'] as string;
+  if (raw['format']) {
+    const format = asRecord(raw['format']);
+    const formatType = safeString(format['@type']);
     if (formatType === 'stickerFormatTgs' || formatType === 'stickerFormatWebm') {
       isAnimated = true;
     }
   }
 
-  const typeField = raw['type'] as Record<string, unknown>;
-  if (typeField) {
-    const typeStr = typeField['@type'] as string;
+  if (raw['type']) {
+    const typeField = asRecord(raw['type']);
+    const typeStr = safeString(typeField['@type']);
     if (typeStr === 'stickerTypeAnimated' || typeStr === 'stickerTypeVideo') {
       isAnimated = true;
     }
@@ -85,19 +87,19 @@ export function parseStickerObject(raw: Record<string, unknown>): TelegramSticke
     fileId: fileId,
     localPath: localPath,
     isAnimated: isAnimated
-  } as TelegramSticker;
+  };
 }
 
-export function parseStickerSetInfoObject(raw: Record<string, unknown>): StickerSetInfo {
+export function parseStickerSetInfoObject(raw: TdObject): StickerSetInfo {
   const id = String(raw['id'] || '0');
-  const title = (raw['title'] as string) || '';
-  const name = (raw['name'] as string) || '';
-  const stickerCount = (raw['size'] as number) || 0;
+  const title = safeString(raw['title']);
+  const name = safeString(raw['name']);
+  const stickerCount = safeNumber(raw['size']);
 
   let thumbnailEmoji = '';
-  const covers = raw['covers'] as Record<string, unknown>[];
-  if (covers && covers.length > 0) {
-    thumbnailEmoji = (covers[0]['emoji'] as string) || '';
+  const covers = asArray(raw['covers']);
+  if (covers.length > 0) {
+    thumbnailEmoji = safeString(covers[0]['emoji']);
   }
   if (thumbnailEmoji.length === 0) {
     thumbnailEmoji = title.length > 0 ? title.charAt(0) : '';
@@ -111,19 +113,18 @@ export function parseStickerSetInfoObject(raw: Record<string, unknown>): Sticker
     count: stickerCount,
     isLoaded: false,
     stickers: []
-  } as StickerSetInfo;
+  };
 }
 
 // --- TDLib operations ---
 
 export async function loadRecentStickers(): Promise<TelegramSticker[]> {
   try {
-    const recentParams: Record<string, unknown> = {};
+    const recentParams: TdObject = {};
     recentParams['is_attached'] = false;
     const result = await TDLibClient.getInstance().send('getRecentStickers', recentParams);
-    const data = result as Record<string, unknown>;
-    const stickersRaw = data['stickers'] as Record<string, unknown>[];
-    if (stickersRaw) {
+    const stickersRaw = asArray(result['stickers']);
+    if (stickersRaw.length > 0) {
       const parsed: TelegramSticker[] = [];
       for (const raw of stickersRaw) {
         parsed.push(parseStickerObject(raw));
@@ -138,14 +139,13 @@ export async function loadRecentStickers(): Promise<TelegramSticker[]> {
 
 export async function loadInstalledSets(): Promise<StickerSetInfo[]> {
   try {
-    const stickerType: Record<string, unknown> = {};
+    const stickerType: TdObject = {};
     stickerType['@type'] = 'stickerTypeRegular';
-    const installedParams: Record<string, unknown> = {};
+    const installedParams: TdObject = {};
     installedParams['sticker_type'] = stickerType;
     const result = await TDLibClient.getInstance().send('getInstalledStickerSets', installedParams);
-    const data = result as Record<string, unknown>;
-    const setsRaw = data['sets'] as Record<string, unknown>[];
-    if (setsRaw) {
+    const setsRaw = asArray(result['sets']);
+    if (setsRaw.length > 0) {
       const sets: StickerSetInfo[] = [];
       for (const raw of setsRaw) {
         sets.push(parseStickerSetInfoObject(raw));
@@ -161,12 +161,11 @@ export async function loadInstalledSets(): Promise<StickerSetInfo[]> {
 export async function loadStickerSetStickers(setInfo: StickerSetInfo): Promise<TelegramSticker[]> {
   if (setInfo.isLoaded) return setInfo.stickers;
   try {
-    const getSetParams: Record<string, unknown> = {};
+    const getSetParams: TdObject = {};
     getSetParams['set_id'] = setInfo.id;
     const result = await TDLibClient.getInstance().send('getStickerSet', getSetParams);
-    const data = result as Record<string, unknown>;
-    const stickersRaw = data['stickers'] as Record<string, unknown>[];
-    if (stickersRaw) {
+    const stickersRaw = asArray(result['stickers']);
+    if (stickersRaw.length > 0) {
       const stickers: TelegramSticker[] = [];
       for (const raw of stickersRaw) {
         stickers.push(parseStickerObject(raw));
@@ -181,16 +180,15 @@ export async function loadStickerSetStickers(setInfo: StickerSetInfo): Promise<T
 
 export async function loadTrendingSets(): Promise<StickerSetInfo[]> {
   try {
-    const trendingType: Record<string, unknown> = {};
+    const trendingType: TdObject = {};
     trendingType['@type'] = 'stickerTypeRegular';
-    const trendingParams: Record<string, unknown> = {};
+    const trendingParams: TdObject = {};
     trendingParams['sticker_type'] = trendingType;
     trendingParams['offset'] = 0;
     trendingParams['limit'] = 20;
     const result = await TDLibClient.getInstance().send('getTrendingStickerSets', trendingParams);
-    const data = result as Record<string, unknown>;
-    const setsRaw = data['sets'] as Record<string, unknown>[];
-    if (setsRaw) {
+    const setsRaw = asArray(result['sets']);
+    if (setsRaw.length > 0) {
       const sets: StickerSetInfo[] = [];
       for (const raw of setsRaw) {
         sets.push(parseStickerSetInfoObject(raw));
@@ -204,14 +202,14 @@ export async function loadTrendingSets(): Promise<StickerSetInfo[]> {
 }
 
 export async function installStickerSet(setId: string): Promise<void> {
-  const installParams: Record<string, unknown> = {};
+  const installParams: TdObject = {};
   installParams['set_id'] = setId;
   installParams['is_installed'] = true;
   await TDLibClient.getInstance().send('changeStickerSet', installParams);
 }
 
 export async function removeStickerSet(setId: string): Promise<void> {
-  const removeParams: Record<string, unknown> = {};
+  const removeParams: TdObject = {};
   removeParams['set_id'] = setId;
   removeParams['is_installed'] = false;
   await TDLibClient.getInstance().send('changeStickerSet', removeParams);
@@ -241,7 +239,7 @@ export function updateStickerPathInList(
         fileId: s.fileId,
         localPath: path,
         isAnimated: s.isAnimated
-      } as TelegramSticker;
+      };
     }
     return s;
   });
@@ -267,7 +265,7 @@ export function updateStickerPathInSets(
         count: set.count,
         isLoaded: set.isLoaded,
         stickers: result.list
-      } as StickerSetInfo;
+      };
     }
     return set;
   });

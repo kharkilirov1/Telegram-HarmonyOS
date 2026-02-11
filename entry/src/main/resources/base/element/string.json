@@ -2171,6 +2171,22 @@
     {
       "name": "chat_draft_prefix",
       "value": "Draft: "
+    },
+    {
+      "name": "permission_microphone_reason",
+      "value": "Telegram needs microphone access for voice messages and calls."
+    },
+    {
+      "name": "permission_camera_reason",
+      "value": "Telegram needs camera access to take photos and videos."
+    },
+    {
+      "name": "permission_media_reason",
+      "value": "Telegram needs media access to send and save photos and videos."
+    },
+    {
+      "name": "permission_location_reason",
+      "value": "Telegram needs location access to share your location in chats."
     }
   ]
 }
