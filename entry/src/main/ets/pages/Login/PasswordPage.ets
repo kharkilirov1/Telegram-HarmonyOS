@@ -156,6 +156,7 @@ export struct PasswordPage {
       .width('100%')
       .height('100%')
       .backgroundColor($r('app.color.background_primary'))
+      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
       .alignItems(HorizontalAlign.Center)
 
       // --- Password recovery overlay ---

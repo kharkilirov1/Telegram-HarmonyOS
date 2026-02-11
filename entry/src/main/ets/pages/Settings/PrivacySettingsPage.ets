@@ -64,6 +64,7 @@ export struct PrivacySettingsPage {
           adaptiveColor: AdaptiveColor.DEFAULT,
           scale: 1.0
         })
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
         Scroll() {
           Column() {
@@ -245,6 +246,7 @@ export struct PrivacySettingsPage {
       .width('100%')
       .height('100%')
       .backgroundColor($r('app.color.background_secondary'))
+      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
     }
     .hideTitleBar(true)
   }

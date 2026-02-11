@@ -77,6 +77,7 @@ export struct ContactsPage {
         adaptiveColor: AdaptiveColor.DEFAULT,
         scale: 1.0
       })
+      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
       // Search bar
       Search({ placeholder: $r('app.string.search_placeholder'), value: this.searchText })
@@ -161,6 +162,7 @@ export struct ContactsPage {
     .width('100%')
     .height('100%')
     .backgroundColor($r('app.color.background_primary'))
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
   }
 
   @Builder

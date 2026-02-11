@@ -95,6 +95,7 @@ export struct ChatListPage {
           adaptiveColor: AdaptiveColor.DEFAULT,
           scale: 1.0
         })
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
         // Search bar — like both platforms
         Search({ placeholder: $r('app.string.search_placeholder'), value: this.searchText })
@@ -200,6 +201,7 @@ export struct ChatListPage {
       .width('100%')
       .height('100%')
       .backgroundColor($r('app.color.background_primary'))
+      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
 
       // FAB — like Android Telegram (pencil/compose icon) → opens NewChat
       Button() {

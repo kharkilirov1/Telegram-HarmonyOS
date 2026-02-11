@@ -153,6 +153,7 @@ struct Index {
     }
     .hideTitleBar(true)
     .mode(NavigationMode.Stack)
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
   }
 
   @Builder
@@ -212,6 +213,13 @@ struct Index {
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: 12, bottom: 8 })
+      .backgroundColor($r('app.color.glass_nav_bg'))
+      .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
+        colorMode: ThemeColorMode.SYSTEM,
+        adaptiveColor: AdaptiveColor.DEFAULT,
+        scale: 1.0
+      })
+      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
       Divider().strokeWidth(0.5).color($r('app.color.separator'))
 
@@ -410,6 +418,7 @@ struct Index {
     .width('100%')
     .height('100%')
     .backgroundColor($r('app.color.background_primary'))
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
   }
 
   @Builder

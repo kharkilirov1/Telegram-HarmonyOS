@@ -123,6 +123,7 @@ export struct MediaViewerPage {
           .width('100%')
           .height('100%')
           .backgroundColor($r('app.color.media_viewer_bg'))
+          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
           .onClick(() => {
             this.isToolbarVisible = !this.isToolbarVisible;
           })
@@ -213,6 +214,7 @@ export struct MediaViewerPage {
           .height(56)
           .padding({ left: 16, right: 16 })
           .backgroundColor($r('app.color.overlay_dark'))
+          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
           .position({ x: 0, y: 0 })
         }
 
@@ -257,6 +259,7 @@ export struct MediaViewerPage {
           .height(56)
           .padding({ left: 32, right: 32 })
           .backgroundColor($r('app.color.overlay_dark'))
+          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
           .position({ x: 0, bottom: 0 })
         }
       }

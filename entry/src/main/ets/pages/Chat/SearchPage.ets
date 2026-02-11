@@ -71,6 +71,7 @@ export struct SearchPage {
           adaptiveColor: AdaptiveColor.DEFAULT,
           scale: 1.0
         })
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
         // Results
         if (this.isSearching) {

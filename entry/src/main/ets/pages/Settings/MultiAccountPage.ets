@@ -96,6 +96,7 @@ export struct MultiAccountPage {
         .height(56)
         .padding({ left: 8, right: 16 })
         .backgroundColor($r('app.color.glass_nav_bg'))
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
         // Account list
         if (this.isLoading) {

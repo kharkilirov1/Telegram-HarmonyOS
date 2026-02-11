@@ -92,6 +92,7 @@ export struct CreateGroupPage {
         adaptiveColor: AdaptiveColor.DEFAULT,
         scale: 1.0
       })
+      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
       // Selected member chips
       if (this.selectedUserIds.length > 0) {
@@ -176,6 +177,7 @@ export struct CreateGroupPage {
         adaptiveColor: AdaptiveColor.DEFAULT,
         scale: 1.0
       })
+      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
       // Group name input with camera icon for photo
       Row() {

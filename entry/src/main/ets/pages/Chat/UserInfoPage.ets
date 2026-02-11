@@ -219,6 +219,7 @@ export struct UserInfoPage {
           adaptiveColor: AdaptiveColor.DEFAULT,
           scale: 1.0
         })
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
         Scroll() {
           Column() {

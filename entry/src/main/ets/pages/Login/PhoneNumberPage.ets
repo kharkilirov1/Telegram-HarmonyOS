@@ -205,6 +205,7 @@ export struct PhoneNumberPage {
         .height('100%')
         .backgroundColor($r('app.color.background_primary'))
         .alignItems(HorizontalAlign.Center)
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
 
         // --- Country picker overlay (like Telegram iOS/Android) ---
         if (this.showCountryPicker) {
@@ -269,7 +270,7 @@ export struct PhoneNumberPage {
                     this.showCountryPicker = false;
                   })
                 }
-              }, (country: CountryEntry) => country.code)
+              }, (country: CountryEntry) => `${country.name}_${country.code}`)
             }
             .width('100%')
             .layoutWeight(1)
@@ -283,6 +284,7 @@ export struct PhoneNumberPage {
           .width('100%')
           .height('100%')
           .backgroundColor($r('app.color.background_primary'))
+          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
           .transition(TransitionEffect.OPACITY.animation({ duration: 200 }))
         }
       }

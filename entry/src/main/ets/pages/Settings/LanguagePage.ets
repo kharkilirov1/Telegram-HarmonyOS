@@ -78,6 +78,7 @@ export struct LanguagePage {
           adaptiveColor: AdaptiveColor.DEFAULT,
           scale: 1.0
         })
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
         // Search bar
         Row() {

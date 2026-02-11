@@ -67,6 +67,7 @@ export struct BusinessAccountPage {
         .height(56)
         .padding({ left: 8, right: 16 })
         .backgroundColor($r('app.color.glass_nav_bg'))
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
         Scroll() {
           Column() {

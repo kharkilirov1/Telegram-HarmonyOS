@@ -166,6 +166,7 @@ export struct ChatSearchBar {
     }
     .width('100%')
     .backgroundColor($r('app.color.glass_nav_bg'))
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
   }
 
   @Builder
