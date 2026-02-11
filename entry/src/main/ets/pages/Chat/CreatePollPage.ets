@@ -2,6 +2,7 @@
 // Reference: Telegram Android CreatePollActivity, iOS CreatePollController
 
 import { MessagesController } from '../../controllers/MessagesController';
+import { promptAction } from '@kit.ArkUI';
 
 @Builder
 export function CreatePollBuilder(name: string, param: Object) {
@@ -141,7 +142,7 @@ export struct CreatePollPage {
                   .margin({ right: 8 })
               }
 
-              TextInput({ placeholder: `Option ${index + 1}`, text: option })
+              TextInput({ placeholder: this.formatOptionPlaceholder(index), text: option })
                 .fontSize(16)
                 .fontColor($r('app.color.text_primary'))
                 .backgroundColor(Color.Transparent)
@@ -372,8 +373,18 @@ export struct CreatePollPage {
         correctId
       );
       this.navPathStack.pop();
-    } catch (e) {
+    } catch (_e) {
+      promptAction.showToast({
+        message: getContext(this).resourceManager.getStringByNameSync('action_failed'),
+        duration: 1500,
+        bottom: 96
+      });
       this.isSending = false;
     }
+  }
+
+  private formatOptionPlaceholder(index: number): string {
+    const template = getContext(this).resourceManager.getStringByNameSync('poll_option_placeholder');
+    return template.replace('%d', (index + 1).toString());
   }
 }

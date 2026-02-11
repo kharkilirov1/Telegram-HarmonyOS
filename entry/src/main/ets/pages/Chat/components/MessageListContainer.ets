@@ -23,7 +23,7 @@ export struct MessageListContainer {
   @Event onCopyMessage: (msg: Message) => void = () => {};
   @Event onDeleteMessage: (msg: Message) => void = () => {};
   @Event onEditMessage: (msg: Message) => void = () => {};
-  @Event onMediaTap: (url: string) => void = () => {};
+  @Event onMediaTap: (url: string, messageId: number, chatId: number) => void = () => {};
   @Event onVideoPlay: (url: string, duration: number) => void = () => {};
   @Event onReactionTap: (msg: Message, emoji: string) => void = () => {};
   @Event onPollVote: (msg: Message, optionIndex: number) => void = () => {};
@@ -60,7 +60,9 @@ export struct MessageListContainer {
                   onCopy: (msg: Message) => { this.onCopyMessage(msg); },
                   onDelete: (msg: Message) => { this.onDeleteMessage(msg); },
                   onEdit: (msg: Message) => { this.onEditMessage(msg); },
-                  onMediaTap: (url: string) => { this.onMediaTap(url); },
+                  onMediaTap: (url: string, messageId: number, chatId: number) => {
+                    this.onMediaTap(url, messageId, chatId);
+                  },
                   onVideoPlay: (url: string, duration: number) => { this.onVideoPlay(url, duration); },
                   onReactionTap: (msg: Message, emoji: string) => { this.onReactionTap(msg, emoji); },
                   onPollVote: (msg: Message, optionIndex: number) => { this.onPollVote(msg, optionIndex); }

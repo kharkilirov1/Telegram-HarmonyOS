@@ -1,6 +1,7 @@
-import { UIAbility } from '@kit.AbilityKit';
+import { UIAbility, ConfigurationConstant } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
+import { i18n } from '@kit.LocalizationKit';
 import { PreferencesService } from '../services/PreferencesService';
 
 const TAG = 'EntryAbility';
@@ -11,6 +12,7 @@ export default class EntryAbility extends UIAbility {
     hilog.info(DOMAIN, TAG, 'onCreate');
     // Initialize preferences with ability context
     await PreferencesService.getInstance().initialize(this.context);
+    await this.applyPersistedAppPreferences();
   }
 
   onDestroy(): void {
@@ -38,5 +40,48 @@ export default class EntryAbility extends UIAbility {
 
   onBackground(): void {
     hilog.info(DOMAIN, TAG, 'onBackground');
+  }
+
+  private async applyPersistedAppPreferences(): Promise<void> {
+    const prefs = PreferencesService.getInstance();
+
+    // Apply persisted theme mode
+    try {
+      const appContext = this.context.getApplicationContext();
+      const themeMode = await prefs.getThemeMode();
+      switch (themeMode) {
+        case 'light':
+          appContext.setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT);
+          break;
+        case 'dark':
+          appContext.setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_DARK);
+          break;
+        default:
+          appContext.setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
+          break;
+      }
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'apply theme preference failed: %{public}s', String(error));
+    }
+
+    // Apply persisted language
+    try {
+      const langCode = await prefs.getAppLanguage();
+      const preferredLanguage = this.mapLanguageCode(langCode);
+      i18n.System.setAppPreferredLanguage(preferredLanguage);
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'apply language preference failed: %{public}s', String(error));
+    }
+  }
+
+  private mapLanguageCode(code: string): string {
+    switch (code) {
+      case 'zh':
+        return 'zh-Hans';
+      case 'pt':
+        return 'pt-BR';
+      default:
+        return code;
+    }
   }
 }

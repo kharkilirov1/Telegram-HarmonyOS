@@ -14,6 +14,7 @@ import chatServiceTest from './ChatService.test';
 import userServiceTest from './UserService.test';
 import fileControllerTest from './FileController.test';
 import storiesControllerTest from './StoriesController.test';
+import tdUpdateParserTest from './TdUpdateParser.test';
 
 export default function testsuite() {
   messagesControllerTest();
@@ -32,4 +33,5 @@ export default function testsuite() {
   userServiceTest();
   fileControllerTest();
   storiesControllerTest();
+  tdUpdateParserTest();
 }

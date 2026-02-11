@@ -78,6 +78,32 @@ class TestablePreferencesService {
     await this.putBoolean('notifications_enabled', enabled);
   }
 
+  // --- Generic public keys ---
+
+  async getBooleanSetting(key: string, defaultValue: boolean): Promise<boolean> {
+    return this.getBoolean(key, defaultValue);
+  }
+
+  async setBooleanSetting(key: string, value: boolean): Promise<void> {
+    await this.putBoolean(key, value);
+  }
+
+  async getStringSetting(key: string, defaultValue: string): Promise<string> {
+    return this.getString(key, defaultValue);
+  }
+
+  async setStringSetting(key: string, value: string): Promise<void> {
+    await this.putString(key, value);
+  }
+
+  async getNumberSetting(key: string, defaultValue: number): Promise<number> {
+    return this.getNumber(key, defaultValue);
+  }
+
+  async setNumberSetting(key: string, value: number): Promise<void> {
+    await this.putNumber(key, value);
+  }
+
   // --- Generic accessors (mirrors production code) ---
 
   private async getString(key: string, defaultValue: string): Promise<string> {
@@ -232,6 +258,21 @@ export default function preferencesServiceTest() {
         expect(await service.getThemeMode()).assertEqual('dark');
         expect(await service.getFontSize()).assertEqual(24);
         expect(await service.getNotificationsEnabled()).assertFalse();
+      });
+
+      it('generic boolean setting should round-trip', 0, async () => {
+        await service.setBooleanSetting('x_bool', true);
+        expect(await service.getBooleanSetting('x_bool', false)).assertTrue();
+      });
+
+      it('generic string setting should round-trip', 0, async () => {
+        await service.setStringSetting('x_string', 'hello');
+        expect(await service.getStringSetting('x_string', 'default')).assertEqual('hello');
+      });
+
+      it('generic number setting should round-trip', 0, async () => {
+        await service.setNumberSetting('x_number', 42);
+        expect(await service.getNumberSetting('x_number', 0)).assertEqual(42);
       });
     });
   });

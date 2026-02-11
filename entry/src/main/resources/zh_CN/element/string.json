@@ -621,6 +621,18 @@
       "value": "自动删除消息"
     },
     {
+      "name": "auto_delete_1_day",
+      "value": "1天"
+    },
+    {
+      "name": "auto_delete_7_days",
+      "value": "7天"
+    },
+    {
+      "name": "auto_delete_30_days",
+      "value": "30天"
+    },
+    {
       "name": "delete_my_account",
       "value": "删除我的账户"
     },
@@ -983,6 +995,38 @@
     {
       "name": "calls_missed_label",
       "value": "未接"
+    },
+    {
+      "name": "message_call_missed_voice",
+      "value": "未接语音通话"
+    },
+    {
+      "name": "message_call_missed_video",
+      "value": "未接视频通话"
+    },
+    {
+      "name": "message_call_declined_voice",
+      "value": "已拒绝语音通话"
+    },
+    {
+      "name": "message_call_declined_video",
+      "value": "已拒绝视频通话"
+    },
+    {
+      "name": "message_call_outgoing_voice",
+      "value": "拨出语音通话"
+    },
+    {
+      "name": "message_call_outgoing_video",
+      "value": "拨出视频通话"
+    },
+    {
+      "name": "message_call_incoming_voice",
+      "value": "来电语音通话"
+    },
+    {
+      "name": "message_call_incoming_video",
+      "value": "来电视频通话"
     },
     {
       "name": "admin_settings",
@@ -1891,6 +1935,242 @@
     {
       "name": "business_chatbots",
       "value": "聊天机器人"
+    },
+    {
+      "name": "contact_send_message",
+      "value": "发送消息"
+    },
+    {
+      "name": "contact_add_contact",
+      "value": "添加联系人"
+    },
+    {
+      "name": "live_location_label",
+      "value": "实时位置"
+    },
+    {
+      "name": "location_updated_hours_minutes",
+      "value": "%s小时%s分钟前更新"
+    },
+    {
+      "name": "location_updated_hours",
+      "value": "%s小时前更新"
+    },
+    {
+      "name": "location_updated_minutes",
+      "value": "%s分钟前更新"
+    },
+    {
+      "name": "location_sharing",
+      "value": "正在共享位置"
+    },
+    {
+      "name": "call_control_speaker",
+      "value": "扬声器"
+    },
+    {
+      "name": "call_control_video",
+      "value": "视频"
+    },
+    {
+      "name": "call_control_flip",
+      "value": "翻转"
+    },
+    {
+      "name": "channel_description_optional",
+      "value": "描述（可选）"
+    },
+    {
+      "name": "channel_type",
+      "value": "频道类型"
+    },
+    {
+      "name": "channel_public_hint",
+      "value": "任何人都可以找到并加入"
+    },
+    {
+      "name": "channel_private_hint",
+      "value": "仅受邀成员可加入"
+    },
+    {
+      "name": "channel_link_placeholder",
+      "value": "链接"
+    },
+    {
+      "name": "language_official_section",
+      "value": "官方语言"
+    },
+    {
+      "name": "language_unofficial_section",
+      "value": "非官方语言"
+    },
+    {
+      "name": "media_saved_toast",
+      "value": "已保存"
+    },
+    {
+      "name": "media_save_failed_toast",
+      "value": "保存失败"
+    },
+    {
+      "name": "media_delete_confirm",
+      "value": "删除这条媒体内容？"
+    },
+    {
+      "name": "media_delete_failed_toast",
+      "value": "删除失败"
+    },
+    {
+      "name": "notifications_private_chats",
+      "value": "私聊"
+    },
+    {
+      "name": "notifications_groups",
+      "value": "群组"
+    },
+    {
+      "name": "notifications_channels",
+      "value": "频道"
+    },
+    {
+      "name": "notifications_message_preview",
+      "value": "消息预览"
+    },
+    {
+      "name": "notifications_sound_label",
+      "value": "声音"
+    },
+    {
+      "name": "notifications_sound_none",
+      "value": "静音"
+    },
+    {
+      "name": "notifications_in_app",
+      "value": "应用内通知"
+    },
+    {
+      "name": "notifications_in_app_sounds",
+      "value": "应用内声音"
+    },
+    {
+      "name": "notifications_in_app_vibrate",
+      "value": "应用内振动"
+    },
+    {
+      "name": "notifications_in_app_preview",
+      "value": "应用内预览"
+    },
+    {
+      "name": "notifications_events",
+      "value": "事件"
+    },
+    {
+      "name": "notifications_contact_joined",
+      "value": "联系人加入 Telegram"
+    },
+    {
+      "name": "notifications_pinned_messages",
+      "value": "置顶消息"
+    },
+    {
+      "name": "notifications_reset_all",
+      "value": "重置所有通知"
+    },
+    {
+      "name": "notifications_reset_hint",
+      "value": "撤销你对所有聊天、群组和频道的自定义通知设置。"
+    },
+    {
+      "name": "privacy_section_security",
+      "value": "安全"
+    },
+    {
+      "name": "privacy_section_privacy",
+      "value": "隐私"
+    },
+    {
+      "name": "privacy_section_auto_delete",
+      "value": "自动删除消息"
+    },
+    {
+      "name": "toggle_on",
+      "value": "开"
+    },
+    {
+      "name": "privacy_last_seen_online",
+      "value": "最后上线与在线状态"
+    },
+    {
+      "name": "privacy_profile_photos",
+      "value": "头像照片"
+    },
+    {
+      "name": "privacy_forwarded_messages",
+      "value": "转发消息"
+    },
+    {
+      "name": "privacy_groups_channels",
+      "value": "群组和频道"
+    },
+    {
+      "name": "delete_account_inactive_period",
+      "value": "离线 6 个月后删除"
+    },
+    {
+      "name": "search_chat_type_channel",
+      "value": "频道"
+    },
+    {
+      "name": "search_chat_type_group",
+      "value": "群组"
+    },
+    {
+      "name": "search_in_chat_context",
+      "value": "在 %s 中"
+    },
+    {
+      "name": "profile_first_name",
+      "value": "名字"
+    },
+    {
+      "name": "profile_last_name",
+      "value": "姓氏"
+    },
+    {
+      "name": "profile_bio_hint",
+      "value": "可填写年龄、职业或城市等信息。"
+    },
+    {
+      "name": "profile_username_hint",
+      "value": "你可以设置 Telegram 用户名，其他人可通过它找到你。"
+    },
+    {
+      "name": "no_administrators",
+      "value": "暂无管理员"
+    },
+    {
+      "name": "action_failed",
+      "value": "操作失败"
+    },
+    {
+      "name": "message_action",
+      "value": "消息"
+    },
+    {
+      "name": "media_share_unavailable",
+      "value": "此媒体暂不支持分享"
+    },
+    {
+      "name": "forward_unavailable",
+      "value": "无法转发该消息"
+    },
+    {
+      "name": "poll_option_placeholder",
+      "value": "选项 %d"
+    },
+    {
+      "name": "chat_draft_prefix",
+      "value": "草稿："
     }
   ]
 }

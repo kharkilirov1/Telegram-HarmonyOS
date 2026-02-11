@@ -8,6 +8,7 @@ export interface CachedUser {
   firstName: string;
   lastName: string;
   username: string;
+  isBot: boolean;
   isOnline: boolean;
   lastSeenDate: number;
 }
@@ -58,6 +59,9 @@ export function upsertUser(
     firstName: rawUser.first_name || (existing ? existing.firstName : ''),
     lastName: rawUser.last_name || (existing ? existing.lastName : ''),
     username: username,
+    isBot: rawUser.type
+      ? tdType(rawUser.type as Record<string, Object>) === 'userTypeBot'
+      : (existing ? existing.isBot : false),
     isOnline: existing ? existing.isOnline : false,
     lastSeenDate: existing ? existing.lastSeenDate : 0
   };
@@ -87,6 +91,7 @@ export function applyUserStatus(
       firstName: '',
       lastName: '',
       username: '',
+      isBot: false,
       isOnline: false,
       lastSeenDate: 0
     };
@@ -172,6 +177,7 @@ function refreshUserPresentation(
     if (displayName.length > 0) {
       privateChat.title = displayName;
     }
+    privateChat.isBot = user.isBot;
     privateChat.isUserOnline = user.isOnline;
     privateChat.lastSeenDate = user.lastSeenDate;
   }

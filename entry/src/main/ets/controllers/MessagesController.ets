@@ -85,6 +85,10 @@ export class MessagesController {
     return this.messagesByChat.get(chatId) || [];
   }
 
+  getPrivateChatUserId(chatId: number): number {
+    return this.privateChatUserByChatId.get(chatId) || 0;
+  }
+
   isDialogsLoading(): boolean {
     return this.dialogsLoading;
   }
@@ -348,9 +352,11 @@ export class MessagesController {
 
           const cachedUser: CachedUser | undefined = this.usersById.get(privateUserId);
           if (cachedUser) {
+            chat.isBot = cachedUser.isBot;
             chat.isUserOnline = cachedUser.isOnline;
             chat.lastSeenDate = cachedUser.lastSeenDate;
           } else {
+            chat.isBot = false;
             void this.loadUserIfMissing(privateUserId);
           }
         }

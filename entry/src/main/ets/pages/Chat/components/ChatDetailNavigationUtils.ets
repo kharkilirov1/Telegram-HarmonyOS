@@ -5,18 +5,29 @@ export function openForwardPicker(navPathStack: NavPathStack, chatId: number, me
   navPathStack.pushPath(new NavPathInfo('ForwardPicker', fwdMsgParam));
 }
 
-export function openCallUi(navPathStack: NavPathStack, chatId: number, chatTitle: string): void {
+export function openCallUi(navPathStack: NavPathStack, chatId: number, chatTitle: string, targetUserId: number = 0): void {
   const callParam: Record<string, Object> = {};
-  callParam['userId'] = chatId;
+  callParam['userId'] = targetUserId > 0 ? targetUserId : chatId;
   callParam['userName'] = chatTitle;
   callParam['isVideo'] = false;
   callParam['isIncoming'] = false;
   navPathStack.pushPath(new NavPathInfo('CallUI', callParam));
 }
 
-export function openMediaViewer(navPathStack: NavPathStack, url: string): void {
+export function openMediaViewer(
+  navPathStack: NavPathStack,
+  url: string,
+  messageId: number = 0,
+  chatId: number = 0
+): void {
   const mediaParam: Record<string, Object> = {};
   mediaParam['url'] = url;
+  if (messageId > 0) {
+    mediaParam['messageId'] = messageId;
+  }
+  if (chatId > 0) {
+    mediaParam['chatId'] = chatId;
+  }
   navPathStack.pushPath(new NavPathInfo('MediaViewer', mediaParam));
 }
 
@@ -33,7 +44,13 @@ export function openCreatePoll(navPathStack: NavPathStack, chatId: number): void
   navPathStack.pushPath(new NavPathInfo('CreatePoll', pollParam));
 }
 
-export function openChatInfo(navPathStack: NavPathStack, chatId: number, isGroupChat: boolean, isChannelChat: boolean): void {
+export function openChatInfo(
+  navPathStack: NavPathStack,
+  chatId: number,
+  isGroupChat: boolean,
+  isChannelChat: boolean,
+  privateUserId: number = 0
+): void {
   if (isGroupChat || isChannelChat) {
     const groupParam: Record<string, Object> = {};
     groupParam['chatId'] = chatId;
@@ -42,6 +59,6 @@ export function openChatInfo(navPathStack: NavPathStack, chatId: number, isGroup
   }
 
   const userParam: Record<string, Object> = {};
-  userParam['userId'] = chatId;
+  userParam['userId'] = privateUserId > 0 ? privateUserId : chatId;
   navPathStack.pushPath(new NavPathInfo('UserInfo', userParam));
 }

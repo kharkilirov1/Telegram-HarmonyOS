@@ -3,6 +3,7 @@ import { NotificationCenter, EventId } from '../../controllers/NotificationCente
 import { Message } from '../../models/Message';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
 import { pasteboard } from '@kit.BasicServicesKit';
+import { promptAction } from '@kit.ArkUI';
 import { ChatDetailListItem } from './components/ChatDetailListItem';
 import { SelectionToolbar } from './components/SelectionToolbar';
 import { ChatHeader } from './components/ChatHeader';
@@ -41,6 +42,7 @@ export struct ChatDetailPage {
   @Param chatId: number = 0;
   @Local chatTitle: string = '';
   @Local lastSeenText: string = '';
+  @Local isPeerOnline: boolean = false;
   @Local isTyping: boolean = false;
   @Local typingText: string = '';
   @Local isGroupChat: boolean = false;
@@ -141,11 +143,17 @@ export struct ChatDetailPage {
             isTyping: this.isTyping,
             typingText: this.typingText,
             lastSeenText: this.lastSeenText,
+            isOnline: this.isPeerOnline,
             onBack: () => { this.navPathStack.pop(); },
             onOpenInfo: () => {
-              openChatInfo(this.navPathStack, this.chatId, this.isGroupChat, this.isChannelChat);
+              const privateUserId = this.getPrivatePeerUserId();
+              openChatInfo(this.navPathStack, this.chatId, this.isGroupChat, this.isChannelChat, privateUserId);
             },
-            onCall: () => { openCallUi(this.navPathStack, this.chatId, this.chatTitle); },
+            onCall: () => {
+              const privateUserId = this.getPrivatePeerUserId();
+              openCallUi(this.navPathStack, this.chatId, this.chatTitle,
+                privateUserId > 0 ? privateUserId : this.chatId);
+            },
             onSearch: () => { this.isSearchMode = true; }
           })
         }
@@ -183,7 +191,9 @@ export struct ChatDetailPage {
           onCopyMessage: (msg: Message) => { this.copyMessageText(msg); },
           onDeleteMessage: (msg: Message) => { this.deleteMessage(msg); },
           onEditMessage: (msg: Message) => { this.editMessage = msg; },
-          onMediaTap: (url: string) => { openMediaViewer(this.navPathStack, url); },
+          onMediaTap: (url: string, messageId: number, sourceChatId: number) => {
+            openMediaViewer(this.navPathStack, url, messageId, sourceChatId);
+          },
           onVideoPlay: (url: string, duration: number) => { openVideoPlayer(this.navPathStack, url, duration); },
           onReactionTap: (msg: Message, emoji: string) => { this.toggleReaction(msg, emoji); },
           onPollVote: (msg: Message, optionIndex: number) => { this.votePoll(msg, optionIndex); }
@@ -254,14 +264,14 @@ export struct ChatDetailPage {
   private loadChatInfo(): void {
     const chat = MessagesController.getInstance().getChat(this.chatId);
     if (!chat) return;
-    const memberStr = getContext(this).resourceManager.getStringByNameSync('group_members_count');
-    const info = buildChatInfoSnapshot(chat, memberStr);
+    const info = buildChatInfoSnapshot(chat, '');
     this.chatTitle = info.title;
     this.isGroupChat = info.isGroup;
     this.isChannelChat = info.isChannel;
     this.chatPhoto = info.photo;
     this.chatInitial = info.initial;
     this.lastSeenText = info.lastSeenText;
+    this.isPeerOnline = info.isOnline;
   }
 
   private async loadInitialMessages(): Promise<void> {
@@ -274,7 +284,7 @@ export struct ChatDetailPage {
       this.rebuildFlatList();
       this.scrollToBottom();
     } catch (e) {
-      // Handle error
+      this.showActionError();
     } finally {
       this.isLoading = false;
     }
@@ -290,7 +300,7 @@ export struct ChatDetailPage {
       this.endReachedOlder = loaded.endReachedOlder;
       this.rebuildFlatList();
     } catch (e) {
-      // Handle error
+      this.showActionError();
     } finally {
       this.isLoadingOlder = false;
     }
@@ -387,5 +397,17 @@ export struct ChatDetailPage {
     if (flatIdx >= 0) {
       this.listScroller.scrollToIndex(flatIdx);
     }
+  }
+
+  private getPrivatePeerUserId(): number {
+    return MessagesController.getInstance().getPrivateChatUserId(this.chatId);
+  }
+
+  private showActionError(): void {
+    promptAction.showToast({
+      message: getContext(this).resourceManager.getStringByNameSync('action_failed'),
+      duration: 1200,
+      bottom: 96
+    });
   }
 }

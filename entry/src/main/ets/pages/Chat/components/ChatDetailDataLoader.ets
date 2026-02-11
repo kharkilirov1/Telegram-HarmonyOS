@@ -10,6 +10,7 @@ export interface ChatInfoSnapshot {
   photo: string | null;
   initial: string;
   lastSeenText: string;
+  isOnline: boolean;
 }
 
 export interface InitialMessagesLoadResult {
@@ -23,9 +24,9 @@ export interface OlderMessagesLoadResult {
   endReachedOlder: boolean;
 }
 
-export function buildChatInfoSnapshot(chat: Chat, groupMembersTemplate: string): ChatInfoSnapshot {
-  const lastSeenText = chat.isGroup
-    ? groupMembersTemplate.replace('%s', chat.unreadCount.toString())
+export function buildChatInfoSnapshot(chat: Chat, _groupMembersTemplate: string): ChatInfoSnapshot {
+  const lastSeenText = (chat.isGroup || chat.isChannel)
+    ? ''
     : formatLastSeen(chat.isUserOnline, chat.lastSeenDate);
 
   return {
@@ -34,7 +35,8 @@ export function buildChatInfoSnapshot(chat: Chat, groupMembersTemplate: string):
     isChannel: chat.isChannel,
     photo: chat.photo,
     initial: chat.title.length > 0 ? chat.title.charAt(0) : '?',
-    lastSeenText: lastSeenText
+    lastSeenText: lastSeenText,
+    isOnline: !chat.isGroup && !chat.isChannel && chat.isUserOnline
   };
 }
 

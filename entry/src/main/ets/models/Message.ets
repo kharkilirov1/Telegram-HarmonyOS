@@ -30,6 +30,10 @@ export class Message {
   // Content
   @Trace contentType: MessageContentType;
   @Trace photoUrl: string | null;
+  @Trace videoUrl: string | null;
+  @Trace fileId: number;
+  @Trace filePath: string | null;
+  @Trace fileSize: number;
   @Trace photoFileId: number;
   @Trace fileName: string | null;
   @Trace voiceDuration: number;
@@ -137,6 +141,10 @@ export class Message {
     this.forwardedFrom = '';
     this.contentType = contentType;
     this.photoUrl = photoUrl;
+    this.videoUrl = null;
+    this.fileId = 0;
+    this.filePath = null;
+    this.fileSize = 0;
     this.photoFileId = 0;
     this.fileName = fileName;
     this.voiceDuration = 0;

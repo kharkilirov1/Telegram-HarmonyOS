@@ -133,7 +133,7 @@ export struct GifPicker {
                     .borderRadius(8)
                 }
 
-                Text('GIF')
+                Text($r('app.string.gif'))
                   .fontSize(10)
                   .fontColor(Color.White)
                   .backgroundColor($r('app.color.time_overlay'))

@@ -1,25 +1,73 @@
 import { promptAction } from '@kit.ArkUI';
 import { fileIo } from '@kit.CoreFileKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { MessagesController } from '../../controllers/MessagesController';
+import { Message } from '../../models/Message';
 
 const MEDIA_TAG = 'MediaViewerPage';
 const MEDIA_DOMAIN = 0x0001;
 
 @Builder
 export function MediaViewerBuilder(name: string, param: Object) {
-  MediaViewerPage({ mediaUrl: (param as Record<string, string>)?.url ?? '' })
+  const routeParam = param as Record<string, Object>;
+  MediaViewerPage({
+    mediaUrl: (routeParam['url'] as string) || '',
+    sourceMessageId: (routeParam['messageId'] as number) || 0,
+    sourceChatId: (routeParam['chatId'] as number) || 0
+  })
 }
 
 @ComponentV2
 export struct MediaViewerPage {
   @Consumer('navPathStack') navPathStack: NavPathStack = new NavPathStack();
   @Param mediaUrl: string = '';
+  @Param sourceMessageId: number = 0;
+  @Param sourceChatId: number = 0;
   @Local zoomScale: number = 1;
   @Local offsetX: number = 0;
   @Local offsetY: number = 0;
   @Local isToolbarVisible: boolean = true;
   @Local senderName: string = '';
   @Local dateText: string = '';
+
+  aboutToAppear(): void {
+    this.loadMessageMeta();
+  }
+
+  private loadMessageMeta(): void {
+    if (this.sourceMessageId <= 0 || this.sourceChatId <= 0) {
+      return;
+    }
+
+    const messages = MessagesController.getInstance().getMessages(this.sourceChatId);
+    const sourceMessage = messages.find((message: Message) => message.id === this.sourceMessageId);
+    if (!sourceMessage) {
+      return;
+    }
+
+    this.senderName = sourceMessage.senderName || '';
+    if (this.senderName.length === 0) {
+      const chat = MessagesController.getInstance().getChat(this.sourceChatId);
+      this.senderName = chat?.title || '';
+    }
+    this.dateText = this.formatTimestamp(sourceMessage.date);
+  }
+
+  private handleShare(): void {
+    if (this.sourceMessageId > 0 && this.sourceChatId > 0) {
+      const forwardParam: Record<string, Object> = {};
+      forwardParam['messageId'] = this.sourceMessageId;
+      forwardParam['chatId'] = this.sourceChatId;
+      this.navPathStack.pushPath(new NavPathInfo('ForwardPicker', forwardParam));
+      return;
+    }
+
+    promptAction.showToast({
+      message: this.getString('media_share_unavailable', 'Share is unavailable for this media'),
+      duration: 2000,
+      bottom: 80
+    });
+  }
 
   private async saveToGallery(): Promise<void> {
     if (this.mediaUrl.length === 0) return;
@@ -30,24 +78,24 @@ export struct MediaViewerPage {
         this.mediaUrl.substring(this.mediaUrl.lastIndexOf('.')) : '.jpg';
       const destPath = getContext(this).filesDir + `/saved_media_${timestamp}${ext}`;
       await fileIo.copyFile(this.mediaUrl, destPath);
-      promptAction.showToast({ message: 'Saved', duration: 2000, bottom: 80 });
+      promptAction.showToast({ message: this.getString('media_saved_toast', 'Saved'), duration: 2000, bottom: 80 });
       hilog.info(MEDIA_DOMAIN, MEDIA_TAG, 'Media saved to %{public}s', destPath);
     } catch (e) {
       hilog.error(MEDIA_DOMAIN, MEDIA_TAG, 'Failed to save media: %{public}s', String(e));
-      promptAction.showToast({ message: 'Save failed', duration: 2000, bottom: 80 });
+      promptAction.showToast({ message: this.getString('media_save_failed_toast', 'Save failed'), duration: 2000, bottom: 80 });
     }
   }
 
   private confirmDelete(): void {
     if (this.mediaUrl.length === 0) return;
     AlertDialog.show({
-      message: 'Delete this media?',
+      message: this.getString('media_delete_confirm', 'Delete this media?'),
       primaryButton: {
-        value: 'Cancel',
+        value: this.getString('cancel', 'Cancel'),
         action: () => {}
       },
       secondaryButton: {
-        value: 'Delete',
+        value: this.getString('delete', 'Delete'),
         fontColor: Color.Red,
         action: () => {
           this.deleteMedia();
@@ -63,7 +111,7 @@ export struct MediaViewerPage {
       this.navPathStack.pop();
     } catch (e) {
       hilog.error(MEDIA_DOMAIN, MEDIA_TAG, 'Failed to delete media: %{public}s', String(e));
-      promptAction.showToast({ message: 'Delete failed', duration: 2000, bottom: 80 });
+      promptAction.showToast({ message: this.getString('media_delete_failed_toast', 'Delete failed'), duration: 2000, bottom: 80 });
     }
   }
 
@@ -177,11 +225,9 @@ export struct MediaViewerPage {
               .height(24)
               .fillColor(Color.White)
               .onClick(() => {
-                const forwardParam: Record<string, Object> = {};
-                forwardParam['mediaUrl'] = this.mediaUrl;
-                this.navPathStack.pushPath(new NavPathInfo('ForwardPicker', forwardParam));
+                this.handleShare();
               })
-              .accessibilityText('Share')
+              .accessibilityText($r('app.string.media_share'))
 
             Blank()
 
@@ -193,7 +239,7 @@ export struct MediaViewerPage {
               .onClick(() => {
                 this.saveToGallery();
               })
-              .accessibilityText('Save to gallery')
+              .accessibilityText($r('app.string.save_to_gallery'))
 
             Blank()
 
@@ -205,7 +251,7 @@ export struct MediaViewerPage {
               .onClick(() => {
                 this.confirmDelete();
               })
-              .accessibilityText('Delete')
+              .accessibilityText($r('app.string.delete'))
           }
           .width('100%')
           .height(56)
@@ -219,5 +265,30 @@ export struct MediaViewerPage {
     }
     .hideTitleBar(true)
     .backgroundColor(Color.Black)
+  }
+
+  private getString(name: string, fallback: string): string {
+    try {
+      return getContext(this).resourceManager.getStringByNameSync(name);
+    } catch (_e) {
+      return fallback;
+    }
+  }
+
+  private formatTimestamp(timestamp: number): string {
+    if (timestamp <= 0) {
+      return '';
+    }
+
+    const date = new Date(timestamp * 1000);
+    const datePart = date.toLocaleDateString([], {
+      day: '2-digit',
+      month: 'short'
+    } as Intl.DateTimeFormatOptions);
+    const timePart = date.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    } as Intl.DateTimeFormatOptions);
+    return `${datePart} ${timePart}`;
   }
 }

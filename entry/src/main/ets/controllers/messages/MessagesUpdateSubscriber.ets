@@ -18,6 +18,7 @@ import {
   TdUser,
   parseUpdateChatAction,
   parseUpdateChatLastMessage,
+  parseUpdateChatIsMarkedAsUnread,
   parseUpdateChatNotificationSettings,
   parseUpdateChatPhoto,
   parseUpdateChatPosition,
@@ -289,6 +290,16 @@ export function subscribeToTdUpdates(deps: MessagesUpdateSubscriberDeps): void {
       chat.isMuted = muteFor > 0;
       NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
     }
+  });
+
+  client.on('updateChatIsMarkedAsUnread', (update: Record<string, Object>) => {
+    const parsed = parseUpdateChatIsMarkedAsUnread(update);
+    if (!parsed) return;
+    const chatId: number = parsed.chatId;
+    const chat = deps.chatsById.get(chatId);
+    if (!chat) return;
+    chat.isMarkedAsUnread = parsed.isMarkedAsUnread;
+    NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
   });
 
   client.on('updateChatAction', (update: Record<string, Object>) => {

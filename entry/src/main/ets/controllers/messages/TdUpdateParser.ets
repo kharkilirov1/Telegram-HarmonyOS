@@ -24,12 +24,17 @@ export interface TdUsernames {
   active_usernames?: string[];
 }
 
+export interface TdUserType {
+  ['@type']?: string;
+}
+
 export interface TdUser {
   id?: number;
   first_name?: string;
   last_name?: string;
   username?: string;
   usernames?: TdUsernames;
+  type?: TdUserType;
   status?: Record<string, Object>;
 }
 
@@ -106,6 +111,11 @@ export interface ParsedUpdateChatReadInbox {
 export interface ParsedUpdateChatNotificationSettings {
   chatId: number;
   settings: TdNotificationSettings;
+}
+
+export interface ParsedUpdateChatIsMarkedAsUnread {
+  chatId: number;
+  isMarkedAsUnread: boolean;
 }
 
 export interface ParsedUpdateChatAction {
@@ -215,6 +225,13 @@ export function parseUpdateChatNotificationSettings(update: Record<string, Objec
   const settings = update['notification_settings'] as TdNotificationSettings | undefined;
   if (!settings) return undefined;
   return { chatId: chatId, settings: settings };
+}
+
+export function parseUpdateChatIsMarkedAsUnread(update: Record<string, Object>): ParsedUpdateChatIsMarkedAsUnread | undefined {
+  const chatId: number = safeNumber(update['chat_id']);
+  if (chatId === 0) return undefined;
+  const isMarkedAsUnread: boolean = (update['is_marked_as_unread'] as boolean) === true;
+  return { chatId: chatId, isMarkedAsUnread: isMarkedAsUnread };
 }
 
 export function parseUpdateChatAction(update: Record<string, Object>): ParsedUpdateChatAction | undefined {

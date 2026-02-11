@@ -1,3 +1,6 @@
+import { promptAction } from '@kit.ArkUI';
+import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
+import { FileController } from '../../controllers/FileController';
 import { Message } from '../../models/Message';
 import { MessageMetaRow } from './MessageMetaRow';
 
@@ -5,6 +8,43 @@ import { MessageMetaRow } from './MessageMetaRow';
 export struct FileBubble {
   @Param message: Message = new Message();
   @Local downloadProgress: number = -1;
+
+  private progressHandler = (args?: Record<string, Object>): void => {
+    const fileId = (args?.['fileId'] as number) || 0;
+    if (fileId <= 0 || fileId !== this.message.fileId) return;
+
+    const downloaded = (args?.['downloaded'] as number) || 0;
+    const total = (args?.['total'] as number) || 0;
+    if (total > 0) {
+      this.downloadProgress = Math.min(99, Math.floor((downloaded * 100) / total));
+    } else {
+      this.downloadProgress = this.downloadProgress < 0 ? 1 : Math.min(99, this.downloadProgress + 1);
+    }
+  };
+
+  private completedHandler = (args?: Record<string, Object>): void => {
+    const fileId = (args?.['fileId'] as number) || 0;
+    if (fileId <= 0 || fileId !== this.message.fileId) return;
+
+    const path = ((args?.['path'] as string) || '').trim();
+    if (path.length > 0) {
+      this.message.filePath = path;
+    }
+    this.downloadProgress = 100;
+  };
+
+  aboutToAppear(): void {
+    NotificationCenter.getInstance().addObserver(EventId.FILE_DOWNLOAD_PROGRESS, this.progressHandler);
+    NotificationCenter.getInstance().addObserver(EventId.FILE_DOWNLOAD_COMPLETED, this.completedHandler);
+    if (this.message.filePath && this.message.filePath.length > 0) {
+      this.downloadProgress = 100;
+    }
+  }
+
+  aboutToDisappear(): void {
+    NotificationCenter.getInstance().removeObserver(EventId.FILE_DOWNLOAD_PROGRESS, this.progressHandler);
+    NotificationCenter.getInstance().removeObserver(EventId.FILE_DOWNLOAD_COMPLETED, this.completedHandler);
+  }
 
   build() {
     Column() {
@@ -36,9 +76,7 @@ export struct FileBubble {
         }
         .width(44).height(44)
         .onClick(() => {
-          if (this.downloadProgress < 0) {
-            this.simulateDownload();
-          }
+          this.handlePrimaryAction();
         })
 
         Column() {
@@ -67,11 +105,13 @@ export struct FileBubble {
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Start)
 
-        if (this.downloadProgress < 0) {
-          Image($r('app.media.ic_download'))
+        if (this.downloadProgress < 0 || this.downloadProgress < 100) {
+          Image(this.downloadProgress >= 0 && this.downloadProgress < 100
+            ? $r('app.media.ic_close')
+            : $r('app.media.ic_download'))
             .width(22).height(22)
             .fillColor($r('app.color.telegram_blue'))
-            .onClick(() => { this.simulateDownload(); })
+            .onClick(() => { this.handlePrimaryAction(); })
         }
       }
       .width('100%')
@@ -87,27 +127,69 @@ export struct FileBubble {
     }
   }
 
+  private handlePrimaryAction(): void {
+    if (this.downloadProgress >= 0 && this.downloadProgress < 100) {
+      if (this.message.fileId > 0) {
+        FileController.getInstance().cancelDownload(this.message.fileId);
+      }
+      this.downloadProgress = -1;
+      return;
+    }
+
+    if (this.message.filePath && this.message.filePath.length > 0) {
+      promptAction.showToast({
+        message: getContext(this).resourceManager.getStringByNameSync('download_complete'),
+        duration: 1200,
+        bottom: 96
+      });
+      return;
+    }
+
+    if (this.message.fileId <= 0) {
+      promptAction.showToast({
+        message: getContext(this).resourceManager.getStringByNameSync('action_failed'),
+        duration: 1200,
+        bottom: 96
+      });
+      return;
+    }
+
+    this.downloadProgress = 0;
+    FileController.getInstance().requestFile(this.message.fileId, 16, (path: string) => {
+      if (path.length > 0) {
+        this.message.filePath = path;
+        this.downloadProgress = 100;
+      } else {
+        this.downloadProgress = -1;
+      }
+    });
+  }
+
   private getFileSizeLabel(): string {
+    if (this.message.fileSize > 0) {
+      return this.formatFileSize(this.message.fileSize);
+    }
+
     const ext = (this.message.fileName || '').split('.').pop()?.toLowerCase() || '';
     switch (ext) {
       case 'pdf': return 'PDF';
-      case 'doc': case 'docx': return 'Word';
-      case 'xls': case 'xlsx': return 'Excel';
-      case 'zip': case 'rar': return 'Archive';
+      case 'doc':
+      case 'docx': return 'Word';
+      case 'xls':
+      case 'xlsx': return 'Excel';
+      case 'zip':
+      case 'rar': return 'Archive';
       case 'apk': return 'APK';
-      case 'mp3': case 'ogg': return 'Audio';
-      default: return 'File';
+      case 'mp3':
+      case 'ogg': return 'Audio';
+      default: return getContext(this).resourceManager.getStringByNameSync('file_label');
     }
   }
 
-  private simulateDownload(): void {
-    this.downloadProgress = 0;
-    const timerId = setInterval(() => {
-      this.downloadProgress += Math.floor(Math.random() * 15 + 5);
-      if (this.downloadProgress >= 100) {
-        this.downloadProgress = 100;
-        clearInterval(timerId);
-      }
-    }, 300);
+  private formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   }
 }

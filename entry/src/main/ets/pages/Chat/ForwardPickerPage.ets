@@ -6,6 +6,7 @@ import { ChatService } from '../../services/ChatService';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Chat } from '../../models/Chat';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
+import { promptAction } from '@kit.ArkUI';
 
 @Builder
 export function ForwardPickerBuilder(name: string, param: Object) {
@@ -24,6 +25,15 @@ export struct ForwardPickerPage {
   private chatDataSource: BasicDataSource<Chat> = new BasicDataSource<Chat>();
 
   aboutToAppear(): void {
+    if (this.messageId <= 0 || this.sourceChatId <= 0) {
+      promptAction.showToast({
+        message: getContext(this).resourceManager.getStringByNameSync('forward_unavailable'),
+        duration: 2000,
+        bottom: 96
+      });
+      this.navPathStack.pop();
+      return;
+    }
     this.refreshChats();
   }
 
@@ -35,6 +45,7 @@ export struct ForwardPickerPage {
           Image($r('app.media.ic_back'))
             .width(24).height(24)
             .fillColor($r('app.color.telegram_blue'))
+            .accessibilityText($r('app.string.accessibility_back'))
             .onClick(() => this.navPathStack.pop())
 
           Text($r('app.string.forward_to'))
@@ -89,7 +100,7 @@ export struct ForwardPickerPage {
           Column() {
             LoadingProgress()
               .width(32).height(32).color($r('app.color.telegram_blue'))
-            Text('Forwarding...')
+            Text($r('app.string.sending'))
               .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .margin({ top: 8 })
@@ -159,6 +170,11 @@ export struct ForwardPickerPage {
       hilog.warn(0x0001, 'ForwardPickerPage', 'Failed to forward message to chat %{public}d: %{public}s',
         targetChatId, String(e));
       this.isForwarding = false;
+      promptAction.showToast({
+        message: getContext(this).resourceManager.getStringByNameSync('action_failed'),
+        duration: 1200,
+        bottom: 96
+      });
     }
   }
 

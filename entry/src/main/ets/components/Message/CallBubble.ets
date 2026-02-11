@@ -70,15 +70,23 @@ export struct CallBubble {
     const isVideo: boolean = this.message.callIsVideo;
 
     if (reason === 'missed') {
-      return isVideo ? 'Missed Video Call' : 'Missed Call';
+      return isVideo
+        ? this.getString('message_call_missed_video', 'Missed video call')
+        : this.getString('message_call_missed_voice', 'Missed voice call');
     }
     if (reason === 'declined') {
-      return isVideo ? 'Declined Video Call' : 'Declined Call';
+      return isVideo
+        ? this.getString('message_call_declined_video', 'Declined video call')
+        : this.getString('message_call_declined_voice', 'Declined voice call');
     }
     if (this.message.isOutgoing) {
-      return isVideo ? 'Outgoing Video Call' : 'Outgoing Call';
+      return isVideo
+        ? this.getString('message_call_outgoing_video', 'Outgoing video call')
+        : this.getString('message_call_outgoing_voice', 'Outgoing voice call');
     }
-    return isVideo ? 'Incoming Video Call' : 'Incoming Call';
+    return isVideo
+      ? this.getString('message_call_incoming_video', 'Incoming video call')
+      : this.getString('message_call_incoming_voice', 'Incoming voice call');
   }
 
   private isMissed(): boolean {
@@ -94,5 +102,13 @@ export struct CallBubble {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  private getString(name: string, fallback: string): string {
+    try {
+      return getContext(this).resourceManager.getStringByNameSync(name);
+    } catch (_e) {
+      return fallback;
+    }
   }
 }

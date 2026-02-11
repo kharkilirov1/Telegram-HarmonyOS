@@ -5,6 +5,14 @@ import { Call } from '../../models/Call';
 import { AvatarWithStatus } from '../../components/Common/AvatarWithStatus';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
 
+@Builder
+export function CallsBuilder(name: string, param: Object) {
+  NavDestination() {
+    CallsPage()
+  }
+  .hideTitleBar(true)
+}
+
 @ComponentV2
 export struct CallsPage {
   @Consumer('navPathStack') navPathStack: NavPathStack = new NavPathStack();
@@ -94,8 +102,12 @@ export struct CallsPage {
             .width(22)
             .height(22)
             .fillColor($r('app.color.telegram_blue'))
+            .accessibilityText($r('app.string.accessibility_call'))
         }
         .backgroundColor(Color.Transparent)
+        .onClick(() => {
+          this.navPathStack.pushPath(new NavPathInfo('NewChat', new Object()));
+        })
       }
       .width('100%')
       .height(44)
@@ -218,6 +230,12 @@ export struct CallsPage {
       }
       .backgroundColor(Color.Transparent)
       .margin({ right: 16 })
+      .onClick(() => {
+        if (call.userId <= 0) return;
+        const navParam: Record<string, Object> = {};
+        navParam['userId'] = call.userId;
+        this.navPathStack.pushPath(new NavPathInfo('UserInfo', navParam));
+      })
     }
     .width('100%')
     .height(60)

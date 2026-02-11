@@ -57,7 +57,7 @@ export struct ContactBubble {
           .width(16).height(16)
           .fillColor($r('app.color.telegram_blue'))
           .margin({ right: 6 })
-        Text('SEND MESSAGE')
+        Text($r('app.string.contact_send_message'))
           .fontSize(13)
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.telegram_blue'))
@@ -76,7 +76,7 @@ export struct ContactBubble {
           .width(16).height(16)
           .fillColor($r('app.color.telegram_blue'))
           .margin({ right: 6 })
-        Text('ADD CONTACT')
+        Text($r('app.string.contact_add_contact'))
           .fontSize(13)
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.telegram_blue'))
@@ -101,7 +101,10 @@ export struct ContactBubble {
     const first: string = this.message.contactFirstName;
     const last: string = this.message.contactLastName;
     const full: string = `${first} ${last}`.trim();
-    return full.length > 0 ? full : 'Contact';
+    if (full.length > 0) {
+      return full;
+    }
+    return getContext(this).resourceManager.getStringByNameSync('contact_label');
   }
 
   private formatPhone(phone: string): string {

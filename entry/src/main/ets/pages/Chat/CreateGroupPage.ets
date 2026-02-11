@@ -8,6 +8,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { User } from '../../models/User';
 import { AvatarWithStatus, formatLastSeen } from '../../components/Common/AvatarWithStatus';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
+import { promptAction } from '@kit.ArkUI';
 
 @Builder
 export function CreateGroupBuilder(name: string, param: Object) {
@@ -163,7 +164,7 @@ export struct CreateGroupPage {
           Text($r('app.string.create'))
             .fontSize(16)
             .fontColor($r('app.color.telegram_blue'))
-            .onClick(() => { this.createGroup(); })
+            .onClick(() => { void this.createGroup(); })
         }
       }
       .width('100%')
@@ -189,7 +190,7 @@ export struct CreateGroupPage {
         .justifyContent(FlexAlign.Center)
         .margin({ right: 16 })
 
-        TextInput({ placeholder: 'Group Name', text: this.groupName })
+        TextInput({ placeholder: $r('app.string.group_name'), text: this.groupName })
           .fontSize(17)
           .layoutWeight(1)
           .backgroundColor(Color.Transparent)
@@ -203,7 +204,7 @@ export struct CreateGroupPage {
       Divider().strokeWidth(0.5).color($r('app.color.separator'))
 
       // Members count
-      Text(`${this.selectedUserIds.length} members`)
+      Text(this.formatMembersCount(this.selectedUserIds.length))
         .fontSize(14)
         .fontColor($r('app.color.text_secondary'))
         .padding({ left: 16, top: 12, bottom: 8 })
@@ -352,12 +353,15 @@ export struct CreateGroupPage {
     try {
       const chatId = await ChatService.getInstance()
         .createNewBasicGroupChat(this.selectedUserIds, this.groupName.trim());
-      this.navPathStack.pop();
-      if (chatId !== 0) {
-        this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
+      if (chatId <= 0) {
+        throw new Error('createNewBasicGroupChat returned 0');
       }
+      this.navPathStack.pop();
+      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
     } catch (e) {
       hilog.warn(0x0001, 'CreateGroupPage', 'Failed to create group chat: %{public}s', String(e));
+      this.showActionError();
+    } finally {
       this.isCreating = false;
     }
   }
@@ -367,7 +371,20 @@ export struct CreateGroupPage {
     if (user) {
       return `${user.firstName} ${user.lastName}`.trim();
     }
-    return 'User';
+    return getContext(this).resourceManager.getStringByNameSync('user_fallback');
+  }
+
+  private formatMembersCount(count: number): string {
+    const template = getContext(this).resourceManager.getStringByNameSync('group_members_count');
+    return template.replace('%s', count.toString());
+  }
+
+  private showActionError(): void {
+    promptAction.showToast({
+      message: getContext(this).resourceManager.getStringByNameSync('action_failed'),
+      duration: 1200,
+      bottom: 96
+    });
   }
 
   private getUserInitials(user: User): string {

@@ -24,7 +24,7 @@ export struct SearchMessageRow {
 
       Column() {
         Row() {
-          Text(this.senderLabel.length > 0 ? this.senderLabel : 'Unknown')
+          Text(this.senderLabel.length > 0 ? this.senderLabel : $r('app.string.user_fallback'))
             .fontSize(15)
             .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.text_primary'))
@@ -38,7 +38,7 @@ export struct SearchMessageRow {
         .width('100%')
 
         if (this.chatTitle.length > 0) {
-          Text(`in ${this.chatTitle}`)
+          Text(this.formatChatContext())
             .fontSize(12)
             .fontColor($r('app.color.telegram_blue'))
             .maxLines(1)
@@ -61,5 +61,10 @@ export struct SearchMessageRow {
     .onClick(() => {
       this.onOpenChat(this.message.chatId);
     })
+  }
+
+  private formatChatContext(): string {
+    const template = getContext(this).resourceManager.getStringByNameSync('search_in_chat_context');
+    return template.replace('%s', this.chatTitle);
   }
 }

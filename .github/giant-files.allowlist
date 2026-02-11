@@ -7,3 +7,5 @@ entry/src/main/ets/components/Message/MessageBubble.ets # Legacy god file; split
 entry/src/main/ets/pages/Settings/SettingsPage.ets # Legacy god file; split in PR-6
 entry/src/main/ets/pages/Settings/DataStoragePage.ets # Legacy god file; split in PR-6
 entry/src/main/ets/pages/Settings/ProxySettingsPage.ets # Legacy god file; split in PR-6
+entry/src/main/ets/controllers/TdMessageParser.ets # Expanded media mapping before parser decomposition in next refactor
+entry/src/main/ets/models/TdTypes.ets # Temporary type growth for release parity; split by domain in next refactor

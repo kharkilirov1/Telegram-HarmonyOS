@@ -13,7 +13,7 @@ export struct MessageMetaRow {
     Row() {
       Blank().layoutWeight(1)
       if (this.isEdited) {
-        Text('edited')
+        Text($r('app.string.editing_message'))
           .fontSize(11)
           .fontColor(this.tint)
           .fontStyle(FontStyle.Italic)

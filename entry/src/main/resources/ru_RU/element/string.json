@@ -621,6 +621,18 @@
       "value": "Автоудаление сообщений"
     },
     {
+      "name": "auto_delete_1_day",
+      "value": "1 день"
+    },
+    {
+      "name": "auto_delete_7_days",
+      "value": "7 дней"
+    },
+    {
+      "name": "auto_delete_30_days",
+      "value": "30 дней"
+    },
+    {
       "name": "delete_my_account",
       "value": "Удалить мой аккаунт"
     },
@@ -983,6 +995,38 @@
     {
       "name": "calls_missed_label",
       "value": "Пропущен"
+    },
+    {
+      "name": "message_call_missed_voice",
+      "value": "Пропущен голосовой звонок"
+    },
+    {
+      "name": "message_call_missed_video",
+      "value": "Пропущен видеозвонок"
+    },
+    {
+      "name": "message_call_declined_voice",
+      "value": "Отклонён голосовой звонок"
+    },
+    {
+      "name": "message_call_declined_video",
+      "value": "Отклонён видеозвонок"
+    },
+    {
+      "name": "message_call_outgoing_voice",
+      "value": "Исходящий голосовой звонок"
+    },
+    {
+      "name": "message_call_outgoing_video",
+      "value": "Исходящий видеозвонок"
+    },
+    {
+      "name": "message_call_incoming_voice",
+      "value": "Входящий голосовой звонок"
+    },
+    {
+      "name": "message_call_incoming_video",
+      "value": "Входящий видеозвонок"
     },
     {
       "name": "admin_settings",
@@ -1891,6 +1935,242 @@
     {
       "name": "business_chatbots",
       "value": "Чат-боты"
+    },
+    {
+      "name": "contact_send_message",
+      "value": "НАПИСАТЬ"
+    },
+    {
+      "name": "contact_add_contact",
+      "value": "ДОБАВИТЬ КОНТАКТ"
+    },
+    {
+      "name": "live_location_label",
+      "value": "Текущая геопозиция"
+    },
+    {
+      "name": "location_updated_hours_minutes",
+      "value": "Обновлено %sч %sм назад"
+    },
+    {
+      "name": "location_updated_hours",
+      "value": "Обновлено %sч назад"
+    },
+    {
+      "name": "location_updated_minutes",
+      "value": "Обновлено %sм назад"
+    },
+    {
+      "name": "location_sharing",
+      "value": "Передача геопозиции"
+    },
+    {
+      "name": "call_control_speaker",
+      "value": "Динамик"
+    },
+    {
+      "name": "call_control_video",
+      "value": "Видео"
+    },
+    {
+      "name": "call_control_flip",
+      "value": "Переключить"
+    },
+    {
+      "name": "channel_description_optional",
+      "value": "Описание (необязательно)"
+    },
+    {
+      "name": "channel_type",
+      "value": "Тип канала"
+    },
+    {
+      "name": "channel_public_hint",
+      "value": "Любой может найти и вступить"
+    },
+    {
+      "name": "channel_private_hint",
+      "value": "Вступление только по приглашению"
+    },
+    {
+      "name": "channel_link_placeholder",
+      "value": "ссылка"
+    },
+    {
+      "name": "language_official_section",
+      "value": "Официальные языки"
+    },
+    {
+      "name": "language_unofficial_section",
+      "value": "Неофициальные языки"
+    },
+    {
+      "name": "media_saved_toast",
+      "value": "Сохранено"
+    },
+    {
+      "name": "media_save_failed_toast",
+      "value": "Не удалось сохранить"
+    },
+    {
+      "name": "media_delete_confirm",
+      "value": "Удалить этот медиафайл?"
+    },
+    {
+      "name": "media_delete_failed_toast",
+      "value": "Не удалось удалить"
+    },
+    {
+      "name": "notifications_private_chats",
+      "value": "Личные чаты"
+    },
+    {
+      "name": "notifications_groups",
+      "value": "Группы"
+    },
+    {
+      "name": "notifications_channels",
+      "value": "Каналы"
+    },
+    {
+      "name": "notifications_message_preview",
+      "value": "Предпросмотр сообщений"
+    },
+    {
+      "name": "notifications_sound_label",
+      "value": "Звук"
+    },
+    {
+      "name": "notifications_sound_none",
+      "value": "Без звука"
+    },
+    {
+      "name": "notifications_in_app",
+      "value": "Уведомления в приложении"
+    },
+    {
+      "name": "notifications_in_app_sounds",
+      "value": "Звуки в приложении"
+    },
+    {
+      "name": "notifications_in_app_vibrate",
+      "value": "Вибрация в приложении"
+    },
+    {
+      "name": "notifications_in_app_preview",
+      "value": "Предпросмотр в приложении"
+    },
+    {
+      "name": "notifications_events",
+      "value": "События"
+    },
+    {
+      "name": "notifications_contact_joined",
+      "value": "Контакт присоединился к Telegram"
+    },
+    {
+      "name": "notifications_pinned_messages",
+      "value": "Закреплённые сообщения"
+    },
+    {
+      "name": "notifications_reset_all",
+      "value": "Сбросить все уведомления"
+    },
+    {
+      "name": "notifications_reset_hint",
+      "value": "Отменить все пользовательские настройки уведомлений для чатов, групп и каналов."
+    },
+    {
+      "name": "privacy_section_security",
+      "value": "БЕЗОПАСНОСТЬ"
+    },
+    {
+      "name": "privacy_section_privacy",
+      "value": "КОНФИДЕНЦИАЛЬНОСТЬ"
+    },
+    {
+      "name": "privacy_section_auto_delete",
+      "value": "АВТОУДАЛЕНИЕ СООБЩЕНИЙ"
+    },
+    {
+      "name": "toggle_on",
+      "value": "Вкл."
+    },
+    {
+      "name": "privacy_last_seen_online",
+      "value": "Последний визит и онлайн"
+    },
+    {
+      "name": "privacy_profile_photos",
+      "value": "Фото профиля"
+    },
+    {
+      "name": "privacy_forwarded_messages",
+      "value": "Пересылаемые сообщения"
+    },
+    {
+      "name": "privacy_groups_channels",
+      "value": "Группы и каналы"
+    },
+    {
+      "name": "delete_account_inactive_period",
+      "value": "Если не заходить 6 месяцев"
+    },
+    {
+      "name": "search_chat_type_channel",
+      "value": "Канал"
+    },
+    {
+      "name": "search_chat_type_group",
+      "value": "Группа"
+    },
+    {
+      "name": "search_in_chat_context",
+      "value": "в %s"
+    },
+    {
+      "name": "profile_first_name",
+      "value": "Имя"
+    },
+    {
+      "name": "profile_last_name",
+      "value": "Фамилия"
+    },
+    {
+      "name": "profile_bio_hint",
+      "value": "Любые подробности: возраст, род занятий или город."
+    },
+    {
+      "name": "profile_username_hint",
+      "value": "Вы можете выбрать имя пользователя в Telegram. Другие смогут найти вас по нему."
+    },
+    {
+      "name": "no_administrators",
+      "value": "Нет администраторов"
+    },
+    {
+      "name": "action_failed",
+      "value": "Не удалось выполнить действие"
+    },
+    {
+      "name": "message_action",
+      "value": "Сообщение"
+    },
+    {
+      "name": "media_share_unavailable",
+      "value": "Поделиться этим медиафайлом сейчас нельзя"
+    },
+    {
+      "name": "forward_unavailable",
+      "value": "Не удалось переслать это сообщение"
+    },
+    {
+      "name": "poll_option_placeholder",
+      "value": "Вариант %d"
+    },
+    {
+      "name": "chat_draft_prefix",
+      "value": "Черновик: "
     }
   ]
 }

@@ -92,6 +92,16 @@ export default function chatServiceTest() {
         const service = ChatService.getInstance();
         expect(typeof service.searchChatMessages).assertEqual('function');
       });
+
+      it('should have addChatMembers method', 0, () => {
+        const service = ChatService.getInstance();
+        expect(typeof service.addChatMembers).assertEqual('function');
+      });
+
+      it('should have setSupergroupUsername method', 0, () => {
+        const service = ChatService.getInstance();
+        expect(typeof service.setSupergroupUsername).assertEqual('function');
+      });
     });
   });
 }

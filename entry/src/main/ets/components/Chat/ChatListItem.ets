@@ -50,7 +50,7 @@ export struct ChatListItem {
 
           Text(this.formatDate(this.chat.lastMessageDate))
             .fontSize(13)
-            .fontColor(this.chat.unreadCount > 0 && !this.chat.isMuted
+            .fontColor((this.chat.unreadCount > 0 || this.chat.isMarkedAsUnread) && !this.chat.isMuted
               ? $r('app.color.telegram_blue')
               : $r('app.color.text_secondary'))
         }
@@ -63,7 +63,7 @@ export struct ChatListItem {
               .layoutWeight(1)
           } else if (this.chat.draftText.length > 0) {
             Text() {
-              Span('Draft: ')
+              Span(this.getDraftPrefix())
                 .fontWeight(FontWeight.Medium)
                 .fontColor($r('app.color.error_red'))
               Span(this.chat.draftText)
@@ -119,6 +119,13 @@ export struct ChatListItem {
               .constraintSize({ minWidth: 20 })
               .height(20)
               .textAlign(TextAlign.Center)
+          } else if (this.chat.isMarkedAsUnread) {
+            Circle()
+              .width(10)
+              .height(10)
+              .fill(this.chat.isMuted
+                ? $r('app.color.text_secondary')
+                : $r('app.color.telegram_blue'))
           } else if (this.chat.isPinned) {
             Image($r('app.media.ic_pin'))
               .width(16)
@@ -167,10 +174,13 @@ export struct ChatListItem {
     const diff = now.getTime() - date.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     if (days < 7) {
-      const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      return weekdays[date.getDay()];
+      return date.toLocaleDateString([], { weekday: 'short' } as Intl.DateTimeFormatOptions);
     }
 
     return `${date.getDate()}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+  }
+
+  private getDraftPrefix(): string {
+    return getContext(this).resourceManager.getStringByNameSync('chat_draft_prefix');
   }
 }

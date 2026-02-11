@@ -8,6 +8,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { User } from '../../models/User';
 import { AvatarWithStatus, formatLastSeen } from '../../components/Common/AvatarWithStatus';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
+import { promptAction } from '@kit.ArkUI';
 
 @Builder
 export function CreateChannelBuilder(name: string, param: Object) {
@@ -28,12 +29,20 @@ export struct CreateChannelPage {
   @Local isCreating: boolean = false;
 
   private contactDataSource: BasicDataSource<User> = new BasicDataSource<User>();
+  private contactsHandler = (): void => {
+    this.refreshContacts();
+  };
 
   aboutToAppear(): void {
     NotificationCenter.getInstance()
-      .addObserver(EventId.CONTACTS_UPDATED, () => { this.refreshContacts(); });
+      .addObserver(EventId.CONTACTS_UPDATED, this.contactsHandler);
     ContactsController.getInstance().loadContacts();
     this.refreshContacts();
+  }
+
+  aboutToDisappear(): void {
+    NotificationCenter.getInstance()
+      .removeObserver(EventId.CONTACTS_UPDATED, this.contactsHandler);
   }
 
   build() {
@@ -101,7 +110,7 @@ export struct CreateChannelPage {
             .justifyContent(FlexAlign.Center)
             .margin({ right: 16 })
 
-            TextInput({ placeholder: 'Channel Name', text: this.channelName })
+            TextInput({ placeholder: $r('app.string.channel_name'), text: this.channelName })
               .fontSize(17)
               .layoutWeight(1)
               .backgroundColor(Color.Transparent)
@@ -113,7 +122,7 @@ export struct CreateChannelPage {
           .padding({ left: 16, right: 16, top: 16, bottom: 8 })
 
           // Description
-          TextArea({ placeholder: 'Description (optional)', text: this.channelDescription })
+          TextArea({ placeholder: $r('app.string.channel_description_optional'), text: this.channelDescription })
             .fontSize(15)
             .width('100%')
             .constraintSize({ minHeight: 60, maxHeight: 120 })
@@ -126,7 +135,7 @@ export struct CreateChannelPage {
           Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ top: 8 })
 
           // Channel type selection
-          Text('Channel Type')
+          Text($r('app.string.channel_type'))
             .fontSize(13)
             .fontColor($r('app.color.text_secondary'))
             .margin({ left: 16, top: 16, bottom: 8 })
@@ -141,10 +150,10 @@ export struct CreateChannelPage {
                 .margin({ right: 12 })
 
               Column() {
-                Text('Public Channel')
+                Text($r('app.string.public_channel'))
                   .fontSize(16)
                   .fontColor($r('app.color.text_primary'))
-                Text('Anyone can find and join')
+                Text($r('app.string.channel_public_hint'))
                   .fontSize(13)
                   .fontColor($r('app.color.text_secondary'))
                   .margin({ top: 2 })
@@ -167,10 +176,10 @@ export struct CreateChannelPage {
                 .margin({ right: 12 })
 
               Column() {
-                Text('Private Channel')
+                Text($r('app.string.private_channel'))
                   .fontSize(16)
                   .fontColor($r('app.color.text_primary'))
-                Text('Only invited members can join')
+                Text($r('app.string.channel_private_hint'))
                   .fontSize(13)
                   .fontColor($r('app.color.text_secondary'))
                   .margin({ top: 2 })
@@ -191,7 +200,7 @@ export struct CreateChannelPage {
 
           // Public link input
           if (this.isPublic) {
-            Text('Public Link')
+            Text($r('app.string.public_link'))
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 16, top: 16, bottom: 8 })
@@ -201,7 +210,7 @@ export struct CreateChannelPage {
                 .fontSize(16)
                 .fontColor($r('app.color.text_secondary'))
 
-              TextInput({ placeholder: 'link', text: this.publicLink })
+              TextInput({ placeholder: $r('app.string.channel_link_placeholder'), text: this.publicLink })
                 .fontSize(16)
                 .layoutWeight(1)
                 .backgroundColor(Color.Transparent)
@@ -240,7 +249,7 @@ export struct CreateChannelPage {
           .fillColor($r('app.color.telegram_blue'))
           .onClick(() => { this.step = 0; })
 
-        Text('Add Members')
+        Text($r('app.string.add_members'))
           .fontSize(17)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
@@ -251,7 +260,7 @@ export struct CreateChannelPage {
           Text($r('app.string.create'))
             .fontSize(16)
             .fontColor($r('app.color.telegram_blue'))
-            .onClick(() => { this.createChannel(); })
+            .onClick(() => { void this.createChannel(); })
         }
       }
       .width('100%')
@@ -350,15 +359,88 @@ export struct CreateChannelPage {
 
     try {
       const chatId = await ChatService.getInstance()
-        .createNewSupergroupChat(this.channelName.trim(), true, this.channelDescription);
-      this.navPathStack.pop();
-      if (chatId !== 0) {
-        this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
+        .createNewSupergroupChat(this.channelName.trim(), true, this.channelDescription.trim());
+      if (chatId <= 0) {
+        throw new Error('createNewSupergroupChat returned 0');
       }
+
+      await this.applyPublicLinkIfNeeded(chatId);
+      await this.inviteMembersIfNeeded(chatId);
+
+      this.navPathStack.pop();
+      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
     } catch (e) {
       hilog.warn(0x0001, 'CreateChannelPage', 'Failed to create channel: %{public}s', String(e));
+      this.showActionError();
+    } finally {
       this.isCreating = false;
     }
+  }
+
+  private async applyPublicLinkIfNeeded(chatId: number): Promise<void> {
+    if (!this.isPublic) return;
+    const username = this.normalizeUsername(this.publicLink);
+    if (username.length === 0) return;
+
+    // Telegram usernames: 5-32 chars, letters/digits/_ and must start with a letter.
+    if (!/^[A-Za-z][A-Za-z0-9_]{4,31}$/.test(username)) {
+      this.showActionError();
+      return;
+    }
+
+    try {
+      const supergroupId = await ChatService.getInstance().getSupergroupIdByChat(chatId);
+      if (supergroupId > 0) {
+        await ChatService.getInstance().setSupergroupUsername(supergroupId, username);
+      }
+    } catch (e) {
+      hilog.warn(0x0001, 'CreateChannelPage', 'Failed to set channel username: %{public}s', String(e));
+      this.showActionError();
+    }
+  }
+
+  private async inviteMembersIfNeeded(chatId: number): Promise<void> {
+    if (this.selectedUserIds.length === 0) return;
+
+    try {
+      await ChatService.getInstance().addChatMembers(chatId, this.selectedUserIds);
+    } catch (e) {
+      hilog.warn(0x0001, 'CreateChannelPage', 'Failed to invite channel members: %{public}s', String(e));
+      this.showActionError();
+    }
+  }
+
+  private normalizeUsername(raw: string): string {
+    let username = raw.trim();
+    if (username.length === 0) return '';
+
+    const lower = username.toLowerCase();
+    if (lower.startsWith('https://')) {
+      username = username.substring(8);
+    } else if (lower.startsWith('http://')) {
+      username = username.substring(7);
+    }
+    if (username.toLowerCase().startsWith('t.me/')) {
+      username = username.substring(5);
+    }
+    if (username.startsWith('@')) {
+      username = username.substring(1);
+    }
+
+    const slashIdx = username.indexOf('/');
+    if (slashIdx >= 0) {
+      username = username.substring(0, slashIdx);
+    }
+
+    return username.trim();
+  }
+
+  private showActionError(): void {
+    promptAction.showToast({
+      message: getContext(this).resourceManager.getStringByNameSync('action_failed'),
+      duration: 1200,
+      bottom: 96
+    });
   }
 
   private getUserInitials(user: User): string {

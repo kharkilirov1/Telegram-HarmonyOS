@@ -2,9 +2,7 @@
 // Decouples UI pages from direct TDLibClient.send() calls
 // Reference: Telegram iOS ChatController, Android ChatActivity
 
-import { TDLibClient, TDLibError } from './TDLibClient';
-import { handleTdlibError } from './AppError';
-import { hilog } from '@kit.PerformanceAnalysisKit';
+import { TDLibClient } from './TDLibClient';
 import {
   TdChats,
   TdChatInviteLink,
@@ -14,13 +12,11 @@ import {
   TdAutoDownloadSettingsPresets,
   TdPassportAuthorizationForm,
   TdMessages,
-  TdMessage
+  TdMessage,
+  safeNumber
 } from '../models/TdTypes';
 import { Message } from '../models/Message';
 import { parseMessage } from '../controllers/TdMessageParser';
-
-const TAG = 'ChatService';
-const DOMAIN = 0x0001;
 
 export class ChatService {
   private static instance: ChatService | null = null;
@@ -76,6 +72,33 @@ export class ChatService {
     params['chat_id'] = chatId;
     params['chat_list'] = chatList;
     await TDLibClient.getInstance().send('addChatToList', params);
+  }
+
+  async getChat(chatId: number): Promise<Record<string, Object>> {
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    return TDLibClient.getInstance().send('getChat', params);
+  }
+
+  async getSupergroupIdByChat(chatId: number): Promise<number> {
+    const result = await this.getChat(chatId);
+    const type = result['type'] as Record<string, Object> | undefined;
+    if (!type) return 0;
+    return safeNumber(type['supergroup_id']);
+  }
+
+  async setSupergroupUsername(supergroupId: number, username: string): Promise<void> {
+    const params: Record<string, Object> = {};
+    params['supergroup_id'] = supergroupId;
+    params['username'] = username;
+    await TDLibClient.getInstance().send('setSupergroupUsername', params);
+  }
+
+  async addChatMembers(chatId: number, userIds: number[]): Promise<Record<string, Object>> {
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    params['user_ids'] = userIds;
+    return TDLibClient.getInstance().send('addChatMembers', params);
   }
 
   // --- Search ---
@@ -276,6 +299,10 @@ export class ChatService {
 
   async markChatAsRead(chatId: number): Promise<void> {
     await TDLibClient.getInstance().openChat(chatId);
+  }
+
+  async setChatMarkedAsUnread(chatId: number, isMarkedAsUnread: boolean): Promise<void> {
+    await TDLibClient.getInstance().toggleChatIsMarkedAsUnread(chatId, isMarkedAsUnread);
   }
 
   // --- Auth recovery (used by PasswordPage) ---

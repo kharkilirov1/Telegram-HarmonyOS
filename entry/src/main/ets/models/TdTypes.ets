@@ -63,6 +63,8 @@ export interface TdFormattedText {
 
 export interface TdFile {
   id: number;
+  size?: number;
+  expected_size?: number;
   local?: TdLocalFile;
 }
 
@@ -77,6 +79,12 @@ export interface TdPhoto {
 
 export interface TdPhotoSize {
   photo?: TdFile;
+  width?: number;
+  height?: number;
+}
+
+export interface TdThumbnail {
+  file?: TdFile;
   width?: number;
   height?: number;
 }
@@ -136,6 +144,7 @@ export interface TdMessageContent {
   caption?: TdFormattedText;
   photo?: TdPhoto;
   video?: TdVideo;
+  animation?: TdAnimation;
   document?: TdDocument;
   voice_note?: TdVoiceNote;
   video_note?: TdVideoNote;
@@ -154,6 +163,14 @@ export interface TdMessageContent {
 export interface TdVideo {
   duration: number;
   video?: TdFile;
+  thumbnail?: TdThumbnail;
+}
+
+export interface TdAnimation {
+  duration?: number;
+  animation?: TdFile;
+  thumbnail?: TdThumbnail;
+  file_name?: string;
 }
 
 export interface TdDocument {
@@ -164,6 +181,7 @@ export interface TdDocument {
 export interface TdVoiceNote {
   duration: number;
   waveform: string;
+  voice?: TdFile;
 }
 
 export interface TdVideoNote {
@@ -227,6 +245,8 @@ export interface TdChatPosition {
 
 export interface TdChatType {
   is_channel?: boolean;
+  supergroup_id?: number;
+  user_id?: number;
 }
 
 export interface TdNotificationSettings {
@@ -273,6 +293,7 @@ export interface TdChat {
   positions?: TdChatPosition[];
   notification_settings?: TdNotificationSettings;
   unread_count?: number;
+  is_marked_as_unread?: boolean;
   type?: TdChatType;
   draft_message?: TdDraftMessage;
 }
@@ -335,6 +356,10 @@ export interface TdUsernames {
   active_usernames?: string[];
 }
 
+export interface TdUserType {
+  ['@type']?: string;
+}
+
 export interface TdUser {
   id?: number;
   first_name?: string;
@@ -342,6 +367,7 @@ export interface TdUser {
   phone_number?: string;
   username?: string;
   usernames?: TdUsernames;
+  type?: TdUserType;
   status?: TdUserStatus;
   profile_photo?: TdProfilePhoto;
   is_premium?: boolean;

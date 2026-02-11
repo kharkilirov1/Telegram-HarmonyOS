@@ -23,12 +23,12 @@ export struct SearchChatRow {
       Column() {
         Row() {
           if (this.chat.isChannel) {
-            Text('Channel')
+            Text($r('app.string.search_chat_type_channel'))
               .fontSize(11)
               .fontColor($r('app.color.telegram_blue'))
               .margin({ right: 4 })
           } else if (this.chat.isGroup) {
-            Text('Group')
+            Text($r('app.string.search_chat_type_group'))
               .fontSize(11)
               .fontColor($r('app.color.sender_color_7'))
               .margin({ right: 4 })

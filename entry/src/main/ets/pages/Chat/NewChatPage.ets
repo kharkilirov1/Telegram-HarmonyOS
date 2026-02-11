@@ -8,6 +8,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { User } from '../../models/User';
 import { AvatarWithStatus, formatLastSeen } from '../../components/Common/AvatarWithStatus';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
+import { promptAction } from '@kit.ArkUI';
 
 @Builder
 export function NewChatBuilder(name: string, param: Object) {
@@ -204,21 +205,23 @@ export struct NewChatPage {
     .height(60)
     .padding({ right: 16 })
     .onClick(() => {
-      this.openPrivateChat(user.id);
+      void this.openPrivateChat(user.id);
     })
   }
 
   private async openPrivateChat(userId: number): Promise<void> {
     try {
       const chatId = await ChatService.getInstance().createPrivateChat(userId);
+      if (chatId <= 0) {
+        this.showActionError();
+        return;
+      }
       this.navPathStack.pop();
-      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId !== 0 ? chatId : -userId));
+      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', chatId));
     } catch (e) {
       hilog.warn(0x0001, 'NewChatPage', 'Failed to create private chat for user %{public}d: %{public}s',
         userId, String(e));
-      // Fallback: use negative userId as chatId convention
-      this.navPathStack.pop();
-      this.navPathStack.pushPath(new NavPathInfo('ChatDetail', -userId));
+      this.showActionError();
     }
   }
 
@@ -249,5 +252,13 @@ export struct NewChatPage {
       });
     }
     this.contactDataSource.setData(contacts);
+  }
+
+  private showActionError(): void {
+    promptAction.showToast({
+      message: getContext(this).resourceManager.getStringByNameSync('action_failed'),
+      duration: 1200,
+      bottom: 96
+    });
   }
 }

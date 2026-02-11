@@ -24,7 +24,7 @@ export struct MessageBubble {
   @Event onCopy: (message: Message) => void = () => {};
   @Event onDelete: (message: Message) => void = () => {};
   @Event onEdit: (message: Message) => void = () => {};
-  @Event onMediaTap: (url: string) => void = () => {};
+  @Event onMediaTap: (url: string, messageId: number, chatId: number) => void = () => {};
   @Event onVideoPlay: (url: string, duration: number) => void = () => {};
   @Event onReactionTap: (message: Message, emoji: string) => void = () => {};
   @Event onPollVote: (message: Message, optionIndex: number) => void = () => {};
@@ -95,7 +95,9 @@ export struct MessageBubble {
           } else if (this.isMediaContent()) {
             MediaBubble({
               message: this.message,
-              onMediaTap: (url: string) => { this.onMediaTap(url); },
+              onMediaTap: (url: string, messageId: number, chatId: number) => {
+                this.onMediaTap(url, messageId, chatId);
+              },
               onVideoPlay: (url: string, duration: number) => { this.onVideoPlay(url, duration); }
             })
           } else {
@@ -245,6 +247,7 @@ export struct MessageBubble {
     return this.message.contentType === MessageContentType.STICKER
       || this.message.contentType === MessageContentType.PHOTO
       || this.message.contentType === MessageContentType.VOICE
+      || this.message.contentType === MessageContentType.ANIMATION
       || this.message.contentType === MessageContentType.VIDEO
       || this.message.contentType === MessageContentType.VIDEO_NOTE;
   }

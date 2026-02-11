@@ -11,7 +11,9 @@ export class Chat {
   @Trace photoFileId: number;
   @Trace isGroup: boolean;
   @Trace isChannel: boolean;
+  @Trace isBot: boolean;
   @Trace isPinned: boolean;
+  @Trace isMarkedAsUnread: boolean;
   @Trace isMuted: boolean;
   @Trace isTyping: boolean;
   @Trace typingDescription: string;
@@ -31,6 +33,7 @@ export class Chat {
     photo: string | null = null,
     isGroup: boolean = false,
     isChannel: boolean = false,
+    isBot: boolean = false,
     isPinned: boolean = false
   ) {
     this.id = id;
@@ -44,7 +47,9 @@ export class Chat {
     this.photoFileId = 0;
     this.isGroup = isGroup;
     this.isChannel = isChannel;
+    this.isBot = isBot;
     this.isPinned = isPinned;
+    this.isMarkedAsUnread = false;
     this.isMuted = false;
     this.isTyping = false;
     this.typingDescription = '';

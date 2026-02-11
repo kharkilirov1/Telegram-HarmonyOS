@@ -395,6 +395,8 @@ export class TDLibClient {
   async deleteChat(chatId: number): Promise<Record<string, Object>> {
     const params: Record<string, Object> = {};
     params['chat_id'] = chatId;
+    params['remove_from_chat_list'] = true;
+    params['revoke'] = false;
     return this.send('deleteChatHistory', params);
   }
 
@@ -429,6 +431,13 @@ export class TDLibClient {
     const params: Record<string, Object> = {};
     params['chat_id'] = chatId;
     return this.send('openChat', params);
+  }
+
+  async toggleChatIsMarkedAsUnread(chatId: number, isMarkedAsUnread: boolean): Promise<Record<string, Object>> {
+    const params: Record<string, Object> = {};
+    params['chat_id'] = chatId;
+    params['is_marked_as_unread'] = isMarkedAsUnread;
+    return this.send('toggleChatIsMarkedAsUnread', params);
   }
 
   async closeChat(chatId: number): Promise<Record<string, Object>> {

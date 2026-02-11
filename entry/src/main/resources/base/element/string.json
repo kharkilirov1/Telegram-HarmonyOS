@@ -621,6 +621,18 @@
       "value": "Auto-Delete Messages"
     },
     {
+      "name": "auto_delete_1_day",
+      "value": "1 day"
+    },
+    {
+      "name": "auto_delete_7_days",
+      "value": "7 days"
+    },
+    {
+      "name": "auto_delete_30_days",
+      "value": "30 days"
+    },
+    {
       "name": "delete_my_account",
       "value": "Delete My Account"
     },
@@ -983,6 +995,38 @@
     {
       "name": "calls_missed_label",
       "value": "Missed"
+    },
+    {
+      "name": "message_call_missed_voice",
+      "value": "Missed voice call"
+    },
+    {
+      "name": "message_call_missed_video",
+      "value": "Missed video call"
+    },
+    {
+      "name": "message_call_declined_voice",
+      "value": "Declined voice call"
+    },
+    {
+      "name": "message_call_declined_video",
+      "value": "Declined video call"
+    },
+    {
+      "name": "message_call_outgoing_voice",
+      "value": "Outgoing voice call"
+    },
+    {
+      "name": "message_call_outgoing_video",
+      "value": "Outgoing video call"
+    },
+    {
+      "name": "message_call_incoming_voice",
+      "value": "Incoming voice call"
+    },
+    {
+      "name": "message_call_incoming_video",
+      "value": "Incoming video call"
     },
     {
       "name": "admin_settings",
@@ -1895,6 +1939,238 @@
     {
       "name": "business_chatbots",
       "value": "Chatbots"
+    },
+    {
+      "name": "contact_send_message",
+      "value": "SEND MESSAGE"
+    },
+    {
+      "name": "contact_add_contact",
+      "value": "ADD CONTACT"
+    },
+    {
+      "name": "live_location_label",
+      "value": "Live Location"
+    },
+    {
+      "name": "location_updated_hours_minutes",
+      "value": "Updated %sh %sm ago"
+    },
+    {
+      "name": "location_updated_hours",
+      "value": "Updated %sh ago"
+    },
+    {
+      "name": "location_updated_minutes",
+      "value": "Updated %sm ago"
+    },
+    {
+      "name": "location_sharing",
+      "value": "Sharing location"
+    },
+    {
+      "name": "call_control_speaker",
+      "value": "Speaker"
+    },
+    {
+      "name": "call_control_video",
+      "value": "Video"
+    },
+    {
+      "name": "call_control_flip",
+      "value": "Flip"
+    },
+    {
+      "name": "channel_description_optional",
+      "value": "Description (optional)"
+    },
+    {
+      "name": "channel_type",
+      "value": "Channel Type"
+    },
+    {
+      "name": "channel_public_hint",
+      "value": "Anyone can find and join"
+    },
+    {
+      "name": "channel_private_hint",
+      "value": "Only invited members can join"
+    },
+    {
+      "name": "channel_link_placeholder",
+      "value": "link"
+    },
+    {
+      "name": "language_official_section",
+      "value": "Official Languages"
+    },
+    {
+      "name": "language_unofficial_section",
+      "value": "Unofficial Languages"
+    },
+    {
+      "name": "media_saved_toast",
+      "value": "Saved"
+    },
+    {
+      "name": "media_save_failed_toast",
+      "value": "Save failed"
+    },
+    {
+      "name": "media_delete_confirm",
+      "value": "Delete this media?"
+    },
+    {
+      "name": "media_delete_failed_toast",
+      "value": "Delete failed"
+    },
+    {
+      "name": "notifications_private_chats",
+      "value": "Private Chats"
+    },
+    {
+      "name": "notifications_groups",
+      "value": "Groups"
+    },
+    {
+      "name": "notifications_channels",
+      "value": "Channels"
+    },
+    {
+      "name": "notifications_message_preview",
+      "value": "Message Preview"
+    },
+    {
+      "name": "notifications_sound_label",
+      "value": "Sound"
+    },
+    {
+      "name": "notifications_sound_none",
+      "value": "None"
+    },
+    {
+      "name": "notifications_in_app",
+      "value": "In-App Notifications"
+    },
+    {
+      "name": "notifications_in_app_sounds",
+      "value": "In-App Sounds"
+    },
+    {
+      "name": "notifications_in_app_vibrate",
+      "value": "In-App Vibrate"
+    },
+    {
+      "name": "notifications_in_app_preview",
+      "value": "In-App Preview"
+    },
+    {
+      "name": "notifications_events",
+      "value": "Events"
+    },
+    {
+      "name": "notifications_contact_joined",
+      "value": "Contact Joined Telegram"
+    },
+    {
+      "name": "notifications_pinned_messages",
+      "value": "Pinned Messages"
+    },
+    {
+      "name": "notifications_reset_all",
+      "value": "Reset All Notifications"
+    },
+    {
+      "name": "notifications_reset_hint",
+      "value": "Undo all custom notification settings for all your chats, groups and channels."
+    },
+    {
+      "name": "privacy_section_security",
+      "value": "SECURITY"
+    },
+    {
+      "name": "privacy_section_privacy",
+      "value": "PRIVACY"
+    },
+    {
+      "name": "privacy_section_auto_delete",
+      "value": "AUTO-DELETE MESSAGES"
+    },
+    {
+      "name": "toggle_on",
+      "value": "On"
+    },
+    {
+      "name": "privacy_last_seen_online",
+      "value": "Last Seen & Online"
+    },
+    {
+      "name": "privacy_profile_photos",
+      "value": "Profile Photos"
+    },
+    {
+      "name": "privacy_forwarded_messages",
+      "value": "Forwarded Messages"
+    },
+    {
+      "name": "privacy_groups_channels",
+      "value": "Groups & Channels"
+    },
+    {
+      "name": "delete_account_inactive_period",
+      "value": "If away for 6 months"
+    },
+    {
+      "name": "search_chat_type_channel",
+      "value": "Channel"
+    },
+    {
+      "name": "search_chat_type_group",
+      "value": "Group"
+    },
+    {
+      "name": "search_in_chat_context",
+      "value": "in %s"
+    },
+    {
+      "name": "profile_first_name",
+      "value": "First Name"
+    },
+    {
+      "name": "profile_last_name",
+      "value": "Last Name"
+    },
+    {
+      "name": "profile_bio_hint",
+      "value": "Any details such as age, occupation or city."
+    },
+    {
+      "name": "profile_username_hint",
+      "value": "You can choose a username on Telegram. Others will be able to find you by this username."
+    },
+    {
+      "name": "action_failed",
+      "value": "Action failed"
+    },
+    {
+      "name": "message_action",
+      "value": "Message"
+    },
+    {
+      "name": "media_share_unavailable",
+      "value": "Share is unavailable for this media"
+    },
+    {
+      "name": "forward_unavailable",
+      "value": "Unable to forward this message"
+    },
+    {
+      "name": "poll_option_placeholder",
+      "value": "Option %d"
+    },
+    {
+      "name": "chat_draft_prefix",
+      "value": "Draft: "
     }
   ]
 }

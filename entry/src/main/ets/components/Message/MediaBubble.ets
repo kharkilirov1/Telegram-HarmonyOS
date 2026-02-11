@@ -5,7 +5,7 @@ import { formatMediaDuration, formatMessageTime } from './MessageUtils';
 @ComponentV2
 export struct MediaBubble {
   @Param message: Message = new Message();
-  @Event onMediaTap: (url: string) => void = () => {};
+  @Event onMediaTap: (url: string, messageId: number, chatId: number) => void = () => {};
   @Event onVideoPlay: (url: string, duration: number) => void = () => {};
 
   @Local spoilerRevealed: boolean = false;
@@ -20,6 +20,8 @@ export struct MediaBubble {
       this.buildPhoto()
     } else if (this.message.contentType === MessageContentType.VOICE) {
       this.buildVoice()
+    } else if (this.message.contentType === MessageContentType.ANIMATION) {
+      this.buildVideo()
     } else if (this.message.contentType === MessageContentType.VIDEO) {
       this.buildVideo()
     } else if (this.message.contentType === MessageContentType.VIDEO_NOTE) {
@@ -46,7 +48,7 @@ export struct MediaBubble {
               if (this.message.hasSpoiler && !this.spoilerRevealed) {
                 this.spoilerRevealed = true;
               } else if (this.message.photoUrl) {
-                this.onMediaTap(this.message.photoUrl);
+                this.onMediaTap(this.message.photoUrl, this.message.id, this.message.chatId);
               }
             })
         } else {
@@ -215,7 +217,15 @@ export struct MediaBubble {
           .justifyContent(FlexAlign.Center)
         }
 
-        if (this.message.videoDuration > 0) {
+        if (this.message.contentType === MessageContentType.ANIMATION) {
+          Text($r('app.string.gif'))
+            .fontSize(11)
+            .fontColor(Color.White)
+            .backgroundColor($r('app.color.time_overlay'))
+            .borderRadius(4)
+            .padding({ left: 4, right: 4, top: 1, bottom: 1 })
+            .position({ x: 8, y: 8 })
+        } else if (this.message.videoDuration > 0) {
           Text(formatMediaDuration(this.message.videoDuration))
             .fontSize(11)
             .fontColor(Color.White)
@@ -229,7 +239,12 @@ export struct MediaBubble {
         if (this.message.hasSpoiler && !this.spoilerRevealed) {
           this.spoilerRevealed = true;
         } else {
-          this.onVideoPlay(this.message.photoUrl || '', this.message.videoDuration);
+          const playableUrl: string = this.message.videoUrl || '';
+          if (playableUrl.length > 0) {
+            this.onVideoPlay(playableUrl, this.message.videoDuration);
+          } else if (this.message.photoUrl) {
+            this.onMediaTap(this.message.photoUrl, this.message.id, this.message.chatId);
+          }
         }
       })
 

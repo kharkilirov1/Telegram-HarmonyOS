@@ -122,7 +122,7 @@ export struct PasswordPage {
 
         // Hint (like real Telegram)
         if (this.passwordHint.length > 0) {
-          Text(`Hint: ${this.passwordHint}`)
+          Text(this.formatHint())
             .fontSize(13)
             .fontColor($r('app.color.text_secondary'))
             .margin({ top: 12 })
@@ -194,7 +194,7 @@ export struct PasswordPage {
             .fillColor($r('app.color.telegram_blue'))
             .margin({ bottom: 24 })
 
-          Text('Check Your Email')
+          Text($r('app.string.recovery_title'))
             .fontSize(24)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
@@ -202,7 +202,7 @@ export struct PasswordPage {
 
           Text(this.recoveryMessage.length > 0
             ? this.recoveryMessage
-            : 'We have sent a recovery code to your email.')
+            : getContext(this).resourceManager.getStringByNameSync('recovery_subtitle'))
             .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .textAlign(TextAlign.Center)
@@ -218,7 +218,7 @@ export struct PasswordPage {
           }
 
           // Recovery code input
-          TextInput({ placeholder: 'Recovery code', text: this.recoveryCode })
+          TextInput({ placeholder: $r('app.string.recovery_code_placeholder'), text: this.recoveryCode })
             .type(InputType.Number)
             .fontSize(17)
             .width('70%')
@@ -271,7 +271,7 @@ export struct PasswordPage {
     try {
       await AuthController.getInstance().submitPassword(this.password);
     } catch (e) {
-      this.errorMessage = 'Wrong password. Please try again.';
+      this.errorMessage = getContext(this).resourceManager.getStringByNameSync('error_wrong_password');
     } finally {
       this.isLoading = false;
     }
@@ -285,18 +285,21 @@ export struct PasswordPage {
       const result: Record<string, Object> = await ChatService.getInstance().requestAuthPasswordRecovery();
       // TDLib responds with emailAddressAuthenticationCodeInfo
       this.recoveryEmailPattern = (result['email_address_pattern'] as string) || '';
-      this.recoveryMessage = this.recoveryEmailPattern.length > 0
-        ? `We sent a recovery code to ${this.recoveryEmailPattern}`
-        : 'We have sent a recovery code to your email.';
+      if (this.recoveryEmailPattern.length > 0) {
+        const template = getContext(this).resourceManager.getStringByNameSync('code_sent_to');
+        this.recoveryMessage = template.replace('%s', this.recoveryEmailPattern);
+      } else {
+        this.recoveryMessage = getContext(this).resourceManager.getStringByNameSync('recovery_subtitle');
+      }
       this.showRecoveryView = true;
     } catch (e) {
       hilog.warn(0x0001, 'PasswordPage', 'Failed to request password recovery');
       // If no recovery email is set, TDLib will return error
       AlertDialog.show({
-        title: 'No Recovery Email',
-        message: 'You did not set up a recovery email address when enabling 2FA. You can reset your account if you cannot remember your password.',
+        title: getContext(this).resourceManager.getStringByNameSync('recovery_no_email_title'),
+        message: getContext(this).resourceManager.getStringByNameSync('recovery_no_email_message'),
         buttons: [
-          { value: 'OK', action: () => {} }
+          { value: getContext(this).resourceManager.getStringByNameSync('done'), action: () => {} }
         ]
       });
     } finally {
@@ -314,9 +317,14 @@ export struct PasswordPage {
       this.showRecoveryView = false;
     } catch (e) {
       hilog.warn(0x0001, 'PasswordPage', 'Failed to recover authentication password');
-      this.errorMessage = 'Invalid recovery code. Please try again.';
+      this.errorMessage = getContext(this).resourceManager.getStringByNameSync('recovery_invalid_code');
     } finally {
       this.isLoading = false;
     }
+  }
+
+  private formatHint(): string {
+    const template = getContext(this).resourceManager.getStringByNameSync('hint_prefix');
+    return template.replace('%s', this.passwordHint);
   }
 }

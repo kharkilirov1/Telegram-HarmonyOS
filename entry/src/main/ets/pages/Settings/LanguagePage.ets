@@ -1,6 +1,9 @@
 // Language settings page — select app language
 // Reference: Telegram iOS LanguageSelectionController, Android LanguageSelectActivity
 
+import { PreferencesService } from '../../services/PreferencesService';
+import { i18n } from '@kit.LocalizationKit';
+
 @Builder
 export function LanguageBuilder(name: string, param: Object) {
   LanguagePage()
@@ -43,6 +46,10 @@ export struct LanguagePage {
     { code: 'fa', name: 'Persian', nativeName: 'فارسی', isOfficial: false },
     { code: 'uz', name: 'Uzbek', nativeName: 'O\'zbekcha', isOfficial: false }
   ];
+
+  aboutToAppear(): void {
+    void this.loadSelectedLanguage();
+  }
 
   build() {
     NavDestination() {
@@ -96,7 +103,7 @@ export struct LanguagePage {
         Scroll() {
           Column() {
             // Official languages section
-            Text('Official Languages')
+            Text($r('app.string.language_official_section'))
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, top: 8, bottom: 6 })
@@ -119,7 +126,7 @@ export struct LanguagePage {
             Blank().height(24)
 
             // Unofficial languages section
-            Text('Unofficial Languages')
+            Text($r('app.string.language_unofficial_section'))
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
@@ -180,6 +187,7 @@ export struct LanguagePage {
     .padding({ left: 16, right: 16 })
     .onClick(() => {
       this.selectedLanguage = lang.code;
+      void this.persistSelectedLanguage(lang.code);
     })
   }
 
@@ -192,5 +200,33 @@ export struct LanguagePage {
        lang.nativeName.toLowerCase().includes(query) ||
        lang.code.includes(query))
     );
+  }
+
+  private async loadSelectedLanguage(): Promise<void> {
+    this.selectedLanguage = await PreferencesService.getInstance().getAppLanguage();
+  }
+
+  private async persistSelectedLanguage(code: string): Promise<void> {
+    await PreferencesService.getInstance().setAppLanguage(code);
+    this.applyLanguage(code);
+  }
+
+  private applyLanguage(code: string): void {
+    try {
+      i18n.System.setAppPreferredLanguage(this.mapLanguageCode(code));
+    } catch (_e) {
+      // Keep persisted value; language will be applied on next app start.
+    }
+  }
+
+  private mapLanguageCode(code: string): string {
+    switch (code) {
+      case 'zh':
+        return 'zh-Hans';
+      case 'pt':
+        return 'pt-BR';
+      default:
+        return code;
+    }
   }
 }

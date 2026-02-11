@@ -111,7 +111,7 @@ export struct LocationBubble {
           .margin({ right: 8 })
 
           Column() {
-            Text('Live Location')
+            Text($r('app.string.live_location_label'))
               .fontSize(14)
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.text_primary'))
@@ -171,10 +171,25 @@ export struct LocationBubble {
       if (minutes >= 60) {
         const hours: number = Math.floor(minutes / 60);
         const rem: number = minutes % 60;
-        return rem > 0 ? `Updated ${hours}h ${rem}m ago` : `Updated ${hours}h ago`;
+        if (rem > 0) {
+          return this.getString('location_updated_hours_minutes', 'Updated %sh %sm ago')
+            .replace('%s', hours.toString())
+            .replace('%s', rem.toString());
+        }
+        return this.getString('location_updated_hours', 'Updated %sh ago')
+          .replace('%s', hours.toString());
       }
-      return `Updated ${minutes}m ago`;
+      return this.getString('location_updated_minutes', 'Updated %sm ago')
+        .replace('%s', minutes.toString());
     }
-    return 'Sharing location';
+    return this.getString('location_sharing', 'Sharing location');
+  }
+
+  private getString(name: string, fallback: string): string {
+    try {
+      return getContext(this).resourceManager.getStringByNameSync(name);
+    } catch (_e) {
+      return fallback;
+    }
   }
 }

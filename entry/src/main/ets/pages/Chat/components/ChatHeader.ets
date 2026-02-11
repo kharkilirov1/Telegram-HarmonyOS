@@ -8,6 +8,7 @@ export struct ChatHeader {
   @Param isTyping: boolean = false;
   @Param typingText: string = '';
   @Param lastSeenText: string = '';
+  @Param isOnline: boolean = false;
 
   @Event onBack: () => void = () => {};
   @Event onOpenInfo: () => void = () => {};
@@ -53,11 +54,15 @@ export struct ChatHeader {
           .maxLines(1)
 
         if (this.isTyping) {
-          TypingIndicator({ typingText: this.typingText.length > 0 ? this.typingText : 'typing...' })
+          TypingIndicator({
+            typingText: this.typingText.length > 0
+              ? this.typingText
+              : getContext(this).resourceManager.getStringByNameSync('typing')
+          })
         } else {
           Text(this.lastSeenText)
             .fontSize(13)
-            .fontColor(this.lastSeenText === 'online'
+            .fontColor(this.isOnline
               ? $r('app.color.online_indicator')
               : $r('app.color.text_secondary'))
         }

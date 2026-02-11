@@ -1,6 +1,6 @@
 @ComponentV2
 export struct SettingsProfileCard {
-  @Param userName: string = 'User';
+  @Param userName: string = '';
   @Param userPhone: string = '';
 
   @Event onOpenProfile: () => void = () => {};
@@ -23,10 +23,12 @@ export struct SettingsProfileCard {
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.text_primary'))
 
-        Text(this.userPhone)
-          .fontSize(14)
-          .fontColor($r('app.color.text_secondary'))
-          .margin({ top: 2 })
+        if (this.userPhone.length > 0) {
+          Text(this.userPhone)
+            .fontSize(14)
+            .fontColor($r('app.color.text_secondary'))
+            .margin({ top: 2 })
+        }
       }
       .margin({ left: 16 })
       .alignItems(HorizontalAlign.Start)

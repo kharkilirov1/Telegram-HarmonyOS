@@ -13,6 +13,10 @@ import {
   TdMessageSender,
   TdFormattedText,
   TdVideo,
+  TdAnimation,
+  TdPhoto,
+  TdPhotoSize,
+  TdThumbnail,
   TdDocument,
   TdVoiceNote,
   TdVideoNote,
@@ -147,6 +151,17 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
     }
     case 'messagePhoto': {
       msg.contentType = MessageContentType.PHOTO;
+      const photo: TdPhoto | undefined = content.photo;
+      if (photo?.sizes && photo.sizes.length > 0) {
+        const bestLocalPath: string = resolveBestPhotoPath(photo.sizes);
+        if (bestLocalPath.length > 0) {
+          msg.photoUrl = bestLocalPath;
+        }
+        const bestFileId: number = resolveBestPhotoFileId(photo.sizes);
+        if (bestFileId > 0) {
+          msg.photoFileId = bestFileId;
+        }
+      }
       const caption: TdFormattedText | undefined = content.caption;
       msg.text = caption?.text || '';
       break;
@@ -155,6 +170,22 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
       msg.contentType = MessageContentType.VIDEO;
       const video: TdVideo | undefined = content.video;
       msg.videoDuration = video?.duration || 0;
+      const videoFile: TdFile | undefined = video?.video;
+      if (videoFile) {
+        msg.fileId = videoFile.id || 0;
+        msg.fileSize = videoFile.expected_size || videoFile.size || 0;
+        const localVideoPath: string = resolveLocalFilePath(videoFile);
+        if (localVideoPath.length > 0) {
+          msg.videoUrl = localVideoPath;
+        }
+      }
+      const thumbnail: TdThumbnail | undefined = video?.thumbnail;
+      if (thumbnail?.file) {
+        const thumbPath: string = resolveLocalFilePath(thumbnail.file);
+        if (thumbPath.length > 0) {
+          msg.photoUrl = thumbPath;
+        }
+      }
       const caption2: TdFormattedText | undefined = content.caption;
       msg.text = caption2?.text || '';
       break;
@@ -163,6 +194,15 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
       msg.contentType = MessageContentType.DOCUMENT;
       const doc: TdDocument | undefined = content.document;
       msg.fileName = doc?.file_name || 'Document';
+      const docFile: TdFile | undefined = doc?.document;
+      if (docFile) {
+        msg.fileId = docFile.id || 0;
+        msg.fileSize = docFile.expected_size || docFile.size || 0;
+        const localDocPath: string = resolveLocalFilePath(docFile);
+        if (localDocPath.length > 0) {
+          msg.filePath = localDocPath;
+        }
+      }
       const caption3: TdFormattedText | undefined = content.caption;
       msg.text = caption3?.text || '';
       break;
@@ -171,6 +211,15 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
       msg.contentType = MessageContentType.VOICE;
       const voice: TdVoiceNote | undefined = content.voice_note;
       msg.voiceDuration = voice?.duration || 0;
+      const voiceFile: TdFile | undefined = voice?.voice;
+      if (voiceFile) {
+        msg.fileId = voiceFile.id || 0;
+        msg.fileSize = voiceFile.expected_size || voiceFile.size || 0;
+        const localVoicePath: string = resolveLocalFilePath(voiceFile);
+        if (localVoicePath.length > 0) {
+          msg.filePath = localVoicePath;
+        }
+      }
       const waveform: string | undefined = voice?.waveform;
       if (waveform) {
         msg.voiceWaveform = decodeWaveform(waveform);
@@ -181,11 +230,38 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
       msg.contentType = MessageContentType.STICKER;
       const sticker: TdSticker | undefined = content.sticker;
       msg.text = sticker?.emoji || '';
+      const stickerFile: TdFile | undefined = sticker?.sticker;
+      if (stickerFile) {
+        msg.stickerFileId = stickerFile.id || 0;
+        const stickerPath: string = resolveLocalFilePath(stickerFile);
+        if (stickerPath.length > 0) {
+          msg.stickerUrl = stickerPath;
+        }
+      }
       break;
     }
     case 'messageAnimation': {
       msg.contentType = MessageContentType.ANIMATION;
-      msg.text = 'GIF';
+      const animation: TdAnimation | undefined = content.animation;
+      msg.videoDuration = animation?.duration || 0;
+      const animationFile: TdFile | undefined = animation?.animation;
+      if (animationFile) {
+        msg.fileId = animationFile.id || 0;
+        msg.fileSize = animationFile.expected_size || animationFile.size || 0;
+        const localAnimationPath: string = resolveLocalFilePath(animationFile);
+        if (localAnimationPath.length > 0) {
+          msg.videoUrl = localAnimationPath;
+        }
+      }
+      const animationThumb: TdThumbnail | undefined = animation?.thumbnail;
+      if (animationThumb?.file) {
+        const thumbPath: string = resolveLocalFilePath(animationThumb.file);
+        if (thumbPath.length > 0) {
+          msg.photoUrl = thumbPath;
+        }
+      }
+      const animationCaption: TdFormattedText | undefined = content.caption;
+      msg.text = animationCaption?.text || 'GIF';
       break;
     }
     case 'messageVideoNote': {
@@ -196,6 +272,12 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
       const vnFile: TdFile | undefined = videoNote?.video;
       if (vnFile) {
         msg.videoNoteFileId = vnFile.id || 0;
+        msg.fileId = vnFile.id || 0;
+        msg.fileSize = vnFile.expected_size || vnFile.size || 0;
+        const localVideoNotePath: string = resolveLocalFilePath(vnFile);
+        if (localVideoNotePath.length > 0) {
+          msg.videoUrl = localVideoNotePath;
+        }
       }
       break;
     }
@@ -309,6 +391,12 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
         const audioFile: TdFile | undefined = audio.audio;
         if (audioFile) {
           msg.audioFileId = audioFile.id || 0;
+          msg.fileId = audioFile.id || 0;
+          msg.fileSize = audioFile.expected_size || audioFile.size || 0;
+          const localAudioPath: string = resolveLocalFilePath(audioFile);
+          if (localAudioPath.length > 0) {
+            msg.filePath = localAudioPath;
+          }
         }
       }
       const audioCaption: TdFormattedText | undefined = content.caption;
@@ -427,6 +515,7 @@ export function parseChat(raw: TdChat): Chat {
     false,
     false
   );
+  chat.isMarkedAsUnread = raw.is_marked_as_unread === true;
 
   // Last message outgoing/read status
   if (lastMsg) {
@@ -560,6 +649,35 @@ function formatDuration(totalSeconds: number): string {
 function toRecord(value: Object | undefined | null): Record<string, Object> | undefined {
   if (value === undefined || value === null) return undefined;
   return value as Record<string, Object>;
+}
+
+function resolveLocalFilePath(file: TdFile | undefined): string {
+  if (!file) return '';
+  const local = file.local;
+  if (!local) return '';
+  if (local.is_downloading_completed !== true) return '';
+  return local.path || '';
+}
+
+function resolveBestPhotoPath(sizes: TdPhotoSize[]): string {
+  for (let i = sizes.length - 1; i >= 0; i--) {
+    const file: TdFile | undefined = sizes[i].photo;
+    const path: string = resolveLocalFilePath(file);
+    if (path.length > 0) {
+      return path;
+    }
+  }
+  return '';
+}
+
+function resolveBestPhotoFileId(sizes: TdPhotoSize[]): number {
+  for (let i = sizes.length - 1; i >= 0; i--) {
+    const file: TdFile | undefined = sizes[i].photo;
+    if (file && file.id > 0) {
+      return file.id;
+    }
+  }
+  return 0;
 }
 
 // --- Waveform decoding ---

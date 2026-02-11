@@ -5,6 +5,7 @@ import { Chat } from '../../models/Chat';
 import { ChatListItem } from '../../components/Chat/ChatListItem';
 import { StoriesBar } from '../../components/Chat/StoriesBar';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
+import { promptAction } from '@kit.ArkUI';
 
 @ComponentV2
 export struct ChatListPage {
@@ -237,6 +238,9 @@ export struct ChatListPage {
       .width(72)
       .height('100%')
       .backgroundColor(chat.isMuted ? $r('app.color.swipe_unmute') : $r('app.color.swipe_mute'))
+      .onClick(() => {
+        void this.toggleMuteChat(chat);
+      })
 
       // Archive button (like iOS/Android Telegram)
       Button() {
@@ -251,12 +255,7 @@ export struct ChatListPage {
       .height('100%')
       .backgroundColor($r('app.color.telegram_blue'))
       .onClick(() => {
-        // Move chat to archive — TDLib: addChatToList(chatListArchive)
-        ChatService.getInstance().addChatToList(chat.id, 'chatListArchive');
-        // Remove from visible list
-        const allChats = MessagesController.getInstance().getSortedDialogs();
-        const filtered = allChats.filter(c => c.id !== chat.id);
-        this.chatDataSource.setData(filtered);
+        void this.archiveChat(chat);
       })
     }
   }
@@ -269,13 +268,16 @@ export struct ChatListPage {
         Column() {
           Image($r('app.media.ic_check_double'))
             .width(22).height(22).fillColor(Color.White)
-          Text(chat.unreadCount > 0 ? $r('app.string.read') : $r('app.string.unread'))
+          Text((chat.unreadCount > 0 || chat.isMarkedAsUnread) ? $r('app.string.read') : $r('app.string.unread'))
             .fontSize(11).fontColor(Color.White)
         }
       }
       .width(72)
       .height('100%')
       .backgroundColor($r('app.color.swipe_read'))
+      .onClick(() => {
+        void this.toggleReadState(chat);
+      })
 
       Button() {
         Column() {
@@ -288,6 +290,9 @@ export struct ChatListPage {
       .width(72)
       .height('100%')
       .backgroundColor($r('app.color.swipe_pin'))
+      .onClick(() => {
+        void this.togglePin(chat);
+      })
 
       Button() {
         Column() {
@@ -300,6 +305,9 @@ export struct ChatListPage {
       .width(72)
       .height('100%')
       .backgroundColor($r('app.color.swipe_delete'))
+      .onClick(() => {
+        void this.deleteChat(chat);
+      })
     }
   }
 
@@ -319,7 +327,7 @@ export struct ChatListPage {
     let filtered: Chat[];
     switch (this.activeFolderIndex) {
       case 1: // Personal — private chats only
-        filtered = allChats.filter(c => !c.isGroup && !c.isChannel);
+        filtered = allChats.filter(c => !c.isGroup && !c.isChannel && !c.isBot);
         break;
       case 2: // Groups
         filtered = allChats.filter(c => c.isGroup && !c.isChannel);
@@ -327,8 +335,8 @@ export struct ChatListPage {
       case 3: // Channels
         filtered = allChats.filter(c => c.isChannel);
         break;
-      case 4: // Bots — filter by title convention (placeholder)
-        filtered = allChats.filter(c => !c.isGroup && !c.isChannel);
+      case 4: // Bots — private chats where peer type is bot
+        filtered = allChats.filter(c => c.isBot);
         break;
       default: // All
         filtered = [...allChats];
@@ -342,5 +350,85 @@ export struct ChatListPage {
     }
 
     this.chatDataSource.setData(filtered);
+  }
+
+  private async toggleMuteChat(chat: Chat): Promise<void> {
+    const shouldMute: boolean = !chat.isMuted;
+    try {
+      if (shouldMute) {
+        // Mute "forever" (10 years), like Telegram default mute behavior
+        await ChatService.getInstance().muteChat(chat.id, 315360000);
+      } else {
+        await ChatService.getInstance().unmuteChat(chat.id);
+      }
+      chat.isMuted = shouldMute;
+      this.applyFilter();
+    } catch (_e) {
+      this.showActionError();
+    }
+  }
+
+  private async toggleReadState(chat: Chat): Promise<void> {
+    try {
+      if (chat.unreadCount > 0 || chat.isMarkedAsUnread) {
+        await ChatService.getInstance().markChatAsRead(chat.id);
+        if (chat.isMarkedAsUnread) {
+          await ChatService.getInstance().setChatMarkedAsUnread(chat.id, false);
+        }
+        chat.unreadCount = 0;
+        chat.isMarkedAsUnread = false;
+      } else {
+        await ChatService.getInstance().setChatMarkedAsUnread(chat.id, true);
+        chat.isMarkedAsUnread = true;
+      }
+      this.applyFilter();
+    } catch (_e) {
+      this.showActionError();
+    }
+  }
+
+  private async togglePin(chat: Chat): Promise<void> {
+    const shouldPin: boolean = !chat.isPinned;
+    try {
+      if (shouldPin) {
+        await ChatService.getInstance().pinChat(chat.id);
+      } else {
+        await ChatService.getInstance().unpinChat(chat.id);
+      }
+      chat.isPinned = shouldPin;
+      this.applyFilter();
+    } catch (_e) {
+      this.showActionError();
+    }
+  }
+
+  private async deleteChat(chat: Chat): Promise<void> {
+    try {
+      await ChatService.getInstance().deleteChatHistory(chat.id);
+      const currentChats = this.chatDataSource.getAllData();
+      const filteredAll = currentChats.filter(c => c.id !== chat.id);
+      this.chatDataSource.setData(filteredAll);
+    } catch (_e) {
+      this.showActionError();
+    }
+  }
+
+  private async archiveChat(chat: Chat): Promise<void> {
+    try {
+      await ChatService.getInstance().addChatToList(chat.id, 'chatListArchive');
+      const currentChats = this.chatDataSource.getAllData();
+      const filtered = currentChats.filter(c => c.id !== chat.id);
+      this.chatDataSource.setData(filtered);
+    } catch (_e) {
+      this.showActionError();
+    }
+  }
+
+  private showActionError(): void {
+    promptAction.showToast({
+      message: getContext(this).resourceManager.getStringByNameSync('action_failed'),
+      duration: 1200,
+      bottom: 96
+    });
   }
 }

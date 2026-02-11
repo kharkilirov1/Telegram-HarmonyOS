@@ -248,7 +248,7 @@ export struct UserInfoPage {
                 .fontColor($r('app.color.text_primary'))
                 .margin({ top: 12 })
 
-              Text(this.isOnline ? 'online' : formatLastSeen(false, this.lastSeenDate))
+              Text(this.isOnline ? $r('app.string.online') : formatLastSeen(false, this.lastSeenDate))
                 .fontSize(14)
                 .fontColor(this.isOnline
                   ? $r('app.color.online_indicator')
@@ -261,13 +261,13 @@ export struct UserInfoPage {
 
             // --- Action buttons row (like Telegram iOS: Message, Audio, Video, More) ---
             Row({ space: 12 }) {
-              this.actionButton($r('app.media.ic_group'), 'Message', () => {
-                this.openPrivateChat();
+              this.actionButton($r('app.media.ic_group'), $r('app.string.message_action'), () => {
+                void this.openPrivateChat();
               })
-              this.actionButton($r('app.media.ic_phone_call'), 'Call', () => {
+              this.actionButton($r('app.media.ic_phone_call'), $r('app.string.call_action'), () => {
                 CallsController.getInstance().startCall(this.userId, false);
               })
-              this.actionButton($r('app.media.ic_settings'), 'Video', () => {
+              this.actionButton($r('app.media.ic_settings'), $r('app.string.calls_video_label'), () => {
                 CallsController.getInstance().startCall(this.userId, true);
               })
             }
@@ -321,7 +321,7 @@ export struct UserInfoPage {
                   .width(20).height(20)
                   .fillColor($r('app.color.text_secondary'))
                   .margin({ right: 12 })
-                Text('Notifications')
+                Text($r('app.string.notifications_label'))
                   .fontSize(16)
                   .fontColor($r('app.color.text_primary'))
                   .layoutWeight(1)
@@ -352,9 +352,7 @@ export struct UserInfoPage {
               .width('100%').height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                const navParam: Record<string, Object> = {};
-                navParam['chatId'] = this.userId;
-                this.navPathStack.pushPath(new NavPathInfo('SharedMedia', navParam));
+                void this.openSharedMedia();
               })
 
               // Common groups
@@ -365,7 +363,7 @@ export struct UserInfoPage {
                     .width(20).height(20)
                     .fillColor($r('app.color.text_secondary'))
                     .margin({ right: 12 })
-                  Text(`${this.commonGroupsCount} Groups in Common`)
+                  Text(this.formatCommonGroupsLabel())
                     .fontSize(16)
                     .fontColor($r('app.color.text_primary'))
                     .layoutWeight(1)
@@ -400,7 +398,7 @@ export struct UserInfoPage {
   }
 
   @Builder
-  actionButton(icon: Resource, label: string, onTap: () => void) {
+  actionButton(icon: Resource, label: Resource, onTap: () => void) {
     Column() {
       Column() {
         Image(icon)
@@ -436,5 +434,32 @@ export struct UserInfoPage {
     .width('100%')
     .padding({ left: 16, right: 16, top: 10, bottom: 10 })
     .alignItems(HorizontalAlign.Start)
+  }
+
+  private formatCommonGroupsLabel(): string {
+    const template = this.getString('groups_in_common', '%d Groups in Common');
+    return template.replace('%d', this.commonGroupsCount.toString());
+  }
+
+  private async openSharedMedia(): Promise<void> {
+    try {
+      const chatId = await this.ensurePrivateChatId();
+      if (chatId <= 0) {
+        return;
+      }
+      const navParam: Record<string, Object> = {};
+      navParam['chatId'] = chatId;
+      this.navPathStack.pushPath(new NavPathInfo('SharedMedia', navParam));
+    } catch (_e) {
+      // Ignore navigation failure.
+    }
+  }
+
+  private getString(name: string, fallback: string): string {
+    try {
+      return getContext(this).resourceManager.getStringByNameSync(name);
+    } catch (_e) {
+      return fallback;
+    }
   }
 }

@@ -81,11 +81,11 @@ export struct ProfileEditModeSection {
       .alignItems(HorizontalAlign.Center)
 
       Column() {
-        this.editField('First Name', this.editFirstName, (value: string) => {
+        this.editField(getContext(this).resourceManager.getStringByNameSync('profile_first_name'), this.editFirstName, (value: string) => {
           this.onFirstNameChange(value);
         })
         Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
-        this.editField('Last Name', this.editLastName, (value: string) => {
+        this.editField(getContext(this).resourceManager.getStringByNameSync('profile_last_name'), this.editLastName, (value: string) => {
           this.onLastNameChange(value);
         })
       }
@@ -99,7 +99,7 @@ export struct ProfileEditModeSection {
       Blank().height(24)
 
       Column() {
-        this.editField('Bio', this.editBio, (value: string) => {
+        this.editField(getContext(this).resourceManager.getStringByNameSync('profile_bio'), this.editBio, (value: string) => {
           this.onBioChange(value);
         })
       }
@@ -110,7 +110,7 @@ export struct ProfileEditModeSection {
       .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
       .margin({ left: 16, right: 16 })
 
-      Text('Any details such as age, occupation or city.')
+      Text($r('app.string.profile_bio_hint'))
         .fontSize(13)
         .fontColor($r('app.color.text_secondary'))
         .margin({ left: 32, top: 6 })
@@ -118,7 +118,7 @@ export struct ProfileEditModeSection {
       Blank().height(24)
 
       Column() {
-        this.editField('Username', this.editUsername, (value: string) => {
+        this.editField(getContext(this).resourceManager.getStringByNameSync('profile_username'), this.editUsername, (value: string) => {
           this.onUsernameChange(value);
         })
       }
@@ -129,7 +129,7 @@ export struct ProfileEditModeSection {
       .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
       .margin({ left: 16, right: 16 })
 
-      Text('You can choose a username on Telegram. Others will be able to find you by this username.')
+      Text($r('app.string.profile_username_hint'))
         .fontSize(13)
         .fontColor($r('app.color.text_secondary'))
         .margin({ left: 32, top: 6, right: 32 })

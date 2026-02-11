@@ -44,6 +44,16 @@ export class PreferencesService {
     await this.putString('theme_mode', mode);
   }
 
+  // --- Language ---
+
+  async getAppLanguage(): Promise<string> {
+    return this.getString('app_language', 'en');
+  }
+
+  async setAppLanguage(languageCode: string): Promise<void> {
+    await this.putString('app_language', languageCode);
+  }
+
   // --- Notifications ---
 
   async getNotificationsEnabled(): Promise<boolean> {
@@ -178,6 +188,32 @@ export class PreferencesService {
 
   async setSaveEditedPhotos(enabled: boolean): Promise<void> {
     await this.putBoolean('save_edited_photos', enabled);
+  }
+
+  // --- Generic public keys (for advanced/settings screens) ---
+
+  async getBooleanSetting(key: string, defaultValue: boolean): Promise<boolean> {
+    return this.getBoolean(key, defaultValue);
+  }
+
+  async setBooleanSetting(key: string, value: boolean): Promise<void> {
+    await this.putBoolean(key, value);
+  }
+
+  async getStringSetting(key: string, defaultValue: string): Promise<string> {
+    return this.getString(key, defaultValue);
+  }
+
+  async setStringSetting(key: string, value: string): Promise<void> {
+    await this.putString(key, value);
+  }
+
+  async getNumberSetting(key: string, defaultValue: number): Promise<number> {
+    return this.getNumber(key, defaultValue);
+  }
+
+  async setNumberSetting(key: string, value: number): Promise<void> {
+    await this.putNumber(key, value);
   }
 
   // --- Generic accessors ---

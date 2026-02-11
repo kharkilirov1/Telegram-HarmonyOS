@@ -130,6 +130,34 @@ export default function tdMessageParserTest() {
         expect(msg.fileName).assertEqual('report.pdf');
       });
 
+      it('should parse document local path and size', 0, () => {
+        const local: Record<string, Object> = {};
+        local['path'] = '/data/report.pdf';
+        local['is_downloading_completed'] = true;
+
+        const file: Record<string, Object> = {};
+        file['id'] = 3001;
+        file['size'] = 2048;
+        file['local'] = local;
+
+        const doc: Record<string, Object> = {};
+        doc['file_name'] = 'report.pdf';
+        doc['document'] = file;
+
+        const content = makeContent('messageDocument');
+        content['document'] = doc;
+
+        const overrides: Record<string, Object> = {};
+        overrides['content'] = content;
+        const raw = makeTdMsg(overrides);
+        const msg = parseMessage(raw);
+
+        expect(msg.contentType).assertEqual(MessageContentType.DOCUMENT);
+        expect(msg.fileId).assertEqual(3001);
+        expect(msg.fileSize).assertEqual(2048);
+        expect(msg.filePath).assertEqual('/data/report.pdf');
+      });
+
       it('should parse voice note with duration and waveform', 0, () => {
         const voice: Record<string, Object> = {};
         voice['duration'] = 15;
@@ -171,6 +199,47 @@ export default function tdMessageParserTest() {
         expect(msg.text).assertEqual('GIF');
       });
 
+      it('should parse animation video path and thumbnail', 0, () => {
+        const localAnimation: Record<string, Object> = {};
+        localAnimation['path'] = '/data/animation.mp4';
+        localAnimation['is_downloading_completed'] = true;
+
+        const animationFile: Record<string, Object> = {};
+        animationFile['id'] = 3501;
+        animationFile['size'] = 4096;
+        animationFile['local'] = localAnimation;
+
+        const localThumb: Record<string, Object> = {};
+        localThumb['path'] = '/data/animation_thumb.jpg';
+        localThumb['is_downloading_completed'] = true;
+
+        const thumbFile: Record<string, Object> = {};
+        thumbFile['id'] = 3502;
+        thumbFile['local'] = localThumb;
+
+        const thumbnail: Record<string, Object> = {};
+        thumbnail['file'] = thumbFile;
+
+        const animation: Record<string, Object> = {};
+        animation['duration'] = 3;
+        animation['animation'] = animationFile;
+        animation['thumbnail'] = thumbnail;
+
+        const content = makeContent('messageAnimation');
+        content['animation'] = animation;
+
+        const overrides: Record<string, Object> = {};
+        overrides['content'] = content;
+        const raw = makeTdMsg(overrides);
+        const msg = parseMessage(raw);
+
+        expect(msg.contentType).assertEqual(MessageContentType.ANIMATION);
+        expect(msg.videoUrl).assertEqual('/data/animation.mp4');
+        expect(msg.photoUrl).assertEqual('/data/animation_thumb.jpg');
+        expect(msg.fileId).assertEqual(3501);
+        expect(msg.fileSize).assertEqual(4096);
+      });
+
       it('should parse video note with dimensions', 0, () => {
         const videoNote: Record<string, Object> = {};
         videoNote['duration'] = 10;
@@ -188,14 +257,14 @@ export default function tdMessageParserTest() {
       });
 
       it('should set UNSUPPORTED for unknown content types', 0, () => {
-        const content = makeContent('messageLocation');
+        const content = makeContent('messageUnknownCustomType');
         const overrides: Record<string, Object> = {};
         overrides['content'] = content;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
 
         expect(msg.contentType).assertEqual(MessageContentType.UNSUPPORTED);
-        expect(msg.text).assertEqual('[Location]');
+        expect(msg.text).assertEqual('[UnknownCustomType]');
       });
 
       it('should parse reply_to message id', 0, () => {
@@ -253,6 +322,82 @@ export default function tdMessageParserTest() {
         const msg = parseMessage(raw);
 
         expect(msg.hasSpoiler).assertTrue();
+      });
+
+      it('should parse local photo path from largest available size', 0, () => {
+        const localFileA: Record<string, Object> = {};
+        localFileA['path'] = '';
+        localFileA['is_downloading_completed'] = false;
+
+        const localFileB: Record<string, Object> = {};
+        localFileB['path'] = '/data/photo_big.jpg';
+        localFileB['is_downloading_completed'] = true;
+
+        const photoFileA: Record<string, Object> = {};
+        photoFileA['id'] = 1001;
+        photoFileA['local'] = localFileA;
+
+        const photoFileB: Record<string, Object> = {};
+        photoFileB['id'] = 1002;
+        photoFileB['local'] = localFileB;
+
+        const sizeA: Record<string, Object> = {};
+        sizeA['photo'] = photoFileA;
+        const sizeB: Record<string, Object> = {};
+        sizeB['photo'] = photoFileB;
+
+        const photo: Record<string, Object> = {};
+        photo['sizes'] = [sizeA, sizeB];
+
+        const content = makeContent('messagePhoto');
+        content['photo'] = photo;
+
+        const overrides: Record<string, Object> = {};
+        overrides['content'] = content;
+        const raw = makeTdMsg(overrides);
+        const msg = parseMessage(raw);
+
+        expect(msg.contentType).assertEqual(MessageContentType.PHOTO);
+        expect(msg.photoUrl).assertEqual('/data/photo_big.jpg');
+        expect(msg.photoFileId).assertEqual(1002);
+      });
+
+      it('should parse local video path and thumbnail path', 0, () => {
+        const localVideo: Record<string, Object> = {};
+        localVideo['path'] = '/data/video.mp4';
+        localVideo['is_downloading_completed'] = true;
+
+        const videoFile: Record<string, Object> = {};
+        videoFile['id'] = 2001;
+        videoFile['local'] = localVideo;
+
+        const localThumb: Record<string, Object> = {};
+        localThumb['path'] = '/data/video_thumb.jpg';
+        localThumb['is_downloading_completed'] = true;
+
+        const thumbFile: Record<string, Object> = {};
+        thumbFile['id'] = 2002;
+        thumbFile['local'] = localThumb;
+
+        const thumbnail: Record<string, Object> = {};
+        thumbnail['file'] = thumbFile;
+
+        const video: Record<string, Object> = {};
+        video['duration'] = 15;
+        video['video'] = videoFile;
+        video['thumbnail'] = thumbnail;
+
+        const content = makeContent('messageVideo');
+        content['video'] = video;
+
+        const overrides: Record<string, Object> = {};
+        overrides['content'] = content;
+        const raw = makeTdMsg(overrides);
+        const msg = parseMessage(raw);
+
+        expect(msg.contentType).assertEqual(MessageContentType.VIDEO);
+        expect(msg.videoUrl).assertEqual('/data/video.mp4');
+        expect(msg.photoUrl).assertEqual('/data/video_thumb.jpg');
       });
     });
 
@@ -330,6 +475,16 @@ export default function tdMessageParserTest() {
 
         expect(chat.lastMessage).assertEqual('Last msg');
         expect(chat.lastMessageDate).assertEqual(1700000000);
+      });
+
+      it('should parse is_marked_as_unread flag', 0, () => {
+        const raw: Record<string, Object> = {};
+        raw['id'] = 601;
+        raw['title'] = 'Unread marker chat';
+        raw['is_marked_as_unread'] = true;
+
+        const chat = parseChat(raw as unknown as TdChat);
+        expect(chat.isMarkedAsUnread).assertTrue();
       });
     });
 

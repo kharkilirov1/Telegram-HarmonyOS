@@ -1,6 +1,7 @@
 import { PreferencesService } from '../../services/PreferencesService';
 import { AuthController } from '../../controllers/AuthController';
 import { ConfigurationConstant } from '@kit.AbilityKit';
+import { promptAction } from '@kit.ArkUI';
 import { SettingsChatSection } from './components/SettingsChatSection';
 import { SettingsCoreSettingsSection } from './components/SettingsCoreSettingsSection';
 import { SettingsLogoutSection } from './components/SettingsLogoutSection';
@@ -10,6 +11,7 @@ import { SettingsProfileCard } from './components/SettingsProfileCard';
 import { SettingsQuickActionsSection } from './components/SettingsQuickActionsSection';
 import { SettingsThemeSection } from './components/SettingsThemeSection';
 import { SettingsTopBar } from './components/SettingsTopBar';
+import { UserService } from '../../services/UserService';
 
 @Builder
 export function SettingsBuilder(name: string, param: Object) {
@@ -26,11 +28,11 @@ export struct SettingsPage {
   @Local fontSize: number = 16;
   @Local lastSeenVisibility: string = 'everybody';
 
-  @Local userName: string = 'User';
-  @Local userPhone: string = '+1 234 567 890';
+  @Local userName: string = '';
+  @Local userPhone: string = '';
 
   aboutToAppear(): void {
-    this.loadSettings();
+    void this.loadSettings();
   }
 
   private async loadSettings(): Promise<void> {
@@ -40,6 +42,23 @@ export struct SettingsPage {
     this.sendByEnter = await prefs.getSendByEnter();
     this.fontSize = await prefs.getFontSize();
     this.lastSeenVisibility = await prefs.getLastSeenVisibility();
+
+    try {
+      const me = await UserService.getInstance().getMe();
+      const fullName = `${me.first_name || ''} ${me.last_name || ''}`.trim();
+      if (fullName.length > 0) {
+        this.userName = fullName;
+      }
+      if (me.phone_number && me.phone_number.length > 0) {
+        this.userPhone = `+${me.phone_number}`;
+      }
+    } catch (_e) {
+      // Keep defaults if profile request fails.
+    }
+
+    if (this.userName.length === 0) {
+      this.userName = getContext(this).resourceManager.getStringByNameSync('user_fallback');
+    }
   }
 
   build() {
@@ -68,9 +87,10 @@ export struct SettingsPage {
 
             SettingsQuickActionsSection({
               onOpenSavedMessages: () => {
-                this.navPathStack.pushPath(new NavPathInfo('ChatDetail', 0));
+                this.navPathStack.pushPath(new NavPathInfo('SavedMessages', new Object()));
               },
               onOpenRecentCalls: () => {
+                this.navPathStack.pushPath(new NavPathInfo('Calls', new Object()));
               },
               onOpenDevices: () => {
                 this.navPathStack.pushPath(new NavPathInfo('SessionManagement', new Object()));
@@ -112,7 +132,7 @@ export struct SettingsPage {
               themeMode: this.themeMode,
               onThemeChange: (mode: string) => {
                 this.themeMode = mode;
-                PreferencesService.getInstance().setThemeMode(mode);
+                void PreferencesService.getInstance().setThemeMode(mode);
                 this.applyTheme(mode);
               }
             })
@@ -123,7 +143,7 @@ export struct SettingsPage {
               notificationsEnabled: this.notificationsEnabled,
               onNotificationsEnabledChange: (isOn: boolean) => {
                 this.notificationsEnabled = isOn;
-                PreferencesService.getInstance().setNotificationsEnabled(isOn);
+                void PreferencesService.getInstance().setNotificationsEnabled(isOn);
               }
             })
 
@@ -134,11 +154,11 @@ export struct SettingsPage {
               fontSize: this.fontSize,
               onSendByEnterChange: (isOn: boolean) => {
                 this.sendByEnter = isOn;
-                PreferencesService.getInstance().setSendByEnter(isOn);
+                void PreferencesService.getInstance().setSendByEnter(isOn);
               },
               onFontSizeChange: (size: number) => {
                 this.fontSize = size;
-                PreferencesService.getInstance().setFontSize(size);
+                void PreferencesService.getInstance().setFontSize(size);
               }
             })
 
@@ -186,13 +206,13 @@ export struct SettingsPage {
   private getLastSeenLabel(): string {
     switch (this.lastSeenVisibility) {
       case 'everybody':
-        return 'Everybody';
+        return getContext(this).resourceManager.getStringByNameSync('settings_everybody');
       case 'contacts':
-        return 'My Contacts';
+        return getContext(this).resourceManager.getStringByNameSync('settings_my_contacts');
       case 'nobody':
-        return 'Nobody';
+        return getContext(this).resourceManager.getStringByNameSync('settings_nobody');
       default:
-        return 'Everybody';
+        return getContext(this).resourceManager.getStringByNameSync('settings_everybody');
     }
   }
 
@@ -210,7 +230,12 @@ export struct SettingsPage {
           ctx.setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
           break;
       }
-    } catch (e) {
+    } catch (_e) {
+      promptAction.showToast({
+        message: getContext(this).resourceManager.getStringByNameSync('action_failed'),
+        duration: 1200,
+        bottom: 96
+      });
     }
   }
 
@@ -219,6 +244,6 @@ export struct SettingsPage {
     const current = options.indexOf(this.lastSeenVisibility);
     const nextIndex = (current + 1) % options.length;
     this.lastSeenVisibility = options[nextIndex];
-    PreferencesService.getInstance().setLastSeenVisibility(this.lastSeenVisibility);
+    void PreferencesService.getInstance().setLastSeenVisibility(this.lastSeenVisibility);
   }
 }
