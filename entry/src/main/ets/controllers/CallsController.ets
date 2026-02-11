@@ -47,14 +47,14 @@ export class CallsController {
   async loadCallHistory(limit: number = 50): Promise<void> {
     try {
       // TDLib: searchCallMessages to get call history
-      const searchParams: Record<string, Object> = {};
+      const searchParams: Record<string, unknown> = {};
       searchParams['offset'] = '';
       searchParams['limit'] = limit;
       searchParams['only_missed'] = false;
       const result = await TDLibClient.getInstance()
-        .send('searchCallMessages', searchParams) as Record<string, Object>;
+        .send('searchCallMessages', searchParams) as Record<string, unknown>;
 
-      const rawMessages = result['messages'] as Record<string, Object>[];
+      const rawMessages = result['messages'] as Record<string, unknown>[];
       if (rawMessages) {
         this.calls = [];
         for (const raw of rawMessages) {
@@ -74,14 +74,14 @@ export class CallsController {
 
   async startCall(userId: number, isVideo: boolean = false): Promise<void> {
     const libraryVersions: string[] = ['5.0.0'];
-    const protocol: Record<string, Object> = {};
+    const protocol: Record<string, unknown> = {};
     protocol['@type'] = 'callProtocol';
     protocol['udp_p2p'] = true;
     protocol['udp_reflector'] = true;
     protocol['min_layer'] = 65;
     protocol['max_layer'] = 92;
     protocol['library_versions'] = libraryVersions;
-    const callParams: Record<string, Object> = {};
+    const callParams: Record<string, unknown> = {};
     callParams['user_id'] = userId;
     callParams['protocol'] = protocol;
     callParams['is_video'] = isVideo;
@@ -89,7 +89,7 @@ export class CallsController {
   }
 
   async discardCall(callId: number): Promise<void> {
-    const discardParams: Record<string, Object> = {};
+    const discardParams: Record<string, unknown> = {};
     discardParams['call_id'] = callId;
     discardParams['is_disconnected'] = false;
     discardParams['duration'] = 0;
@@ -100,20 +100,20 @@ export class CallsController {
 
   // --- Private ---
 
-  private parseCallFromMessage(raw: Record<string, Object>): Call | null {
-    const content = raw['content'] as Record<string, Object>;
+  private parseCallFromMessage(raw: Record<string, unknown>): Call | null {
+    const content = raw['content'] as Record<string, unknown>;
     if (!content) return null;
 
     const contentType = (content['@type'] as string) || '';
     if (contentType !== 'messageCall') return null;
 
-    const senderId = raw['sender_id'] as Record<string, Object>;
+    const senderId = raw['sender_id'] as Record<string, unknown>;
     const userId = senderId ? ((senderId['user_id'] as number) || 0) : 0;
     const isOutgoing = (raw['is_outgoing'] as boolean) || false;
     const isVideo = (content['is_video'] as boolean) || false;
     const duration = (content['duration'] as number) || 0;
 
-    const discardReasonObj = content['discard_reason'] as Record<string, Object>;
+    const discardReasonObj = content['discard_reason'] as Record<string, unknown>;
     let discardReason = CallDiscardReason.EMPTY;
     if (discardReasonObj) {
       const reasonType = (discardReasonObj['@type'] as string) || '';
@@ -150,12 +150,12 @@ export class CallsController {
   private subscribeToUpdates(): void {
     const client = TDLibClient.getInstance();
 
-    client.on('updateCall', (update: Record<string, Object>) => {
-      const rawCall = update['call'] as Record<string, Object>;
+    client.on('updateCall', (update: Record<string, unknown>) => {
+      const rawCall = update['call'] as Record<string, unknown>;
       if (!rawCall) return;
 
       const callId = (rawCall['id'] as number) || 0;
-      const state = rawCall['state'] as Record<string, Object>;
+      const state = rawCall['state'] as Record<string, unknown>;
       const stateType = state ? ((state['@type'] as string) || '') : '';
 
       hilog.info(DOMAIN, TAG, 'Call %{public}d state: %{public}s', callId, stateType);
@@ -171,7 +171,7 @@ export class CallsController {
         this.loadCallHistory();
       }
 
-      const callStateArgs: Record<string, Object> = {};
+      const callStateArgs: Record<string, unknown> = {};
       callStateArgs['callId'] = callId;
       callStateArgs['state'] = stateType;
       NotificationCenter.getInstance().post(

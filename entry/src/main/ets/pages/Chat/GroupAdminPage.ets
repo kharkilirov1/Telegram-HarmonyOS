@@ -168,7 +168,7 @@ export struct GroupAdminPage {
     this.isSaving = true;
 
     try {
-      const permissions: Record<string, Object> = {};
+      const permissions: Record<string, unknown> = {};
       permissions['@type'] = 'chatPermissions';
       permissions['can_send_basic_messages'] = this.canSendMessages;
       permissions['can_send_audios'] = this.canSendMedia;
@@ -252,7 +252,7 @@ export struct GroupAdminPage {
             GroupAdminAdminsSection({
               administrators: this.administrators,
               onOpenUser: (userId: number) => {
-                const navParam: Record<string, Object> = {};
+                const navParam: Record<string, unknown> = {};
                 navParam['userId'] = userId;
                 this.navPathStack.pushPath(new NavPathInfo('UserInfo', navParam));
               }

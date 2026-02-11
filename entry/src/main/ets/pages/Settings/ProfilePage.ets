@@ -227,7 +227,7 @@ export struct ProfilePage {
         this.photoUrl = path.length > 0 ? path : null;
       }
 
-      const statusObj = me.status as Record<string, Object> | undefined;
+      const statusObj = me.status as Record<string, unknown> | undefined;
       const statusType = (statusObj?.['@type'] as string) || '';
       this.isOnline = statusType === 'userStatusOnline';
 

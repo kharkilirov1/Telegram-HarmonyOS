@@ -283,7 +283,7 @@ export struct PasswordPage {
     this.errorMessage = '';
 
     try {
-      const result: Record<string, Object> = await ChatService.getInstance().requestAuthPasswordRecovery();
+      const result: Record<string, unknown> = await ChatService.getInstance().requestAuthPasswordRecovery();
       // TDLib responds with emailAddressAuthenticationCodeInfo
       this.recoveryEmailPattern = (result['email_address_pattern'] as string) || '';
       if (this.recoveryEmailPattern.length > 0) {

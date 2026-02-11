@@ -60,13 +60,13 @@ export function upsertUser(
     lastName: rawUser.last_name || (existing ? existing.lastName : ''),
     username: username,
     isBot: rawUser.type
-      ? tdType(rawUser.type as Record<string, Object>) === 'userTypeBot'
+      ? tdType(rawUser.type as Record<string, unknown>) === 'userTypeBot'
       : (existing ? existing.isBot : false),
     isOnline: existing ? existing.isOnline : false,
     lastSeenDate: existing ? existing.lastSeenDate : 0
   };
 
-  const status: Record<string, Object> | undefined = rawUser.status;
+  const status: Record<string, unknown> | undefined = rawUser.status;
   if (status) {
     applyStatusToUser(user, status);
   }
@@ -78,7 +78,7 @@ export function upsertUser(
 
 export function applyUserStatus(
   userId: number,
-  status: Record<string, Object>,
+  status: Record<string, unknown>,
   usersById: Map<number, CachedUser>,
   messagesByChat: Map<number, Message[]>,
   chatsById: Map<number, Chat>,
@@ -127,7 +127,7 @@ export function registerPrivateChatUser(
   set.add(chatId);
 }
 
-function applyStatusToUser(user: CachedUser, status: Record<string, Object>): void {
+function applyStatusToUser(user: CachedUser, status: Record<string, unknown>): void {
   const statusType: string = tdType(status);
   if (statusType === 'userStatusOnline') {
     user.isOnline = true;

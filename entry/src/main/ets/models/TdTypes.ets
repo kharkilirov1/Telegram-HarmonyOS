@@ -3,21 +3,21 @@
 
 // --- Type guard helper ---
 
-export function tdType(obj: Record<string, Object>): string {
+export function tdType(obj: Record<string, unknown>): string {
   return (obj['@type'] as string) || '';
 }
 
 // --- Type guard functions for TDLib responses ---
 
-export function isTdError(response: Record<string, Object>): boolean {
+export function isTdError(response: Record<string, unknown>): boolean {
   return tdType(response) === 'error';
 }
 
-export function getTdErrorCode(response: Record<string, Object>): number {
+export function getTdErrorCode(response: Record<string, unknown>): number {
   return (response['code'] as number) || 0;
 }
 
-export function getTdErrorMessage(response: Record<string, Object>): string {
+export function getTdErrorMessage(response: Record<string, unknown>): string {
   return (response['message'] as string) || 'Unknown error';
 }
 
@@ -238,7 +238,7 @@ export interface TdSelfDestructType {
 }
 
 export interface TdChatPosition {
-  list?: Record<string, Object>;
+  list?: Record<string, unknown>;
   order?: string;
   is_pinned?: boolean;
 }
@@ -396,7 +396,7 @@ export interface TdSupergroupFullInfo {
 
 export interface TdSupergroupMember {
   member_id?: TdMessageSender;
-  status?: Record<string, Object>;
+  status?: Record<string, unknown>;
 }
 
 export interface TdSupergroupMembers {
@@ -425,7 +425,7 @@ export interface TdChatInviteLinks {
 
 export interface TdSecretChat {
   id?: number;
-  state?: Record<string, Object>;
+  state?: Record<string, unknown>;
   key_hash?: string;
   user_id?: number;
 }

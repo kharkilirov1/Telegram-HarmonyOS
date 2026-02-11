@@ -9,9 +9,9 @@ import {
   safeNumber
 } from '../../models/TdTypes';
 
-function toRecord(value: Object | undefined | null): Record<string, Object> | undefined {
+function toRecord(value: Object | undefined | null): Record<string, unknown> | undefined {
   if (value === undefined || value === null) return undefined;
-  return value as Record<string, Object>;
+  return value as Record<string, unknown>;
 }
 
 export interface TdChatPhoto {
@@ -35,11 +35,11 @@ export interface TdUser {
   username?: string;
   usernames?: TdUsernames;
   type?: TdUserType;
-  status?: Record<string, Object>;
+  status?: Record<string, unknown>;
 }
 
 export interface TdMessageReactionInfo {
-  reaction?: Record<string, Object>;
+  reaction?: Record<string, unknown>;
   total_count?: number;
   is_chosen?: boolean;
 }
@@ -79,7 +79,7 @@ export interface ParsedUpdateUser {
 
 export interface ParsedUpdateUserStatus {
   userId: number;
-  status: Record<string, Object>;
+  status: Record<string, unknown>;
 }
 
 export interface ParsedUpdateNewMessage {
@@ -123,13 +123,13 @@ export interface ParsedUpdateChatAction {
   action: TdChatAction;
 }
 
-export function parseUpdateNewChat(update: Record<string, Object>): ParsedUpdateNewChat | undefined {
+export function parseUpdateNewChat(update: Record<string, unknown>): ParsedUpdateNewChat | undefined {
   const chat = update['chat'] as TdChat | undefined;
   if (!chat) return undefined;
   return { chat: chat };
 }
 
-export function parseUpdateChatLastMessage(update: Record<string, Object>): ParsedUpdateChatLastMessage | undefined {
+export function parseUpdateChatLastMessage(update: Record<string, unknown>): ParsedUpdateChatLastMessage | undefined {
   const chatId: number = safeNumber(update['chat_id']);
   if (chatId === 0) return undefined;
   const lastMessage = update['last_message'] as TdMessage | undefined;
@@ -137,7 +137,7 @@ export function parseUpdateChatLastMessage(update: Record<string, Object>): Pars
   return { chatId: chatId, lastMessage: lastMessage, positions: positions };
 }
 
-export function parseUpdateChatPosition(update: Record<string, Object>): ParsedUpdateChatPosition | undefined {
+export function parseUpdateChatPosition(update: Record<string, unknown>): ParsedUpdateChatPosition | undefined {
   const chatId: number = safeNumber(update['chat_id']);
   if (chatId === 0) return undefined;
   const position = update['position'] as TdChatPosition | undefined;
@@ -145,27 +145,27 @@ export function parseUpdateChatPosition(update: Record<string, Object>): ParsedU
   return { chatId: chatId, position: position };
 }
 
-export function parseUpdateChatTitle(update: Record<string, Object>): ParsedUpdateChatTitle | undefined {
+export function parseUpdateChatTitle(update: Record<string, unknown>): ParsedUpdateChatTitle | undefined {
   const chatId: number = safeNumber(update['chat_id']);
   if (chatId === 0) return undefined;
   const title = (update['title'] as string) || '';
   return { chatId: chatId, title: title };
 }
 
-export function parseUpdateChatPhoto(update: Record<string, Object>): ParsedUpdateChatPhoto | undefined {
+export function parseUpdateChatPhoto(update: Record<string, unknown>): ParsedUpdateChatPhoto | undefined {
   const chatId: number = safeNumber(update['chat_id']);
   if (chatId === 0) return undefined;
   const photo = update['photo'] as TdChatPhoto | undefined;
   return { chatId: chatId, photo: photo };
 }
 
-export function parseUpdateUser(update: Record<string, Object>): ParsedUpdateUser | undefined {
+export function parseUpdateUser(update: Record<string, unknown>): ParsedUpdateUser | undefined {
   const user = update['user'] as TdUser | undefined;
   if (!user) return undefined;
   return { user: user };
 }
 
-export function parseUpdateUserStatus(update: Record<string, Object>): ParsedUpdateUserStatus | undefined {
+export function parseUpdateUserStatus(update: Record<string, unknown>): ParsedUpdateUserStatus | undefined {
   const userId: number = safeNumber(update['user_id']);
   if (userId === 0) return undefined;
   const status = toRecord(update['status']);
@@ -173,13 +173,13 @@ export function parseUpdateUserStatus(update: Record<string, Object>): ParsedUpd
   return { userId: userId, status: status };
 }
 
-export function parseUpdateNewMessage(update: Record<string, Object>): ParsedUpdateNewMessage | undefined {
+export function parseUpdateNewMessage(update: Record<string, unknown>): ParsedUpdateNewMessage | undefined {
   const message = update['message'] as TdMessage | undefined;
   if (!message) return undefined;
   return { message: message };
 }
 
-export function parseUpdateMessageContent(update: Record<string, Object>): ParsedUpdateMessageContent | undefined {
+export function parseUpdateMessageContent(update: Record<string, unknown>): ParsedUpdateMessageContent | undefined {
   const chatId: number = safeNumber(update['chat_id']);
   const messageId: number = safeNumber(update['message_id']);
   if (chatId === 0 || messageId === 0) return undefined;
@@ -188,7 +188,7 @@ export function parseUpdateMessageContent(update: Record<string, Object>): Parse
   return { chatId: chatId, messageId: messageId, newContent: newContent };
 }
 
-export function parseUpdateMessageInteractionInfo(update: Record<string, Object>): ParsedUpdateMessageInteractionInfo | undefined {
+export function parseUpdateMessageInteractionInfo(update: Record<string, unknown>): ParsedUpdateMessageInteractionInfo | undefined {
   const chatId: number = safeNumber(update['chat_id']);
   const messageId: number = safeNumber(update['message_id']);
   if (chatId === 0 || messageId === 0) return undefined;
@@ -197,7 +197,7 @@ export function parseUpdateMessageInteractionInfo(update: Record<string, Object>
   return { chatId: chatId, messageId: messageId, interactionInfo: interactionInfo };
 }
 
-export function parseUpdateDeleteMessages(update: Record<string, Object>): ParsedUpdateDeleteMessages | undefined {
+export function parseUpdateDeleteMessages(update: Record<string, unknown>): ParsedUpdateDeleteMessages | undefined {
   const chatId: number = safeNumber(update['chat_id']);
   if (chatId === 0) return undefined;
   const rawIds = update['message_ids'] as number[] | undefined;
@@ -212,14 +212,14 @@ export function parseUpdateDeleteMessages(update: Record<string, Object>): Parse
   return { chatId: chatId, messageIds: messageIds };
 }
 
-export function parseUpdateChatReadInbox(update: Record<string, Object>): ParsedUpdateChatReadInbox | undefined {
+export function parseUpdateChatReadInbox(update: Record<string, unknown>): ParsedUpdateChatReadInbox | undefined {
   const chatId: number = safeNumber(update['chat_id']);
   if (chatId === 0) return undefined;
   const unreadCount: number = safeNumber(update['unread_count']);
   return { chatId: chatId, unreadCount: unreadCount };
 }
 
-export function parseUpdateChatNotificationSettings(update: Record<string, Object>): ParsedUpdateChatNotificationSettings | undefined {
+export function parseUpdateChatNotificationSettings(update: Record<string, unknown>): ParsedUpdateChatNotificationSettings | undefined {
   const chatId: number = safeNumber(update['chat_id']);
   if (chatId === 0) return undefined;
   const settings = update['notification_settings'] as TdNotificationSettings | undefined;
@@ -227,14 +227,14 @@ export function parseUpdateChatNotificationSettings(update: Record<string, Objec
   return { chatId: chatId, settings: settings };
 }
 
-export function parseUpdateChatIsMarkedAsUnread(update: Record<string, Object>): ParsedUpdateChatIsMarkedAsUnread | undefined {
+export function parseUpdateChatIsMarkedAsUnread(update: Record<string, unknown>): ParsedUpdateChatIsMarkedAsUnread | undefined {
   const chatId: number = safeNumber(update['chat_id']);
   if (chatId === 0) return undefined;
   const isMarkedAsUnread: boolean = (update['is_marked_as_unread'] as boolean) === true;
   return { chatId: chatId, isMarkedAsUnread: isMarkedAsUnread };
 }
 
-export function parseUpdateChatAction(update: Record<string, Object>): ParsedUpdateChatAction | undefined {
+export function parseUpdateChatAction(update: Record<string, unknown>): ParsedUpdateChatAction | undefined {
   const chatId: number = safeNumber(update['chat_id']);
   if (chatId === 0) return undefined;
   const actionRecord = toRecord(update['action']);

@@ -69,7 +69,7 @@ export struct ChatDetailPage {
   private messageDataSource: BasicDataSource<ChatDetailListItem> = new BasicDataSource<ChatDetailListItem>();
 
   // Event handlers
-  private newMessageHandler = (args?: Record<string, Object>): void => {
+  private newMessageHandler = (args?: Record<string, unknown>): void => {
     if (!args) return;
     const msgChatId = args['chatId'] as number;
     if (msgChatId !== this.chatId) return;
@@ -85,7 +85,7 @@ export struct ChatDetailPage {
     }
   };
 
-  private typingHandler = (args?: Record<string, Object>): void => {
+  private typingHandler = (args?: Record<string, unknown>): void => {
     if (!args) return;
     const chatId = args['chatId'] as number;
     if (chatId !== this.chatId) return;
@@ -95,7 +95,7 @@ export struct ChatDetailPage {
     this.typingText = chat?.typingDescription || '';
   };
 
-  private dialogsUpdatedHandler = (_args?: Record<string, Object>): void => {
+  private dialogsUpdatedHandler = (_args?: Record<string, unknown>): void => {
     this.loadChatInfo();
     const chat = MessagesController.getInstance().getChat(this.chatId);
     if (chat) {

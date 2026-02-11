@@ -140,7 +140,7 @@ export struct DataStoragePage {
     const isEnabled = photosEnabled || videosEnabled || filesEnabled;
 
     try {
-      const autoDownloadSettings: Record<string, Object> = {};
+      const autoDownloadSettings: Record<string, unknown> = {};
       autoDownloadSettings['@type'] = 'autoDownloadSettings';
       autoDownloadSettings['is_auto_download_enabled'] = isEnabled;
       autoDownloadSettings['max_photo_file_size'] = photosEnabled ? 1048576 : 0;

@@ -47,7 +47,7 @@ export class SessionService {
     if (!sessions) return [];
 
     return sessions.map((s): SessionInfo => {
-      const session = s as Record<string, Object>;
+      const session = s as Record<string, unknown>;
       return {
         id: session['id'] as number,
         isCurrent: session['is_current'] as boolean,
@@ -72,7 +72,7 @@ export class SessionService {
    */
   async terminateSession(sessionId: number): Promise<AppError | null> {
     try {
-      const params: Record<string, Object> = {};
+      const params: Record<string, unknown> = {};
       params['session_id'] = sessionId;
       await this.tdlib.send('terminateSession', params);
       hilog.info(DOMAIN, TAG, 'Session %{public}d terminated', sessionId);

@@ -37,7 +37,7 @@ export default class OpenHarmonyTestRunner implements TestRunner {
     };
     abilityDelegator.addAbilityMonitor(lMonitor, addAbilityMonitorCallback);
 
-    const want: Record<string, Object> = {};
+    const want: Record<string, unknown> = {};
     want['bundleName'] = bundleName;
     want['abilityName'] = testAbilityName;
     abilityDelegator.startAbility(want, (err) => {

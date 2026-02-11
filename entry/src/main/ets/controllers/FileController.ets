@@ -58,7 +58,7 @@ export class FileController {
     this.downloadCallbacks.set(fileId, existing);
 
     // Request download from TDLib
-    const downloadParams: Record<string, Object> = {};
+    const downloadParams: Record<string, unknown> = {};
     downloadParams['file_id'] = fileId;
     downloadParams['priority'] = priority;
     downloadParams['offset'] = 0;
@@ -72,19 +72,19 @@ export class FileController {
    */
   cancelDownload(fileId: number): void {
     this.downloadCallbacks.delete(fileId);
-    const cancelParams: Record<string, Object> = {};
+    const cancelParams: Record<string, unknown> = {};
     cancelParams['file_id'] = fileId;
     cancelParams['only_if_pending'] = true;
     TDLibClient.getInstance().send('cancelDownloadFile', cancelParams);
   }
 
   private subscribeToUpdates(): void {
-    TDLibClient.getInstance().on('updateFile', (update: Record<string, Object>) => {
-      const file = update['file'] as Record<string, Object>;
+    TDLibClient.getInstance().on('updateFile', (update: Record<string, unknown>) => {
+      const file = update['file'] as Record<string, unknown>;
       if (!file) return;
 
       const fileId = file['id'] as number;
-      const local = file['local'] as Record<string, Object>;
+      const local = file['local'] as Record<string, unknown>;
       if (!local) return;
 
       const isComplete = local['is_downloading_completed'] as boolean;
@@ -100,7 +100,7 @@ export class FileController {
         }
         this.downloadCallbacks.delete(fileId);
 
-        const completedArgs: Record<string, Object> = {};
+        const completedArgs: Record<string, unknown> = {};
         completedArgs['fileId'] = fileId;
         completedArgs['path'] = path;
         NotificationCenter.getInstance().post(
@@ -112,7 +112,7 @@ export class FileController {
         const downloaded = local['downloaded_size'] as number || 0;
         const totalSize = (file['expected_size'] as number) || (file['size'] as number) || 0;
 
-        const progressArgs: Record<string, Object> = {};
+        const progressArgs: Record<string, unknown> = {};
         progressArgs['fileId'] = fileId;
         progressArgs['downloaded'] = downloaded;
         progressArgs['total'] = totalSize;

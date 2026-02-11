@@ -73,7 +73,7 @@ export function parseMessage(raw: TdMessage): Message {
 
   // Reply
   const replyTo: TdReplyTo | undefined = raw.reply_to;
-  if (replyTo && tdType(replyTo as Record<string, Object>) === 'messageReplyToMessage') {
+  if (replyTo && tdType(replyTo as Record<string, unknown>) === 'messageReplyToMessage') {
     msg.replyToMessageId = replyTo.message_id || 0;
   }
 
@@ -95,7 +95,7 @@ export function parseMessage(raw: TdMessage): Message {
   // Scheduling state
   const scheduling: TdSchedulingState | undefined = raw.scheduling_state;
   if (scheduling) {
-    const schedType: string = tdType(scheduling as Record<string, Object>);
+    const schedType: string = tdType(scheduling as Record<string, unknown>);
     if (schedType === 'messageSchedulingStateSendAtDate') {
       msg.schedulingState = scheduling.send_date || 0;
     }
@@ -105,7 +105,7 @@ export function parseMessage(raw: TdMessage): Message {
   const selfDestruct: TdSelfDestructType | undefined = raw.self_destruct_type;
   if (selfDestruct) {
     msg.selfDestructIn = selfDestruct.self_destruct_time || 0;
-    const sdType: string = tdType(selfDestruct as Record<string, Object>);
+    const sdType: string = tdType(selfDestruct as Record<string, unknown>);
     if (sdType === 'messageSelfDestructTypeImmediately') {
       msg.isViewOnce = true;
     }
@@ -132,7 +132,7 @@ export function parseMessage(raw: TdMessage): Message {
 // --- Content type mapping ---
 
 export function applyContent(msg: Message, content: TdMessageContent): void {
-  const type: string = tdType(content as Record<string, Object>);
+  const type: string = tdType(content as Record<string, unknown>);
 
   switch (type) {
     case 'messageText': {
@@ -292,7 +292,7 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
         msg.pollIsAnonymous = poll.is_anonymous !== false;
 
         const pt: TdPollType | undefined = poll.type;
-        msg.pollType = (pt ? tdType(pt as Record<string, Object>) : '') === 'pollTypeQuiz' ? 'quiz' : 'regular';
+        msg.pollType = (pt ? tdType(pt as Record<string, unknown>) : '') === 'pollTypeQuiz' ? 'quiz' : 'regular';
 
         const opts: TdPollOption[] | undefined = poll.options;
         if (opts) {
@@ -355,11 +355,11 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
     }
     case 'messageCall': {
       msg.contentType = MessageContentType.CALL;
-      const payload: Record<string, Object> = content as Record<string, Object>;
-      const call: Record<string, Object> | undefined = toRecord(payload['call']);
+      const payload: Record<string, unknown> = content as Record<string, unknown>;
+      const call: Record<string, unknown> | undefined = toRecord(payload['call']);
       msg.callDuration = safeNumber(call?.['duration']);
       msg.callIsVideo = safeBool(call?.['is_video']);
-      const discardReason: Record<string, Object> | undefined = toRecord(call?.['discard_reason']);
+      const discardReason: Record<string, unknown> | undefined = toRecord(call?.['discard_reason']);
       const reasonType: string = discardReason ? tdType(discardReason) : '';
       if (reasonType === 'callDiscardReasonMissed') {
         msg.callDiscardReason = 'missed';
@@ -405,8 +405,8 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
     }
     case 'messageGame': {
       msg.contentType = MessageContentType.GAME;
-      const gamePayload: Record<string, Object> = content as Record<string, Object>;
-      const game: Record<string, Object> | undefined = toRecord(gamePayload['game']);
+      const gamePayload: Record<string, unknown> = content as Record<string, unknown>;
+      const game: Record<string, unknown> | undefined = toRecord(gamePayload['game']);
       const gameTitle: string = safeString(game?.['title']);
       msg.text = gameTitle.length > 0 ? `🎮 ${gameTitle}` : '🎮 Game';
       break;
@@ -432,7 +432,7 @@ export function extractTextPreview(rawMsg: TdMessage): string {
   const content: TdMessageContent | undefined = rawMsg.content;
   if (!content) return '';
 
-  const type: string = tdType(content as Record<string, Object>);
+  const type: string = tdType(content as Record<string, unknown>);
   switch (type) {
     case 'messageText': {
       return content.text?.text || '';
@@ -453,7 +453,7 @@ export function extractTextPreview(rawMsg: TdMessage): string {
       return `📊 ${question}`;
     }
     case 'messageContact': {
-      const contact: Record<string, Object> | undefined = toRecord((content as Record<string, Object>)['contact']);
+      const contact: Record<string, unknown> | undefined = toRecord((content as Record<string, unknown>)['contact']);
       const firstName: string = safeString(contact?.['first_name']);
       const lastName: string = safeString(contact?.['last_name']);
       const fullName: string = `${firstName} ${lastName}`.trim();
@@ -462,27 +462,27 @@ export function extractTextPreview(rawMsg: TdMessage): string {
     case 'messageLocation': return '📍 Location';
     case 'messageLiveLocation': return '📡 Live location';
     case 'messageVenue': {
-      const venue: Record<string, Object> | undefined = toRecord((content as Record<string, Object>)['venue']);
+      const venue: Record<string, unknown> | undefined = toRecord((content as Record<string, unknown>)['venue']);
       const venueTitle: string = safeString(venue?.['title']);
       return venueTitle.length > 0 ? `📍 ${venueTitle}` : '📍 Venue';
     }
     case 'messageCall': {
-      const callPayload: Record<string, Object> = content as Record<string, Object>;
+      const callPayload: Record<string, unknown> = content as Record<string, unknown>;
       return buildCallText(callPayload);
     }
     case 'messageDice': {
-      const dicePayload: Record<string, Object> = content as Record<string, Object>;
-      const diceObj: Record<string, Object> | undefined = toRecord(dicePayload['dice']);
+      const dicePayload: Record<string, unknown> = content as Record<string, unknown>;
+      const diceObj: Record<string, unknown> | undefined = toRecord(dicePayload['dice']);
       const diceEmoji: string = safeString(diceObj?.['emoji']) || '🎲';
       return diceEmoji;
     }
     case 'messageAudio': {
-      const audioObj: Record<string, Object> | undefined = toRecord((content as Record<string, Object>)['audio']);
+      const audioObj: Record<string, unknown> | undefined = toRecord((content as Record<string, unknown>)['audio']);
       const audioTitle: string = safeString(audioObj?.['title']);
       return audioTitle.length > 0 ? `🎵 ${audioTitle}` : '🎵 Audio';
     }
     case 'messageGame': {
-      const gameObj: Record<string, Object> | undefined = toRecord((content as Record<string, Object>)['game']);
+      const gameObj: Record<string, unknown> | undefined = toRecord((content as Record<string, unknown>)['game']);
       const gameTitle: string = safeString(gameObj?.['title']);
       return gameTitle.length > 0 ? `🎮 ${gameTitle}` : '🎮 Game';
     }
@@ -534,7 +534,7 @@ export function parseChat(raw: TdChat): Chat {
   // Determine type
   const chatType: TdChatType | undefined = raw.type;
   if (chatType) {
-    const t: string = tdType(chatType as Record<string, Object>);
+    const t: string = tdType(chatType as Record<string, unknown>);
     chat.isGroup = t === 'chatTypeSupergroup' || t === 'chatTypeBasicGroup';
     chat.isChannel = t === 'chatTypeSupergroup' && (chatType.is_channel === true);
   }
@@ -555,7 +555,7 @@ export function parseChat(raw: TdChat): Chat {
 
 export function updateChatPositions(chat: Chat, positions: TdChatPosition[]): void {
   for (const pos of positions) {
-    const list: Record<string, Object> | undefined = pos.list;
+    const list: Record<string, unknown> | undefined = pos.list;
     if (list && tdType(list) === 'chatListMain') {
       chat.order = pos.order || '0';
       chat.isPinned = pos.is_pinned || false;
@@ -566,10 +566,10 @@ export function updateChatPositions(chat: Chat, positions: TdChatPosition[]): vo
 // --- Known content fallback text ---
 
 function buildKnownContentText(type: string, content: TdMessageContent): string | undefined {
-  const payload: Record<string, Object> = content as Record<string, Object>;
+  const payload: Record<string, unknown> = content as Record<string, unknown>;
   switch (type) {
     case 'messageInvoice': {
-      const invoice: Record<string, Object> | undefined = toRecord(payload['invoice']);
+      const invoice: Record<string, unknown> | undefined = toRecord(payload['invoice']);
       const title: string = safeString(invoice?.['title']);
       return title.length > 0 ? `💳 ${title}` : '💳 Invoice';
     }
@@ -613,11 +613,11 @@ function buildKnownContentText(type: string, content: TdMessageContent): string 
   }
 }
 
-function buildCallText(payload: Record<string, Object>): string {
-  const call: Record<string, Object> | undefined = toRecord(payload['call']);
+function buildCallText(payload: Record<string, unknown>): string {
+  const call: Record<string, unknown> | undefined = toRecord(payload['call']);
   const duration: number = safeNumber(call?.['duration']);
   const isVideo: boolean = safeBool(call?.['is_video']);
-  const discardReason: Record<string, Object> | undefined = toRecord(call?.['discard_reason']);
+  const discardReason: Record<string, unknown> | undefined = toRecord(call?.['discard_reason']);
   const reasonType: string = discardReason ? tdType(discardReason) : '';
 
   if (reasonType === 'callDiscardReasonMissed') {
@@ -646,9 +646,9 @@ function formatDuration(totalSeconds: number): string {
   return `${seconds}s`;
 }
 
-function toRecord(value: Object | undefined | null): Record<string, Object> | undefined {
+function toRecord(value: Object | undefined | null): Record<string, unknown> | undefined {
   if (value === undefined || value === null) return undefined;
-  return value as Record<string, Object>;
+  return value as Record<string, unknown>;
 }
 
 function resolveLocalFilePath(file: TdFile | undefined): string {

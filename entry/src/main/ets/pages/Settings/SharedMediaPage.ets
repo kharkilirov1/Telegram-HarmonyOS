@@ -613,7 +613,7 @@ export struct SharedMediaPage {
   private openMediaItem(item: SharedMediaItem): void {
     if (item.type === 'video' || item.type === 'gif') {
       if (item.url.length > 0) {
-        const navParam: Record<string, Object> = {};
+        const navParam: Record<string, unknown> = {};
         navParam['videoUrl'] = item.url;
         navParam['duration'] = item.duration;
         this.navPathStack.pushPath(new NavPathInfo('VideoPlayer', navParam));
@@ -630,8 +630,8 @@ export struct SharedMediaPage {
     this.navPathStack.pushPath(new NavPathInfo('MediaViewer', this.buildMediaViewerParam(imageUrl, item)));
   }
 
-  private buildMediaViewerParam(url: string, item: SharedMediaItem): Record<string, Object> {
-    const navParam: Record<string, Object> = {};
+  private buildMediaViewerParam(url: string, item: SharedMediaItem): Record<string, unknown> {
+    const navParam: Record<string, unknown> = {};
     navParam['url'] = url;
     if (item.messageId > 0) {
       navParam['messageId'] = item.messageId;

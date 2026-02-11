@@ -42,7 +42,7 @@ export enum EventId {
   APP_ERROR = 60,
 }
 
-type EventHandler = (args?: Record<string, Object>) => void;
+type EventHandler = (args?: Record<string, unknown>) => void;
 
 export class NotificationCenter {
   private static instance: NotificationCenter | null = null;
@@ -73,7 +73,7 @@ export class NotificationCenter {
     }
   }
 
-  post(eventId: EventId, args?: Record<string, Object>): void {
+  post(eventId: EventId, args?: Record<string, unknown>): void {
     const list = this.observers.get(eventId);
     if (list) {
       for (const handler of list) {

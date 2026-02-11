@@ -234,7 +234,7 @@ export struct CallsPage {
       .margin({ right: 16 })
       .onClick(() => {
         if (call.userId <= 0) return;
-        const navParam: Record<string, Object> = {};
+        const navParam: Record<string, unknown> = {};
         navParam['userId'] = call.userId;
         this.navPathStack.pushPath(new NavPathInfo('UserInfo', navParam));
       })

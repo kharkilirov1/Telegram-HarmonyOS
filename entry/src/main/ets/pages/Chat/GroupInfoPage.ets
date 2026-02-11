@@ -86,7 +86,7 @@ export struct GroupInfoPage {
         if ((member.member_id?.user_id || 0) !== myUserId) {
           continue;
         }
-        const statusRecord = member.status as Record<string, Object> | undefined;
+        const statusRecord = member.status as Record<string, unknown> | undefined;
         const statusType = (statusRecord?.['@type'] as string) || '';
         if (statusType === 'chatMemberStatusCreator') {
           this.canEditGroupInfo = true;
@@ -94,7 +94,7 @@ export struct GroupInfoPage {
           return;
         }
         if (statusType === 'chatMemberStatusAdministrator') {
-          const rightsRecord = statusRecord?.['rights'] as Record<string, Object> | undefined;
+          const rightsRecord = statusRecord?.['rights'] as Record<string, unknown> | undefined;
           const hasExplicitRights = rightsRecord !== undefined ||
             statusRecord?.['can_change_info'] !== undefined ||
             statusRecord?.['can_invite_users'] !== undefined;
@@ -181,7 +181,7 @@ export struct GroupInfoPage {
             if (!this.canEditGroupInfo) {
               return;
             }
-            const navParam: Record<string, Object> = {};
+            const navParam: Record<string, unknown> = {};
             navParam['chatId'] = this.chatId;
             this.navPathStack.pushPath(new NavPathInfo('GroupAdmin', navParam));
           }
@@ -271,7 +271,7 @@ export struct GroupInfoPage {
               .width('100%').height(48)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                const navParam: Record<string, Object> = {};
+                const navParam: Record<string, unknown> = {};
                 navParam['chatId'] = this.chatId;
                 this.navPathStack.pushPath(new NavPathInfo('SharedMedia', navParam));
               })
@@ -305,7 +305,7 @@ export struct GroupInfoPage {
                   .width('100%').height(48)
                   .padding({ left: 16, right: 16 })
                   .onClick(() => {
-                    const navParam: Record<string, Object> = {};
+                    const navParam: Record<string, unknown> = {};
                     navParam['chatId'] = this.chatId;
                     this.navPathStack.pushPath(new NavPathInfo('GroupAdmin', navParam));
                   })
@@ -330,7 +330,7 @@ export struct GroupInfoPage {
                   .width('100%').height(48)
                   .padding({ left: 16, right: 16 })
                   .onClick(() => {
-                    const navParam: Record<string, Object> = {};
+                    const navParam: Record<string, unknown> = {};
                     navParam['chatId'] = this.chatId;
                     this.navPathStack.pushPath(new NavPathInfo('InviteLinks', navParam));
                   })
@@ -391,7 +391,7 @@ export struct GroupInfoPage {
                   GroupInfoMemberRow({
                     member: member,
                     onOpenUser: (userId: number) => {
-                      const navParam: Record<string, Object> = {};
+                      const navParam: Record<string, unknown> = {};
                       navParam['userId'] = userId;
                       this.navPathStack.pushPath(new NavPathInfo('UserInfo', navParam));
                     }

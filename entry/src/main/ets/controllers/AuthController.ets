@@ -51,7 +51,7 @@ export class AuthController {
   async fetchMyUserId(): Promise<number> {
     if (this.myUserId > 0) return this.myUserId;
     try {
-      const result = await TDLibClient.getInstance().send('getMe') as Record<string, Object>;
+      const result = await TDLibClient.getInstance().send('getMe') as Record<string, unknown>;
       this.myUserId = (result['id'] as number) || 0;
     } catch (e) {
       hilog.warn(DOMAIN, TAG, 'Failed to fetch my user ID: %{public}s', String(e));
@@ -78,8 +78,8 @@ export class AuthController {
   private subscribeToUpdates(): void {
     const client = TDLibClient.getInstance();
 
-    client.on('updateAuthorizationState', (update: Record<string, Object>) => {
-      const authState = update['authorization_state'] as Record<string, Object>;
+    client.on('updateAuthorizationState', (update: Record<string, unknown>) => {
+      const authState = update['authorization_state'] as Record<string, unknown>;
       const stateType = (authState['@type'] as string) || '';
 
       hilog.info(DOMAIN, TAG, 'Auth state: %{public}s', stateType);
@@ -88,7 +88,7 @@ export class AuthController {
       // Handle states that need automatic responses
       if (stateType === 'authorizationStateWaitEncryptionKey') {
         const dbKey = SecurityService.getInstance().getDatabaseEncryptionKey();
-        const params: Record<string, Object> = {};
+        const params: Record<string, unknown> = {};
         params['encryption_key'] = dbKey;
         client.send('checkDatabaseEncryptionKey', params);
         return;
@@ -104,7 +104,7 @@ export class AuthController {
         this.fetchMyUserId();
       }
 
-      const eventArgs: Record<string, Object> = {};
+      const eventArgs: Record<string, unknown> = {};
       eventArgs['state'] = stateType;
       NotificationCenter.getInstance().post(
         EventId.AUTH_STATE_CHANGED,
@@ -112,14 +112,14 @@ export class AuthController {
       );
     });
 
-    client.on('updateConnectionState', (update: Record<string, Object>) => {
-      const state = update['state'] as Record<string, Object>;
+    client.on('updateConnectionState', (update: Record<string, unknown>) => {
+      const state = update['state'] as Record<string, unknown>;
       if (!state) return;
       const stateType = (state['@type'] as string) || '';
       hilog.info(DOMAIN, TAG, 'Connection state: %{public}s', stateType);
       this.connectionState = stateType;
 
-      const connArgs: Record<string, Object> = {};
+      const connArgs: Record<string, unknown> = {};
       connArgs['state'] = stateType;
       NotificationCenter.getInstance().post(
         EventId.CONNECTION_STATE_CHANGED,

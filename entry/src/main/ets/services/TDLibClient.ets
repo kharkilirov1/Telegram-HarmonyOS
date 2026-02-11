@@ -57,10 +57,10 @@ export enum LogLevel {
   NONE = 4
 }
 
-type TDLibUpdateHandler = (update: Record<string, Object>) => void;
+type TDLibUpdateHandler = (update: Record<string, unknown>) => void;
 
 interface PendingRequest {
-  resolve: (response: Record<string, Object>) => void;
+  resolve: (response: Record<string, unknown>) => void;
   reject: (code: number, message: string) => void;
   method: string;
   timerId: number;
@@ -138,13 +138,13 @@ export class TDLibClient {
   }
 
   // Send a request and get a promise for the response
-  async send(method: string, inputParams?: Record<string, Object>): Promise<Record<string, Object>> {
+  async send(method: string, inputParams?: Record<string, unknown>): Promise<Record<string, unknown>> {
     if (this._state !== ClientState.Ready && this._state !== ClientState.Initializing) {
       throw new TDLibError(0, `Cannot send '${method}' in state '${this._state}'`);
     }
 
     const id: number = ++this.requestId;
-    let request: Record<string, Object>;
+    let request: Record<string, unknown>;
     if (inputParams !== undefined) {
       request = inputParams;
     } else {
@@ -153,7 +153,7 @@ export class TDLibClient {
     request['@type'] = method;
     request['@extra'] = id;
 
-    return new Promise<Record<string, Object>>((resolve, reject) => {
+    return new Promise<Record<string, unknown>>((resolve, reject) => {
       // Set timeout to auto-reject hanging requests
       const timerId: number = setTimeout(() => {
         if (this.pendingRequests.has(id)) {
@@ -195,51 +195,51 @@ export class TDLibClient {
 
   // --- Auth methods (mirroring iOS Telegram patterns) ---
 
-  async setPhoneNumber(phoneNumber: string): Promise<Record<string, Object>> {
-    const settings: Record<string, Object> = {};
+  async setPhoneNumber(phoneNumber: string): Promise<Record<string, unknown>> {
+    const settings: Record<string, unknown> = {};
     settings['@type'] = 'phoneNumberAuthenticationSettings';
     settings['allow_flash_call'] = false;
     settings['allow_missed_call'] = false;
     settings['is_current_phone_number'] = false;
     settings['allow_sms_retriever_api'] = false;
-    const params: Record<string, Object> = {};
+    const params: Record<string, unknown> = {};
     params['phone_number'] = phoneNumber;
     params['settings'] = settings;
     return this.send('setAuthenticationPhoneNumber', params);
   }
 
-  async checkAuthCode(code: string): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = {};
+  async checkAuthCode(code: string): Promise<Record<string, unknown>> {
+    const params: Record<string, unknown> = {};
     params['code'] = code;
     return this.send('checkAuthenticationCode', params);
   }
 
-  async checkAuthPassword(password: string): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = {};
+  async checkAuthPassword(password: string): Promise<Record<string, unknown>> {
+    const params: Record<string, unknown> = {};
     params['password'] = password;
     return this.send('checkAuthenticationPassword', params);
   }
 
   // --- Chat methods ---
 
-  async loadChats(limit: number = 20): Promise<Record<string, Object>> {
-    const chatList: Record<string, Object> = {};
+  async loadChats(limit: number = 20): Promise<Record<string, unknown>> {
+    const chatList: Record<string, unknown> = {};
     chatList['@type'] = 'chatListMain';
-    const params: Record<string, Object> = {};
+    const params: Record<string, unknown> = {};
     params['chat_list'] = chatList;
     params['limit'] = limit;
     return this.send('loadChats', params);
   }
 
-  async getChat(chatId: number): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = {};
+  async getChat(chatId: number): Promise<Record<string, unknown>> {
+    const params: Record<string, unknown> = {};
     params['chat_id'] = chatId;
     return this.send('getChat', params);
   }
 
   async getChatHistory(chatId: number, fromMessageId: number = 0,
-    limit: number = 50): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = {};
+    limit: number = 50): Promise<Record<string, unknown>> {
+    const params: Record<string, unknown> = {};
     params['chat_id'] = chatId;
     params['from_message_id'] = fromMessageId;
     params['offset'] = 0;
@@ -250,27 +250,27 @@ export class TDLibClient {
 
   // --- Contact methods ---
 
-  async getContacts(): Promise<Record<string, Object>> {
+  async getContacts(): Promise<Record<string, unknown>> {
     return this.send('getContacts');
   }
 
-  async searchContacts(query: string, limit: number = 50): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = {};
+  async searchContacts(query: string, limit: number = 50): Promise<Record<string, unknown>> {
+    const params: Record<string, unknown> = {};
     params['query'] = query;
     params['limit'] = limit;
     return this.send('searchContacts', params);
   }
 
-  async getUser(userId: number): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = {};
+  async getUser(userId: number): Promise<Record<string, unknown>> {
+    const params: Record<string, unknown> = {};
     params['user_id'] = userId;
     return this.send('getUser', params);
   }
 
   // --- Create chat ---
 
-  async createPrivateChat(userId: number): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = {};
+  async createPrivateChat(userId: number): Promise<Record<string, unknown>> {
+    const params: Record<string, unknown> = {};
     params['user_id'] = userId;
     params['force'] = false;
     return this.send('createPrivateChat', params);
@@ -278,10 +278,10 @@ export class TDLibClient {
 
   // --- Search ---
 
-  async searchMessages(query: string, limit: number = 50): Promise<Record<string, Object>> {
-    const chatList: Record<string, Object> = {};
+  async searchMessages(query: string, limit: number = 50): Promise<Record<string, unknown>> {
+    const chatList: Record<string, unknown> = {};
     chatList['@type'] = 'chatListMain';
-    const params: Record<string, Object> = {};
+    const params: Record<string, unknown> = {};
     params['chat_list'] = chatList;
     params['query'] = query;
     params['offset'] = '';
@@ -293,33 +293,33 @@ export class TDLibClient {
 
   // --- Message methods ---
 
-  async editMessageText(chatId: number, messageId: number, text: string): Promise<Record<string, Object>> {
-    const formattedText: Record<string, Object> = {};
+  async editMessageText(chatId: number, messageId: number, text: string): Promise<Record<string, unknown>> {
+    const formattedText: Record<string, unknown> = {};
     formattedText['@type'] = 'formattedText';
     formattedText['text'] = text;
-    const inputContent: Record<string, Object> = {};
+    const inputContent: Record<string, unknown> = {};
     inputContent['@type'] = 'inputMessageText';
     inputContent['text'] = formattedText;
-    const params: Record<string, Object> = {};
+    const params: Record<string, unknown> = {};
     params['chat_id'] = chatId;
     params['message_id'] = messageId;
     params['input_message_content'] = inputContent;
     return this.send('editMessageText', params);
   }
 
-  async sendMessage(chatId: number, text: string, replyToMessageId: number = 0): Promise<Record<string, Object>> {
-    const formattedText: Record<string, Object> = {};
+  async sendMessage(chatId: number, text: string, replyToMessageId: number = 0): Promise<Record<string, unknown>> {
+    const formattedText: Record<string, unknown> = {};
     formattedText['@type'] = 'formattedText';
     formattedText['text'] = text;
-    const inputContent: Record<string, Object> = {};
+    const inputContent: Record<string, unknown> = {};
     inputContent['@type'] = 'inputMessageText';
     inputContent['text'] = formattedText;
-    const params: Record<string, Object> = {};
+    const params: Record<string, unknown> = {};
     params['chat_id'] = chatId;
     params['input_message_content'] = inputContent;
 
     if (replyToMessageId > 0) {
-      const replyTo: Record<string, Object> = {};
+      const replyTo: Record<string, unknown> = {};
       replyTo['@type'] = 'inputMessageReplyToMessage';
       replyTo['message_id'] = replyToMessageId;
       params['reply_to'] = replyTo;
@@ -330,8 +330,8 @@ export class TDLibClient {
 
   // --- View messages (mark as read) ---
 
-  async viewMessages(chatId: number, messageIds: number[]): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = {};
+  async viewMessages(chatId: number, messageIds: number[]): Promise<Record<string, unknown>> {
+    const params: Record<string, unknown> = {};
     params['chat_id'] = chatId;
     params['message_ids'] = messageIds;
     params['force_read'] = true;
@@ -341,22 +341,22 @@ export class TDLibClient {
   // --- Send photo ---
 
   async sendPhoto(chatId: number, filePath: string, caption: string = '',
-    replyToMessageId: number = 0): Promise<Record<string, Object>> {
-    const inputFile: Record<string, Object> = {};
+    replyToMessageId: number = 0): Promise<Record<string, unknown>> {
+    const inputFile: Record<string, unknown> = {};
     inputFile['@type'] = 'inputFileLocal';
     inputFile['path'] = filePath;
-    const formattedCaption: Record<string, Object> = {};
+    const formattedCaption: Record<string, unknown> = {};
     formattedCaption['@type'] = 'formattedText';
     formattedCaption['text'] = caption;
-    const inputContent: Record<string, Object> = {};
+    const inputContent: Record<string, unknown> = {};
     inputContent['@type'] = 'inputMessagePhoto';
     inputContent['photo'] = inputFile;
     inputContent['caption'] = formattedCaption;
-    const params: Record<string, Object> = {};
+    const params: Record<string, unknown> = {};
     params['chat_id'] = chatId;
     params['input_message_content'] = inputContent;
     if (replyToMessageId > 0) {
-      const replyTo: Record<string, Object> = {};
+      const replyTo: Record<string, unknown> = {};
       replyTo['@type'] = 'inputMessageReplyToMessage';
       replyTo['message_id'] = replyToMessageId;
       params['reply_to'] = replyTo;
@@ -367,22 +367,22 @@ export class TDLibClient {
   // --- Send document ---
 
   async sendDocument(chatId: number, filePath: string, caption: string = '',
-    replyToMessageId: number = 0): Promise<Record<string, Object>> {
-    const inputFile: Record<string, Object> = {};
+    replyToMessageId: number = 0): Promise<Record<string, unknown>> {
+    const inputFile: Record<string, unknown> = {};
     inputFile['@type'] = 'inputFileLocal';
     inputFile['path'] = filePath;
-    const formattedCaption: Record<string, Object> = {};
+    const formattedCaption: Record<string, unknown> = {};
     formattedCaption['@type'] = 'formattedText';
     formattedCaption['text'] = caption;
-    const inputContent: Record<string, Object> = {};
+    const inputContent: Record<string, unknown> = {};
     inputContent['@type'] = 'inputMessageDocument';
     inputContent['document'] = inputFile;
     inputContent['caption'] = formattedCaption;
-    const params: Record<string, Object> = {};
+    const params: Record<string, unknown> = {};
     params['chat_id'] = chatId;
     params['input_message_content'] = inputContent;
     if (replyToMessageId > 0) {
-      const replyTo: Record<string, Object> = {};
+      const replyTo: Record<string, unknown> = {};
       replyTo['@type'] = 'inputMessageReplyToMessage';
       replyTo['message_id'] = replyToMessageId;
       params['reply_to'] = replyTo;
@@ -392,8 +392,8 @@ export class TDLibClient {
 
   // --- Delete chat ---
 
-  async deleteChat(chatId: number): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = {};
+  async deleteChat(chatId: number): Promise<Record<string, unknown>> {
+    const params: Record<string, unknown> = {};
     params['chat_id'] = chatId;
     params['remove_from_chat_list'] = true;
     params['revoke'] = false;
@@ -402,12 +402,12 @@ export class TDLibClient {
 
   // --- Toggle mute ---
 
-  async setChatNotificationSettings(chatId: number, muteFor: number): Promise<Record<string, Object>> {
-    const settings: Record<string, Object> = {};
+  async setChatNotificationSettings(chatId: number, muteFor: number): Promise<Record<string, unknown>> {
+    const settings: Record<string, unknown> = {};
     settings['@type'] = 'chatNotificationSettings';
     settings['use_default_mute_for'] = false;
     settings['mute_for'] = muteFor;
-    const params: Record<string, Object> = {};
+    const params: Record<string, unknown> = {};
     params['chat_id'] = chatId;
     params['notification_settings'] = settings;
     return this.send('setChatNotificationSettings', params);
@@ -415,10 +415,10 @@ export class TDLibClient {
 
   // --- Pin/unpin chat ---
 
-  async toggleChatIsPinned(chatId: number, isPinned: boolean): Promise<Record<string, Object>> {
-    const chatList: Record<string, Object> = {};
+  async toggleChatIsPinned(chatId: number, isPinned: boolean): Promise<Record<string, unknown>> {
+    const chatList: Record<string, unknown> = {};
     chatList['@type'] = 'chatListMain';
-    const params: Record<string, Object> = {};
+    const params: Record<string, unknown> = {};
     params['chat_list'] = chatList;
     params['chat_id'] = chatId;
     params['is_pinned'] = isPinned;
@@ -427,21 +427,21 @@ export class TDLibClient {
 
   // --- Read all in chat ---
 
-  async openChat(chatId: number): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = {};
+  async openChat(chatId: number): Promise<Record<string, unknown>> {
+    const params: Record<string, unknown> = {};
     params['chat_id'] = chatId;
     return this.send('openChat', params);
   }
 
-  async toggleChatIsMarkedAsUnread(chatId: number, isMarkedAsUnread: boolean): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = {};
+  async toggleChatIsMarkedAsUnread(chatId: number, isMarkedAsUnread: boolean): Promise<Record<string, unknown>> {
+    const params: Record<string, unknown> = {};
     params['chat_id'] = chatId;
     params['is_marked_as_unread'] = isMarkedAsUnread;
     return this.send('toggleChatIsMarkedAsUnread', params);
   }
 
-  async closeChat(chatId: number): Promise<Record<string, Object>> {
-    const params: Record<string, Object> = {};
+  async closeChat(chatId: number): Promise<Record<string, unknown>> {
+    const params: Record<string, unknown> = {};
     params['chat_id'] = chatId;
     return this.send('closeChat', params);
   }
@@ -449,23 +449,23 @@ export class TDLibClient {
   // --- Send video ---
 
   async sendVideo(chatId: number, filePath: string, caption: string = '',
-    duration: number = 0, replyToMessageId: number = 0): Promise<Record<string, Object>> {
-    const inputFile: Record<string, Object> = {};
+    duration: number = 0, replyToMessageId: number = 0): Promise<Record<string, unknown>> {
+    const inputFile: Record<string, unknown> = {};
     inputFile['@type'] = 'inputFileLocal';
     inputFile['path'] = filePath;
-    const formattedCaption: Record<string, Object> = {};
+    const formattedCaption: Record<string, unknown> = {};
     formattedCaption['@type'] = 'formattedText';
     formattedCaption['text'] = caption;
-    const inputContent: Record<string, Object> = {};
+    const inputContent: Record<string, unknown> = {};
     inputContent['@type'] = 'inputMessageVideo';
     inputContent['video'] = inputFile;
     inputContent['caption'] = formattedCaption;
     inputContent['duration'] = duration;
-    const params: Record<string, Object> = {};
+    const params: Record<string, unknown> = {};
     params['chat_id'] = chatId;
     params['input_message_content'] = inputContent;
     if (replyToMessageId > 0) {
-      const replyTo: Record<string, Object> = {};
+      const replyTo: Record<string, unknown> = {};
       replyTo['@type'] = 'inputMessageReplyToMessage';
       replyTo['message_id'] = replyToMessageId;
       params['reply_to'] = replyTo;
@@ -476,7 +476,7 @@ export class TDLibClient {
   // --- Private methods ---
 
   private sendTdlibParameters(): void {
-    const params: Record<string, Object> = {};
+    const params: Record<string, unknown> = {};
     params['database_directory'] = '/data/storage/el2/base/tdlib';
     params['files_directory'] = '/data/storage/el2/base/tdlib/files';
     params['use_file_database'] = true;
@@ -496,7 +496,7 @@ export class TDLibClient {
     try {
       // Parse JSON off the main thread via TaskPool
       const task: taskpool.Task = new taskpool.Task(parseJsonInBackground, responseJson);
-      const response: Record<string, Object> = (await taskpool.execute(task)) as Record<string, Object>;
+      const response: Record<string, unknown> = (await taskpool.execute(task)) as Record<string, unknown>;
 
       const type: string = (response['@type'] as string) || '';
       const extra: number = (response['@extra'] as number) || 0;

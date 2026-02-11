@@ -9,7 +9,7 @@ export struct FileBubble {
   @Param message: Message = new Message();
   @Local downloadProgress: number = -1;
 
-  private progressHandler = (args?: Record<string, Object>): void => {
+  private progressHandler = (args?: Record<string, unknown>): void => {
     const fileId = (args?.['fileId'] as number) || 0;
     if (fileId <= 0 || fileId !== this.message.fileId) return;
 
@@ -22,7 +22,7 @@ export struct FileBubble {
     }
   };
 
-  private completedHandler = (args?: Record<string, Object>): void => {
+  private completedHandler = (args?: Record<string, unknown>): void => {
     const fileId = (args?.['fileId'] as number) || 0;
     if (fileId <= 0 || fileId !== this.message.fileId) return;
 

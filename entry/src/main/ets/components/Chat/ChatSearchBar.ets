@@ -285,10 +285,10 @@ export struct ChatSearchBar {
     }
     try {
       const result = await ChatService.getInstance().searchChatMembers(this.chatId, name, 10);
-      const members = result['members'] as Record<string, Object>[];
+      const members = result['members'] as Record<string, unknown>[];
       if (members && members.length > 0) {
         const firstMember = members[0];
-        const memberId = firstMember['member_id'] as Record<string, Object>;
+        const memberId = firstMember['member_id'] as Record<string, unknown>;
         if (memberId && memberId['@type'] === 'messageSenderUser') {
           this.searchSenderId = memberId['user_id'] as number || 0;
           this.showSenderInput = false;

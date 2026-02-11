@@ -7,8 +7,8 @@ import { User } from '../../../main/ets/models/User';
  */
 
 // Standalone copy of parseUser — the private method on ContactsController
-function parseUser(raw: Record<string, Object>): User {
-  const status = raw['status'] as Record<string, Object>;
+function parseUser(raw: Record<string, unknown>): User {
+  const status = raw['status'] as Record<string, unknown>;
   let isOnline = false;
   let lastSeenDate = 0;
 
@@ -21,12 +21,12 @@ function parseUser(raw: Record<string, Object>): User {
     }
   }
 
-  const profilePhoto = raw['profile_photo'] as Record<string, Object>;
+  const profilePhoto = raw['profile_photo'] as Record<string, unknown>;
   let photoUrl: string | null = null;
   if (profilePhoto) {
-    const small = profilePhoto['small'] as Record<string, Object>;
+    const small = profilePhoto['small'] as Record<string, unknown>;
     if (small) {
-      const localPath = small['local'] as Record<string, Object>;
+      const localPath = small['local'] as Record<string, unknown>;
       if (localPath && localPath['path']) {
         photoUrl = localPath['path'] as string;
       }
@@ -38,7 +38,7 @@ function parseUser(raw: Record<string, Object>): User {
     (raw['first_name'] as string) || '',
     (raw['last_name'] as string) || '',
     (raw['username'] as string) ||
-      ((raw['usernames'] as Record<string, Object>)?.['editable_username'] as string) || '',
+      ((raw['usernames'] as Record<string, unknown>)?.['editable_username'] as string) || '',
     (raw['phone_number'] as string) || '',
     photoUrl,
     isOnline,
@@ -64,7 +64,7 @@ export default function contactsControllerTest() {
     describe('parseUser', () => {
 
       it('should parse basic user fields', 0, () => {
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['id'] = 12345;
         raw['first_name'] = 'Alice';
         raw['last_name'] = 'Smith';
@@ -80,9 +80,9 @@ export default function contactsControllerTest() {
       });
 
       it('should detect online status', 0, () => {
-        const status: Record<string, Object> = {};
+        const status: Record<string, unknown> = {};
         status['@type'] = 'userStatusOnline';
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['id'] = 1;
         raw['status'] = status;
 
@@ -92,10 +92,10 @@ export default function contactsControllerTest() {
       });
 
       it('should detect offline status with was_online', 0, () => {
-        const status: Record<string, Object> = {};
+        const status: Record<string, unknown> = {};
         status['@type'] = 'userStatusOffline';
         status['was_online'] = 1700000000;
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['id'] = 2;
         raw['status'] = status;
 
@@ -105,7 +105,7 @@ export default function contactsControllerTest() {
       });
 
       it('should handle missing status', 0, () => {
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['id'] = 3;
 
         const user = parseUser(raw);
@@ -114,13 +114,13 @@ export default function contactsControllerTest() {
       });
 
       it('should extract profile photo path', 0, () => {
-        const localPath: Record<string, Object> = {};
+        const localPath: Record<string, unknown> = {};
         localPath['path'] = '/data/photos/avatar.jpg';
-        const small: Record<string, Object> = {};
+        const small: Record<string, unknown> = {};
         small['local'] = localPath;
-        const profilePhoto: Record<string, Object> = {};
+        const profilePhoto: Record<string, unknown> = {};
         profilePhoto['small'] = small;
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['id'] = 4;
         raw['profile_photo'] = profilePhoto;
 
@@ -129,7 +129,7 @@ export default function contactsControllerTest() {
       });
 
       it('should return null photo when no profile_photo', 0, () => {
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['id'] = 5;
 
         const user = parseUser(raw);
@@ -137,9 +137,9 @@ export default function contactsControllerTest() {
       });
 
       it('should use editable_username from usernames object', 0, () => {
-        const usernames: Record<string, Object> = {};
+        const usernames: Record<string, unknown> = {};
         usernames['editable_username'] = 'bob_username';
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['id'] = 6;
         raw['usernames'] = usernames;
 
@@ -148,7 +148,7 @@ export default function contactsControllerTest() {
       });
 
       it('should default fields when data is missing', 0, () => {
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
 
         const user = parseUser(raw);
         expect(user.id).assertEqual(0);

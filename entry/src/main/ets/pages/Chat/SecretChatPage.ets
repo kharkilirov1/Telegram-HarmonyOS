@@ -49,7 +49,7 @@ export struct SecretChatPage {
     { label: '1w', seconds: 604800 }
   ];
 
-  private secretChatUpdateHandler = (update: Record<string, Object>): void => {
+  private secretChatUpdateHandler = (update: Record<string, unknown>): void => {
     this.handleSecretChatUpdate(update);
   };
 
@@ -114,7 +114,7 @@ export struct SecretChatPage {
     try {
       const result = await ChatService.getInstance().createNewSecretChat(this.userId);
 
-      const chatType = result['type'] as Record<string, Object> | undefined;
+      const chatType = result['type'] as Record<string, unknown> | undefined;
       if (chatType) {
         this.secretChatId = (chatType['secret_chat_id'] as number) || 0;
       }
@@ -162,8 +162,8 @@ export struct SecretChatPage {
     }
   }
 
-  private handleSecretChatUpdate(update: Record<string, Object>): void {
-    const record = update as Record<string, Object>;
+  private handleSecretChatUpdate(update: Record<string, unknown>): void {
+    const record = update as Record<string, unknown>;
     const secretChat = record['secret_chat'] as TdSecretChat | undefined;
     if (!secretChat) {
       return;

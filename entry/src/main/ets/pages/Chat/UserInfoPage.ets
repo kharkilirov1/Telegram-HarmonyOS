@@ -34,14 +34,14 @@ export struct UserInfoPage {
   @Local commonGroupsCount: number = 0;
   @Local privateChatId: number = 0;
 
-  private userInfoUpdatedHandler = (args?: Record<string, Object>): void => {
+  private userInfoUpdatedHandler = (args?: Record<string, unknown>): void => {
     const updatedUserId = args ? ((args['userId'] as number) || 0) : 0;
     if (updatedUserId !== this.userId) return;
     this.applyCachedUser();
     this.applyCachedFullInfo();
   };
 
-  private userStatusUpdatedHandler = (args?: Record<string, Object>): void => {
+  private userStatusUpdatedHandler = (args?: Record<string, unknown>): void => {
     const updatedUserId = args ? ((args['userId'] as number) || 0) : 0;
     if (updatedUserId !== this.userId) return;
     this.applyCachedUser();
@@ -80,7 +80,7 @@ export struct UserInfoPage {
     const fullInfo = ContactsController.getInstance().getUserFullInfo(this.userId);
     if (!fullInfo) return false;
 
-    const bio = fullInfo['bio'] as Record<string, Object> | undefined;
+    const bio = fullInfo['bio'] as Record<string, unknown> | undefined;
     this.bio = bio ? ((bio['text'] as string) || '') : '';
     this.commonGroupsCount = (fullInfo['group_in_common_count'] as number) || 0;
     return true;
@@ -99,7 +99,7 @@ export struct UserInfoPage {
         this.phoneNumber = result.phone_number || '';
         this.photoUrl = result.profile_photo?.small?.local?.path || null;
 
-        const status = result.status as Record<string, Object> | undefined;
+        const status = result.status as Record<string, unknown> | undefined;
         if (status) {
           const statusType = (status['@type'] as string) || '';
           this.isOnline = statusType === 'userStatusOnline';
@@ -157,7 +157,7 @@ export struct UserInfoPage {
         return;
       }
       const chatResult = await GroupService.getInstance().getChat(chatId);
-      const settings = chatResult['notification_settings'] as Record<string, Object> | undefined;
+      const settings = chatResult['notification_settings'] as Record<string, unknown> | undefined;
       const muteFor = settings ? ((settings['mute_for'] as number) || 0) : 0;
       this.notificationsEnabled = muteFor <= 0;
     } catch (_e) {
@@ -448,7 +448,7 @@ export struct UserInfoPage {
       if (chatId <= 0) {
         return;
       }
-      const navParam: Record<string, Object> = {};
+      const navParam: Record<string, unknown> = {};
       navParam['chatId'] = chatId;
       this.navPathStack.pushPath(new NavPathInfo('SharedMedia', navParam));
     } catch (_e) {

@@ -9,7 +9,7 @@ const MEDIA_DOMAIN = 0x0001;
 
 @Builder
 export function MediaViewerBuilder(name: string, param: Object) {
-  const routeParam = param as Record<string, Object>;
+  const routeParam = param as Record<string, unknown>;
   MediaViewerPage({
     mediaUrl: (routeParam['url'] as string) || '',
     sourceMessageId: (routeParam['messageId'] as number) || 0,
@@ -55,7 +55,7 @@ export struct MediaViewerPage {
 
   private handleShare(): void {
     if (this.sourceMessageId > 0 && this.sourceChatId > 0) {
-      const forwardParam: Record<string, Object> = {};
+      const forwardParam: Record<string, unknown> = {};
       forwardParam['messageId'] = this.sourceMessageId;
       forwardParam['chatId'] = this.sourceChatId;
       this.navPathStack.pushPath(new NavPathInfo('ForwardPicker', forwardParam));

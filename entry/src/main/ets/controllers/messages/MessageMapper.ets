@@ -33,7 +33,7 @@ export function applyInteractionInfo(msg: Message, info: TdMessageInteractionInf
   msg.reactions = mappedReactions;
 }
 
-function resolveReactionEmoji(reaction: Record<string, Object> | undefined): string {
+function resolveReactionEmoji(reaction: Record<string, unknown> | undefined): string {
   if (!reaction) return '';
 
   const reactionType: string = tdType(reaction);
