@@ -86,114 +86,114 @@ export default function messagesControllerTest() {
     describe('extractTextPreview', () => {
 
       it('should extract text from messageText', 0, () => {
-        const textInner: Record<string, Object> = {};
+        const textInner: Record<string, unknown> = {};
         textInner['text'] = 'Hello world';
-        const content: Record<string, Object> = {};
+        const content: Record<string, unknown> = {};
         content['@type'] = 'messageText';
         content['text'] = textInner;
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['content'] = content;
-        expect(extractTextPreview(raw as unknown as TdMessage)).assertEqual('Hello world');
+        expect(extractTextPreview(raw as TdMessage)).assertEqual('Hello world');
       });
 
       it('should return "Photo" for messagePhoto', 0, () => {
-        const content: Record<string, Object> = {};
+        const content: Record<string, unknown> = {};
         content['@type'] = 'messagePhoto';
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['content'] = content;
-        expect(extractTextPreview(raw as unknown as TdMessage)).assertEqual('Photo');
+        expect(extractTextPreview(raw as TdMessage)).assertEqual('Photo');
       });
 
       it('should return "Video" for messageVideo', 0, () => {
-        const content: Record<string, Object> = {};
+        const content: Record<string, unknown> = {};
         content['@type'] = 'messageVideo';
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['content'] = content;
-        expect(extractTextPreview(raw as unknown as TdMessage)).assertEqual('Video');
+        expect(extractTextPreview(raw as TdMessage)).assertEqual('Video');
       });
 
       it('should return file name for messageDocument', 0, () => {
-        const doc: Record<string, Object> = {};
+        const doc: Record<string, unknown> = {};
         doc['file_name'] = 'report.pdf';
-        const content: Record<string, Object> = {};
+        const content: Record<string, unknown> = {};
         content['@type'] = 'messageDocument';
         content['document'] = doc;
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['content'] = content;
-        expect(extractTextPreview(raw as unknown as TdMessage)).assertEqual('report.pdf');
+        expect(extractTextPreview(raw as TdMessage)).assertEqual('report.pdf');
       });
 
       it('should return "Document" when document has no file_name', 0, () => {
-        const doc: Record<string, Object> = {};
-        const content: Record<string, Object> = {};
+        const doc: Record<string, unknown> = {};
+        const content: Record<string, unknown> = {};
         content['@type'] = 'messageDocument';
         content['document'] = doc;
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['content'] = content;
-        expect(extractTextPreview(raw as unknown as TdMessage)).assertEqual('Document');
+        expect(extractTextPreview(raw as TdMessage)).assertEqual('Document');
       });
 
       it('should return "Voice message" for messageVoiceNote', 0, () => {
-        const content: Record<string, Object> = {};
+        const content: Record<string, unknown> = {};
         content['@type'] = 'messageVoiceNote';
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['content'] = content;
-        expect(extractTextPreview(raw as unknown as TdMessage)).assertEqual('Voice message');
+        expect(extractTextPreview(raw as TdMessage)).assertEqual('Voice message');
       });
 
       it('should return emoji + Sticker for messageSticker', 0, () => {
-        const sticker: Record<string, Object> = {};
+        const sticker: Record<string, unknown> = {};
         sticker['emoji'] = '\u{1F600}';
-        const content: Record<string, Object> = {};
+        const content: Record<string, unknown> = {};
         content['@type'] = 'messageSticker';
         content['sticker'] = sticker;
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['content'] = content;
-        const preview = extractTextPreview(raw as unknown as TdMessage);
+        const preview = extractTextPreview(raw as TdMessage);
         expect(preview.indexOf('Sticker') >= 0).assertTrue();
         expect(preview.indexOf('\u{1F600}') >= 0).assertTrue();
       });
 
       it('should return "GIF" for messageAnimation', 0, () => {
-        const content: Record<string, Object> = {};
+        const content: Record<string, unknown> = {};
         content['@type'] = 'messageAnimation';
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['content'] = content;
-        expect(extractTextPreview(raw as unknown as TdMessage)).assertEqual('GIF');
+        expect(extractTextPreview(raw as TdMessage)).assertEqual('GIF');
       });
 
       it('should return empty string when content is missing', 0, () => {
-        const raw: Record<string, Object> = {};
-        expect(extractTextPreview(raw as unknown as TdMessage)).assertEqual('');
+        const raw: Record<string, unknown> = {};
+        expect(extractTextPreview(raw as TdMessage)).assertEqual('');
       });
 
       it('should strip "message" prefix for unknown types', 0, () => {
-        const content: Record<string, Object> = {};
+        const content: Record<string, unknown> = {};
         content['@type'] = 'messageContact';
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['content'] = content;
-        expect(extractTextPreview(raw as unknown as TdMessage)).assertEqual('Contact');
+        expect(extractTextPreview(raw as TdMessage)).assertEqual('Contact');
       });
 
       it('should return "Video message" for messageVideoNote', 0, () => {
-        const content: Record<string, Object> = {};
+        const content: Record<string, unknown> = {};
         content['@type'] = 'messageVideoNote';
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['content'] = content;
-        expect(extractTextPreview(raw as unknown as TdMessage)).assertEqual('Video message');
+        expect(extractTextPreview(raw as TdMessage)).assertEqual('Video message');
       });
 
       it('should return poll question for messagePoll', 0, () => {
-        const question: Record<string, Object> = {};
+        const question: Record<string, unknown> = {};
         question['text'] = 'Favorite language?';
-        const poll: Record<string, Object> = {};
+        const poll: Record<string, unknown> = {};
         poll['question'] = question;
-        const content: Record<string, Object> = {};
+        const content: Record<string, unknown> = {};
         content['@type'] = 'messagePoll';
         content['poll'] = poll;
-        const raw: Record<string, Object> = {};
+        const raw: Record<string, unknown> = {};
         raw['content'] = content;
-        const preview = extractTextPreview(raw as unknown as TdMessage);
+        const preview = extractTextPreview(raw as TdMessage);
         expect(preview.indexOf('Favorite language?') >= 0).assertTrue();
       });
     });
