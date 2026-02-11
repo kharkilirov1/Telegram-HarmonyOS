@@ -27,7 +27,7 @@ export struct ProfileTopBar {
             .color($r('app.color.telegram_blue'))
         } else {
           Text($r('app.string.done'))
-            .fontSize(17)
+            .fontSize(20)
             .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.telegram_blue'))
             .onClick(() => {
@@ -36,7 +36,7 @@ export struct ProfileTopBar {
         }
       } else {
         Text($r('app.string.profile_edit'))
-          .fontSize(17)
+          .fontSize(20)
           .fontColor($r('app.color.telegram_blue'))
           .onClick(() => {
             this.onEdit();
@@ -44,7 +44,7 @@ export struct ProfileTopBar {
       }
     }
     .width('100%')
-    .height(44)
+    .height(56)
     .padding({ left: 16, right: 16 })
     .backgroundColor($r('app.color.glass_nav_bg'))
     .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {

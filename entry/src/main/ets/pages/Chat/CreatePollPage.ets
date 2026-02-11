@@ -70,7 +70,7 @@ export struct CreatePollPage {
         .onClick(() => this.navPathStack.pop())
 
       Text($r('app.string.new_poll'))
-        .fontSize(17)
+        .fontSize(20)
         .fontWeight(FontWeight.Bold)
         .fontColor($r('app.color.text_primary'))
         .margin({ left: 16 })
@@ -292,7 +292,7 @@ export struct CreatePollPage {
         .type(ButtonType.Capsule)
         .width('100%')
         .height(48)
-        .fontSize(17)
+        .fontSize(20)
         .fontWeight(FontWeight.Medium)
         .backgroundColor(this.canCreate() ? $r('app.color.telegram_blue') : $r('app.color.text_secondary'))
         .fontColor(Color.White)

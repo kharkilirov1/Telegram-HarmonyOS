@@ -315,7 +315,7 @@ export struct SavedMessagesPage {
               .fillColor($r('app.color.telegram_blue'))
           }
           .width(36).height(36)
-          .borderRadius(18)
+          .borderRadius(20)
           .backgroundColor($r('app.color.background_primary'))
           .shadow({ radius: 4, color: $r('app.color.shadow_color') })
           .justifyContent(FlexAlign.Center)

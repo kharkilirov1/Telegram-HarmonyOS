@@ -221,7 +221,7 @@ export struct CallUIPage {
     Column() {
       Column() {
         Image(icon)
-          .width(22).height(22)
+          .width(24).height(24)
           .fillColor(isActive ? $r('app.color.call_bg_dark') : Color.White)
       }
       .width(52).height(52)

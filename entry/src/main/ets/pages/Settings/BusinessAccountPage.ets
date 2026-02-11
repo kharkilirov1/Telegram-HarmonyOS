@@ -57,7 +57,7 @@ export struct BusinessAccountPage {
             .accessibilityText($r('app.string.accessibility_back'))
 
           Text($r('app.string.business_account'))
-            .fontSize(17)
+            .fontSize(20)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
             .margin({ left: 16 })
@@ -100,7 +100,7 @@ export struct BusinessAccountPage {
               ForEach(this.features, (feature: BusinessFeature, index: number) => {
                 Row() {
                   Image(feature.icon)
-                    .width(22).height(22)
+                    .width(24).height(24)
                     .fillColor($r('app.color.telegram_blue'))
 
                   Text(feature.title)
@@ -122,7 +122,7 @@ export struct BusinessAccountPage {
               }, (feature: BusinessFeature, index: number) => `business_${index}`)
             }
             .backgroundColor($r('app.color.glass_card_bg'))
-            .borderRadius(16)
+            .borderRadius(24)
             .margin({ left: 16, right: 16 })
 
             // Premium required notice

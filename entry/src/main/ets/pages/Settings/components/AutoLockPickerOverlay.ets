@@ -34,7 +34,7 @@ export struct AutoLockPickerOverlay {
         .padding({ top: 8, bottom: 16 })
 
         Text($r('app.string.auto_lock_timeout'))
-          .fontSize(17)
+          .fontSize(20)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
           .margin({ bottom: 8, left: 16 })

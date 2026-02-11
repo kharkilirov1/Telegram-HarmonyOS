@@ -30,7 +30,7 @@ export struct SavedMessagesSearchBar {
         })
         .layoutWeight(1)
         .height(36)
-        .borderRadius(18)
+        .borderRadius(20)
         .backgroundColor($r('app.color.background_secondary'))
         .padding({ left: 12, right: 12 })
         .fontSize(14)

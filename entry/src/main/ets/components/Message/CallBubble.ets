@@ -48,13 +48,13 @@ export struct CallBubble {
         // iOS: call action button (right-aligned)
         Column() {
           Image(this.message.callIsVideo ? $r('app.media.ic_video_call') : $r('app.media.ic_phone_call'))
-            .width(22)
-            .height(22)
+            .width(24)
+            .height(24)
             .fillColor($r('app.color.telegram_blue'))
         }
         .width(36)
         .height(36)
-        .borderRadius(18)
+        .borderRadius(20)
         .backgroundColor($r('app.color.background_secondary'))
         .justifyContent(FlexAlign.Center)
       }

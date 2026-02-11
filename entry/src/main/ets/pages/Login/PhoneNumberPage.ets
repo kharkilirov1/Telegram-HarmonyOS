@@ -82,14 +82,14 @@ export struct PhoneNumberPage {
             Blank()
             if (this.phoneNumber.length > 0) {
               Text($r('app.string.next_button'))
-                .fontSize(17)
+                .fontSize(20)
                 .fontWeight(FontWeight.Medium)
                 .fontColor($r('app.color.telegram_blue'))
                 .onClick(() => this.submitPhoneNumber())
             }
           }
           .width('100%')
-          .height(44)
+          .height(56)
           .padding({ left: 16, right: 16 })
 
           Blank().height(20)
@@ -117,7 +117,7 @@ export struct PhoneNumberPage {
           Column() {
             Row() {
               Text(`${this.countryFlag}  ${this.countryName}`)
-                .fontSize(17)
+                .fontSize(20)
                 .fontColor($r('app.color.text_primary'))
                 .layoutWeight(1)
 
@@ -140,7 +140,7 @@ export struct PhoneNumberPage {
             Row() {
               // Country code (tappable to open picker)
               Text(this.countryCode)
-                .fontSize(17)
+                .fontSize(20)
                 .fontColor($r('app.color.telegram_blue'))
                 .width(60)
                 .textAlign(TextAlign.Center)
@@ -158,7 +158,7 @@ export struct PhoneNumberPage {
               // Phone number input
               TextInput({ placeholder: $r('app.string.phone_placeholder'), text: this.phoneNumber })
                 .type(InputType.PhoneNumber)
-                .fontSize(17)
+                .fontSize(20)
                 .layoutWeight(1)
                 .height(48)
                 .backgroundColor(Color.Transparent)
@@ -220,7 +220,7 @@ export struct PhoneNumberPage {
               Blank()
 
               Text($r('app.string.login_choose_country'))
-                .fontSize(17)
+                .fontSize(20)
                 .fontWeight(FontWeight.Bold)
                 .fontColor($r('app.color.text_primary'))
 

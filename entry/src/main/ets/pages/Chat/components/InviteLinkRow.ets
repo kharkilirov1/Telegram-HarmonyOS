@@ -28,7 +28,7 @@ export struct InviteLinkRow {
                 .fontSize(12)
                 .fontColor(Color.White)
                 .backgroundColor($r('app.color.telegram_blue'))
-                .borderRadius(8)
+                .borderRadius(14)
                 .padding({ left: 8, right: 8, top: 2, bottom: 2 })
                 .margin({ left: 8 })
             }
@@ -38,7 +38,7 @@ export struct InviteLinkRow {
                 .fontSize(12)
                 .fontColor(Color.White)
                 .backgroundColor($r('app.color.error_red'))
-                .borderRadius(8)
+                .borderRadius(14)
                 .padding({ left: 8, right: 8, top: 2, bottom: 2 })
                 .margin({ left: 8 })
             }

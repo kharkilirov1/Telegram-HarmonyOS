@@ -14,7 +14,7 @@ export struct SessionTopBar {
         })
 
       Text($r('app.string.active_sessions'))
-        .fontSize(17)
+        .fontSize(20)
         .fontWeight(FontWeight.Bold)
         .fontColor($r('app.color.text_primary'))
         .margin({ left: 16 })

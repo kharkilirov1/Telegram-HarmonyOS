@@ -16,7 +16,7 @@ export struct GroupAdminTopBar {
         })
 
       Text($r('app.string.admin_settings'))
-        .fontSize(17)
+        .fontSize(20)
         .fontWeight(FontWeight.Bold)
         .fontColor($r('app.color.text_primary'))
         .margin({ left: 16 })

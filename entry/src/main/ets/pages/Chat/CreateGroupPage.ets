@@ -70,7 +70,7 @@ export struct CreateGroupPage {
           .onClick(() => this.navPathStack.pop())
 
         Text($r('app.string.new_group'))
-          .fontSize(17)
+          .fontSize(20)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
           .margin({ left: 16 })
@@ -155,7 +155,7 @@ export struct CreateGroupPage {
           .onClick(() => { this.step = 0; })
 
         Text($r('app.string.new_group'))
-          .fontSize(17)
+          .fontSize(20)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
           .margin({ left: 16 })
@@ -193,7 +193,7 @@ export struct CreateGroupPage {
         .margin({ right: 16 })
 
         TextInput({ placeholder: $r('app.string.group_name'), text: this.groupName })
-          .fontSize(17)
+          .fontSize(20)
           .layoutWeight(1)
           .backgroundColor(Color.Transparent)
           .onChange((value: string) => {
@@ -251,7 +251,7 @@ export struct CreateGroupPage {
         .fontColor($r('app.color.telegram_blue'))
 
       Image($r('app.media.ic_close'))
-        .width(14).height(14)
+        .width(16).height(16)
         .fillColor($r('app.color.text_secondary'))
         .margin({ left: 4 })
     }

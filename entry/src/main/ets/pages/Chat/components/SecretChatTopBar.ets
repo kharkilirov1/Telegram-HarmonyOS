@@ -15,7 +15,7 @@ export struct SecretChatTopBar {
 
       Column() {
         Text($r('app.string.secret_chat'))
-          .fontSize(17)
+          .fontSize(20)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
 

@@ -31,7 +31,7 @@ export struct ChatHeader {
           .onError(() => {})
           .width(36)
           .height(36)
-          .borderRadius(18)
+          .borderRadius(20)
           .margin({ left: 8 })
       } else {
         Text(this.chatInitial)
@@ -40,7 +40,7 @@ export struct ChatHeader {
           .fontColor($r('app.color.icon_on_primary'))
           .width(36)
           .height(36)
-          .borderRadius(18)
+          .borderRadius(20)
           .backgroundColor($r('app.color.telegram_blue'))
           .textAlign(TextAlign.Center)
           .margin({ left: 8 })
@@ -48,7 +48,7 @@ export struct ChatHeader {
 
       Column() {
         Text(this.chatTitle)
-          .fontSize(17)
+          .fontSize(20)
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.text_primary'))
           .maxLines(1)
@@ -73,22 +73,22 @@ export struct ChatHeader {
       .onClick(() => { this.onOpenInfo(); })
 
       Image($r('app.media.ic_phone_call'))
-        .width(22)
-        .height(22)
+        .width(24)
+        .height(24)
         .fillColor($r('app.color.telegram_blue'))
         .margin({ right: 16 })
         .onClick(() => { this.onCall(); })
 
       Image($r('app.media.ic_search'))
-        .width(22)
-        .height(22)
+        .width(24)
+        .height(24)
         .fillColor($r('app.color.telegram_blue'))
         .margin({ right: 16 })
         .onClick(() => { this.onSearch(); })
 
       Image($r('app.media.ic_more'))
-        .width(22)
-        .height(22)
+        .width(24)
+        .height(24)
         .fillColor($r('app.color.telegram_blue'))
     }
     .width('100%')

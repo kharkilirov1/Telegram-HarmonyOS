@@ -103,7 +103,7 @@ export struct MessageListContainer {
               .height(36)
               .fillColor($r('app.color.text_secondary'))
               .backgroundColor($r('app.color.background_primary'))
-              .borderRadius(18)
+              .borderRadius(20)
               .shadow({ radius: 4, color: $r('app.color.shadow_color') })
               .accessibilityText($r('app.string.accessibility_scroll_bottom'))
           }

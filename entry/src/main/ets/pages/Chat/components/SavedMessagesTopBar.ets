@@ -19,13 +19,13 @@ export struct SavedMessagesTopBar {
         .height(36)
         .fillColor($r('app.color.icon_on_primary'))
         .backgroundColor($r('app.color.settings_icon_blue'))
-        .borderRadius(18)
+        .borderRadius(20)
         .padding(6)
         .margin({ left: 8 })
 
       Column() {
         Text($r('app.string.saved_messages'))
-          .fontSize(17)
+          .fontSize(20)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
           .maxLines(1)
@@ -36,8 +36,8 @@ export struct SavedMessagesTopBar {
       .alignItems(HorizontalAlign.Start)
 
       Image($r('app.media.ic_search'))
-        .width(22)
-        .height(22)
+        .width(24)
+        .height(24)
         .fillColor($r('app.color.telegram_blue'))
         .onClick(() => {
           this.onEnterSearch();

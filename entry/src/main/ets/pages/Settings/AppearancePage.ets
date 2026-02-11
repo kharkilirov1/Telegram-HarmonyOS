@@ -103,7 +103,7 @@ export struct AppearancePage {
               .width('100%')
               .padding(12)
               .backgroundColor($r('app.color.background_secondary'))
-              .borderRadius(16)
+              .borderRadius(24)
               .margin({ left: 16, right: 16 })
             }
 
@@ -121,7 +121,7 @@ export struct AppearancePage {
                   .fontColor($r('app.color.text_primary'))
                   .layoutWeight(1)
                 Image($r('app.media.ic_forward'))
-                  .width(14).height(14)
+                  .width(16).height(16)
                   .fillColor($r('app.color.text_secondary'))
               }
               .width('100%').height(48)
@@ -133,7 +133,7 @@ export struct AppearancePage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -155,7 +155,7 @@ export struct AppearancePage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -192,7 +192,7 @@ export struct AppearancePage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -235,7 +235,7 @@ export struct AppearancePage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -280,7 +280,7 @@ export struct AppearancePage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -308,7 +308,7 @@ export struct AppearancePage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 

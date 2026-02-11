@@ -12,7 +12,7 @@ export struct SettingsIconBadge {
     }
     .width(28)
     .height(28)
-    .borderRadius(6)
+    .borderRadius(8)
     .backgroundColor(this.bgColor)
     .justifyContent(FlexAlign.Center)
     .margin({ right: 12 })

@@ -131,7 +131,7 @@ export struct MediaBubble {
           .height(36)
           .fillColor(Color.White)
           .backgroundColor($r('app.color.telegram_blue'))
-          .borderRadius(18)
+          .borderRadius(20)
           .padding(8)
 
         Column() {

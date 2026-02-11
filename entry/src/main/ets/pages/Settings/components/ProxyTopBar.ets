@@ -14,7 +14,7 @@ export struct ProxyTopBar {
         })
 
       Text($r('app.string.proxy_settings'))
-        .fontSize(17)
+        .fontSize(20)
         .fontWeight(FontWeight.Bold)
         .fontColor($r('app.color.text_primary'))
         .margin({ left: 16 })

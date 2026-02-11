@@ -99,8 +99,8 @@ export struct CallsPage {
         // New call button
         Button() {
           Image($r('app.media.ic_phone_call'))
-            .width(22)
-            .height(22)
+            .width(24)
+            .height(24)
             .fillColor($r('app.color.telegram_blue'))
             .accessibilityText($r('app.string.accessibility_call'))
         }
@@ -110,7 +110,7 @@ export struct CallsPage {
         })
       }
       .width('100%')
-      .height(44)
+      .height(56)
       .padding({ left: 16, right: 16 })
       .backgroundColor($r('app.color.glass_nav_bg'))
       .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {

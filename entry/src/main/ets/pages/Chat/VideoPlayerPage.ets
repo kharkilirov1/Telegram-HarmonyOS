@@ -122,7 +122,7 @@ export struct VideoPlayerPage {
             }
             .width(36)
             .height(36)
-            .borderRadius(18)
+            .borderRadius(20)
             .backgroundColor($r('app.color.overlay_dark'))
             .backgroundBlurStyle(BlurStyle.COMPONENT_THIN, {
               colorMode: ThemeColorMode.DARK,
@@ -134,7 +134,7 @@ export struct VideoPlayerPage {
             .onClick(() => this.navPathStack.pop())
 
             Text($r('app.string.video_player'))
-              .fontSize(17)
+              .fontSize(20)
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.icon_on_primary'))
               .margin({ left: 12 })

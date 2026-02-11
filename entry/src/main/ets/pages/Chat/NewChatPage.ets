@@ -51,7 +51,7 @@ export struct NewChatPage {
             .onClick(() => this.navPathStack.pop())
 
           Text($r('app.string.new_message'))
-            .fontSize(17)
+            .fontSize(20)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
             .margin({ left: 16 })
@@ -144,7 +144,7 @@ export struct NewChatPage {
         .fontSize(16)
         .fontColor($r('app.color.telegram_blue'))
     }
-    .width('100%').height(50)
+    .width('100%').height(56)
     .alignItems(VerticalAlign.Center)
   }
 
@@ -166,7 +166,7 @@ export struct NewChatPage {
         .fontSize(16)
         .fontColor($r('app.color.telegram_blue'))
     }
-    .width('100%').height(50)
+    .width('100%').height(56)
     .alignItems(VerticalAlign.Center)
     .onClick(onTap)
   }

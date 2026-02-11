@@ -42,7 +42,7 @@ export struct ChatFoldersPage {
             .onClick(() => this.navPathStack.pop())
 
           Text($r('app.string.settings_chat_folders'))
-            .fontSize(17)
+            .fontSize(20)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
             .margin({ left: 16 })
@@ -72,7 +72,7 @@ export struct ChatFoldersPage {
               // Create new folder button
               Row() {
                 Image($r('app.media.ic_edit'))
-                  .width(22).height(22)
+                  .width(24).height(24)
                   .fillColor($r('app.color.telegram_blue'))
                   .margin({ right: 12 })
 
@@ -102,7 +102,7 @@ export struct ChatFoldersPage {
                     .fontColor($r('app.color.text_secondary'))
 
                   Image($r('app.media.ic_forward'))
-                    .width(14).height(14)
+                    .width(16).height(16)
                     .fillColor($r('app.color.text_secondary'))
                     .margin({ left: 8 })
                 }
@@ -117,7 +117,7 @@ export struct ChatFoldersPage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -166,7 +166,7 @@ export struct ChatFoldersPage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 

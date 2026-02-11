@@ -113,7 +113,7 @@ export struct NotificationsSettingsPage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -141,7 +141,7 @@ export struct NotificationsSettingsPage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -169,7 +169,7 @@ export struct NotificationsSettingsPage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -197,7 +197,7 @@ export struct NotificationsSettingsPage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -220,7 +220,7 @@ export struct NotificationsSettingsPage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -241,7 +241,7 @@ export struct NotificationsSettingsPage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -304,7 +304,7 @@ export struct NotificationsSettingsPage {
         .fontColor($r('app.color.text_secondary'))
 
       Image($r('app.media.ic_forward'))
-        .width(14).height(14)
+        .width(16).height(16)
         .fillColor($r('app.color.text_secondary'))
         .margin({ left: 6 })
     }

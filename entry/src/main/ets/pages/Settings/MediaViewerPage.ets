@@ -205,8 +205,8 @@ export struct MediaViewerPage {
 
             // More actions (like Android Telegram)
             Image($r('app.media.ic_more'))
-              .width(22)
-              .height(22)
+              .width(24)
+              .height(24)
               .fillColor(Color.White)
               .margin({ left: 16 })
           }

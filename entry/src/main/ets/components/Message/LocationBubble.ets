@@ -64,7 +64,7 @@ export struct LocationBubble {
             }
             .width(36)
             .height(36)
-            .borderRadius(18)
+            .borderRadius(20)
             .backgroundColor(Color.White)
             .justifyContent(FlexAlign.Center)
             .shadow({ radius: 4, color: '#40000000', offsetY: 2 })
@@ -79,7 +79,7 @@ export struct LocationBubble {
             .fontColor(Color.White)
           if (this.message.isOutgoing) {
             Image(this.message.isRead ? $r('app.media.ic_check_double') : $r('app.media.ic_check_single'))
-              .width(14).height(14)
+              .width(16).height(16)
               .fillColor(this.message.isRead ? $r('app.color.telegram_blue') : Color.White)
               .margin({ left: 3 })
           }
@@ -105,7 +105,7 @@ export struct LocationBubble {
               .stroke($r('app.color.telegram_blue'))
               .strokeWidth(2)
             Image($r('app.media.ic_location'))
-              .width(14).height(14)
+              .width(16).height(16)
               .fillColor($r('app.color.telegram_blue'))
           }
           .margin({ right: 8 })

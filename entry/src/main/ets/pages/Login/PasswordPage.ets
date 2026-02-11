@@ -41,14 +41,14 @@ export struct PasswordPage {
 
           if (this.password.length > 0 && !this.isLoading) {
             Text($r('app.string.next_button'))
-              .fontSize(17)
+              .fontSize(20)
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.telegram_blue'))
               .onClick(() => this.submitPassword())
           }
         }
         .width('100%')
-        .height(44)
+        .height(56)
         .padding({ left: 16, right: 16 })
 
         Blank().height(20)
@@ -76,7 +76,7 @@ export struct PasswordPage {
         Row() {
           TextInput({ placeholder: $r('app.string.password_placeholder'), text: this.password })
             .type(this.showPassword ? InputType.Normal : InputType.Password)
-            .fontSize(17)
+            .fontSize(20)
             .layoutWeight(1)
             .height(48)
             .backgroundColor(Color.Transparent)
@@ -177,14 +177,14 @@ export struct PasswordPage {
 
             if (this.recoveryCode.length > 0 && !this.isLoading) {
               Text($r('app.string.next_button'))
-                .fontSize(17)
+                .fontSize(20)
                 .fontWeight(FontWeight.Medium)
                 .fontColor($r('app.color.telegram_blue'))
                 .onClick(() => { this.submitRecoveryCode(); })
             }
           }
           .width('100%')
-          .height(44)
+          .height(56)
           .padding({ left: 16, right: 16 })
 
           Blank().height(40)
@@ -221,7 +221,7 @@ export struct PasswordPage {
           // Recovery code input
           TextInput({ placeholder: $r('app.string.recovery_code_placeholder'), text: this.recoveryCode })
             .type(InputType.Number)
-            .fontSize(17)
+            .fontSize(20)
             .width('70%')
             .height(48)
             .backgroundColor($r('app.color.background_secondary'))

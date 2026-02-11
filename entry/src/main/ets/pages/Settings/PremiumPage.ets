@@ -56,7 +56,7 @@ export struct PremiumPage {
             .accessibilityText($r('app.string.accessibility_back'))
 
           Text($r('app.string.telegram_premium'))
-            .fontSize(17)
+            .fontSize(20)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
             .margin({ left: 16 })
@@ -101,7 +101,7 @@ export struct PremiumPage {
                       .fillColor($r('app.color.icon_on_primary'))
                   }
                   .width(36).height(36)
-                  .borderRadius(18)
+                  .borderRadius(20)
                   .backgroundColor(feature.color)
                   .justifyContent(FlexAlign.Center)
 

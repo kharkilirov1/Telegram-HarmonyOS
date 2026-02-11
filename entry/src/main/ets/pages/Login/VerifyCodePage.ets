@@ -42,14 +42,14 @@ export struct VerifyCodePage {
 
           if (this.code.length >= 5 && !this.isLoading) {
             Text($r('app.string.next_button'))
-              .fontSize(17)
+              .fontSize(20)
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.telegram_blue'))
               .onClick(() => this.submitCode())
           }
         }
         .width('100%')
-        .height(44)
+        .height(56)
         .padding({ left: 16, right: 16 })
 
         Blank().height(20)

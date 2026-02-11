@@ -14,7 +14,7 @@ export struct DataStorageTopBar {
         .accessibilityText($r('app.string.accessibility_back'))
 
       Text($r('app.string.settings_data_storage'))
-        .fontSize(17)
+        .fontSize(20)
         .fontWeight(FontWeight.Bold)
         .fontColor($r('app.color.text_primary'))
         .margin({ left: 16 })

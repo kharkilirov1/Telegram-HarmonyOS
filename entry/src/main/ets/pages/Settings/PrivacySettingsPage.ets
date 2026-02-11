@@ -50,7 +50,7 @@ export struct PrivacySettingsPage {
             .onClick(() => this.navPathStack.pop())
 
           Text($r('app.string.settings_privacy_security'))
-            .fontSize(17)
+            .fontSize(20)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
             .margin({ left: 16 })
@@ -120,7 +120,7 @@ export struct PrivacySettingsPage {
                   .fontColor($r('app.color.text_primary'))
                   .layoutWeight(1)
                 Image($r('app.media.ic_forward'))
-                  .width(14).height(14)
+                  .width(16).height(16)
                   .fillColor($r('app.color.text_secondary'))
               }
               .width('100%').height(48)
@@ -130,7 +130,7 @@ export struct PrivacySettingsPage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -173,7 +173,7 @@ export struct PrivacySettingsPage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -203,7 +203,7 @@ export struct PrivacySettingsPage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -231,7 +231,7 @@ export struct PrivacySettingsPage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
             .margin({ left: 16, right: 16 })
 
@@ -267,7 +267,7 @@ export struct PrivacySettingsPage {
         .fillColor(Color.White)
     }
     .width(28).height(28)
-    .borderRadius(6)
+    .borderRadius(8)
     .backgroundColor(bgColor)
     .justifyContent(FlexAlign.Center)
     .margin({ right: 12 })
@@ -286,7 +286,7 @@ export struct PrivacySettingsPage {
         .fontColor($r('app.color.text_secondary'))
 
       Image($r('app.media.ic_forward'))
-        .width(14).height(14)
+        .width(16).height(16)
         .fillColor($r('app.color.text_secondary'))
         .margin({ left: 6 })
     }

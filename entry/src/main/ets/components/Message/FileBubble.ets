@@ -109,7 +109,7 @@ export struct FileBubble {
           Image(this.downloadProgress >= 0 && this.downloadProgress < 100
             ? $r('app.media.ic_close')
             : $r('app.media.ic_download'))
-            .width(22).height(22)
+            .width(24).height(24)
             .fillColor($r('app.color.telegram_blue'))
             .onClick(() => { this.handlePrimaryAction(); })
         }

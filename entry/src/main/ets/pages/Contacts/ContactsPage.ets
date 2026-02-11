@@ -54,7 +54,7 @@ export struct ContactsPage {
         Blank()
 
         Text($r('app.string.contacts_title'))
-          .fontSize(17)
+          .fontSize(20)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
 
@@ -62,14 +62,14 @@ export struct ContactsPage {
 
         Button() {
           Image($r('app.media.ic_contact_add'))
-            .width(22)
-            .height(22)
+            .width(24)
+            .height(24)
             .fillColor($r('app.color.telegram_blue'))
         }
         .backgroundColor(Color.Transparent)
       }
       .width('100%')
-      .height(44)
+      .height(56)
       .padding({ left: 16, right: 16 })
       .backgroundColor($r('app.color.glass_nav_bg'))
       .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
@@ -179,7 +179,7 @@ export struct ContactsPage {
         .fontColor($r('app.color.telegram_blue'))
     }
     .width('100%')
-    .height(50)
+    .height(56)
     .alignItems(VerticalAlign.Center)
   }
 

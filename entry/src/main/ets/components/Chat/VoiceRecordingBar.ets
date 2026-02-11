@@ -53,7 +53,7 @@ export struct VoiceRecordingBar {
             .backgroundColor($r('app.color.telegram_blue'))
         }, (_amp: number, index: number) => index.toString())
       }
-      .height(22)
+      .height(24)
       .alignItems(VerticalAlign.Center)
       .margin({ left: 12 })
       .layoutWeight(1)
@@ -84,7 +84,7 @@ export struct VoiceRecordingBar {
 
       Row() {
         Image($r('app.media.ic_back'))
-          .width(14).height(14)
+          .width(16).height(16)
           .fillColor($r('app.color.text_secondary'))
           .opacity(Math.min(1, Math.abs(this.slideOffsetX) / 60 + 0.4))
         Text($r('app.string.slide_to_cancel'))

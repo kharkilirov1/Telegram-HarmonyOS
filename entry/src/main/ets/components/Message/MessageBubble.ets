@@ -41,7 +41,7 @@ export struct MessageBubble {
           Checkbox()
             .select(this.isSelected)
             .selectedColor($r('app.color.telegram_blue'))
-            .width(22).height(22)
+            .width(24).height(24)
             .margin({ right: 8 })
             .onChange((_value: boolean) => { this.onSelect(this.message); })
         }

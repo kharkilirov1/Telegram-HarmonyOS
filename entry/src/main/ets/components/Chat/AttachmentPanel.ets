@@ -58,7 +58,7 @@ export struct AttachmentPanel {
       Button($r('app.string.cancel'))
         .width('90%')
         .height(44)
-        .fontSize(17)
+        .fontSize(20)
         .fontColor($r('app.color.telegram_blue'))
         .backgroundColor($r('app.color.background_secondary'))
         .borderRadius(12)

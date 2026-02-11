@@ -230,7 +230,7 @@ export struct SharedMediaPage {
             .onClick(() => this.navPathStack.pop())
 
           Text($r('app.string.profile_shared_media'))
-            .fontSize(17)
+            .fontSize(20)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
             .margin({ left: 16 })
@@ -388,7 +388,7 @@ export struct SharedMediaPage {
             Row() {
               Column() {
                 Image($r('app.media.ic_document'))
-                  .width(22).height(22)
+                  .width(24).height(24)
                   .fillColor(Color.White)
               }
               .width(44).height(44)
@@ -413,7 +413,7 @@ export struct SharedMediaPage {
               .layoutWeight(1)
 
               Image($r('app.media.ic_download'))
-                .width(22).height(22)
+                .width(24).height(24)
                 .fillColor($r('app.color.telegram_blue'))
                 .accessibilityText($r('app.string.accessibility_download'))
             }
@@ -445,7 +445,7 @@ export struct SharedMediaPage {
             Row() {
               Column() {
                 Image($r('app.media.ic_forward'))
-                  .width(22).height(22)
+                  .width(24).height(24)
                   .fillColor(Color.White)
               }
               .width(44).height(44)

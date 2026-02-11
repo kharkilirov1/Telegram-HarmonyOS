@@ -10,7 +10,7 @@ export struct DataStorageSizePickerSheet {
   build() {
     Column() {
       Text(this.title)
-        .fontSize(17)
+        .fontSize(20)
         .fontWeight(FontWeight.Bold)
         .fontColor($r('app.color.text_primary'))
         .margin({ top: 16, bottom: 12 })

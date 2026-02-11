@@ -207,7 +207,7 @@ export struct UserInfoPage {
           Blank()
 
           Image($r('app.media.ic_more'))
-            .width(22).height(22)
+            .width(24).height(24)
             .fillColor($r('app.color.telegram_blue'))
         }
         .width('100%')
@@ -347,7 +347,7 @@ export struct UserInfoPage {
                   .fontColor($r('app.color.text_primary'))
                   .layoutWeight(1)
                 Image($r('app.media.ic_forward'))
-                  .width(14).height(14)
+                  .width(16).height(16)
                   .fillColor($r('app.color.text_secondary'))
               }
               .width('100%').height(48)
@@ -369,7 +369,7 @@ export struct UserInfoPage {
                     .fontColor($r('app.color.text_primary'))
                     .layoutWeight(1)
                   Image($r('app.media.ic_forward'))
-                    .width(14).height(14)
+                    .width(16).height(16)
                     .fillColor($r('app.color.text_secondary'))
                 }
                 .width('100%').height(48)
@@ -403,7 +403,7 @@ export struct UserInfoPage {
     Column() {
       Column() {
         Image(icon)
-          .width(22).height(22)
+          .width(24).height(24)
           .fillColor($r('app.color.telegram_blue'))
       }
       .width(52).height(52)

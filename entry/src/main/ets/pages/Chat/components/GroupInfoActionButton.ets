@@ -8,8 +8,8 @@ export struct GroupInfoActionButton {
     Column() {
       Column() {
         Image(this.icon)
-          .width(22)
-          .height(22)
+          .width(24)
+          .height(24)
           .fillColor($r('app.color.telegram_blue'))
       }
       .width(52)

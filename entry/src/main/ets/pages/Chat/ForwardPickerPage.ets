@@ -49,7 +49,7 @@ export struct ForwardPickerPage {
             .onClick(() => this.navPathStack.pop())
 
           Text($r('app.string.forward_to'))
-            .fontSize(17)
+            .fontSize(20)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
             .margin({ left: 16 })

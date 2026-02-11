@@ -182,7 +182,7 @@ export struct ChatInputBar {
             .layoutWeight(1)
             .constraintSize({ minHeight: 36, maxHeight: 120 })
             .backgroundColor($r('app.color.background_secondary'))
-            .borderRadius(18)
+            .borderRadius(20)
             .padding({ left: 12, right: 12, top: 8, bottom: 8 })
             .onChange((value: string) => {
               this.inputText = value;
@@ -391,7 +391,7 @@ export struct ChatInputBar {
   schedulePickerPanel() {
     Column() {
       Text($r('app.string.schedule_message'))
-        .fontSize(17)
+        .fontSize(20)
         .fontWeight(FontWeight.Bold)
         .fontColor($r('app.color.text_primary'))
         .margin({ top: 16, bottom: 12 })
@@ -409,7 +409,7 @@ export struct ChatInputBar {
       Button($r('app.string.cancel'))
         .width('90%')
         .height(44)
-        .fontSize(17)
+        .fontSize(20)
         .fontColor($r('app.color.telegram_blue'))
         .backgroundColor($r('app.color.background_secondary'))
         .borderRadius(12)

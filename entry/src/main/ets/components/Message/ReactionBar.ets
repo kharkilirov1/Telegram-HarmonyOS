@@ -19,7 +19,7 @@ export struct ReactionBar {
       // Add reaction button
       Column() {
         Image($r('app.media.ic_emoji'))
-          .width(14).height(14)
+          .width(16).height(16)
           .fillColor($r('app.color.text_secondary'))
           .accessibilityText($r('app.string.accessibility_add_reaction'))
       }

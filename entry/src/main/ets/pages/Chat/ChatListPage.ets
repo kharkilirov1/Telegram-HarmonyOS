@@ -60,7 +60,7 @@ export struct ChatListPage {
           Blank()
 
           Text($r('app.string.chats_title'))
-            .fontSize(17)
+            .fontSize(20)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
 
@@ -68,8 +68,8 @@ export struct ChatListPage {
 
           Row({ space: 16 }) {
             Image($r('app.media.ic_search'))
-              .width(22)
-              .height(22)
+              .width(24)
+              .height(24)
               .fillColor($r('app.color.telegram_blue'))
               .accessibilityText($r('app.string.accessibility_search'))
               .onClick(() => {
@@ -77,8 +77,8 @@ export struct ChatListPage {
               })
 
             Image($r('app.media.ic_edit'))
-              .width(22)
-              .height(22)
+              .width(24)
+              .height(24)
               .fillColor($r('app.color.telegram_blue'))
               .accessibilityText($r('app.string.accessibility_compose'))
               .onClick(() => {
@@ -87,7 +87,7 @@ export struct ChatListPage {
           }
         }
         .width('100%')
-        .height(44)
+        .height(56)
         .padding({ left: 16, right: 16 })
         .backgroundColor($r('app.color.glass_nav_bg'))
         .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
@@ -232,7 +232,7 @@ export struct ChatListPage {
       Button() {
         Column() {
           Image(chat.isMuted ? $r('app.media.ic_unmute') : $r('app.media.ic_mute'))
-            .width(22).height(22).fillColor(Color.White)
+            .width(24).height(24).fillColor(Color.White)
           Text(chat.isMuted ? $r('app.string.unmute') : $r('app.string.mute'))
             .fontSize(11).fontColor(Color.White)
         }
@@ -248,7 +248,7 @@ export struct ChatListPage {
       Button() {
         Column() {
           Image($r('app.media.ic_saved'))
-            .width(22).height(22).fillColor(Color.White)
+            .width(24).height(24).fillColor(Color.White)
           Text($r('app.string.archive'))
             .fontSize(11).fontColor(Color.White)
         }
@@ -269,7 +269,7 @@ export struct ChatListPage {
       Button() {
         Column() {
           Image($r('app.media.ic_check_double'))
-            .width(22).height(22).fillColor(Color.White)
+            .width(24).height(24).fillColor(Color.White)
           Text((chat.unreadCount > 0 || chat.isMarkedAsUnread) ? $r('app.string.read') : $r('app.string.unread'))
             .fontSize(11).fontColor(Color.White)
         }
@@ -284,7 +284,7 @@ export struct ChatListPage {
       Button() {
         Column() {
           Image($r('app.media.ic_pin'))
-            .width(22).height(22).fillColor(Color.White)
+            .width(24).height(24).fillColor(Color.White)
           Text(chat.isPinned ? $r('app.string.unpin') : $r('app.string.pin'))
             .fontSize(11).fontColor(Color.White)
         }
@@ -299,7 +299,7 @@ export struct ChatListPage {
       Button() {
         Column() {
           Image($r('app.media.ic_delete'))
-            .width(22).height(22).fillColor(Color.White)
+            .width(24).height(24).fillColor(Color.White)
           Text($r('app.string.delete'))
             .fontSize(11).fontColor(Color.White)
         }

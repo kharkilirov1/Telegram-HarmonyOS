@@ -98,7 +98,7 @@ export struct NearbyPeoplePage {
             .accessibilityText($r('app.string.accessibility_back'))
 
           Text($r('app.string.nearby_people'))
-            .fontSize(17)
+            .fontSize(20)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
             .margin({ left: 16 })
@@ -135,7 +135,7 @@ export struct NearbyPeoplePage {
               .padding({ left: 16, right: 16, top: 14, bottom: 14 })
             }
             .backgroundColor($r('app.color.glass_card_bg'))
-            .borderRadius(16)
+            .borderRadius(24)
             .margin({ left: 16, right: 16 })
 
             // Users nearby section
@@ -181,7 +181,7 @@ export struct NearbyPeoplePage {
                 }, (user: NearbyUser, index: number) => `nearby_user_${user.userId}_${index}`)
               }
               .backgroundColor($r('app.color.glass_card_bg'))
-              .borderRadius(16)
+              .borderRadius(24)
               .margin({ left: 16, right: 16 })
             }
 
@@ -251,7 +251,7 @@ export struct NearbyPeoplePage {
               }
             }
             .backgroundColor($r('app.color.glass_card_bg'))
-            .borderRadius(16)
+            .borderRadius(24)
             .margin({ left: 16, right: 16 })
 
             Blank().height(40)

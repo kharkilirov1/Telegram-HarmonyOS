@@ -7,8 +7,8 @@ export struct ProfileInfoRow {
   build() {
     Row() {
       Image(this.icon)
-        .width(22)
-        .height(22)
+        .width(24)
+        .height(24)
         .fillColor($r('app.color.telegram_blue'))
         .margin({ right: 12 })
       Column() {

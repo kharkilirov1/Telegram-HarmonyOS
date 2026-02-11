@@ -40,7 +40,7 @@ export struct ChatSearchBar {
           .height(36)
           .margin({ left: 8, right: 8 })
           .backgroundColor($r('app.color.search_bar_bg'))
-          .borderRadius(18)
+          .borderRadius(20)
           .fontSize(15)
           .onChange((value: string) => {
             this.searchQuery = value;
@@ -137,7 +137,7 @@ export struct ChatSearchBar {
               .layoutWeight(1)
               .height(36)
               .backgroundColor($r('app.color.search_sender_input_bg'))
-              .borderRadius(18)
+              .borderRadius(20)
               .fontSize(14)
               .onChange((value: string) => { this.searchSenderName = value; })
               .onSubmit(() => { this.lookupSenderByName(this.searchSenderName); })
@@ -159,7 +159,7 @@ export struct ChatSearchBar {
             }
           }
           .width('100%')
-          .height(44)
+          .height(56)
           .padding({ left: 12, right: 12 })
         }
       }

@@ -15,7 +15,7 @@ export struct SelectionToolbar {
       Blank()
 
       Text(`${this.selectedCount}`)
-        .fontSize(17)
+        .fontSize(20)
         .fontWeight(FontWeight.Medium)
         .fontColor($r('app.color.text_primary'))
         .accessibilityText($r('app.string.selected_count'))
@@ -23,15 +23,15 @@ export struct SelectionToolbar {
       Blank()
 
       Image($r('app.media.ic_forward'))
-        .width(22)
-        .height(22)
+        .width(24)
+        .height(24)
         .fillColor($r('app.color.telegram_blue'))
         .margin({ right: 16 })
         .onClick(() => { this.onForward(); })
 
       Image($r('app.media.ic_delete'))
-        .width(22)
-        .height(22)
+        .width(24)
+        .height(24)
         .fillColor($r('app.color.error_red'))
         .onClick(() => { this.onDelete(); })
     }

@@ -173,7 +173,7 @@ export struct StickerPicker {
           })
           .height(36)
           .layoutWeight(1)
-          .borderRadius(18)
+          .borderRadius(20)
           .backgroundColor($r('app.color.background_secondary'))
           .padding({ left: 12, right: 12 })
           .fontSize(14)

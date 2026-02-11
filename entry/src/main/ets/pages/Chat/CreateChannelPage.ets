@@ -72,7 +72,7 @@ export struct CreateChannelPage {
           .onClick(() => this.navPathStack.pop())
 
         Text($r('app.string.new_channel'))
-          .fontSize(17)
+          .fontSize(20)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
           .margin({ left: 16 })
@@ -112,7 +112,7 @@ export struct CreateChannelPage {
             .margin({ right: 16 })
 
             TextInput({ placeholder: $r('app.string.channel_name'), text: this.channelName })
-              .fontSize(17)
+              .fontSize(20)
               .layoutWeight(1)
               .backgroundColor(Color.Transparent)
               .onChange((value: string) => {
@@ -251,7 +251,7 @@ export struct CreateChannelPage {
           .onClick(() => { this.step = 0; })
 
         Text($r('app.string.add_members'))
-          .fontSize(17)
+          .fontSize(20)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
           .margin({ left: 16 })
