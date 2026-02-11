@@ -294,7 +294,7 @@ export struct UserInfoPage {
               if (this.bio.length > 0) {
                 Column() {
                   Text($r('app.string.profile_bio'))
-                    .fontSize(13)
+                    .fontSize(14)
                     .fontColor($r('app.color.telegram_blue'))
                   Text(this.bio)
                     .fontSize(16)
@@ -309,9 +309,9 @@ export struct UserInfoPage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(16)
 
@@ -379,9 +379,9 @@ export struct UserInfoPage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(40)
           }
@@ -425,7 +425,7 @@ export struct UserInfoPage {
   infoRow(label: Resource, value: string) {
     Column() {
       Text(label)
-        .fontSize(13)
+        .fontSize(14)
         .fontColor($r('app.color.telegram_blue'))
       Text(value)
         .fontSize(16)

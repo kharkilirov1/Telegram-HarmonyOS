@@ -20,7 +20,7 @@ export struct SecretChatTopBar {
           .fontColor($r('app.color.text_primary'))
 
         Text(this.userName)
-          .fontSize(13)
+          .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .margin({ top: 1 })
       }

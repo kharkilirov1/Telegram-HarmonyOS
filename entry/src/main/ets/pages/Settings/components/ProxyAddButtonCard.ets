@@ -21,9 +21,9 @@ export struct ProxyAddButtonCard {
     .width('100%')
     .backgroundColor($r('app.color.glass_card_bg'))
     .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-    .borderRadius(16)
+    .borderRadius(24)
     .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-    .margin({ left: 16, right: 16 })
+    .margin({ left: 12, right: 12 })
     .accessibilityText($r('app.string.accessibility_add_proxy'))
     .onClick(() => {
       this.onAdd();

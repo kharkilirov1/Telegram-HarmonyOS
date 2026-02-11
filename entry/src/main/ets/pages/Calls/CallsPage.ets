@@ -60,7 +60,7 @@ export struct CallsPage {
         // Segmented control: All / Missed
         Row() {
           Text($r('app.string.calls_all'))
-            .fontSize(13)
+            .fontSize(14)
             .fontWeight(FontWeight.Medium)
             .fontColor(!this.showMissedOnly
               ? Color.White
@@ -76,7 +76,7 @@ export struct CallsPage {
             })
 
           Text($r('app.string.calls_missed'))
-            .fontSize(13)
+            .fontSize(14)
             .fontWeight(FontWeight.Medium)
             .fontColor(this.showMissedOnly
               ? Color.White

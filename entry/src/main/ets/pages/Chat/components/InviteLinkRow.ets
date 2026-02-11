@@ -47,11 +47,11 @@ export struct InviteLinkRow {
 
           Row({ space: 16 }) {
             Text(`${this.item.memberCount} joined`)
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
 
             Text(this.expirationText)
-              .fontSize(13)
+              .fontSize(12)
               .fontColor($r('app.color.text_secondary'))
           }
           .margin({ top: 4 })

@@ -30,14 +30,14 @@ export struct CallBubble {
           Row() {
             if (this.message.callDuration > 0) {
               Text(this.formatCallDuration(this.message.callDuration))
-                .fontSize(13)
+                .fontSize(12)
                 .fontColor($r('app.color.text_secondary'))
               Text(' \u2022 ')
-                .fontSize(13)
+                .fontSize(12)
                 .fontColor($r('app.color.text_secondary'))
             }
             Text(formatMessageTime(this.message.date))
-              .fontSize(13)
+              .fontSize(12)
               .fontColor($r('app.color.text_secondary'))
           }
           .margin({ top: 2 })

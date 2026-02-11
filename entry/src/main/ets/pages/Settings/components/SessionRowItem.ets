@@ -19,7 +19,7 @@ export struct SessionRowItem {
             .layoutWeight(1)
 
           Text(this.lastActiveLabel)
-            .fontSize(13)
+            .fontSize(12)
             .fontColor($r('app.color.telegram_blue'))
         }
         .width('100%')
@@ -31,16 +31,16 @@ export struct SessionRowItem {
 
         Row() {
           Text(this.ip)
-            .fontSize(13)
+            .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
 
           if (this.location.length > 0) {
             Text(' - ')
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
 
             Text(this.location)
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
           }
         }

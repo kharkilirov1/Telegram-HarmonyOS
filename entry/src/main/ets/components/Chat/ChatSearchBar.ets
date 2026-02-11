@@ -58,7 +58,7 @@ export struct ChatSearchBar {
             .color($r('app.color.telegram_blue'))
         } else if (this.searchResults.length > 0) {
           Text(`${this.currentSearchIndex + 1}/${this.searchResults.length}`)
-            .fontSize(13)
+            .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .margin({ right: 4 })
 
@@ -108,7 +108,7 @@ export struct ChatSearchBar {
 
             // Calendar / date jump chip
             Text($r('app.string.search_jump_to_date'))
-              .fontSize(13)
+              .fontSize(14)
               .fontColor(this.searchFromDate > 0
                 ? $r('app.color.search_chip_active_text')
                 : $r('app.color.search_chip_text'))
@@ -172,7 +172,7 @@ export struct ChatSearchBar {
   @Builder
   filterChip(label: Resource, filterType: string, isActive: boolean) {
     Text(label)
-      .fontSize(13)
+      .fontSize(14)
       .fontColor(isActive
         ? $r('app.color.search_chip_active_text')
         : $r('app.color.search_chip_text'))
@@ -202,7 +202,7 @@ export struct ChatSearchBar {
     Text(this.searchSenderName.length > 0
       ? `${this.searchSenderName}`
       : $r('app.string.search_filter_from'))
-      .fontSize(13)
+      .fontSize(14)
       .fontColor(this.searchSenderId > 0
         ? $r('app.color.search_chip_active_text')
         : $r('app.color.search_chip_text'))

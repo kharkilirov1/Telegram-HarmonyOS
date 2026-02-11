@@ -405,7 +405,7 @@ export struct SharedMediaPage {
                   .maxLines(1)
 
                 Text(this.formatFileMeta(item))
-                  .fontSize(13)
+                  .fontSize(12)
                   .fontColor($r('app.color.text_secondary'))
                   .margin({ top: 2 })
               }
@@ -462,7 +462,7 @@ export struct SharedMediaPage {
                   .maxLines(1)
 
                 Text(item.url)
-                  .fontSize(13)
+                  .fontSize(14)
                   .fontColor($r('app.color.telegram_blue'))
                   .maxLines(1)
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -521,7 +521,7 @@ export struct SharedMediaPage {
                   .maxLines(1)
 
                 Text(this.formatVoiceMeta(item))
-                  .fontSize(13)
+                  .fontSize(12)
                   .fontColor($r('app.color.text_secondary'))
                   .margin({ top: 2 })
               }

@@ -67,12 +67,12 @@ export struct ChatInputBar {
 
           Column() {
             Text(this.replyMessage.senderName)
-              .fontSize(13)
+              .fontSize(14)
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.telegram_blue'))
               .maxLines(1)
             Text(this.replyMessage.text)
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -109,12 +109,12 @@ export struct ChatInputBar {
 
           Column() {
             Text($r('app.string.editing_message'))
-              .fontSize(13)
+              .fontSize(14)
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.telegram_blue'))
               .maxLines(1)
             Text(this.editMessage.text)
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })

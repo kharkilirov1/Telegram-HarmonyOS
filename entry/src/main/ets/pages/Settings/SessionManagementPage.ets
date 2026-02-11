@@ -159,9 +159,9 @@ export struct SessionManagementPage {
                 .width('100%')
                 .backgroundColor($r('app.color.glass_card_bg'))
                 .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-                .borderRadius(16)
+                .borderRadius(24)
                 .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-                .margin({ left: 16, right: 16 })
+                .margin({ left: 12, right: 12 })
 
                 Blank().height(24)
               }
@@ -175,7 +175,7 @@ export struct SessionManagementPage {
                 })
 
                 Text($r('app.string.terminate_all_warning'))
-                  .fontSize(13)
+                  .fontSize(14)
                   .fontColor($r('app.color.text_secondary'))
                   .margin({ left: 32, right: 32, top: 6 })
 
@@ -208,9 +208,9 @@ export struct SessionManagementPage {
                 .width('100%')
                 .backgroundColor($r('app.color.glass_card_bg'))
                 .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-                .borderRadius(16)
+                .borderRadius(24)
                 .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-                .margin({ left: 16, right: 16 })
+                .margin({ left: 12, right: 12 })
               } else {
                 // No other sessions
                 Column() {
@@ -224,9 +224,9 @@ export struct SessionManagementPage {
                 .width('100%')
                 .backgroundColor($r('app.color.glass_card_bg'))
                 .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-                .borderRadius(16)
+                .borderRadius(24)
                 .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-                .margin({ left: 16, right: 16 })
+                .margin({ left: 12, right: 12 })
               }
 
               Blank().height(40)

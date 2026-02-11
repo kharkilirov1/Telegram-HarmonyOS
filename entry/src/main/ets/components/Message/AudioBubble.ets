@@ -38,7 +38,7 @@ export struct AudioBubble {
 
           // Performer
           Text(this.getPerformer())
-            .fontSize(13)
+            .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .margin({ top: 1 })
             .maxLines(1)

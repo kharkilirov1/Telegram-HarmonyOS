@@ -11,7 +11,7 @@ export struct ProxyListSection {
   build() {
     Column() {
       Text($r('app.string.proxy_settings'))
-        .fontSize(13)
+        .fontSize(14)
         .fontColor($r('app.color.text_secondary'))
         .margin({ left: 32, bottom: 6, top: 2 })
 
@@ -27,9 +27,9 @@ export struct ProxyListSection {
         .width('100%')
         .backgroundColor($r('app.color.glass_card_bg'))
         .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-        .borderRadius(16)
+        .borderRadius(24)
         .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-        .margin({ left: 16, right: 16 })
+        .margin({ left: 12, right: 12 })
       } else {
         Column() {
           ForEach(this.proxies, (proxy: ProxyInfo, index: number) => {
@@ -56,41 +56,41 @@ export struct ProxyListSection {
 
                 Row() {
                   Text(this.getTypeLabel(proxy.type))
-                    .fontSize(13)
+                    .fontSize(14)
                     .fontColor($r('app.color.text_secondary'))
 
                   if (proxy.isEnabled) {
                     Text(' \u2022 ')
-                      .fontSize(13)
+                      .fontSize(14)
                       .fontColor($r('app.color.text_secondary'))
                     Text($r('app.string.proxy_connected'))
-                      .fontSize(13)
+                      .fontSize(14)
                       .fontColor($r('app.color.settings_icon_green'))
                   }
 
                   if (proxy.lastPingMs >= 0) {
                     Text(' \u2022 ')
-                      .fontSize(13)
+                      .fontSize(14)
                       .fontColor($r('app.color.text_secondary'))
                     Text(`${proxy.lastPingMs}`)
-                      .fontSize(13)
+                      .fontSize(14)
                       .fontColor($r('app.color.text_secondary'))
                     Text($r('app.string.proxy_ping_ms'))
-                      .fontSize(13)
+                      .fontSize(14)
                       .fontColor($r('app.color.text_secondary'))
                   } else if (proxy.lastPingMs === -1) {
                     Text(' \u2022 ')
-                      .fontSize(13)
+                      .fontSize(14)
                       .fontColor($r('app.color.text_secondary'))
                     Text($r('app.string.proxy_checking'))
-                      .fontSize(13)
+                      .fontSize(14)
                       .fontColor($r('app.color.settings_icon_orange'))
                   } else if (proxy.lastPingMs === -2) {
                     Text(' \u2022 ')
-                      .fontSize(13)
+                      .fontSize(14)
                       .fontColor($r('app.color.text_secondary'))
                     Text($r('app.string.proxy_unavailable'))
-                      .fontSize(13)
+                      .fontSize(14)
                       .fontColor($r('app.color.settings_icon_red'))
                   }
                 }
@@ -124,9 +124,9 @@ export struct ProxyListSection {
         .width('100%')
         .backgroundColor($r('app.color.glass_card_bg'))
         .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-        .borderRadius(16)
+        .borderRadius(24)
         .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-        .margin({ left: 16, right: 16 })
+        .margin({ left: 12, right: 12 })
       }
     }
     .width('100%')

@@ -38,7 +38,7 @@ export struct TypingIndicator {
         .scale({ x: this.dot3Scale, y: this.dot3Scale })
 
       Text(this.typingText)
-        .fontSize(13)
+        .fontSize(14)
         .fontColor($r('app.color.telegram_blue'))
         .margin({ left: 2 })
     }

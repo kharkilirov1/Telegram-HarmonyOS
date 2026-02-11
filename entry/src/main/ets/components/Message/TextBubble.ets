@@ -99,7 +99,7 @@ export struct TextBubble {
         // Description — iOS: text with entities, max lines
         if (this.message.webPageDescription.length > 0) {
           Text(this.message.webPageDescription)
-            .fontSize(13)
+            .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .lineHeight(18)
             .margin({ top: 2 })

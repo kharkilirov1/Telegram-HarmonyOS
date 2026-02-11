@@ -124,8 +124,8 @@ export struct PremiumPage {
               }, (feature: PremiumFeature, index: number) => `premium_${index}`)
             }
             .backgroundColor($r('app.color.glass_card_bg'))
-            .borderRadius(16)
-            .margin({ left: 16, right: 16 })
+            .borderRadius(24)
+            .margin({ left: 12, right: 12 })
 
             // Subscribe button
             if (!this.isPremium) {

@@ -132,7 +132,7 @@ export struct PrivacySettingsPage {
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
             .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(24)
 
@@ -175,7 +175,7 @@ export struct PrivacySettingsPage {
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
             .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(24)
 
@@ -205,7 +205,7 @@ export struct PrivacySettingsPage {
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
             .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(24)
 
@@ -218,7 +218,7 @@ export struct PrivacySettingsPage {
                     .fontSize(16)
                     .fontColor($r('app.color.text_primary'))
                   Text($r('app.string.delete_account_inactive_period'))
-                    .fontSize(13)
+                    .fontSize(14)
                     .fontColor($r('app.color.text_secondary'))
                     .margin({ top: 2 })
                 }
@@ -233,7 +233,7 @@ export struct PrivacySettingsPage {
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
             .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(40)
           }
@@ -254,7 +254,7 @@ export struct PrivacySettingsPage {
   @Builder
   sectionHeader(title: Resource) {
     Text(title)
-      .fontSize(13)
+      .fontSize(14)
       .fontColor($r('app.color.text_secondary'))
       .margin({ left: 32, bottom: 6, top: 2 })
   }

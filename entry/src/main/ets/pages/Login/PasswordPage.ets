@@ -123,7 +123,7 @@ export struct PasswordPage {
         // Hint (like real Telegram)
         if (this.passwordHint.length > 0) {
           Text(this.formatHint())
-            .fontSize(13)
+            .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .margin({ top: 12 })
         }
@@ -131,7 +131,7 @@ export struct PasswordPage {
         // Error message
         if (this.errorMessage.length > 0) {
           Text(this.errorMessage)
-            .fontSize(13)
+            .fontSize(14)
             .fontColor($r('app.color.error_red'))
             .margin({ top: 8 })
         }
@@ -241,7 +241,7 @@ export struct PasswordPage {
           // Error
           if (this.errorMessage.length > 0) {
             Text(this.errorMessage)
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.error_red'))
               .margin({ top: 12 })
           }

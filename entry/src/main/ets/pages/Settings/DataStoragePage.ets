@@ -295,7 +295,7 @@ export struct DataStoragePage {
             })
 
             Text($r('app.string.data_auto_download_hint'))
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, top: 6 })
 

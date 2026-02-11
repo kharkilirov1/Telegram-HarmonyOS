@@ -15,13 +15,13 @@ export struct ReplyPreview {
 
         Column() {
           Text(this.message.replyPreviewSenderName)
-            .fontSize(13)
+            .fontSize(14)
             .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.telegram_blue'))
             .maxLines(1)
 
           Text(this.message.replyPreviewText)
-            .fontSize(13)
+            .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })

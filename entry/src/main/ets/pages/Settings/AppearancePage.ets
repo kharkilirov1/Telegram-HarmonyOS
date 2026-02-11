@@ -62,7 +62,7 @@ export struct AppearancePage {
             // --- Chat preview ---
             Column() {
               Text($r('app.string.appearance_chat_preview'))
-                .fontSize(13)
+                .fontSize(14)
                 .fontColor($r('app.color.text_secondary'))
                 .margin({ left: 16, bottom: 8, top: 16 })
 
@@ -104,7 +104,7 @@ export struct AppearancePage {
               .padding(12)
               .backgroundColor($r('app.color.background_secondary'))
               .borderRadius(24)
-              .margin({ left: 16, right: 16 })
+              .margin({ left: 12, right: 12 })
             }
 
             Blank().height(16)
@@ -135,13 +135,13 @@ export struct AppearancePage {
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
             .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(24)
 
             // --- Theme section ---
             Text($r('app.string.appearance_color_theme'))
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
 
@@ -157,13 +157,13 @@ export struct AppearancePage {
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
             .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(24)
 
             // --- Auto Night Mode ---
             Text($r('app.string.appearance_night_mode'))
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
 
@@ -185,7 +185,7 @@ export struct AppearancePage {
               .padding({ left: 16, right: 16 })
 
               Text($r('app.string.appearance_auto_night_hint'))
-                .fontSize(13)
+                .fontSize(14)
                 .fontColor($r('app.color.text_secondary'))
                 .padding({ left: 16, right: 16, bottom: 12 })
             }
@@ -194,13 +194,13 @@ export struct AppearancePage {
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
             .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(24)
 
             // --- Text Size ---
             Text($r('app.string.appearance_text_size'))
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
 
@@ -237,13 +237,13 @@ export struct AppearancePage {
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
             .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(24)
 
             // --- Bubble corners ---
             Text($r('app.string.appearance_bubble_style'))
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
 
@@ -282,13 +282,13 @@ export struct AppearancePage {
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
             .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             // --- App Icon ---
             Blank().height(24)
 
             Text($r('app.string.appearance_app_icon'))
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
 
@@ -310,7 +310,7 @@ export struct AppearancePage {
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
             .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(40)
           }
@@ -346,7 +346,7 @@ export struct AppearancePage {
           .fontSize(16)
           .fontColor($r('app.color.text_primary'))
         Text(subtitle)
-          .fontSize(13)
+          .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .margin({ top: 1 })
       }

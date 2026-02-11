@@ -6,7 +6,7 @@ export struct GroupAdminTypeSection {
   build() {
     Column() {
       Text($r('app.string.group_type'))
-        .fontSize(13)
+        .fontSize(14)
         .fontColor($r('app.color.text_secondary'))
         .margin({ bottom: 8 })
 
@@ -17,7 +17,7 @@ export struct GroupAdminTypeSection {
             .fontColor($r('app.color.text_primary'))
 
           Text($r('app.string.public_group_hint'))
-            .fontSize(13)
+            .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .margin({ top: 2 })
         }
@@ -35,7 +35,7 @@ export struct GroupAdminTypeSection {
       .padding({ left: 16, right: 16 })
       .backgroundColor($r('app.color.glass_card_bg'))
       .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-      .borderRadius(16)
+      .borderRadius(24)
       .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
     }
     .width('100%')

@@ -123,7 +123,7 @@ export struct BusinessAccountPage {
             }
             .backgroundColor($r('app.color.glass_card_bg'))
             .borderRadius(24)
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             // Premium required notice
             if (!this.isBusiness) {

@@ -261,7 +261,7 @@ export struct ProxySettingsPage {
         .margin({ bottom: 20 })
 
       Text($r('app.string.proxy_server'))
-        .fontSize(13)
+        .fontSize(14)
         .fontColor($r('app.color.text_secondary'))
         .alignSelf(ItemAlign.Start)
         .margin({ bottom: 4 })
@@ -280,7 +280,7 @@ export struct ProxySettingsPage {
       Blank().height(12)
 
       Text($r('app.string.proxy_port'))
-        .fontSize(13)
+        .fontSize(14)
         .fontColor($r('app.color.text_secondary'))
         .alignSelf(ItemAlign.Start)
         .margin({ bottom: 4 })
@@ -300,7 +300,7 @@ export struct ProxySettingsPage {
       Blank().height(12)
 
       Text($r('app.string.proxy_type'))
-        .fontSize(13)
+        .fontSize(14)
         .fontColor($r('app.color.text_secondary'))
         .alignSelf(ItemAlign.Start)
         .margin({ bottom: 4 })
@@ -317,7 +317,7 @@ export struct ProxySettingsPage {
 
       if (this.formType === 'socks5' || this.formType === 'http') {
         Text($r('app.string.proxy_username'))
-          .fontSize(13)
+          .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .alignSelf(ItemAlign.Start)
           .margin({ bottom: 4 })
@@ -336,7 +336,7 @@ export struct ProxySettingsPage {
         Blank().height(12)
 
         Text($r('app.string.proxy_password'))
-          .fontSize(13)
+          .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .alignSelf(ItemAlign.Start)
           .margin({ bottom: 4 })
@@ -356,7 +356,7 @@ export struct ProxySettingsPage {
 
       if (this.formType === 'mtproto') {
         Text($r('app.string.proxy_secret'))
-          .fontSize(13)
+          .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .alignSelf(ItemAlign.Start)
           .margin({ bottom: 4 })

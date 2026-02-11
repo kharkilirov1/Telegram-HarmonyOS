@@ -145,7 +145,7 @@ export struct MultiAccountPage {
             ListItem() {
               Column() {
                 Text($r('app.string.max_accounts_reached'))
-                  .fontSize(13)
+                  .fontSize(14)
                   .fontColor($r('app.color.text_secondary'))
                   .padding({ left: 16, right: 16, top: 16 })
               }

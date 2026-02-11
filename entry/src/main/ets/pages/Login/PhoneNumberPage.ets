@@ -186,7 +186,7 @@ export struct PhoneNumberPage {
           // Error message
           if (this.errorMessage.length > 0) {
             Text(this.errorMessage)
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.error_red'))
               .margin({ top: 12 })
           }

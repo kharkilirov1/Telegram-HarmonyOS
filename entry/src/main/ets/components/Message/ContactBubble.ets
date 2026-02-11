@@ -33,7 +33,7 @@ export struct ContactBubble {
           // Phone number — iOS: up to 5 lines of info
           if (this.message.contactPhone.length > 0) {
             Text(this.formatPhone(this.message.contactPhone))
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .margin({ top: 1 })
               .maxLines(2)
@@ -58,7 +58,7 @@ export struct ContactBubble {
           .fillColor($r('app.color.telegram_blue'))
           .margin({ right: 6 })
         Text($r('app.string.contact_send_message'))
-          .fontSize(13)
+          .fontSize(14)
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.telegram_blue'))
       }
@@ -77,7 +77,7 @@ export struct ContactBubble {
           .fillColor($r('app.color.telegram_blue'))
           .margin({ right: 6 })
         Text($r('app.string.contact_add_contact'))
-          .fontSize(13)
+          .fontSize(14)
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.telegram_blue'))
       }

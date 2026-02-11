@@ -159,7 +159,7 @@ export struct VideoPlayerPage {
             Row() {
               // Current time
               Text(this.formatTime(this.isSeeking ? this.seekPosition : this.currentTime))
-                .fontSize(13)
+                .fontSize(12)
                 .fontColor($r('app.color.icon_on_primary'))
                 .fontWeight(FontWeight.Medium)
                 .width(52)
@@ -194,7 +194,7 @@ export struct VideoPlayerPage {
 
               // Total duration
               Text(this.formatTime(this.totalDuration))
-                .fontSize(13)
+                .fontSize(12)
                 .fontColor($r('app.color.text_on_overlay'))
                 .width(52)
                 .textAlign(TextAlign.Center)

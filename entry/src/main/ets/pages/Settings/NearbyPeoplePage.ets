@@ -136,12 +136,12 @@ export struct NearbyPeoplePage {
             }
             .backgroundColor($r('app.color.glass_card_bg'))
             .borderRadius(24)
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             // Users nearby section
             if (this.nearbyUsers.length > 0) {
               Text($r('app.string.nearby_users'))
-                .fontSize(13)
+                .fontSize(14)
                 .fontWeight(FontWeight.Medium)
                 .fontColor($r('app.color.text_secondary'))
                 .padding({ left: 32, top: 24, bottom: 8 })
@@ -164,7 +164,7 @@ export struct NearbyPeoplePage {
                         .fontColor($r('app.color.text_primary'))
 
                       Text(this.formatDistance(user.distance))
-                        .fontSize(13)
+                        .fontSize(12)
                         .fontColor($r('app.color.text_secondary'))
                         .margin({ top: 2 })
                     }
@@ -182,12 +182,12 @@ export struct NearbyPeoplePage {
               }
               .backgroundColor($r('app.color.glass_card_bg'))
               .borderRadius(24)
-              .margin({ left: 16, right: 16 })
+              .margin({ left: 12, right: 12 })
             }
 
             // Groups nearby section
             Text($r('app.string.nearby_groups'))
-              .fontSize(13)
+              .fontSize(14)
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.text_secondary'))
               .padding({ left: 32, top: 24, bottom: 8 })
@@ -233,7 +233,7 @@ export struct NearbyPeoplePage {
                         .fontColor($r('app.color.text_primary'))
 
                       Text(this.formatDistance(group.distance))
-                        .fontSize(13)
+                        .fontSize(12)
                         .fontColor($r('app.color.text_secondary'))
                         .margin({ top: 2 })
                     }
@@ -252,7 +252,7 @@ export struct NearbyPeoplePage {
             }
             .backgroundColor($r('app.color.glass_card_bg'))
             .borderRadius(24)
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(40)
           }

@@ -376,7 +376,7 @@ export struct StickerPicker {
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
 
                 Text(getContext(this).resourceManager.getStringByNameSync('sticker_pack_count_format').replace('%s', set.count.toString()))
-                  .fontSize(13)
+                  .fontSize(14)
                   .fontColor($r('app.color.text_secondary'))
                   .margin({ top: 2 })
               }
@@ -422,7 +422,7 @@ export struct StickerPicker {
             .margin({ bottom: 12 })
 
           Text(getContext(this).resourceManager.getStringByNameSync('sticker_pack_count_format').replace('%s', this.installedSets[this.longPressSetIndex].count.toString()))
-            .fontSize(13)
+            .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .margin({ bottom: 16 })
 
@@ -458,7 +458,7 @@ export struct StickerPicker {
           .width('100%')
         }
         .padding(20)
-        .borderRadius(16)
+        .borderRadius(24)
         .backgroundColor($r('app.color.background_primary'))
         .shadow({
           radius: 16,

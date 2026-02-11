@@ -33,7 +33,7 @@ export struct GroupInfoMemberRow {
         .width('100%')
 
         Text(this.member.status)
-          .fontSize(13)
+          .fontSize(12)
           .fontColor(this.member.status === 'online'
             ? $r('app.color.online_indicator')
             : $r('app.color.text_secondary'))

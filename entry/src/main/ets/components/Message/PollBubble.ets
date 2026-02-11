@@ -43,7 +43,7 @@ export struct PollBubble {
     Column() {
       // Poll type indicator
       Text(this.pollTypeLabel)
-        .fontSize(13)
+        .fontSize(14)
         .fontColor($r('app.color.text_secondary'))
         .margin({ bottom: 4 })
         .alignSelf(ItemAlign.Start)
@@ -77,14 +77,14 @@ export struct PollBubble {
       // Status row: vote count + closed indicator
       Row() {
         Text(this.statusLabel)
-          .fontSize(13)
+          .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
 
         Blank().layoutWeight(1)
 
         if (this.message.pollIsClosed) {
           Text($r('app.string.closed_label'))
-            .fontSize(13)
+            .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .fontWeight(FontWeight.Medium)
         }

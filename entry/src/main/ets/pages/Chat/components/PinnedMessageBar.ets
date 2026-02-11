@@ -22,7 +22,7 @@ export struct PinnedMessageBar {
             .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.telegram_blue'))
           Text(this.pinnedMessage.text)
-            .fontSize(13)
+            .fontSize(14)
             .fontColor($r('app.color.text_primary'))
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })

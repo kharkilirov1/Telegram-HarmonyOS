@@ -51,7 +51,7 @@ export struct PasscodeOverlay {
 
       if (this.passcodeError.length > 0) {
         Text(this.passcodeError)
-          .fontSize(13)
+          .fontSize(14)
           .fontColor($r('app.color.error_red'))
           .margin({ top: 4, bottom: 4 })
           .transition(TransitionEffect.OPACITY.animation({ duration: 200 }))

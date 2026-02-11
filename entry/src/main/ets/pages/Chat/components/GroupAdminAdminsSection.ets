@@ -8,7 +8,7 @@ export struct GroupAdminAdminsSection {
   build() {
     Column() {
       Text($r('app.string.administrators_label'))
-        .fontSize(13)
+        .fontSize(14)
         .fontColor($r('app.color.text_secondary'))
         .margin({ bottom: 8 })
 
@@ -32,7 +32,7 @@ export struct GroupAdminAdminsSection {
       .width('100%')
       .backgroundColor($r('app.color.glass_card_bg'))
       .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-      .borderRadius(16)
+      .borderRadius(24)
       .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
     }
     .width('100%')
@@ -70,7 +70,7 @@ export struct GroupAdminAdminsSection {
           .maxLines(1)
 
         Text(admin.role)
-          .fontSize(13)
+          .fontSize(14)
           .fontColor($r('app.color.telegram_blue'))
           .margin({ top: 1 })
       }

@@ -38,7 +38,7 @@ export struct SavedMessagesSearchBar {
 
       if (this.resultsCount > 0) {
         Text(`${this.currentResultIndex + 1}/${this.resultsCount}`)
-          .fontSize(13)
+          .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .margin({ left: 8 })
 

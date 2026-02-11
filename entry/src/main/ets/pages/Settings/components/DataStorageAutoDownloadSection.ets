@@ -44,7 +44,7 @@ export struct DataStorageAutoDownloadSection {
   build() {
     Column() {
       Text($r('app.string.data_auto_download'))
-        .fontSize(13)
+        .fontSize(14)
         .fontColor($r('app.color.text_secondary'))
         .margin({ left: 32, bottom: 6, top: 2 })
 
@@ -147,9 +147,9 @@ export struct DataStorageAutoDownloadSection {
       .width('100%')
       .backgroundColor($r('app.color.glass_card_bg'))
       .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-      .borderRadius(16)
+      .borderRadius(24)
       .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-      .margin({ left: 16, right: 16 })
+      .margin({ left: 12, right: 12 })
     }
     .width('100%')
   }
@@ -163,7 +163,7 @@ export struct DataStorageAutoDownloadSection {
           .fontColor($r('app.color.text_primary'))
 
         Text(summary)
-          .fontSize(13)
+          .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .margin({ top: 2 })
       }

@@ -129,7 +129,7 @@ export struct CallUIPage {
                 .justifyContent(FlexAlign.Center)
 
                 Text($r('app.string.decline'))
-                  .fontSize(13)
+                  .fontSize(14)
                   .fontColor(Color.White)
                   .margin({ top: 8 })
               }
@@ -149,7 +149,7 @@ export struct CallUIPage {
                 .justifyContent(FlexAlign.Center)
 
                 Text($r('app.string.accept'))
-                  .fontSize(13)
+                  .fontSize(14)
                   .fontColor(Color.White)
                   .margin({ top: 8 })
               }

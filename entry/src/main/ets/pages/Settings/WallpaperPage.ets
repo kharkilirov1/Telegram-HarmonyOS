@@ -82,7 +82,7 @@ export struct WallpaperPage {
             // --- Chat preview with selected wallpaper ---
             Column() {
               Text($r('app.string.wallpaper_preview'))
-                .fontSize(13)
+                .fontSize(14)
                 .fontColor($r('app.color.text_secondary'))
                 .margin({ left: 16, bottom: 8, top: 16 })
 
@@ -116,15 +116,15 @@ export struct WallpaperPage {
               .height(120)
               .padding(12)
               .backgroundColor(this.getSelectedColor())
-              .borderRadius(16)
-              .margin({ left: 16, right: 16 })
+              .borderRadius(24)
+              .margin({ left: 12, right: 12 })
             }
 
             Blank().height(24)
 
             // --- Solid Colors ---
             Text($r('app.string.wallpaper_colors'))
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 8 })
 
@@ -164,7 +164,7 @@ export struct WallpaperPage {
 
             // --- Patterns ---
             Text($r('app.string.wallpaper_patterns'))
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 8 })
 
@@ -222,9 +222,9 @@ export struct WallpaperPage {
             .width('100%')
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
+            .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(40)
           }

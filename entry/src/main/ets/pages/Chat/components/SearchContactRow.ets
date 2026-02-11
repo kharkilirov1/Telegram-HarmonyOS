@@ -40,14 +40,14 @@ export struct SearchContactRow {
 
         if (this.user.username.length > 0) {
           Text(`@${this.user.username}`)
-            .fontSize(13)
+            .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .margin({ top: 2 })
         } else if (this.user.phoneNumber.length > 0) {
           Text(`+${this.user.phoneNumber}`)
-            .fontSize(13)
+            .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .maxLines(1)
             .margin({ top: 2 })

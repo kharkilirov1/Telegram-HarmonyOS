@@ -61,7 +61,7 @@ export struct ChatHeader {
           })
         } else {
           Text(this.lastSeenText)
-            .fontSize(13)
+            .fontSize(12)
             .fontColor(this.isOnline
               ? $r('app.color.online_indicator')
               : $r('app.color.text_secondary'))

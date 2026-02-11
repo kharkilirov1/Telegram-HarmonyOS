@@ -49,7 +49,7 @@ export struct ChatListItem {
           }
 
           Text(this.formatDate(this.chat.lastMessageDate))
-            .fontSize(13)
+            .fontSize(12)
             .fontColor((this.chat.unreadCount > 0 || this.chat.isMarkedAsUnread) && !this.chat.isMuted
               ? $r('app.color.telegram_blue')
               : $r('app.color.text_secondary'))

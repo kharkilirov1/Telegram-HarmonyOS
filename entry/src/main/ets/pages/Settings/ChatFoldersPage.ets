@@ -119,10 +119,10 @@ export struct ChatFoldersPage {
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
             .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Text($r('app.string.folders_hint'))
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, top: 6 })
 
@@ -168,7 +168,7 @@ export struct ChatFoldersPage {
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
             .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(40)
           }
@@ -188,7 +188,7 @@ export struct ChatFoldersPage {
   @Builder
   sectionHeader(title: ResourceStr) {
     Text(title)
-      .fontSize(13)
+      .fontSize(14)
       .fontColor($r('app.color.text_secondary'))
       .margin({ left: 32, bottom: 6, top: 2 })
   }

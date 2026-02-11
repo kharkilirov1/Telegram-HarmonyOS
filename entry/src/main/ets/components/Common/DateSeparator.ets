@@ -7,7 +7,7 @@ export struct DateSeparator {
       Blank().layoutWeight(1)
 
       Text(this.dateText)
-        .fontSize(13)
+        .fontSize(14)
         .fontWeight(FontWeight.Medium)
         .fontColor(Color.White)
         .padding({ left: 12, right: 12, top: 4, bottom: 4 })

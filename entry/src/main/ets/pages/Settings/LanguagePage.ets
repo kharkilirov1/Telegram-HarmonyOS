@@ -105,7 +105,7 @@ export struct LanguagePage {
           Column() {
             // Official languages section
             Text($r('app.string.language_official_section'))
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, top: 8, bottom: 6 })
 
@@ -122,13 +122,13 @@ export struct LanguagePage {
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
             .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(24)
 
             // Unofficial languages section
             Text($r('app.string.language_unofficial_section'))
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 32, bottom: 6 })
 
@@ -145,7 +145,7 @@ export struct LanguagePage {
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
             .borderRadius(24)
             .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-            .margin({ left: 16, right: 16 })
+            .margin({ left: 12, right: 12 })
 
             Blank().height(40)
           }
@@ -170,7 +170,7 @@ export struct LanguagePage {
           .fontSize(16)
           .fontColor($r('app.color.text_primary'))
         Text(lang.name)
-          .fontSize(13)
+          .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .margin({ top: 1 })
       }

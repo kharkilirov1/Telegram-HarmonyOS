@@ -17,7 +17,7 @@ export struct ServiceBubble {
             .fillColor($r('app.color.telegram_blue'))
             .margin({ right: 4 })
           Text(this.message.forwardedFrom)
-            .fontSize(13)
+            .fontSize(14)
             .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.telegram_blue'))
             .fontStyle(FontStyle.Italic)
@@ -27,7 +27,7 @@ export struct ServiceBubble {
 
       if (!this.message.isOutgoing && this.showSenderName && this.isFirstInGroup) {
         Text(this.message.senderName)
-          .fontSize(13)
+          .fontSize(14)
           .fontWeight(FontWeight.Medium)
           .fontColor(getSenderColor(this.message.senderId))
           .margin({ bottom: 2 })

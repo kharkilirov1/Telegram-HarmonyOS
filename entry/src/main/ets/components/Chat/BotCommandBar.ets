@@ -134,7 +134,7 @@ export struct BotCommandBar {
                   .constraintSize({ minWidth: 80 })
 
                 Text(cmd.description)
-                  .fontSize(13)
+                  .fontSize(14)
                   .fontColor($r('app.color.text_secondary'))
                   .margin({ left: 12 })
                   .layoutWeight(1)

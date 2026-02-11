@@ -140,7 +140,7 @@ export struct LocationBubble {
           }
           if (this.message.venueAddress.length > 0) {
             Text(this.message.venueAddress)
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .maxLines(2)
               .textOverflow({ overflow: TextOverflow.Ellipsis })

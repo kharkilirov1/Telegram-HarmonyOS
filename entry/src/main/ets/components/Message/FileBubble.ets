@@ -90,14 +90,14 @@ export struct FileBubble {
           Row() {
             if (this.downloadProgress >= 0 && this.downloadProgress < 100) {
               Text(`${this.downloadProgress}%`)
-                .fontSize(13)
+                .fontSize(12)
                 .fontColor($r('app.color.telegram_blue'))
               Text(' \u2022 ')
-                .fontSize(13)
+                .fontSize(12)
                 .fontColor($r('app.color.text_secondary'))
             }
             Text(this.getFileSizeLabel())
-              .fontSize(13)
+              .fontSize(12)
               .fontColor($r('app.color.text_secondary'))
           }
         }

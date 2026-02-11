@@ -137,7 +137,7 @@ export struct CreateChannelPage {
 
           // Channel type selection
           Text($r('app.string.channel_type'))
-            .fontSize(13)
+            .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .margin({ left: 16, top: 16, bottom: 8 })
 
@@ -155,7 +155,7 @@ export struct CreateChannelPage {
                   .fontSize(16)
                   .fontColor($r('app.color.text_primary'))
                 Text($r('app.string.channel_public_hint'))
-                  .fontSize(13)
+                  .fontSize(14)
                   .fontColor($r('app.color.text_secondary'))
                   .margin({ top: 2 })
               }
@@ -181,7 +181,7 @@ export struct CreateChannelPage {
                   .fontSize(16)
                   .fontColor($r('app.color.text_primary'))
                 Text($r('app.string.channel_private_hint'))
-                  .fontSize(13)
+                  .fontSize(14)
                   .fontColor($r('app.color.text_secondary'))
                   .margin({ top: 2 })
               }
@@ -195,14 +195,14 @@ export struct CreateChannelPage {
           .width('100%')
           .backgroundColor($r('app.color.glass_card_bg'))
           .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-          .borderRadius(16)
+          .borderRadius(24)
           .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
-          .margin({ left: 16, right: 16 })
+          .margin({ left: 12, right: 12 })
 
           // Public link input
           if (this.isPublic) {
             Text($r('app.string.public_link'))
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 16, top: 16, bottom: 8 })
 
@@ -224,8 +224,8 @@ export struct CreateChannelPage {
             .height(44)
             .backgroundColor($r('app.color.glass_card_bg'))
             .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-            .borderRadius(16)
-            .margin({ left: 16, right: 16 })
+            .borderRadius(24)
+            .margin({ left: 12, right: 12 })
           }
 
           Blank().height(40)

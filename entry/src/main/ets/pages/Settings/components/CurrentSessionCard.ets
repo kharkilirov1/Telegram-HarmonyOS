@@ -21,22 +21,22 @@ export struct CurrentSessionCard {
             .margin({ top: 4 })
 
           Text(this.lastActiveLabel)
-            .fontSize(13)
+            .fontSize(12)
             .fontColor($r('app.color.online_indicator'))
             .margin({ top: 4 })
 
           Row() {
             Text(this.ip)
-              .fontSize(13)
+              .fontSize(14)
               .fontColor($r('app.color.text_secondary'))
 
             if (this.location.length > 0) {
               Text(' - ')
-                .fontSize(13)
+                .fontSize(14)
                 .fontColor($r('app.color.text_secondary'))
 
               Text(this.location)
-                .fontSize(13)
+                .fontSize(14)
                 .fontColor($r('app.color.text_secondary'))
             }
           }

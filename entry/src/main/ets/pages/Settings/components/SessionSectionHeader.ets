@@ -4,7 +4,7 @@ export struct SessionSectionHeader {
 
   build() {
     Text(this.title)
-      .fontSize(13)
+      .fontSize(14)
       .fontColor($r('app.color.text_secondary'))
       .margin({ left: 32, bottom: 6, top: 2 })
   }

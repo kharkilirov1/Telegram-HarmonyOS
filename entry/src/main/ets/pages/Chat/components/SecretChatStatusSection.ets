@@ -18,7 +18,7 @@ export struct SecretChatStatusSection {
           .margin({ top: 12 })
 
         Text(this.waitingMessage)
-          .fontSize(13)
+          .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .margin({ top: 4 })
           .textAlign(TextAlign.Center)
@@ -47,7 +47,7 @@ export struct SecretChatStatusSection {
 
         if (this.errorMessage.length > 0) {
           Text(this.errorMessage)
-            .fontSize(13)
+            .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .margin({ top: 4 })
             .textAlign(TextAlign.Center)

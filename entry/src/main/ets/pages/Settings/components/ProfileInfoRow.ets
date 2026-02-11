@@ -16,7 +16,7 @@ export struct ProfileInfoRow {
           .fontSize(16)
           .fontColor($r('app.color.text_primary'))
         Text(this.label)
-          .fontSize(13)
+          .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .margin({ top: 2 })
       }
