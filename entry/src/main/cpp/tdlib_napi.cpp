@@ -858,6 +858,22 @@ napi_value StopReceiveLoop(napi_env env, napi_callback_info info) {
     return undefined;
 }
 
+static std::string json_escape(const std::string& s) {
+    std::string out;
+    out.reserve(s.size());
+    for (char c : s) {
+        switch (c) {
+            case '"':  out += "\\\""; break;
+            case '\\': out += "\\\\"; break;
+            case '\n': out += "\\n";  break;
+            case '\r': out += "\\r";  break;
+            case '\t': out += "\\t";  break;
+            default:   out += c;      break;
+        }
+    }
+    return out;
+}
+
 napi_value GetTdlibInfo(napi_env env, napi_callback_info info) {
     // Build a JSON string with compile-time diagnostics
     const char* mode =
@@ -870,9 +886,9 @@ napi_value GetTdlibInfo(napi_env env, napi_callback_info info) {
     const char* tdlib_dir = XSTR(TDLIB_DIR_PATH);
     const char* soname = XSTR(TDLIB_SONAME);
 
-    std::string json = "{\"mode\":\"" + std::string(mode) +
-                       "\",\"tdlibDir\":\"" + std::string(tdlib_dir) +
-                       "\",\"soname\":\"" + std::string(soname) + "\"}";
+    std::string json = "{\"mode\":\"" + json_escape(mode) +
+                       "\",\"tdlibDir\":\"" + json_escape(tdlib_dir) +
+                       "\",\"soname\":\"" + json_escape(soname) + "\"}";
 
     OH_LOG_INFO(LogType::LOG_APP,
         "┌─ TDLib Runtime Info ─────────────────────────");

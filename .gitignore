@@ -23,11 +23,5 @@ oh_modules/
 .DS_Store
 Thumbs.db
 
-# Local config (API keys)
-# ConfigLocal.ets is tracked in git with placeholder values (api_id=0, api_hash='').
-# Developers fill in their own credentials locally; do NOT commit real keys.
-# To avoid accidentally committing real credentials:
-#   git update-index --skip-worktree entry/src/main/ets/services/ConfigLocal.ets
-# To undo:
-#   git update-index --no-skip-worktree entry/src/main/ets/services/ConfigLocal.ets
-# (hvigor breaks on dotted filenames, so Config.local.ets cannot be used)
+# Local config (API keys) — NEVER commit real credentials
+entry/src/main/ets/services/ConfigLocal.ets

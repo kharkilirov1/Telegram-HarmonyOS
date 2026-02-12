@@ -5,6 +5,7 @@
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { promptAction } from '@kit.ArkUI';
+import { ERR_TDLIB_INIT_TIMEOUT, ERR_TDLIB_CLIENT_DESTROYED } from './TDLibClient';
 
 const TAG = 'AppError';
 const DOMAIN = 0x0001;
@@ -59,7 +60,7 @@ export class AppError {
  */
 export function classifyTdlibError(code: number, message: string): AppError {
   // Initialization timeout — client didn't reach Ready state in time
-  if (code === 0 && message.startsWith('TDLIB_INIT_TIMEOUT')) {
+  if (code === 0 && message.startsWith(ERR_TDLIB_INIT_TIMEOUT)) {
     return new AppError(
       AppErrorKind.NETWORK,
       'Initialization timed out. Please restart the app.',
@@ -68,7 +69,7 @@ export function classifyTdlibError(code: number, message: string): AppError {
   }
 
   // Client destroyed while caller was waiting
-  if (code === 0 && message.startsWith('TDLIB_CLIENT_DESTROYED')) {
+  if (code === 0 && message.startsWith(ERR_TDLIB_CLIENT_DESTROYED)) {
     return new AppError(
       AppErrorKind.NETWORK,
       'Connection interrupted.',

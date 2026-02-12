@@ -32,6 +32,10 @@ const REQUEST_TIMEOUT_MS = 30000;
 // Default timeout for waitForReady() initialization barrier (30 seconds)
 const INIT_TIMEOUT_MS = 30000;
 
+// Shared error code prefixes — used by TDLibClient and AppError for classification.
+export const ERR_TDLIB_INIT_TIMEOUT = 'TDLIB_INIT_TIMEOUT';
+export const ERR_TDLIB_CLIENT_DESTROYED = 'TDLIB_CLIENT_DESTROYED';
+
 // --- TDLib database paths (single source of truth) ---
 const TDLIB_DB_DIR = '/data/storage/el2/base/tdlib';
 const TDLIB_FILES_DIR = '/data/storage/el2/base/tdlib/files';
@@ -147,7 +151,7 @@ export class TDLibClient {
     }
     if (this._state === ClientState.Stopped || this._state === ClientState.Stopping) {
       return Promise.reject(
-        new TDLibError(0, 'TDLIB_CLIENT_DESTROYED: client is not running'));
+        new TDLibError(0, `${ERR_TDLIB_CLIENT_DESTROYED}: client is not running`));
     }
 
     return new Promise<void>((resolve, reject) => {
@@ -158,10 +162,10 @@ export class TDLibClient {
         settled = true;
         const security = SecurityService.getInstance();
         this.logError(
-          'TDLIB_INIT_TIMEOUT: state=%{public}s, elapsedMs=%{public}d, secMode=%{public}s, tdlibMode=%{public}s',
-          this._state, timeoutMs, security.mode, this.tdlibMode);
+          '%{public}s: state=%{public}s, elapsedMs=%{public}d, secMode=%{public}s, tdlibMode=%{public}s',
+          ERR_TDLIB_INIT_TIMEOUT, this._state, timeoutMs, security.mode, this.tdlibMode);
         reject(new TDLibError(0,
-          `TDLIB_INIT_TIMEOUT: initialization did not complete within ${timeoutMs}ms ` +
+          `${ERR_TDLIB_INIT_TIMEOUT}: initialization did not complete within ${timeoutMs}ms ` +
           `(state=${this._state}, secMode=${security.mode}, tdlibMode=${this.tdlibMode})`));
       }, timeoutMs);
 
@@ -202,6 +206,8 @@ export class TDLibClient {
       return;
     }
 
+    this._degradedSecurity = false;
+
     // --- Query native layer for TDLib build info (REAL vs STUB) ---
     try {
       const infoJson: string = tdlib.getTdlibInfo();
@@ -219,7 +225,6 @@ export class TDLibClient {
     this.logInfo('│ API_HASH:    %{public}s', TELEGRAM_API_HASH.length > 0 ? 'configured' : 'NOT SET');
     this.logInfo('│ DB_PATH:     %{public}s', TDLIB_DB_DIR);
     this.logInfo('│ SEC_MODE:    (pending — resolved after HUKS init)');
-    this.logInfo('└──────────────────────────────────────────────');
 
     // Validate API credentials
     if (TELEGRAM_API_ID === 0 || TELEGRAM_API_HASH.length === 0) {
@@ -244,6 +249,7 @@ export class TDLibClient {
     await security.initialize();
     const dbEncKey = security.getDatabaseEncryptionKey();
     this.logInfo('│ SEC_MODE:    %{public}s (resolved)', security.mode);
+    this.logInfo('└──────────────────────────────────────────────');
     if (dbEncKey.length === 0) {
       this.logWarn('Database encryption key is empty — TDLib database will be unencrypted');
     }
@@ -310,7 +316,7 @@ export class TDLibClient {
     // Reject any pending waitForReady() callers before resetting the barrier
     if (this._readyReject) {
       this._readyReject(
-        new TDLibError(0, 'TDLIB_CLIENT_DESTROYED: client was destroyed during initialization'));
+        new TDLibError(0, `${ERR_TDLIB_CLIENT_DESTROYED}: client was destroyed during initialization`));
       this._readyReject = null;
       this._readyResolve = null;
     }
@@ -746,8 +752,8 @@ export class TDLibClient {
         //   this.migrateEncV1toV2();
         //   break;
         default:
-          this.logError('Unknown encryption schema version %{public}d — skipping', from);
-          break;
+          this.logError('Unknown encryption schema version %{public}d — aborting migration', from);
+          return;
       }
     }
   }
@@ -812,7 +818,7 @@ export class TDLibClient {
       this.logWarn('└────────────────────────────────────────────────');
 
       try {
-        fileIo.rmdirSync(TDLIB_DB_DIR);
+        this.removeDirRecursive(TDLIB_DB_DIR);
         this.logInfo('Old DB directory removed: %{public}s', TDLIB_DB_DIR);
       } catch (e) {
         this.logError('Failed to remove old DB directory: %{public}s', String(e));
@@ -827,6 +833,20 @@ export class TDLibClient {
     }
 
     this.writeEncSchemaMarker(1);
+  }
+
+  private removeDirRecursive(dirPath: string): void {
+    const entries = fileIo.listFileSync(dirPath);
+    for (const name of entries) {
+      const fullPath = `${dirPath}/${name}`;
+      const stat = fileIo.statSync(fullPath);
+      if (stat.isDirectory()) {
+        this.removeDirRecursive(fullPath);
+      } else {
+        fileIo.unlinkSync(fullPath);
+      }
+    }
+    fileIo.rmdirSync(dirPath);
   }
 
   /**
