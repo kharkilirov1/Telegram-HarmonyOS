@@ -29,29 +29,22 @@ export struct PasswordPage {
   build() {
     NavDestination() {
       Column() {
-        // Top bar: Back + "Next"
+        // Top bar: Back button only
         Row() {
           Image($r('app.media.ic_back'))
             .width(24)
             .height(24)
             .fillColor($r('app.color.telegram_blue'))
+            .padding(12)
             .onClick(() => this.navPathStack.pop())
 
           Blank()
-
-          if (this.password.length > 0 && !this.isLoading) {
-            Text($r('app.string.next_button'))
-              .fontSize(20)
-              .fontWeight(FontWeight.Medium)
-              .fontColor($r('app.color.telegram_blue'))
-              .onClick(() => this.submitPassword())
-          }
         }
         .width('100%')
-        .height(56)
-        .padding({ left: 16, right: 16 })
+        .height(48)
+        .padding({ left: 4, right: 16 })
 
-        Blank().height(20)
+        Blank().height(12)
 
         // Animated mascot — closes eyes for password, peeks when toggled
         TelegramMascot({ mascotState: this.mascotState, mascotSize: 120 })
@@ -152,21 +145,39 @@ export struct PasswordPage {
           .onClick(() => { this.requestPasswordRecovery(); })
 
         Blank()
+
+        // Continue button at bottom center (like iOS Telegram)
+        if (this.password.length > 0 && !this.isLoading) {
+          Button($r('app.string.next_button'))
+            .type(ButtonType.Capsule)
+            .width('90%')
+            .height(50)
+            .fontSize(17)
+            .fontWeight(FontWeight.Medium)
+            .backgroundColor($r('app.color.telegram_blue'))
+            .fontColor(Color.White)
+            .margin({ bottom: 16 })
+            .onClick(() => this.submitPassword())
+            .transition(TransitionEffect.OPACITY.combine(
+              TransitionEffect.scale({ x: 0.95, y: 0.95 })
+            ).animation({ duration: 200, curve: Curve.EaseOut }))
+        }
       }
       .width('100%')
       .height('100%')
       .backgroundColor($r('app.color.background_primary'))
-      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
       .alignItems(HorizontalAlign.Center)
 
       // --- Password recovery overlay ---
       if (this.showRecoveryView) {
         Column() {
-          // Top bar
+          // Top bar: Back button only
           Row() {
             Image($r('app.media.ic_back'))
               .width(24).height(24)
               .fillColor($r('app.color.telegram_blue'))
+              .padding(12)
               .onClick(() => {
                 this.showRecoveryView = false;
                 this.recoveryCode = '';
@@ -174,20 +185,12 @@ export struct PasswordPage {
               })
 
             Blank()
-
-            if (this.recoveryCode.length > 0 && !this.isLoading) {
-              Text($r('app.string.next_button'))
-                .fontSize(20)
-                .fontWeight(FontWeight.Medium)
-                .fontColor($r('app.color.telegram_blue'))
-                .onClick(() => { this.submitRecoveryCode(); })
-            }
           }
           .width('100%')
-          .height(56)
-          .padding({ left: 16, right: 16 })
+          .height(48)
+          .padding({ left: 4, right: 16 })
 
-          Blank().height(40)
+          Blank().height(32)
 
           // Email icon
           Image($r('app.media.ic_email'))
@@ -254,11 +257,29 @@ export struct PasswordPage {
           }
 
           Blank()
+
+          // Continue button at bottom center
+          if (this.recoveryCode.length > 0 && !this.isLoading) {
+            Button($r('app.string.next_button'))
+              .type(ButtonType.Capsule)
+              .width('90%')
+              .height(50)
+              .fontSize(17)
+              .fontWeight(FontWeight.Medium)
+              .backgroundColor($r('app.color.telegram_blue'))
+              .fontColor(Color.White)
+              .margin({ bottom: 16 })
+              .onClick(() => { this.submitRecoveryCode(); })
+              .transition(TransitionEffect.OPACITY.combine(
+                TransitionEffect.scale({ x: 0.95, y: 0.95 })
+              ).animation({ duration: 200, curve: Curve.EaseOut }))
+          }
         }
         .width('100%')
         .height('100%')
         .backgroundColor($r('app.color.background_primary'))
         .alignItems(HorizontalAlign.Center)
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
         .transition(TransitionEffect.OPACITY.animation({ duration: 200 }))
       }
     }

@@ -82,22 +82,7 @@ export struct PhoneNumberPage {
     NavDestination() {
       Stack() {
         Column() {
-          // Top bar with "Next" in top-right (like real Telegram iOS)
-          Row() {
-            Blank()
-            if (this.phoneNumber.length > 0) {
-              Text($r('app.string.next_button'))
-                .fontSize(20)
-                .fontWeight(FontWeight.Medium)
-                .fontColor($r('app.color.telegram_blue'))
-                .onClick(() => this.submitPhoneNumber())
-            }
-          }
-          .width('100%')
-          .height(56)
-          .padding({ left: 16, right: 16 })
-
-          Blank().height(20)
+          Blank().height(24)
 
           // Animated mascot — the Telegram monkey (like real Telegram login)
           TelegramMascot({ mascotState: MascotState.IDLE, mascotSize: 120 })
@@ -205,12 +190,29 @@ export struct PhoneNumberPage {
           }
 
           Blank()
+
+          // Continue button at bottom center (like iOS Telegram)
+          if (this.phoneNumber.length > 0 && !this.isLoading) {
+            Button($r('app.string.next_button'))
+              .type(ButtonType.Capsule)
+              .width('90%')
+              .height(50)
+              .fontSize(17)
+              .fontWeight(FontWeight.Medium)
+              .backgroundColor($r('app.color.telegram_blue'))
+              .fontColor(Color.White)
+              .margin({ bottom: 16 })
+              .onClick(() => this.submitPhoneNumber())
+              .transition(TransitionEffect.OPACITY.combine(
+                TransitionEffect.scale({ x: 0.95, y: 0.95 })
+              ).animation({ duration: 200, curve: Curve.EaseOut }))
+          }
         }
         .width('100%')
         .height('100%')
         .backgroundColor($r('app.color.background_primary'))
         .alignItems(HorizontalAlign.Center)
-        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
 
         // --- Country picker overlay (like Telegram iOS/Android) ---
         if (this.showCountryPicker) {
@@ -289,7 +291,7 @@ export struct PhoneNumberPage {
           .width('100%')
           .height('100%')
           .backgroundColor($r('app.color.background_primary'))
-          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
           .transition(TransitionEffect.OPACITY.animation({ duration: 200 }))
         }
       }

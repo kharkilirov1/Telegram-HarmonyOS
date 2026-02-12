@@ -30,29 +30,22 @@ export struct VerifyCodePage {
   build() {
     NavDestination() {
       Column() {
-        // Top bar: Back + "Next" (like real Telegram)
+        // Top bar: Back button only
         Row() {
           Image($r('app.media.ic_back'))
             .width(24)
             .height(24)
             .fillColor($r('app.color.telegram_blue'))
+            .padding(12)
             .onClick(() => this.navPathStack.pop())
 
           Blank()
-
-          if (this.code.length >= 5 && !this.isLoading) {
-            Text($r('app.string.next_button'))
-              .fontSize(20)
-              .fontWeight(FontWeight.Medium)
-              .fontColor($r('app.color.telegram_blue'))
-              .onClick(() => this.submitCode())
-          }
         }
         .width('100%')
-        .height(56)
-        .padding({ left: 16, right: 16 })
+        .height(48)
+        .padding({ left: 4, right: 16 })
 
-        Blank().height(20)
+        Blank().height(12)
 
         // Animated mascot — tracks code input (like real Telegram)
         TelegramMascot({ mascotState: this.mascotState, mascotSize: 120 })
@@ -138,11 +131,28 @@ export struct VerifyCodePage {
         }
 
         Blank()
+
+        // Continue button at bottom center (like iOS Telegram)
+        if (this.code.length >= 5 && !this.isLoading) {
+          Button($r('app.string.next_button'))
+            .type(ButtonType.Capsule)
+            .width('90%')
+            .height(50)
+            .fontSize(17)
+            .fontWeight(FontWeight.Medium)
+            .backgroundColor($r('app.color.telegram_blue'))
+            .fontColor(Color.White)
+            .margin({ bottom: 16 })
+            .onClick(() => this.submitCode())
+            .transition(TransitionEffect.OPACITY.combine(
+              TransitionEffect.scale({ x: 0.95, y: 0.95 })
+            ).animation({ duration: 200, curve: Curve.EaseOut }))
+        }
       }
       .width('100%')
       .height('100%')
       .backgroundColor($r('app.color.background_primary'))
-      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
       .alignItems(HorizontalAlign.Center)
     }
     .hideTitleBar(true)
