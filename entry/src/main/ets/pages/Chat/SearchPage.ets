@@ -104,7 +104,7 @@ export struct SearchPage {
             // --- Contacts Section ---
             if (this.matchingContacts.length > 0) {
               ListItem() {
-                SearchSectionHeader({ title: 'Contacts' })
+                SearchSectionHeader({ title: $r('app.string.search_contacts_section') })
               }
 
               ForEach(this.matchingContacts, (user: User) => {
@@ -122,7 +122,7 @@ export struct SearchPage {
             // --- Chats Section ---
             if (this.matchingChats.length > 0) {
               ListItem() {
-                SearchSectionHeader({ title: 'Chats' })
+                SearchSectionHeader({ title: $r('app.string.search_chats_section') })
               }
 
               ForEach(this.matchingChats, (chat: Chat) => {
@@ -141,7 +141,7 @@ export struct SearchPage {
             // --- Messages Section ---
             if (this.matchingMessages.length > 0) {
               ListItem() {
-                SearchSectionHeader({ title: 'Messages' })
+                SearchSectionHeader({ title: $r('app.string.search_messages_section') })
               }
 
               ForEach(this.matchingMessages, (msg: Message) => {
@@ -293,13 +293,14 @@ export struct SearchPage {
   }
 
   private contentTypeLabel(contentType: MessageContentType): string {
+    const rm = getContext(this).resourceManager;
     switch (contentType) {
-      case MessageContentType.PHOTO: return 'Photo';
-      case MessageContentType.VIDEO: return 'Video';
-      case MessageContentType.DOCUMENT: return 'Document';
-      case MessageContentType.VOICE: return 'Voice message';
-      case MessageContentType.STICKER: return 'Sticker';
-      case MessageContentType.ANIMATION: return 'GIF';
+      case MessageContentType.PHOTO: return rm.getStringByNameSync('photo');
+      case MessageContentType.VIDEO: return rm.getStringByNameSync('video');
+      case MessageContentType.DOCUMENT: return rm.getStringByNameSync('document_label');
+      case MessageContentType.VOICE: return rm.getStringByNameSync('voice_message');
+      case MessageContentType.STICKER: return rm.getStringByNameSync('sticker');
+      case MessageContentType.ANIMATION: return rm.getStringByNameSync('gif');
       default: return '';
     }
   }

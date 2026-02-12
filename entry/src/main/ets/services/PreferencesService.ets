@@ -218,7 +218,7 @@ export class PreferencesService {
 
   // --- Generic accessors ---
 
-  private async getString(key: string, defaultValue: string): Promise<string> {
+  private getString(key: string, defaultValue: string): string {
     if (!this.store) return defaultValue;
     try {
       return this.store.getSync(key, defaultValue) as string;
@@ -234,7 +234,7 @@ export class PreferencesService {
     await this.store.flush();
   }
 
-  private async getBoolean(key: string, defaultValue: boolean): Promise<boolean> {
+  private getBoolean(key: string, defaultValue: boolean): boolean {
     if (!this.store) return defaultValue;
     try {
       return this.store.getSync(key, defaultValue) as boolean;
@@ -250,7 +250,7 @@ export class PreferencesService {
     await this.store.flush();
   }
 
-  private async getNumber(key: string, defaultValue: number): Promise<number> {
+  private getNumber(key: string, defaultValue: number): number {
     if (!this.store) return defaultValue;
     try {
       return this.store.getSync(key, defaultValue) as number;

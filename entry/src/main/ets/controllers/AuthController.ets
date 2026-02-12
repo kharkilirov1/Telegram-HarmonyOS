@@ -200,9 +200,9 @@ export class AuthController {
         this.emailAddressPattern = safeString(authState['email_address_pattern']);
       }
 
-      // Fetch user ID once authorized
+      // Fetch user ID once authorized (fire-and-forget; errors handled internally)
       if (stateType === 'authorizationStateReady') {
-        this.fetchMyUserId();
+        void this.fetchMyUserId();
       }
 
       // Clean up on logout/close

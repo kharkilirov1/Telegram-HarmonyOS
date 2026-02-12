@@ -1,6 +1,6 @@
 @ComponentV2
 export struct SearchSectionHeader {
-  @Param title: string = '';
+  @Param title: ResourceStr = '';
 
   build() {
     Row() {

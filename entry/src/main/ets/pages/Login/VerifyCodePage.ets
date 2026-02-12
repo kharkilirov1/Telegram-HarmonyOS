@@ -66,7 +66,7 @@ export struct VerifyCodePage {
           .margin({ bottom: 8 })
 
         // Subtitle with phone number
-        Text(`We've sent the code to ${this.phoneNumber}`)
+        Text($r('app.string.code_sent_to', this.phoneNumber))
           .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .textAlign(TextAlign.Center)
@@ -123,7 +123,7 @@ export struct VerifyCodePage {
 
         // Resend timer (like real Telegram)
         if (this.resendTimer > 0) {
-          Text(`You can request the code again in 0:${this.resendTimer.toString().padStart(2, '0')}`)
+          Text($r('app.string.login_resend_code', `0:${this.resendTimer.toString().padStart(2, '0')}`))
             .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .margin({ top: 24 })
@@ -156,7 +156,7 @@ export struct VerifyCodePage {
     try {
       await AuthController.getInstance().submitCode(this.code);
     } catch (e) {
-      this.errorMessage = 'Invalid code. Please try again.';
+      this.errorMessage = getContext(this).resourceManager.getStringByNameSync('error_invalid_code');
     } finally {
       this.isLoading = false;
     }
@@ -168,7 +168,7 @@ export struct VerifyCodePage {
       this.resendTimer = 60;
       this.startResendTimer();
     } catch (e) {
-      this.errorMessage = 'Failed to resend code. Please try again.';
+      this.errorMessage = getContext(this).resourceManager.getStringByNameSync('error_send_code');
     }
   }
 
