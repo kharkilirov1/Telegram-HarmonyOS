@@ -53,15 +53,15 @@ export struct MessageBubble {
               .fontSize(14)
               .fontWeight(FontWeight.Medium)
               .fontColor(Color.White)
-              .width(34)
-              .height(34)
-              .borderRadius(17)
+              .width(36)
+              .height(36)
+              .borderRadius(18)
               .backgroundColor(getSenderColor(this.message.senderId))
               .textAlign(TextAlign.Center)
-              .margin({ right: 6 })
+              .margin({ right: 8 })
               .alignSelf(ItemAlign.End)
           } else {
-            Blank().width(40)
+            Blank().width(44)
           }
         }
 
@@ -114,8 +114,8 @@ export struct MessageBubble {
                   this.message.contentType === MessageContentType.VENUE
                     ? { left: 0, right: 0, top: 0, bottom: 4 } :
                     this.message.contentType === MessageContentType.DICE
-                      ? { left: 6, right: 6, top: 4, bottom: 4 } :
-                      { left: 10, right: 10, top: 6, bottom: 6 })
+                      ? { left: 8, right: 8, top: 4, bottom: 4 } :
+                      { left: 12, right: 12, top: 8, bottom: 8 })
         .borderRadius(this.getBubbleRadii())
         .backgroundColor(this.getBubbleColor())
         .shadow(this.message.contentType === MessageContentType.STICKER
@@ -183,8 +183,8 @@ export struct MessageBubble {
     }
     .width('100%')
     .margin({
-      top: this.isFirstInGroup ? 6 : 1,
-      bottom: this.isLastInGroup ? 6 : 1
+      top: this.isFirstInGroup ? 8 : 2,
+      bottom: this.isLastInGroup ? 8 : 2
     })
   }
 
@@ -225,8 +225,8 @@ export struct MessageBubble {
   }
 
   private getBubbleRadii(): BorderRadiuses {
-    const r = 17;
-    const tailR = 4;
+    const r = 18;
+    const tailR = 6;
     if (this.message.contentType === MessageContentType.STICKER) {
       return { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 };
     }

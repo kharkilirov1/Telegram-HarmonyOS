@@ -14,7 +14,7 @@ export struct ChatListItem {
         photoUrl: this.chat.photo || '',
         initials: this.getInitials(),
         avatarColor: this.getAvatarColor(),
-        avatarSize: 54,
+        avatarSize: 48,
         isOnline: this.chat.isUserOnline,
         showOnlineDot: !this.chat.isGroup && !this.chat.isChannel
       })
@@ -42,8 +42,8 @@ export struct ChatListItem {
 
           if (this.chat.isMuted) {
             Image($r('app.media.ic_mute'))
-              .width(15)
-              .height(15)
+              .width(16)
+              .height(16)
               .fillColor($r('app.color.text_secondary'))
               .margin({ left: 4, right: 4 })
           }
@@ -69,7 +69,7 @@ export struct ChatListItem {
               Span(this.chat.draftText)
                 .fontColor($r('app.color.text_secondary'))
             }
-            .fontSize(15)
+            .fontSize(16)
             .maxLines(2)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .layoutWeight(1)
@@ -84,7 +84,7 @@ export struct ChatListItem {
                   .fillColor(this.chat.lastMessageIsRead
                     ? $r('app.color.telegram_blue')
                     : $r('app.color.text_secondary'))
-                  .margin({ right: 3 })
+                  .margin({ right: 4 })
               }
 
               Text() {
@@ -97,7 +97,7 @@ export struct ChatListItem {
                 Span(this.chat.lastMessage)
                   .fontColor($r('app.color.text_secondary'))
               }
-              .fontSize(15)
+              .fontSize(16)
               .maxLines(2)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
               .layoutWeight(1)
@@ -139,7 +139,7 @@ export struct ChatListItem {
       .layoutWeight(1)
     }
     .width('100%')
-    .height(76)
+    .height(72)
     .padding({ left: 16, right: 16 })
     .onClick(() => this.onChatClick(this.chat.id))
   }

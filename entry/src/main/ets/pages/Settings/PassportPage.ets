@@ -62,10 +62,10 @@ export struct PassportPage {
             .layoutWeight(1)
         }
         .width('100%')
-        .height(56)
-        .padding({ left: 8, right: 16 })
+        .height(48)
+        .padding({ left: 4, right: 12 })
         .backgroundColor($r('app.color.glass_nav_bg'))
-        .borderRadius({ topLeft: 0, topRight: 0, bottomLeft: 16, bottomRight: 16 })
+        .borderRadius({ topLeft: 0, topRight: 0, bottomLeft: 24, bottomRight: 24 })
         .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: 2 })
         .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 

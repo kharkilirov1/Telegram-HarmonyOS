@@ -34,21 +34,21 @@ export struct ChatHeader {
           .alt($r('app.media.app_icon'))
           .autoResize(true)
           .onError(() => {})
-          .width(36)
-          .height(36)
+          .width(40)
+          .height(40)
           .borderRadius(20)
-          .margin({ left: 8 })
+          .margin({ left: 4 })
       } else {
         Text(this.chatInitial)
-          .fontSize(15)
+          .fontSize(16)
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.icon_on_primary'))
-          .width(36)
-          .height(36)
+          .width(40)
+          .height(40)
           .borderRadius(20)
           .backgroundColor($r('app.color.telegram_blue'))
           .textAlign(TextAlign.Center)
-          .margin({ left: 8 })
+          .margin({ left: 4 })
       }
 
       Column() {
@@ -72,7 +72,7 @@ export struct ChatHeader {
               : $r('app.color.text_secondary'))
         }
       }
-      .margin({ left: 10 })
+      .margin({ left: 8 })
       .alignItems(HorizontalAlign.Start)
       .layoutWeight(1)
       .onClick(() => { this.onOpenInfo(); })
@@ -100,15 +100,15 @@ export struct ChatHeader {
         .padding(8)
     }
     .width('100%')
-    .height(56)
-    .padding({ left: 8, right: 16 })
+    .height(48)
+    .padding({ left: 4, right: 12 })
     .backgroundColor($r('app.color.glass_nav_bg'))
     .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
       colorMode: ThemeColorMode.SYSTEM,
       adaptiveColor: AdaptiveColor.DEFAULT,
       scale: 1.0
     })
-    .borderRadius({ topLeft: 0, topRight: 0, bottomLeft: 16, bottomRight: 16 })
+    .borderRadius({ topLeft: 0, topRight: 0, bottomLeft: 24, bottomRight: 24 })
     .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: 2 })
     .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
   }
