@@ -2,7 +2,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { taskpool } from '@kit.ArkTS';
 import { fileIo } from '@kit.CoreFileKit';
 import { TELEGRAM_API_ID, TELEGRAM_API_HASH } from './ConfigLocal';
-import { SecurityService } from './SecurityService';
+import { SecurityService, SecurityMode } from './SecurityService';
 import { TdFallbackRegistry } from './TdFallbackRegistry';
 import { classifyTdlibError } from './AppError';
 import { TdObject } from '../models/TdTypes';
@@ -105,6 +105,10 @@ export class TDLibClient {
   private _readyReject: ((reason: Error) => void) | null = null;
   private _readyPromise: Promise<void>;
 
+  // True when running REAL TDLib with SOFTWARE_FALLBACK encryption.
+  // Production builds should treat this as a degraded state.
+  private _degradedSecurity: boolean = false;
+
   private constructor() {
     this._readyPromise = new Promise<void>((resolve, reject) => {
       this._readyResolve = resolve;
@@ -183,6 +187,15 @@ export class TDLibClient {
     return this._tdlibInfo?.mode ?? 'UNKNOWN';
   }
 
+  /**
+   * True when REAL TDLib is running with SOFTWARE_FALLBACK encryption.
+   * This means the database encryption key is NOT hardware-backed.
+   * UI/monitoring should surface this prominently in production builds.
+   */
+  get isDegradedSecurity(): boolean {
+    return this._degradedSecurity;
+  }
+
   async initialize(): Promise<void> {
     if (this._state !== ClientState.Idle && this._state !== ClientState.Stopped) {
       this.logWarn('initialize() called in invalid state: %{public}s', this._state);
@@ -233,6 +246,21 @@ export class TDLibClient {
     this.logInfo('│ SEC_MODE:    %{public}s (resolved)', security.mode);
     if (dbEncKey.length === 0) {
       this.logWarn('Database encryption key is empty — TDLib database will be unencrypted');
+    }
+
+    // Release/profile guard: SOFTWARE_FALLBACK in REAL mode = degraded production
+    if (security.mode === SecurityMode.SOFTWARE_FALLBACK && this._tdlibInfo!.mode === 'REAL') {
+      this._degradedSecurity = true;
+      this.logError('┌─ DEGRADED SECURITY ─────────────────────────────');
+      this.logError('│ REAL TDLib mode with SOFTWARE_FALLBACK encryption.');
+      this.logError('│ Database encryption key is NOT hardware-backed (HUKS unavailable).');
+      this.logError('│ This build is NOT production-safe for sensitive data.');
+      this.logError('│ Ensure the device supports HUKS (TEE/Secure Element)');
+      this.logError('│ or accept degraded security for this deployment.');
+      this.logError('└──────────────────────────────────────────────────');
+    } else if (security.mode === SecurityMode.SOFTWARE_FALLBACK) {
+      // STUB mode — expected in dev/emulator, just log info
+      this.logInfo('SOFTWARE_FALLBACK in STUB mode — acceptable for development');
     }
 
     // Guard: ensure DB is compatible with the current encryption scheme.
