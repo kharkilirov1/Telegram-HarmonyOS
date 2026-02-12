@@ -149,11 +149,19 @@ export struct SavedMessagesPage {
     if (text.length === 0 || this.chatId === 0) return;
 
     this.inputText = '';
-    await MessagesController.getInstance().sendTextMessage(this.chatId, text);
+    try {
+      await MessagesController.getInstance().sendTextMessage(this.chatId, text);
+    } catch (e) {
+      hilog.warn(0x0001, 'SavedMessagesPage', 'Failed to send message');
+    }
   }
 
   private async deleteMessage(messageId: number): Promise<void> {
-    await MessagesController.getInstance().deleteMessage(this.chatId, messageId);
+    try {
+      await MessagesController.getInstance().deleteMessage(this.chatId, messageId);
+    } catch (e) {
+      hilog.warn(0x0001, 'SavedMessagesPage', 'Failed to delete message');
+    }
   }
 
   // --- Search ---

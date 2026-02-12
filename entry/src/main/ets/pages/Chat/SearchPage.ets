@@ -306,7 +306,7 @@ export struct SearchPage {
   }
 
   private formatDate(timestamp: number): string {
-    if (timestamp === 0) return '';
+    if (timestamp <= 0) return '';
     const date = new Date(timestamp * 1000);
     const now = new Date();
     if (date.toDateString() === now.toDateString()) {

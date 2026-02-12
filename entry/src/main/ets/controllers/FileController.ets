@@ -129,6 +129,11 @@ export class FileController {
   }
 
   private addToCache(fileId: number, path: string): void {
+    // Remove existing entry to avoid duplicates in cacheOrder
+    const existingIdx = this.cacheOrder.indexOf(fileId);
+    if (existingIdx >= 0) {
+      this.cacheOrder.splice(existingIdx, 1);
+    }
     // LRU eviction
     if (this.cacheOrder.length >= this.maxCacheSize) {
       const evictId = this.cacheOrder.shift()!;
