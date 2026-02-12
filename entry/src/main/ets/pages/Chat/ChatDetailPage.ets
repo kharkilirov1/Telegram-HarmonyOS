@@ -104,6 +104,14 @@ export struct ChatDetailPage {
     }
   };
 
+  private pinnedMessageHandler = (args?: Record<string, unknown>): void => {
+    if (!args) return;
+    const chatId = args['chatId'] as number;
+    if (chatId !== this.chatId) return;
+    // Reload pinned message from TDLib
+    this.reloadPinnedMessage();
+  };
+
   aboutToAppear(): void {
     NotificationCenter.getInstance()
       .addObserver(EventId.NEW_MESSAGE, this.newMessageHandler);
@@ -111,6 +119,8 @@ export struct ChatDetailPage {
       .addObserver(EventId.CHAT_ACTION_UPDATED, this.typingHandler);
     NotificationCenter.getInstance()
       .addObserver(EventId.DIALOGS_UPDATED, this.dialogsUpdatedHandler);
+    NotificationCenter.getInstance()
+      .addObserver(EventId.PINNED_MESSAGE_UPDATED, this.pinnedMessageHandler);
 
     this.loadChatInfo();
     this.loadInitialMessages();
@@ -123,6 +133,8 @@ export struct ChatDetailPage {
       .removeObserver(EventId.CHAT_ACTION_UPDATED, this.typingHandler);
     NotificationCenter.getInstance()
       .removeObserver(EventId.DIALOGS_UPDATED, this.dialogsUpdatedHandler);
+    NotificationCenter.getInstance()
+      .removeObserver(EventId.PINNED_MESSAGE_UPDATED, this.pinnedMessageHandler);
   }
 
   build() {
@@ -291,6 +303,16 @@ export struct ChatDetailPage {
     }
   }
 
+  private async reloadPinnedMessage(): Promise<void> {
+    try {
+      const pinned = await MessagesController.getInstance().getChatPinnedMessage(this.chatId);
+      this.pinnedMessage = pinned;
+      this.showPinnedBar = pinned !== null;
+    } catch (_e) {
+      // Keep existing pinned state on error
+    }
+  }
+
   private async loadOlderMessages(): Promise<void> {
     if (this.isLoadingOlder || this.endReachedOlder || this.messages.length === 0) return;
     this.isLoadingOlder = true;
@@ -382,8 +404,8 @@ export struct ChatDetailPage {
     const existing = msg.reactions.find((r) => r.emoji === resolvedEmoji);
     const isRemoving = existing !== undefined && existing.isMine;
 
-    // Optimistic local update
-    toggleReactionState(msg, emoji);
+    // Optimistic local update — use resolvedEmoji so local and server stay in sync
+    toggleReactionState(msg, resolvedEmoji);
     this.rebuildFlatList();
 
     // Send to TDLib
@@ -392,7 +414,7 @@ export struct ChatDetailPage {
         .toggleMessageReaction(this.chatId, msg.id, resolvedEmoji, !isRemoving);
     } catch (_e) {
       // Revert optimistic update on failure
-      toggleReactionState(msg, emoji);
+      toggleReactionState(msg, resolvedEmoji);
       this.rebuildFlatList();
     }
   }

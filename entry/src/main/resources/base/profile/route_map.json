@@ -189,6 +189,11 @@
       "name": "BusinessAccount",
       "pageSourceFile": "src/main/ets/pages/Settings/BusinessAccountPage.ets",
       "buildFunction": "BusinessAccountBuilder"
+    },
+    {
+      "name": "PhoneNumber",
+      "pageSourceFile": "src/main/ets/pages/Login/PhoneNumberPage.ets",
+      "buildFunction": "PhoneNumberBuilder"
     }
   ]
 }

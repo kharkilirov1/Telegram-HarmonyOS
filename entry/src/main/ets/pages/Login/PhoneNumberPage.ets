@@ -1,6 +1,11 @@
 import { AuthController } from '../../controllers/AuthController';
 import { TelegramMascot, MascotState } from '../../components/Common/TelegramMascot';
 
+@Builder
+export function PhoneNumberBuilder(name: string, param: Object) {
+  PhoneNumberPage()
+}
+
 interface CountryEntry {
   name: string;
   code: string;

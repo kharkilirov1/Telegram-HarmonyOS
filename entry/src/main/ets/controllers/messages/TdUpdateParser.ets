@@ -275,6 +275,20 @@ export function parseUpdateMessageSendSucceeded(update: Record<string, Object>):
   return { message: message, oldMessageId: oldMessageId };
 }
 
+export interface ParsedUpdateMessageIsPinned {
+  chatId: number;
+  messageId: number;
+  isPinned: boolean;
+}
+
+export function parseUpdateMessageIsPinned(update: Record<string, Object>): ParsedUpdateMessageIsPinned | undefined {
+  const chatId: number = safeNumber(update['chat_id']);
+  const messageId: number = safeNumber(update['message_id']);
+  if (chatId === 0 || messageId === 0) return undefined;
+  const isPinned: boolean = (update['is_pinned'] as boolean) === true;
+  return { chatId: chatId, messageId: messageId, isPinned: isPinned };
+}
+
 export function parseUpdateMessageSendFailed(update: Record<string, Object>): ParsedUpdateMessageSendFailed | undefined {
   const message = update['message'] as TdMessage | undefined;
   if (!message) return undefined;

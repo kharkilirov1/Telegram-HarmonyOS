@@ -33,7 +33,8 @@ import {
   parseUpdateUser,
   parseUpdateUserStatus,
   parseUpdateMessageSendSucceeded,
-  parseUpdateMessageSendFailed
+  parseUpdateMessageSendFailed,
+  parseUpdateMessageIsPinned
 } from './TdUpdateParser';
 import { ChatActionState, applyInteractionInfo as mapInteractionInfo, mapChatActionState } from './MessageMapper';
 import { removeMessages, replaceTemporaryMessage, sortDialogs as reduceSortDialogs, upsertIncomingMessage } from './MessageStateReducer';
@@ -81,6 +82,13 @@ export function subscribeToTdUpdates(deps: MessagesUpdateSubscriberDeps): void {
     if (rawMsg) {
       chat.lastMessage = deps.extractTextPreview(rawMsg);
       chat.lastMessageDate = rawMsg.date || 0;
+
+      // Update outgoing/read flags for chat list checkmark indicators
+      chat.lastMessageIsOutgoing = rawMsg.is_outgoing === true;
+      const msgId: number = rawMsg.id || 0;
+      chat.lastMessageIsRead = chat.lastMessageIsOutgoing
+        && chat.lastReadOutboxMessageId > 0
+        && msgId <= chat.lastReadOutboxMessageId;
 
       const sender: TdMessageSender | undefined = rawMsg.sender_id;
       if (sender && tdType(sender as Record<string, unknown>) === 'messageSenderUser') {
@@ -292,6 +300,11 @@ export function subscribeToTdUpdates(deps: MessagesUpdateSubscriberDeps): void {
     if (chat) {
       chat.lastReadOutboxMessageId = lastReadId;
 
+      // Update chat list checkmark: if last message is outgoing and now read
+      if (chat.lastMessageIsOutgoing && !chat.lastMessageIsRead) {
+        chat.lastMessageIsRead = true;
+      }
+
       // Mark outgoing messages as read up to this ID
       const messages = deps.messagesByChat.get(chatId);
       if (messages) {
@@ -409,5 +422,18 @@ export function subscribeToTdUpdates(deps: MessagesUpdateSubscriberDeps): void {
     eventArgs['errorCode'] = parsed.errorCode;
     eventArgs['errorMessage'] = parsed.errorMessage;
     NotificationCenter.getInstance().post(EventId.MESSAGE_SEND_FAILED, eventArgs);
+  });
+
+  // --- Pinned message live updates ---
+
+  client.on('updateMessageIsPinned', (update: Record<string, Object>) => {
+    const parsed = parseUpdateMessageIsPinned(update);
+    if (!parsed) return;
+
+    const eventArgs: Record<string, unknown> = {};
+    eventArgs['chatId'] = parsed.chatId;
+    eventArgs['messageId'] = parsed.messageId;
+    eventArgs['isPinned'] = parsed.isPinned;
+    NotificationCenter.getInstance().post(EventId.PINNED_MESSAGE_UPDATED, eventArgs);
   });
 }

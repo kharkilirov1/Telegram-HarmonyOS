@@ -78,10 +78,22 @@ export struct LocationBubble {
             .fontSize(11)
             .fontColor(Color.White)
           if (this.message.isOutgoing) {
-            Image(this.message.isRead ? $r('app.media.ic_check_double') : $r('app.media.ic_check_single'))
-              .width(16).height(16)
-              .fillColor(this.message.isRead ? $r('app.color.telegram_blue') : Color.White)
-              .margin({ left: 3 })
+            if (this.message.sendState === 'sending') {
+              Image($r('app.media.ic_clock'))
+                .width(16).height(16)
+                .fillColor(Color.White)
+                .margin({ left: 3 })
+            } else if (this.message.sendState === 'failed') {
+              Image($r('app.media.ic_warning'))
+                .width(16).height(16)
+                .fillColor($r('app.color.swipe_delete'))
+                .margin({ left: 3 })
+            } else {
+              Image(this.message.isRead ? $r('app.media.ic_check_double') : $r('app.media.ic_check_single'))
+                .width(16).height(16)
+                .fillColor(this.message.isRead ? $r('app.color.telegram_blue') : Color.White)
+                .margin({ left: 3 })
+            }
           }
         }
         .padding({ left: 5, right: 5, top: 2, bottom: 2 })

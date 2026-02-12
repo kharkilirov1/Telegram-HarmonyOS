@@ -38,6 +38,9 @@ export enum EventId {
   // Connection
   CONNECTION_STATE_CHANGED = 50,
 
+  // Pinned messages
+  PINNED_MESSAGE_UPDATED = 52,
+
   // Stories
   STORIES_UPDATED = 55,
   STORY_DELETED = 56,

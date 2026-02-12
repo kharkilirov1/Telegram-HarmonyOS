@@ -136,7 +136,7 @@ export struct MultiAccountPage {
               .width('100%')
               .padding({ left: 16, right: 16, top: 12, bottom: 12 })
               .onClick(() => {
-                this.navPathStack.pushPath(new NavPathInfo('PhonePage', new Object()));
+                this.navPathStack.pushPath(new NavPathInfo('PhoneNumber', new Object()));
               })
             }
 

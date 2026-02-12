@@ -48,6 +48,12 @@ export struct ChatListPage {
       .removeObserver(EventId.DIALOGS_UPDATED, this.dialogsHandler);
     NotificationCenter.getInstance()
       .removeObserver(EventId.CHAT_ACTION_UPDATED, this.dialogsHandler);
+
+    // Clean up debounce timer to prevent late state updates
+    if (this.searchDebounceTimer > 0) {
+      clearTimeout(this.searchDebounceTimer);
+      this.searchDebounceTimer = 0;
+    }
   }
 
   build() {
