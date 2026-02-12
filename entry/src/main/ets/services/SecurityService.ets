@@ -11,9 +11,20 @@ const DB_KEY_ALIAS = 'telegram_db_enc_key';
 // Fixed derivation input — encrypted with the HUKS hardware key to produce the DB key
 const DERIVATION_INPUT = 'TelegramHarmonyOS_DBKey_v1';
 
+/** How the database encryption key was derived. */
+export enum SecurityMode {
+  /** Not yet initialized. */
+  UNINITIALIZED = 'UNINITIALIZED',
+  /** Key derived via hardware-backed HUKS (TEE/Secure Element). */
+  HUKS_HARDWARE = 'HUKS_HARDWARE',
+  /** Fallback: deterministic key from constant (no hardware backing). */
+  SOFTWARE_FALLBACK = 'SOFTWARE_FALLBACK'
+}
+
 export class SecurityService {
   private static instance: SecurityService | null = null;
   private dbEncryptionKey: string = '';
+  private _mode: SecurityMode = SecurityMode.UNINITIALIZED;
 
   private constructor() {}
 
@@ -25,6 +36,14 @@ export class SecurityService {
   }
 
   /**
+   * Returns the security mode used for key derivation.
+   * Available after initialize() completes.
+   */
+  get mode(): SecurityMode {
+    return this._mode;
+  }
+
+  /**
    * Initialize HUKS key and derive the database encryption key.
    * Must be called before getDatabaseEncryptionKey().
    */
@@ -32,12 +51,13 @@ export class SecurityService {
     try {
       await this.ensureHuksKeyExists();
       this.dbEncryptionKey = await this.deriveDbKey();
-      hilog.info(DOMAIN, TAG, 'Security service initialized successfully');
+      this._mode = SecurityMode.HUKS_HARDWARE;
+      hilog.info(DOMAIN, TAG, 'Security initialized: mode=%{public}s', this._mode);
     } catch (e) {
-      hilog.error(DOMAIN, TAG, 'Failed to initialize security: %{public}s', String(e));
-      // Fallback: generate a deterministic key from device info
-      // This is less secure but prevents app from crashing
+      hilog.error(DOMAIN, TAG, 'HUKS init failed, falling back to software: %{public}s', String(e));
       this.dbEncryptionKey = this.generateFallbackKey();
+      this._mode = SecurityMode.SOFTWARE_FALLBACK;
+      hilog.warn(DOMAIN, TAG, 'Security initialized: mode=%{public}s (DB key is NOT hardware-backed)', this._mode);
     }
   }
 

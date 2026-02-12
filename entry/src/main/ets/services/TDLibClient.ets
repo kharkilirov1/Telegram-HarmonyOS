@@ -163,6 +163,7 @@ export class TDLibClient {
     this.logInfo('│ API_ID:      %{public}s', TELEGRAM_API_ID > 0 ? 'configured' : 'NOT SET');
     this.logInfo('│ API_HASH:    %{public}s', TELEGRAM_API_HASH.length > 0 ? 'configured' : 'NOT SET');
     this.logInfo('│ DB_PATH:     %{public}s', TDLIB_DB_DIR);
+    this.logInfo('│ SEC_MODE:    (pending — resolved after HUKS init)');
     this.logInfo('└──────────────────────────────────────────────');
 
     // Validate API credentials
@@ -187,6 +188,7 @@ export class TDLibClient {
     const security = SecurityService.getInstance();
     await security.initialize();
     const dbEncKey = security.getDatabaseEncryptionKey();
+    this.logInfo('│ SEC_MODE:    %{public}s (resolved)', security.mode);
     if (dbEncKey.length === 0) {
       this.logWarn('Database encryption key is empty — TDLib database will be unencrypted');
     }
