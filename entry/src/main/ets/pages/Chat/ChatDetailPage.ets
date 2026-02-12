@@ -229,7 +229,7 @@ export struct ChatDetailPage {
       }
       .width('100%')
       .height('100%')
-      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+      .expandSafeArea([SafeAreaType.SYSTEM, SafeAreaType.KEYBOARD], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
     }
     .hideTitleBar(true)
   }

@@ -41,6 +41,9 @@ export struct PinnedMessageBar {
       .height(36)
       .padding({ left: 12, right: 12 })
       .backgroundColor($r('app.color.glass_nav_bg'))
+      .borderRadius(12)
+      .margin({ left: 8, right: 8, top: 4, bottom: 4 })
+      .shadow({ radius: 4, color: $r('app.color.shadow_color'), offsetY: 1 })
       .onClick(() => { this.onOpenPinnedMessage(); })
     }
   }

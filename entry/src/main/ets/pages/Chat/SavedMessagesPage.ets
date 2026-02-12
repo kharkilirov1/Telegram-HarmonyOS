@@ -345,6 +345,7 @@ export struct SavedMessagesPage {
       .width('100%')
       .height('100%')
       .backgroundColor($r('app.color.background_secondary'))
+      .expandSafeArea([SafeAreaType.SYSTEM, SafeAreaType.KEYBOARD], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
     }
     .hideTitleBar(true)
   }

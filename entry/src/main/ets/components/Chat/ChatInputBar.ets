@@ -138,8 +138,6 @@ export struct ChatInputBar {
         Divider().strokeWidth(0.5).color($r('app.color.separator'))
       }
 
-      Divider().strokeWidth(0.5).color($r('app.color.separator'))
-
       // Main input row
       Row() {
         if (this.isRecording) {
@@ -242,6 +240,8 @@ export struct ChatInputBar {
         adaptiveColor: AdaptiveColor.DEFAULT,
         scale: 1.0
       })
+      .borderRadius({ topLeft: 16, topRight: 16, bottomLeft: 0, bottomRight: 0 })
+      .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: -2 })
 
       // Panel selector tabs (emoji / stickers / gifs)
       if (this.showEmojiPicker || this.showStickerPicker || this.showGifPicker) {

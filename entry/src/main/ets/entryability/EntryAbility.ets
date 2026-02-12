@@ -1,6 +1,6 @@
 import { Configuration, UIAbility, ConfigurationConstant } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { window } from '@kit.ArkUI';
+import { window, KeyboardAvoidMode } from '@kit.ArkUI';
 import { i18n } from '@kit.LocalizationKit';
 import { PreferencesService } from '../services/PreferencesService';
 
@@ -35,12 +35,20 @@ export default class EntryAbility extends UIAbility {
       hilog.warn(DOMAIN, TAG, 'window edge-to-edge setup failed: %{public}s', String(error));
     }
 
+    // Use RESIZE mode so keyboard compresses layout instead of shifting it
+    // (critical for chat input bars — prevents content from being obscured)
     windowStage.loadContent('pages/Index', (err) => {
       if (err.code) {
         hilog.error(DOMAIN, TAG, 'Failed to load content: %{public}s', JSON.stringify(err));
         return;
       }
       hilog.info(DOMAIN, TAG, 'Content loaded successfully');
+      try {
+        const uiContext = windowStage.getMainWindowSync().getUIContext();
+        uiContext.setKeyboardAvoidMode(KeyboardAvoidMode.RESIZE);
+      } catch (error) {
+        hilog.warn(DOMAIN, TAG, 'setKeyboardAvoidMode failed: %{public}s', String(error));
+      }
     });
   }
 

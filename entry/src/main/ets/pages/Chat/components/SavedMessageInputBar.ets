@@ -38,6 +38,13 @@ export struct SavedMessageInputBar {
     }
     .width('100%')
     .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-    .backgroundColor($r('app.color.background_primary'))
+    .backgroundColor($r('app.color.glass_input_bg'))
+    .backgroundBlurStyle(BlurStyle.COMPONENT_THIN, {
+      colorMode: ThemeColorMode.SYSTEM,
+      adaptiveColor: AdaptiveColor.DEFAULT,
+      scale: 1.0
+    })
+    .borderRadius({ topLeft: 16, topRight: 16, bottomLeft: 0, bottomRight: 0 })
+    .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: -2 })
   }
 }

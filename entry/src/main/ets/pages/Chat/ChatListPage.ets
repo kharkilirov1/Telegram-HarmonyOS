@@ -103,6 +103,8 @@ export struct ChatListPage {
           adaptiveColor: AdaptiveColor.DEFAULT,
           scale: 1.0
         })
+        .borderRadius({ topLeft: 0, topRight: 0, bottomLeft: 16, bottomRight: 16 })
+        .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: 2 })
         .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
         // Search bar — like both platforms
@@ -225,7 +227,7 @@ export struct ChatListPage {
       .borderRadius(28)
       .backgroundColor($r('app.color.telegram_blue'))
       .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: 4 })
-      .margin({ right: 16, bottom: 16 })
+      .margin({ right: 16, bottom: 72 })
       .onClick(() => {
         this.navPathStack.pushPath(new NavPathInfo('NewChat', new Object()));
       })

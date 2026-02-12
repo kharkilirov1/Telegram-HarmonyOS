@@ -219,9 +219,9 @@ struct Index {
         adaptiveColor: AdaptiveColor.DEFAULT,
         scale: 1.0
       })
+      .borderRadius({ topLeft: 0, topRight: 0, bottomLeft: 16, bottomRight: 16 })
+      .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: 2 })
       .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
-
-      Divider().strokeWidth(0.5).color($r('app.color.separator'))
 
       // Quick settings list — tapping rows navigates into NavDestination
       Scroll() {

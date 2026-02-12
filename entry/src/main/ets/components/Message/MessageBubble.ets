@@ -117,6 +117,9 @@ export struct MessageBubble {
                       { left: 10, right: 10, top: 6, bottom: 6 })
         .borderRadius(this.getBubbleRadii())
         .backgroundColor(this.getBubbleColor())
+        .shadow(this.message.contentType === MessageContentType.STICKER
+          ? { radius: 0 }
+          : { radius: 4, color: $r('app.color.shadow_color'), offsetY: 1 })
         .constraintSize({ maxWidth: '75%' })
         .gesture(
           GestureGroup(GestureMode.Exclusive,

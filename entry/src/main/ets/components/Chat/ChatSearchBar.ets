@@ -166,6 +166,8 @@ export struct ChatSearchBar {
     }
     .width('100%')
     .backgroundColor($r('app.color.glass_nav_bg'))
+    .borderRadius({ topLeft: 0, topRight: 0, bottomLeft: 16, bottomRight: 16 })
+    .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: 2 })
     .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
   }
 
