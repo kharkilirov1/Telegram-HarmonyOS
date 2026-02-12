@@ -133,6 +133,10 @@ export class AuthController {
     await TDLibClient.getInstance().send('checkAuthenticationEmailCode', params);
   }
 
+  async resendCode(): Promise<void> {
+    await TDLibClient.getInstance().send('resendAuthenticationCode');
+  }
+
   async logout(): Promise<void> {
     await TDLibClient.getInstance().send('logOut');
   }

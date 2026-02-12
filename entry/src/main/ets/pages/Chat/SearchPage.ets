@@ -29,6 +29,13 @@ export struct SearchPage {
 
   private searchTimerId: number = -1;
 
+  aboutToDisappear(): void {
+    if (this.searchTimerId >= 0) {
+      clearTimeout(this.searchTimerId);
+      this.searchTimerId = -1;
+    }
+  }
+
   private totalResultCount(): number {
     return this.matchingContacts.length + this.matchingChats.length + this.matchingMessages.length;
   }

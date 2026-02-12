@@ -53,10 +53,13 @@ export class FileController {
       return;
     }
 
-    // Queue callback
-    const existing = this.downloadCallbacks.get(fileId) || [];
-    existing.push(callback);
-    this.downloadCallbacks.set(fileId, existing);
+    // Queue callback; only send download request if this is the first request for this fileId
+    const existing = this.downloadCallbacks.get(fileId);
+    if (existing) {
+      existing.push(callback);
+      return;
+    }
+    this.downloadCallbacks.set(fileId, [callback]);
 
     // Request download from TDLib
     const downloadParams: TdObject = {};

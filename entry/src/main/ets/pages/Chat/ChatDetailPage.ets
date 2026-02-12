@@ -340,18 +340,26 @@ export struct ChatDetailPage {
   private async sendMessage(text: string): Promise<void> {
     const replyId = this.replyMessage?.id || 0;
     this.replyMessage = null;
-    await MessagesController.getInstance()
-      .sendTextMessage(this.chatId, text, replyId);
+    try {
+      await MessagesController.getInstance()
+        .sendTextMessage(this.chatId, text, replyId);
+    } catch (e) {
+      this.showActionError();
+    }
   }
 
   private async editMessageText(messageId: number, text: string): Promise<void> {
     this.editMessage = null;
-    await MessagesController.getInstance().editMessageText(this.chatId, messageId, text);
-    // Update local view
-    const msg = this.messages.find(m => m.id === messageId);
-    if (msg) {
-      msg.text = text;
-      this.rebuildFlatList();
+    try {
+      await MessagesController.getInstance().editMessageText(this.chatId, messageId, text);
+      // Update local view
+      const msg = this.messages.find(m => m.id === messageId);
+      if (msg) {
+        msg.text = text;
+        this.rebuildFlatList();
+      }
+    } catch (e) {
+      this.showActionError();
     }
   }
 
@@ -371,24 +379,40 @@ export struct ChatDetailPage {
   }
 
   private async sendGifMessage(gifId: number): Promise<void> {
-    await MessagesController.getInstance().sendGifMessage(this.chatId, gifId);
+    try {
+      await MessagesController.getInstance().sendGifMessage(this.chatId, gifId);
+    } catch (e) {
+      this.showActionError();
+    }
   }
 
   private async sendStickerMessage(emoji: string): Promise<void> {
-    await MessagesController.getInstance().sendStickerMessage(this.chatId, emoji);
+    try {
+      await MessagesController.getInstance().sendStickerMessage(this.chatId, emoji);
+    } catch (e) {
+      this.showActionError();
+    }
   }
 
   private async sendVoiceMessage(duration: number): Promise<void> {
     const replyId = this.replyMessage?.id || 0;
     this.replyMessage = null;
-    await MessagesController.getInstance().sendVoiceMessage(this.chatId, duration, '', replyId);
+    try {
+      await MessagesController.getInstance().sendVoiceMessage(this.chatId, duration, '', replyId);
+    } catch (e) {
+      this.showActionError();
+    }
   }
 
   private async sendScheduledMessage(text: string, sendDate: number): Promise<void> {
     const replyId = this.replyMessage?.id || 0;
     this.replyMessage = null;
-    await MessagesController.getInstance()
-      .sendScheduledMessage(this.chatId, text, sendDate, replyId);
+    try {
+      await MessagesController.getInstance()
+        .sendScheduledMessage(this.chatId, text, sendDate, replyId);
+    } catch (e) {
+      this.showActionError();
+    }
   }
 
   private saveDraft(text: string): void {
@@ -396,7 +420,11 @@ export struct ChatDetailPage {
   }
 
   private async votePoll(msg: Message, optionIndex: number): Promise<void> {
-    await MessagesController.getInstance().votePoll(this.chatId, msg.id, [optionIndex]);
+    try {
+      await MessagesController.getInstance().votePoll(this.chatId, msg.id, [optionIndex]);
+    } catch (e) {
+      this.showActionError();
+    }
   }
 
   private async toggleReaction(msg: Message, emoji: string): Promise<void> {
@@ -420,9 +448,13 @@ export struct ChatDetailPage {
   }
 
   private async deleteMessage(msg: Message): Promise<void> {
-    await MessagesController.getInstance().deleteMessage(this.chatId, msg.id);
-    this.messages = this.messages.filter(m => m.id !== msg.id);
-    this.rebuildFlatList();
+    try {
+      await MessagesController.getInstance().deleteMessage(this.chatId, msg.id);
+      this.messages = this.messages.filter(m => m.id !== msg.id);
+      this.rebuildFlatList();
+    } catch (e) {
+      this.showActionError();
+    }
   }
 
   // --- Build flat list from messages (sender groups + date groups → flat items) ---

@@ -26,12 +26,14 @@ export struct StoryViewerPage {
   private videoController: VideoController = new VideoController();
   private readonly STORY_DURATION_MS: number = 5000; // 5 seconds per story
   private readonly TICK_MS: number = 50;
+  private isDestroyed: boolean = false;
 
   aboutToAppear(): void {
     this.loadStories();
   }
 
   aboutToDisappear(): void {
+    this.isDestroyed = true;
     this.stopTimer();
     // Close the current story
     if (this.currentIndex < this.stories.length) {
@@ -62,6 +64,8 @@ export struct StoryViewerPage {
         loaded.push(story);
       }
     }
+
+    if (this.isDestroyed) return;
 
     this.stories = loaded;
     this.isLoading = false;

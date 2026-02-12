@@ -133,8 +133,7 @@ export struct VerifyCodePage {
             .fontColor($r('app.color.telegram_blue'))
             .margin({ top: 24 })
             .onClick(() => {
-              this.resendTimer = 60;
-              this.startResendTimer();
+              this.resendAuthCode();
             })
         }
 
@@ -160,6 +159,16 @@ export struct VerifyCodePage {
       this.errorMessage = 'Invalid code. Please try again.';
     } finally {
       this.isLoading = false;
+    }
+  }
+
+  private async resendAuthCode(): Promise<void> {
+    try {
+      await AuthController.getInstance().resendCode();
+      this.resendTimer = 60;
+      this.startResendTimer();
+    } catch (e) {
+      this.errorMessage = 'Failed to resend code. Please try again.';
     }
   }
 
