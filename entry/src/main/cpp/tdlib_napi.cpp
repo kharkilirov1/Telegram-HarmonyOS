@@ -15,11 +15,20 @@ static std::queue<std::string> stub_response_queue;
 static std::mutex stub_queue_mutex;
 static std::atomic<bool> stub_auth_sent{false};
 
+// Tracked thread for deferred stub replies (replaces detached threads).
+// Joined on StopReceiveLoop to prevent post-shutdown enqueue race.
+static std::thread stub_reply_thread;
+static std::mutex stub_reply_mutex;
+
 // Push a mock response into the queue
 static void stub_enqueue(const std::string& json) {
     std::lock_guard<std::mutex> lock(stub_queue_mutex);
     stub_response_queue.push(json);
 }
+
+// Safe enqueue: only push if the receive loop is still running.
+// Returns false if the loop has stopped (caller should bail out).
+static bool stub_enqueue_if_running(const std::string& json);
 
 // Pop a mock response (returns empty if none)
 static std::string stub_dequeue() {
@@ -230,23 +239,40 @@ static void stub_handle_send(const std::string& request) {
             std::to_string(now) + ",\"is_outgoing\":true,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"" +
             send_text + "\"}}}}");
 
-        // Simulate a reply after 2 seconds
-        std::thread([send_chat_id, msg_id]() {
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-            // Typing indicator
-            stub_enqueue("{\"@type\":\"updateChatAction\",\"chat_id\":" + std::to_string(send_chat_id) +
-                ",\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"action\":{\"@type\":\"chatActionTyping\"}}");
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-            stub_enqueue("{\"@type\":\"updateChatAction\",\"chat_id\":" + std::to_string(send_chat_id) +
-                ",\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"action\":{\"@type\":\"chatActionCancel\"}}");
-            // Auto-reply
-            int reply_id = msg_id + 1000;
-            long reply_time = 1700001000 + reply_id;
-            stub_enqueue("{\"@type\":\"updateNewMessage\",\"message\":{\"@type\":\"message\",\"id\":" +
-                std::to_string(reply_id) + ",\"chat_id\":" + std::to_string(send_chat_id) +
-                ",\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"date\":" +
-                std::to_string(reply_time) + ",\"is_outgoing\":false,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Got your message! \\ud83d\\udc4d\"}}}}");
-        }).detach();
+        // Simulate a reply after 2 seconds (tracked thread — joined on shutdown)
+        {
+            std::lock_guard<std::mutex> reply_guard(stub_reply_mutex);
+            // Join any previous reply thread before starting a new one
+            if (stub_reply_thread.joinable()) {
+                stub_reply_thread.join();
+            }
+            stub_reply_thread = std::thread([send_chat_id, msg_id]() {
+                // Sleep in small increments so we can bail out if loop stops
+                for (int i = 0; i < 20 && loop_state.load() == LoopState::Running; ++i)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                if (loop_state.load() != LoopState::Running) return;
+
+                // Typing indicator
+                if (!stub_enqueue_if_running("{\"@type\":\"updateChatAction\",\"chat_id\":" + std::to_string(send_chat_id) +
+                    ",\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"action\":{\"@type\":\"chatActionTyping\"}}"))
+                    return;
+
+                for (int i = 0; i < 20 && loop_state.load() == LoopState::Running; ++i)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                if (loop_state.load() != LoopState::Running) return;
+
+                stub_enqueue_if_running("{\"@type\":\"updateChatAction\",\"chat_id\":" + std::to_string(send_chat_id) +
+                    ",\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"action\":{\"@type\":\"chatActionCancel\"}}");
+
+                // Auto-reply
+                int reply_id = msg_id + 1000;
+                long reply_time = 1700001000 + reply_id;
+                stub_enqueue_if_running("{\"@type\":\"updateNewMessage\",\"message\":{\"@type\":\"message\",\"id\":" +
+                    std::to_string(reply_id) + ",\"chat_id\":" + std::to_string(send_chat_id) +
+                    ",\"sender_id\":{\"@type\":\"messageSenderUser\",\"user_id\":100001},\"date\":" +
+                    std::to_string(reply_time) + ",\"is_outgoing\":false,\"content\":{\"@type\":\"messageText\",\"text\":{\"@type\":\"formattedText\",\"text\":\"Got your message! \\ud83d\\udc4d\"}}}}");
+            });
+        }
     }
     else if (request.find("\"searchMessages\"") != std::string::npos) {
         std::string extra_str;
@@ -537,6 +563,15 @@ static std::thread receive_thread;
 static std::mutex loop_mutex;
 static napi_threadsafe_function threadsafe_callback = nullptr;
 
+#ifdef TDLIB_STUB
+// Implementation: safe enqueue that checks loop_state before pushing.
+static bool stub_enqueue_if_running(const std::string& json) {
+    if (loop_state.load() != LoopState::Running) return false;
+    stub_enqueue(json);
+    return true;
+}
+#endif
+
 // --- NAPI argument validation helpers ---
 // Throws a JS TypeError and returns nullptr on failure.
 
@@ -807,6 +842,16 @@ napi_value StopReceiveLoop(napi_env env, napi_callback_info info) {
     if (receive_thread.joinable()) {
         receive_thread.join();
     }
+
+#ifdef TDLIB_STUB
+    // Join any pending stub reply thread to prevent post-shutdown enqueue
+    {
+        std::lock_guard<std::mutex> reply_guard(stub_reply_mutex);
+        if (stub_reply_thread.joinable()) {
+            stub_reply_thread.join();
+        }
+    }
+#endif
 
     napi_value undefined;
     napi_get_undefined(env, &undefined);
