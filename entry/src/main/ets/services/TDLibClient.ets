@@ -1,25 +1,12 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { taskpool } from '@kit.ArkTS';
-import { fileIo } from '@kit.CoreFileKit';
-import { TELEGRAM_API_ID, TELEGRAM_API_HASH } from './ConfigLocal';
-import { SecurityService, SecurityMode } from './SecurityService';
+import { TELEGRAM_API_ID, TELEGRAM_API_HASH } from './ConfigLocal.example';
 import { TdFallbackRegistry } from './TdFallbackRegistry';
 import { classifyTdlibError } from './AppError';
 import { TdObject } from '../models/TdTypes';
 
-// Error message prefixes — shared with AppError for classification
-export const ERR_TDLIB_INIT_TIMEOUT = 'TDLIB_INIT_TIMEOUT';
-export const ERR_TDLIB_CLIENT_DESTROYED = 'TDLIB_CLIENT_DESTROYED';
-
 // Native NAPI module
 import tdlib from 'libtdlib_napi.so';
-
-// --- TDLib runtime info from native layer ---
-interface TdlibInfo {
-  mode: string;   // "REAL"
-  tdlibDir: string;
-  soname: string;
-}
 
 // Offload heavy JSON parsing to TaskPool worker thread
 @Concurrent
@@ -32,20 +19,8 @@ const DOMAIN = 0x0001;
 
 // Default timeout for TDLib requests (30 seconds)
 const REQUEST_TIMEOUT_MS = 30000;
-
-// Default timeout for waitForReady() initialization barrier (30 seconds)
-const INIT_TIMEOUT_MS = 30000;
-
-// --- TDLib database paths (single source of truth) ---
-const TDLIB_DB_DIR = '/data/storage/el2/base/tdlib';
-const TDLIB_FILES_DIR = '/data/storage/el2/base/tdlib/files';
-// --- Encryption schema versioning ---
-// Each version writes a marker file .enc_key_v<N> in the DB directory.
-// The migration dispatcher reads the current version and runs necessary upgrades.
-const DB_ENC_SCHEMA_DIR = '/data/storage/el2/base/tdlib';
-const DB_ENC_MARKER_PREFIX = '.enc_key_v';
-// Current encryption schema version. Bump when key derivation or DB encryption changes.
-const DB_ENC_CURRENT_VERSION = 1;
+export const ERR_TDLIB_INIT_TIMEOUT: string = 'TDLIB_INIT_TIMEOUT';
+export const ERR_TDLIB_CLIENT_DESTROYED: string = 'TDLIB_CLIENT_DESTROYED';
 
 // --- Lifecycle state machine ---
 export enum ClientState {
@@ -103,24 +78,7 @@ export class TDLibClient {
   private _state: ClientState = ClientState.Idle;
   private _logLevel: LogLevel = LogLevel.INFO;
 
-  // Ready barrier: resolved when initialize() completes successfully.
-  // Callers that need to wait for init can `await TDLibClient.getInstance().waitForReady()`.
-  private _readyResolve: (() => void) | null = null;
-  private _readyReject: ((reason: Error) => void) | null = null;
-  private _readyPromise: Promise<void>;
-
-  // True when running REAL TDLib with SOFTWARE_FALLBACK encryption.
-  // Production builds should treat this as a degraded state.
-  private _degradedSecurity: boolean = false;
-
-  private constructor() {
-    this._readyPromise = new Promise<void>((resolve, reject) => {
-      this._readyResolve = resolve;
-      this._readyReject = reject;
-    });
-    // Prevent unhandled rejection if destroy() rejects the barrier with no waiters
-    this._readyPromise.catch(() => {});
-  }
+  private constructor() {}
 
   static getInstance(): TDLibClient {
     if (TDLibClient.instance === null) {
@@ -137,130 +95,20 @@ export class TDLibClient {
     this._logLevel = level;
   }
 
-  /**
-   * Returns a promise that resolves when the client reaches Ready state.
-   * Safe to call multiple times — returns the same promise.
-   * Use this when code outside TelegramAbilityStage needs to ensure
-   * the client is initialized before sending requests.
-   *
-   * Example: `await TDLibClient.getInstance().waitForReady();`
-   */
-  waitForReady(timeoutMs: number = INIT_TIMEOUT_MS): Promise<void> {
-    if (this._state === ClientState.Ready) {
-      return Promise.resolve();
-    }
-    if (this._state === ClientState.Stopped || this._state === ClientState.Stopping) {
-      return Promise.reject(
-        new TDLibError(0, `${ERR_TDLIB_CLIENT_DESTROYED}: client is not running`));
-    }
-
-    return new Promise<void>((resolve, reject) => {
-      let settled = false;
-
-      const timerId = setTimeout(() => {
-        if (settled) return;
-        settled = true;
-        const security = SecurityService.getInstance();
-        this.logError(
-          '%{public}s: state=%{public}s, elapsedMs=%{public}d, secMode=%{public}s, tdlibMode=%{public}s',
-          ERR_TDLIB_INIT_TIMEOUT, this._state, timeoutMs, security.mode, this.tdlibMode);
-        reject(new TDLibError(0,
-          `${ERR_TDLIB_INIT_TIMEOUT}: initialization did not complete within ${timeoutMs}ms ` +
-          `(state=${this._state}, secMode=${security.mode}, tdlibMode=${this.tdlibMode})`));
-      }, timeoutMs);
-
-      this._readyPromise.then(() => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timerId);
-        resolve();
-      }).catch((err: Error) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timerId);
-        reject(err);
-      });
-    });
-  }
-
-  /** Cached TDLib mode from native layer. Set once during initialize(). */
-  private _tdlibInfo: TdlibInfo | null = null;
-
-  /** Returns "REAL" or "STUB" after initialize(). */
-  get tdlibMode(): string {
-    return this._tdlibInfo?.mode ?? 'UNKNOWN';
-  }
-
-  /**
-   * True when REAL TDLib is running with SOFTWARE_FALLBACK encryption.
-   * This means the database encryption key is NOT hardware-backed.
-   * UI/monitoring should surface this prominently in production builds.
-   */
-  get isDegradedSecurity(): boolean {
-    return this._degradedSecurity;
-  }
-
-  async initialize(): Promise<void> {
+  initialize(): void {
     if (this._state !== ClientState.Idle && this._state !== ClientState.Stopped) {
       this.logWarn('initialize() called in invalid state: %{public}s', this._state);
       return;
     }
 
-    this._degradedSecurity = false;
-
-    // --- Query native layer for TDLib build info (REAL vs STUB) ---
-    try {
-      const infoJson: string = tdlib.getTdlibInfo();
-      this._tdlibInfo = JSON.parse(infoJson) as TdlibInfo;
-    } catch (e) {
-      this._tdlibInfo = { mode: 'UNKNOWN', tdlibDir: '', soname: '' };
-      this.logError('Failed to query TDLib info: %{public}s', String(e));
-    }
-
-    this.logInfo('┌─ TDLib Client Init ─────────────────────────');
-    this.logInfo('│ TDLIB_MODE:  %{public}s', this._tdlibInfo!.mode);
-    this.logInfo('│ TDLIB_DIR:   %{public}s', this._tdlibInfo!.tdlibDir);
-    this.logInfo('│ SONAME:      %{public}s', this._tdlibInfo!.soname);
-    this.logInfo('│ API_ID:      %{public}s', TELEGRAM_API_ID > 0 ? 'configured' : 'NOT SET');
-    this.logInfo('│ API_HASH:    %{public}s', TELEGRAM_API_HASH.length > 0 ? 'configured' : 'NOT SET');
-    this.logInfo('│ DB_PATH:     %{public}s', TDLIB_DB_DIR);
-    this.logInfo('│ SEC_MODE:    (pending — resolved after HUKS init)');
-
-    // Validate API credentials
+    // Validate API credentials before starting
     if (TELEGRAM_API_ID === 0 || TELEGRAM_API_HASH.length === 0) {
       this.logError('API credentials not configured. Copy ConfigLocal.example.ets → ConfigLocal.ets and fill in your values from https://my.telegram.org/apps');
-      this.logError('TDLib requires valid API credentials. Init will likely fail.');
     }
 
     this._state = ClientState.Initializing;
     this.clientId = tdlib.createClient();
     this.logInfo('Client created with id: %{public}d', this.clientId);
-
-    // Initialize SecurityService for database encryption key
-    const security = SecurityService.getInstance();
-    await security.initialize();
-    const dbEncKey = security.getDatabaseEncryptionKey();
-    this.logInfo('│ SEC_MODE:    %{public}s (resolved)', security.mode);
-    this.logInfo('└──────────────────────────────────────────────');
-    if (dbEncKey.length === 0) {
-      this.logWarn('Database encryption key is empty — TDLib database will be unencrypted');
-    }
-
-    // SOFTWARE_FALLBACK means DB encryption key is NOT hardware-backed (HUKS unavailable)
-    if (security.mode === SecurityMode.SOFTWARE_FALLBACK) {
-      this._degradedSecurity = true;
-      this.logError('┌─ DEGRADED SECURITY ─────────────────────────────');
-      this.logError('│ SOFTWARE_FALLBACK encryption active.');
-      this.logError('│ Database encryption key is NOT hardware-backed (HUKS unavailable).');
-      this.logError('│ This build is NOT production-safe for sensitive data.');
-      this.logError('│ Ensure the device supports HUKS (TEE/Secure Element)');
-      this.logError('│ or accept degraded security for this deployment.');
-      this.logError('└──────────────────────────────────────────────────');
-    }
-
-    // Guard: ensure DB is compatible with the current encryption scheme.
-    // Must run BEFORE startReceiveLoop/sendTdlibParameters.
-    this.ensureDbEncryptionMigration();
 
     // Start receiving updates from TDLib on a background thread
     tdlib.startReceiveLoop((responseJson: string) => {
@@ -268,31 +116,19 @@ export class TDLibClient {
       this.handleResponse(responseJson);
     });
 
-    // Send TDLib parameters (single source of truth)
-    this.sendTdlibParameters(dbEncKey);
+    // Send TDLib parameters
+    this.sendTdlibParameters();
     this._state = ClientState.Ready;
-
-    // Signal the ready barrier — unblocks any waitForReady() callers
-    if (this._readyResolve) {
-      this._readyResolve();
-    }
   }
 
   destroy(): void {
-    if (this._state === ClientState.Stopped || this._state === ClientState.Stopping) {
-      this.logWarn('destroy() called in state %{public}s, ignoring', this._state);
-      return;
-    }
-
+    if (this._state === ClientState.Stopped) return;
     this._state = ClientState.Stopping;
-    const pendingCount = this.pendingRequests.size;
-    this.logInfo('Destroying client, rejecting %{public}d pending request(s)', pendingCount);
 
-    // Reject all pending requests with explicit per-request reason
-    this.pendingRequests.forEach((pending: PendingRequest, id: number) => {
+    // Reject all pending requests
+    this.pendingRequests.forEach((pending: PendingRequest) => {
       clearTimeout(pending.timerId);
-      this.logDebug('Rejecting pending #%{public}d (%{public}s)', id, pending.method);
-      pending.reject(0, `Client destroyed while '${pending.method}' was pending`);
+      pending.reject(0, ERR_TDLIB_CLIENT_DESTROYED);
     });
     this.pendingRequests.clear();
 
@@ -301,32 +137,13 @@ export class TDLibClient {
 
     tdlib.stopReceiveLoop();
     this._state = ClientState.Stopped;
-
-    // Reject any pending waitForReady() callers before resetting the barrier
-    if (this._readyReject) {
-      this._readyReject(
-        new TDLibError(0, `${ERR_TDLIB_CLIENT_DESTROYED}: client was destroyed during initialization`));
-      this._readyReject = null;
-      this._readyResolve = null;
-    }
-
-    // Reset the ready barrier for potential re-initialization
-    this._readyPromise = new Promise<void>((resolve, reject) => {
-      this._readyResolve = resolve;
-      this._readyReject = reject;
-    });
-    this._readyPromise.catch(() => {});
-
-    this.logInfo('Client destroyed');
+    this.logInfo('Client destroyed, all pending requests rejected');
   }
 
-  // Send a request and get a promise for the response.
-  // Rejects immediately if the client is not in a sendable state.
+  // Send a request and get a promise for the response
   async send(method: string, inputParams?: TdObject): Promise<TdObject> {
-    // Snapshot state to avoid TOCTOU race with destroy()
-    const currentState = this._state;
-    if (currentState !== ClientState.Ready && currentState !== ClientState.Initializing) {
-      throw new TDLibError(0, `Cannot send '${method}' in state '${currentState}'`);
+    if (this._state !== ClientState.Ready && this._state !== ClientState.Initializing) {
+      throw new TDLibError(0, `Cannot send '${method}' in state '${this._state}'`);
     }
 
     const id: number = ++this.requestId;
@@ -340,18 +157,11 @@ export class TDLibClient {
     request['@extra'] = id;
 
     return new Promise<TdObject>((resolve, reject) => {
-      // Double-check: state may have changed to Stopping between the check above and now
-      if (this._state === ClientState.Stopping || this._state === ClientState.Stopped) {
-        reject(new TDLibError(0, `Cannot send '${method}': client is shutting down`));
-        return;
-      }
-
       // Set timeout to auto-reject hanging requests
       const timerId: number = setTimeout(() => {
         if (this.pendingRequests.has(id)) {
           this.pendingRequests.delete(id);
-          this.logWarn('Request #%{public}d (%{public}s) timed out', id, method);
-          reject(new TDLibError(0, `Request '${method}' timed out after ${REQUEST_TIMEOUT_MS}ms`));
+          reject(new TDLibError(0, `${ERR_TDLIB_INIT_TIMEOUT}: Request '${method}' timed out after ${REQUEST_TIMEOUT_MS}ms`));
         }
       }, REQUEST_TIMEOUT_MS) as number;
 
@@ -365,7 +175,7 @@ export class TDLibClient {
       };
       this.pendingRequests.set(id, pending);
       tdlib.send(this.clientId, JSON.stringify(request));
-      this.logDebug('Sent: %{public}s (#%{public}d)', method, id);
+      this.logDebug('Sent: %{public}s', method);
     });
   }
 
@@ -411,6 +221,10 @@ export class TDLibClient {
     const params: TdObject = {};
     params['password'] = password;
     return this.send('checkAuthenticationPassword', params);
+  }
+
+  async resendAuthCode(): Promise<TdObject> {
+    return this.send('resendAuthenticationCode');
   }
 
   // --- Chat methods ---
@@ -521,9 +335,17 @@ export class TDLibClient {
     return this.send('sendMessage', params);
   }
 
-  // --- Reactions ---
+  // --- View messages (mark as read) ---
 
-  async addMessageReaction(chatId: number, messageId: number, emoji: string, isBig: boolean = false): Promise<TdObject> {
+  async viewMessages(chatId: number, messageIds: number[]): Promise<TdObject> {
+    const params: TdObject = {};
+    params['chat_id'] = chatId;
+    params['message_ids'] = messageIds;
+    params['force_read'] = true;
+    return this.send('viewMessages', params);
+  }
+
+  async addMessageReaction(chatId: number, messageId: number, emoji: string): Promise<TdObject> {
     const reactionType: TdObject = {};
     reactionType['@type'] = 'reactionTypeEmoji';
     reactionType['emoji'] = emoji;
@@ -531,7 +353,7 @@ export class TDLibClient {
     params['chat_id'] = chatId;
     params['message_id'] = messageId;
     params['reaction_type'] = reactionType;
-    params['is_big'] = isBig;
+    params['is_big'] = false;
     params['update_recent_reactions'] = true;
     return this.send('addMessageReaction', params);
   }
@@ -547,22 +369,10 @@ export class TDLibClient {
     return this.send('removeMessageReaction', params);
   }
 
-  // --- Pinned message ---
-
   async getChatPinnedMessage(chatId: number): Promise<TdObject> {
     const params: TdObject = {};
     params['chat_id'] = chatId;
     return this.send('getChatPinnedMessage', params);
-  }
-
-  // --- View messages (mark as read) ---
-
-  async viewMessages(chatId: number, messageIds: number[]): Promise<TdObject> {
-    const params: TdObject = {};
-    params['chat_id'] = chatId;
-    params['message_ids'] = messageIds;
-    params['force_read'] = true;
-    return this.send('viewMessages', params);
   }
 
   // --- Send photo ---
@@ -702,141 +512,10 @@ export class TDLibClient {
 
   // --- Private methods ---
 
-  /**
-   * Versioned DB encryption migration dispatcher.
-   *
-   * Reads the current schema version from marker files (.enc_key_v<N>)
-   * and runs the necessary upgrade steps to reach DB_ENC_CURRENT_VERSION.
-   *
-   * Version history:
-   *   v0 (implicit) — no marker, no encryption key. Legacy unencrypted DB.
-   *   v1            — first encrypted DB via SecurityService + HUKS/fallback.
-   *   v2+           — reserved for future key-derivation changes.
-   *
-   * Extension point: add a case to the switch below for v1→v2, v2→v3, etc.
-   * Each migration runs exactly once and writes the new marker before proceeding.
-   *
-   * Rollback: delete .enc_key_v<N> markers and pass an empty encryption key
-   * in sendTdlibParameters().
-   */
-  private ensureDbEncryptionMigration(): void {
-    const currentVersion = this.readEncSchemaVersion();
-    const targetVersion = DB_ENC_CURRENT_VERSION;
-
-    if (currentVersion >= targetVersion) {
-      this.logDebug('DB encryption schema v%{public}d — up to date', currentVersion);
-      return;
-    }
-
-    this.logInfo('DB encryption schema: v%{public}d → v%{public}d', currentVersion, targetVersion);
-
-    // Run each migration step sequentially
-    for (let from = currentVersion; from < targetVersion; from++) {
-      switch (from) {
-        case 0:
-          this.migrateEncV0toV1();
-          break;
-        // Extension point: future migrations
-        // case 1:
-        //   this.migrateEncV1toV2();
-        //   break;
-        default:
-          this.logError('Unknown encryption schema version %{public}d — aborting migration', from);
-          throw new Error(`Unknown encryption schema version ${from}: cannot migrate`);
-      }
-    }
-  }
-
-  /**
-   * Detect the current encryption schema version by scanning for marker files.
-   * Returns 0 if no marker exists (legacy or fresh install).
-   */
-  private readEncSchemaVersion(): number {
-    // Scan from highest plausible version down to find the current one
-    for (let v = DB_ENC_CURRENT_VERSION; v >= 1; v--) {
-      const markerPath = `${DB_ENC_SCHEMA_DIR}/${DB_ENC_MARKER_PREFIX}${v}`;
-      try {
-        const exists = fileIo.accessSync(markerPath);
-        if (exists) {
-          return v;
-        }
-      } catch (_e) {
-        // Marker doesn't exist — try lower version
-      }
-    }
-    return 0; // No marker found → v0 (legacy or fresh install)
-  }
-
-  /**
-   * Write a schema version marker file.
-   */
-  private writeEncSchemaMarker(version: number): void {
-    const markerPath = `${DB_ENC_SCHEMA_DIR}/${DB_ENC_MARKER_PREFIX}${version}`;
-    try {
-      const fd = fileIo.openSync(markerPath,
-        fileIo.OpenMode.CREATE | fileIo.OpenMode.WRITE_ONLY);
-      fileIo.writeSync(fd.fd, `v${version}`);
-      fileIo.closeSync(fd);
-      this.logInfo('DB encryption marker written: v%{public}d', version);
-    } catch (e) {
-      this.logError('Failed to write migration marker v%{public}d: %{public}s',
-        version, String(e));
-    }
-  }
-
-  /**
-   * Migration v0 → v1: legacy unencrypted DB to first encrypted schema.
-   *
-   * If an existing DB directory is present without a v1 marker,
-   * it was created without encryption and must be reset.
-   */
-  private migrateEncV0toV1(): void {
-    let dbDirExists = false;
-    try {
-      const stat = fileIo.statSync(TDLIB_DB_DIR);
-      dbDirExists = stat.isDirectory();
-    } catch (_e) {
-      // Directory doesn't exist → fresh install, no migration needed
-    }
-
-    if (dbDirExists) {
-      this.logWarn('┌─ DB ENCRYPTION MIGRATION v0→v1 ─────────────────');
-      this.logWarn('│ Found existing TDLib database without encryption marker.');
-      this.logWarn('│ Removing old unencrypted database for safe re-creation.');
-      this.logWarn('│ User will need to re-authenticate after this one-time reset.');
-      this.logWarn('└────────────────────────────────────────────────');
-
-      try {
-        this.removeDirRecursive(TDLIB_DB_DIR);
-        this.logInfo('Old DB directory removed: %{public}s', TDLIB_DB_DIR);
-      } catch (e) {
-        this.logError('Failed to remove old DB directory: %{public}s', String(e));
-      }
-    }
-
-    // Ensure the DB directory exists
-    try {
-      fileIo.mkdirSync(TDLIB_DB_DIR, true);
-    } catch (_e) {
-      // May already exist — harmless
-    }
-
-    this.writeEncSchemaMarker(1);
-  }
-
-  /**
-   * SINGLE SOURCE OF TRUTH for TDLib parameters.
-   * All TDLib config values are set here and nowhere else.
-   * @param dbEncryptionKey - base64-encoded database encryption key from SecurityService
-   */
-  private sendTdlibParameters(dbEncryptionKey: string): void {
-    const dbDir = TDLIB_DB_DIR;
-    const filesDir = TDLIB_FILES_DIR;
-
+  private sendTdlibParameters(): void {
     const params: TdObject = {};
-    params['database_directory'] = dbDir;
-    params['files_directory'] = filesDir;
-    params['database_encryption_key'] = dbEncryptionKey;
+    params['database_directory'] = '/data/storage/el2/base/tdlib';
+    params['files_directory'] = '/data/storage/el2/base/tdlib/files';
     params['use_file_database'] = true;
     params['use_chat_info_database'] = true;
     params['use_message_database'] = true;
@@ -847,28 +526,14 @@ export class TDLibClient {
     params['device_model'] = 'HarmonyOS Device';
     params['system_version'] = 'HarmonyOS 6.0';
     params['application_version'] = '1.0.0';
-
-    this.logInfo('TDLib params: db=%{public}s, files=%{public}s, enc_key=%{public}s',
-      dbDir, filesDir, dbEncryptionKey.length > 0 ? 'set(' + dbEncryptionKey.length + ' chars)' : 'EMPTY');
-
     this.send('setTdlibParameters', params);
   }
 
   private async handleResponse(responseJson: string): Promise<void> {
-    // Guard: discard responses that arrive after destroy began
-    if (this._state === ClientState.Stopped) return;
-
     try {
       // Parse JSON off the main thread via TaskPool
       const task: taskpool.Task = new taskpool.Task(parseJsonInBackground, responseJson);
       const response: TdObject = (await taskpool.execute(task)) as TdObject;
-
-      // Re-check after async gap: state may have changed during JSON parsing
-      if (this._state === ClientState.Stopped) {
-        this.logDebug('Discarding response after destroy: %{public}s',
-          (response['@type'] as string) || 'unknown');
-        return;
-      }
 
       const type: string = (response['@type'] as string) || '';
       const extra: number = (response['@extra'] as number) || 0;
@@ -917,20 +582,6 @@ export class TDLibClient {
     }
   }
 
-  private removeDirRecursive(dirPath: string): void {
-    const entries = fileIo.listFileSync(dirPath);
-    for (const name of entries) {
-      const full = `${dirPath}/${name}`;
-      const stat = fileIo.statSync(full);
-      if (stat.isDirectory()) {
-        this.removeDirRecursive(full);
-      } else {
-        fileIo.unlinkSync(full);
-      }
-    }
-    fileIo.rmdirSync(dirPath);
-  }
-
   // --- Logging helpers ---
 
   private logDebug(format: string, ...args: Object[]): void {
@@ -957,3 +608,4 @@ export class TDLibClient {
     }
   }
 }
+

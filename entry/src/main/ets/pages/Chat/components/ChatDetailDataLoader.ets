@@ -41,10 +41,12 @@ export function buildChatInfoSnapshot(chat: Chat, _groupMembersTemplate: string)
 }
 
 export async function loadInitialMessages(chatId: number, limit: number = 50): Promise<InitialMessagesLoadResult> {
-  const [msgs, pinnedMessage] = await Promise.all([
+  const result = await Promise.all([
     MessagesController.getInstance().loadMessages(chatId, 0, limit),
     MessagesController.getInstance().getChatPinnedMessage(chatId)
   ]);
+  const msgs: Message[] = result[0];
+  const pinnedMessage: Message | null = result[1];
   const messages: Message[] = msgs.reverse();
   const endReachedOlder = msgs.length < limit;
 

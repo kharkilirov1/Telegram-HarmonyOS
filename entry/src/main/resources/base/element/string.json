@@ -89,6 +89,10 @@
       "value": "Forwarded from %s"
     },
     {
+      "name": "forwarded_message",
+      "value": "Forwarded message"
+    },
+    {
       "name": "document_label",
       "value": "Document"
     },

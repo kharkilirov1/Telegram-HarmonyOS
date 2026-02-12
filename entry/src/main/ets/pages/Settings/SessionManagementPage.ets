@@ -26,7 +26,7 @@ export struct SessionManagementPage {
   @Local currentSession: SessionInfo | null = null;
   @Local otherSessions: SessionInfo[] = [];
   @Local showTerminateAllDialog: boolean = false;
-  @Local terminatingSessionId: string = '0';
+  @Local terminatingSessionId: number = 0;
 
   private sessionService: SessionService = SessionService.getInstance();
 
@@ -46,13 +46,13 @@ export struct SessionManagementPage {
     this.isLoading = false;
   }
 
-  private async terminateSession(sessionId: string): Promise<void> {
+  private async terminateSession(sessionId: number): Promise<void> {
     this.terminatingSessionId = sessionId;
     const error = await this.sessionService.terminateSession(sessionId);
     if (!error) {
       this.otherSessions = this.otherSessions.filter((s: SessionInfo) => s.id !== sessionId);
     }
-    this.terminatingSessionId = '0';
+    this.terminatingSessionId = 0;
   }
 
   private async terminateAllOtherSessions(): Promise<void> {
@@ -199,7 +199,7 @@ export struct SessionManagementPage {
                       lastActiveLabel: this.formatLastActive(session.lastActiveDate),
                       ip: session.ip,
                       location: this.formatLocation(session),
-                      onTerminate: (sessionId: string) => {
+                      onTerminate: (sessionId: number) => {
                         this.terminateSession(sessionId);
                       }
                     })

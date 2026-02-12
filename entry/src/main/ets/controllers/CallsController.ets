@@ -101,7 +101,8 @@ export class CallsController {
 
   // --- Private ---
 
-  private parseCallFromMessage(raw: TdObject): Call | null {
+  private parseCallFromMessage(rawValue: Object): Call | null {
+    const raw: TdObject = asRecord(rawValue);
     const contentObj = raw['content'];
     if (!contentObj) return null;
     const content = asRecord(contentObj);

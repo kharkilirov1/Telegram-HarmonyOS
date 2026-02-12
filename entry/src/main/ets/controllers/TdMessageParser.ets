@@ -31,6 +31,7 @@ import {
   TdSchedulingState,
   TdSelfDestructType,
   TdChat,
+  TdChatPhoto,
   TdChatPosition,
   TdChatType,
   TdNotificationSettings,
@@ -74,7 +75,7 @@ export function parseMessage(raw: TdMessage): Message {
 
   // Reply
   const replyTo: TdReplyTo | undefined = raw.reply_to;
-  if (replyTo && tdType(replyTo as Record<string, unknown>) === 'messageReplyToMessage') {
+  if (replyTo && tdType(replyTo as Record<string, Object>) === 'messageReplyToMessage') {
     msg.replyToMessageId = replyTo.message_id || 0;
   }
 
@@ -96,7 +97,7 @@ export function parseMessage(raw: TdMessage): Message {
   // Scheduling state
   const scheduling: TdSchedulingState | undefined = raw.scheduling_state;
   if (scheduling) {
-    const schedType: string = tdType(scheduling as Record<string, unknown>);
+    const schedType: string = tdType(scheduling as Record<string, Object>);
     if (schedType === 'messageSchedulingStateSendAtDate') {
       msg.schedulingState = scheduling.send_date || 0;
     }
@@ -106,14 +107,14 @@ export function parseMessage(raw: TdMessage): Message {
   const selfDestruct: TdSelfDestructType | undefined = raw.self_destruct_type;
   if (selfDestruct) {
     msg.selfDestructIn = selfDestruct.self_destruct_time || 0;
-    const sdType: string = tdType(selfDestruct as Record<string, unknown>);
+    const sdType: string = tdType(selfDestruct as Record<string, Object>);
     if (sdType === 'messageSelfDestructTypeImmediately') {
       msg.isViewOnce = true;
     }
   }
 
   // Send state (from TDLib sending_state)
-  const sendingState: Record<string, unknown> | undefined = (raw as Record<string, unknown>)['sending_state'] as Record<string, unknown> | undefined;
+  const sendingState: Record<string, Object> | undefined = raw.sending_state;
   if (sendingState) {
     const sendingType: string = tdType(sendingState);
     if (sendingType === 'messageSendingStatePending') {
@@ -144,7 +145,7 @@ export function parseMessage(raw: TdMessage): Message {
 // --- Content type mapping ---
 
 export function applyContent(msg: Message, content: TdMessageContent): void {
-  const type: string = tdType(content as Record<string, unknown>);
+  const type: string = tdType(content as Record<string, Object>);
 
   switch (type) {
     case 'messageText': {
@@ -319,7 +320,7 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
         msg.pollIsAnonymous = poll.is_anonymous !== false;
 
         const pt: TdPollType | undefined = poll.type;
-        msg.pollType = (pt ? tdType(pt as Record<string, unknown>) : '') === 'pollTypeQuiz' ? 'quiz' : 'regular';
+        msg.pollType = (pt ? tdType(pt as Record<string, Object>) : '') === 'pollTypeQuiz' ? 'quiz' : 'regular';
 
         const opts: TdPollOption[] | undefined = poll.options;
         if (opts) {
@@ -382,11 +383,11 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
     }
     case 'messageCall': {
       msg.contentType = MessageContentType.CALL;
-      const payload: Record<string, unknown> = content as Record<string, unknown>;
-      const call: Record<string, unknown> | undefined = toRecord(payload['call']);
+      const payload: Record<string, Object> = content as Record<string, Object>;
+      const call: Record<string, Object> | undefined = toRecord(payload['call']);
       msg.callDuration = safeNumber(call?.['duration']);
       msg.callIsVideo = safeBool(call?.['is_video']);
-      const discardReason: Record<string, unknown> | undefined = toRecord(call?.['discard_reason']);
+      const discardReason: Record<string, Object> | undefined = toRecord(call?.['discard_reason']);
       const reasonType: string = discardReason ? tdType(discardReason) : '';
       if (reasonType === 'callDiscardReasonMissed') {
         msg.callDiscardReason = 'missed';
@@ -433,8 +434,8 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
     }
     case 'messageGame': {
       msg.contentType = MessageContentType.GAME;
-      const gamePayload: Record<string, unknown> = content as Record<string, unknown>;
-      const game: Record<string, unknown> | undefined = toRecord(gamePayload['game']);
+      const gamePayload: Record<string, Object> = content as Record<string, Object>;
+      const game: Record<string, Object> | undefined = toRecord(gamePayload['game']);
       const gameTitle: string = safeString(game?.['title']);
       msg.text = gameTitle.length > 0 ? `🎮 ${gameTitle}` : '🎮 Game';
       break;
@@ -460,7 +461,7 @@ export function extractTextPreview(rawMsg: TdMessage): string {
   const content: TdMessageContent | undefined = rawMsg.content;
   if (!content) return '';
 
-  const type: string = tdType(content as Record<string, unknown>);
+  const type: string = tdType(content as Record<string, Object>);
   switch (type) {
     case 'messageText': {
       return content.text?.text || '';
@@ -481,7 +482,7 @@ export function extractTextPreview(rawMsg: TdMessage): string {
       return `📊 ${question}`;
     }
     case 'messageContact': {
-      const contact: Record<string, unknown> | undefined = toRecord((content as Record<string, unknown>)['contact']);
+      const contact: Record<string, Object> | undefined = toRecord((content as Record<string, Object>)['contact']);
       const firstName: string = safeString(contact?.['first_name']);
       const lastName: string = safeString(contact?.['last_name']);
       const fullName: string = `${firstName} ${lastName}`.trim();
@@ -490,27 +491,27 @@ export function extractTextPreview(rawMsg: TdMessage): string {
     case 'messageLocation': return '📍 Location';
     case 'messageLiveLocation': return '📡 Live location';
     case 'messageVenue': {
-      const venue: Record<string, unknown> | undefined = toRecord((content as Record<string, unknown>)['venue']);
+      const venue: Record<string, Object> | undefined = toRecord((content as Record<string, Object>)['venue']);
       const venueTitle: string = safeString(venue?.['title']);
       return venueTitle.length > 0 ? `📍 ${venueTitle}` : '📍 Venue';
     }
     case 'messageCall': {
-      const callPayload: Record<string, unknown> = content as Record<string, unknown>;
+      const callPayload: Record<string, Object> = content as Record<string, Object>;
       return buildCallText(callPayload);
     }
     case 'messageDice': {
-      const dicePayload: Record<string, unknown> = content as Record<string, unknown>;
-      const diceObj: Record<string, unknown> | undefined = toRecord(dicePayload['dice']);
+      const dicePayload: Record<string, Object> = content as Record<string, Object>;
+      const diceObj: Record<string, Object> | undefined = toRecord(dicePayload['dice']);
       const diceEmoji: string = safeString(diceObj?.['emoji']) || '🎲';
       return diceEmoji;
     }
     case 'messageAudio': {
-      const audioObj: Record<string, unknown> | undefined = toRecord((content as Record<string, unknown>)['audio']);
+      const audioObj: Record<string, Object> | undefined = toRecord((content as Record<string, Object>)['audio']);
       const audioTitle: string = safeString(audioObj?.['title']);
       return audioTitle.length > 0 ? `🎵 ${audioTitle}` : '🎵 Audio';
     }
     case 'messageGame': {
-      const gameObj: Record<string, unknown> | undefined = toRecord((content as Record<string, unknown>)['game']);
+      const gameObj: Record<string, Object> | undefined = toRecord((content as Record<string, Object>)['game']);
       const gameTitle: string = safeString(gameObj?.['title']);
       return gameTitle.length > 0 ? `🎮 ${gameTitle}` : '🎮 Game';
     }
@@ -544,8 +545,8 @@ export function parseChat(raw: TdChat): Chat {
     false
   );
   chat.isMarkedAsUnread = raw.is_marked_as_unread === true;
-  chat.lastReadOutboxMessageId = safeNumber((raw as Record<string, unknown>)['last_read_outbox_message_id']);
-  chat.lastReadInboxMessageId = safeNumber((raw as Record<string, unknown>)['last_read_inbox_message_id']);
+  chat.lastReadOutboxMessageId = raw.last_read_outbox_message_id || 0;
+  chat.lastReadInboxMessageId = raw.last_read_inbox_message_id || 0;
 
   // Last message outgoing/read status
   if (lastMsg) {
@@ -568,7 +569,7 @@ export function parseChat(raw: TdChat): Chat {
   // Determine type
   const chatType: TdChatType | undefined = raw.type;
   if (chatType) {
-    const t: string = tdType(chatType as Record<string, unknown>);
+    const t: string = tdType(chatType as Record<string, Object>);
     chat.isGroup = t === 'chatTypeSupergroup' || t === 'chatTypeBasicGroup';
     chat.isChannel = t === 'chatTypeSupergroup' && (chatType.is_channel === true);
   }
@@ -580,16 +581,15 @@ export function parseChat(raw: TdChat): Chat {
   }
 
   // Chat photo
-  const rawRecord: Record<string, unknown> = raw as Record<string, unknown>;
-  const chatPhoto = rawRecord['photo'] as Record<string, unknown> | undefined;
+  const chatPhoto: TdChatPhoto | undefined = raw.photo;
   if (chatPhoto) {
-    const small = chatPhoto['small'] as Record<string, unknown> | undefined;
+    const small: TdFile | undefined = chatPhoto.small;
     if (small) {
-      const smallFileId = (small['id'] as number) || 0;
+      const smallFileId = small.id || 0;
       chat.photoFileId = smallFileId;
-      const localFile = small['local'] as Record<string, unknown> | undefined;
-      if (localFile && (localFile['is_downloading_completed'] as boolean) === true) {
-        const photoPath = (localFile['path'] as string) || '';
+      const localFile = small.local;
+      if (localFile && localFile.is_downloading_completed === true) {
+        const photoPath = localFile.path || '';
         if (photoPath.length > 0) {
           chat.photo = photoPath;
         }
@@ -613,7 +613,7 @@ export function parseChat(raw: TdChat): Chat {
 
 export function updateChatPositions(chat: Chat, positions: TdChatPosition[]): void {
   for (const pos of positions) {
-    const list: Record<string, unknown> | undefined = pos.list;
+    const list: Record<string, Object> | undefined = pos.list;
     if (list && tdType(list) === 'chatListMain') {
       chat.order = pos.order || '0';
       chat.isPinned = pos.is_pinned || false;
@@ -624,10 +624,10 @@ export function updateChatPositions(chat: Chat, positions: TdChatPosition[]): vo
 // --- Known content fallback text ---
 
 function buildKnownContentText(type: string, content: TdMessageContent): string | undefined {
-  const payload: Record<string, unknown> = content as Record<string, unknown>;
+  const payload: Record<string, Object> = content as Record<string, Object>;
   switch (type) {
     case 'messageInvoice': {
-      const invoice: Record<string, unknown> | undefined = toRecord(payload['invoice']);
+      const invoice: Record<string, Object> | undefined = toRecord(payload['invoice']);
       const title: string = safeString(invoice?.['title']);
       return title.length > 0 ? `💳 ${title}` : '💳 Invoice';
     }
@@ -671,11 +671,11 @@ function buildKnownContentText(type: string, content: TdMessageContent): string 
   }
 }
 
-function buildCallText(payload: Record<string, unknown>): string {
-  const call: Record<string, unknown> | undefined = toRecord(payload['call']);
+function buildCallText(payload: Record<string, Object>): string {
+  const call: Record<string, Object> | undefined = toRecord(payload['call']);
   const duration: number = safeNumber(call?.['duration']);
   const isVideo: boolean = safeBool(call?.['is_video']);
-  const discardReason: Record<string, unknown> | undefined = toRecord(call?.['discard_reason']);
+  const discardReason: Record<string, Object> | undefined = toRecord(call?.['discard_reason']);
   const reasonType: string = discardReason ? tdType(discardReason) : '';
 
   if (reasonType === 'callDiscardReasonMissed') {
@@ -704,9 +704,9 @@ function formatDuration(totalSeconds: number): string {
   return `${seconds}s`;
 }
 
-function toRecord(value: Object | undefined | null): Record<string, unknown> | undefined {
+function toRecord(value: Object | undefined | null): Record<string, Object> | undefined {
   if (value === undefined || value === null) return undefined;
-  return value as Record<string, unknown>;
+  return value as Record<string, Object>;
 }
 
 /**
@@ -721,7 +721,15 @@ function requestFileForMessage(
 ): void {
   FileController.getInstance().requestFile(fileId, priority, (path: string) => {
     if (path.length > 0) {
-      msg[field] = path;
+      if (field === 'photoUrl') {
+        msg.photoUrl = path;
+      } else if (field === 'videoUrl') {
+        msg.videoUrl = path;
+      } else if (field === 'stickerUrl') {
+        msg.stickerUrl = path;
+      } else {
+        msg.filePath = path;
+      }
     }
   });
 }
@@ -824,3 +832,4 @@ function fallbackWaveform(): number[] {
   }
   return result;
 }
+

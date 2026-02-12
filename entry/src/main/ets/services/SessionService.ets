@@ -4,14 +4,13 @@
 
 import { TDLibClient, TDLibError } from './TDLibClient';
 import { handleTdlibError, AppError } from './AppError';
-import { TdObject, TdSessions, TdSession, safeNumber, safeString, safeBool, safeInt64, asRecord, asArray } from '../models/TdTypes';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const TAG = 'SessionService';
 const DOMAIN = 0x0001;
 
 export interface SessionInfo {
-  id: string; // TDLib int64 — stored as string to prevent precision loss
+  id: number;
   isCurrent: boolean;
   deviceModel: string;
   platform: string;
@@ -44,24 +43,25 @@ export class SessionService {
    */
   async getActiveSessions(): Promise<SessionInfo[]> {
     const result = await this.tdlib.send('getActiveSessions');
-    const sessions = asArray(result['sessions']);
+    const sessions = result['sessions'] as Object[];
     if (!sessions) return [];
 
-    return sessions.map((session: TdObject): SessionInfo => {
+    return sessions.map((s): SessionInfo => {
+      const session = s as Record<string, Object>;
       return {
-        id: safeInt64(session['id']),
-        isCurrent: safeBool(session['is_current']),
-        deviceModel: safeString(session['device_model']),
-        platform: safeString(session['platform']),
-        systemVersion: safeString(session['system_version']),
-        apiId: safeNumber(session['api_id']),
-        applicationName: safeString(session['application_name']),
-        applicationVersion: safeString(session['application_version']),
-        logInDate: safeNumber(session['log_in_date']),
-        lastActiveDate: safeNumber(session['last_active_date']),
-        ip: safeString(session['ip_address']) || safeString(session['ip']),
-        country: safeString(session['country']),
-        region: safeString(session['region']),
+        id: session['id'] as number,
+        isCurrent: session['is_current'] as boolean,
+        deviceModel: session['device_model'] as string,
+        platform: session['platform'] as string,
+        systemVersion: session['system_version'] as string,
+        apiId: session['api_id'] as number,
+        applicationName: session['application_name'] as string,
+        applicationVersion: session['application_version'] as string,
+        logInDate: session['log_in_date'] as number,
+        lastActiveDate: session['last_active_date'] as number,
+        ip: (session['ip_address'] as string) || (session['ip'] as string) || '',
+        country: (session['country'] as string) || '',
+        region: (session['region'] as string) || '',
       };
     });
   }
@@ -70,12 +70,12 @@ export class SessionService {
    * Terminate a specific session by ID.
    * Returns AppError on failure, null on success.
    */
-  async terminateSession(sessionId: string): Promise<AppError | null> {
+  async terminateSession(sessionId: number): Promise<AppError | null> {
     try {
-      const params: TdObject = {};
+      const params: Record<string, Object> = {};
       params['session_id'] = sessionId;
       await this.tdlib.send('terminateSession', params);
-      hilog.info(DOMAIN, TAG, 'Session %{public}s terminated', sessionId);
+      hilog.info(DOMAIN, TAG, 'Session %{public}d terminated', sessionId);
       return null;
     } catch (e) {
       if (e instanceof TDLibError) {
@@ -104,3 +104,4 @@ export class SessionService {
     }
   }
 }
+

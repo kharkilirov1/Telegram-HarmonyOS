@@ -157,7 +157,7 @@ export class MessagesController {
   }
 
   async deleteMessage(chatId: number, messageId: number): Promise<void> {
-    const deleteParams: Record<string, unknown> = {};
+    const deleteParams: Record<string, Object> = {};
     deleteParams['chat_id'] = chatId;
     deleteParams['message_ids'] = [messageId];
     deleteParams['revoke'] = true;
@@ -172,7 +172,7 @@ export class MessagesController {
       }
     }
 
-    const eventArgs: Record<string, unknown> = {};
+    const eventArgs: Record<string, Object> = {};
     eventArgs['chatId'] = chatId;
     eventArgs['messageId'] = messageId;
     NotificationCenter.getInstance().post(EventId.MESSAGE_DELETED, eventArgs);
@@ -200,7 +200,7 @@ export class MessagesController {
       }
     }
 
-    const eventArgs: Record<string, unknown> = {};
+    const eventArgs: Record<string, Object> = {};
     eventArgs['chatId'] = chatId;
     eventArgs['messageId'] = messageId;
     NotificationCenter.getInstance().post(EventId.MESSAGE_EDITED, eventArgs);
@@ -232,7 +232,8 @@ export class MessagesController {
       const result = await TDLibClient.getInstance().getChatPinnedMessage(chatId);
       const type = (result['@type'] as string) || '';
       if (type === 'message') {
-        return this.parseMessage(result as TdMessage);
+        const rawPinnedMessage = result as Object as TdMessage;
+        return this.parseMessage(rawPinnedMessage);
       }
     } catch (_e) {
       // No pinned message or error — return null
@@ -241,7 +242,7 @@ export class MessagesController {
   }
 
   async votePoll(chatId: number, messageId: number, optionIds: number[]): Promise<void> {
-    const voteParams: Record<string, unknown> = {};
+    const voteParams: Record<string, Object> = {};
     voteParams['chat_id'] = chatId;
     voteParams['message_id'] = messageId;
     voteParams['option_ids'] = optionIds;
@@ -249,7 +250,7 @@ export class MessagesController {
   }
 
   async getScheduledMessages(chatId: number): Promise<Message[]> {
-    const scheduledParams: Record<string, unknown> = {};
+    const scheduledParams: Record<string, Object> = {};
     scheduledParams['chat_id'] = chatId;
     const result: TdMessages = await TDLibClient.getInstance().send('getChatScheduledMessages', scheduledParams) as TdMessages;
     const rawMessages: TdMessage[] | undefined = result.messages;
@@ -299,7 +300,7 @@ export class MessagesController {
       updateChatPositions: (chat: Chat, positions: TdChatPosition[]): void => this.updateChatPositions(chat, positions),
       upsertUser: (rawUser: TdUser): number =>
         reduceUpsertUser(rawUser, this.usersById, this.messagesByChat, this.chatsById, this.privateChatIdsByUserId),
-      applyUserStatus: (userId: number, status: Record<string, unknown>): void =>
+      applyUserStatus: (userId: number, status: Record<string, Object>): void =>
         reduceApplyUserStatus(userId, status, this.usersById, this.messagesByChat, this.chatsById, this.privateChatIdsByUserId),
       parseMessage: (raw: TdMessage): Message => this.parseMessage(raw),
       applyContent: (msg: Message, content: TdMessageContent): void => this.applyContent(msg, content)
@@ -313,7 +314,7 @@ export class MessagesController {
 
     this.pendingUserLoads.add(userId);
     try {
-      const params: Record<string, unknown> = {};
+      const params: Record<string, Object> = {};
       params['user_id'] = userId;
       const raw = await TDLibClient.getInstance().send('getUser', params) as TdUser;
       const resolvedUserId: number = reduceUpsertUser(
@@ -324,7 +325,7 @@ export class MessagesController {
         this.privateChatIdsByUserId
       );
       if (resolvedUserId > 0) {
-        const eventArgs: Record<string, unknown> = {};
+        const eventArgs: Record<string, Object> = {};
         eventArgs['userId'] = resolvedUserId;
         NotificationCenter.getInstance().post(EventId.USER_INFO_UPDATED, eventArgs);
         NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
@@ -344,7 +345,7 @@ export class MessagesController {
 
     if (lastMsg) {
       const sender: TdMessageSender | undefined = lastMsg.sender_id;
-      if (sender && tdType(sender as Record<string, unknown>) === 'messageSenderUser') {
+      if (sender && tdType(sender as Record<string, Object>) === 'messageSenderUser') {
         const senderUserId: number = sender.user_id || 0;
         chat.lastMessageSenderId = senderUserId;
         chat.lastMessageSenderName = reduceGetUserDisplayName(this.usersById, senderUserId);
@@ -357,7 +358,7 @@ export class MessagesController {
     // Determine type
     const chatType: TdChatType | undefined = raw.type;
     if (chatType) {
-      const chatTypeRecord: Record<string, unknown> = chatType as Record<string, unknown>;
+      const chatTypeRecord: Record<string, Object> = chatType as Record<string, Object>;
       const t: string = tdType(chatTypeRecord);
       chat.isGroup = t === 'chatTypeSupergroup' || t === 'chatTypeBasicGroup';
       chat.isChannel = t === 'chatTypeSupergroup' && (chatType.is_channel === true);
