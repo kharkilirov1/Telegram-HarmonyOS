@@ -29,6 +29,9 @@ const DOMAIN = 0x0001;
 // Default timeout for TDLib requests (30 seconds)
 const REQUEST_TIMEOUT_MS = 30000;
 
+// Default timeout for waitForReady() initialization barrier (30 seconds)
+const INIT_TIMEOUT_MS = 30000;
+
 // --- TDLib database paths (single source of truth) ---
 const TDLIB_DB_DIR = '/data/storage/el2/base/tdlib';
 const TDLIB_FILES_DIR = '/data/storage/el2/base/tdlib/files';
@@ -95,12 +98,16 @@ export class TDLibClient {
   // Ready barrier: resolved when initialize() completes successfully.
   // Callers that need to wait for init can `await TDLibClient.getInstance().waitForReady()`.
   private _readyResolve: (() => void) | null = null;
+  private _readyReject: ((reason: Error) => void) | null = null;
   private _readyPromise: Promise<void>;
 
   private constructor() {
-    this._readyPromise = new Promise<void>((resolve) => {
+    this._readyPromise = new Promise<void>((resolve, reject) => {
       this._readyResolve = resolve;
+      this._readyReject = reject;
     });
+    // Prevent unhandled rejection if destroy() rejects the barrier with no waiters
+    this._readyPromise.catch(() => {});
   }
 
   static getInstance(): TDLibClient {
@@ -126,11 +133,42 @@ export class TDLibClient {
    *
    * Example: `await TDLibClient.getInstance().waitForReady();`
    */
-  waitForReady(): Promise<void> {
+  waitForReady(timeoutMs: number = INIT_TIMEOUT_MS): Promise<void> {
     if (this._state === ClientState.Ready) {
       return Promise.resolve();
     }
-    return this._readyPromise;
+    if (this._state === ClientState.Stopped || this._state === ClientState.Stopping) {
+      return Promise.reject(
+        new TDLibError(0, 'TDLIB_CLIENT_DESTROYED: client is not running'));
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      let settled = false;
+
+      const timerId = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        const security = SecurityService.getInstance();
+        this.logError(
+          'TDLIB_INIT_TIMEOUT: state=%{public}s, elapsedMs=%{public}d, secMode=%{public}s, tdlibMode=%{public}s',
+          this._state, timeoutMs, security.mode, this.tdlibMode);
+        reject(new TDLibError(0,
+          `TDLIB_INIT_TIMEOUT: initialization did not complete within ${timeoutMs}ms ` +
+          `(state=${this._state}, secMode=${security.mode}, tdlibMode=${this.tdlibMode})`));
+      }, timeoutMs);
+
+      this._readyPromise.then(() => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timerId);
+        resolve();
+      }).catch((err: Error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timerId);
+        reject(err);
+      });
+    });
   }
 
   /** Cached TDLib mode from native layer. Set once during initialize(). */
@@ -237,10 +275,20 @@ export class TDLibClient {
     tdlib.stopReceiveLoop();
     this._state = ClientState.Stopped;
 
+    // Reject any pending waitForReady() callers before resetting the barrier
+    if (this._readyReject) {
+      this._readyReject(
+        new TDLibError(0, 'TDLIB_CLIENT_DESTROYED: client was destroyed during initialization'));
+      this._readyReject = null;
+      this._readyResolve = null;
+    }
+
     // Reset the ready barrier for potential re-initialization
-    this._readyPromise = new Promise<void>((resolve) => {
+    this._readyPromise = new Promise<void>((resolve, reject) => {
       this._readyResolve = resolve;
+      this._readyReject = reject;
     });
+    this._readyPromise.catch(() => {});
 
     this.logInfo('Client destroyed');
   }

@@ -58,6 +58,24 @@ export class AppError {
  * Reference: TDLib error codes documentation and Telegram client implementations.
  */
 export function classifyTdlibError(code: number, message: string): AppError {
+  // Initialization timeout — client didn't reach Ready state in time
+  if (code === 0 && message.startsWith('TDLIB_INIT_TIMEOUT')) {
+    return new AppError(
+      AppErrorKind.NETWORK,
+      'Initialization timed out. Please restart the app.',
+      message, code, true
+    );
+  }
+
+  // Client destroyed while caller was waiting
+  if (code === 0 && message.startsWith('TDLIB_CLIENT_DESTROYED')) {
+    return new AppError(
+      AppErrorKind.NETWORK,
+      'Connection interrupted.',
+      message, code, false
+    );
+  }
+
   // Network errors
   if (code === 0 && (message.includes('timed out') || message.includes('Client destroyed'))) {
     return new AppError(
