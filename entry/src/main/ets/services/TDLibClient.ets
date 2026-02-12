@@ -16,7 +16,7 @@ import tdlib from 'libtdlib_napi.so';
 
 // --- TDLib runtime info from native layer ---
 interface TdlibInfo {
-  mode: string;   // "REAL" | "STUB"
+  mode: string;   // "REAL"
   tdlibDir: string;
   soname: string;
 }
@@ -235,11 +235,6 @@ export class TDLibClient {
       }
     }
 
-    // Warn if STUB mode with real credentials — possible misconfiguration
-    if (this._tdlibInfo!.mode === 'STUB' && TELEGRAM_API_ID > 0) {
-      this.logWarn('STUB mode active but API credentials are set. Requests will NOT reach Telegram servers.');
-    }
-
     this._state = ClientState.Initializing;
     this.clientId = tdlib.createClient();
     this.logInfo('Client created with id: %{public}d', this.clientId);
@@ -254,19 +249,16 @@ export class TDLibClient {
       this.logWarn('Database encryption key is empty — TDLib database will be unencrypted');
     }
 
-    // Release/profile guard: SOFTWARE_FALLBACK in REAL mode = degraded production
-    if (security.mode === SecurityMode.SOFTWARE_FALLBACK && this._tdlibInfo!.mode === 'REAL') {
+    // SOFTWARE_FALLBACK means DB encryption key is NOT hardware-backed (HUKS unavailable)
+    if (security.mode === SecurityMode.SOFTWARE_FALLBACK) {
       this._degradedSecurity = true;
       this.logError('┌─ DEGRADED SECURITY ─────────────────────────────');
-      this.logError('│ REAL TDLib mode with SOFTWARE_FALLBACK encryption.');
+      this.logError('│ SOFTWARE_FALLBACK encryption active.');
       this.logError('│ Database encryption key is NOT hardware-backed (HUKS unavailable).');
       this.logError('│ This build is NOT production-safe for sensitive data.');
       this.logError('│ Ensure the device supports HUKS (TEE/Secure Element)');
       this.logError('│ or accept degraded security for this deployment.');
       this.logError('└──────────────────────────────────────────────────');
-    } else if (security.mode === SecurityMode.SOFTWARE_FALLBACK) {
-      // STUB mode — expected in dev/emulator, just log info
-      this.logInfo('SOFTWARE_FALLBACK in STUB mode — acceptable for development');
     }
 
     // Guard: ensure DB is compatible with the current encryption scheme.

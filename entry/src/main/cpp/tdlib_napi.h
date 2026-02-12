@@ -3,9 +3,8 @@
 
 #include "napi/native_api.h"
 
-// TDLib JSON client interface
-// When TDLib is built and available, these call the real td_json_client functions.
-// In stub mode, they return mock responses for development.
+// TDLib JSON client NAPI interface.
+// All functions call the real td_json_client functions from libtdjson.so.
 
 namespace tdlib_napi {
 

@@ -53,46 +53,30 @@ set(TDLIB_HEADER "${TDLIB_DIR}/include/td/telegram/td_json_client.h")
 set(TDLIB_LIBRARY "${TDLIB_DIR}/lib/${TDLIB_ABI}/libtdjson.so")
 set(TDLIB_RUNTIME_SONAME "libtdjson.so.1.8.61")
 
-if(EXISTS "${TDLIB_HEADER}" AND EXISTS "${TDLIB_LIBRARY}")
-    message(STATUS "┌─ TDLib REAL mode ──────────────────────────────")
-    message(STATUS "│ ABI:     ${TDLIB_ABI}")
-    message(STATUS "│ Header:  ${TDLIB_HEADER}")
-    message(STATUS "│ Library: ${TDLIB_LIBRARY}")
-    message(STATUS "│ SONAME:  ${TDLIB_RUNTIME_SONAME}")
-    message(STATUS "└────────────────────────────────────────────────")
-
-    target_include_directories(tdlib_napi PRIVATE "${TDLIB_DIR}/include")
-    target_link_libraries(tdlib_napi PUBLIC "${TDLIB_LIBRARY}")
-    target_compile_definitions(tdlib_napi PRIVATE
-        TDLIB_STUB=0
-        TDLIB_DIR_PATH="${TDLIB_DIR}"
-        TDLIB_SONAME="${TDLIB_RUNTIME_SONAME}"
-    )
-    # Ensure SONAME copy for runtime resolution
-    add_custom_command(TARGET tdlib_napi POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${TDLIB_LIBRARY}"
-        "$<TARGET_FILE_DIR:tdlib_napi>/${TDLIB_RUNTIME_SONAME}"
-    )
-else()
-    # Release builds MUST have real TDLib — fail fast
-    if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-        message(FATAL_ERROR
-            "TDLib not found for ABI '${TDLIB_ABI}' in RELEASE build.\n"
-            "  Expected header:  ${TDLIB_HEADER}\n"
-            "  Expected library: ${TDLIB_LIBRARY}\n"
-            "Place prebuilt TDLib or set -DTDLIB_DIR=<path>.")
-    endif()
-
-    message(WARNING "┌─ TDLib STUB mode (dev only) ───────────────────")
-    message(WARNING "│ ABI:    ${TDLIB_ABI}")
-    message(WARNING "│ Looked: ${TDLIB_DIR}")
-    message(WARNING "│ STUB WILL NOT CONNECT TO TELEGRAM SERVERS.")
-    message(WARNING "└────────────────────────────────────────────────")
-
-    target_compile_definitions(tdlib_napi PRIVATE
-        TDLIB_STUB=1
-        TDLIB_DIR_PATH="${TDLIB_DIR}"
-        TDLIB_SONAME="none"
-    )
+if(NOT EXISTS "${TDLIB_HEADER}" OR NOT EXISTS "${TDLIB_LIBRARY}")
+    message(FATAL_ERROR
+        "TDLib not found for ABI '${TDLIB_ABI}'.\n"
+        "  Expected header:  ${TDLIB_HEADER}\n"
+        "  Expected library: ${TDLIB_LIBRARY}\n"
+        "Place prebuilt TDLib under ${TDLIB_DIR} or set -DTDLIB_DIR=<path>.")
 endif()
+
+message(STATUS "┌─ TDLib ────────────────────────────────────────")
+message(STATUS "│ ABI:     ${TDLIB_ABI}")
+message(STATUS "│ Header:  ${TDLIB_HEADER}")
+message(STATUS "│ Library: ${TDLIB_LIBRARY}")
+message(STATUS "│ SONAME:  ${TDLIB_RUNTIME_SONAME}")
+message(STATUS "└────────────────────────────────────────────────")
+
+target_include_directories(tdlib_napi PRIVATE "${TDLIB_DIR}/include")
+target_link_libraries(tdlib_napi PUBLIC "${TDLIB_LIBRARY}")
+target_compile_definitions(tdlib_napi PRIVATE
+    TDLIB_DIR_PATH="${TDLIB_DIR}"
+    TDLIB_SONAME="${TDLIB_RUNTIME_SONAME}"
+)
+# Ensure SONAME copy for runtime resolution
+add_custom_command(TARGET tdlib_napi POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${TDLIB_LIBRARY}"
+    "$<TARGET_FILE_DIR:tdlib_napi>/${TDLIB_RUNTIME_SONAME}"
+)
