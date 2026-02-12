@@ -1,5 +1,6 @@
 import { TDLibClient } from '../services/TDLibClient';
 import { NotificationCenter, EventId } from './NotificationCenter';
+import { FileController } from './FileController';
 import { User } from '../models/User';
 import { TdObject, TdUserFullInfo, safeNumber, safeString, safeBool, asRecord, safeNumberArray } from '../models/TdTypes';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -163,34 +164,54 @@ export class ContactsController {
 
     const profilePhotoObj = raw['profile_photo'];
     let photoUrl: string | null = null;
+    let photoFileId = 0;
     if (profilePhotoObj) {
       const profilePhoto = asRecord(profilePhotoObj);
       const smallObj = profilePhoto['small'];
       if (smallObj) {
         const small = asRecord(smallObj);
+        photoFileId = safeNumber(small['id']);
         const localObj = small['local'];
         if (localObj) {
-          const localPath = asRecord(localObj);
-          const pathVal = safeString(localPath['path']);
-          if (pathVal) {
-            photoUrl = pathVal;
+          const localFile = asRecord(localObj);
+          if (safeBool(localFile['is_downloading_completed'])) {
+            const pathVal = safeString(localFile['path']);
+            if (pathVal) {
+              photoUrl = pathVal;
+            }
           }
         }
       }
     }
 
     const username = safeString(raw['username']) || safeString(asRecord(raw['usernames'])['editable_username']);
+    const userId = safeNumber(raw['id']);
 
-    return new User(
-      safeNumber(raw['id']),
+    const user = new User(
+      userId,
       safeString(raw['first_name']),
       safeString(raw['last_name']),
       username,
       safeString(raw['phone_number']),
       photoUrl,
+      photoFileId,
       isOnline,
       lastSeenDate
     );
+
+    // Trigger download if photo not yet downloaded
+    if (photoFileId > 0 && !photoUrl) {
+      FileController.getInstance().requestFile(photoFileId, 5, (path: string) => {
+        if (path.length > 0) {
+          user.photoUrl = path;
+          const eventArgs: Record<string, Object> = {};
+          eventArgs['userId'] = userId;
+          NotificationCenter.getInstance().post(EventId.USER_INFO_UPDATED, eventArgs);
+        }
+      });
+    }
+
+    return user;
   }
 
   private subscribeToUpdates(): void {

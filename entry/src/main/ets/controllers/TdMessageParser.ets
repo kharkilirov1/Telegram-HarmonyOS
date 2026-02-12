@@ -1,9 +1,10 @@
-// TdMessageParser — pure parsing/mapping layer for TDLib responses
+// TdMessageParser — parsing/mapping layer for TDLib responses
 // Extracted from MessagesController to separate parsing from state management
 // Reference: Telegram iOS MessageUtils, Android MessageObject
 
 import { Chat } from '../models/Chat';
 import { Message, MessageContentType } from '../models/Message';
+import { FileController } from './FileController';
 import { TdFallbackRegistry } from '../services/TdFallbackRegistry';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
@@ -171,6 +172,9 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
         const bestFileId: number = resolveBestPhotoFileId(photo.sizes);
         if (bestFileId > 0) {
           msg.photoFileId = bestFileId;
+          if (!msg.photoUrl) {
+            requestFileForMessage(bestFileId, 16, msg, 'photoUrl');
+          }
         }
       }
       const caption: TdFormattedText | undefined = content.caption;
@@ -192,9 +196,12 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
       }
       const thumbnail: TdThumbnail | undefined = video?.thumbnail;
       if (thumbnail?.file) {
+        const thumbFileId: number = thumbnail.file.id || 0;
         const thumbPath: string = resolveLocalFilePath(thumbnail.file);
         if (thumbPath.length > 0) {
           msg.photoUrl = thumbPath;
+        } else if (thumbFileId > 0) {
+          requestFileForMessage(thumbFileId, 16, msg, 'photoUrl');
         }
       }
       const caption2: TdFormattedText | undefined = content.caption;
@@ -229,6 +236,8 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
         const localVoicePath: string = resolveLocalFilePath(voiceFile);
         if (localVoicePath.length > 0) {
           msg.filePath = localVoicePath;
+        } else if (msg.fileId > 0) {
+          requestFileForMessage(msg.fileId, 10, msg, 'filePath');
         }
       }
       const waveform: string | undefined = voice?.waveform;
@@ -247,6 +256,8 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
         const stickerPath: string = resolveLocalFilePath(stickerFile);
         if (stickerPath.length > 0) {
           msg.stickerUrl = stickerPath;
+        } else if (msg.stickerFileId > 0) {
+          requestFileForMessage(msg.stickerFileId, 16, msg, 'stickerUrl');
         }
       }
       break;
@@ -266,9 +277,12 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
       }
       const animationThumb: TdThumbnail | undefined = animation?.thumbnail;
       if (animationThumb?.file) {
+        const animThumbFileId: number = animationThumb.file.id || 0;
         const thumbPath: string = resolveLocalFilePath(animationThumb.file);
         if (thumbPath.length > 0) {
           msg.photoUrl = thumbPath;
+        } else if (animThumbFileId > 0) {
+          requestFileForMessage(animThumbFileId, 16, msg, 'photoUrl');
         }
       }
       const animationCaption: TdFormattedText | undefined = content.caption;
@@ -288,6 +302,8 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
         const localVideoNotePath: string = resolveLocalFilePath(vnFile);
         if (localVideoNotePath.length > 0) {
           msg.videoUrl = localVideoNotePath;
+        } else if (msg.fileId > 0) {
+          requestFileForMessage(msg.fileId, 10, msg, 'videoUrl');
         }
       }
       break;
@@ -408,6 +424,7 @@ export function applyContent(msg: Message, content: TdMessageContent): void {
           if (localAudioPath.length > 0) {
             msg.filePath = localAudioPath;
           }
+          // Note: audio files are not auto-downloaded (can be large), handled by FileBubble on tap
         }
       }
       const audioCaption: TdFormattedText | undefined = content.caption;
@@ -562,6 +579,30 @@ export function parseChat(raw: TdChat): Chat {
     chat.isMuted = muteFor > 0;
   }
 
+  // Chat photo
+  const rawRecord: Record<string, unknown> = raw as Record<string, unknown>;
+  const chatPhoto = rawRecord['photo'] as Record<string, unknown> | undefined;
+  if (chatPhoto) {
+    const small = chatPhoto['small'] as Record<string, unknown> | undefined;
+    if (small) {
+      const smallFileId = (small['id'] as number) || 0;
+      chat.photoFileId = smallFileId;
+      const localFile = small['local'] as Record<string, unknown> | undefined;
+      if (localFile && (localFile['is_downloading_completed'] as boolean) === true) {
+        const photoPath = (localFile['path'] as string) || '';
+        if (photoPath.length > 0) {
+          chat.photo = photoPath;
+        }
+      } else if (smallFileId > 0) {
+        FileController.getInstance().requestFile(smallFileId, 5, (path: string) => {
+          if (path.length > 0) {
+            chat.photo = path;
+          }
+        });
+      }
+    }
+  }
+
   // Positions / pinned / order
   if (positions) {
     updateChatPositions(chat, positions);
@@ -666,6 +707,23 @@ function formatDuration(totalSeconds: number): string {
 function toRecord(value: Object | undefined | null): Record<string, unknown> | undefined {
   if (value === undefined || value === null) return undefined;
   return value as Record<string, unknown>;
+}
+
+/**
+ * Request a file download and update the given Message field when complete.
+ * Uses @Trace reactivity: setting msg[field] triggers UI re-render automatically.
+ */
+function requestFileForMessage(
+  fileId: number,
+  priority: number,
+  msg: Message,
+  field: 'photoUrl' | 'videoUrl' | 'stickerUrl' | 'filePath'
+): void {
+  FileController.getInstance().requestFile(fileId, priority, (path: string) => {
+    if (path.length > 0) {
+      msg[field] = path;
+    }
+  });
 }
 
 function resolveLocalFilePath(file: TdFile | undefined): string {

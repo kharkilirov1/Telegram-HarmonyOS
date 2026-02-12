@@ -41,6 +41,7 @@ function parseUser(raw: Record<string, unknown>): User {
       ((raw['usernames'] as Record<string, unknown>)?.['editable_username'] as string) || '',
     (raw['phone_number'] as string) || '',
     photoUrl,
+    0,
     isOnline,
     lastSeenDate
   );
@@ -215,7 +216,7 @@ export default function contactsControllerTest() {
       });
 
       it('should construct with all parameters', 0, () => {
-        const user = new User(42, 'John', 'Doe', 'johnd', '+555', '/photo.jpg', true, 12345);
+        const user = new User(42, 'John', 'Doe', 'johnd', '+555', '/photo.jpg', 0, true, 12345);
         expect(user.id).assertEqual(42);
         expect(user.firstName).assertEqual('John');
         expect(user.lastName).assertEqual('Doe');

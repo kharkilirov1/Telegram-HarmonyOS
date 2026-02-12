@@ -5,6 +5,7 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { UserService } from '../../services/UserService';
 import { AuthController } from '../../controllers/AuthController';
+import { FileController } from '../../controllers/FileController';
 import { PreferencesService } from '../../services/PreferencesService';
 
 @Builder
@@ -51,6 +52,14 @@ export struct MultiAccountPage {
           const localFile = small.local;
           if (localFile && localFile.is_downloading_completed) {
             photoUrl = localFile.path || '';
+          } else if (small.id && small.id > 0) {
+            FileController.getInstance().requestFile(small.id, 5, (path: string) => {
+              if (path.length > 0 && this.accounts.length > 0) {
+                const updated = this.accounts.slice();
+                updated[0].photoUrl = path;
+                this.accounts = updated;
+              }
+            });
           }
         }
       }

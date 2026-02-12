@@ -3,6 +3,7 @@
 // HarmonyOS: NavDestination, @ComponentV2, V2 decorators, glass card styling
 
 import { MessagesController } from '../../controllers/MessagesController';
+import { FileController } from '../../controllers/FileController';
 import { GroupService } from '../../services/GroupService';
 import { UserService } from '../../services/UserService';
 import { ChatService } from '../../services/ChatService';
@@ -98,8 +99,16 @@ export struct GroupAdminPage {
             const photo = user.profile_photo;
             if (photo?.small?.local) {
               const localFile = photo.small.local;
-              if (localFile.is_downloading_completed) {
+              if (localFile.is_downloading_completed && localFile.path) {
                 photoUrl = localFile.path;
+              } else if (photo.small.id && photo.small.id > 0) {
+                const adminIdx = this.administrators.length;
+                FileController.getInstance().requestFile(photo.small.id, 3, (path: string) => {
+                  if (path.length > 0 && adminIdx < this.administrators.length) {
+                    this.administrators[adminIdx].photoUrl = path;
+                    this.administrators = this.administrators.slice();
+                  }
+                });
               }
             }
           } catch (e) {

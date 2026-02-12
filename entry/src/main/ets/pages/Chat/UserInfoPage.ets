@@ -7,6 +7,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { User } from '../../models/User';
 import { CallsController } from '../../controllers/CallsController';
 import { ChatService } from '../../services/ChatService';
+import { FileController } from '../../controllers/FileController';
 import { GroupService } from '../../services/GroupService';
 import { formatLastSeen } from '../../components/Common/AvatarWithStatus';
 import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
@@ -97,7 +98,19 @@ export struct UserInfoPage {
         this.lastName = result.last_name || '';
         this.username = result.username || '';
         this.phoneNumber = result.phone_number || '';
-        this.photoUrl = result.profile_photo?.small?.local?.path || null;
+        const userPhoto = result.profile_photo;
+        if (userPhoto?.small?.local?.is_downloading_completed && userPhoto.small.local.path) {
+          this.photoUrl = userPhoto.small.local.path;
+        } else if (userPhoto?.small?.id && userPhoto.small.id > 0) {
+          this.photoUrl = null;
+          FileController.getInstance().requestFile(userPhoto.small.id, 5, (path: string) => {
+            if (path.length > 0) {
+              this.photoUrl = path;
+            }
+          });
+        } else {
+          this.photoUrl = null;
+        }
 
         const status = result.status as Record<string, unknown> | undefined;
         if (status) {

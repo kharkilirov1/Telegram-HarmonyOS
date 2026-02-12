@@ -4,6 +4,7 @@
 import { TDLibClient, TDLibError } from '../services/TDLibClient';
 import { handleTdlibError } from '../services/AppError';
 import { NotificationCenter, EventId } from './NotificationCenter';
+import { FileController } from './FileController';
 import { Story, StoryContentType, ChatActiveStories } from '../models/Story';
 import { TdObject, safeNumber, safeString, safeBool, asRecord, asArray } from '../models/TdTypes';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -204,9 +205,21 @@ export class StoriesController {
       if (photo) {
         const small = photo['small'] as Record<string, unknown>;
         if (small) {
+          const smallFileId = (small['id'] as number) || 0;
           const localFile = small['local'] as Record<string, unknown>;
           if (localFile && (localFile['is_downloading_completed'] as boolean)) {
             photoUrl = (localFile['path'] as string) || '';
+          } else if (smallFileId > 0) {
+            const capturedChatId = chatId;
+            FileController.getInstance().requestFile(smallFileId, 5, (path: string) => {
+              if (path.length > 0) {
+                const active = this.activeStoriesByChat.get(capturedChatId);
+                if (active) {
+                  active.chatPhotoUrl = path;
+                  NotificationCenter.getInstance().post(EventId.STORIES_UPDATED);
+                }
+              }
+            });
           }
         }
       }
@@ -263,9 +276,21 @@ export class StoriesController {
         if (video) {
           const videoFile = video['video'] as Record<string, unknown>;
           if (videoFile) {
+            const videoFileId = (videoFile['id'] as number) || 0;
             const localFile = videoFile['local'] as Record<string, unknown>;
             if (localFile && (localFile['is_downloading_completed'] as boolean)) {
               videoUrl = (localFile['path'] as string) || '';
+            } else if (videoFileId > 0) {
+              const storyKey = `${chatId}_${id}`;
+              FileController.getInstance().requestFile(videoFileId, 8, (path: string) => {
+                if (path.length > 0) {
+                  const cached = this.storiesCache.get(storyKey);
+                  if (cached) {
+                    cached.videoUrl = path;
+                    NotificationCenter.getInstance().post(EventId.STORIES_UPDATED);
+                  }
+                }
+              });
             }
           }
         }
@@ -278,9 +303,21 @@ export class StoriesController {
             const lastSize = sizes[sizes.length - 1];
             const photoFile = lastSize['photo'] as Record<string, unknown>;
             if (photoFile) {
+              const photoFileId = (photoFile['id'] as number) || 0;
               const localFile = photoFile['local'] as Record<string, unknown>;
               if (localFile && (localFile['is_downloading_completed'] as boolean)) {
                 photoUrl = (localFile['path'] as string) || '';
+              } else if (photoFileId > 0) {
+                const storyKey = `${chatId}_${id}`;
+                FileController.getInstance().requestFile(photoFileId, 8, (path: string) => {
+                  if (path.length > 0) {
+                    const cached = this.storiesCache.get(storyKey);
+                    if (cached) {
+                      cached.photoUrl = path;
+                      NotificationCenter.getInstance().post(EventId.STORIES_UPDATED);
+                    }
+                  }
+                });
               }
             }
           }

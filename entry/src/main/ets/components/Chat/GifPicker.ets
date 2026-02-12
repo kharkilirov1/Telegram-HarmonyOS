@@ -2,6 +2,7 @@
 // Reference: Telegram iOS GifPanelController, Android GifAdapter
 
 import { TDLibClient } from '../../services/TDLibClient';
+import { FileController } from '../../controllers/FileController';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 interface GifItem {
@@ -69,6 +70,18 @@ export struct GifPicker {
           title: title,
           aspectRatio: clampedRatio
         });
+
+        // Trigger download for GIFs not yet cached
+        if (localPath.length === 0 && fileId > 0) {
+          const gifIndex = loaded.length - 1;
+          FileController.getInstance().requestFile(fileId, 3, (path: string) => {
+            if (path.length > 0 && gifIndex < this.gifs.length && this.gifs[gifIndex].id === fileId) {
+              const updated = this.gifs.slice();
+              updated[gifIndex].previewPath = path;
+              this.gifs = updated;
+            }
+          });
+        }
       }
       this.gifs = loaded;
     } catch (e) {

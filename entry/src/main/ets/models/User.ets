@@ -6,6 +6,7 @@ export class User {
   @Trace username: string;
   @Trace phoneNumber: string;
   @Trace photoUrl: string | null;
+  @Trace photoFileId: number;
   @Trace isOnline: boolean;
   @Trace lastSeenDate: number;
 
@@ -16,6 +17,7 @@ export class User {
     username: string = '',
     phoneNumber: string = '',
     photoUrl: string | null = null,
+    photoFileId: number = 0,
     isOnline: boolean = false,
     lastSeenDate: number = 0
   ) {
@@ -25,6 +27,7 @@ export class User {
     this.username = username;
     this.phoneNumber = phoneNumber;
     this.photoUrl = photoUrl;
+    this.photoFileId = photoFileId;
     this.isOnline = isOnline;
     this.lastSeenDate = lastSeenDate;
   }

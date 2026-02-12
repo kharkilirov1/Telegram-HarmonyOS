@@ -1,5 +1,6 @@
 import { TDLibClient } from '../../services/TDLibClient';
 import { NotificationCenter, EventId } from '../NotificationCenter';
+import { FileController } from '../FileController';
 import { NotificationService } from '../../services/NotificationService';
 import { Chat } from '../../models/Chat';
 import { Message } from '../../models/Message';
@@ -153,6 +154,13 @@ export function subscribeToTdUpdates(deps: MessagesUpdateSubscriberDeps): void {
       const local: TdLocalFile | undefined = small.local;
       if (local && local.is_downloading_completed && local.path.length > 0) {
         chat.photo = local.path;
+      } else if (chat.photoFileId > 0) {
+        FileController.getInstance().requestFile(chat.photoFileId, 5, (path: string) => {
+          if (path.length > 0) {
+            chat.photo = path;
+            NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
+          }
+        });
       }
     }
 

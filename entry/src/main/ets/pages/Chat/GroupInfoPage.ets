@@ -4,6 +4,7 @@
 
 import { MessagesController } from '../../controllers/MessagesController';
 import { AuthController } from '../../controllers/AuthController';
+import { FileController } from '../../controllers/FileController';
 import { GroupService } from '../../services/GroupService';
 import { UserService } from '../../services/UserService';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -140,8 +141,16 @@ export struct GroupInfoPage {
             const photo = user.profile_photo;
             if (photo?.small?.local) {
               const localFile = photo.small.local;
-              if (localFile.is_downloading_completed) {
+              if (localFile.is_downloading_completed && localFile.path) {
                 photoUrl = localFile.path;
+              } else if (photo.small.id && photo.small.id > 0) {
+                const memberIdx = this.members.length;
+                FileController.getInstance().requestFile(photo.small.id, 3, (path: string) => {
+                  if (path.length > 0 && memberIdx < this.members.length) {
+                    this.members[memberIdx].photoUrl = path;
+                    this.members = this.members.slice();
+                  }
+                });
               }
             }
             const userStatusObj = user.status as Record<string, string> | undefined;

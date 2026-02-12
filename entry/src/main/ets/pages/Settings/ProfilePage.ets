@@ -3,6 +3,7 @@
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AuthController } from '../../controllers/AuthController';
+import { FileController } from '../../controllers/FileController';
 import { UserService } from '../../services/UserService';
 import { ProfileEditModeSection } from './components/ProfileEditModeSection';
 import { ProfileInfoRow } from './components/ProfileInfoRow';
@@ -225,6 +226,12 @@ export struct ProfilePage {
       if (profilePhoto?.small?.local && profilePhoto.small.local.is_downloading_completed) {
         const path = profilePhoto.small.local.path || '';
         this.photoUrl = path.length > 0 ? path : null;
+      } else if (profilePhoto?.small?.id && profilePhoto.small.id > 0) {
+        FileController.getInstance().requestFile(profilePhoto.small.id, 5, (path: string) => {
+          if (path.length > 0) {
+            this.photoUrl = path;
+          }
+        });
       }
 
       const statusObj = me.status as Record<string, unknown> | undefined;
