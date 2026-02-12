@@ -67,6 +67,7 @@ export struct CreateGroupPage {
         Image($r('app.media.ic_back'))
           .width(24).height(24)
           .fillColor($r('app.color.telegram_blue'))
+          .padding(12)
           .onClick(() => this.navPathStack.pop())
 
         Text($r('app.string.new_group'))
@@ -154,6 +155,7 @@ export struct CreateGroupPage {
         Image($r('app.media.ic_back'))
           .width(24).height(24)
           .fillColor($r('app.color.telegram_blue'))
+          .padding(12)
           .onClick(() => { this.step = 0; })
 
         Text($r('app.string.new_group'))

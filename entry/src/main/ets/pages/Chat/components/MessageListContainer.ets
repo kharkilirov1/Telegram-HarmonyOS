@@ -1,4 +1,6 @@
+import { curves } from '@kit.ArkUI';
 import { Message } from '../../../models/Message';
+import { HapticService } from '../../../services/HapticService';
 import { MessageBubble } from '../../../components/Message/MessageBubble';
 import { DateSeparator } from '../../../components/Common/DateSeparator';
 import { BasicDataSource } from '../../../datasources/BasicDataSource';
@@ -108,7 +110,15 @@ export struct MessageListContainer {
               .accessibilityText($r('app.string.accessibility_scroll_bottom'))
           }
           .position({ right: 16, bottom: 16 })
-          .onClick(() => { this.onScrollToBottomTap(); })
+          .onClick(() => {
+            HapticService.getInstance().light();
+            this.onScrollToBottomTap();
+          })
+          .transition(
+            TransitionEffect.OPACITY.animation({ duration: 200, curve: Curve.EaseOut })
+              .combine(TransitionEffect.scale({ x: 0.8, y: 0.8 })
+                .animation({ curve: curves.springMotion(0.6, 0.9) }))
+          )
         }
       }
       .width('100%')

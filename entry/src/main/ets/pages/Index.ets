@@ -191,6 +191,7 @@ struct Index {
     .width('100%')
     .height(56)
     .justifyContent(FlexAlign.Center)
+    .hoverEffect(HoverEffect.Highlight)
   }
 
   // Settings as tab content (navigates to full settings on tap)

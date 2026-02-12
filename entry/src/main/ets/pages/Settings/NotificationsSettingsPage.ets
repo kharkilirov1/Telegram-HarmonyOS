@@ -67,6 +67,7 @@ export struct NotificationsSettingsPage {
           Image($r('app.media.ic_back'))
             .width(24).height(24)
             .fillColor($r('app.color.telegram_blue'))
+            .padding(12)
             .onClick(() => this.navPathStack.pop())
 
           Text($r('app.string.settings_notifications_sounds'))

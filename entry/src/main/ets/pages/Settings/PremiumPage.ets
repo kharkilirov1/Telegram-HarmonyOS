@@ -52,6 +52,7 @@ export struct PremiumPage {
           Image($r('app.media.ic_back'))
             .width(24).height(24)
             .fillColor($r('app.color.telegram_blue'))
+            .padding(12)
             .onClick(() => this.navPathStack.pop())
             .accessibilityText($r('app.string.accessibility_back'))
 

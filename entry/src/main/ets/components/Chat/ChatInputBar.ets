@@ -2,7 +2,9 @@
 // Reference: Telegram iOS ChatInputBar, Android ChatActivityEnterView
 // Voice recording UI extracted to VoiceRecordingBar.ets
 
+import { curves } from '@kit.ArkUI';
 import { Message } from '../../models/Message';
+import { HapticService } from '../../services/HapticService';
 import { EmojiPicker } from './EmojiPicker';
 import { AttachmentPanel } from './AttachmentPanel';
 import { StickerPicker } from './StickerPicker';
@@ -89,6 +91,9 @@ export struct ChatInputBar {
         .width('100%').height(40)
         .padding({ left: 12, right: 12 })
         .backgroundColor($r('app.color.background_primary'))
+        .transition(TransitionEffect.move(TransitionEdge.BOTTOM)
+          .combine(TransitionEffect.OPACITY)
+          .animation({ duration: 200, curve: Curve.EaseOut }))
 
         Divider().strokeWidth(0.5).color($r('app.color.separator'))
       }
@@ -134,6 +139,9 @@ export struct ChatInputBar {
         .width('100%').height(40)
         .padding({ left: 12, right: 12 })
         .backgroundColor($r('app.color.background_primary'))
+        .transition(TransitionEffect.move(TransitionEdge.BOTTOM)
+          .combine(TransitionEffect.OPACITY)
+          .animation({ duration: 200, curve: Curve.EaseOut }))
 
         Divider().strokeWidth(0.5).color($r('app.color.separator'))
       }
@@ -148,6 +156,7 @@ export struct ChatInputBar {
             onCancel: () => { this.cancelRecording(); },
             onLock: () => { this.recordingLocked = true; }
           })
+            .transition(TransitionEffect.OPACITY.animation({ duration: 200, curve: Curve.EaseOut }))
         } else {
           // Emoji/Sticker toggle button
           Image(this.showEmojiPicker || this.showStickerPicker || this.showGifPicker
@@ -205,6 +214,7 @@ export struct ChatInputBar {
                     .onAction(() => {
                       const text = this.inputText.trim();
                       if (text.length > 0) {
+                        HapticService.getInstance().light();
                         if (this.editMessage !== null) {
                           this.onEditMessage(this.editMessage.id, text);
                         } else {
@@ -265,6 +275,7 @@ export struct ChatInputBar {
         .width('100%')
         .height(36)
         .backgroundColor($r('app.color.background_primary'))
+        .transition(TransitionEffect.OPACITY.animation({ duration: 200, curve: Curve.EaseOut }))
       }
 
       // Emoji picker panel
@@ -272,6 +283,8 @@ export struct ChatInputBar {
         EmojiPicker({
           onEmojiSelected: (emoji: string) => { this.inputText += emoji; }
         })
+          .transition(TransitionEffect.move(TransitionEdge.BOTTOM)
+            .animation({ curve: curves.springMotion(0.6, 0.8) }))
       }
 
       // Sticker picker panel
@@ -282,6 +295,8 @@ export struct ChatInputBar {
             this.closeAllPanels();
           }
         })
+          .transition(TransitionEffect.move(TransitionEdge.BOTTOM)
+            .animation({ curve: curves.springMotion(0.6, 0.8) }))
       }
 
       // GIF picker panel
@@ -292,6 +307,8 @@ export struct ChatInputBar {
             this.closeAllPanels();
           }
         })
+          .transition(TransitionEffect.move(TransitionEdge.BOTTOM)
+            .animation({ curve: curves.springMotion(0.6, 0.8) }))
       }
 
       // Attachment panel
@@ -305,11 +322,17 @@ export struct ChatInputBar {
           onPoll: () => { this.showAttachPanel = false; this.onCreatePoll(); },
           onClose: () => { this.showAttachPanel = false; }
         })
+          .transition(TransitionEffect.move(TransitionEdge.BOTTOM)
+            .animation({ curve: curves.springMotion(0.6, 0.8) }))
       }
 
       // Schedule picker panel
       if (this.showSchedulePicker) {
-        this.schedulePickerPanel()
+        Column() {
+          this.schedulePickerPanel()
+        }
+        .transition(TransitionEffect.move(TransitionEdge.BOTTOM)
+          .animation({ curve: curves.springMotion(0.6, 0.8) }))
       }
     }
     .width('100%')
@@ -338,6 +361,7 @@ export struct ChatInputBar {
   // --- Recording control ---
 
   private startRecording(): void {
+    HapticService.getInstance().medium();
     this.isRecording = true;
     this.recordingDuration = 0;
     this.recordingLocked = false;

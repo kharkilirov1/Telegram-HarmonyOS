@@ -1,4 +1,5 @@
 import { Message, MessageContentType } from '../../models/Message';
+import { HapticService } from '../../services/HapticService';
 import { AudioBubble } from './AudioBubble';
 import { CallBubble } from './CallBubble';
 import { ContactBubble } from './ContactBubble';
@@ -125,6 +126,7 @@ export struct MessageBubble {
           GestureGroup(GestureMode.Exclusive,
             LongPressGesture()
               .onAction(() => {
+                HapticService.getInstance().heavy();
                 if (this.isSelectionMode) {
                   this.onSelect(this.message);
                 } else {
@@ -140,6 +142,7 @@ export struct MessageBubble {
               })
               .onActionEnd(() => {
                 if (this.swipeOffsetX < -50) {
+                  HapticService.getInstance().medium();
                   this.onReply(this.message);
                 }
                 this.swipeOffsetX = 0;

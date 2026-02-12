@@ -9,6 +9,7 @@ export struct SavedMessagesTopBar {
         .width(24)
         .height(24)
         .fillColor($r('app.color.telegram_blue'))
+        .padding(12)
         .onClick(() => {
           this.onBack();
         })

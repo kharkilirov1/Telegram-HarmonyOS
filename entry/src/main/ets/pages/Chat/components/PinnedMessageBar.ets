@@ -45,6 +45,11 @@ export struct PinnedMessageBar {
       .margin({ left: 8, right: 8, top: 4, bottom: 4 })
       .shadow({ radius: 4, color: $r('app.color.shadow_color'), offsetY: 1 })
       .onClick(() => { this.onOpenPinnedMessage(); })
+      .transition(
+        TransitionEffect.move(TransitionEdge.TOP)
+          .combine(TransitionEffect.OPACITY)
+          .animation({ duration: 250, curve: Curve.EaseOut })
+      )
     }
   }
 }

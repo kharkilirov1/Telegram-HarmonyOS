@@ -1,5 +1,6 @@
 import { MessagesController } from '../../controllers/MessagesController';
 import { ChatService } from '../../services/ChatService';
+import { HapticService } from '../../services/HapticService';
 import { NotificationCenter, EventId } from '../../controllers/NotificationCenter';
 import { Chat } from '../../models/Chat';
 import { ChatListItem } from '../../components/Chat/ChatListItem';
@@ -228,7 +229,9 @@ export struct ChatListPage {
       .backgroundColor($r('app.color.telegram_blue'))
       .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: 4 })
       .margin({ right: 16, bottom: 72 })
+      .hoverEffect(HoverEffect.Scale)
       .onClick(() => {
+        HapticService.getInstance().light();
         this.navPathStack.pushPath(new NavPathInfo('NewChat', new Object()));
       })
     }

@@ -1,3 +1,4 @@
+import { HapticService } from '../../../services/HapticService';
 import { TypingIndicator } from '../../../components/Common/TypingIndicator';
 
 @ComponentV2
@@ -21,8 +22,12 @@ export struct ChatHeader {
         .width(24)
         .height(24)
         .fillColor($r('app.color.telegram_blue'))
+        .padding(12)
         .accessibilityText($r('app.string.accessibility_back'))
-        .onClick(() => { this.onBack(); })
+        .onClick(() => {
+          HapticService.getInstance().light();
+          this.onBack();
+        })
 
       if (this.chatPhoto) {
         Image(this.chatPhoto)
@@ -76,20 +81,23 @@ export struct ChatHeader {
         .width(24)
         .height(24)
         .fillColor($r('app.color.telegram_blue'))
-        .margin({ right: 16 })
+        .padding(8)
+        .margin({ right: 4 })
         .onClick(() => { this.onCall(); })
 
       Image($r('app.media.ic_search'))
         .width(24)
         .height(24)
         .fillColor($r('app.color.telegram_blue'))
-        .margin({ right: 16 })
+        .padding(8)
+        .margin({ right: 4 })
         .onClick(() => { this.onSearch(); })
 
       Image($r('app.media.ic_more'))
         .width(24)
         .height(24)
         .fillColor($r('app.color.telegram_blue'))
+        .padding(8)
     }
     .width('100%')
     .height(56)

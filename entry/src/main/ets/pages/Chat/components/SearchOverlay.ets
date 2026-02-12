@@ -14,6 +14,11 @@ export struct SearchOverlay {
         onClose: () => { this.onClose(); },
         onScrollToMessage: (messageId: number) => { this.onScrollToMessage(messageId); }
       })
+        .transition(
+          TransitionEffect.move(TransitionEdge.TOP)
+            .combine(TransitionEffect.OPACITY)
+            .animation({ duration: 250, curve: Curve.EaseOut })
+        )
     }
   }
 }

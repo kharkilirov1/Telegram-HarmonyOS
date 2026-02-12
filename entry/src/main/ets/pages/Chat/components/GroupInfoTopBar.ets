@@ -10,6 +10,7 @@ export struct GroupInfoTopBar {
         .width(24)
         .height(24)
         .fillColor($r('app.color.telegram_blue'))
+        .padding(12)
         .accessibilityText($r('app.string.accessibility_back'))
         .onClick(() => {
           this.onBack();
