@@ -229,10 +229,7 @@ export class TDLibClient {
     // Validate API credentials
     if (TELEGRAM_API_ID === 0 || TELEGRAM_API_HASH.length === 0) {
       this.logError('API credentials not configured. Copy ConfigLocal.example.ets → ConfigLocal.ets and fill in your values from https://my.telegram.org/apps');
-      if (this._tdlibInfo!.mode === 'REAL') {
-        // In REAL mode without credentials, TDLib will fail immediately — warn loudly
-        this.logError('REAL TDLib mode requires valid API credentials. Init will likely fail.');
-      }
+      this.logError('TDLib requires valid API credentials. Init will likely fail.');
     }
 
     this._state = ClientState.Initializing;

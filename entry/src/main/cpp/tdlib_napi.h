@@ -34,7 +34,7 @@ napi_value StartReceiveLoop(napi_env env, napi_callback_info info);
 napi_value StopReceiveLoop(napi_env env, napi_callback_info info);
 
 // Returns a JSON string with TDLib build-time diagnostics:
-//   { "mode": "REAL"|"STUB", "tdlibDir": "...", "soname": "..." }
+//   { "mode": "REAL", "tdlibDir": "...", "soname": "..." }
 // No arguments required.
 napi_value GetTdlibInfo(napi_env env, napi_callback_info info);
 
