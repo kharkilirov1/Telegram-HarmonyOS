@@ -1,5 +1,6 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { taskpool } from '@kit.ArkTS';
+import { fileIo } from '@kit.CoreFileKit';
 import { TELEGRAM_API_ID, TELEGRAM_API_HASH } from './ConfigLocal';
 import { SecurityService } from './SecurityService';
 import { TdFallbackRegistry } from './TdFallbackRegistry';
@@ -27,6 +28,13 @@ const DOMAIN = 0x0001;
 
 // Default timeout for TDLib requests (30 seconds)
 const REQUEST_TIMEOUT_MS = 30000;
+
+// --- TDLib database paths (single source of truth) ---
+const TDLIB_DB_DIR = '/data/storage/el2/base/tdlib';
+const TDLIB_FILES_DIR = '/data/storage/el2/base/tdlib/files';
+// Marker file: if present, the DB was created with the current encryption scheme.
+// Absence + existing DB dir = pre-encryption legacy database → requires migration.
+const DB_ENC_MIGRATION_MARKER = '/data/storage/el2/base/tdlib/.enc_key_v1';
 
 // --- Lifecycle state machine ---
 export enum ClientState {
@@ -130,7 +138,7 @@ export class TDLibClient {
     this.logInfo('│ SONAME:      %{public}s', this._tdlibInfo!.soname);
     this.logInfo('│ API_ID:      %{public}s', TELEGRAM_API_ID > 0 ? 'configured' : 'NOT SET');
     this.logInfo('│ API_HASH:    %{public}s', TELEGRAM_API_HASH.length > 0 ? 'configured' : 'NOT SET');
-    this.logInfo('│ DB_PATH:     /data/storage/el2/base/tdlib');
+    this.logInfo('│ DB_PATH:     %{public}s', TDLIB_DB_DIR);
     this.logInfo('└──────────────────────────────────────────────');
 
     // Validate API credentials
@@ -158,6 +166,10 @@ export class TDLibClient {
     if (dbEncKey.length === 0) {
       this.logWarn('Database encryption key is empty — TDLib database will be unencrypted');
     }
+
+    // Guard: ensure DB is compatible with the current encryption scheme.
+    // Must run BEFORE startReceiveLoop/sendTdlibParameters.
+    this.ensureDbEncryptionMigration();
 
     // Start receiving updates from TDLib on a background thread
     tdlib.startReceiveLoop((responseJson: string) => {
@@ -579,13 +591,87 @@ export class TDLibClient {
   // --- Private methods ---
 
   /**
+   * One-time DB encryption migration guard.
+   *
+   * Scenario: user upgrades from a build without database_encryption_key
+   * to a build that now encrypts the DB via SecurityService.  TDLib cannot
+   * open an unencrypted DB with an encryption key → it fails hard.
+   *
+   * Strategy:
+   *   1. Check for marker file `.enc_key_v1` in the DB directory.
+   *   2. If marker exists → already migrated, nothing to do.
+   *   3. If marker absent AND DB directory has content → legacy unencrypted DB.
+   *      Delete the old DB directory (one-time reset), log prominently.
+   *   4. Write the marker file (idempotent).
+   *
+   * Rollback: if this logic causes issues, delete the marker file and
+   * pass an empty encryption key in sendTdlibParameters().
+   */
+  private ensureDbEncryptionMigration(): void {
+    try {
+      // Check if migration marker already exists
+      const markerExists = fileIo.accessSync(DB_ENC_MIGRATION_MARKER);
+      if (markerExists) {
+        this.logDebug('DB encryption marker present — no migration needed');
+        return;
+      }
+    } catch (_e) {
+      // accessSync throws if file doesn't exist — expected for first run or migration
+    }
+
+    // Marker absent. Check if there's an existing DB directory with content.
+    let dbDirExists = false;
+    try {
+      const stat = fileIo.statSync(TDLIB_DB_DIR);
+      dbDirExists = stat.isDirectory();
+    } catch (_e) {
+      // Directory doesn't exist → fresh install
+    }
+
+    if (dbDirExists) {
+      // Directory exists without marker → legacy unencrypted database
+      this.logWarn('┌─ DB ENCRYPTION MIGRATION ──────────────────────');
+      this.logWarn('│ Found existing TDLib database without encryption marker.');
+      this.logWarn('│ Removing old unencrypted database for safe re-creation.');
+      this.logWarn('│ User will need to re-authenticate after this one-time reset.');
+      this.logWarn('└────────────────────────────────────────────────');
+
+      try {
+        fileIo.rmdirSync(TDLIB_DB_DIR);
+        this.logInfo('Old DB directory removed: %{public}s', TDLIB_DB_DIR);
+      } catch (e) {
+        this.logError('Failed to remove old DB directory: %{public}s', String(e));
+        // Continue anyway — TDLib will fail with a clear error if the DB is incompatible
+      }
+    }
+
+    // Ensure the DB directory exists
+    try {
+      fileIo.mkdirSync(TDLIB_DB_DIR, true);
+    } catch (_e) {
+      // May already exist after rmdirSync race — harmless
+    }
+
+    // Write the migration marker (atomic: create-or-open, then close)
+    try {
+      const fd = fileIo.openSync(DB_ENC_MIGRATION_MARKER,
+        fileIo.OpenMode.CREATE | fileIo.OpenMode.WRITE_ONLY);
+      fileIo.writeSync(fd.fd, 'v1');
+      fileIo.closeSync(fd);
+      this.logInfo('DB encryption migration marker written');
+    } catch (e) {
+      this.logError('Failed to write migration marker: %{public}s', String(e));
+    }
+  }
+
+  /**
    * SINGLE SOURCE OF TRUTH for TDLib parameters.
    * All TDLib config values are set here and nowhere else.
    * @param dbEncryptionKey - base64-encoded database encryption key from SecurityService
    */
   private sendTdlibParameters(dbEncryptionKey: string): void {
-    const dbDir = '/data/storage/el2/base/tdlib';
-    const filesDir = '/data/storage/el2/base/tdlib/files';
+    const dbDir = TDLIB_DB_DIR;
+    const filesDir = TDLIB_FILES_DIR;
 
     const params: TdObject = {};
     params['database_directory'] = dbDir;
