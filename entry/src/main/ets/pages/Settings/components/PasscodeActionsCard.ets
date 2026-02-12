@@ -17,6 +17,16 @@ export struct PasscodeActionsCard {
       .onClick(() => {
         this.onChangePasscode();
       })
+      .hoverEffect(HoverEffect.Highlight)
+      .opacity(1.0)
+      .stateStyles({
+        pressed: {
+          .opacity(0.6)
+        },
+        normal: {
+          .opacity(1.0)
+        }
+      })
 
       Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 16 })
 
@@ -31,6 +41,16 @@ export struct PasscodeActionsCard {
       .padding({ left: 16, right: 16 })
       .onClick(() => {
         this.onTurnOffPasscode();
+      })
+      .hoverEffect(HoverEffect.Highlight)
+      .opacity(1.0)
+      .stateStyles({
+        pressed: {
+          .opacity(0.6)
+        },
+        normal: {
+          .opacity(1.0)
+        }
       })
     }
     .width('100%')

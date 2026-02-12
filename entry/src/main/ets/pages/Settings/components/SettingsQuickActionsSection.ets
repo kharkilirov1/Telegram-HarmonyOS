@@ -31,6 +31,16 @@ export struct SettingsQuickActionsSection {
       .onClick(() => {
         this.onOpenSavedMessages();
       })
+      .hoverEffect(HoverEffect.Highlight)
+      .opacity(1.0)
+      .stateStyles({
+        pressed: {
+          .opacity(0.6)
+        },
+        normal: {
+          .opacity(1.0)
+        }
+      })
 
       Divider()
         .strokeWidth(0.5)
@@ -58,6 +68,16 @@ export struct SettingsQuickActionsSection {
       .padding({ left: 16, right: 16 })
       .onClick(() => {
         this.onOpenRecentCalls();
+      })
+      .hoverEffect(HoverEffect.Highlight)
+      .opacity(1.0)
+      .stateStyles({
+        pressed: {
+          .opacity(0.6)
+        },
+        normal: {
+          .opacity(1.0)
+        }
       })
 
       Divider()
@@ -87,6 +107,16 @@ export struct SettingsQuickActionsSection {
       .onClick(() => {
         this.onOpenDevices();
       })
+      .hoverEffect(HoverEffect.Highlight)
+      .opacity(1.0)
+      .stateStyles({
+        pressed: {
+          .opacity(0.6)
+        },
+        normal: {
+          .opacity(1.0)
+        }
+      })
 
       Divider()
         .strokeWidth(0.5)
@@ -114,6 +144,16 @@ export struct SettingsQuickActionsSection {
       .padding({ left: 16, right: 16 })
       .onClick(() => {
         this.onOpenChatFolders();
+      })
+      .hoverEffect(HoverEffect.Highlight)
+      .opacity(1.0)
+      .stateStyles({
+        pressed: {
+          .opacity(0.6)
+        },
+        normal: {
+          .opacity(1.0)
+        }
       })
     }
     .width('100%')

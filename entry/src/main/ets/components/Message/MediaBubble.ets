@@ -68,7 +68,7 @@ export struct MediaBubble {
 
         Row() {
           Text(formatMessageTime(this.message.date))
-            .fontSize(11)
+            .fontSize(12)
             .fontColor(Color.White)
           if (this.message.isOutgoing) {
             this.buildOverlayCheckmarks()
@@ -222,7 +222,7 @@ export struct MediaBubble {
 
         if (this.message.contentType === MessageContentType.ANIMATION) {
           Text($r('app.string.gif'))
-            .fontSize(11)
+            .fontSize(12)
             .fontColor(Color.White)
             .backgroundColor($r('app.color.time_overlay'))
             .borderRadius(4)
@@ -230,7 +230,7 @@ export struct MediaBubble {
             .position({ x: 8, y: 8 })
         } else if (this.message.videoDuration > 0) {
           Text(formatMediaDuration(this.message.videoDuration))
-            .fontSize(11)
+            .fontSize(12)
             .fontColor(Color.White)
             .backgroundColor($r('app.color.time_overlay'))
             .borderRadius(4)
@@ -288,7 +288,7 @@ export struct MediaBubble {
 
       if (this.message.videoNoteDuration > 0) {
         Text(formatMediaDuration(this.message.videoNoteDuration))
-          .fontSize(11)
+          .fontSize(12)
           .fontColor(Color.White)
           .backgroundColor($r('app.color.time_overlay'))
           .borderRadius(8)

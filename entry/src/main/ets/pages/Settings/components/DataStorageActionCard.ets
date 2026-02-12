@@ -17,6 +17,16 @@ export struct DataStorageActionCard {
         .onClick(() => {
           this.onTap();
         })
+        .hoverEffect(HoverEffect.Highlight)
+        .opacity(1.0)
+        .stateStyles({
+          pressed: {
+            .opacity(0.6)
+          },
+          normal: {
+            .opacity(1.0)
+          }
+        })
     }
     .width('100%')
     .backgroundColor($r('app.color.glass_card_bg'))

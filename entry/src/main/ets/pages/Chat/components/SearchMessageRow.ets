@@ -25,7 +25,7 @@ export struct SearchMessageRow {
       Column() {
         Row() {
           Text(this.senderLabel.length > 0 ? this.senderLabel : $r('app.string.user_fallback'))
-            .fontSize(15)
+            .fontSize(14)
             .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.text_primary'))
             .layoutWeight(1)
@@ -60,6 +60,16 @@ export struct SearchMessageRow {
     .padding({ left: 16, right: 16 })
     .onClick(() => {
       this.onOpenChat(this.message.chatId);
+    })
+    .hoverEffect(HoverEffect.Highlight)
+    .opacity(1.0)
+    .stateStyles({
+      pressed: {
+        .opacity(0.6)
+      },
+      normal: {
+        .opacity(1.0)
+      }
     })
   }
 

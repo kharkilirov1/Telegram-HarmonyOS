@@ -48,6 +48,16 @@ export struct SecretChatTimerSection {
           this.onTogglePicker();
         }
       })
+      .hoverEffect(HoverEffect.Highlight)
+      .opacity(1.0)
+      .stateStyles({
+        pressed: {
+          .opacity(0.6)
+        },
+        normal: {
+          .opacity(1.0)
+        }
+      })
 
       if (this.showTimerPicker) {
         Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 48 })
@@ -67,6 +77,16 @@ export struct SecretChatTimerSection {
               .margin(4)
               .onClick(() => {
                 this.onSelectTimer(index, option.seconds);
+              })
+              .hoverEffect(HoverEffect.Highlight)
+              .opacity(1.0)
+              .stateStyles({
+                pressed: {
+                  .opacity(0.6)
+                },
+                normal: {
+                  .opacity(1.0)
+                }
               })
           }, (_option: SecretChatTimerOption, index: number) => `timer_${index}`)
         }

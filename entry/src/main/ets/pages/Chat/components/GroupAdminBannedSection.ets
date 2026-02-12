@@ -14,7 +14,7 @@ export struct GroupAdminBannedSection {
       Column() {
         if (this.bannedUsers.length === 0) {
           Text($r('app.string.no_banned_users'))
-            .fontSize(15)
+            .fontSize(16)
             .fontColor($r('app.color.text_secondary'))
             .width('100%')
             .textAlign(TextAlign.Center)

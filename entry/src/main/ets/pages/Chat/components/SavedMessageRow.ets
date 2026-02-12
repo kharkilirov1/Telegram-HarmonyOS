@@ -74,7 +74,7 @@ export struct SavedMessageRow {
 
           Row() {
             Text(this.formatTime(this.groupedMessage.message.date))
-              .fontSize(11)
+              .fontSize(12)
               .fontColor($r('app.color.text_secondary'))
           }
           .width('100%')

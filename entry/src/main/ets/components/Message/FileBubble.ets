@@ -81,7 +81,7 @@ export struct FileBubble {
 
         Column() {
           Text(this.message.fileName || $r('app.string.document_label'))
-            .fontSize(15)
+            .fontSize(16)
             .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.telegram_blue'))
             .maxLines(1)

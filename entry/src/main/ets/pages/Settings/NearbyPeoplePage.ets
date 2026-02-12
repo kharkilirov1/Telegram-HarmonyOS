@@ -154,7 +154,7 @@ export struct NearbyPeoplePage {
                 ForEach(this.nearbyUsers, (user: NearbyUser, index: number) => {
                   Row() {
                     Text(user.initial)
-                      .fontSize(18)
+                      .fontSize(19)
                       .fontColor($r('app.color.icon_on_primary'))
                       .width(40).height(40)
                       .borderRadius(20)
@@ -223,7 +223,7 @@ export struct NearbyPeoplePage {
                 ForEach(this.nearbyGroups, (group: NearbyChat, index: number) => {
                   Row() {
                     Text(group.initial)
-                      .fontSize(18)
+                      .fontSize(19)
                       .fontColor($r('app.color.icon_on_primary'))
                       .width(40).height(40)
                       .borderRadius(20)

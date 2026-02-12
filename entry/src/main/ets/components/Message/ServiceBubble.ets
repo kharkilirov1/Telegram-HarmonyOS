@@ -18,7 +18,7 @@ export struct ServiceBubble {
               .fillColor($r('app.color.telegram_blue'))
               .margin({ right: 4 })
             Text($r('app.string.forwarded_message'))
-              .fontSize(13)
+              .fontSize(12)
               .fontColor($r('app.color.telegram_blue'))
               .fontStyle(FontStyle.Italic)
           }

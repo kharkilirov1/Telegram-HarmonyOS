@@ -86,7 +86,7 @@ export struct StoriesBar {
 
       // Name
       Text(item.chatTitle)
-        .fontSize(11)
+        .fontSize(12)
         .fontColor($r('app.color.text_primary'))
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })

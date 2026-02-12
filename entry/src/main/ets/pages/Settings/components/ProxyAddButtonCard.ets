@@ -28,5 +28,15 @@ export struct ProxyAddButtonCard {
     .onClick(() => {
       this.onAdd();
     })
+    .hoverEffect(HoverEffect.Highlight)
+    .opacity(1.0)
+    .stateStyles({
+      pressed: {
+        .opacity(0.6)
+      },
+      normal: {
+        .opacity(1.0)
+      }
+    })
   }
 }

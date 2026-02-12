@@ -119,6 +119,9 @@ export struct ChatListItem {
               .constraintSize({ minWidth: 20 })
               .height(20)
               .textAlign(TextAlign.Center)
+              .transition(TransitionEffect.OPACITY.combine(
+                TransitionEffect.scale({ x: 0.5, y: 0.5 })
+              ).animation({ duration: 200, curve: Curve.EaseOut }))
           } else if (this.chat.isMarkedAsUnread) {
             Circle()
               .width(10)
@@ -126,6 +129,7 @@ export struct ChatListItem {
               .fill(this.chat.isMuted
                 ? $r('app.color.text_secondary')
                 : $r('app.color.telegram_blue'))
+              .transition(TransitionEffect.OPACITY.animation({ duration: 200 }))
           } else if (this.chat.isPinned) {
             Image($r('app.media.ic_pin'))
               .width(16)
@@ -142,6 +146,16 @@ export struct ChatListItem {
     .height(72)
     .padding({ left: 16, right: 16 })
     .onClick(() => this.onChatClick(this.chat.id))
+    .hoverEffect(HoverEffect.Highlight)
+    .opacity(1.0)
+    .stateStyles({
+      pressed: {
+        .opacity(0.6)
+      },
+      normal: {
+        .opacity(1.0)
+      }
+    })
   }
 
   private getInitials(): string {

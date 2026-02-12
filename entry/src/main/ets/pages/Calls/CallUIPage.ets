@@ -201,7 +201,7 @@ export struct CallUIPage {
           } else {
             // Ended state
             Text($r('app.string.call_ended'))
-              .fontSize(18)
+              .fontSize(22)
               .fontColor($r('app.color.call_ended_text'))
           }
 
@@ -231,7 +231,7 @@ export struct CallUIPage {
       .onClick(onTap)
 
       Text(label)
-        .fontSize(11)
+        .fontSize(12)
         .fontColor(Color.White)
         .margin({ top: 6 })
     }

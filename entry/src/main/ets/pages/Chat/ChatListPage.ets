@@ -140,7 +140,9 @@ export struct ChatListPage {
                   .width('80%')
               }
               .onClick(() => {
-                this.activeFolderIndex = index;
+                animateTo({ duration: 200, curve: Curve.EaseInOut }, () => {
+                  this.activeFolderIndex = index;
+                });
                 const allChats = MessagesController.getInstance().getSortedDialogs();
                 this.applyFolderFilter(allChats);
               })
@@ -171,6 +173,7 @@ export struct ChatListPage {
           .width('100%')
           .layoutWeight(1)
           .justifyContent(FlexAlign.Center)
+          .transition(TransitionEffect.OPACITY.animation({ duration: 200 }))
         } else {
           Refresh({ refreshing: $$this.isRefreshing }) {
             List() {
@@ -227,12 +230,21 @@ export struct ChatListPage {
       .height(56)
       .borderRadius(28)
       .backgroundColor($r('app.color.telegram_blue'))
-      .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: 4 })
+      .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: 2 })
       .margin({ right: 16, bottom: 72 })
       .hoverEffect(HoverEffect.Scale)
       .onClick(() => {
         HapticService.getInstance().light();
         this.navPathStack.pushPath(new NavPathInfo('NewChat', new Object()));
+      })
+      .opacity(1.0)
+      .stateStyles({
+        pressed: {
+          .opacity(0.7)
+        },
+        normal: {
+          .opacity(1.0)
+        }
       })
     }
     .width('100%')
@@ -248,7 +260,7 @@ export struct ChatListPage {
           Image(chat.isMuted ? $r('app.media.ic_unmute') : $r('app.media.ic_mute'))
             .width(24).height(24).fillColor(Color.White)
           Text(chat.isMuted ? $r('app.string.unmute') : $r('app.string.mute'))
-            .fontSize(11).fontColor(Color.White)
+            .fontSize(12).fontColor(Color.White)
         }
       }
       .width(72)
@@ -264,7 +276,7 @@ export struct ChatListPage {
           Image($r('app.media.ic_saved'))
             .width(24).height(24).fillColor(Color.White)
           Text($r('app.string.archive'))
-            .fontSize(11).fontColor(Color.White)
+            .fontSize(12).fontColor(Color.White)
         }
       }
       .width(72)
@@ -285,7 +297,7 @@ export struct ChatListPage {
           Image($r('app.media.ic_check_double'))
             .width(24).height(24).fillColor(Color.White)
           Text((chat.unreadCount > 0 || chat.isMarkedAsUnread) ? $r('app.string.read') : $r('app.string.unread'))
-            .fontSize(11).fontColor(Color.White)
+            .fontSize(12).fontColor(Color.White)
         }
       }
       .width(72)
@@ -300,7 +312,7 @@ export struct ChatListPage {
           Image($r('app.media.ic_pin'))
             .width(24).height(24).fillColor(Color.White)
           Text(chat.isPinned ? $r('app.string.unpin') : $r('app.string.pin'))
-            .fontSize(11).fontColor(Color.White)
+            .fontSize(12).fontColor(Color.White)
         }
       }
       .width(72)
@@ -315,7 +327,7 @@ export struct ChatListPage {
           Image($r('app.media.ic_delete'))
             .width(24).height(24).fillColor(Color.White)
           Text($r('app.string.delete'))
-            .fontSize(11).fontColor(Color.White)
+            .fontSize(12).fontColor(Color.White)
         }
       }
       .width(72)

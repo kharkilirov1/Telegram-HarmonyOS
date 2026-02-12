@@ -14,7 +14,7 @@ export struct InviteLinkRow {
         Column() {
           Row() {
             Text(this.item.link)
-              .fontSize(15)
+              .fontSize(16)
               .fontColor(this.item.isRevoked ? $r('app.color.text_secondary') : $r('app.color.telegram_blue'))
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -68,6 +68,16 @@ export struct InviteLinkRow {
             .onClick(() => {
               this.onCopy(this.item.link);
             })
+            .hoverEffect(HoverEffect.Highlight)
+            .opacity(1.0)
+            .stateStyles({
+              pressed: {
+                .opacity(0.6)
+              },
+              normal: {
+                .opacity(1.0)
+              }
+            })
 
           if (!this.item.isPrimary) {
             Text($r('app.string.revoke'))
@@ -75,6 +85,16 @@ export struct InviteLinkRow {
               .fontColor($r('app.color.error_red'))
               .onClick(() => {
                 this.onRevoke(this.item.link);
+              })
+              .hoverEffect(HoverEffect.Highlight)
+              .opacity(1.0)
+              .stateStyles({
+                pressed: {
+                  .opacity(0.6)
+                },
+                normal: {
+                  .opacity(1.0)
+                }
               })
           }
         }

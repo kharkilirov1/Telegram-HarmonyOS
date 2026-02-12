@@ -34,6 +34,8 @@ export struct UserInfoPage {
   @Local notificationsEnabled: boolean = true;
   @Local commonGroupsCount: number = 0;
   @Local privateChatId: number = 0;
+  @Local scrollY: number = 0;
+  private scroller: Scroller = new Scroller();
 
   private userInfoUpdatedHandler = (args?: Record<string, unknown>): void => {
     const updatedUserId = args ? ((args['userId'] as number) || 0) : 0;
@@ -237,7 +239,7 @@ export struct UserInfoPage {
         .shadow({ radius: 8, color: $r('app.color.shadow_color'), offsetY: 2 })
         .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
-        Scroll() {
+        Scroll(this.scroller) {
           Column() {
             // --- Avatar + name header (like iOS PeerInfoScreen) ---
             Column() {
@@ -275,6 +277,8 @@ export struct UserInfoPage {
             .width('100%')
             .padding({ top: 24, bottom: 24 })
             .alignItems(HorizontalAlign.Center)
+            .translate({ y: this.scrollY * 0.4 })
+            .opacity(Math.max(0.0, 1.0 - this.scrollY / 300))
 
             // --- Action buttons row (like Telegram iOS: Message, Audio, Video, More) ---
             Row({ space: 12 }) {
@@ -291,6 +295,8 @@ export struct UserInfoPage {
             .width('100%')
             .justifyContent(FlexAlign.Center)
             .padding({ bottom: 24 })
+            .translate({ y: this.scrollY * 0.4 })
+            .opacity(Math.max(0.0, 1.0 - this.scrollY / 300))
 
             // --- Info section ---
             Column() {
@@ -371,6 +377,16 @@ export struct UserInfoPage {
               .onClick(() => {
                 void this.openSharedMedia();
               })
+              .hoverEffect(HoverEffect.Highlight)
+              .opacity(1.0)
+              .stateStyles({
+                pressed: {
+                  .opacity(0.6)
+                },
+                normal: {
+                  .opacity(1.0)
+                }
+              })
 
               // Common groups
               if (this.commonGroupsCount > 0) {
@@ -406,6 +422,9 @@ export struct UserInfoPage {
         .width('100%')
         .layoutWeight(1)
         .scrollBar(BarState.Off)
+        .onDidScroll(() => {
+          this.scrollY = this.scroller.currentOffset().yOffset;
+        })
       }
       .width('100%')
       .height('100%')
@@ -423,11 +442,10 @@ export struct UserInfoPage {
           .fillColor($r('app.color.telegram_blue'))
       }
       .width(52).height(52)
-      .borderRadius(26)
+      .borderRadius(24)
       .backgroundColor($r('app.color.glass_card_bg'))
       .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
       .justifyContent(FlexAlign.Center)
-      .onClick(onTap)
 
       Text(label)
         .fontSize(12)
@@ -435,6 +453,17 @@ export struct UserInfoPage {
         .margin({ top: 4 })
     }
     .alignItems(HorizontalAlign.Center)
+    .onClick(onTap)
+    .hoverEffect(HoverEffect.Scale)
+    .opacity(1.0)
+    .stateStyles({
+      pressed: {
+        .opacity(0.6)
+      },
+      normal: {
+        .opacity(1.0)
+      }
+    })
   }
 
   @Builder

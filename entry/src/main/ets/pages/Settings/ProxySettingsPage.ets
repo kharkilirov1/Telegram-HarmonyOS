@@ -255,7 +255,7 @@ export struct ProxySettingsPage {
 
     Column() {
       Text(this.editingProxy ? $r('app.string.edit_proxy') : $r('app.string.add_proxy'))
-        .fontSize(18)
+        .fontSize(19)
         .fontWeight(FontWeight.Bold)
         .fontColor($r('app.color.text_primary'))
         .margin({ bottom: 20 })
@@ -405,8 +405,8 @@ export struct ProxySettingsPage {
     .padding(24)
     .backgroundColor($r('app.color.glass_card_bg'))
     .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
-    .borderRadius(20)
-    .shadow({ radius: 16, color: $r('app.color.glass_card_shadow'), offsetY: 4 })
+    .borderRadius(24)
+    .shadow({ radius: 8, color: $r('app.color.glass_card_shadow'), offsetY: 2 })
     .position({ x: '5%', y: '15%' })
   }
 

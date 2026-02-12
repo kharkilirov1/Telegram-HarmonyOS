@@ -118,6 +118,16 @@ export struct ProxyListSection {
             .onClick(() => {
               this.onEnableProxy(index);
             })
+            .hoverEffect(HoverEffect.Highlight)
+            .opacity(1.0)
+            .stateStyles({
+              pressed: {
+                .opacity(0.6)
+              },
+              normal: {
+                .opacity(1.0)
+              }
+            })
             .accessibilityText(`${proxy.server}:${proxy.port}`)
           }, (proxy: ProxyInfo) => proxy.id.toString())
         }

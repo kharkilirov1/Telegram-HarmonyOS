@@ -15,7 +15,7 @@ export struct GroupAdminAdminsSection {
       Column() {
         if (this.administrators.length === 0) {
           Text($r('app.string.no_administrators'))
-            .fontSize(15)
+            .fontSize(16)
             .fontColor($r('app.color.text_secondary'))
             .width('100%')
             .textAlign(TextAlign.Center)
@@ -83,6 +83,16 @@ export struct GroupAdminAdminsSection {
     .padding({ left: 16, right: 16 })
     .onClick(() => {
       this.onOpenUser(admin.userId);
+    })
+    .hoverEffect(HoverEffect.Highlight)
+    .opacity(1.0)
+    .stateStyles({
+      pressed: {
+        .opacity(0.6)
+      },
+      normal: {
+        .opacity(1.0)
+      }
     })
   }
 }

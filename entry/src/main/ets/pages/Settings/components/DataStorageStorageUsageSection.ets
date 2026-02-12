@@ -45,6 +45,16 @@ export struct DataStorageStorageUsageSection {
         .onClick(() => {
           this.onOpenStorageUsage();
         })
+        .hoverEffect(HoverEffect.Highlight)
+        .opacity(1.0)
+        .stateStyles({
+          pressed: {
+            .opacity(0.6)
+          },
+          normal: {
+            .opacity(1.0)
+          }
+        })
 
         Divider().strokeWidth(0.5).color($r('app.color.separator')).margin({ left: 52 })
 
@@ -69,6 +79,16 @@ export struct DataStorageStorageUsageSection {
         .padding({ left: 16, right: 16 })
         .onClick(() => {
           this.onOpenNetworkUsage();
+        })
+        .hoverEffect(HoverEffect.Highlight)
+        .opacity(1.0)
+        .stateStyles({
+          pressed: {
+            .opacity(0.6)
+          },
+          normal: {
+            .opacity(1.0)
+          }
         })
       }
       .width('100%')

@@ -30,7 +30,7 @@ export struct AudioBubble {
         Column() {
           // Track title — iOS: semibold
           Text(this.getTitle())
-            .fontSize(15)
+            .fontSize(16)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
             .maxLines(1)
@@ -66,7 +66,7 @@ export struct AudioBubble {
             .height(2)
 
             Text(formatMediaDuration(this.message.audioDuration))
-              .fontSize(11)
+              .fontSize(12)
               .fontColor($r('app.color.text_secondary'))
               .margin({ left: 8 })
           }

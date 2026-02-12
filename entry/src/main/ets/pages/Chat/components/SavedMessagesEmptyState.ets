@@ -9,7 +9,7 @@ export struct SavedMessagesEmptyState {
         .opacity(0.5)
 
       Text($r('app.string.saved_messages'))
-        .fontSize(18)
+        .fontSize(19)
         .fontWeight(FontWeight.Bold)
         .fontColor($r('app.color.text_primary'))
         .margin({ top: 16 })

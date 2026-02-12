@@ -39,6 +39,16 @@ export struct SettingsProfileCard {
     .onClick(() => {
       this.onOpenProfile();
     })
+    .hoverEffect(HoverEffect.Highlight)
+    .opacity(1.0)
+    .stateStyles({
+      pressed: {
+        .opacity(0.6)
+      },
+      normal: {
+        .opacity(1.0)
+      }
+    })
   }
 
   private getInitial(): string {

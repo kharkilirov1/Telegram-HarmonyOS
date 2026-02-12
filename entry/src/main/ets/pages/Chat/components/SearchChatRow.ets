@@ -24,18 +24,18 @@ export struct SearchChatRow {
         Row() {
           if (this.chat.isChannel) {
             Text($r('app.string.search_chat_type_channel'))
-              .fontSize(11)
+              .fontSize(12)
               .fontColor($r('app.color.telegram_blue'))
               .margin({ right: 4 })
           } else if (this.chat.isGroup) {
             Text($r('app.string.search_chat_type_group'))
-              .fontSize(11)
+              .fontSize(12)
               .fontColor($r('app.color.sender_color_7'))
               .margin({ right: 4 })
           }
 
           Text(this.chat.title)
-            .fontSize(15)
+            .fontSize(14)
             .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.text_primary'))
             .layoutWeight(1)
@@ -44,7 +44,7 @@ export struct SearchChatRow {
 
           if (this.chat.unreadCount > 0) {
             Text(this.chat.unreadCount.toString())
-              .fontSize(11)
+              .fontSize(12)
               .fontColor(Color.White)
               .backgroundColor(this.chat.isMuted
                 ? $r('app.color.text_secondary')
@@ -73,6 +73,16 @@ export struct SearchChatRow {
     .padding({ left: 16, right: 16 })
     .onClick(() => {
       this.onOpen(this.chat.id);
+    })
+    .hoverEffect(HoverEffect.Highlight)
+    .opacity(1.0)
+    .stateStyles({
+      pressed: {
+        .opacity(0.6)
+      },
+      normal: {
+        .opacity(1.0)
+      }
     })
   }
 }

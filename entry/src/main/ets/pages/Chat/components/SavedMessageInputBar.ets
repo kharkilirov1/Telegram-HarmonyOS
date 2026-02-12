@@ -33,6 +33,16 @@ export struct SavedMessageInputBar {
           .onClick(() => {
             this.onSend();
           })
+          .hoverEffect(HoverEffect.Scale)
+          .opacity(1.0)
+          .stateStyles({
+            pressed: {
+              .opacity(0.6)
+            },
+            normal: {
+              .opacity(1.0)
+            }
+          })
           .accessibilityText($r('app.string.accessibility_send'))
       }
     }

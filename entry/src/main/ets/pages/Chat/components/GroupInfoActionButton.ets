@@ -14,12 +14,22 @@ export struct GroupInfoActionButton {
       }
       .width(52)
       .height(52)
-      .borderRadius(26)
+      .borderRadius(24)
       .backgroundColor($r('app.color.glass_card_bg'))
       .backgroundEffect({ radius: 25, brightness: 0.85, saturation: 15 })
       .justifyContent(FlexAlign.Center)
       .onClick(() => {
         this.onTap();
+      })
+      .hoverEffect(HoverEffect.Highlight)
+      .opacity(1.0)
+      .stateStyles({
+        pressed: {
+          .opacity(0.6)
+        },
+        normal: {
+          .opacity(1.0)
+        }
       })
 
       Text(this.label)

@@ -40,6 +40,16 @@ export struct PrimaryInviteLinkCard {
           .onClick(() => {
             this.onCopy();
           })
+          .hoverEffect(HoverEffect.Highlight)
+          .opacity(1.0)
+          .stateStyles({
+            pressed: {
+              .opacity(0.6)
+            },
+            normal: {
+              .opacity(1.0)
+            }
+          })
 
           Divider()
             .vertical(true)
@@ -58,6 +68,16 @@ export struct PrimaryInviteLinkCard {
           .justifyContent(FlexAlign.Center)
           .onClick(() => {
             this.onShare();
+          })
+          .hoverEffect(HoverEffect.Highlight)
+          .opacity(1.0)
+          .stateStyles({
+            pressed: {
+              .opacity(0.6)
+            },
+            normal: {
+              .opacity(1.0)
+            }
           })
         }
         .width('100%')

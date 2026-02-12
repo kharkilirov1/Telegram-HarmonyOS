@@ -15,13 +15,13 @@ export struct MessageMetaRow {
       Blank().layoutWeight(1)
       if (this.isEdited) {
         Text($r('app.string.editing_message'))
-          .fontSize(11)
+          .fontSize(12)
           .fontColor(this.tint)
           .fontStyle(FontStyle.Italic)
           .margin({ right: 4 })
       }
       Text(formatMessageTime(this.date))
-        .fontSize(11)
+        .fontSize(12)
         .fontColor(this.tint)
       if (this.isOutgoing) {
         if (this.sendState === 'sending') {

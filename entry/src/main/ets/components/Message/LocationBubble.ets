@@ -67,7 +67,7 @@ export struct LocationBubble {
             .borderRadius(20)
             .backgroundColor(Color.White)
             .justifyContent(FlexAlign.Center)
-            .shadow({ radius: 4, color: '#40000000', offsetY: 2 })
+            .shadow({ radius: 4, color: $r('app.color.shadow_color'), offsetY: 2 })
           }
         }
         .offset({ y: -4 })
@@ -75,7 +75,7 @@ export struct LocationBubble {
         // iOS: timestamp overlay on map (bottom-right like photos)
         Row() {
           Text(formatMessageTime(this.message.date))
-            .fontSize(11)
+            .fontSize(12)
             .fontColor(Color.White)
           if (this.message.isOutgoing) {
             if (this.message.sendState === 'sending') {

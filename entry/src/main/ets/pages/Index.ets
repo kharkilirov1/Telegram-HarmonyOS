@@ -178,6 +178,9 @@ struct Index {
             .constraintSize({ minWidth: 16 })
             .textAlign(TextAlign.Center)
             .translate({ x: 8, y: -4 })
+            .transition(TransitionEffect.OPACITY.combine(
+              TransitionEffect.scale({ x: 0.5, y: 0.5 })
+            ).animation({ duration: 200, curve: Curve.EaseOut }))
         }
       }
 
@@ -448,5 +451,15 @@ struct Index {
     .width('100%')
     .height(44)
     .padding({ left: 16, right: 16 })
+    .hoverEffect(HoverEffect.Highlight)
+    .opacity(1.0)
+    .stateStyles({
+      pressed: {
+        .opacity(0.6)
+      },
+      normal: {
+        .opacity(1.0)
+      }
+    })
   }
 }

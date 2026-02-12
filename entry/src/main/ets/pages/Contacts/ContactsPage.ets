@@ -223,6 +223,16 @@ export struct ContactsPage {
       // Navigate to private chat with this user
       this.navPathStack.pushPath(new NavPathInfo('ChatDetail', user.id));
     })
+    .hoverEffect(HoverEffect.Highlight)
+    .opacity(1.0)
+    .stateStyles({
+      pressed: {
+        .opacity(0.6)
+      },
+      normal: {
+        .opacity(1.0)
+      }
+    })
   }
 
   private getInitials(user: User): string {

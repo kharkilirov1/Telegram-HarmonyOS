@@ -34,6 +34,8 @@ export struct GroupInfoPage {
   @Local canEditGroupInfo: boolean = false;
   @Local canManageInviteLinks: boolean = false;
   @Local members: GroupInfoMember[] = [];
+  @Local scrollY: number = 0;
+  private scroller: Scroller = new Scroller();
 
   aboutToAppear(): void {
     this.loadGroupInfo();
@@ -196,7 +198,7 @@ export struct GroupInfoPage {
           }
         })
 
-        Scroll() {
+        Scroll(this.scroller) {
           Column() {
             GroupInfoHeaderSection({
               title: this.title,
@@ -204,6 +206,8 @@ export struct GroupInfoPage {
               isChannel: this.isChannel,
               memberCount: this.memberCount
             })
+            .translate({ y: this.scrollY * 0.4 })
+            .opacity(Math.max(0.0, 1.0 - this.scrollY / 300))
 
             Row({ space: 12 }) {
               GroupInfoActionButton({
@@ -224,6 +228,8 @@ export struct GroupInfoPage {
             .width('100%')
             .justifyContent(FlexAlign.Center)
             .padding({ bottom: 24 })
+            .translate({ y: this.scrollY * 0.4 })
+            .opacity(Math.max(0.0, 1.0 - this.scrollY / 300))
 
             // --- Description ---
             if (this.description.length > 0) {
@@ -317,6 +323,16 @@ export struct GroupInfoPage {
                     const navParam: Record<string, unknown> = {};
                     navParam['chatId'] = this.chatId;
                     this.navPathStack.pushPath(new NavPathInfo('GroupAdmin', navParam));
+                  })
+                  .hoverEffect(HoverEffect.Highlight)
+                  .opacity(1.0)
+                  .stateStyles({
+                    pressed: {
+                      .opacity(0.6)
+                    },
+                    normal: {
+                      .opacity(1.0)
+                    }
                   })
                 }
                 if (this.canEditGroupInfo && this.canManageInviteLinks) {
@@ -449,6 +465,9 @@ export struct GroupInfoPage {
         .width('100%')
         .layoutWeight(1)
         .scrollBar(BarState.Off)
+        .onDidScroll(() => {
+          this.scrollY = this.scroller.currentOffset().yOffset;
+        })
       }
       .width('100%')
       .height('100%')
