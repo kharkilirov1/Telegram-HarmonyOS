@@ -219,6 +219,27 @@ export class MessagesController {
     await requestSendVoiceMessage(chatId, duration, filePath, replyToMessageId);
   }
 
+  async toggleMessageReaction(chatId: number, messageId: number, emoji: string, isAdding: boolean): Promise<void> {
+    if (isAdding) {
+      await TDLibClient.getInstance().addMessageReaction(chatId, messageId, emoji);
+    } else {
+      await TDLibClient.getInstance().removeMessageReaction(chatId, messageId, emoji);
+    }
+  }
+
+  async getChatPinnedMessage(chatId: number): Promise<Message | null> {
+    try {
+      const result = await TDLibClient.getInstance().getChatPinnedMessage(chatId);
+      const type = (result['@type'] as string) || '';
+      if (type === 'message') {
+        return this.parseMessage(result as TdMessage);
+      }
+    } catch (_e) {
+      // No pinned message or error — return null
+    }
+    return null;
+  }
+
   async votePoll(chatId: number, messageId: number, optionIds: number[]): Promise<void> {
     const voteParams: Record<string, unknown> = {};
     voteParams['chat_id'] = chatId;

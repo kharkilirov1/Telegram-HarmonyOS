@@ -23,6 +23,7 @@ import {
   parseUpdateChatPhoto,
   parseUpdateChatPosition,
   parseUpdateChatReadInbox,
+  parseUpdateChatReadOutbox,
   parseUpdateChatTitle,
   parseUpdateDeleteMessages,
   parseUpdateMessageContent,
@@ -277,6 +278,33 @@ export function subscribeToTdUpdates(deps: MessagesUpdateSubscriberDeps): void {
     const chat = deps.chatsById.get(chatId);
     if (chat) {
       chat.unreadCount = unreadCount;
+      chat.lastReadInboxMessageId = (update['last_read_inbox_message_id'] as number) || chat.lastReadInboxMessageId;
+      NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
+    }
+  });
+
+  client.on('updateChatReadOutbox', (update: Record<string, unknown>) => {
+    const parsed = parseUpdateChatReadOutbox(update);
+    if (!parsed) return;
+    const chatId: number = parsed.chatId;
+    const lastReadId: number = parsed.lastReadOutboxMessageId;
+    const chat = deps.chatsById.get(chatId);
+    if (chat) {
+      chat.lastReadOutboxMessageId = lastReadId;
+
+      // Mark outgoing messages as read up to this ID
+      const messages = deps.messagesByChat.get(chatId);
+      if (messages) {
+        for (const msg of messages) {
+          if (msg.isOutgoing && msg.id <= lastReadId) {
+            msg.isRead = true;
+          }
+        }
+      }
+
+      const eventArgs: Record<string, unknown> = {};
+      eventArgs['chatId'] = chatId;
+      NotificationCenter.getInstance().post(EventId.MESSAGES_READ, eventArgs);
       NotificationCenter.getInstance().post(EventId.DIALOGS_UPDATED);
     }
   });
@@ -346,6 +374,7 @@ export function subscribeToTdUpdates(deps: MessagesUpdateSubscriberDeps): void {
     const oldMessageId: number = parsed.oldMessageId;
 
     const confirmedMsg = deps.parseMessage(rawMsg);
+    confirmedMsg.sendState = ''; // Confirmed
     const chatMessages: Message[] = deps.messagesByChat.get(confirmedMsg.chatId) || [];
     const nextMessages: Message[] = replaceTemporaryMessage(chatMessages, oldMessageId, confirmedMsg);
     deps.messagesByChat.set(confirmedMsg.chatId, nextMessages);
@@ -369,8 +398,8 @@ export function subscribeToTdUpdates(deps: MessagesUpdateSubscriberDeps): void {
     if (messages) {
       const msg = messages.find((m: Message): boolean => m.id === oldMessageId);
       if (msg) {
-        // Mark the message as failed (UI can show retry indicator)
         msg.id = rawMsg.id || oldMessageId;
+        msg.sendState = 'failed'; // Mark as failed for UI retry indicator
       }
     }
 

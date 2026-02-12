@@ -136,8 +136,7 @@ export struct MultiAccountPage {
               .width('100%')
               .padding({ left: 16, right: 16, top: 12, bottom: 12 })
               .onClick(() => {
-                // In a full implementation, this would launch a new TDLib session
-                // For now, show info about the limit
+                this.navPathStack.pushPath(new NavPathInfo('PhonePage', new Object()));
               })
             }
 

@@ -43,6 +43,20 @@ export struct SharedMediaPage {
   @Local voiceItems: SharedMediaItem[] = [];
   @Local gifItems: SharedMediaItem[] = [];
   @Local isLoading: boolean = true;
+  @Local isLoadingMore: boolean = false;
+
+  // Pagination cursors (last messageId loaded per tab)
+  private mediaLastId: number = 0;
+  private fileLastId: number = 0;
+  private linkLastId: number = 0;
+  private voiceLastId: number = 0;
+  private gifLastId: number = 0;
+  private mediaEndReached: boolean = false;
+  private fileEndReached: boolean = false;
+  private linkEndReached: boolean = false;
+  private voiceEndReached: boolean = false;
+  private gifEndReached: boolean = false;
+  private readonly PAGE_SIZE: number = 50;
 
   aboutToAppear(): void {
     void this.loadSharedMedia();
@@ -63,13 +77,33 @@ export struct SharedMediaPage {
     }
   }
 
-  private async loadMediaItems(): Promise<void> {
-    this.mediaItems = [];
+  async loadMoreForActiveTab(): Promise<void> {
+    if (this.isLoadingMore) return;
+    this.isLoadingMore = true;
+    try {
+      switch (this.activeTab) {
+        case 0: await this.loadMediaItems(true); break;
+        case 1: await this.loadFileItems(true); break;
+        case 2: await this.loadLinkItems(true); break;
+        case 3: await this.loadVoiceItems(true); break;
+        case 4: await this.loadGifItems(true); break;
+        default: break;
+      }
+    } finally {
+      this.isLoadingMore = false;
+    }
+  }
+
+  private async loadMediaItems(append: boolean = false): Promise<void> {
+    if (append && this.mediaEndReached) return;
+    if (!append) { this.mediaItems = []; this.mediaLastId = 0; this.mediaEndReached = false; }
     try {
       const messages: Message[] = await ChatService.getInstance()
-        .searchChatMessages(this.chatId, '', 0, 50, 'searchMessagesFilterPhotoAndVideo');
+        .searchChatMessages(this.chatId, '', this.mediaLastId, this.PAGE_SIZE, 'searchMessagesFilterPhotoAndVideo');
       if (messages && messages.length > 0) {
-        this.mediaItems = messages.map((msg: Message, index: number): SharedMediaItem => {
+        this.mediaLastId = messages[messages.length - 1].id;
+        if (messages.length < this.PAGE_SIZE) this.mediaEndReached = true;
+        const newItems = messages.map((msg: Message, index: number): SharedMediaItem => {
           const isGif = msg.contentType === MessageContentType.ANIMATION;
           const isVideo = msg.contentType === MessageContentType.VIDEO
             || msg.contentType === MessageContentType.VIDEO_NOTE;
@@ -92,20 +126,26 @@ export struct SharedMediaPage {
           };
           return item;
         });
+        this.mediaItems = append ? [...this.mediaItems, ...newItems] : newItems;
         return;
+      } else {
+        this.mediaEndReached = true;
       }
     } catch (e) {
       hilog.warn(0x0001, 'SharedMediaPage', 'Failed to load media items');
     }
   }
 
-  private async loadFileItems(): Promise<void> {
-    this.fileItems = [];
+  private async loadFileItems(append: boolean = false): Promise<void> {
+    if (append && this.fileEndReached) return;
+    if (!append) { this.fileItems = []; this.fileLastId = 0; this.fileEndReached = false; }
     try {
       const messages: Message[] = await ChatService.getInstance()
-        .searchChatMessages(this.chatId, '', 0, 50, 'searchMessagesFilterDocument');
+        .searchChatMessages(this.chatId, '', this.fileLastId, this.PAGE_SIZE, 'searchMessagesFilterDocument');
       if (messages && messages.length > 0) {
-        this.fileItems = messages.map((msg: Message, index: number): SharedMediaItem => {
+        this.fileLastId = messages[messages.length - 1].id;
+        if (messages.length < this.PAGE_SIZE) this.fileEndReached = true;
+        const newItems = messages.map((msg: Message, index: number): SharedMediaItem => {
           const item: SharedMediaItem = {
             id: msg.id || index,
             messageId: msg.id,
@@ -120,20 +160,26 @@ export struct SharedMediaPage {
           };
           return item;
         });
+        this.fileItems = append ? [...this.fileItems, ...newItems] : newItems;
         return;
+      } else {
+        this.fileEndReached = true;
       }
     } catch (e) {
       hilog.warn(0x0001, 'SharedMediaPage', 'Failed to load file items');
     }
   }
 
-  private async loadLinkItems(): Promise<void> {
-    this.linkItems = [];
+  private async loadLinkItems(append: boolean = false): Promise<void> {
+    if (append && this.linkEndReached) return;
+    if (!append) { this.linkItems = []; this.linkLastId = 0; this.linkEndReached = false; }
     try {
       const messages: Message[] = await ChatService.getInstance()
-        .searchChatMessages(this.chatId, '', 0, 50, 'searchMessagesFilterUrl');
+        .searchChatMessages(this.chatId, '', this.linkLastId, this.PAGE_SIZE, 'searchMessagesFilterUrl');
       if (messages && messages.length > 0) {
-        this.linkItems = messages.map((msg: Message, index: number): SharedMediaItem => {
+        this.linkLastId = messages[messages.length - 1].id;
+        if (messages.length < this.PAGE_SIZE) this.linkEndReached = true;
+        const newItems = messages.map((msg: Message, index: number): SharedMediaItem => {
           const item: SharedMediaItem = {
             id: msg.id || index,
             messageId: msg.id,
@@ -148,20 +194,26 @@ export struct SharedMediaPage {
           };
           return item;
         });
+        this.linkItems = append ? [...this.linkItems, ...newItems] : newItems;
         return;
+      } else {
+        this.linkEndReached = true;
       }
     } catch (e) {
       hilog.warn(0x0001, 'SharedMediaPage', 'Failed to load link items');
     }
   }
 
-  private async loadVoiceItems(): Promise<void> {
-    this.voiceItems = [];
+  private async loadVoiceItems(append: boolean = false): Promise<void> {
+    if (append && this.voiceEndReached) return;
+    if (!append) { this.voiceItems = []; this.voiceLastId = 0; this.voiceEndReached = false; }
     try {
       const messages: Message[] = await ChatService.getInstance()
-        .searchChatMessages(this.chatId, '', 0, 50, 'searchMessagesFilterVoiceNote');
+        .searchChatMessages(this.chatId, '', this.voiceLastId, this.PAGE_SIZE, 'searchMessagesFilterVoiceNote');
       if (messages && messages.length > 0) {
-        this.voiceItems = messages.map((msg: Message, index: number): SharedMediaItem => {
+        this.voiceLastId = messages[messages.length - 1].id;
+        if (messages.length < this.PAGE_SIZE) this.voiceEndReached = true;
+        const newItems = messages.map((msg: Message, index: number): SharedMediaItem => {
           const item: SharedMediaItem = {
             id: msg.id || index,
             messageId: msg.id,
@@ -176,20 +228,26 @@ export struct SharedMediaPage {
           };
           return item;
         });
+        this.voiceItems = append ? [...this.voiceItems, ...newItems] : newItems;
         return;
+      } else {
+        this.voiceEndReached = true;
       }
     } catch (e) {
       hilog.warn(0x0001, 'SharedMediaPage', 'Failed to load voice items');
     }
   }
 
-  private async loadGifItems(): Promise<void> {
-    this.gifItems = [];
+  private async loadGifItems(append: boolean = false): Promise<void> {
+    if (append && this.gifEndReached) return;
+    if (!append) { this.gifItems = []; this.gifLastId = 0; this.gifEndReached = false; }
     try {
       const messages: Message[] = await ChatService.getInstance()
-        .searchChatMessages(this.chatId, '', 0, 50, 'searchMessagesFilterAnimation');
+        .searchChatMessages(this.chatId, '', this.gifLastId, this.PAGE_SIZE, 'searchMessagesFilterAnimation');
       if (messages && messages.length > 0) {
-        this.gifItems = messages.map((msg: Message, index: number): SharedMediaItem => {
+        this.gifLastId = messages[messages.length - 1].id;
+        if (messages.length < this.PAGE_SIZE) this.gifEndReached = true;
+        const newItems = messages.map((msg: Message, index: number): SharedMediaItem => {
           const item: SharedMediaItem = {
             id: msg.id || index,
             messageId: msg.id,
@@ -204,7 +262,10 @@ export struct SharedMediaPage {
           };
           return item;
         });
+        this.gifItems = append ? [...this.gifItems, ...newItems] : newItems;
         return;
+      } else {
+        this.gifEndReached = true;
       }
     } catch (e) {
       hilog.warn(0x0001, 'SharedMediaPage', 'Failed to load GIF items');
@@ -374,6 +435,9 @@ export struct SharedMediaPage {
       .width('100%')
       .layoutWeight(1)
       .padding(2)
+      .onReachEnd(() => {
+        void this.loadMoreForActiveTab();
+      })
     }
   }
 
@@ -430,6 +494,9 @@ export struct SharedMediaPage {
         color: $r('app.color.separator'),
         startMargin: 72,
         endMargin: 0
+      })
+      .onReachEnd(() => {
+        void this.loadMoreForActiveTab();
       })
     }
   }
@@ -490,6 +557,9 @@ export struct SharedMediaPage {
         startMargin: 72,
         endMargin: 0
       })
+      .onReachEnd(() => {
+        void this.loadMoreForActiveTab();
+      })
     }
   }
 
@@ -541,6 +611,9 @@ export struct SharedMediaPage {
         color: $r('app.color.separator'),
         startMargin: 72,
         endMargin: 0
+      })
+      .onReachEnd(() => {
+        void this.loadMoreForActiveTab();
       })
     }
   }
@@ -595,6 +668,9 @@ export struct SharedMediaPage {
       .width('100%')
       .layoutWeight(1)
       .padding(2)
+      .onReachEnd(() => {
+        void this.loadMoreForActiveTab();
+      })
     }
   }
 

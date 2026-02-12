@@ -152,13 +152,12 @@ export struct SecretChatPage {
           this.keyHash = decoded;
           return;
         }
-        this.generatePlaceholderKeyHash();
-      } else {
-        this.generatePlaceholderKeyHash();
       }
+      // No key hash available yet — show empty (UI should indicate key not yet exchanged)
+      this.keyHash = [];
     } catch (e) {
       hilog.warn(0x0001, 'SecretChatPage', 'Failed to fetch secret chat info');
-      this.generatePlaceholderKeyHash();
+      this.keyHash = [];
     }
   }
 
@@ -183,16 +182,6 @@ export struct SecretChatPage {
     } else if (stateType === 'secretChatStateClosed') {
       this.chatState = 'closed';
     }
-  }
-
-  private generatePlaceholderKeyHash(): void {
-    const hash: number[] = [];
-    let seed = this.secretChatId > 0 ? this.secretChatId : this.userId;
-    for (let i = 0; i < 36; i++) {
-      seed = ((seed * 1103515245 + 12345) & 0x7fffffff);
-      hash.push(seed % 256);
-    }
-    this.keyHash = hash;
   }
 
   private decodeBase64ToBytes(base64: string): number[] {

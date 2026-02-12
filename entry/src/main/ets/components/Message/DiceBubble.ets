@@ -19,6 +19,7 @@ export struct DiceBubble {
         isOutgoing: this.message.isOutgoing,
         isRead: this.message.isRead,
         isEdited: this.message.isEdited,
+        sendState: this.message.sendState,
         tint: $r('app.color.text_secondary'),
         checkTint: $r('app.color.telegram_blue')
       })

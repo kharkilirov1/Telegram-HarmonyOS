@@ -10,18 +10,26 @@ export struct ServiceBubble {
   build() {
     Column() {
       if (this.message.forwardedFrom.length > 0) {
-        Row() {
-          Image($r('app.media.ic_forward'))
-            .width(14)
-            .height(14)
-            .fillColor($r('app.color.telegram_blue'))
-            .margin({ right: 4 })
+        Column() {
+          Row() {
+            Image($r('app.media.ic_forward'))
+              .width(14)
+              .height(14)
+              .fillColor($r('app.color.telegram_blue'))
+              .margin({ right: 4 })
+            Text($r('app.string.forwarded_message'))
+              .fontSize(13)
+              .fontColor($r('app.color.telegram_blue'))
+              .fontStyle(FontStyle.Italic)
+          }
           Text(this.message.forwardedFrom)
             .fontSize(14)
             .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.telegram_blue'))
-            .fontStyle(FontStyle.Italic)
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
         }
+        .alignItems(HorizontalAlign.Start)
         .margin({ bottom: 4 })
       }
 

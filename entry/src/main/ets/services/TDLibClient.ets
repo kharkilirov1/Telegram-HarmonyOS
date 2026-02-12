@@ -329,6 +329,40 @@ export class TDLibClient {
     return this.send('sendMessage', params);
   }
 
+  // --- Reactions ---
+
+  async addMessageReaction(chatId: number, messageId: number, emoji: string, isBig: boolean = false): Promise<TdObject> {
+    const reactionType: TdObject = {};
+    reactionType['@type'] = 'reactionTypeEmoji';
+    reactionType['emoji'] = emoji;
+    const params: TdObject = {};
+    params['chat_id'] = chatId;
+    params['message_id'] = messageId;
+    params['reaction_type'] = reactionType;
+    params['is_big'] = isBig;
+    params['update_recent_reactions'] = true;
+    return this.send('addMessageReaction', params);
+  }
+
+  async removeMessageReaction(chatId: number, messageId: number, emoji: string): Promise<TdObject> {
+    const reactionType: TdObject = {};
+    reactionType['@type'] = 'reactionTypeEmoji';
+    reactionType['emoji'] = emoji;
+    const params: TdObject = {};
+    params['chat_id'] = chatId;
+    params['message_id'] = messageId;
+    params['reaction_type'] = reactionType;
+    return this.send('removeMessageReaction', params);
+  }
+
+  // --- Pinned message ---
+
+  async getChatPinnedMessage(chatId: number): Promise<TdObject> {
+    const params: TdObject = {};
+    params['chat_id'] = chatId;
+    return this.send('getChatPinnedMessage', params);
+  }
+
   // --- View messages (mark as read) ---
 
   async viewMessages(chatId: number, messageIds: number[]): Promise<TdObject> {

@@ -16,6 +16,8 @@ export struct ChatListPage {
   @Local activeFolderIndex: number = 0;
 
   private chatDataSource: BasicDataSource<Chat> = new BasicDataSource<Chat>();
+  private searchDebounceTimer: number = 0;
+  @Local isSearching: boolean = false;
 
   // Folder tabs: All, Personal, Groups, Channels, Bots (like Android Telegram)
   private readonly folderLabels: Resource[] = [
@@ -189,11 +191,12 @@ export struct ChatListPage {
               endMargin: 0
             })
           }
-          .onRefreshing(() => {
-            MessagesController.getInstance().loadDialogs(30);
-            setTimeout(() => {
+          .onRefreshing(async () => {
+            try {
+              await MessagesController.getInstance().loadDialogs(30);
+            } finally {
               this.isRefreshing = false;
-            }, 1500);
+            }
           })
           .layoutWeight(1)
         }
@@ -316,12 +319,49 @@ export struct ChatListPage {
   private applyFilter(): void {
     const allChats = MessagesController.getInstance().getSortedDialogs();
     if (this.searchText.length === 0) {
+      this.isSearching = false;
       this.applyFolderFilter(allChats);
     } else {
-      const filtered = allChats.filter((chat) =>
-        chat.title.toLowerCase().includes(this.searchText.toLowerCase())
+      // Immediate local filter for responsiveness
+      const query = this.searchText.toLowerCase();
+      const localFiltered = allChats.filter((chat) =>
+        chat.title.toLowerCase().includes(query)
       );
-      this.chatDataSource.setData(filtered);
+      this.chatDataSource.setData(localFiltered);
+
+      // Debounced server-backed search to merge TDLib results
+      if (this.searchDebounceTimer > 0) {
+        clearTimeout(this.searchDebounceTimer);
+      }
+      this.searchDebounceTimer = setTimeout(() => {
+        void this.performServerSearch(this.searchText, localFiltered);
+      }, 300) as number;
+    }
+  }
+
+  private async performServerSearch(query: string, localResults: Chat[]): Promise<void> {
+    if (query.length === 0 || query !== this.searchText) return;
+    this.isSearching = true;
+    try {
+      const serverResult = await ChatService.getInstance().searchChats(query, 20);
+      if (query !== this.searchText) return; // Stale query
+      const serverChatIds: number[] = (serverResult.chat_ids as number[]) || [];
+      const localIds = new Set(localResults.map((c: Chat): number => c.id));
+      const merged = [...localResults];
+
+      for (const chatId of serverChatIds) {
+        if (!localIds.has(chatId)) {
+          const chat = MessagesController.getInstance().getChat(chatId);
+          if (chat) {
+            merged.push(chat);
+          }
+        }
+      }
+      this.chatDataSource.setData(merged);
+    } catch (_e) {
+      // Keep local results on error
+    } finally {
+      this.isSearching = false;
     }
   }
 

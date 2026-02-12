@@ -296,10 +296,18 @@ export struct ChatDetailPage {
     this.isLoadingOlder = true;
 
     try {
+      const prevCount = this.messageDataSource.totalCount();
       const loaded = await loadOlderMessagesData(this.chatId, this.messages, 50);
       this.messages = loaded.messages;
       this.endReachedOlder = loaded.endReachedOlder;
       this.rebuildFlatList();
+
+      // Anchor-preserving: scroll to the item that was previously at the top
+      const newCount = this.messageDataSource.totalCount();
+      const insertedCount = newCount - prevCount;
+      if (insertedCount > 0) {
+        this.listScroller.scrollToIndex(insertedCount);
+      }
     } catch (e) {
       this.showActionError();
     } finally {
@@ -369,9 +377,24 @@ export struct ChatDetailPage {
     await MessagesController.getInstance().votePoll(this.chatId, msg.id, [optionIndex]);
   }
 
-  private toggleReaction(msg: Message, emoji: string): void {
+  private async toggleReaction(msg: Message, emoji: string): Promise<void> {
+    const resolvedEmoji = emoji.length === 0 ? '\u{1F44D}' : emoji;
+    const existing = msg.reactions.find((r) => r.emoji === resolvedEmoji);
+    const isRemoving = existing !== undefined && existing.isMine;
+
+    // Optimistic local update
     toggleReactionState(msg, emoji);
     this.rebuildFlatList();
+
+    // Send to TDLib
+    try {
+      await MessagesController.getInstance()
+        .toggleMessageReaction(this.chatId, msg.id, resolvedEmoji, !isRemoving);
+    } catch (_e) {
+      // Revert optimistic update on failure
+      toggleReactionState(msg, emoji);
+      this.rebuildFlatList();
+    }
   }
 
   private async deleteMessage(msg: Message): Promise<void> {

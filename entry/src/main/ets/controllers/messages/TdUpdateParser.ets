@@ -224,11 +224,23 @@ export function parseUpdateDeleteMessages(update: Record<string, Object>): Parse
   return { chatId: chatId, messageIds: messageIds };
 }
 
+export interface ParsedUpdateChatReadOutbox {
+  chatId: number;
+  lastReadOutboxMessageId: number;
+}
+
 export function parseUpdateChatReadInbox(update: Record<string, Object>): ParsedUpdateChatReadInbox | undefined {
   const chatId: number = safeNumber(update['chat_id']);
   if (chatId === 0) return undefined;
   const unreadCount: number = safeNumber(update['unread_count']);
   return { chatId: chatId, unreadCount: unreadCount };
+}
+
+export function parseUpdateChatReadOutbox(update: Record<string, Object>): ParsedUpdateChatReadOutbox | undefined {
+  const chatId: number = safeNumber(update['chat_id']);
+  if (chatId === 0) return undefined;
+  const lastReadOutboxMessageId: number = safeNumber(update['last_read_outbox_message_id']);
+  return { chatId: chatId, lastReadOutboxMessageId: lastReadOutboxMessageId };
 }
 
 export function parseUpdateChatNotificationSettings(update: Record<string, Object>): ParsedUpdateChatNotificationSettings | undefined {

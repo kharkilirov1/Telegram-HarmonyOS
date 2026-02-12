@@ -111,6 +111,17 @@ export function parseMessage(raw: TdMessage): Message {
     }
   }
 
+  // Send state (from TDLib sending_state)
+  const sendingState: Record<string, unknown> | undefined = (raw as Record<string, unknown>)['sending_state'] as Record<string, unknown> | undefined;
+  if (sendingState) {
+    const sendingType: string = tdType(sendingState);
+    if (sendingType === 'messageSendingStatePending') {
+      msg.sendState = 'sending';
+    } else if (sendingType === 'messageSendingStateFailed') {
+      msg.sendState = 'failed';
+    }
+  }
+
   // Edit date
   const editDate: number | undefined = raw.edit_date;
   if (editDate && editDate > 0) {
@@ -516,10 +527,16 @@ export function parseChat(raw: TdChat): Chat {
     false
   );
   chat.isMarkedAsUnread = raw.is_marked_as_unread === true;
+  chat.lastReadOutboxMessageId = safeNumber((raw as Record<string, unknown>)['last_read_outbox_message_id']);
+  chat.lastReadInboxMessageId = safeNumber((raw as Record<string, unknown>)['last_read_inbox_message_id']);
 
   // Last message outgoing/read status
   if (lastMsg) {
     chat.lastMessageIsOutgoing = lastMsg.is_outgoing || false;
+    // Determine if the last outgoing message has been read by the recipient
+    if (lastMsg.is_outgoing && lastMsg.id > 0 && chat.lastReadOutboxMessageId > 0) {
+      chat.lastMessageIsRead = lastMsg.id <= chat.lastReadOutboxMessageId;
+    }
   }
 
   // Draft message

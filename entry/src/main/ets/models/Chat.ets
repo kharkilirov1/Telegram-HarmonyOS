@@ -23,6 +23,8 @@ export class Chat {
   @Trace lastMessageIsRead: boolean;
   @Trace draftText: string;
   @Trace order: string;
+  @Trace lastReadOutboxMessageId: number;
+  @Trace lastReadInboxMessageId: number;
 
   constructor(
     id: number = 0,
@@ -59,5 +61,7 @@ export class Chat {
     this.lastMessageIsRead = false;
     this.draftText = '';
     this.order = '0';
+    this.lastReadOutboxMessageId = 0;
+    this.lastReadInboxMessageId = 0;
   }
 }

@@ -112,6 +112,9 @@ export class Message {
   // Reactions
   @Trace reactions: MessageReaction[];
 
+  // Send state: '' = confirmed, 'sending' = pending, 'failed' = send failed
+  @Trace sendState: string;
+
   constructor(
     id: number = 0,
     chatId: number = 0,
@@ -192,6 +195,7 @@ export class Message {
     this.isEdited = false;
     this.editDate = 0;
     this.reactions = [];
+    this.sendState = '';
   }
 }
 
