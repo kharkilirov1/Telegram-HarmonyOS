@@ -35,9 +35,13 @@ const INIT_TIMEOUT_MS = 30000;
 // --- TDLib database paths (single source of truth) ---
 const TDLIB_DB_DIR = '/data/storage/el2/base/tdlib';
 const TDLIB_FILES_DIR = '/data/storage/el2/base/tdlib/files';
-// Marker file: if present, the DB was created with the current encryption scheme.
-// Absence + existing DB dir = pre-encryption legacy database → requires migration.
-const DB_ENC_MIGRATION_MARKER = '/data/storage/el2/base/tdlib/.enc_key_v1';
+// --- Encryption schema versioning ---
+// Each version writes a marker file .enc_key_v<N> in the DB directory.
+// The migration dispatcher reads the current version and runs necessary upgrades.
+const DB_ENC_SCHEMA_DIR = '/data/storage/el2/base/tdlib';
+const DB_ENC_MARKER_PREFIX = '.enc_key_v';
+// Current encryption schema version. Bump when key derivation or DB encryption changes.
+const DB_ENC_CURRENT_VERSION = 1;
 
 // --- Lifecycle state machine ---
 export enum ClientState {
@@ -676,46 +680,104 @@ export class TDLibClient {
   // --- Private methods ---
 
   /**
-   * One-time DB encryption migration guard.
+   * Versioned DB encryption migration dispatcher.
    *
-   * Scenario: user upgrades from a build without database_encryption_key
-   * to a build that now encrypts the DB via SecurityService.  TDLib cannot
-   * open an unencrypted DB with an encryption key → it fails hard.
+   * Reads the current schema version from marker files (.enc_key_v<N>)
+   * and runs the necessary upgrade steps to reach DB_ENC_CURRENT_VERSION.
    *
-   * Strategy:
-   *   1. Check for marker file `.enc_key_v1` in the DB directory.
-   *   2. If marker exists → already migrated, nothing to do.
-   *   3. If marker absent AND DB directory has content → legacy unencrypted DB.
-   *      Delete the old DB directory (one-time reset), log prominently.
-   *   4. Write the marker file (idempotent).
+   * Version history:
+   *   v0 (implicit) — no marker, no encryption key. Legacy unencrypted DB.
+   *   v1            — first encrypted DB via SecurityService + HUKS/fallback.
+   *   v2+           — reserved for future key-derivation changes.
    *
-   * Rollback: if this logic causes issues, delete the marker file and
-   * pass an empty encryption key in sendTdlibParameters().
+   * Extension point: add a case to the switch below for v1→v2, v2→v3, etc.
+   * Each migration runs exactly once and writes the new marker before proceeding.
+   *
+   * Rollback: delete .enc_key_v<N> markers and pass an empty encryption key
+   * in sendTdlibParameters().
    */
   private ensureDbEncryptionMigration(): void {
-    try {
-      // Check if migration marker already exists
-      const markerExists = fileIo.accessSync(DB_ENC_MIGRATION_MARKER);
-      if (markerExists) {
-        this.logDebug('DB encryption marker present — no migration needed');
-        return;
-      }
-    } catch (_e) {
-      // accessSync throws if file doesn't exist — expected for first run or migration
+    const currentVersion = this.readEncSchemaVersion();
+    const targetVersion = DB_ENC_CURRENT_VERSION;
+
+    if (currentVersion >= targetVersion) {
+      this.logDebug('DB encryption schema v%{public}d — up to date', currentVersion);
+      return;
     }
 
-    // Marker absent. Check if there's an existing DB directory with content.
+    this.logInfo('DB encryption schema: v%{public}d → v%{public}d', currentVersion, targetVersion);
+
+    // Run each migration step sequentially
+    for (let from = currentVersion; from < targetVersion; from++) {
+      switch (from) {
+        case 0:
+          this.migrateEncV0toV1();
+          break;
+        // Extension point: future migrations
+        // case 1:
+        //   this.migrateEncV1toV2();
+        //   break;
+        default:
+          this.logError('Unknown encryption schema version %{public}d — skipping', from);
+          break;
+      }
+    }
+  }
+
+  /**
+   * Detect the current encryption schema version by scanning for marker files.
+   * Returns 0 if no marker exists (legacy or fresh install).
+   */
+  private readEncSchemaVersion(): number {
+    // Scan from highest plausible version down to find the current one
+    for (let v = DB_ENC_CURRENT_VERSION; v >= 1; v--) {
+      const markerPath = `${DB_ENC_SCHEMA_DIR}/${DB_ENC_MARKER_PREFIX}${v}`;
+      try {
+        const exists = fileIo.accessSync(markerPath);
+        if (exists) {
+          return v;
+        }
+      } catch (_e) {
+        // Marker doesn't exist — try lower version
+      }
+    }
+    return 0; // No marker found → v0 (legacy or fresh install)
+  }
+
+  /**
+   * Write a schema version marker file.
+   */
+  private writeEncSchemaMarker(version: number): void {
+    const markerPath = `${DB_ENC_SCHEMA_DIR}/${DB_ENC_MARKER_PREFIX}${version}`;
+    try {
+      const fd = fileIo.openSync(markerPath,
+        fileIo.OpenMode.CREATE | fileIo.OpenMode.WRITE_ONLY);
+      fileIo.writeSync(fd.fd, `v${version}`);
+      fileIo.closeSync(fd);
+      this.logInfo('DB encryption marker written: v%{public}d', version);
+    } catch (e) {
+      this.logError('Failed to write migration marker v%{public}d: %{public}s',
+        version, String(e));
+    }
+  }
+
+  /**
+   * Migration v0 → v1: legacy unencrypted DB to first encrypted schema.
+   *
+   * If an existing DB directory is present without a v1 marker,
+   * it was created without encryption and must be reset.
+   */
+  private migrateEncV0toV1(): void {
     let dbDirExists = false;
     try {
       const stat = fileIo.statSync(TDLIB_DB_DIR);
       dbDirExists = stat.isDirectory();
     } catch (_e) {
-      // Directory doesn't exist → fresh install
+      // Directory doesn't exist → fresh install, no migration needed
     }
 
     if (dbDirExists) {
-      // Directory exists without marker → legacy unencrypted database
-      this.logWarn('┌─ DB ENCRYPTION MIGRATION ──────────────────────');
+      this.logWarn('┌─ DB ENCRYPTION MIGRATION v0→v1 ─────────────────');
       this.logWarn('│ Found existing TDLib database without encryption marker.');
       this.logWarn('│ Removing old unencrypted database for safe re-creation.');
       this.logWarn('│ User will need to re-authenticate after this one-time reset.');
@@ -726,7 +788,6 @@ export class TDLibClient {
         this.logInfo('Old DB directory removed: %{public}s', TDLIB_DB_DIR);
       } catch (e) {
         this.logError('Failed to remove old DB directory: %{public}s', String(e));
-        // Continue anyway — TDLib will fail with a clear error if the DB is incompatible
       }
     }
 
@@ -734,19 +795,10 @@ export class TDLibClient {
     try {
       fileIo.mkdirSync(TDLIB_DB_DIR, true);
     } catch (_e) {
-      // May already exist after rmdirSync race — harmless
+      // May already exist — harmless
     }
 
-    // Write the migration marker (atomic: create-or-open, then close)
-    try {
-      const fd = fileIo.openSync(DB_ENC_MIGRATION_MARKER,
-        fileIo.OpenMode.CREATE | fileIo.OpenMode.WRITE_ONLY);
-      fileIo.writeSync(fd.fd, 'v1');
-      fileIo.closeSync(fd);
-      this.logInfo('DB encryption migration marker written');
-    } catch (e) {
-      this.logError('Failed to write migration marker: %{public}s', String(e));
-    }
+    this.writeEncSchemaMarker(1);
   }
 
   /**
