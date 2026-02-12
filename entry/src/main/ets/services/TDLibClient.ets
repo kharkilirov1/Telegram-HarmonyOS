@@ -92,7 +92,16 @@ export class TDLibClient {
   private _state: ClientState = ClientState.Idle;
   private _logLevel: LogLevel = LogLevel.INFO;
 
-  private constructor() {}
+  // Ready barrier: resolved when initialize() completes successfully.
+  // Callers that need to wait for init can `await TDLibClient.getInstance().waitForReady()`.
+  private _readyResolve: (() => void) | null = null;
+  private _readyPromise: Promise<void>;
+
+  private constructor() {
+    this._readyPromise = new Promise<void>((resolve) => {
+      this._readyResolve = resolve;
+    });
+  }
 
   static getInstance(): TDLibClient {
     if (TDLibClient.instance === null) {
@@ -107,6 +116,21 @@ export class TDLibClient {
 
   setLogLevel(level: LogLevel): void {
     this._logLevel = level;
+  }
+
+  /**
+   * Returns a promise that resolves when the client reaches Ready state.
+   * Safe to call multiple times — returns the same promise.
+   * Use this when code outside TelegramAbilityStage needs to ensure
+   * the client is initialized before sending requests.
+   *
+   * Example: `await TDLibClient.getInstance().waitForReady();`
+   */
+  waitForReady(): Promise<void> {
+    if (this._state === ClientState.Ready) {
+      return Promise.resolve();
+    }
+    return this._readyPromise;
   }
 
   /** Cached TDLib mode from native layer. Set once during initialize(). */
@@ -180,6 +204,11 @@ export class TDLibClient {
     // Send TDLib parameters (single source of truth)
     this.sendTdlibParameters(dbEncKey);
     this._state = ClientState.Ready;
+
+    // Signal the ready barrier — unblocks any waitForReady() callers
+    if (this._readyResolve) {
+      this._readyResolve();
+    }
   }
 
   destroy(): void {
@@ -205,6 +234,12 @@ export class TDLibClient {
 
     tdlib.stopReceiveLoop();
     this._state = ClientState.Stopped;
+
+    // Reset the ready barrier for potential re-initialization
+    this._readyPromise = new Promise<void>((resolve) => {
+      this._readyResolve = resolve;
+    });
+
     this.logInfo('Client destroyed');
   }
 
