@@ -23,5 +23,5 @@ oh_modules/
 .DS_Store
 Thumbs.db
 
-# Local config (API keys) — NEVER commit real credentials
+# Local config (API keys)
 entry/src/main/ets/services/ConfigLocal.ets

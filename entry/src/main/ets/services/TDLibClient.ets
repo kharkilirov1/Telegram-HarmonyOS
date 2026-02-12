@@ -7,6 +7,10 @@ import { TdFallbackRegistry } from './TdFallbackRegistry';
 import { classifyTdlibError } from './AppError';
 import { TdObject } from '../models/TdTypes';
 
+// Error message prefixes — shared with AppError for classification
+export const ERR_TDLIB_INIT_TIMEOUT = 'TDLIB_INIT_TIMEOUT';
+export const ERR_TDLIB_CLIENT_DESTROYED = 'TDLIB_CLIENT_DESTROYED';
+
 // Native NAPI module
 import tdlib from 'libtdlib_napi.so';
 
@@ -31,10 +35,6 @@ const REQUEST_TIMEOUT_MS = 30000;
 
 // Default timeout for waitForReady() initialization barrier (30 seconds)
 const INIT_TIMEOUT_MS = 30000;
-
-// Shared error code prefixes — used by TDLibClient and AppError for classification.
-export const ERR_TDLIB_INIT_TIMEOUT = 'TDLIB_INIT_TIMEOUT';
-export const ERR_TDLIB_CLIENT_DESTROYED = 'TDLIB_CLIENT_DESTROYED';
 
 // --- TDLib database paths (single source of truth) ---
 const TDLIB_DB_DIR = '/data/storage/el2/base/tdlib';
@@ -753,7 +753,7 @@ export class TDLibClient {
         //   break;
         default:
           this.logError('Unknown encryption schema version %{public}d — aborting migration', from);
-          return;
+          throw new Error(`Unknown encryption schema version ${from}: cannot migrate`);
       }
     }
   }
@@ -833,20 +833,6 @@ export class TDLibClient {
     }
 
     this.writeEncSchemaMarker(1);
-  }
-
-  private removeDirRecursive(dirPath: string): void {
-    const entries = fileIo.listFileSync(dirPath);
-    for (const name of entries) {
-      const fullPath = `${dirPath}/${name}`;
-      const stat = fileIo.statSync(fullPath);
-      if (stat.isDirectory()) {
-        this.removeDirRecursive(fullPath);
-      } else {
-        fileIo.unlinkSync(fullPath);
-      }
-    }
-    fileIo.rmdirSync(dirPath);
   }
 
   /**
@@ -940,6 +926,20 @@ export class TDLibClient {
     } catch (e) {
       this.logError('Failed to parse response: %{public}s', String(e));
     }
+  }
+
+  private removeDirRecursive(dirPath: string): void {
+    const entries = fileIo.listFileSync(dirPath);
+    for (const name of entries) {
+      const full = `${dirPath}/${name}`;
+      const stat = fileIo.statSync(full);
+      if (stat.isDirectory()) {
+        this.removeDirRecursive(full);
+      } else {
+        fileIo.unlinkSync(full);
+      }
+    }
+    fileIo.rmdirSync(dirPath);
   }
 
   // --- Logging helpers ---
