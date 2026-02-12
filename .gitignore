@@ -24,6 +24,10 @@ oh_modules/
 Thumbs.db
 
 # Local config (API keys)
-# ConfigLocal.ets is committed as a template with dummy values.
-# Users fill in their own API credentials locally.
-# The file with dots in the name (Config.local.ets) is avoided because hvigor breaks on dotted filenames.
+# ConfigLocal.ets is tracked in git with placeholder values (api_id=0, api_hash='').
+# Developers fill in their own credentials locally; do NOT commit real keys.
+# To avoid accidentally committing real credentials:
+#   git update-index --skip-worktree entry/src/main/ets/services/ConfigLocal.ets
+# To undo:
+#   git update-index --no-skip-worktree entry/src/main/ets/services/ConfigLocal.ets
+# (hvigor breaks on dotted filenames, so Config.local.ets cannot be used)

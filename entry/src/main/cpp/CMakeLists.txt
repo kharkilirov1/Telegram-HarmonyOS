@@ -22,11 +22,27 @@ target_link_libraries(tdlib_napi PUBLIC
     libhilog_ndk.z.so
 )
 
-# TDLib integration
-# Uses bundled prebuilt TDLib by default, or external one if TDLIB_DIR is provided.
+# ──────────────────────────────────────────────────────────────────────
+# TDLib integration — SINGLE SOURCE OF TRUTH for the TDLib binary path.
+#
+# Priority:
+#   1. -DTDLIB_DIR=<path> passed on cmake command line
+#   2. TDLIB_DIR environment variable
+#   3. Default: <this dir>/third_party/tdlib  (prebuilt binaries)
+#
+# NOTE: The repo-root tdlib/ submodule (.gitmodules) is for building
+# TDLib from source. The *prebuilt* artifacts must be placed under
+# third_party/tdlib/{include,lib/<abi>}. These are separate concerns.
+# ──────────────────────────────────────────────────────────────────────
 if(NOT DEFINED TDLIB_DIR)
-    set(TDLIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/tdlib")
+    if(DEFINED ENV{TDLIB_DIR})
+        set(TDLIB_DIR "$ENV{TDLIB_DIR}")
+        message(STATUS "TDLIB_DIR from environment: ${TDLIB_DIR}")
+    else()
+        set(TDLIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/tdlib")
+    endif()
 endif()
+message(STATUS "TDLIB_DIR resolved to: ${TDLIB_DIR}")
 
 set(TDLIB_ABI "${CMAKE_OHOS_ARCH_ABI}")
 if(NOT TDLIB_ABI AND DEFINED OHOS_ARCH)
@@ -38,24 +54,45 @@ set(TDLIB_LIBRARY "${TDLIB_DIR}/lib/${TDLIB_ABI}/libtdjson.so")
 set(TDLIB_RUNTIME_SONAME "libtdjson.so.1.8.61")
 
 if(EXISTS "${TDLIB_HEADER}" AND EXISTS "${TDLIB_LIBRARY}")
+    message(STATUS "┌─ TDLib REAL mode ──────────────────────────────")
+    message(STATUS "│ ABI:     ${TDLIB_ABI}")
+    message(STATUS "│ Header:  ${TDLIB_HEADER}")
+    message(STATUS "│ Library: ${TDLIB_LIBRARY}")
+    message(STATUS "│ SONAME:  ${TDLIB_RUNTIME_SONAME}")
+    message(STATUS "└────────────────────────────────────────────────")
+
     target_include_directories(tdlib_napi PRIVATE "${TDLIB_DIR}/include")
     target_link_libraries(tdlib_napi PUBLIC "${TDLIB_LIBRARY}")
-    # libtdlib_napi depends on TDLib SONAME (libtdjson.so.1.8.61). Ensure this exact
-    # filename is present next to native outputs so bundle packaging keeps runtime deps resolvable.
+    target_compile_definitions(tdlib_napi PRIVATE
+        TDLIB_STUB=0
+        TDLIB_DIR_PATH="${TDLIB_DIR}"
+        TDLIB_SONAME="${TDLIB_RUNTIME_SONAME}"
+    )
+    # Ensure SONAME copy for runtime resolution
     add_custom_command(TARGET tdlib_napi POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${TDLIB_LIBRARY}"
         "$<TARGET_FILE_DIR:tdlib_napi>/${TDLIB_RUNTIME_SONAME}"
     )
-    message(STATUS "Using TDLib for ABI ${TDLIB_ABI}: ${TDLIB_LIBRARY}")
 else()
-    # Release builds MUST have real TDLib — stub is only for development
+    # Release builds MUST have real TDLib — fail fast
     if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
         message(FATAL_ERROR
-            "TDLib not found for ABI ${TDLIB_ABI} in release build. "
-            "Place prebuilt TDLib at ${TDLIB_DIR}/lib/${TDLIB_ABI}/libtdjson.so "
-            "and headers at ${TDLIB_DIR}/include/td/telegram/td_json_client.h")
+            "TDLib not found for ABI '${TDLIB_ABI}' in RELEASE build.\n"
+            "  Expected header:  ${TDLIB_HEADER}\n"
+            "  Expected library: ${TDLIB_LIBRARY}\n"
+            "Place prebuilt TDLib or set -DTDLIB_DIR=<path>.")
     endif()
-    message(WARNING "TDLib not found for ABI ${TDLIB_ABI}. Using stub implementations (dev only).")
-    target_compile_definitions(tdlib_napi PRIVATE TDLIB_STUB=1)
+
+    message(WARNING "┌─ TDLib STUB mode (dev only) ───────────────────")
+    message(WARNING "│ ABI:    ${TDLIB_ABI}")
+    message(WARNING "│ Looked: ${TDLIB_DIR}")
+    message(WARNING "│ STUB WILL NOT CONNECT TO TELEGRAM SERVERS.")
+    message(WARNING "└────────────────────────────────────────────────")
+
+    target_compile_definitions(tdlib_napi PRIVATE
+        TDLIB_STUB=1
+        TDLIB_DIR_PATH="${TDLIB_DIR}"
+        TDLIB_SONAME="none"
+    )
 endif()

@@ -1,6 +1,5 @@
 import { AbilityStage } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { SecurityService } from './services/SecurityService';
 import { TDLibClient } from './services/TDLibClient';
 import { AuthController } from './controllers/AuthController';
 import { MessagesController } from './controllers/MessagesController';
@@ -17,11 +16,10 @@ export default class TelegramAbilityStage extends AbilityStage {
   async onCreate(): Promise<void> {
     hilog.info(DOMAIN, TAG, 'onCreate — initializing singletons');
 
-    // Security must be initialized first (HUKS key derivation)
-    await SecurityService.getInstance().initialize();
+    // TDLibClient.initialize() internally initializes SecurityService (HUKS)
+    // and sends TDLib parameters. Must be awaited before controllers.
+    await TDLibClient.getInstance().initialize();
 
-    // Initialize TDLib, then controllers that depend on it
-    TDLibClient.getInstance().initialize();
     AuthController.getInstance();
     MessagesController.getInstance();
     FileController.getInstance();

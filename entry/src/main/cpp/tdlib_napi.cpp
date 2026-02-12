@@ -516,6 +516,17 @@ static void stub_handle_send(const std::string& request) {
 }
 #endif
 
+// --- Stringify macros for compile-time defines ---
+#define XSTR(x) STR(x)
+#define STR(x) #x
+
+#ifndef TDLIB_DIR_PATH
+#define TDLIB_DIR_PATH unknown
+#endif
+#ifndef TDLIB_SONAME
+#define TDLIB_SONAME unknown
+#endif
+
 #define LOG_TAG "TDLibNAPI"
 #define LOG_DOMAIN 0x0001
 
@@ -526,9 +537,47 @@ static std::thread receive_thread;
 static std::mutex loop_mutex;
 static napi_threadsafe_function threadsafe_callback = nullptr;
 
+// --- NAPI argument validation helpers ---
+// Throws a JS TypeError and returns nullptr on failure.
+
+static napi_value napi_throw_arg_error(napi_env env, const char* func, const char* msg) {
+    std::string full = std::string(func) + ": " + msg;
+    OH_LOG_ERROR(LogType::LOG_APP, "NAPI arg error: %{public}s", full.c_str());
+    napi_throw_error(env, "ERR_INVALID_ARG", full.c_str());
+    return nullptr;
+}
+
+static bool napi_check_argc(napi_env env, const char* func, size_t actual, size_t expected) {
+    if (actual < expected) {
+        std::string msg = "expected " + std::to_string(expected) +
+                          " argument(s), got " + std::to_string(actual);
+        napi_throw_arg_error(env, func, msg.c_str());
+        return false;
+    }
+    return true;
+}
+
+static bool napi_check_type(napi_env env, const char* func, napi_value val,
+                            napi_valuetype expected, const char* argName) {
+    napi_valuetype actual;
+    napi_typeof(env, val, &actual);
+    if (actual != expected) {
+        const char* type_names[] = {
+            "undefined", "null", "boolean", "number", "string", "symbol", "object", "function", "external", "bigint"
+        };
+        const char* actual_name = (actual >= 0 && actual <= 9) ? type_names[actual] : "unknown";
+        const char* expected_name = (expected >= 0 && expected <= 9) ? type_names[expected] : "unknown";
+        std::string msg = std::string(argName) + " must be " + expected_name + ", got " + actual_name;
+        napi_throw_arg_error(env, func, msg.c_str());
+        return false;
+    }
+    return true;
+}
+
 namespace tdlib_napi {
 
 napi_value CreateClient(napi_env env, napi_callback_info info) {
+    // No arguments required
     int client_id;
 #ifndef TDLIB_STUB
     client_id = td_create_client_id();
@@ -546,6 +595,11 @@ napi_value Send(napi_env env, napi_callback_info info) {
     size_t argc = 2;
     napi_value argv[2];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    // Strict validation: 2 args (number, string)
+    if (!napi_check_argc(env, "send", argc, 2)) return nullptr;
+    if (!napi_check_type(env, "send", argv[0], napi_number, "clientId")) return nullptr;
+    if (!napi_check_type(env, "send", argv[1], napi_string, "requestJson")) return nullptr;
 
     // Get client_id
     int32_t client_id;
@@ -587,6 +641,10 @@ napi_value Receive(napi_env env, napi_callback_info info) {
     napi_value argv[1];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
+    // Strict validation: 1 arg (number)
+    if (!napi_check_argc(env, "receive", argc, 1)) return nullptr;
+    if (!napi_check_type(env, "receive", argv[0], napi_number, "timeoutSeconds")) return nullptr;
+
     double timeout;
     napi_get_value_double(env, argv[0], &timeout);
 
@@ -596,7 +654,6 @@ napi_value Receive(napi_env env, napi_callback_info info) {
 #else
     std::string resp = stub_dequeue();
     if (!resp.empty()) {
-        // Return the stub response
         napi_value result;
         napi_create_string_utf8(env, resp.c_str(), resp.length(), &result);
         return result;
@@ -616,6 +673,10 @@ napi_value Execute(napi_env env, napi_callback_info info) {
     size_t argc = 1;
     napi_value argv[1];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    // Strict validation: 1 arg (string)
+    if (!napi_check_argc(env, "execute", argc, 1)) return nullptr;
+    if (!napi_check_type(env, "execute", argv[0], napi_string, "requestJson")) return nullptr;
 
     size_t str_len;
     napi_get_value_string_utf8(env, argv[0], nullptr, 0, &str_len);
@@ -652,6 +713,14 @@ static void CallJs(napi_env env, napi_value js_callback, void* context, void* da
 }
 
 napi_value StartReceiveLoop(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value argv[1];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    // Strict validation: 1 arg (function)
+    if (!napi_check_argc(env, "startReceiveLoop", argc, 1)) return nullptr;
+    if (!napi_check_type(env, "startReceiveLoop", argv[0], napi_function, "callback")) return nullptr;
+
     std::lock_guard<std::mutex> guard(loop_mutex);
 
     // Prevent double-start
@@ -668,10 +737,6 @@ napi_value StartReceiveLoop(napi_env env, napi_callback_info info) {
     if (receive_thread.joinable()) {
         receive_thread.join();
     }
-
-    size_t argc = 1;
-    napi_value argv[1];
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
     napi_value resource_name;
     napi_create_string_utf8(env, "TDLibReceiveLoop", NAPI_AUTO_LENGTH, &resource_name);
@@ -746,6 +811,38 @@ napi_value StopReceiveLoop(napi_env env, napi_callback_info info) {
     napi_value undefined;
     napi_get_undefined(env, &undefined);
     return undefined;
+}
+
+napi_value GetTdlibInfo(napi_env env, napi_callback_info info) {
+    // Build a JSON string with compile-time diagnostics
+    const char* mode =
+#if TDLIB_STUB
+        "STUB";
+#else
+        "REAL";
+#endif
+
+    const char* tdlib_dir = XSTR(TDLIB_DIR_PATH);
+    const char* soname = XSTR(TDLIB_SONAME);
+
+    std::string json = "{\"mode\":\"" + std::string(mode) +
+                       "\",\"tdlibDir\":\"" + std::string(tdlib_dir) +
+                       "\",\"soname\":\"" + std::string(soname) + "\"}";
+
+    OH_LOG_INFO(LogType::LOG_APP,
+        "┌─ TDLib Runtime Info ─────────────────────────");
+    OH_LOG_INFO(LogType::LOG_APP,
+        "│ MODE:      %{public}s", mode);
+    OH_LOG_INFO(LogType::LOG_APP,
+        "│ TDLIB_DIR: %{public}s", tdlib_dir);
+    OH_LOG_INFO(LogType::LOG_APP,
+        "│ SONAME:    %{public}s", soname);
+    OH_LOG_INFO(LogType::LOG_APP,
+        "└──────────────────────────────────────────────");
+
+    napi_value result;
+    napi_create_string_utf8(env, json.c_str(), json.length(), &result);
+    return result;
 }
 
 } // namespace tdlib_napi

@@ -1,12 +1,20 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { taskpool } from '@kit.ArkTS';
 import { TELEGRAM_API_ID, TELEGRAM_API_HASH } from './ConfigLocal';
+import { SecurityService } from './SecurityService';
 import { TdFallbackRegistry } from './TdFallbackRegistry';
 import { classifyTdlibError } from './AppError';
 import { TdObject } from '../models/TdTypes';
 
 // Native NAPI module
 import tdlib from 'libtdlib_napi.so';
+
+// --- TDLib runtime info from native layer ---
+interface TdlibInfo {
+  mode: string;   // "REAL" | "STUB"
+  tdlibDir: string;
+  soname: string;
+}
 
 // Offload heavy JSON parsing to TaskPool worker thread
 @Concurrent
@@ -93,20 +101,63 @@ export class TDLibClient {
     this._logLevel = level;
   }
 
-  initialize(): void {
+  /** Cached TDLib mode from native layer. Set once during initialize(). */
+  private _tdlibInfo: TdlibInfo | null = null;
+
+  /** Returns "REAL" or "STUB" after initialize(). */
+  get tdlibMode(): string {
+    return this._tdlibInfo?.mode ?? 'UNKNOWN';
+  }
+
+  async initialize(): Promise<void> {
     if (this._state !== ClientState.Idle && this._state !== ClientState.Stopped) {
       this.logWarn('initialize() called in invalid state: %{public}s', this._state);
       return;
     }
 
-    // Validate API credentials before starting
+    // --- Query native layer for TDLib build info (REAL vs STUB) ---
+    try {
+      const infoJson: string = tdlib.getTdlibInfo();
+      this._tdlibInfo = JSON.parse(infoJson) as TdlibInfo;
+    } catch (e) {
+      this._tdlibInfo = { mode: 'UNKNOWN', tdlibDir: '', soname: '' };
+      this.logError('Failed to query TDLib info: %{public}s', String(e));
+    }
+
+    this.logInfo('┌─ TDLib Client Init ─────────────────────────');
+    this.logInfo('│ TDLIB_MODE:  %{public}s', this._tdlibInfo!.mode);
+    this.logInfo('│ TDLIB_DIR:   %{public}s', this._tdlibInfo!.tdlibDir);
+    this.logInfo('│ SONAME:      %{public}s', this._tdlibInfo!.soname);
+    this.logInfo('│ API_ID:      %{public}s', TELEGRAM_API_ID > 0 ? 'configured' : 'NOT SET');
+    this.logInfo('│ API_HASH:    %{public}s', TELEGRAM_API_HASH.length > 0 ? 'configured' : 'NOT SET');
+    this.logInfo('│ DB_PATH:     /data/storage/el2/base/tdlib');
+    this.logInfo('└──────────────────────────────────────────────');
+
+    // Validate API credentials
     if (TELEGRAM_API_ID === 0 || TELEGRAM_API_HASH.length === 0) {
       this.logError('API credentials not configured. Copy ConfigLocal.example.ets → ConfigLocal.ets and fill in your values from https://my.telegram.org/apps');
+      if (this._tdlibInfo!.mode === 'REAL') {
+        // In REAL mode without credentials, TDLib will fail immediately — warn loudly
+        this.logError('REAL TDLib mode requires valid API credentials. Init will likely fail.');
+      }
+    }
+
+    // Warn if STUB mode with real credentials — possible misconfiguration
+    if (this._tdlibInfo!.mode === 'STUB' && TELEGRAM_API_ID > 0) {
+      this.logWarn('STUB mode active but API credentials are set. Requests will NOT reach Telegram servers.');
     }
 
     this._state = ClientState.Initializing;
     this.clientId = tdlib.createClient();
     this.logInfo('Client created with id: %{public}d', this.clientId);
+
+    // Initialize SecurityService for database encryption key
+    const security = SecurityService.getInstance();
+    await security.initialize();
+    const dbEncKey = security.getDatabaseEncryptionKey();
+    if (dbEncKey.length === 0) {
+      this.logWarn('Database encryption key is empty — TDLib database will be unencrypted');
+    }
 
     // Start receiving updates from TDLib on a background thread
     tdlib.startReceiveLoop((responseJson: string) => {
@@ -114,19 +165,26 @@ export class TDLibClient {
       this.handleResponse(responseJson);
     });
 
-    // Send TDLib parameters
-    this.sendTdlibParameters();
+    // Send TDLib parameters (single source of truth)
+    this.sendTdlibParameters(dbEncKey);
     this._state = ClientState.Ready;
   }
 
   destroy(): void {
-    if (this._state === ClientState.Stopped) return;
-    this._state = ClientState.Stopping;
+    if (this._state === ClientState.Stopped || this._state === ClientState.Stopping) {
+      this.logWarn('destroy() called in state %{public}s, ignoring', this._state);
+      return;
+    }
 
-    // Reject all pending requests
-    this.pendingRequests.forEach((pending: PendingRequest) => {
+    this._state = ClientState.Stopping;
+    const pendingCount = this.pendingRequests.size;
+    this.logInfo('Destroying client, rejecting %{public}d pending request(s)', pendingCount);
+
+    // Reject all pending requests with explicit per-request reason
+    this.pendingRequests.forEach((pending: PendingRequest, id: number) => {
       clearTimeout(pending.timerId);
-      pending.reject(0, 'Client destroyed');
+      this.logDebug('Rejecting pending #%{public}d (%{public}s)', id, pending.method);
+      pending.reject(0, `Client destroyed while '${pending.method}' was pending`);
     });
     this.pendingRequests.clear();
 
@@ -135,13 +193,16 @@ export class TDLibClient {
 
     tdlib.stopReceiveLoop();
     this._state = ClientState.Stopped;
-    this.logInfo('Client destroyed, all pending requests rejected');
+    this.logInfo('Client destroyed');
   }
 
-  // Send a request and get a promise for the response
+  // Send a request and get a promise for the response.
+  // Rejects immediately if the client is not in a sendable state.
   async send(method: string, inputParams?: TdObject): Promise<TdObject> {
-    if (this._state !== ClientState.Ready && this._state !== ClientState.Initializing) {
-      throw new TDLibError(0, `Cannot send '${method}' in state '${this._state}'`);
+    // Snapshot state to avoid TOCTOU race with destroy()
+    const currentState = this._state;
+    if (currentState !== ClientState.Ready && currentState !== ClientState.Initializing) {
+      throw new TDLibError(0, `Cannot send '${method}' in state '${currentState}'`);
     }
 
     const id: number = ++this.requestId;
@@ -155,10 +216,17 @@ export class TDLibClient {
     request['@extra'] = id;
 
     return new Promise<TdObject>((resolve, reject) => {
+      // Double-check: state may have changed to Stopping between the check above and now
+      if (this._state === ClientState.Stopping || this._state === ClientState.Stopped) {
+        reject(new TDLibError(0, `Cannot send '${method}': client is shutting down`));
+        return;
+      }
+
       // Set timeout to auto-reject hanging requests
       const timerId: number = setTimeout(() => {
         if (this.pendingRequests.has(id)) {
           this.pendingRequests.delete(id);
+          this.logWarn('Request #%{public}d (%{public}s) timed out', id, method);
           reject(new TDLibError(0, `Request '${method}' timed out after ${REQUEST_TIMEOUT_MS}ms`));
         }
       }, REQUEST_TIMEOUT_MS) as number;
@@ -173,7 +241,7 @@ export class TDLibClient {
       };
       this.pendingRequests.set(id, pending);
       tdlib.send(this.clientId, JSON.stringify(request));
-      this.logDebug('Sent: %{public}s', method);
+      this.logDebug('Sent: %{public}s (#%{public}d)', method, id);
     });
   }
 
@@ -510,10 +578,19 @@ export class TDLibClient {
 
   // --- Private methods ---
 
-  private sendTdlibParameters(): void {
+  /**
+   * SINGLE SOURCE OF TRUTH for TDLib parameters.
+   * All TDLib config values are set here and nowhere else.
+   * @param dbEncryptionKey - base64-encoded database encryption key from SecurityService
+   */
+  private sendTdlibParameters(dbEncryptionKey: string): void {
+    const dbDir = '/data/storage/el2/base/tdlib';
+    const filesDir = '/data/storage/el2/base/tdlib/files';
+
     const params: TdObject = {};
-    params['database_directory'] = '/data/storage/el2/base/tdlib';
-    params['files_directory'] = '/data/storage/el2/base/tdlib/files';
+    params['database_directory'] = dbDir;
+    params['files_directory'] = filesDir;
+    params['database_encryption_key'] = dbEncryptionKey;
     params['use_file_database'] = true;
     params['use_chat_info_database'] = true;
     params['use_message_database'] = true;
@@ -524,14 +601,28 @@ export class TDLibClient {
     params['device_model'] = 'HarmonyOS Device';
     params['system_version'] = 'HarmonyOS 6.0';
     params['application_version'] = '1.0.0';
+
+    this.logInfo('TDLib params: db=%{public}s, files=%{public}s, enc_key=%{public}s',
+      dbDir, filesDir, dbEncryptionKey.length > 0 ? 'set(' + dbEncryptionKey.length + ' chars)' : 'EMPTY');
+
     this.send('setTdlibParameters', params);
   }
 
   private async handleResponse(responseJson: string): Promise<void> {
+    // Guard: discard responses that arrive after destroy began
+    if (this._state === ClientState.Stopped) return;
+
     try {
       // Parse JSON off the main thread via TaskPool
       const task: taskpool.Task = new taskpool.Task(parseJsonInBackground, responseJson);
       const response: TdObject = (await taskpool.execute(task)) as TdObject;
+
+      // Re-check after async gap: state may have changed during JSON parsing
+      if (this._state === ClientState.Stopped) {
+        this.logDebug('Discarding response after destroy: %{public}s',
+          (response['@type'] as string) || 'unknown');
+        return;
+      }
 
       const type: string = (response['@type'] as string) || '';
       const extra: number = (response['@extra'] as number) || 0;

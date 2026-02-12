@@ -34,6 +34,11 @@ napi_value StartReceiveLoop(napi_env env, napi_callback_info info);
 // Stop the receive loop
 napi_value StopReceiveLoop(napi_env env, napi_callback_info info);
 
+// Returns a JSON string with TDLib build-time diagnostics:
+//   { "mode": "REAL"|"STUB", "tdlibDir": "...", "soname": "..." }
+// No arguments required.
+napi_value GetTdlibInfo(napi_env env, napi_callback_info info);
+
 } // namespace tdlib_napi
 
 #endif // TDLIB_NAPI_H

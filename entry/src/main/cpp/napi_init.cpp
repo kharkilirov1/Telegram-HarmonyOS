@@ -9,6 +9,7 @@ static napi_value Init(napi_env env, napi_value exports) {
         { "execute", nullptr, tdlib_napi::Execute, nullptr, nullptr, nullptr, napi_default, nullptr },
         { "startReceiveLoop", nullptr, tdlib_napi::StartReceiveLoop, nullptr, nullptr, nullptr, napi_default, nullptr },
         { "stopReceiveLoop", nullptr, tdlib_napi::StopReceiveLoop, nullptr, nullptr, nullptr, napi_default, nullptr },
+        { "getTdlibInfo", nullptr, tdlib_napi::GetTdlibInfo, nullptr, nullptr, nullptr, napi_default, nullptr },
     };
 
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);

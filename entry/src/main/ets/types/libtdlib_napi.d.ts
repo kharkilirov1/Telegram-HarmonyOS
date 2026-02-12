@@ -6,6 +6,8 @@ declare module 'libtdlib_napi.so' {
     execute(requestJson: string): string | null;
     startReceiveLoop(callback: (responseJson: string) => void): void;
     stopReceiveLoop(): void;
+    /** Returns JSON: { mode: "REAL"|"STUB", tdlibDir: string, soname: string } */
+    getTdlibInfo(): string;
   }
 
   const tdlib: TdlibNapiModule;
