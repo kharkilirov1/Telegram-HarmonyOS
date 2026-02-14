@@ -1,6 +1,6 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { taskpool } from '@kit.ArkTS';
-import { TELEGRAM_API_ID, TELEGRAM_API_HASH } from './ConfigLocal.example';
+import { TELEGRAM_API_ID, TELEGRAM_API_HASH } from './ConfigLocal';
 import { TdFallbackRegistry } from './TdFallbackRegistry';
 import { classifyTdlibError } from './AppError';
 import { TdObject } from '../models/TdTypes';
@@ -116,8 +116,6 @@ export class TDLibClient {
       this.handleResponse(responseJson);
     });
 
-    // Send TDLib parameters
-    this.sendTdlibParameters();
     this._state = ClientState.Ready;
   }
 
@@ -512,7 +510,7 @@ export class TDLibClient {
 
   // --- Private methods ---
 
-  private sendTdlibParameters(): void {
+  sendTdlibParameters(): void {
     const params: TdObject = {};
     params['database_directory'] = '/data/storage/el2/base/tdlib';
     params['files_directory'] = '/data/storage/el2/base/tdlib/files';

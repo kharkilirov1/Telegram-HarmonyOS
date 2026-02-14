@@ -32,15 +32,15 @@ export struct BotCommandBar {
 
     try {
       // Get full bot info via TDLib
-      const result: Record<string, unknown> = await UserService.getInstance().getUserFullInfo(this.botUserId);
+      const result: Record<string, Object> = await UserService.getInstance().getUserFullInfo(this.botUserId);
 
-      const botInfo: Record<string, unknown> | undefined = result['bot_info'] as Record<string, unknown>;
+      const botInfo: Record<string, Object> | undefined = result['bot_info'] as Record<string, Object>;
       if (botInfo) {
-        const shortDesc: Record<string, unknown> | undefined = botInfo['short_description'] as Record<string, unknown>;
+        const shortDesc: Record<string, Object> | undefined = botInfo['short_description'] as Record<string, Object>;
         this.botDescription = shortDesc !== undefined ? ((shortDesc['text'] as string) || '') : '';
 
         // Commands
-        const rawCommands: Record<string, unknown>[] | undefined = botInfo['commands'] as Record<string, unknown>[];
+        const rawCommands: Record<string, Object>[] | undefined = botInfo['commands'] as Record<string, Object>[];
         if (rawCommands) {
           const parsed: BotCommand[] = [];
           for (const cmd of rawCommands) {
@@ -54,7 +54,7 @@ export struct BotCommandBar {
         }
 
         // Menu button (Mini App)
-        const menuButton: Record<string, unknown> | undefined = botInfo['menu_button'] as Record<string, unknown>;
+        const menuButton: Record<string, Object> | undefined = botInfo['menu_button'] as Record<string, Object>;
         if (menuButton) {
           const btnType: string = (menuButton['@type'] as string) || '';
           if (btnType === 'botMenuButton') {

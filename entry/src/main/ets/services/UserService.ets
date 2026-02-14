@@ -28,34 +28,34 @@ export class UserService {
   }
 
   async getUser(userId: number): Promise<TdUser> {
-    const params: Record<string, unknown> = {};
+    const params: Record<string, Object> = {};
     params['user_id'] = userId;
     const result = await TDLibClient.getInstance().send('getUser', params);
     return result as TdUser;
   }
 
   async getUserFullInfo(userId: number): Promise<TdUserFullInfo> {
-    const params: Record<string, unknown> = {};
+    const params: Record<string, Object> = {};
     params['user_id'] = userId;
     const result = await TDLibClient.getInstance().send('getUserFullInfo', params);
     return result as TdUserFullInfo;
   }
 
   async setName(firstName: string, lastName: string): Promise<void> {
-    const params: Record<string, unknown> = {};
+    const params: Record<string, Object> = {};
     params['first_name'] = firstName;
     params['last_name'] = lastName;
     await TDLibClient.getInstance().send('setName', params);
   }
 
   async setBio(bio: string): Promise<void> {
-    const params: Record<string, unknown> = {};
+    const params: Record<string, Object> = {};
     params['bio'] = bio;
     await TDLibClient.getInstance().send('setBio', params);
   }
 
   async setUsername(username: string): Promise<void> {
-    const params: Record<string, unknown> = {};
+    const params: Record<string, Object> = {};
     params['username'] = username;
     await TDLibClient.getInstance().send('setUsername', params);
   }

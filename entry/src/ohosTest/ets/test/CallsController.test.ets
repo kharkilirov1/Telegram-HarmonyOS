@@ -7,20 +7,20 @@ import { Call, CallDiscardReason } from '../../../main/ets/models/Call';
  */
 
 // Standalone copy of parseCallFromMessage — the private method on CallsController
-function parseCallFromMessage(raw: Record<string, unknown>): Call | null {
-  const content = raw['content'] as Record<string, unknown>;
+function parseCallFromMessage(raw: Record<string, Object>): Call | null {
+  const content = raw['content'] as Record<string, Object>;
   if (!content) return null;
 
   const contentType = (content['@type'] as string) || '';
   if (contentType !== 'messageCall') return null;
 
-  const senderId = raw['sender_id'] as Record<string, unknown>;
+  const senderId = raw['sender_id'] as Record<string, Object>;
   const userId = senderId ? ((senderId['user_id'] as number) || 0) : 0;
   const isOutgoing = (raw['is_outgoing'] as boolean) || false;
   const isVideo = (content['is_video'] as boolean) || false;
   const duration = (content['duration'] as number) || 0;
 
-  const discardReasonObj = content['discard_reason'] as Record<string, unknown>;
+  const discardReasonObj = content['discard_reason'] as Record<string, Object>;
   let discardReason = CallDiscardReason.EMPTY;
   if (discardReasonObj) {
     const reasonType = (discardReasonObj['@type'] as string) || '';
@@ -55,17 +55,17 @@ function parseCallFromMessage(raw: Record<string, unknown>): Call | null {
 }
 
 // Helper to build a raw TDLib call message
-function makeRawCallMessage(overrides: Record<string, unknown>): Record<string, unknown> {
-  const discardReason: Record<string, unknown> = {};
+function makeRawCallMessage(overrides: Record<string, Object>): Record<string, Object> {
+  const discardReason: Record<string, Object> = {};
   discardReason['@type'] = (overrides['reasonType'] as string) || 'callDiscardReasonHungUp';
-  const content: Record<string, unknown> = {};
+  const content: Record<string, Object> = {};
   content['@type'] = 'messageCall';
   content['is_video'] = (overrides['is_video'] as boolean) || false;
   content['duration'] = (overrides['duration'] as number) || 60;
   content['discard_reason'] = discardReason;
-  const senderId: Record<string, unknown> = {};
+  const senderId: Record<string, Object> = {};
   senderId['user_id'] = (overrides['user_id'] as number) || 100;
-  const raw: Record<string, unknown> = {};
+  const raw: Record<string, Object> = {};
   raw['id'] = (overrides['id'] as number) || 1;
   raw['chat_id'] = (overrides['chat_id'] as number) || 200;
   raw['sender_id'] = senderId;
@@ -141,7 +141,7 @@ export default function callsControllerTest() {
     describe('parseCallFromMessage', () => {
 
       it('should parse basic call message', 0, () => {
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['id'] = 42;
         overrides['chat_id'] = 100;
         overrides['user_id'] = 200;
@@ -163,7 +163,7 @@ export default function callsControllerTest() {
       });
 
       it('should parse missed call', 0, () => {
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['reasonType'] = 'callDiscardReasonMissed';
         overrides['duration'] = 0;
         const raw = makeRawCallMessage(overrides);
@@ -177,7 +177,7 @@ export default function callsControllerTest() {
       });
 
       it('should parse declined call', 0, () => {
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['reasonType'] = 'callDiscardReasonDeclined';
         const raw = makeRawCallMessage(overrides);
 
@@ -190,7 +190,7 @@ export default function callsControllerTest() {
       });
 
       it('should parse video call', 0, () => {
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['is_video'] = true;
         const raw = makeRawCallMessage(overrides);
 
@@ -202,7 +202,7 @@ export default function callsControllerTest() {
       });
 
       it('should parse outgoing call', 0, () => {
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['is_outgoing'] = true;
         const raw = makeRawCallMessage(overrides);
 
@@ -214,16 +214,16 @@ export default function callsControllerTest() {
       });
 
       it('should return null for missing content', 0, () => {
-        const raw: Record<string, unknown> = {};
+        const raw: Record<string, Object> = {};
         raw['id'] = 1;
         const call = parseCallFromMessage(raw);
         expect(call === null).assertTrue();
       });
 
       it('should return null for non-messageCall content', 0, () => {
-        const content: Record<string, unknown> = {};
+        const content: Record<string, Object> = {};
         content['@type'] = 'messageText';
-        const raw: Record<string, unknown> = {};
+        const raw: Record<string, Object> = {};
         raw['id'] = 1;
         raw['content'] = content;
         const call = parseCallFromMessage(raw);
@@ -231,10 +231,10 @@ export default function callsControllerTest() {
       });
 
       it('should default discardReason to EMPTY when no reason', 0, () => {
-        const content: Record<string, unknown> = {};
+        const content: Record<string, Object> = {};
         content['@type'] = 'messageCall';
         content['duration'] = 10;
-        const raw: Record<string, unknown> = {};
+        const raw: Record<string, Object> = {};
         raw['id'] = 1;
         raw['content'] = content;
         const call = parseCallFromMessage(raw);

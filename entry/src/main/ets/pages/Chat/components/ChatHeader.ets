@@ -98,6 +98,10 @@ export struct ChatHeader {
         .height(24)
         .fillColor($r('app.color.telegram_blue'))
         .padding(8)
+        .onClick(() => {
+          HapticService.getInstance().light();
+          this.onOpenInfo();
+        })
     }
     .width('100%')
     .height(48)

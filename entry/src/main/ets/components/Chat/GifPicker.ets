@@ -35,10 +35,10 @@ export struct GifPicker {
     this.isLoading = true;
     this.gifs = [];
     try {
-      const params: Record<string, unknown> = {};
+      const params: Record<string, Object> = {};
       params['limit'] = 100;
       const result = await TDLibClient.getInstance().send('getSavedAnimations', params);
-      const rawAnimations = result['animations'] as Record<string, unknown>[] | undefined;
+      const rawAnimations = result['animations'] as Record<string, Object>[] | undefined;
       if (!rawAnimations || rawAnimations.length === 0) {
         this.isLoading = false;
         return;
@@ -47,14 +47,14 @@ export struct GifPicker {
       const seen: Set<number> = new Set<number>();
       const loaded: GifItem[] = [];
       for (const animation of rawAnimations) {
-        const fileRecord = animation['animation'] as Record<string, unknown> | undefined;
+        const fileRecord = animation['animation'] as Record<string, Object> | undefined;
         const fileId = fileRecord ? ((fileRecord['id'] as number) || 0) : 0;
         if (fileId <= 0 || seen.has(fileId)) {
           continue;
         }
         seen.add(fileId);
 
-        const local = fileRecord ? (fileRecord['local'] as Record<string, unknown> | undefined) : undefined;
+        const local = fileRecord ? (fileRecord['local'] as Record<string, Object> | undefined) : undefined;
         const localPath = local && ((local['is_downloading_completed'] as boolean) || false)
           ? ((local['path'] as string) || '')
           : '';

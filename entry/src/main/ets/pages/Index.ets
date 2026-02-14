@@ -24,7 +24,7 @@ struct Index {
   @Local userInitial: string = '';
 
   // Auth state handler — driven by NotificationCenter, not raw TDLib
-  private authHandler = (args?: Record<string, unknown>): void => {
+  private authHandler = (args?: Record<string, Object>): void => {
     if (!args) return;
     const state = args['state'] as string;
 
@@ -55,7 +55,7 @@ struct Index {
     this.updateUnreadCount();
   };
 
-  private userInfoHandler = (args?: Record<string, unknown>): void => {
+  private userInfoHandler = (args?: Record<string, Object>): void => {
     if (!args) return;
     const userId = args['userId'] as number;
     if (userId === AuthController.getInstance().getMyUserId()) {

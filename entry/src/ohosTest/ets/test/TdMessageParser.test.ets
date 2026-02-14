@@ -19,8 +19,8 @@ import { Chat } from '../../../main/ets/models/Chat';
  */
 
 // Helper to build a minimal TdMessage-shaped Record
-function makeTdMsg(overrides: Record<string, unknown>): TdMessage {
-  const base: Record<string, unknown> = {};
+function makeTdMsg(overrides: Record<string, Object>): TdMessage {
+  const base: Record<string, Object> = {};
   base['id'] = 1;
   base['chat_id'] = 100;
   base['date'] = 1700000000;
@@ -33,8 +33,8 @@ function makeTdMsg(overrides: Record<string, unknown>): TdMessage {
   return base as TdMessage;
 }
 
-function makeContent(type: string, extra?: Record<string, unknown>): Record<string, unknown> {
-  const content: Record<string, unknown> = {};
+function makeContent(type: string, extra?: Record<string, Object>): Record<string, Object> {
+  const content: Record<string, Object> = {};
   content['@type'] = type;
   if (extra) {
     const keys = Object.keys(extra);
@@ -64,7 +64,7 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse outgoing flag', 0, () => {
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['is_outgoing'] = true;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -72,11 +72,11 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse text message content', 0, () => {
-        const textObj: Record<string, unknown> = {};
+        const textObj: Record<string, Object> = {};
         textObj['text'] = 'Hello TDLib';
         const content = makeContent('messageText');
         content['text'] = textObj;
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['content'] = content;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -86,11 +86,11 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse photo message with caption', 0, () => {
-        const caption: Record<string, unknown> = {};
+        const caption: Record<string, Object> = {};
         caption['text'] = 'Nice view';
         const content = makeContent('messagePhoto');
         content['caption'] = caption;
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['content'] = content;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -100,14 +100,14 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse video message with duration', 0, () => {
-        const video: Record<string, unknown> = {};
+        const video: Record<string, Object> = {};
         video['duration'] = 120;
-        const caption: Record<string, unknown> = {};
+        const caption: Record<string, Object> = {};
         caption['text'] = '';
         const content = makeContent('messageVideo');
         content['video'] = video;
         content['caption'] = caption;
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['content'] = content;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -117,11 +117,11 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse document message with file name', 0, () => {
-        const doc: Record<string, unknown> = {};
+        const doc: Record<string, Object> = {};
         doc['file_name'] = 'report.pdf';
         const content = makeContent('messageDocument');
         content['document'] = doc;
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['content'] = content;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -131,23 +131,23 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse document local path and size', 0, () => {
-        const local: Record<string, unknown> = {};
+        const local: Record<string, Object> = {};
         local['path'] = '/data/report.pdf';
         local['is_downloading_completed'] = true;
 
-        const file: Record<string, unknown> = {};
+        const file: Record<string, Object> = {};
         file['id'] = 3001;
         file['size'] = 2048;
         file['local'] = local;
 
-        const doc: Record<string, unknown> = {};
+        const doc: Record<string, Object> = {};
         doc['file_name'] = 'report.pdf';
         doc['document'] = file;
 
         const content = makeContent('messageDocument');
         content['document'] = doc;
 
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['content'] = content;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -159,12 +159,12 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse voice note with duration and waveform', 0, () => {
-        const voice: Record<string, unknown> = {};
+        const voice: Record<string, Object> = {};
         voice['duration'] = 15;
         voice['waveform'] = 'AQID';
         const content = makeContent('messageVoiceNote');
         content['voice_note'] = voice;
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['content'] = content;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -175,11 +175,11 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse sticker message with emoji', 0, () => {
-        const sticker: Record<string, unknown> = {};
+        const sticker: Record<string, Object> = {};
         sticker['emoji'] = '\u{1F60E}';
         const content = makeContent('messageSticker');
         content['sticker'] = sticker;
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['content'] = content;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -190,7 +190,7 @@ export default function tdMessageParserTest() {
 
       it('should parse animation message', 0, () => {
         const content = makeContent('messageAnimation');
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['content'] = content;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -200,27 +200,27 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse animation video path and thumbnail', 0, () => {
-        const localAnimation: Record<string, unknown> = {};
+        const localAnimation: Record<string, Object> = {};
         localAnimation['path'] = '/data/animation.mp4';
         localAnimation['is_downloading_completed'] = true;
 
-        const animationFile: Record<string, unknown> = {};
+        const animationFile: Record<string, Object> = {};
         animationFile['id'] = 3501;
         animationFile['size'] = 4096;
         animationFile['local'] = localAnimation;
 
-        const localThumb: Record<string, unknown> = {};
+        const localThumb: Record<string, Object> = {};
         localThumb['path'] = '/data/animation_thumb.jpg';
         localThumb['is_downloading_completed'] = true;
 
-        const thumbFile: Record<string, unknown> = {};
+        const thumbFile: Record<string, Object> = {};
         thumbFile['id'] = 3502;
         thumbFile['local'] = localThumb;
 
-        const thumbnail: Record<string, unknown> = {};
+        const thumbnail: Record<string, Object> = {};
         thumbnail['file'] = thumbFile;
 
-        const animation: Record<string, unknown> = {};
+        const animation: Record<string, Object> = {};
         animation['duration'] = 3;
         animation['animation'] = animationFile;
         animation['thumbnail'] = thumbnail;
@@ -228,7 +228,7 @@ export default function tdMessageParserTest() {
         const content = makeContent('messageAnimation');
         content['animation'] = animation;
 
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['content'] = content;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -241,12 +241,12 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse video note with dimensions', 0, () => {
-        const videoNote: Record<string, unknown> = {};
+        const videoNote: Record<string, Object> = {};
         videoNote['duration'] = 10;
         videoNote['length'] = 200;
         const content = makeContent('messageVideoNote');
         content['video_note'] = videoNote;
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['content'] = content;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -258,7 +258,7 @@ export default function tdMessageParserTest() {
 
       it('should set UNSUPPORTED for unknown content types', 0, () => {
         const content = makeContent('messageUnknownCustomType');
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['content'] = content;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -268,10 +268,10 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse reply_to message id', 0, () => {
-        const replyTo: Record<string, unknown> = {};
+        const replyTo: Record<string, Object> = {};
         replyTo['@type'] = 'messageReplyToMessage';
         replyTo['message_id'] = 42;
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['reply_to'] = replyTo;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -280,11 +280,11 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse forward info', 0, () => {
-        const origin: Record<string, unknown> = {};
+        const origin: Record<string, Object> = {};
         origin['sender_name'] = 'Alice';
-        const forwardInfo: Record<string, unknown> = {};
+        const forwardInfo: Record<string, Object> = {};
         forwardInfo['origin'] = origin;
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['forward_info'] = forwardInfo;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -293,7 +293,7 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse media_album_id', 0, () => {
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['media_album_id'] = '12345';
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -302,10 +302,10 @@ export default function tdMessageParserTest() {
       });
 
       it('should detect view-once (self-destruct immediately)', 0, () => {
-        const selfDestruct: Record<string, unknown> = {};
+        const selfDestruct: Record<string, Object> = {};
         selfDestruct['@type'] = 'messageSelfDestructTypeImmediately';
         selfDestruct['self_destruct_time'] = 0;
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['self_destruct_type'] = selfDestruct;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -316,7 +316,7 @@ export default function tdMessageParserTest() {
       it('should detect spoiler on photo content', 0, () => {
         const content = makeContent('messagePhoto');
         content['has_spoiler'] = true;
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['content'] = content;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -325,34 +325,34 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse local photo path from largest available size', 0, () => {
-        const localFileA: Record<string, unknown> = {};
+        const localFileA: Record<string, Object> = {};
         localFileA['path'] = '';
         localFileA['is_downloading_completed'] = false;
 
-        const localFileB: Record<string, unknown> = {};
+        const localFileB: Record<string, Object> = {};
         localFileB['path'] = '/data/photo_big.jpg';
         localFileB['is_downloading_completed'] = true;
 
-        const photoFileA: Record<string, unknown> = {};
+        const photoFileA: Record<string, Object> = {};
         photoFileA['id'] = 1001;
         photoFileA['local'] = localFileA;
 
-        const photoFileB: Record<string, unknown> = {};
+        const photoFileB: Record<string, Object> = {};
         photoFileB['id'] = 1002;
         photoFileB['local'] = localFileB;
 
-        const sizeA: Record<string, unknown> = {};
+        const sizeA: Record<string, Object> = {};
         sizeA['photo'] = photoFileA;
-        const sizeB: Record<string, unknown> = {};
+        const sizeB: Record<string, Object> = {};
         sizeB['photo'] = photoFileB;
 
-        const photo: Record<string, unknown> = {};
+        const photo: Record<string, Object> = {};
         photo['sizes'] = [sizeA, sizeB];
 
         const content = makeContent('messagePhoto');
         content['photo'] = photo;
 
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['content'] = content;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -363,26 +363,26 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse local video path and thumbnail path', 0, () => {
-        const localVideo: Record<string, unknown> = {};
+        const localVideo: Record<string, Object> = {};
         localVideo['path'] = '/data/video.mp4';
         localVideo['is_downloading_completed'] = true;
 
-        const videoFile: Record<string, unknown> = {};
+        const videoFile: Record<string, Object> = {};
         videoFile['id'] = 2001;
         videoFile['local'] = localVideo;
 
-        const localThumb: Record<string, unknown> = {};
+        const localThumb: Record<string, Object> = {};
         localThumb['path'] = '/data/video_thumb.jpg';
         localThumb['is_downloading_completed'] = true;
 
-        const thumbFile: Record<string, unknown> = {};
+        const thumbFile: Record<string, Object> = {};
         thumbFile['id'] = 2002;
         thumbFile['local'] = localThumb;
 
-        const thumbnail: Record<string, unknown> = {};
+        const thumbnail: Record<string, Object> = {};
         thumbnail['file'] = thumbFile;
 
-        const video: Record<string, unknown> = {};
+        const video: Record<string, Object> = {};
         video['duration'] = 15;
         video['video'] = videoFile;
         video['thumbnail'] = thumbnail;
@@ -390,7 +390,7 @@ export default function tdMessageParserTest() {
         const content = makeContent('messageVideo');
         content['video'] = video;
 
-        const overrides: Record<string, unknown> = {};
+        const overrides: Record<string, Object> = {};
         overrides['content'] = content;
         const raw = makeTdMsg(overrides);
         const msg = parseMessage(raw);
@@ -407,7 +407,7 @@ export default function tdMessageParserTest() {
     describe('parseChat', () => {
 
       it('should parse basic chat fields', 0, () => {
-        const raw: Record<string, unknown> = {};
+        const raw: Record<string, Object> = {};
         raw['id'] = 200;
         raw['title'] = 'Test Group';
         raw['unread_count'] = 5;
@@ -419,10 +419,10 @@ export default function tdMessageParserTest() {
       });
 
       it('should detect supergroup type', 0, () => {
-        const chatType: Record<string, unknown> = {};
+        const chatType: Record<string, Object> = {};
         chatType['@type'] = 'chatTypeSupergroup';
         chatType['is_channel'] = false;
-        const raw: Record<string, unknown> = {};
+        const raw: Record<string, Object> = {};
         raw['id'] = 300;
         raw['title'] = 'Big Group';
         raw['type'] = chatType;
@@ -433,10 +433,10 @@ export default function tdMessageParserTest() {
       });
 
       it('should detect channel type', 0, () => {
-        const chatType: Record<string, unknown> = {};
+        const chatType: Record<string, Object> = {};
         chatType['@type'] = 'chatTypeSupergroup';
         chatType['is_channel'] = true;
-        const raw: Record<string, unknown> = {};
+        const raw: Record<string, Object> = {};
         raw['id'] = 400;
         raw['title'] = 'My Channel';
         raw['type'] = chatType;
@@ -447,9 +447,9 @@ export default function tdMessageParserTest() {
       });
 
       it('should detect muted status from notification settings', 0, () => {
-        const notif: Record<string, unknown> = {};
+        const notif: Record<string, Object> = {};
         notif['mute_for'] = 86400;
-        const raw: Record<string, unknown> = {};
+        const raw: Record<string, Object> = {};
         raw['id'] = 500;
         raw['title'] = 'Muted Chat';
         raw['notification_settings'] = notif;
@@ -459,15 +459,15 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse last message preview', 0, () => {
-        const textObj: Record<string, unknown> = {};
+        const textObj: Record<string, Object> = {};
         textObj['text'] = 'Last msg';
-        const content: Record<string, unknown> = {};
+        const content: Record<string, Object> = {};
         content['@type'] = 'messageText';
         content['text'] = textObj;
-        const lastMsg: Record<string, unknown> = {};
+        const lastMsg: Record<string, Object> = {};
         lastMsg['content'] = content;
         lastMsg['date'] = 1700000000;
-        const raw: Record<string, unknown> = {};
+        const raw: Record<string, Object> = {};
         raw['id'] = 600;
         raw['title'] = 'Chat';
         raw['last_message'] = lastMsg;
@@ -478,7 +478,7 @@ export default function tdMessageParserTest() {
       });
 
       it('should parse is_marked_as_unread flag', 0, () => {
-        const raw: Record<string, unknown> = {};
+        const raw: Record<string, Object> = {};
         raw['id'] = 601;
         raw['title'] = 'Unread marker chat';
         raw['is_marked_as_unread'] = true;
@@ -495,9 +495,9 @@ export default function tdMessageParserTest() {
 
       it('should update order and pinned from chatListMain position', 0, () => {
         const chat = new Chat(1, 'Test');
-        const list: Record<string, unknown> = {};
+        const list: Record<string, Object> = {};
         list['@type'] = 'chatListMain';
-        const position: Record<string, unknown> = {};
+        const position: Record<string, Object> = {};
         position['list'] = list;
         position['order'] = '69175290';
         position['is_pinned'] = true;
@@ -511,9 +511,9 @@ export default function tdMessageParserTest() {
       it('should ignore non-main chat list positions', 0, () => {
         const chat = new Chat(1, 'Test');
         chat.order = '0';
-        const list: Record<string, unknown> = {};
+        const list: Record<string, Object> = {};
         list['@type'] = 'chatListArchive';
-        const position: Record<string, unknown> = {};
+        const position: Record<string, Object> = {};
         position['list'] = list;
         position['order'] = '99999';
         position['is_pinned'] = false;
@@ -530,25 +530,25 @@ export default function tdMessageParserTest() {
     describe('applyContent edge cases', () => {
 
       it('should handle poll with all fields', 0, () => {
-        const questionText: Record<string, unknown> = {};
+        const questionText: Record<string, Object> = {};
         questionText['text'] = 'Best OS?';
-        const opt1Text: Record<string, unknown> = {};
+        const opt1Text: Record<string, Object> = {};
         opt1Text['text'] = 'HarmonyOS';
-        const opt2Text: Record<string, unknown> = {};
+        const opt2Text: Record<string, Object> = {};
         opt2Text['text'] = 'Other';
-        const opt1: Record<string, unknown> = {};
+        const opt1: Record<string, Object> = {};
         opt1['text'] = opt1Text;
         opt1['voter_count'] = 10;
         opt1['vote_percentage'] = 67;
         opt1['is_chosen'] = true;
-        const opt2: Record<string, unknown> = {};
+        const opt2: Record<string, Object> = {};
         opt2['text'] = opt2Text;
         opt2['voter_count'] = 5;
         opt2['vote_percentage'] = 33;
         opt2['is_chosen'] = false;
-        const pollType: Record<string, unknown> = {};
+        const pollType: Record<string, Object> = {};
         pollType['@type'] = 'pollTypeRegular';
-        const poll: Record<string, unknown> = {};
+        const poll: Record<string, Object> = {};
         poll['id'] = 'poll123';
         poll['question'] = questionText;
         poll['total_voter_count'] = 15;
@@ -557,7 +557,7 @@ export default function tdMessageParserTest() {
         poll['type'] = pollType;
         poll['options'] = [opt1, opt2];
 
-        const content: Record<string, unknown> = {};
+        const content: Record<string, Object> = {};
         content['@type'] = 'messagePoll';
         content['poll'] = poll;
 
@@ -574,16 +574,16 @@ export default function tdMessageParserTest() {
       });
 
       it('should handle quiz poll type', 0, () => {
-        const questionText: Record<string, unknown> = {};
+        const questionText: Record<string, Object> = {};
         questionText['text'] = 'Quiz?';
-        const pollType: Record<string, unknown> = {};
+        const pollType: Record<string, Object> = {};
         pollType['@type'] = 'pollTypeQuiz';
-        const poll: Record<string, unknown> = {};
+        const poll: Record<string, Object> = {};
         poll['id'] = 'quiz1';
         poll['question'] = questionText;
         poll['type'] = pollType;
 
-        const content: Record<string, unknown> = {};
+        const content: Record<string, Object> = {};
         content['@type'] = 'messagePoll';
         content['poll'] = poll;
 

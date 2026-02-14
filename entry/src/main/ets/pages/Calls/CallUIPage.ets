@@ -32,7 +32,7 @@ export struct CallUIPage {
 
   private durationTimerId: number = -1;
 
-  private callStateHandler = (args?: Record<string, unknown>): void => {
+  private callStateHandler = (args?: Record<string, Object>): void => {
     if (!args) return;
     const state = args['state'] as string;
     if (state === 'callStateReady') {

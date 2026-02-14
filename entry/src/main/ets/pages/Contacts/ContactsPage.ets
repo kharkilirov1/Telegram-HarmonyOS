@@ -4,6 +4,16 @@ import { User } from '../../models/User';
 import { AvatarWithStatus, formatLastSeen } from '../../components/Common/AvatarWithStatus';
 import { BasicDataSource } from '../../datasources/BasicDataSource';
 
+// Unified list item for contacts: action row, section header, or contact (Telegram-iOS style)
+export interface ContactListItem {
+  kind: 'action' | 'section' | 'user';
+  key?: string;
+  icon?: Resource;
+  label?: Resource;
+  letter?: string;
+  user?: User;
+}
+
 @ComponentV2
 export struct ContactsPage {
   @Consumer('navPathStack') navPathStack: NavPathStack = new NavPathStack();
@@ -11,7 +21,7 @@ export struct ContactsPage {
   @Local isLoading: boolean = true;
   @Local sectionLetters: string[] = [];
 
-  private contactDataSource: BasicDataSource<User> = new BasicDataSource<User>();
+  private listDataSource: BasicDataSource<ContactListItem> = new BasicDataSource<ContactListItem>();
   private listScroller: Scroller = new Scroller();
   private searchTimerId: number = -1;
 
@@ -112,20 +122,17 @@ export struct ContactsPage {
       } else {
         Stack({ alignContent: Alignment.End }) {
           List({ scroller: this.listScroller }) {
-            // Action rows at top
-            ListItem() {
-              this.actionRow($r('app.media.ic_contact_add'), $r('app.string.contacts_invite_friends'))
-            }
-            ListItem() {
-              this.actionRow($r('app.media.ic_location'), $r('app.string.contacts_find_nearby'))
-            }
-
-            // Contact list
-            LazyForEach(this.contactDataSource, (user: User) => {
+            LazyForEach(this.listDataSource, (item: ContactListItem) => {
               ListItem() {
-                this.contactRow(user)
+                if (item.kind === 'action' && item.icon && item.label) {
+                  this.actionRow(item.icon, item.label)
+                } else if (item.kind === 'section' && item.letter) {
+                  this.sectionHeader(item.letter)
+                } else if (item.kind === 'user' && item.user) {
+                  this.contactRow(item.user)
+                }
               }
-            }, (user: User) => user.id.toString())
+            }, (item: ContactListItem) => this.contactListKey(item))
           }
           .width('100%')
           .layoutWeight(1)
@@ -165,6 +172,19 @@ export struct ContactsPage {
     .height('100%')
     .backgroundColor($r('app.color.background_primary'))
     .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+  }
+
+  @Builder
+  sectionHeader(letter: string) {
+    Row() {
+      Text(letter)
+        .fontSize(14)
+        .fontWeight(FontWeight.Medium)
+        .fontColor($r('app.color.text_secondary'))
+        .padding({ left: 16, top: 8, bottom: 4 })
+    }
+    .width('100%')
+    .backgroundColor($r('app.color.background_secondary'))
   }
 
   @Builder
@@ -256,12 +276,24 @@ export struct ContactsPage {
     return colors[Math.abs(userId) % colors.length];
   }
 
+  private contactListKey(item: ContactListItem): string {
+    if (item.key) {
+      return item.key;
+    }
+    if (item.kind === 'section' && item.letter) {
+      return `section_${item.letter}`;
+    }
+    if (item.kind === 'user' && item.user) {
+      return `user_${item.user.id}`;
+    }
+    return `_${Math.random()}`;
+  }
+
   private scrollToLetter(letter: string): void {
-    const contacts = this.contactDataSource.getAllData() as User[];
-    // +2 offset for the two action rows at top
-    const idx = contacts.findIndex(u => u.firstName.charAt(0).toUpperCase() === letter);
+    const all = this.listDataSource.getAllData();
+    const idx = all.findIndex(item => item.kind === 'section' && item.letter === letter);
     if (idx >= 0) {
-      this.listScroller.scrollToIndex(idx + 2);
+      this.listScroller.scrollToIndex(idx);
     }
   }
 
@@ -277,16 +309,42 @@ export struct ContactsPage {
       });
     }
 
-    this.contactDataSource.setData(contacts);
+    const list: ContactListItem[] = [];
+    list.push({
+      kind: 'action',
+      key: 'action_invite',
+      icon: $r('app.media.ic_contact_add'),
+      label: $r('app.string.contacts_invite_friends')
+    });
+    list.push({
+      kind: 'action',
+      key: 'action_nearby',
+      icon: $r('app.media.ic_location'),
+      label: $r('app.string.contacts_find_nearby')
+    });
 
-    // Build section letters
-    const letters = new Set<string>();
-    for (const user of contacts) {
-      const firstChar = user.firstName.charAt(0).toUpperCase();
-      if (firstChar.length > 0) {
-        letters.add(firstChar);
+    if (contacts.length > 0) {
+      const grouped = new Map<string, User[]>();
+      for (const u of contacts) {
+        const firstChar = u.firstName.charAt(0).toUpperCase();
+        const letter = firstChar.length > 0 ? firstChar : '#';
+        if (!grouped.has(letter)) {
+          grouped.set(letter, []);
+        }
+        grouped.get(letter)!.push(u);
       }
+      const sortedLetters = Array.from(grouped.keys()).sort((a, b) => (a === '#' ? 1 : b === '#' ? -1 : a.localeCompare(b)));
+      for (const letter of sortedLetters) {
+        list.push({ kind: 'section', letter: letter });
+        for (const user of grouped.get(letter)!) {
+          list.push({ kind: 'user', user: user });
+        }
+      }
+      this.sectionLetters = sortedLetters.filter(l => l !== '#');
+    } else {
+      this.sectionLetters = [];
     }
-    this.sectionLetters = Array.from(letters).sort();
+
+    this.listDataSource.setData(list);
   }
 }

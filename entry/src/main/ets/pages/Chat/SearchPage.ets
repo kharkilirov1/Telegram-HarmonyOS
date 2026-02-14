@@ -248,22 +248,22 @@ export struct SearchPage {
   private async searchMessages(query: string): Promise<Message[]> {
     try {
       const result = await ChatService.getInstance().searchGlobalMessages(query, 50);
-      const rawMessages = result['messages'] as Record<string, unknown>[];
+      const rawMessages = result['messages'] as Record<string, Object>[];
       if (!rawMessages) return [];
-      return rawMessages.map((raw: Record<string, unknown>): Message => {
+      return rawMessages.map((raw: Record<string, Object>): Message => {
         const msg = new Message();
         msg.id = (raw['id'] as number) || 0;
         msg.chatId = (raw['chat_id'] as number) || 0;
         msg.date = (raw['date'] as number) || 0;
         msg.isOutgoing = (raw['is_outgoing'] as boolean) || false;
-        const content = raw['content'] as Record<string, unknown>;
+        const content = raw['content'] as Record<string, Object>;
         if (content) {
-          const text = content['text'] as Record<string, unknown>;
+          const text = content['text'] as Record<string, Object>;
           if (text) {
             msg.text = (text['text'] as string) || '';
           }
         }
-        const sender = raw['sender_id'] as Record<string, unknown>;
+        const sender = raw['sender_id'] as Record<string, Object>;
         if (sender) {
           msg.senderId = (sender['user_id'] as number) || 0;
         }

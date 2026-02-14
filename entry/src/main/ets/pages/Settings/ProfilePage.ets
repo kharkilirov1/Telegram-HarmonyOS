@@ -234,7 +234,7 @@ export struct ProfilePage {
         });
       }
 
-      const statusObj = me.status as Record<string, unknown> | undefined;
+      const statusObj = me.status as Record<string, Object> | undefined;
       const statusType = (statusObj?.['@type'] as string) || '';
       this.isOnline = statusType === 'userStatusOnline';
 

@@ -40,13 +40,13 @@ export default function notificationCenterTest() {
       it('should pass args to observer', 0, () => {
         const nc = NotificationCenter.getInstance();
         let receivedState = '';
-        const handler = (args?: Record<string, unknown>): void => {
+        const handler = (args?: Record<string, Object>): void => {
           if (args) {
             receivedState = args['state'] as string;
           }
         };
         nc.addObserver(EventId.CONNECTION_STATE_CHANGED, handler);
-        const eventArgs: Record<string, unknown> = {};
+        const eventArgs: Record<string, Object> = {};
         eventArgs['state'] = 'connectionStateReady';
         nc.post(EventId.CONNECTION_STATE_CHANGED, eventArgs);
         nc.removeObserver(EventId.CONNECTION_STATE_CHANGED, handler);
@@ -117,7 +117,7 @@ export default function notificationCenterTest() {
       it('should handle post with undefined args', 0, () => {
         const nc = NotificationCenter.getInstance();
         let called = false;
-        const handler = (args?: Record<string, unknown>): void => {
+        const handler = (args?: Record<string, Object>): void => {
           called = true;
           expect(args).assertUndefined();
         };

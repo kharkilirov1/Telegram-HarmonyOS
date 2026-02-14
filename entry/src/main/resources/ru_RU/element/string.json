@@ -221,6 +221,10 @@
       "value": "Отмена"
     },
     {
+      "name": "share_contact",
+      "value": "Поделиться контактом"
+    },
+    {
       "name": "done",
       "value": "Готово"
     },

@@ -30,7 +30,7 @@ export struct VerifyCodePage {
   build() {
     NavDestination() {
       Column() {
-        // Top bar: Back button only
+        // Top bar — Telegram-iOS style: back only, glass effect
         Row() {
           Image($r('app.media.ic_back'))
             .width(24)
@@ -44,6 +44,13 @@ export struct VerifyCodePage {
         .width('100%')
         .height(48)
         .padding({ left: 4, right: 16 })
+        .backgroundColor($r('app.color.glass_nav_bg'))
+        .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
+          colorMode: ThemeColorMode.SYSTEM,
+          adaptiveColor: AdaptiveColor.DEFAULT,
+          scale: 1.0
+        })
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
         Blank().height(12)
 

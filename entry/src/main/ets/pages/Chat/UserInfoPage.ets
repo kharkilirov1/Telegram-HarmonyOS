@@ -37,14 +37,14 @@ export struct UserInfoPage {
   @Local scrollY: number = 0;
   private scroller: Scroller = new Scroller();
 
-  private userInfoUpdatedHandler = (args?: Record<string, unknown>): void => {
+  private userInfoUpdatedHandler = (args?: Record<string, Object>): void => {
     const updatedUserId = args ? ((args['userId'] as number) || 0) : 0;
     if (updatedUserId !== this.userId) return;
     this.applyCachedUser();
     this.applyCachedFullInfo();
   };
 
-  private userStatusUpdatedHandler = (args?: Record<string, unknown>): void => {
+  private userStatusUpdatedHandler = (args?: Record<string, Object>): void => {
     const updatedUserId = args ? ((args['userId'] as number) || 0) : 0;
     if (updatedUserId !== this.userId) return;
     this.applyCachedUser();
@@ -83,7 +83,7 @@ export struct UserInfoPage {
     const fullInfo = ContactsController.getInstance().getUserFullInfo(this.userId);
     if (!fullInfo) return false;
 
-    const bio = fullInfo['bio'] as Record<string, unknown> | undefined;
+    const bio = fullInfo['bio'] as Record<string, Object> | undefined;
     this.bio = bio ? ((bio['text'] as string) || '') : '';
     this.commonGroupsCount = (fullInfo['group_in_common_count'] as number) || 0;
     return true;
@@ -114,7 +114,7 @@ export struct UserInfoPage {
           this.photoUrl = null;
         }
 
-        const status = result.status as Record<string, unknown> | undefined;
+        const status = result.status as Record<string, Object> | undefined;
         if (status) {
           const statusType = (status['@type'] as string) || '';
           this.isOnline = statusType === 'userStatusOnline';
@@ -172,7 +172,7 @@ export struct UserInfoPage {
         return;
       }
       const chatResult = await GroupService.getInstance().getChat(chatId);
-      const settings = chatResult['notification_settings'] as Record<string, unknown> | undefined;
+      const settings = chatResult['notification_settings'] as Record<string, Object> | undefined;
       const muteFor = settings ? ((settings['mute_for'] as number) || 0) : 0;
       this.notificationsEnabled = muteFor <= 0;
     } catch (_e) {
@@ -225,6 +225,9 @@ export struct UserInfoPage {
           Image($r('app.media.ic_more'))
             .width(24).height(24)
             .fillColor($r('app.color.telegram_blue'))
+            .onClick(() => {
+              this.showPeerMenu();
+            })
         }
         .width('100%')
         .height(48)
@@ -493,7 +496,7 @@ export struct UserInfoPage {
       if (chatId <= 0) {
         return;
       }
-      const navParam: Record<string, unknown> = {};
+      const navParam: Record<string, Object> = {};
       navParam['chatId'] = chatId;
       this.navPathStack.pushPath(new NavPathInfo('SharedMedia', navParam));
     } catch (_e) {
@@ -507,5 +510,24 @@ export struct UserInfoPage {
     } catch (_e) {
       return fallback;
     }
+  }
+
+  private showPeerMenu(): void {
+    const shareLabel = this.getString('share_contact', 'Share contact');
+    const cancelLabel = this.getString('cancel', 'Cancel');
+    AlertDialog.show({
+      title: '',
+      message: '',
+      primaryButton: {
+        value: shareLabel,
+        action: () => {
+          void this.openPrivateChat();
+        }
+      },
+      secondaryButton: {
+        value: cancelLabel,
+        action: () => {}
+      }
+    });
   }
 }

@@ -225,6 +225,10 @@
       "value": "Cancel"
     },
     {
+      "name": "share_contact",
+      "value": "Share contact"
+    },
+    {
       "name": "done",
       "value": "Done"
     },

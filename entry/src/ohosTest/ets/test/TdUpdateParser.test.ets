@@ -4,7 +4,7 @@ import { parseUpdateChatIsMarkedAsUnread } from '../../../main/ets/controllers/m
 export default function tdUpdateParserTest() {
   describe('TdUpdateParser', () => {
     it('should parse updateChatIsMarkedAsUnread payload', 0, () => {
-      const update: Record<string, unknown> = {};
+      const update: Record<string, Object> = {};
       update['chat_id'] = 123;
       update['is_marked_as_unread'] = true;
 
@@ -17,7 +17,7 @@ export default function tdUpdateParserTest() {
     });
 
     it('should return undefined when chat_id is invalid', 0, () => {
-      const update: Record<string, unknown> = {};
+      const update: Record<string, Object> = {};
       update['chat_id'] = 0;
       update['is_marked_as_unread'] = true;
 

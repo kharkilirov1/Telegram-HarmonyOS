@@ -29,7 +29,7 @@ export struct PasswordPage {
   build() {
     NavDestination() {
       Column() {
-        // Top bar: Back button only
+        // Top bar — Telegram-iOS style: back only, glass effect
         Row() {
           Image($r('app.media.ic_back'))
             .width(24)
@@ -43,6 +43,13 @@ export struct PasswordPage {
         .width('100%')
         .height(48)
         .padding({ left: 4, right: 16 })
+        .backgroundColor($r('app.color.glass_nav_bg'))
+        .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
+          colorMode: ThemeColorMode.SYSTEM,
+          adaptiveColor: AdaptiveColor.DEFAULT,
+          scale: 1.0
+        })
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
 
         Blank().height(12)
 
@@ -304,7 +311,7 @@ export struct PasswordPage {
     this.errorMessage = '';
 
     try {
-      const result: Record<string, unknown> = await ChatService.getInstance().requestAuthPasswordRecovery();
+      const result: Record<string, Object> = await ChatService.getInstance().requestAuthPasswordRecovery();
       // TDLib responds with emailAddressAuthenticationCodeInfo
       this.recoveryEmailPattern = (result['email_address_pattern'] as string) || '';
       if (this.recoveryEmailPattern.length > 0) {

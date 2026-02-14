@@ -336,6 +336,13 @@ export struct ChatInputBar {
       }
     }
     .width('100%')
+    .backgroundColor($r('app.color.glass_input_bg'))
+    .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
+      colorMode: ThemeColorMode.SYSTEM,
+      adaptiveColor: AdaptiveColor.DEFAULT,
+      scale: 1.0
+    })
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
   }
 
   @Builder

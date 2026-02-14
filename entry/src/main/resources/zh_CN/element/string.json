@@ -221,6 +221,10 @@
       "value": "取消"
     },
     {
+      "name": "share_contact",
+      "value": "分享联系人"
+    },
+    {
       "name": "done",
       "value": "完成"
     },

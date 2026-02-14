@@ -16,9 +16,10 @@ export default class TelegramAbilityStage extends AbilityStage {
   async onCreate(): Promise<void> {
     hilog.info(DOMAIN, TAG, 'onCreate — initializing singletons');
 
-    // TDLibClient.initialize() internally initializes SecurityService (HUKS)
-    // and sends TDLib parameters. Must be awaited before controllers.
-    await TDLibClient.getInstance().initialize();
+    // Create TDLib client and start receive loop.
+    // TDLib parameters are sent by AuthController when it receives
+    // authorizationStateWaitTdlibParameters update.
+    TDLibClient.getInstance().initialize();
 
     AuthController.getInstance();
     MessagesController.getInstance();

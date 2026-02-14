@@ -90,6 +90,11 @@ export class AuthController {
       this.currentState = stateType;
 
       // Handle states that need automatic responses
+      if (stateType === 'authorizationStateWaitTdlibParameters') {
+        client.sendTdlibParameters();
+        return;
+      }
+
       if (stateType === 'authorizationStateWaitEncryptionKey') {
         const dbKey = SecurityService.getInstance().getDatabaseEncryptionKey();
         const params: Record<string, Object> = {};

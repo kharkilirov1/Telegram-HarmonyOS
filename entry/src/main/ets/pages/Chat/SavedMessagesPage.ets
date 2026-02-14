@@ -54,7 +54,7 @@ export struct SavedMessagesPage {
   private messageDataSource: BasicDataSource<SavedListItem> = new BasicDataSource<SavedListItem>();
 
   // Event handlers
-  private newMessageHandler = (args?: Record<string, unknown>): void => {
+  private newMessageHandler = (args?: Record<string, Object>): void => {
     if (!args) return;
     const msgChatId = args['chatId'] as number;
     if (msgChatId !== this.chatId) return;
@@ -65,7 +65,7 @@ export struct SavedMessagesPage {
     this.scrollToBottom();
   };
 
-  private messageDeletedHandler = (args?: Record<string, unknown>): void => {
+  private messageDeletedHandler = (args?: Record<string, Object>): void => {
     if (!args) return;
     const msgChatId = args['chatId'] as number;
     if (msgChatId !== this.chatId) return;

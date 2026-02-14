@@ -7,7 +7,7 @@ import { Story, StoryContentType, ChatActiveStories } from '../../../main/ets/mo
  */
 
 // Standalone copy of parseStory — the private method on StoriesController
-function parseStory(raw: Record<string, unknown>, chatId: number): Story {
+function parseStory(raw: Record<string, Object>, chatId: number): Story {
   const id = (raw['id'] as number) || 0;
   const date = (raw['date'] as number) || 0;
   const expirationDate = (raw['expiration_date'] as number) || 0;
@@ -18,30 +18,30 @@ function parseStory(raw: Record<string, unknown>, chatId: number): Story {
   let videoUrl = '';
   let caption = '';
 
-  const content = raw['content'] as Record<string, unknown>;
+  const content = raw['content'] as Record<string, Object>;
   if (content) {
     const type = (content['@type'] as string) || '';
     if (type === 'storyContentVideo') {
       contentType = StoryContentType.VIDEO;
-      const video = content['video'] as Record<string, unknown>;
+      const video = content['video'] as Record<string, Object>;
       if (video) {
-        const videoFile = video['video'] as Record<string, unknown>;
+        const videoFile = video['video'] as Record<string, Object>;
         if (videoFile) {
-          const localFile = videoFile['local'] as Record<string, unknown>;
+          const localFile = videoFile['local'] as Record<string, Object>;
           if (localFile && (localFile['is_downloading_completed'] as boolean)) {
             videoUrl = (localFile['path'] as string) || '';
           }
         }
       }
     } else {
-      const photo = content['photo'] as Record<string, unknown>;
+      const photo = content['photo'] as Record<string, Object>;
       if (photo) {
-        const sizes = photo['sizes'] as Record<string, unknown>[];
+        const sizes = photo['sizes'] as Record<string, Object>[];
         if (sizes && sizes.length > 0) {
           const lastSize = sizes[sizes.length - 1];
-          const photoFile = lastSize['photo'] as Record<string, unknown>;
+          const photoFile = lastSize['photo'] as Record<string, Object>;
           if (photoFile) {
-            const localFile = photoFile['local'] as Record<string, unknown>;
+            const localFile = photoFile['local'] as Record<string, Object>;
             if (localFile && (localFile['is_downloading_completed'] as boolean)) {
               photoUrl = (localFile['path'] as string) || '';
             }
@@ -50,7 +50,7 @@ function parseStory(raw: Record<string, unknown>, chatId: number): Story {
       }
     }
 
-    const captionObj = content['caption'] as Record<string, unknown>;
+    const captionObj = content['caption'] as Record<string, Object>;
     if (captionObj) {
       caption = (captionObj['text'] as string) || '';
     }
@@ -152,23 +152,23 @@ export default function storiesControllerTest() {
     describe('parseStory', () => {
 
       it('should parse a photo story', 0, () => {
-        const localFile: Record<string, unknown> = {};
+        const localFile: Record<string, Object> = {};
         localFile['is_downloading_completed'] = true;
         localFile['path'] = '/data/story_photo.jpg';
-        const photoFile: Record<string, unknown> = {};
+        const photoFile: Record<string, Object> = {};
         photoFile['local'] = localFile;
-        const size: Record<string, unknown> = {};
+        const size: Record<string, Object> = {};
         size['photo'] = photoFile;
-        const sizes: Record<string, unknown>[] = [size];
-        const photo: Record<string, unknown> = {};
+        const sizes: Record<string, Object>[] = [size];
+        const photo: Record<string, Object> = {};
         photo['sizes'] = sizes;
-        const captionObj: Record<string, unknown> = {};
+        const captionObj: Record<string, Object> = {};
         captionObj['text'] = 'Look at this!';
-        const content: Record<string, unknown> = {};
+        const content: Record<string, Object> = {};
         content['@type'] = 'storyContentPhoto';
         content['photo'] = photo;
         content['caption'] = captionObj;
-        const raw: Record<string, unknown> = {};
+        const raw: Record<string, Object> = {};
         raw['id'] = 10;
         raw['date'] = 1700000000;
         raw['expiration_date'] = 1700086400;
@@ -187,17 +187,17 @@ export default function storiesControllerTest() {
       });
 
       it('should parse a video story', 0, () => {
-        const localFile: Record<string, unknown> = {};
+        const localFile: Record<string, Object> = {};
         localFile['is_downloading_completed'] = true;
         localFile['path'] = '/data/story_video.mp4';
-        const videoFileObj: Record<string, unknown> = {};
+        const videoFileObj: Record<string, Object> = {};
         videoFileObj['local'] = localFile;
-        const video: Record<string, unknown> = {};
+        const video: Record<string, Object> = {};
         video['video'] = videoFileObj;
-        const content: Record<string, unknown> = {};
+        const content: Record<string, Object> = {};
         content['@type'] = 'storyContentVideo';
         content['video'] = video;
-        const raw: Record<string, unknown> = {};
+        const raw: Record<string, Object> = {};
         raw['id'] = 20;
         raw['date'] = 1700001000;
         raw['content'] = content;
@@ -210,7 +210,7 @@ export default function storiesControllerTest() {
       });
 
       it('should handle story with no content', 0, () => {
-        const raw: Record<string, unknown> = {};
+        const raw: Record<string, Object> = {};
         raw['id'] = 30;
 
         const story = parseStory(raw, 1);
@@ -222,20 +222,20 @@ export default function storiesControllerTest() {
       });
 
       it('should handle photo not yet downloaded', 0, () => {
-        const localFile: Record<string, unknown> = {};
+        const localFile: Record<string, Object> = {};
         localFile['is_downloading_completed'] = false;
         localFile['path'] = '';
-        const photoFile: Record<string, unknown> = {};
+        const photoFile: Record<string, Object> = {};
         photoFile['local'] = localFile;
-        const size: Record<string, unknown> = {};
+        const size: Record<string, Object> = {};
         size['photo'] = photoFile;
-        const sizes: Record<string, unknown>[] = [size];
-        const photo: Record<string, unknown> = {};
+        const sizes: Record<string, Object>[] = [size];
+        const photo: Record<string, Object> = {};
         photo['sizes'] = sizes;
-        const content: Record<string, unknown> = {};
+        const content: Record<string, Object> = {};
         content['@type'] = 'storyContentPhoto';
         content['photo'] = photo;
-        const raw: Record<string, unknown> = {};
+        const raw: Record<string, Object> = {};
         raw['id'] = 40;
         raw['content'] = content;
 
@@ -244,7 +244,7 @@ export default function storiesControllerTest() {
       });
 
       it('should default fields for minimal raw data', 0, () => {
-        const raw: Record<string, unknown> = {};
+        const raw: Record<string, Object> = {};
 
         const story = parseStory(raw, 99);
         expect(story.id).assertEqual(0);

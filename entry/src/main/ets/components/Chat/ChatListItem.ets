@@ -2,10 +2,19 @@ import { Chat } from '../../models/Chat';
 import { AvatarWithStatus } from '../Common/AvatarWithStatus';
 import { TypingIndicator } from '../Common/TypingIndicator';
 
+// Reusable list item for LazyForEach — aligns with HarmonyOS ArkUI best practice
+@Reusable
 @ComponentV2
 export struct ChatListItem {
   @Param chat: Chat = new Chat();
   @Event onChatClick: (chatId: number) => void;
+
+  aboutToReuse(params: Record<string, Object>): void {
+    const c = params['chat'];
+    if (c !== undefined) {
+      this.chat = c as Chat;
+    }
+  }
 
   build() {
     Row() {
