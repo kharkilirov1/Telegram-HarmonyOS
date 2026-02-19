@@ -183,6 +183,14 @@ export class TdObject {
   }
 
   /**
+   * Get raw cache for serialization.
+   * Used by CommandSerializer to build request JSON.
+   */
+  getCache(): TdValueContainer {
+    return this.cache;
+  }
+
+  /**
    * Copy all cached values from another TdObject.
    * Used for building requests with params.
    */
@@ -209,6 +217,9 @@ export class TdObject {
   /**
    * Convert TdObject to JSON string for sending to TDLib.
    * Serializes all cached values into JSON format.
+   *
+   * Special fields with pattern _fieldname_json are expanded:
+   *   _input_message_content_json: "{...}" → "input_message_content": {...}
    */
   toJSON(): string {
     const keys = this.cache.keys();
@@ -220,6 +231,17 @@ export class TdObject {
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
       const value = this.cache.get(key);
+
+      // Special handling for _*_json fields — expand as raw JSON
+      if (key.startsWith('_') && key.endsWith('_json')) {
+        // Extract real field name: _input_message_content_json → input_message_content
+        const realKey = key.substring(1, key.length - 5);
+        if (typeof value === 'string') {
+          parts.push(`"${realKey}":${value}`);
+        }
+        continue;
+      }
+
       const jsonValue = this.valueToJsonString(value);
       parts.push(`"${key}":${jsonValue}`);
     }

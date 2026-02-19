@@ -47,13 +47,13 @@ export class StoreIntegrationTest {
       // Test 5: Dispatch another event (serial queue test)
       hilog.info(DOMAIN, TAG, 'Dispatching newMessage event...');
       const messageDto = new MessageDto();
-      messageDto.id = 67890;
+      messageDto.id = '67890';
       messageDto.chatId = 12345;
       const contentDto = new MessageContentDto();
       contentDto.type = MessageContentType.TEXT;
       contentDto.text = 'Hello';
       messageDto.content = contentDto;
-      await this.store.dispatch(createNewMessageEvent(12345, 67890, messageDto));
+      await this.store.dispatch(createNewMessageEvent(12345, '67890', messageDto));
 
       // Test 6: Verify messages state
       const afterMessageState = this.store.getState();

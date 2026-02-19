@@ -1,9 +1,7 @@
-// CommandSerializer — маппинг AnyAppCommand → TDLib JSON
+// CommandSerializer — преобразует AnyAppCommand → TdObject для TdGateway.send()
 //
-// Каждая команда из core/model/AppCommand преобразуется в JSON-объект,
-// который TdGateway.send() отправляет в нативный TDLib.
-//
-// Референс TDLib API: https://core.telegram.org/tdlib/docs/
+// Возвращает объект с method (строка) и params (TdObject).
+// TdGateway.send(method, params) отправляет запрос в TDLib.
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
@@ -16,41 +14,25 @@ import {
   SendMessageCommand,
   ViewMessagesCommand
 } from '../../../core/model/AppCommand';
+import { TdObject } from '../../../models/TdTypes';
 
 const TAG = 'CommandSerializer';
 const DOMAIN = 0x000C;
 
-// Явные интерфейсы для параметров команд (согласно рекомендациям Huawei)
-interface SendMessageParams {
-  chat_id: number;
-  input_message_content: InputMessageContent;
-  reply_to?: ReplyToMessage;
-}
-
-interface InputMessageContent {
-  '@type': string;
-  text: FormattedText;
-  clear_draft: boolean;
-}
-
-interface FormattedText {
-  '@type': string;
-  text: string;
-  entities: unknown[];
-}
-
-interface ReplyToMessage {
-  '@type': string;
-  message_id: string;
-}
-
+/**
+ * Результат сериализации команды.
+ */
 export class SerializedCommand {
   method: string = '';
-  chat_id: number = 0;
-  input_message_content?: InputMessageContent;
-  reply_to?: ReplyToMessage;
+  params: TdObject = new TdObject();
 }
 
+/**
+ * Сериализует AnyAppCommand в TDLib запрос.
+ *
+ * @param command - команда из use case
+ * @returns SerializedCommand с method и params
+ */
 export function serializeCommand(command: AnyAppCommand): SerializedCommand {
   const result = new SerializedCommand();
 
@@ -58,62 +40,59 @@ export function serializeCommand(command: AnyAppCommand): SerializedCommand {
     case 'setPhoneNumber': {
       const cmd = command as SetPhoneNumberCommand;
       result.method = 'setAuthenticationPhoneNumber';
-      result.chat_id = 0;
-      // inline settings - не требует отдельного интерфейса
+      result.params.setString('phone_number', cmd.payload.phoneNumber);
       break;
     }
 
     case 'checkAuthCode': {
       const cmd = command as CheckAuthCodeCommand;
       result.method = 'checkAuthenticationCode';
-      result.chat_id = 0;
+      result.params.setString('code', cmd.payload.code);
       break;
     }
 
     case 'checkAuthPassword': {
       const cmd = command as CheckAuthPasswordCommand;
       result.method = 'checkAuthenticationPassword';
-      result.chat_id = 0;
+      result.params.setString('password', cmd.payload.password);
       break;
     }
 
     case 'loadChats': {
       const cmd = command as LoadChatsCommand;
       result.method = 'getChats';
-      result.chat_id = 0;
+      // TDLib getChats params: chat_list, limit
+      result.params.setNumber('limit', cmd.payload.limit);
+      // chat_list по умолчанию chatListMain — не указываем, TDLib использует default
       break;
     }
 
     case 'openChat': {
       const cmd = command as OpenChatCommand;
       result.method = 'openChat';
-      result.chat_id = cmd.payload.chatId;
+      result.params.setNumber('chat_id', cmd.payload.chatId);
       break;
     }
 
     case 'sendMessage': {
       const cmd = command as SendMessageCommand;
       result.method = 'sendMessage';
-      result.chat_id = cmd.payload.chatId;
-      
-      const inputContent: InputMessageContent = {
-        '@type': 'inputMessageText',
-        text: {
-          '@type': 'formattedText',
-          text: cmd.payload.text,
-          entities: []
-        },
-        clear_draft: true
-      };
-      result.input_message_content = inputContent;
+      result.params.setNumber('chat_id', cmd.payload.chatId);
 
-      // Точечный доступ - согласно рекомендациям Huawei
+      // input_message_content — вложенный объект
+      // Для ArkTS compliance создаём как отдельную строку JSON
+      // и добавляем в rawJson (workaround для вложенных объектов)
+      const text = escapeForJson(cmd.payload.text);
+      const inputContentJson = `{"@type":"inputMessageText","text":{"@type":"formattedText","text":"${text}","entities":[]},"clear_draft":true}`;
+
+      // Добавляем как raw для toJSON
+      result.params.setString('_input_message_content_json', inputContentJson);
+
+      // reply_to если указан
       const replyToId = cmd.payload.replyToMessageId;
       if (replyToId && replyToId !== '0') {
-        result.reply_to = {
-          '@type': 'inputMessageReplyToMessage',
-          message_id: replyToId
-        };
+        const replyJson = `{"@type":"inputMessageReplyToMessage","message_id":${replyToId}}`;
+        result.params.setString('_reply_to_json', replyJson);
       }
       break;
     }
@@ -121,7 +100,11 @@ export function serializeCommand(command: AnyAppCommand): SerializedCommand {
     case 'viewMessages': {
       const cmd = command as ViewMessagesCommand;
       result.method = 'viewMessages';
-      result.chat_id = cmd.payload.chatId;
+      result.params.setNumber('chat_id', cmd.payload.chatId);
+      // message_ids — массив int64
+      const idsJson = '[' + cmd.payload.messageIds.join(',') + ']';
+      result.params.setString('_message_ids_json', idsJson);
+      result.params.setBool('force_read', true);
       break;
     }
 
@@ -132,4 +115,61 @@ export function serializeCommand(command: AnyAppCommand): SerializedCommand {
   }
 
   return result;
+}
+
+/**
+ * Собирает финальный JSON для отправки в TDLib.
+ * Учитывает специальные поля _*_json для вложенных объектов.
+ */
+export function buildTdlibRequestJson(method: string, params: TdObject): string {
+  const parts: string[] = [];
+  parts.push(`"@type":"${method}"`);
+
+  // Получаем все ключи из cache
+  const keys = params.getCache().keys();
+
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+
+    // Специальные поля для вложенных JSON
+    if (key === '_input_message_content_json') {
+      const value = params.getString(key);
+      parts.push(`"input_message_content":${value}`);
+      continue;
+    }
+    if (key === '_reply_to_json') {
+      const value = params.getString(key);
+      parts.push(`"reply_to":${value}`);
+      continue;
+    }
+    if (key === '_message_ids_json') {
+      const value = params.getString(key);
+      parts.push(`"message_ids":${value}`);
+      continue;
+    }
+
+    // Обычные поля
+    const value = params.get(key);
+    if (typeof value === 'string') {
+      parts.push(`"${key}":"${escapeForJson(value)}"`);
+    } else if (typeof value === 'number') {
+      parts.push(`"${key}":${value}`);
+    } else if (typeof value === 'boolean') {
+      parts.push(`"${key}":${value ? 'true' : 'false'}`);
+    }
+  }
+
+  return '{' + parts.join(',') + '}';
+}
+
+/**
+ * Экранирование строки для JSON.
+ */
+function escapeForJson(str: string): string {
+  return str
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
 }

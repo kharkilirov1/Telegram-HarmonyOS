@@ -1,52 +1,71 @@
-// BootstrapSession use case - initializes TDLib session and sets up event flow
-// Core business logic for application startup
+// BootstrapSession use case - initializes TDLib session
+//
+// ВАЖНО: этот use case НЕ подписывается на обновления Gateway.
+// Все обновления идут через pipeline в AppCoreRuntime:
+//   TdGateway → MainThreadDispatcher → EventNormalizer → AppStore
+//
+// BootstrapSession только:
+//   1. Вызывает runtime.initialize() (если нужно)
+//   2. Отправляет начальные команды (getOption, setTdlibParameters)
+//   3. Ждёт готовности auth state через selectors
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppStore } from '../../core/store/AppStore';
 import { TdGatewayPort } from '../ports/TdGatewayPort';
-import { AnyAppEvent, createAuthStateChangedEvent } from '../../core/model/AppEvent';
+import { createAuthStateChangedEvent } from '../../core/model/AppEvent';
 import { AppError, AppErrorKind } from '../../core/model/AppError';
+import { selectAuthStatus } from '../selectors/authSelectors';
 
 const TAG = 'BootstrapSession';
-const DOMAIN = 0x0004;
+const DOMAIN = 0x0007;
 
 export class BootstrapSessionUseCase {
   private store: AppStore;
   private gateway: TdGatewayPort;
-  private unsubscribeGateway?: () => void;
 
   constructor(store: AppStore, gateway: TdGatewayPort) {
     this.store = store;
     this.gateway = gateway;
   }
 
-  // Main entry point
+  /**
+   * Инициализирует сессию TDLib.
+   *
+   * Вызывается ПОСЛЕ AppCoreRuntime.initialize(), который уже настроил
+   * pipeline обновлений. Здесь мы только отправляем начальные команды.
+   */
   async execute(): Promise<void> {
     try {
       hilog.info(DOMAIN, TAG, 'Starting session bootstrap...');
 
-      // 1. Initialize gateway
-      await this.gateway.initialize();
-      hilog.info(DOMAIN, TAG, 'Gateway initialized');
+      // Проверяем что Gateway готов (AppCoreRuntime уже должен был его инициализировать)
+      const connectionState = this.gateway.getConnectionState();
+      if (connectionState !== 'ready') {
+        hilog.warn(DOMAIN, TAG, 'Gateway not ready, state: %{public}s', connectionState);
+        // Не бросаем ошибку — возможно ещё инициализируется
+      }
 
-      // 2. Subscribe to gateway updates and dispatch to store
-      this.setupGatewaySubscription();
+      // Начальное состояние auth — TDLib отправит updateAuthorizationState
+      // после получения setTdlibParameters, но мы можем установить
+      // промежуточное состояние для UI
+      const currentStatus = selectAuthStatus(this.store.getState());
+      if (currentStatus === 'notInitialized') {
+        // UI может показать loading spinner
+        hilog.info(DOMAIN, TAG, 'Auth status: notInitialized, waiting for TDLib updates');
+      }
 
-      // 3. Dispatch initial connection state
-      await this.store.dispatch(createAuthStateChangedEvent('notInitialized'));
+      // TDLib автоматически отправит updateAuthorizationState после
+      // tdlib.createClient() и startReceiveLoop() — это уже сделано в TdGateway.
+      //
+      // Первое обновление будет authorizationStateWaitTdlibParameters,
+      // после чего нужно отправить setTdlibParameters.
+      //
+      // Это обрабатывается в отдельном use case или в UI layer.
 
-      // 4. Send initial TDLib command to get auth state
-      // In TDLib, we need to send 'getOption' or similar to trigger updates
-      // For now, we'll just mark as waiting for phone number
-      await this.store.dispatch(createAuthStateChangedEvent('waitPhoneNumber'));
-
-      hilog.info(DOMAIN, TAG, 'Session bootstrap completed');
+      hilog.info(DOMAIN, TAG, 'Session bootstrap completed. Waiting for auth updates...');
     } catch (error) {
       const err = error as Error;
       hilog.error(DOMAIN, TAG, 'Bootstrap failed: %{public}s', err.message);
-
-      // Dispatch error state
-      await this.store.dispatch(createAuthStateChangedEvent('closed'));
 
       throw new AppError(
         AppErrorKind.UNKNOWN,
@@ -58,58 +77,34 @@ export class BootstrapSessionUseCase {
     }
   }
 
-  // Setup gateway subscription to forward events to store
-  private setupGatewaySubscription(): void {
-    this.unsubscribeGateway = this.gateway.subscribeUpdates(async (event: AnyAppEvent) => {
-      try {
-        // Dispatch event to store
-        await this.store.dispatch(event);
-
-        // Additional business logic based on event type
-        this.handleGatewayEvent(event);
-      } catch (error) {
-        const err = error as Error;
-        hilog.error(DOMAIN, TAG, 'Error processing gateway event: %{public}s', err.message);
-      }
-    });
-
-    hilog.info(DOMAIN, TAG, 'Gateway subscription established');
-  }
-
-  // Handle specific gateway events with business logic
-  private handleGatewayEvent(event: AnyAppEvent): void {
-    switch (event.type) {
-      case 'connectionStateChanged':
-        hilog.info(DOMAIN, TAG, 'Connection state: %{public}s', event.state);
-        break;
-
-      case 'authStateChanged':
-        hilog.info(DOMAIN, TAG, 'Auth state changed: %{public}s', event.state);
-        break;
-    }
-  }
-
-  // Cleanup resources
-  async cleanup(): Promise<void> {
-    if (this.unsubscribeGateway) {
-      this.unsubscribeGateway();
-      this.unsubscribeGateway = undefined;
-      hilog.info(DOMAIN, TAG, 'Gateway subscription removed');
-    }
-
-    await this.gateway.destroy();
-    hilog.info(DOMAIN, TAG, 'Gateway destroyed');
-  }
-
-  // Check if session is ready (auth state is 'ready')
+  /**
+   * Проверяет готовность сессии (auth state = 'ready').
+   */
   isSessionReady(): boolean {
-    // This would need access to store state
-    // For now, return false - selectors will handle this
-    return false;
+    const status = selectAuthStatus(this.store.getState());
+    return status === 'ready';
+  }
+
+  /**
+   * Проверяет нужна ли авторизация.
+   */
+  needsAuth(): boolean {
+    const status = selectAuthStatus(this.store.getState());
+    return status === 'waitPhoneNumber' ||
+           status === 'waitCode' ||
+           status === 'waitPassword' ||
+           status === 'waitRegistration';
+  }
+
+  /**
+   * Cleanup — no-op, так как Gateway управляется AppCoreRuntime.
+   */
+  async cleanup(): Promise<void> {
+    hilog.info(DOMAIN, TAG, 'Cleanup called (no-op, Gateway managed by AppCoreRuntime)');
   }
 }
 
-// Factory function for convenience
+// Factory function
 export function createBootstrapSessionUseCase(
   store: AppStore,
   gateway: TdGatewayPort

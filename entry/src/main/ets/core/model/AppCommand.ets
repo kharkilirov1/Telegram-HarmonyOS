@@ -32,7 +32,7 @@ export class OpenChatPayload {
 export class SendMessagePayload {
   chatId: ChatId = 0;
   text: string = '';
-  replyToMessageId: MessageId = 0;
+  replyToMessageId: MessageId = '0';
 }
 
 export class ViewMessagesPayload {
@@ -125,7 +125,7 @@ export function createSendMessageCommand(
   const cmd = new SendMessageCommand();
   cmd.payload.chatId = chatId;
   cmd.payload.text = text;
-  cmd.payload.replyToMessageId = replyToMessageId || 0;
+  cmd.payload.replyToMessageId = replyToMessageId || '0';
   return cmd;
 }
 

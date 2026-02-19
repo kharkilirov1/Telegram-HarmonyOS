@@ -17,15 +17,62 @@ export const selectChatMessagesMap = (chatId: ChatId) => (state: AppState) => {
   return state.messages.messages.get(chatId);
 };
 
+/**
+ * Сообщения чата, отсортированные по timestamp (newest first).
+ * Используется для списка диалогов (последнее сообщение сверху).
+ */
 export const selectChatMessages = (chatId: ChatId) => (state: AppState): Message[] => {
   const chatMessages = state.messages.messages.get(chatId);
   if (!chatMessages) {
     return [];
   }
-  
+
   // Convert Map to array and sort by timestamp (newest first)
   const messages = Array.from(chatMessages.values());
-  return messages.sort((a, b) => b.timestamp - a.timestamp);
+  return messages.sort((a: Message, b: Message): number => b.timestamp - a.timestamp);
+};
+
+/**
+ * Сообщения чата для chat view (oldest first).
+ * Подтверждённые сообщения сортируются по id (int64 string comparison).
+ * Pending/failed сообщения добавляются в конец.
+ */
+export const selectChatMessagesForChatView = (chatId: ChatId) => (state: AppState): Message[] => {
+  const chatMessages = state.messages.messages.get(chatId);
+  if (!chatMessages) {
+    return [];
+  }
+
+  const all = Array.from(chatMessages.values());
+
+  // Разделяем подтверждённые и pending/failed
+  const confirmed: Message[] = [];
+  const pending: Message[] = [];
+
+  for (const msg of all) {
+    if (msg.sendStatus === 'pending' || msg.sendStatus === 'failed') {
+      pending.push(msg);
+    } else {
+      confirmed.push(msg);
+    }
+  }
+
+  // Подтверждённые сортируем по id (oldest first = меньший id первым)
+  confirmed.sort((a: Message, b: Message): number => {
+    // String comparison for int64 IDs
+    if (a.id.length !== b.id.length) {
+      return a.id.length - b.id.length;
+    }
+    if (a.id < b.id) return -1;
+    if (a.id > b.id) return 1;
+    return 0;
+  });
+
+  // Pending сортируем по timestamp (oldest first)
+  pending.sort((a: Message, b: Message): number => a.timestamp - b.timestamp);
+
+  // Confirmed + Pending в конце
+  return confirmed.concat(pending);
 };
 
 // Specific message by ID
@@ -104,25 +151,34 @@ export class ChatMessagesForUI {
   isLoading: boolean = false;
 }
 
-// Combined selectors for UI
+/**
+ * Combined selector for chat view UI.
+ * Использует oldest-first сортировку для отображения в чате.
+ */
 export const selectChatMessagesForUI = (chatId: ChatId) => (state: AppState): ChatMessagesForUI => {
-  const messages = selectChatMessages(chatId)(state);
+  // Для chat view используем oldest-first
+  const messages = selectChatMessagesForChatView(chatId)(state);
   const unreadCount = selectUnreadMessagesCount(chatId)(state);
-  const pendingCount = selectPendingMessagesInChat(chatId)(state).length;
+  const pendingMessages = messages.filter((m: Message) =>
+    m.sendStatus === 'pending' || m.sendStatus === 'failed');
+  const pendingCount = pendingMessages.length;
+
+  // Latest message для preview (newest first)
+  const newestFirst = selectChatMessages(chatId)(state);
 
   const result = new ChatMessagesForUI();
   result.messages = messages;
   result.unreadCount = unreadCount;
   result.pendingCount = pendingCount;
   result.hasMessages = messages.length > 0;
-  result.latestMessage = messages.length > 0 ? messages[0] : null;
+  result.latestMessage = newestFirst.length > 0 ? newestFirst[0] : null;
   result.isLoading = false;
   return result;
 };
 
 // DTO for message bubble UI
 export class MessageForUI {
-  id: MessageId = 0;
+  id: MessageId = '0';
   chatId: ChatId = 0;
   senderId: number = 0;
   contentType: string = 'text';
