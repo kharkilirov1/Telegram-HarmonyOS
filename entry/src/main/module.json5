@@ -2,7 +2,6 @@
   "module": {
     "name": "entry",
     "type": "entry",
-    "srcEntry": "./ets/TelegramAbilityStage.ets",
     "description": "$string:module_desc",
     "mainElement": "EntryAbility",
     "deviceTypes": [

@@ -7,7 +7,10 @@
         "signingConfig": "default",
         "compatibleSdkVersion": "6.0.2(22)",
         "targetSdkVersion": "6.0.2(22)",
-        "runtimeOS": "HarmonyOS"
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "nativeCompiler": "BiSheng"
+        }
       }
     ],
     "buildModeSet": [

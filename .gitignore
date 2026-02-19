@@ -2,11 +2,24 @@
 .claude/
 .codex/
 .cursor/
+.qwen/
 .aider*
 CLAUDE.md
 AGENTS.md
 .clinerules
 .windsurfrules
+
+# AI generated reports (keep in separate branch if needed)
+*_REPORT.md
+*_AUDIT*.md
+*_COMPARISON.md
+*_VALIDATION.md
+MCP_*.md
+QWEN_*.md
+
+# Temporary scripts
+*.py
+semantic_memory.db
 
 # IDE
 .idea/
@@ -18,6 +31,14 @@ node_modules/
 oh_modules/
 .preview/
 .hvigor/
+entry/.cxx/
+hvigor/
+
+# Generated
+entry/oh-package-lock.json5
+
+# Third-party dependencies (built separately)
+entry/src/main/cpp/third_party/
 
 # OS
 .DS_Store
@@ -25,3 +46,4 @@ Thumbs.db
 
 # Local config (API keys)
 entry/src/main/ets/services/ConfigLocal.ets
+local.properties

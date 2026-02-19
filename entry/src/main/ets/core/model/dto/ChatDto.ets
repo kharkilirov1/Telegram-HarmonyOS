@@ -1,0 +1,205 @@
+// Chat DTO - domain data transfer object for chats
+// ArkTS compliant - uses TdObject wrapper class
+
+import { ChatId } from '../EntityId';
+import { TdObject, tdGetString, tdGetNumber, tdGetBoolean, tdGetInt64, tdGetObject, tdGetArray, tdHasKeys } from '../../utils/tdAccessors';
+
+export enum ChatType {
+  PRIVATE = 'private',
+  GROUP = 'group',
+  SUPERGROUP = 'supergroup',
+  CHANNEL = 'channel'
+}
+
+export class ChatLastMessage {
+  id: string = '0'; // MessageId as string (TDLib int64)
+  text: string = '';
+  timestamp: number = 0;
+}
+
+export class ChatPhoto {
+  small: string = '';
+  big: string = '';
+}
+
+export class ChatDto {
+  id: ChatId = 0;
+  type: ChatType = ChatType.PRIVATE;
+  title: string = '';
+  unreadCount: number = 0;
+  unreadMentionCount: number = 0;
+  lastMessage?: ChatLastMessage;
+  isPinned: boolean = false;
+  photo?: ChatPhoto;
+  order: string = '0';
+  draftText: string = '';
+  draftReplyToMessageId: string = '0';
+}
+
+// Helper to create DTO from raw TDLib chat object
+export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
+  // Map TDLib chat type to our enum
+  let type: ChatType = ChatType.PRIVATE;
+  const tdTypeObj = tdGetObject(tdChat, 'type');
+  const tdTypeStr = tdGetString(tdTypeObj, '@type');
+
+  if (tdTypeStr === 'chatTypePrivate' || tdTypeStr === 'chatTypeSecret') {
+    type = ChatType.PRIVATE;
+  } else if (tdTypeStr === 'chatTypeBasicGroup') {
+    type = ChatType.GROUP;
+  } else if (tdTypeStr === 'chatTypeSupergroup') {
+    const isChannel = tdGetBoolean(tdTypeObj, 'is_channel');
+    type = isChannel ? ChatType.CHANNEL : ChatType.SUPERGROUP;
+  }
+
+  const chatDto = new ChatDto();
+  chatDto.id = tdGetNumber(tdChat, 'id');
+  chatDto.type = type;
+  chatDto.title = tdGetString(tdChat, 'title');
+  chatDto.unreadCount = tdGetNumber(tdChat, 'unread_count');
+
+  // Extract isPinned and order from positions
+  const positions = tdGetArray(tdChat, 'positions');
+  for (const position of positions) {
+    const listObj = tdGetObject(position, 'list');
+    const listType = tdGetString(listObj, '@type');
+    if (listType === 'chatListMain') {
+      chatDto.isPinned = tdGetBoolean(position, 'is_pinned');
+      chatDto.order = tdGetInt64(position, 'order');
+      break;
+    }
+  }
+
+  // Last message
+  const lastMsgObj = tdGetObject(tdChat, 'last_message');
+  if (tdHasKeys(lastMsgObj)) {
+    chatDto.lastMessage = extractLastMessage(lastMsgObj);
+  }
+
+  // Photo if available
+  const photoObj = tdGetObject(tdChat, 'photo');
+  if (tdHasKeys(photoObj)) {
+    chatDto.photo = extractChatPhoto(photoObj);
+  }
+
+  return chatDto;
+}
+
+// Extract ChatLastMessage from TDLib message object
+export function extractLastMessage(tdMessage: TdObject): ChatLastMessage {
+  const lastMsg = new ChatLastMessage();
+  lastMsg.id = tdGetInt64(tdMessage, 'id');
+  lastMsg.timestamp = tdGetNumber(tdMessage, 'date');
+
+  // Extract text from content
+  const content = tdGetObject(tdMessage, 'content');
+  const contentType = tdGetString(content, '@type');
+
+  if (contentType === 'messageText') {
+    const textObj = tdGetObject(content, 'text');
+    lastMsg.text = tdGetString(textObj, 'text');
+  } else if (contentType === 'messagePhoto' || contentType === 'messageVideo' ||
+    contentType === 'messageDocument' || contentType === 'messageAudio' ||
+    contentType === 'messageVoiceNote') {
+    const caption = tdGetObject(content, 'caption');
+    const captionText = tdGetString(caption, 'text');
+    lastMsg.text = captionText || `[${contentType.replace('message', '')}]`;
+  } else if (contentType) {
+    lastMsg.text = `[${contentType.replace('message', '')}]`;
+  }
+
+  return lastMsg;
+}
+
+// Extract ChatPhoto from TDLib photo object
+export function extractChatPhoto(photoObj: TdObject): ChatPhoto {
+  const smallObj = tdGetObject(photoObj, 'small');
+  const bigObj = tdGetObject(photoObj, 'big');
+  const smallLocal = tdGetObject(smallObj, 'local');
+  const bigLocal = tdGetObject(bigObj, 'local');
+
+  const photo = new ChatPhoto();
+  photo.small = tdGetString(smallLocal, 'path');
+  photo.big = tdGetString(bigLocal, 'path');
+  return photo;
+}
+
+// Full position data from chatListMain
+export class ChatPositionInfo {
+  isPinned: boolean = false;
+  order: string = '0';
+}
+
+// Extract isPinned + order from a single TDLib position object
+export function extractMainListPosition(tdPosition: TdObject): ChatPositionInfo | undefined {
+  const listObj = tdGetObject(tdPosition, 'list');
+  const listType = tdGetString(listObj, '@type');
+  if (listType === 'chatListMain') {
+    const info = new ChatPositionInfo();
+    info.isPinned = tdGetBoolean(tdPosition, 'is_pinned');
+    info.order = tdGetInt64(tdPosition, 'order');
+    return info;
+  }
+  return undefined;
+}
+
+// Helper for partial updates (chatUpdated event)
+export class ChatUpdateDto {
+  title?: string;
+  unreadCount?: number;
+  unreadMentionCount?: number;
+  lastMessage?: ChatLastMessage;
+  photo?: ChatPhoto;
+  isPinned?: boolean;
+  order?: string;
+  draftText?: string;
+  draftReplyToMessageId?: string;
+}
+
+export function applyChatUpdate(chat: ChatDto, update: ChatUpdateDto): ChatDto {
+  const updatedChat = new ChatDto();
+
+  // Copy all fields from original chat
+  updatedChat.id = chat.id;
+  updatedChat.type = chat.type;
+  updatedChat.title = chat.title;
+  updatedChat.unreadCount = chat.unreadCount;
+  updatedChat.unreadMentionCount = chat.unreadMentionCount;
+  updatedChat.isPinned = chat.isPinned;
+  updatedChat.lastMessage = chat.lastMessage;
+  updatedChat.photo = chat.photo;
+  updatedChat.order = chat.order;
+  updatedChat.draftText = chat.draftText;
+  updatedChat.draftReplyToMessageId = chat.draftReplyToMessageId;
+
+  // Apply updates
+  if (update.title !== undefined) {
+    updatedChat.title = update.title;
+  }
+  if (update.unreadCount !== undefined) {
+    updatedChat.unreadCount = update.unreadCount;
+  }
+  if (update.unreadMentionCount !== undefined) {
+    updatedChat.unreadMentionCount = update.unreadMentionCount;
+  }
+  if (update.isPinned !== undefined) {
+    updatedChat.isPinned = update.isPinned;
+  }
+  if (update.lastMessage !== undefined) {
+    updatedChat.lastMessage = update.lastMessage;
+  }
+  if (update.photo !== undefined) {
+    updatedChat.photo = update.photo;
+  }
+  if (update.order !== undefined) {
+    updatedChat.order = update.order;
+  }
+  if (update.draftText !== undefined) {
+    updatedChat.draftText = update.draftText;
+  }
+  if (update.draftReplyToMessageId !== undefined) {
+    updatedChat.draftReplyToMessageId = update.draftReplyToMessageId;
+  }
+
+  return updatedChat;
+}

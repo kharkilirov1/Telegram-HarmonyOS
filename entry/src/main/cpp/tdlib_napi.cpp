@@ -21,11 +21,16 @@
 #define LOG_DOMAIN 0x0001
 
 // --- Receive loop state machine ---
+// Huawei Best Practice: использовать atomic для thread-safe доступа
 enum class LoopState { Stopped, Starting, Running, Stopping };
 static std::atomic<LoopState> loop_state{LoopState::Stopped};
 static std::thread receive_thread;
 static std::mutex loop_mutex;
+
+// Thread-safe callback wrapper с mutex защитой
+// napi_threadsafe_function не может быть atomic, поэтому используем отдельный mutex
 static napi_threadsafe_function threadsafe_callback = nullptr;
+static std::mutex callback_mutex;  // Защита для threadsafe_callback
 
 // --- NAPI argument validation helpers ---
 // Throws a JS TypeError and returns nullptr on failure.
@@ -47,16 +52,22 @@ static bool napi_check_argc(napi_env env, const char* func, size_t actual, size_
     return true;
 }
 
+// Huawei Best Practice: constexpr для compile-time bounds check
+static constexpr const char* type_names[] = {
+    "undefined", "null", "boolean", "number", "string", "symbol", "object", "function", "external", "bigint"
+};
+static constexpr size_t TYPE_NAMES_COUNT = sizeof(type_names) / sizeof(type_names[0]);
+
 static bool napi_check_type(napi_env env, const char* func, napi_value val,
                             napi_valuetype expected, const char* argName) {
     napi_valuetype actual;
     napi_typeof(env, val, &actual);
     if (actual != expected) {
-        const char* type_names[] = {
-            "undefined", "null", "boolean", "number", "string", "symbol", "object", "function", "external", "bigint"
-        };
-        const char* actual_name = (actual >= 0 && actual <= 9) ? type_names[actual] : "unknown";
-        const char* expected_name = (expected >= 0 && expected <= 9) ? type_names[expected] : "unknown";
+        // Bounds check для будущих версий NAPI
+        const char* actual_name = (static_cast<size_t>(actual) < TYPE_NAMES_COUNT)
+            ? type_names[actual] : "unknown";
+        const char* expected_name = (static_cast<size_t>(expected) < TYPE_NAMES_COUNT)
+            ? type_names[expected] : "unknown";
         std::string msg = std::string(argName) + " must be " + expected_name + ", got " + actual_name;
         napi_throw_arg_error(env, func, msg.c_str());
         return false;
@@ -234,11 +245,15 @@ napi_value StartReceiveLoop(napi_env env, napi_callback_info info) {
     napi_value resource_name;
     napi_create_string_utf8(env, "TDLibReceiveLoop", NAPI_AUTO_LENGTH, &resource_name);
 
-    napi_create_threadsafe_function(
-        env, argv[0], nullptr, resource_name,
-        0, 1, nullptr, nullptr, nullptr,
-        CallJs, &threadsafe_callback
-    );
+    // Thread-safe создание callback с mutex защитой
+    {
+        std::lock_guard<std::mutex> cb_guard(callback_mutex);
+        napi_create_threadsafe_function(
+            env, argv[0], nullptr, resource_name,
+            0, 1, nullptr, nullptr, nullptr,
+            CallJs, &threadsafe_callback
+        );
+    }
 
     loop_state = LoopState::Running;
 
@@ -249,13 +264,25 @@ napi_value StartReceiveLoop(napi_env env, napi_callback_info info) {
             const char* response = td_receive(1.0);
             if (response != nullptr) {
                 auto* data = new std::string(response);
-                napi_call_threadsafe_function(threadsafe_callback, data, napi_tsfn_blocking);
+                // Thread-safe access к callback с mutex защитой
+                {
+                    std::lock_guard<std::mutex> cb_guard(callback_mutex);
+                    if (threadsafe_callback != nullptr) {
+                        napi_call_threadsafe_function(threadsafe_callback, data, napi_tsfn_blocking);
+                    } else {
+                        delete data;  // Callback уже освобождён
+                    }
+                }
             }
         }
         OH_LOG_INFO(LogType::LOG_APP, "TDLib receive loop stopped");
-        if (threadsafe_callback != nullptr) {
-            napi_release_threadsafe_function(threadsafe_callback, napi_tsfn_release);
-            threadsafe_callback = nullptr;
+        // Thread-safe cleanup с mutex защитой
+        {
+            std::lock_guard<std::mutex> cb_guard(callback_mutex);
+            if (threadsafe_callback != nullptr) {
+                napi_release_threadsafe_function(threadsafe_callback, napi_tsfn_release);
+                threadsafe_callback = nullptr;
+            }
         }
         loop_state = LoopState::Stopped;
     });
@@ -266,7 +293,7 @@ napi_value StartReceiveLoop(napi_env env, napi_callback_info info) {
 }
 
 napi_value StopReceiveLoop(napi_env env, napi_callback_info info) {
-    std::lock_guard<std::mutex> guard(loop_mutex);
+    std::unique_lock<std::mutex> lock(loop_mutex);
 
     LoopState current = loop_state.load();
     if (current != LoopState::Running) {
@@ -279,7 +306,7 @@ napi_value StopReceiveLoop(napi_env env, napi_callback_info info) {
 
     loop_state = LoopState::Stopping;
     OH_LOG_INFO(LogType::LOG_APP, "TDLib receive loop stop requested");
-
+    lock.unlock(); // Release mutex before join
     // Join the receive thread to ensure clean shutdown
     if (receive_thread.joinable()) {
         receive_thread.join();

@@ -1,0 +1,136 @@
+// User DTO - domain data transfer object for users
+// ArkTS compliant - uses TdObject wrapper class
+
+import { UserId } from '../EntityId';
+import { TdObject, tdGetString, tdGetNumber, tdGetBoolean, tdGetObject, tdHasKeys } from '../../utils/tdAccessors';
+
+// Type for user status
+export type UserStatus = 'online' | 'offline' | 'recently' | 'lastWeek' | 'lastMonth' | 'longTimeAgo';
+
+// Class for user photo
+export class UserPhoto {
+  small: string = '';
+  big: string = '';
+}
+
+export class UserDto {
+  id: UserId = 0;
+  firstName: string = '';
+  lastName: string = '';
+  username: string = '';
+  phoneNumber: string = '';
+  photo?: UserPhoto;
+  isContact: boolean = false;
+  isVerified: boolean = false;
+  isPremium: boolean = false;
+  status: UserStatus = 'offline';
+}
+
+// Parse TDLib user status @type string to our UserStatus
+export function parseUserStatus(tdStatus: TdObject): UserStatus {
+  const statusType = tdGetString(tdStatus, '@type');
+  switch (statusType) {
+    case 'userStatusOnline':
+      return 'online';
+    case 'userStatusOffline':
+      return 'offline';
+    case 'userStatusRecently':
+      return 'recently';
+    case 'userStatusLastWeek':
+      return 'lastWeek';
+    case 'userStatusLastMonth':
+      return 'lastMonth';
+    case 'userStatusEmpty':
+    default:
+      return 'longTimeAgo';
+  }
+}
+
+// Extract user photo from TDLib profile_photo object
+function extractUserPhoto(profilePhoto: TdObject): UserPhoto | undefined {
+  if (!tdHasKeys(profilePhoto)) {
+    return undefined;
+  }
+  const smallObj = tdGetObject(profilePhoto, 'small');
+  const bigObj = tdGetObject(profilePhoto, 'big');
+  const smallLocal = tdGetObject(smallObj, 'local');
+  const bigLocal = tdGetObject(bigObj, 'local');
+
+  const photo = new UserPhoto();
+  photo.small = tdGetString(smallLocal, 'path');
+  photo.big = tdGetString(bigLocal, 'path');
+  return photo;
+}
+
+// Helper to create DTO from raw TDLib user object
+export function createUserDtoFromTd(tdUser: TdObject): UserDto {
+  const tdStatus = tdGetObject(tdUser, 'status');
+  const status = parseUserStatus(tdStatus);
+
+  const userDto = new UserDto();
+  userDto.id = tdGetNumber(tdUser, 'id');
+  userDto.firstName = tdGetString(tdUser, 'first_name');
+  userDto.lastName = tdGetString(tdUser, 'last_name');
+  userDto.phoneNumber = tdGetString(tdUser, 'phone_number');
+  userDto.isContact = tdGetBoolean(tdUser, 'is_contact');
+  userDto.isVerified = tdGetBoolean(tdUser, 'is_verified');
+  userDto.isPremium = tdGetBoolean(tdUser, 'is_premium');
+  userDto.status = status;
+
+  // Username: TDLib can have either 'username' or 'usernames.editable_username'
+  const directUsername = tdGetString(tdUser, 'username');
+  if (directUsername) {
+    userDto.username = directUsername;
+  } else {
+    const usernames = tdGetObject(tdUser, 'usernames');
+    if (tdHasKeys(usernames)) {
+      userDto.username = tdGetString(usernames, 'editable_username');
+    }
+  }
+
+  // Photo
+  const profilePhoto = tdGetObject(tdUser, 'profile_photo');
+  userDto.photo = extractUserPhoto(profilePhoto);
+
+  return userDto;
+}
+
+// Helper for partial updates (userUpdated event)
+export class UserUpdateDto {
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  phoneNumber?: string;
+  photo?: UserPhoto;
+  status?: UserStatus;
+  isContact?: boolean;
+  isVerified?: boolean;
+  isPremium?: boolean;
+}
+
+export function applyUserUpdate(user: UserDto, update: UserUpdateDto): UserDto {
+  const updatedUser = new UserDto();
+
+  updatedUser.id = user.id;
+  updatedUser.firstName = user.firstName;
+  updatedUser.lastName = user.lastName;
+  updatedUser.username = user.username;
+  updatedUser.phoneNumber = user.phoneNumber;
+  updatedUser.photo = user.photo;
+  updatedUser.isContact = user.isContact;
+  updatedUser.isVerified = user.isVerified;
+  updatedUser.isPremium = user.isPremium;
+  updatedUser.status = user.status;
+
+  if (update.firstName !== undefined) { updatedUser.firstName = update.firstName; }
+  if (update.lastName !== undefined) { updatedUser.lastName = update.lastName; }
+  if (update.username !== undefined) { updatedUser.username = update.username; }
+  if (update.phoneNumber !== undefined) { updatedUser.phoneNumber = update.phoneNumber; }
+  if (update.photo !== undefined) { updatedUser.photo = update.photo; }
+  if (update.status !== undefined) { updatedUser.status = update.status; }
+  if (update.isContact !== undefined) { updatedUser.isContact = update.isContact; }
+  if (update.isVerified !== undefined) { updatedUser.isVerified = update.isVerified; }
+  if (update.isPremium !== undefined) { updatedUser.isPremium = update.isPremium; }
+
+  return updatedUser;
+}
