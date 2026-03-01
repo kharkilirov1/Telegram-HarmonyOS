@@ -21,8 +21,8 @@ jobs:
           test -f docs/ai/VISUAL_QA_CHECKLIST.md
 
       - name: Phase 0 UI smoke checks
-        shell: pwsh
-        run: ./scripts/smoke-ui-phase0.ps1
+        shell: bash
+        run: bash ./scripts/smoke-ui-phase0.sh
 
   smoke-build-harmony:
     name: Smoke (hvigor build)
