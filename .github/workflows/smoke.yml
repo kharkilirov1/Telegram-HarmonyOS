@@ -1,0 +1,48 @@
+name: Smoke CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke-static:
+    name: Smoke (static checks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Verify required docs
+        shell: bash
+        run: |
+          test -f docs/ai/AI_MEMORY.md
+          test -f docs/ai/UI_MIGRATION_PLAN.md
+          test -f docs/ai/VISUAL_QA_CHECKLIST.md
+
+      - name: Phase 0 UI smoke checks
+        shell: pwsh
+        run: ./scripts/smoke-ui-phase0.ps1
+
+  smoke-build-harmony:
+    name: Smoke (hvigor build)
+    needs: smoke-static
+    if: ${{ vars.HARMONYOS_SMOKE_BUILD == 'true' }}
+    runs-on: [self-hosted, Windows, HarmonyOS]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Build HAP
+        shell: pwsh
+        run: ./scripts/smoke-build.ps1
+
+      - name: Upload build artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: harmonyos-build-output
+          path: |
+            entry/build/**/outputs/**/*.hap
+            build/outputs/**/*.app
+          if-no-files-found: ignore
