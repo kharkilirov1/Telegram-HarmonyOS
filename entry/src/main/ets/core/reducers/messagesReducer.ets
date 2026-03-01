@@ -28,6 +28,50 @@ function contentFromDto(dto: MessageContentDto): MessageContent {
   content.type = dto.type as 'text' | 'photo' | 'video' | 'document' | 'audio' |
     'voice' | 'sticker' | 'location' | 'contact' | 'poll' | 'animation' | 'videoNote' | 'unknown';
   content.text = dto.text;
+  content.caption = dto.caption;
+
+  content.photoPath = dto.photoPath;
+  content.photoThumbPath = dto.photoThumbPath;
+  content.photoWidth = dto.photoWidth;
+  content.photoHeight = dto.photoHeight;
+
+  content.videoPath = dto.videoPath;
+  content.videoThumbPath = dto.videoThumbPath;
+  content.videoDuration = dto.videoDuration;
+  content.videoWidth = dto.videoWidth;
+  content.videoHeight = dto.videoHeight;
+
+  content.documentPath = dto.documentPath;
+  content.fileName = dto.fileName;
+  content.fileSize = dto.fileSize;
+  content.mimeType = dto.mimeType;
+
+  content.audioPath = dto.audioPath;
+  content.audioDuration = dto.audioDuration;
+  content.audioTitle = dto.audioTitle;
+  content.audioPerformer = dto.audioPerformer;
+
+  content.voicePath = dto.voicePath;
+  content.voiceDuration = dto.voiceDuration;
+  content.voiceWaveform = dto.voiceWaveform;
+  content.isVoiceListened = dto.isVoiceListened;
+
+  content.stickerPath = dto.stickerPath;
+  content.stickerEmoji = dto.stickerEmoji;
+  content.stickerWidth = dto.stickerWidth;
+  content.stickerHeight = dto.stickerHeight;
+  content.isAnimatedSticker = dto.isAnimatedSticker;
+  content.isVideoSticker = dto.isVideoSticker;
+  content.isPremiumSticker = dto.isPremiumSticker;
+
+  content.animationPath = dto.animationPath;
+  content.animationDuration = dto.animationDuration;
+  content.animationWidth = dto.animationWidth;
+  content.animationHeight = dto.animationHeight;
+
+  content.videoNotePath = dto.videoNotePath;
+  content.videoNoteDuration = dto.videoNoteDuration;
+  content.videoNoteLength = dto.videoNoteLength;
   return content;
 }
 
@@ -56,7 +100,46 @@ function cloneMessage(msg: Message): Message {
   clone.chatId = msg.chatId;
   clone.senderId = msg.senderId;
   clone.senderChatId = msg.senderChatId;
-  clone.content = msg.content;
+  const clonedContent = new MessageContent();
+  clonedContent.type = msg.content.type;
+  clonedContent.text = msg.content.text;
+  clonedContent.caption = msg.content.caption;
+  clonedContent.photoPath = msg.content.photoPath;
+  clonedContent.photoThumbPath = msg.content.photoThumbPath;
+  clonedContent.photoWidth = msg.content.photoWidth;
+  clonedContent.photoHeight = msg.content.photoHeight;
+  clonedContent.videoPath = msg.content.videoPath;
+  clonedContent.videoThumbPath = msg.content.videoThumbPath;
+  clonedContent.videoDuration = msg.content.videoDuration;
+  clonedContent.videoWidth = msg.content.videoWidth;
+  clonedContent.videoHeight = msg.content.videoHeight;
+  clonedContent.documentPath = msg.content.documentPath;
+  clonedContent.fileName = msg.content.fileName;
+  clonedContent.fileSize = msg.content.fileSize;
+  clonedContent.mimeType = msg.content.mimeType;
+  clonedContent.audioPath = msg.content.audioPath;
+  clonedContent.audioDuration = msg.content.audioDuration;
+  clonedContent.audioTitle = msg.content.audioTitle;
+  clonedContent.audioPerformer = msg.content.audioPerformer;
+  clonedContent.voicePath = msg.content.voicePath;
+  clonedContent.voiceDuration = msg.content.voiceDuration;
+  clonedContent.voiceWaveform = msg.content.voiceWaveform;
+  clonedContent.isVoiceListened = msg.content.isVoiceListened;
+  clonedContent.stickerPath = msg.content.stickerPath;
+  clonedContent.stickerEmoji = msg.content.stickerEmoji;
+  clonedContent.stickerWidth = msg.content.stickerWidth;
+  clonedContent.stickerHeight = msg.content.stickerHeight;
+  clonedContent.isAnimatedSticker = msg.content.isAnimatedSticker;
+  clonedContent.isVideoSticker = msg.content.isVideoSticker;
+  clonedContent.isPremiumSticker = msg.content.isPremiumSticker;
+  clonedContent.animationPath = msg.content.animationPath;
+  clonedContent.animationDuration = msg.content.animationDuration;
+  clonedContent.animationWidth = msg.content.animationWidth;
+  clonedContent.animationHeight = msg.content.animationHeight;
+  clonedContent.videoNotePath = msg.content.videoNotePath;
+  clonedContent.videoNoteDuration = msg.content.videoNoteDuration;
+  clonedContent.videoNoteLength = msg.content.videoNoteLength;
+  clone.content = clonedContent;
   clone.timestamp = msg.timestamp;
   clone.isOutgoing = msg.isOutgoing;
   clone.isRead = msg.isRead;

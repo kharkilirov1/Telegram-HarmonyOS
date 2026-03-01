@@ -1,10 +1,9 @@
 // infra/td/gateway/TdGateway.ets
 //
-// TDLib native bridge. Получает сырой JSON из нативного потока TDLib.
-// ВАЖНО: колбэк из tdlib.startReceiveLoop() приходит из ФОНОВОГО потока.
-// Поэтому:
-//   - Парсинг JSON и resolve pending requests — можно делать в фоне (thread-safe)
-//   - Broadcast обновлений подписчикам — через MainThreadDispatcher → main thread
+// TDLib native bridge. Получает raw JSON из NAPI callback и
+// маршрутизирует его в responses/updates через MainThreadDispatcher.
+// Детали переключения потоков инкапсулированы в native (thread-safe function)
+// и в dispatcher слое.
 //
 // Референс: iOS Telegram — MtProtoKit + SwiftSignalKit Queue.mainQueue()
 
@@ -35,7 +34,7 @@ const METHOD_TIMEOUTS: MethodTimeout = {
 
 // Хелпер для получения таймаута — явная проверка свойства
 function getMethodTimeout(method: string): number {
-  if (method === 'getChats') return METHOD_TIMEOUTS.getChats;
+  if (method === 'getChats' || method === 'loadChats') return METHOD_TIMEOUTS.getChats;
   if (method === 'sendMessage') return METHOD_TIMEOUTS.sendMessage;
   if (method === 'downloadFile') return METHOD_TIMEOUTS.downloadFile;
   if (method === 'close') return METHOD_TIMEOUTS.close;
@@ -136,20 +135,19 @@ export class TdGatewayImpl implements TdGateway {
       Logger.info(`Created native client with ID: ${this.clientId}`);
 
       // Настраиваем MainThreadDispatcher ДО запуска receive loop.
-      // dispatcher.subscribeResponses получает JSON ответы на main thread,
-      // где мы безопасно resolve/reject pending requests.
+      // dispatcher.subscribeResponses получает JSON ответы, где мы
+      // безопасно resolve/reject pending requests.
       const dispatcher = getMainThreadDispatcher();
 
       dispatcher.subscribeResponses((responseJson: string) => {
-        // Это выполняется на MAIN THREAD (через Emitter)
+        // Это выполняется в dispatcher-пайплайне ArkTS.
         this.handleResponseOnMainThread(responseJson);
       });
 
       // Запускаем нативный receive loop.
-      // Колбэк вызывается из ФОНОВОГО потока TDLib.
-      // Мы НЕ обрабатываем данные здесь — только пробрасываем через dispatcher.
+      // Мы НЕ смешиваем бизнес-логику с callback слоем:
+      // только определяем тип payload и передаём в dispatcher.
       tdlib.startReceiveLoop((rawJson: string) => {
-        // ⚠️ Это ФОНОВЫЙ ПОТОК — нельзя трогать UI/AppStorage/handlers
         try {
           // Huawei Best Practice: валидация JSON через parsing вместо string.includes
           // string.includes('@extra') может дать false positive если '@extra' в теле сообщения
@@ -174,6 +172,10 @@ export class TdGatewayImpl implements TdGateway {
   }
 
   async send(method: string, params: TdObject = new TdObject()): Promise<TdObject> {
+    if (!method || method.length === 0) {
+      throw new AppError(AppErrorKind.UNKNOWN, 'Cannot send: method is empty', '', 0, false);
+    }
+
     // Strict state routing
     if (method === 'close') {
       if (this.state !== 'destroying' && this.state !== 'ready') {
@@ -309,7 +311,38 @@ export class TdGatewayImpl implements TdGateway {
       await this.send('close')
         .then((): void => { closeOk = true; })
         .catch((err: Error): void => Logger.warn(`TDLib close command rejected: ${err.message}`));
-      if (closeOk) Logger.info('TDLib closed gracefully');
+      if (closeOk) {
+        Logger.info('Waiting for TDLib to flush database and close...');
+        await new Promise<void>((resolve) => {
+          let settled = false;
+
+          const handler = (update: TdObject): void => {
+            if (update.getType() === 'updateAuthorizationState') {
+              const authState = update.getObject('authorization_state');
+              if (authState && authState.getType() === 'authorizationStateClosed') {
+                if (!settled) {
+                  settled = true;
+                  clearTimeout(timeoutId);
+                  this.updateHandlers.delete(handler);
+                  resolve();
+                }
+              }
+            }
+          };
+
+          this.updateHandlers.add(handler);
+
+          const timeoutId = setTimeout(() => {
+            if (!settled) {
+              settled = true;
+              this.updateHandlers.delete(handler);
+              Logger.warn('TDLib close wait timed out');
+              resolve();
+            }
+          }, 5000);
+        });
+        Logger.info('TDLib closed gracefully');
+      }
     }
 
     tdlib.stopReceiveLoop();
@@ -329,10 +362,10 @@ export class TdGatewayImpl implements TdGateway {
     Logger.info('Gateway destroyed completely');
   }
 
-  // --- Обработка на MAIN THREAD (через Emitter) ---
+  // --- Обработка в dispatcher-пайплайне ---
 
   /**
-   * Вызывается на MAIN THREAD через MainThreadDispatcher.
+   * Вызывается через MainThreadDispatcher.
    * Обрабатывает ответы на запросы (JSON с @extra).
    */
   private handleResponseOnMainThread(responseJson: string): void {
@@ -356,7 +389,7 @@ export class TdGatewayImpl implements TdGateway {
 
   /**
    * Вызывается из AppCoreRuntime через MainThreadDispatcher.subscribeUpdates.
-   * Обновления уже на main thread — безопасно вызывать handlers.
+   * Обновления уже в едином dispatcher-пайплайне.
    */
   handleUpdateOnMainThread(rawJson: string): void {
     if (this.state !== 'ready' && this.state !== 'destroying') return;
@@ -408,14 +441,16 @@ export class TdGatewayImpl implements TdGateway {
 
   /**
    * Проверяет, является ли JSON ответом на запрос (содержит @extra на верхнем уровне).
-   * ArkTS Best Practice: используем string search вместо 'in' operator (arkts-no-in).
-   * Ищем "@extra" в начале JSON объекта (первые 100 символов) для надёжности.
+   * Используем безопасный парсинг вместо строковых проверок для предотвращения ложных срабатываний.
    */
   private isResponseJson(rawJson: string): boolean {
-    // @extra всегда добавляется в начало объекта при отправке запроса
-    // Проверяем первые 150 символов чтобы избежать false positives из тела сообщения
-    const prefix = rawJson.substring(0, 150);
-    return prefix.includes('"@extra"');
+    try {
+      const jsonObj: Record<string, object> = JSON.parse(rawJson);
+      return jsonObj && typeof jsonObj === 'object' && jsonObj['@extra'] !== undefined;
+    } catch {
+      // Если JSON некорректный, используем fallback проверку
+      return rawJson.includes('"@extra"');
+    }
   }
 }
 

@@ -3,7 +3,7 @@
 //
 // THREADING MODEL (аналог iOS Telegram):
 //   1. TDLib native thread → raw JSON
-//   2. MainThreadDispatcher (Emitter) → переброс на main thread
+//   2. MainThreadDispatcher → доставка в обработчики ArkTS
 //   3. EventNormalizer → typed AppEvent[]
 //   4. AppStore.dispatch() → reducers → new state
 //   5. UI subscribers (main thread) → re-render
@@ -18,6 +18,8 @@ import { appReducer } from '../../core/reducers/index';
 import { AnyAppEvent } from '../../core/model/AppEvent';
 import { AppError, AppErrorKind } from '../../core/model/AppError';
 import { TdObject, tdGetProperty, safeString } from '../../models/TdTypes';
+import { initAppStoreBridge, resetAppStoreBridge } from '../bridge/AppStoreBridge';
+import { setAuthSideEffectStore, startAuthSideEffect, stopAuthSideEffect } from '../../core/sideeffects/AuthSideEffect';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN = 0x0003;
@@ -70,8 +72,17 @@ export class AppCoreRuntime {
       await this.gateway.initialize();
       hilog.info(DOMAIN, TAG, 'Gateway initialized');
 
+      // 4. AppStoreBridge: Store → AppStorage (UI reads via @StorageLink)
+      initAppStoreBridge(this.store);
+      hilog.info(DOMAIN, TAG, 'AppStoreBridge initialized');
+
+      // 5. AuthSideEffect: auto-send TDLib params + resolve user
+      setAuthSideEffectStore(this.store);
+      startAuthSideEffect();
+      hilog.info(DOMAIN, TAG, 'AuthSideEffect started');
+
       this.isRunning = true;
-      hilog.info(DOMAIN, TAG, 'Pipeline ready. Threading: TDLib→Emitter→MainThread→Normalizer→Store');
+      hilog.info(DOMAIN, TAG, 'Pipeline ready. Threading: TDLib→Dispatcher→Normalizer→Store');
     } catch (error) {
       const err = error as Error;
       hilog.error(DOMAIN, TAG, 'Failed to initialize: %{public}s', err.message);
@@ -110,7 +121,7 @@ export class AppCoreRuntime {
 
   private async dispatchEvents(events: AnyAppEvent[]): Promise<void> {
     // Serial dispatch queue — события обрабатываются строго по порядку
-    this.pendingDispatch = this.pendingDispatch.then(async () => {
+    const currentDispatch = this.pendingDispatch.then(async () => {
       try {
         for (const event of events) {
           await this.store.dispatch(event);
@@ -121,7 +132,8 @@ export class AppCoreRuntime {
       }
     });
 
-    await this.pendingDispatch;
+    this.pendingDispatch = currentDispatch;
+    await currentDispatch;
   }
 
   getStore(): AppStore {
@@ -150,6 +162,9 @@ export class AppCoreRuntime {
     if (!this.isRunning) return;
 
     hilog.info(DOMAIN, TAG, 'Shutting down pipeline...');
+
+    stopAuthSideEffect();
+    resetAppStoreBridge();
 
     if (this.unsubscribeGateway) {
       this.unsubscribeGateway();

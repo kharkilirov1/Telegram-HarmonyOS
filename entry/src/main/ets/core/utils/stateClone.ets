@@ -6,7 +6,7 @@ import {
   AppState,
   AuthState,
   ConnectionState,
-  DialogsState,
+  ChatsState,
   MessagesState,
   UsersState,
   Chat,
@@ -24,6 +24,11 @@ export function cloneAuthState(auth: AuthState): AuthState {
   newAuth.status = auth.status;
   newAuth.userId = auth.userId;
   newAuth.phoneNumber = auth.phoneNumber;
+  newAuth.codeType = auth.codeType;
+  newAuth.codeLength = auth.codeLength;
+  newAuth.codeTimeout = auth.codeTimeout;
+  newAuth.nextCodeType = auth.nextCodeType;
+  newAuth.passwordHint = auth.passwordHint;
   newAuth.error = auth.error;
   return newAuth;
 }
@@ -39,19 +44,19 @@ export function cloneConnectionState(connection: ConnectionState): ConnectionSta
 }
 
 /**
- * Clone DialogsState immutably
+ * Clone ChatsState immutably
  */
-export function cloneDialogsState(dialogs: DialogsState): DialogsState {
-  const newDialogs = new DialogsState();
+export function cloneChatsState(chats: ChatsState): ChatsState {
+  const newChats = new ChatsState();
   // Clone maps and arrays
-  newDialogs.chats = new Map<number, Chat>();
-  dialogs.chats.forEach((chat: Chat, chatId: number) => {
-    newDialogs.chats.set(chatId, chat);
+  newChats.chats = new Map<number, Chat>();
+  chats.chats.forEach((chat: Chat, chatId: number) => {
+    newChats.chats.set(chatId, chat);
   });
-  newDialogs.orderedChatIds = dialogs.orderedChatIds.slice();
-  newDialogs.isLoading = dialogs.isLoading;
-  newDialogs.hasMore = dialogs.hasMore;
-  return newDialogs;
+  newChats.orderedChatIds = chats.orderedChatIds.slice();
+  newChats.isLoading = chats.isLoading;
+  newChats.hasMore = chats.hasMore;
+  return newChats;
 }
 
 /**
@@ -85,8 +90,12 @@ export function cloneChat(chat: Chat): Chat {
   const newChat = new Chat();
   newChat.id = chat.id;
   newChat.type = chat.type;
+  newChat.peerUserId = chat.peerUserId;
   newChat.title = chat.title;
   newChat.unreadCount = chat.unreadCount;
+  newChat.muteForSeconds = chat.muteForSeconds;
+  newChat.lastReadOutboxMessageId = chat.lastReadOutboxMessageId;
+  newChat.lastReadInboxMessageId = chat.lastReadInboxMessageId;
   newChat.isPinned = chat.isPinned;
   newChat.photoSmall = chat.photoSmall;
   newChat.order = chat.order;
@@ -127,7 +136,7 @@ export function cloneAppState(state: AppState): AppState {
   const newState = new AppState();
   newState.auth = cloneAuthState(state.auth);
   newState.connection = cloneConnectionState(state.connection);
-  newState.dialogs = cloneDialogsState(state.dialogs);
+  newState.chats = cloneChatsState(state.chats);
   newState.messages = cloneMessagesState(state.messages);
   newState.users = cloneUsersState(state.users);
   newState.lastEvent = state.lastEvent;
@@ -145,7 +154,7 @@ export function cloneStateForAuth(state: AppState): AppState {
   const newState = new AppState();
   newState.auth = cloneAuthState(state.auth);
   newState.connection = cloneConnectionState(state.connection);
-  newState.dialogs = state.dialogs;       // shared — not modified by authReducer
+  newState.chats = state.chats;            // shared — not modified by authReducer
   newState.messages = state.messages;      // shared
   newState.users = state.users;            // shared
   newState.lastEvent = state.lastEvent;
@@ -154,13 +163,13 @@ export function cloneStateForAuth(state: AppState): AppState {
 }
 
 /**
- * Clone state for dialogsReducer - only dialogs slice is modified
+ * Clone state for chatsReducer - only chats slice is modified
  */
-export function cloneStateForDialogs(state: AppState): AppState {
+export function cloneStateForChats(state: AppState): AppState {
   const newState = new AppState();
   newState.auth = state.auth;              // shared
   newState.connection = state.connection;  // shared
-  newState.dialogs = cloneDialogsState(state.dialogs);
+  newState.chats = cloneChatsState(state.chats);
   newState.messages = state.messages;      // shared
   newState.users = state.users;            // shared
   newState.lastEvent = state.lastEvent;
@@ -175,7 +184,7 @@ export function cloneStateForMessages(state: AppState): AppState {
   const newState = new AppState();
   newState.auth = state.auth;              // shared
   newState.connection = state.connection;  // shared
-  newState.dialogs = state.dialogs;        // shared
+  newState.chats = state.chats;             // shared
   newState.messages = cloneMessagesState(state.messages);
   newState.users = state.users;            // shared
   newState.lastEvent = state.lastEvent;
@@ -190,7 +199,7 @@ export function cloneStateForUsers(state: AppState): AppState {
   const newState = new AppState();
   newState.auth = state.auth;              // shared
   newState.connection = state.connection;  // shared
-  newState.dialogs = state.dialogs;        // shared
+  newState.chats = state.chats;             // shared
   newState.messages = state.messages;      // shared
   newState.users = cloneUsersState(state.users);
   newState.lastEvent = state.lastEvent;

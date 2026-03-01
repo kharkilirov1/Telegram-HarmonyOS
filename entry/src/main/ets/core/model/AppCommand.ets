@@ -56,6 +56,10 @@ export class CheckAuthPasswordCommand extends AppCommand {
   payload: CheckAuthPasswordPayload = new CheckAuthPasswordPayload();
 }
 
+export class ResendAuthCodeCommand extends AppCommand {
+  type: string = 'resendAuthCode';
+}
+
 export class LoadChatsCommand extends AppCommand {
   type: string = 'loadChats';
   payload: LoadChatsPayload = new LoadChatsPayload();
@@ -76,15 +80,21 @@ export class ViewMessagesCommand extends AppCommand {
   payload: ViewMessagesPayload = new ViewMessagesPayload();
 }
 
+export class LogoutCommand extends AppCommand {
+  type: string = 'logout';
+}
+
 // Unified type for all commands
 export type AnyAppCommand =
   | SetPhoneNumberCommand
   | CheckAuthCodeCommand
   | CheckAuthPasswordCommand
+  | ResendAuthCodeCommand
   | LoadChatsCommand
   | OpenChatCommand
   | SendMessageCommand
-  | ViewMessagesCommand;
+  | ViewMessagesCommand
+  | LogoutCommand;
 
 // Helper functions to create commands
 export function createSetPhoneNumberCommand(phoneNumber: string): SetPhoneNumberCommand {
@@ -103,6 +113,10 @@ export function createCheckAuthPasswordCommand(password: string): CheckAuthPassw
   const cmd = new CheckAuthPasswordCommand();
   cmd.payload.password = password;
   return cmd;
+}
+
+export function createResendAuthCodeCommand(): ResendAuthCodeCommand {
+  return new ResendAuthCodeCommand();
 }
 
 export function createLoadChatsCommand(limit: number = 20): LoadChatsCommand {
@@ -134,4 +148,8 @@ export function createViewMessagesCommand(chatId: ChatId, messageIds: MessageId[
   cmd.payload.chatId = chatId;
   cmd.payload.messageIds = messageIds;
   return cmd;
+}
+
+export function createLogoutCommand(): LogoutCommand {
+  return new LogoutCommand();
 }

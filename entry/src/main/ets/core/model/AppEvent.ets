@@ -23,6 +23,12 @@ export class AuthStateChangedEvent extends AppEvent {
   type: string = 'authStateChanged';
   state: AuthState = 'waitPhoneNumber';
   userId: UserId = 0;
+  phoneNumber: string = '';
+  codeType: string = '';
+  codeLength: number = 0;
+  codeTimeout: number = -1;
+  nextCodeType: string = '';
+  passwordHint: string = '';
 }
 
 // Fired after getMe() resolves — sets the current user's ID

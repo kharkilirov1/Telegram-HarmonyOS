@@ -58,12 +58,17 @@ export function serializeCommand(command: AnyAppCommand): SerializedCommand {
       break;
     }
 
+    case 'resendAuthCode': {
+      result.method = 'resendAuthenticationCode';
+      break;
+    }
+
     case 'loadChats': {
       const cmd = command as LoadChatsCommand;
-      result.method = 'getChats';
-      // TDLib getChats params: chat_list, limit
+      result.method = 'loadChats';
+      // TDLib 1.8+: loadChats(chat_list, limit) — загружает чаты, шлёт updateNewChat
+      result.params.setString('_chat_list_json', '{"@type":"chatListMain"}');
       result.params.setNumber('limit', cmd.payload.limit);
-      // chat_list по умолчанию chatListMain — не указываем, TDLib использует default
       break;
     }
 

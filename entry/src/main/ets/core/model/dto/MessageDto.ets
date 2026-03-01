@@ -2,7 +2,7 @@
 // ArkTS compliant - uses TdObject wrapper class
 
 import { ChatId, MessageId, UserId } from '../EntityId';
-import { TdObject, tdGetString, tdGetNumber, tdGetBoolean, tdGetInt64, tdGetObject, tdHasKeys } from '../../utils/tdAccessors';
+import { TdObject, tdGetString, tdGetNumber, tdGetBoolean, tdGetInt64, tdGetObject, tdGetArray, tdHasKeys } from '../../utils/tdAccessors';
 
 export enum MessageContentType {
   TEXT = 'text',
@@ -15,6 +15,8 @@ export enum MessageContentType {
   LOCATION = 'location',
   CONTACT = 'contact',
   POLL = 'poll',
+  ANIMATION = 'animation',
+  VIDEO_NOTE = 'videoNote',
   UNKNOWN = 'unknown'
 }
 
@@ -22,6 +24,49 @@ export class MessageContentDto {
   type: MessageContentType = MessageContentType.TEXT;
   text: string = '';
   caption: string = '';
+
+  photoPath: string = '';
+  photoThumbPath: string = '';
+  photoWidth: number = 0;
+  photoHeight: number = 0;
+
+  videoPath: string = '';
+  videoThumbPath: string = '';
+  videoDuration: number = 0;
+  videoWidth: number = 0;
+  videoHeight: number = 0;
+
+  documentPath: string = '';
+  fileName: string = '';
+  fileSize: number = 0;
+  mimeType: string = '';
+
+  audioPath: string = '';
+  audioDuration: number = 0;
+  audioTitle: string = '';
+  audioPerformer: string = '';
+
+  voicePath: string = '';
+  voiceDuration: number = 0;
+  voiceWaveform: string = '';
+  isVoiceListened: boolean = false;
+
+  stickerPath: string = '';
+  stickerEmoji: string = '';
+  stickerWidth: number = 0;
+  stickerHeight: number = 0;
+  isAnimatedSticker: boolean = false;
+  isVideoSticker: boolean = false;
+  isPremiumSticker: boolean = false;
+
+  animationPath: string = '';
+  animationDuration: number = 0;
+  animationWidth: number = 0;
+  animationHeight: number = 0;
+
+  videoNotePath: string = '';
+  videoNoteDuration: number = 0;
+  videoNoteLength: number = 0;
 }
 
 export class MessageDto {
@@ -38,75 +83,83 @@ export class MessageDto {
   replyToMessageId: MessageId = '0';
 }
 
+function extractCaption(contentObj: TdObject): string {
+  const captionObj = tdGetObject(contentObj, 'caption');
+  return tdGetString(captionObj, 'text');
+}
+
+function extractLocalFilePath(fileObj: TdObject): string {
+  const localObj = tdGetObject(fileObj, 'local');
+  return tdGetString(localObj, 'path');
+}
+
+function extractThumbnailPath(parentObj: TdObject): string {
+  const thumbnailObj = tdGetObject(parentObj, 'thumbnail');
+  const fileObj = tdGetObject(thumbnailObj, 'file');
+  return extractLocalFilePath(fileObj);
+}
+
+function extractPhotoMainPath(photoObj: TdObject): string {
+  const sizes = tdGetArray(photoObj, 'sizes');
+  let bestPath = '';
+  let bestArea = 0;
+  for (const size of sizes) {
+    const fileObj = tdGetObject(size, 'photo');
+    const path = extractLocalFilePath(fileObj);
+    if (path.length === 0) {
+      continue;
+    }
+    const width = tdGetNumber(size, 'width');
+    const height = tdGetNumber(size, 'height');
+    const area = width * height;
+    if (area >= bestArea) {
+      bestArea = area;
+      bestPath = path;
+    }
+  }
+  return bestPath;
+}
+
+function extractPhotoThumbPath(photoObj: TdObject): string {
+  const sizes = tdGetArray(photoObj, 'sizes');
+  let firstPath = '';
+  for (const size of sizes) {
+    const fileObj = tdGetObject(size, 'photo');
+    const path = extractLocalFilePath(fileObj);
+    if (path.length > 0) {
+      firstPath = path;
+      break;
+    }
+  }
+  return firstPath;
+}
+
+class PhotoDimensions {
+  width: number = 0;
+  height: number = 0;
+}
+
+function extractPhotoDimensions(photoObj: TdObject): PhotoDimensions {
+  const sizes = tdGetArray(photoObj, 'sizes');
+  const result = new PhotoDimensions();
+  let bestArea = 0;
+  for (const size of sizes) {
+    const width = tdGetNumber(size, 'width');
+    const height = tdGetNumber(size, 'height');
+    const area = width * height;
+    if (area >= bestArea) {
+      bestArea = area;
+      result.width = width;
+      result.height = height;
+    }
+  }
+  return result;
+}
+
 // Helper to create DTO from raw TDLib message object
 export function createMessageDtoFromTd(tdMessage: TdObject): MessageDto {
   const content = tdGetObject(tdMessage, 'content');
-  const contentType = tdGetString(content, '@type') || 'messageText';
-  let messageContentType: MessageContentType = MessageContentType.TEXT;
-  let text: string = '';
-
-  switch (contentType) {
-    case 'messageText': {
-      messageContentType = MessageContentType.TEXT;
-      const textObj = tdGetObject(content, 'text');
-      text = tdGetString(textObj, 'text');
-      break;
-    }
-    case 'messagePhoto': {
-      messageContentType = MessageContentType.PHOTO;
-      const photoCaption = tdGetObject(content, 'caption');
-      text = tdGetString(photoCaption, 'text');
-      break;
-    }
-    case 'messageVideo': {
-      messageContentType = MessageContentType.VIDEO;
-      const videoCaption = tdGetObject(content, 'caption');
-      text = tdGetString(videoCaption, 'text');
-      break;
-    }
-    case 'messageDocument': {
-      messageContentType = MessageContentType.DOCUMENT;
-      const docCaption = tdGetObject(content, 'caption');
-      text = tdGetString(docCaption, 'text');
-      break;
-    }
-    case 'messageAudio': {
-      messageContentType = MessageContentType.AUDIO;
-      const audioCaption = tdGetObject(content, 'caption');
-      text = tdGetString(audioCaption, 'text');
-      break;
-    }
-    case 'messageVoiceNote': {
-      messageContentType = MessageContentType.VOICE;
-      const voiceCaption = tdGetObject(content, 'caption');
-      text = tdGetString(voiceCaption, 'text');
-      break;
-    }
-    case 'messageSticker':
-      messageContentType = MessageContentType.STICKER;
-      break;
-    case 'messageLocation':
-      messageContentType = MessageContentType.LOCATION;
-      break;
-    case 'messageContact':
-      messageContentType = MessageContentType.CONTACT;
-      break;
-    case 'messagePoll':
-      messageContentType = MessageContentType.POLL;
-      break;
-    case 'messageAnimation': {
-      messageContentType = MessageContentType.TEXT;
-      const animCaption = tdGetObject(content, 'caption');
-      text = tdGetString(animCaption, 'text');
-      break;
-    }
-    case 'messageVideoNote':
-      messageContentType = MessageContentType.VIDEO;
-      break;
-    default:
-      messageContentType = MessageContentType.UNKNOWN;
-      text = `[${contentType}]`;
-  }
+  const parsedContent = parseMessageContent(content);
 
   let senderId: UserId = 0;
   let senderChatId: ChatId = 0;
@@ -124,10 +177,7 @@ export function createMessageDtoFromTd(tdMessage: TdObject): MessageDto {
   messageDto.senderId = senderId;
   messageDto.senderChatId = senderChatId;
 
-  const contentDto = new MessageContentDto();
-  contentDto.type = messageContentType;
-  contentDto.text = text;
-  messageDto.content = contentDto;
+  messageDto.content = parsedContent;
 
   messageDto.timestamp = tdGetNumber(tdMessage, 'date') || Date.now();
   messageDto.isOutgoing = tdGetBoolean(tdMessage, 'is_outgoing');
@@ -150,58 +200,140 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
   switch (contentType) {
     case 'messageText': {
       const textObj = tdGetObject(contentObj, 'text');
-      contentDto.text = tdGetString(textObj, 'text');
       contentDto.type = MessageContentType.TEXT;
+      contentDto.text = tdGetString(textObj, 'text');
+      contentDto.caption = '';
       break;
     }
     case 'messagePhoto': {
-      const caption = tdGetObject(contentObj, 'caption');
-      contentDto.text = tdGetString(caption, 'text');
+      const caption = extractCaption(contentObj);
+      const photoObj = tdGetObject(contentObj, 'photo');
+      const dimensions = extractPhotoDimensions(photoObj);
       contentDto.type = MessageContentType.PHOTO;
+      contentDto.caption = caption;
+      contentDto.text = caption.length > 0 ? caption : '[Photo]';
+      contentDto.photoPath = extractPhotoMainPath(photoObj);
+      contentDto.photoThumbPath = extractPhotoThumbPath(photoObj);
+      contentDto.photoWidth = dimensions.width;
+      contentDto.photoHeight = dimensions.height;
       break;
     }
     case 'messageVideo': {
-      const caption = tdGetObject(contentObj, 'caption');
-      contentDto.text = tdGetString(caption, 'text');
+      const caption = extractCaption(contentObj);
+      const videoObj = tdGetObject(contentObj, 'video');
+      const videoFile = tdGetObject(videoObj, 'video');
       contentDto.type = MessageContentType.VIDEO;
+      contentDto.caption = caption;
+      contentDto.text = caption.length > 0 ? caption : '[Video]';
+      contentDto.videoPath = extractLocalFilePath(videoFile);
+      contentDto.videoThumbPath = extractThumbnailPath(videoObj);
+      contentDto.videoDuration = tdGetNumber(videoObj, 'duration');
+      contentDto.videoWidth = tdGetNumber(videoObj, 'width');
+      contentDto.videoHeight = tdGetNumber(videoObj, 'height');
+      contentDto.fileName = tdGetString(videoObj, 'file_name');
+      contentDto.mimeType = tdGetString(videoObj, 'mime_type');
+      contentDto.fileSize = tdGetNumber(videoFile, 'size');
       break;
     }
     case 'messageDocument': {
-      const caption = tdGetObject(contentObj, 'caption');
-      contentDto.text = tdGetString(caption, 'text');
+      const caption = extractCaption(contentObj);
+      const documentObj = tdGetObject(contentObj, 'document');
+      const documentFile = tdGetObject(documentObj, 'document');
       contentDto.type = MessageContentType.DOCUMENT;
+      contentDto.caption = caption;
+      contentDto.text = caption.length > 0 ? caption : '[File]';
+      contentDto.documentPath = extractLocalFilePath(documentFile);
+      contentDto.fileName = tdGetString(documentObj, 'file_name');
+      contentDto.fileSize = tdGetNumber(documentFile, 'size');
+      contentDto.mimeType = tdGetString(documentObj, 'mime_type');
       break;
     }
     case 'messageAudio': {
-      const caption = tdGetObject(contentObj, 'caption');
-      contentDto.text = tdGetString(caption, 'text');
+      const caption = extractCaption(contentObj);
+      const audioObj = tdGetObject(contentObj, 'audio');
+      const audioFile = tdGetObject(audioObj, 'audio');
       contentDto.type = MessageContentType.AUDIO;
+      contentDto.caption = caption;
+      contentDto.text = caption.length > 0 ? caption : '[Audio]';
+      contentDto.audioPath = extractLocalFilePath(audioFile);
+      contentDto.audioDuration = tdGetNumber(audioObj, 'duration');
+      contentDto.audioTitle = tdGetString(audioObj, 'title');
+      contentDto.audioPerformer = tdGetString(audioObj, 'performer');
+      contentDto.fileName = tdGetString(audioObj, 'file_name');
+      contentDto.fileSize = tdGetNumber(audioFile, 'size');
+      contentDto.mimeType = tdGetString(audioObj, 'mime_type');
       break;
     }
     case 'messageVoiceNote': {
-      const caption = tdGetObject(contentObj, 'caption');
-      contentDto.text = tdGetString(caption, 'text');
+      const caption = extractCaption(contentObj);
+      const voiceObj = tdGetObject(contentObj, 'voice_note');
+      const voiceFile = tdGetObject(voiceObj, 'voice');
       contentDto.type = MessageContentType.VOICE;
+      contentDto.caption = caption;
+      contentDto.text = caption.length > 0 ? caption : '[Voice message]';
+      contentDto.voicePath = extractLocalFilePath(voiceFile);
+      contentDto.voiceDuration = tdGetNumber(voiceObj, 'duration');
+      contentDto.voiceWaveform = tdGetString(voiceObj, 'waveform');
+      contentDto.isVoiceListened = tdGetBoolean(contentObj, 'is_listened');
       break;
     }
-    case 'messageSticker':
+    case 'messageSticker': {
+      const stickerObj = tdGetObject(contentObj, 'sticker');
+      const stickerFile = tdGetObject(stickerObj, 'sticker');
+      const formatObj = tdGetObject(stickerObj, 'format');
+      const formatType = tdGetString(formatObj, '@type');
       contentDto.type = MessageContentType.STICKER;
+      contentDto.stickerPath = extractLocalFilePath(stickerFile);
+      contentDto.stickerEmoji = tdGetString(stickerObj, 'emoji');
+      contentDto.stickerWidth = tdGetNumber(stickerObj, 'width');
+      contentDto.stickerHeight = tdGetNumber(stickerObj, 'height');
+      contentDto.isAnimatedSticker = formatType === 'stickerFormatTgs';
+      contentDto.isVideoSticker = formatType === 'stickerFormatWebm';
+      contentDto.isPremiumSticker = tdGetBoolean(stickerObj, 'is_premium');
+      contentDto.text = contentDto.stickerEmoji.length > 0 ? contentDto.stickerEmoji : '[Sticker]';
       break;
+    }
     case 'messageLocation':
       contentDto.type = MessageContentType.LOCATION;
+      contentDto.text = '[Location]';
       break;
     case 'messageContact':
       contentDto.type = MessageContentType.CONTACT;
+      contentDto.text = '[Contact]';
       break;
     case 'messagePoll':
       contentDto.type = MessageContentType.POLL;
+      contentDto.text = '[Poll]';
       break;
-    case 'messageAnimation':
-      contentDto.type = MessageContentType.TEXT;
+    case 'messageAnimation': {
+      const caption = extractCaption(contentObj);
+      const animationObj = tdGetObject(contentObj, 'animation');
+      const animationFile = tdGetObject(animationObj, 'animation');
+      contentDto.type = MessageContentType.ANIMATION;
+      contentDto.caption = caption;
+      contentDto.text = caption.length > 0 ? caption : '[GIF]';
+      contentDto.animationPath = extractLocalFilePath(animationFile);
+      contentDto.animationDuration = tdGetNumber(animationObj, 'duration');
+      contentDto.animationWidth = tdGetNumber(animationObj, 'width');
+      contentDto.animationHeight = tdGetNumber(animationObj, 'height');
+      contentDto.fileName = tdGetString(animationObj, 'file_name');
+      contentDto.fileSize = tdGetNumber(animationFile, 'size');
+      contentDto.mimeType = tdGetString(animationObj, 'mime_type');
       break;
+    }
+    case 'messageVideoNote': {
+      const videoNoteObj = tdGetObject(contentObj, 'video_note');
+      const videoNoteFile = tdGetObject(videoNoteObj, 'video');
+      contentDto.type = MessageContentType.VIDEO_NOTE;
+      contentDto.text = '[Video message]';
+      contentDto.videoNotePath = extractLocalFilePath(videoNoteFile);
+      contentDto.videoNoteDuration = tdGetNumber(videoNoteObj, 'duration');
+      contentDto.videoNoteLength = tdGetNumber(videoNoteObj, 'length');
+      break;
+    }
     default:
       contentDto.type = MessageContentType.UNKNOWN;
-      contentDto.text = `[${contentType}]`;
+      contentDto.text = contentType.length > 0 ? `[${contentType}]` : '[Unsupported]';
   }
 
   return contentDto;

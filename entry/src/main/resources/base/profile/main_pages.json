@@ -1,5 +1,5 @@
 {
   "src": [
-    "ui/pages/PlaceholderPage"
+    "ui/pages/login/LoginRouterPage"
   ]
 }

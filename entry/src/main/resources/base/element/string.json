@@ -1009,6 +1009,10 @@
       "value": "Missed voice call"
     },
     {
+      "name": "invalid_phone_format",
+      "value": "Invalid phone number format"
+    },
+    {
       "name": "message_call_missed_video",
       "value": "Missed video call"
     },
@@ -2195,6 +2199,194 @@
     {
       "name": "permission_location_reason",
       "value": "Telegram needs location access to share your location in chats."
+    },
+    {
+      "name": "select_country",
+      "value": "Select Country"
+    },
+    {
+      "name": "login_continue",
+      "value": "Continue"
+    },
+    {
+      "name": "login_sms_sent",
+      "value": "We've sent an SMS with a code to %s"
+    },
+    {
+      "name": "login_call_sent",
+      "value": "We're calling %s with a code"
+    },
+    {
+      "name": "login_check_telegram",
+      "value": "Check your Telegram messages for the code"
+    },
+    {
+      "name": "login_missed_call",
+      "value": "We're calling %s. Enter the last digits of the number"
+    },
+    {
+      "name": "login_fragment_sent",
+      "value": "We sent the code via Fragment to %s"
+    },
+    {
+      "name": "login_email_sent",
+      "value": "We sent a code to your email address"
+    },
+    {
+      "name": "login_code_word_sent",
+      "value": "A code word was sent to your other device"
+    },
+    {
+      "name": "login_code_phrase_sent",
+      "value": "A code phrase was sent to your other device"
+    },
+    {
+      "name": "login_code_sent_generic",
+      "value": "We've sent a code to %s"
+    },
+    {
+      "name": "login_request_call_in",
+      "value": "Request a call in %s"
+    },
+    {
+      "name": "login_resend_sms_in",
+      "value": "Resend SMS in %s"
+    },
+    {
+      "name": "login_resend_code_in",
+      "value": "Resend code in %s"
+    },
+    {
+      "name": "login_request_call",
+      "value": "Request a phone call"
+    },
+    {
+      "name": "login_resend_sms",
+      "value": "Resend SMS"
+    },
+    {
+      "name": "login_didnt_get_code",
+      "value": "Didn't get the code?"
+    },
+    {
+      "name": "login_open_fragment",
+      "value": "Open Fragment"
+    },
+    {
+      "name": "login_check_email",
+      "value": "Check Your Email"
+    },
+    {
+      "name": "login_enter_code_word",
+      "value": "Enter Code Word"
+    },
+    {
+      "name": "login_enter_code_phrase",
+      "value": "Enter Code Phrase"
+    },
+    {
+      "name": "login_reset_account",
+      "value": "Reset Account"
+    },
+    {
+      "name": "login_recovery_unavailable",
+      "value": "Password recovery is not available for this account."
+    },
+    {
+      "name": "login_two_step_protected",
+      "value": "Your account is protected with an additional password."
+    },
+    {
+      "name": "chat_not_selected",
+      "value": "Chat is not selected"
+    },
+    {
+      "name": "offline",
+      "value": "offline"
+    },
+    {
+      "name": "no_contacts",
+      "value": "No contacts yet"
+    },
+    {
+      "name": "no_recent_calls",
+      "value": "No recent calls"
+    },
+    {
+      "name": "weekday_sun",
+      "value": "Sun"
+    },
+    {
+      "name": "weekday_mon",
+      "value": "Mon"
+    },
+    {
+      "name": "weekday_tue",
+      "value": "Tue"
+    },
+    {
+      "name": "weekday_wed",
+      "value": "Wed"
+    },
+    {
+      "name": "weekday_thu",
+      "value": "Thu"
+    },
+    {
+      "name": "weekday_fri",
+      "value": "Fri"
+    },
+    {
+      "name": "weekday_sat",
+      "value": "Sat"
+    },
+    {
+      "name": "month_jan",
+      "value": "Jan"
+    },
+    {
+      "name": "month_feb",
+      "value": "Feb"
+    },
+    {
+      "name": "month_mar",
+      "value": "Mar"
+    },
+    {
+      "name": "month_apr",
+      "value": "Apr"
+    },
+    {
+      "name": "month_may",
+      "value": "May"
+    },
+    {
+      "name": "month_jun",
+      "value": "Jun"
+    },
+    {
+      "name": "month_jul",
+      "value": "Jul"
+    },
+    {
+      "name": "month_aug",
+      "value": "Aug"
+    },
+    {
+      "name": "month_sep",
+      "value": "Sep"
+    },
+    {
+      "name": "month_oct",
+      "value": "Oct"
+    },
+    {
+      "name": "month_nov",
+      "value": "Nov"
+    },
+    {
+      "name": "month_dec",
+      "value": "Dec"
     }
   ]
 }

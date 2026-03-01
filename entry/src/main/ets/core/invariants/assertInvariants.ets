@@ -43,14 +43,14 @@ function checkHardInvariants(state: AppState): InvariantViolation[] {
 
   // 1. No duplicate chat IDs
   const chatIds = new Set<number>();
-  for (const chatId of state.dialogs.orderedChatIds) {
+  for (const chatId of state.chats.orderedChatIds) {
     if (chatIds.has(chatId)) {
       const violation = new InvariantViolation();
       violation.severity = InvariantSeverity.HARD;
       violation.message = `Duplicate chat ID in orderedChatIds: ${chatId}`;
       const details = new ViolationDetails();
       details.chatId = chatId;
-      details.orderedChatIds = state.dialogs.orderedChatIds;
+      details.orderedChatIds = state.chats.orderedChatIds;
       violation.details = details;
       violations.push(violation);
     }
@@ -58,14 +58,14 @@ function checkHardInvariants(state: AppState): InvariantViolation[] {
   }
 
   // 2. All orderedChatIds must exist in chats map
-  for (const chatId of state.dialogs.orderedChatIds) {
-    if (!state.dialogs.chats.has(chatId)) {
+  for (const chatId of state.chats.orderedChatIds) {
+    if (!state.chats.chats.has(chatId)) {
       const violation = new InvariantViolation();
       violation.severity = InvariantSeverity.HARD;
       violation.message = `Ordered chat ID not found in chats map: ${chatId}`;
       const details = new ViolationDetails();
       details.chatId = chatId;
-      details.chatsSize = state.dialogs.chats.size;
+      details.chatsSize = state.chats.chats.size;
       violation.details = details;
       violations.push(violation);
     }
@@ -89,19 +89,10 @@ function checkHardInvariants(state: AppState): InvariantViolation[] {
     });
   });
 
-  // 4. Auth state consistency
-  if (state.auth.status === 'ready' && !state.auth.userId) {
-    const violation = new InvariantViolation();
-    violation.severity = InvariantSeverity.HARD;
-    violation.message = 'Auth status is ready but userId is missing';
-    const details = new ViolationDetails();
-    details.authStatus = state.auth.status;
-    violation.details = details;
-    violations.push(violation);
-  }
+  // 4. (Moved to soft invariants: Auth state consistency)
 
   // 5. No negative unread counts
-  state.dialogs.chats.forEach((chat: Chat, chatId: number) => {
+  state.chats.chats.forEach((chat: Chat, chatId: number) => {
     if (chat.unreadCount < 0) {
       const violation = new InvariantViolation();
       violation.severity = InvariantSeverity.HARD;
@@ -116,7 +107,7 @@ function checkHardInvariants(state: AppState): InvariantViolation[] {
 
   // 6. Message references valid chat
   state.messages.messages.forEach((messagesMap: Map<string, Message>, chatId: number) => {
-    if (!state.dialogs.chats.has(chatId)) {
+    if (!state.chats.chats.has(chatId)) {
       const violation = new InvariantViolation();
       violation.severity = InvariantSeverity.HARD;
       violation.message = `Messages exist for non-existent chat ${chatId}`;
@@ -137,8 +128,8 @@ function checkSoftInvariants(state: AppState): InvariantViolation[] {
 
   // 1. Ordered chat IDs should be in reasonable order (by timestamp)
   let lastTimestamp = Infinity;
-  for (const chatId of state.dialogs.orderedChatIds.slice(0, 10)) {
-    const chat = state.dialogs.chats.get(chatId);
+  for (const chatId of state.chats.orderedChatIds.slice(0, 10)) {
+    const chat = state.chats.chats.get(chatId);
     if (chat?.lastMessage?.timestamp) {
       if (chat.lastMessage.timestamp > lastTimestamp) {
         // Not a violation, just potentially out of order
@@ -172,9 +163,11 @@ function checkSoftInvariants(state: AppState): InvariantViolation[] {
   });
 
   // 3. User references should exist
+  const missingSenderIds = new Set<number>();
   state.messages.messages.forEach((messagesMap: Map<string, Message>, chatId: number) => {
     messagesMap.forEach((message: Message) => {
-      if (message.senderId !== 0 && !state.users.users.has(message.senderId)) {
+      if (message.senderId !== 0 && !state.users.users.has(message.senderId) && !missingSenderIds.has(message.senderId)) {
+        missingSenderIds.add(message.senderId);
         const violation = new InvariantViolation();
         violation.severity = InvariantSeverity.SOFT;
         violation.message = `Message references non-existent user ${message.senderId}`;
@@ -187,6 +180,18 @@ function checkSoftInvariants(state: AppState): InvariantViolation[] {
       }
     });
   });
+
+  // 4. (Из Hard) Auth state consistency
+  // Мы ожидаем userId после ready, но он может подгрузиться асинхронно через доли секунды.
+  if (state.auth.status === 'ready' && !state.auth.userId) {
+    const violation = new InvariantViolation();
+    violation.severity = InvariantSeverity.SOFT;
+    violation.message = 'Auth status is ready but userId is currently missing (fetching in progress)';
+    const details = new ViolationDetails();
+    details.authStatus = state.auth.status;
+    violation.details = details;
+    violations.push(violation);
+  }
 
   return violations;
 }
@@ -217,8 +222,14 @@ export function assertInvariants(state: AppState, isDevMode: boolean = true): vo
   if (softViolations.length > 0) {
     hilog.warn(DOMAIN, TAG, 'Soft violations found: %{public}d', softViolations.length);
 
-    for (const violation of softViolations) {
+    const SOFT_LOG_MAX = 20;
+    const limit = Math.min(softViolations.length, SOFT_LOG_MAX);
+    for (let i = 0; i < limit; i++) {
+      const violation = softViolations[i];
       hilog.warn(DOMAIN, TAG, '[Soft] %{public}s', violation.message);
+    }
+    if (softViolations.length > SOFT_LOG_MAX) {
+      hilog.warn(DOMAIN, TAG, '[Soft] ... +%{public}d more', softViolations.length - SOFT_LOG_MAX);
     }
   }
 }

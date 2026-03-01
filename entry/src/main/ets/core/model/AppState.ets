@@ -17,6 +17,11 @@ export class AuthState {
   status: AuthStatus = 'notInitialized';
   userId: UserId = 0;
   phoneNumber: string = '';
+  codeType: string = 'sms';
+  codeLength: number = 5;
+  codeTimeout: number = 60;
+  nextCodeType: string = 'call';
+  passwordHint: string = '';
   error: string = '';
 }
 
@@ -33,19 +38,23 @@ export class ChatLastMessage {
   timestamp: number = 0;
 }
 
-// Chat/Dialog state
+// Chat state
 export class Chat {
   id: ChatId = 0;
   type: ChatType = 'private';
+  peerUserId: UserId = 0; // for private/secret chats
   title: string = '';
   unreadCount: number = 0;
+  muteForSeconds: number = 0;
+  lastReadOutboxMessageId: MessageId = '0';
+  lastReadInboxMessageId: MessageId = '0';
   lastMessage?: ChatLastMessage;
   isPinned: boolean = false;
   photoSmall: string = '';
   order: string = '0'; // TDLib int64 sort key as string; '0' = not in chatListMain
 }
 
-export class DialogsState {
+export class ChatsState {
   chats: Map<ChatId, Chat> = new Map<ChatId, Chat>();
   orderedChatIds: ChatId[] = [];
   isLoading: boolean = false;
@@ -56,6 +65,58 @@ export class DialogsState {
 export class MessageContent {
   type: MessageContentType = 'text';
   text: string = '';
+  caption: string = '';
+
+  // Photo
+  photoPath: string = '';
+  photoThumbPath: string = '';
+  photoWidth: number = 0;
+  photoHeight: number = 0;
+
+  // Video
+  videoPath: string = '';
+  videoThumbPath: string = '';
+  videoDuration: number = 0;
+  videoWidth: number = 0;
+  videoHeight: number = 0;
+
+  // Document
+  documentPath: string = '';
+  fileName: string = '';
+  fileSize: number = 0;
+  mimeType: string = '';
+
+  // Audio
+  audioPath: string = '';
+  audioDuration: number = 0;
+  audioTitle: string = '';
+  audioPerformer: string = '';
+
+  // Voice note
+  voicePath: string = '';
+  voiceDuration: number = 0;
+  voiceWaveform: string = '';
+  isVoiceListened: boolean = false;
+
+  // Sticker
+  stickerPath: string = '';
+  stickerEmoji: string = '';
+  stickerWidth: number = 0;
+  stickerHeight: number = 0;
+  isAnimatedSticker: boolean = false;
+  isVideoSticker: boolean = false;
+  isPremiumSticker: boolean = false;
+
+  // Animation
+  animationPath: string = '';
+  animationDuration: number = 0;
+  animationWidth: number = 0;
+  animationHeight: number = 0;
+
+  // Video note
+  videoNotePath: string = '';
+  videoNoteDuration: number = 0;
+  videoNoteLength: number = 0;
 }
 
 // Message state - uses string for MessageId (int64)
@@ -112,7 +173,7 @@ export class UsersState {
 export class AppState {
   auth: AuthState = new AuthState();
   connection: ConnectionState = new ConnectionState();
-  dialogs: DialogsState = new DialogsState();
+  chats: ChatsState = new ChatsState();
   messages: MessagesState = new MessagesState();
   users: UsersState = new UsersState();
   lastEvent?: AnyAppEvent;

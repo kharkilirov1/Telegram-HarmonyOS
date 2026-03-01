@@ -2191,6 +2191,194 @@
     {
       "name": "permission_location_reason",
       "value": "Telegram необходим доступ к местоположению для отправки геолокации в чатах."
+    },
+    {
+      "name": "select_country",
+      "value": "Выберите страну"
+    },
+    {
+      "name": "login_continue",
+      "value": "Продолжить"
+    },
+    {
+      "name": "login_sms_sent",
+      "value": "Мы отправили SMS с кодом на %s"
+    },
+    {
+      "name": "login_call_sent",
+      "value": "Мы звоним на %s с кодом"
+    },
+    {
+      "name": "login_check_telegram",
+      "value": "Проверьте сообщения Telegram для получения кода"
+    },
+    {
+      "name": "login_missed_call",
+      "value": "Мы звоним на %s. Введите последние цифры номера"
+    },
+    {
+      "name": "login_fragment_sent",
+      "value": "Мы отправили код через Fragment на %s"
+    },
+    {
+      "name": "login_email_sent",
+      "value": "Мы отправили код на вашу почту"
+    },
+    {
+      "name": "login_code_word_sent",
+      "value": "Кодовое слово отправлено на другое устройство"
+    },
+    {
+      "name": "login_code_phrase_sent",
+      "value": "Кодовая фраза отправлена на другое устройство"
+    },
+    {
+      "name": "login_code_sent_generic",
+      "value": "Мы отправили код на %s"
+    },
+    {
+      "name": "login_request_call_in",
+      "value": "Запросить звонок через %s"
+    },
+    {
+      "name": "login_resend_sms_in",
+      "value": "Повторить SMS через %s"
+    },
+    {
+      "name": "login_resend_code_in",
+      "value": "Повторить код через %s"
+    },
+    {
+      "name": "login_request_call",
+      "value": "Позвонить мне"
+    },
+    {
+      "name": "login_resend_sms",
+      "value": "Повторить SMS"
+    },
+    {
+      "name": "login_didnt_get_code",
+      "value": "Не получили код?"
+    },
+    {
+      "name": "login_open_fragment",
+      "value": "Открыть Fragment"
+    },
+    {
+      "name": "login_check_email",
+      "value": "Проверьте почту"
+    },
+    {
+      "name": "login_enter_code_word",
+      "value": "Введите кодовое слово"
+    },
+    {
+      "name": "login_enter_code_phrase",
+      "value": "Введите кодовую фразу"
+    },
+    {
+      "name": "login_reset_account",
+      "value": "Сбросить аккаунт"
+    },
+    {
+      "name": "login_recovery_unavailable",
+      "value": "Восстановление пароля недоступно для этого аккаунта."
+    },
+    {
+      "name": "login_two_step_protected",
+      "value": "Ваш аккаунт защищён дополнительным паролем."
+    },
+    {
+      "name": "chat_not_selected",
+      "value": "Чат не выбран"
+    },
+    {
+      "name": "offline",
+      "value": "не в сети"
+    },
+    {
+      "name": "no_contacts",
+      "value": "Пока нет контактов"
+    },
+    {
+      "name": "no_recent_calls",
+      "value": "Нет недавних звонков"
+    },
+    {
+      "name": "weekday_sun",
+      "value": "Вс"
+    },
+    {
+      "name": "weekday_mon",
+      "value": "Пн"
+    },
+    {
+      "name": "weekday_tue",
+      "value": "Вт"
+    },
+    {
+      "name": "weekday_wed",
+      "value": "Ср"
+    },
+    {
+      "name": "weekday_thu",
+      "value": "Чт"
+    },
+    {
+      "name": "weekday_fri",
+      "value": "Пт"
+    },
+    {
+      "name": "weekday_sat",
+      "value": "Сб"
+    },
+    {
+      "name": "month_jan",
+      "value": "янв"
+    },
+    {
+      "name": "month_feb",
+      "value": "фев"
+    },
+    {
+      "name": "month_mar",
+      "value": "мар"
+    },
+    {
+      "name": "month_apr",
+      "value": "апр"
+    },
+    {
+      "name": "month_may",
+      "value": "мая"
+    },
+    {
+      "name": "month_jun",
+      "value": "июн"
+    },
+    {
+      "name": "month_jul",
+      "value": "июл"
+    },
+    {
+      "name": "month_aug",
+      "value": "авг"
+    },
+    {
+      "name": "month_sep",
+      "value": "сен"
+    },
+    {
+      "name": "month_oct",
+      "value": "окт"
+    },
+    {
+      "name": "month_nov",
+      "value": "ноя"
+    },
+    {
+      "name": "month_dec",
+      "value": "дек"
     }
   ]
 }

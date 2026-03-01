@@ -23,13 +23,49 @@ export function authReducer(state: AppState, action: ReducerAction): AppState {
     case 'authStateChanged': {
       const authEvent = action as AuthStateChangedEvent;
       newState.auth.status = authEvent.state;
-      newState.auth.userId = authEvent.userId || 0;
+
+      if (authEvent.state === 'waitPhoneNumber') {
+        newState.auth.phoneNumber = '';
+        newState.auth.codeType = 'sms';
+        newState.auth.codeLength = 5;
+        newState.auth.codeTimeout = 60;
+        newState.auth.nextCodeType = 'call';
+        newState.auth.passwordHint = '';
+      }
+
+      // userId приходит только из myUserResolved (через getMe).
+      // authStateChanged НЕ содержит userId — не перезаписываем существующий.
+      if (authEvent.userId && authEvent.userId > 0) {
+        newState.auth.userId = authEvent.userId;
+      }
+      if (authEvent.phoneNumber.length > 0) {
+        newState.auth.phoneNumber = authEvent.phoneNumber;
+      }
+      if (authEvent.codeType.length > 0) {
+        newState.auth.codeType = authEvent.codeType;
+      }
+      if (authEvent.codeLength > 0) {
+        newState.auth.codeLength = authEvent.codeLength;
+      }
+      if (authEvent.codeTimeout >= 0) {
+        newState.auth.codeTimeout = authEvent.codeTimeout;
+      }
+      if (authEvent.state === 'waitCode' || authEvent.nextCodeType.length > 0) {
+        newState.auth.nextCodeType = authEvent.nextCodeType;
+      }
+      if (authEvent.state !== 'waitPassword') {
+        newState.auth.passwordHint = '';
+      } else {
+        newState.auth.passwordHint = authEvent.passwordHint;
+      }
       break;
     }
 
     case 'myUserResolved': {
       const resolvedEvent = action as MyUserResolvedEvent;
-      newState.auth.userId = resolvedEvent.userId;
+      if (resolvedEvent.userId > 0) {
+        newState.auth.userId = resolvedEvent.userId;
+      }
       break;
     }
 

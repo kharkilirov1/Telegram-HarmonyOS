@@ -3,8 +3,11 @@
 // Референс: util.LRUCache из @kit.ArkTS
 
 import { util } from '@kit.ArkTS';
-import { Message, MessageId, ChatId } from '../model/AppState';
+import { Message } from '../model/AppState';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+
+type MessageId = string;
+type ChatId = string;
 
 const DOMAIN = 0x000C;
 const TAG = 'MessageLruCache';
@@ -51,10 +54,12 @@ export class ChatMessageCache {
   }
 
   put(messageId: MessageId, message: Message): void {
-    // LRUCache автоматически вытеснит старые записи при превышении capacity
+    // Проверяем, было ли сообщение уже в cache (update vs insert)
+    const wasPresent = this.cache.contains(messageId);
     const oldLength = this.cache.length;
     this.cache.put(messageId, message);
-    if (this.cache.length === oldLength && !this.cache.contains(messageId)) {
+    // Eviction: вставили новое (не было раньше), но размер не вырос — значит что-то вытеснено
+    if (!wasPresent && this.cache.length <= oldLength) {
       this.evictionCount++;
     }
   }

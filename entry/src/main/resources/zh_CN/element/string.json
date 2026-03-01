@@ -2191,6 +2191,194 @@
     {
       "name": "permission_location_reason",
       "value": "Telegram需要位置权限来在聊天中分享您的位置。"
+    },
+    {
+      "name": "chat_not_selected",
+      "value": "未选择聊天"
+    },
+    {
+      "name": "offline",
+      "value": "离线"
+    },
+    {
+      "name": "no_contacts",
+      "value": "暂无联系人"
+    },
+    {
+      "name": "no_recent_calls",
+      "value": "暂无最近通话"
+    },
+    {
+      "name": "weekday_sun",
+      "value": "周日"
+    },
+    {
+      "name": "weekday_mon",
+      "value": "周一"
+    },
+    {
+      "name": "weekday_tue",
+      "value": "周二"
+    },
+    {
+      "name": "weekday_wed",
+      "value": "周三"
+    },
+    {
+      "name": "weekday_thu",
+      "value": "周四"
+    },
+    {
+      "name": "weekday_fri",
+      "value": "周五"
+    },
+    {
+      "name": "weekday_sat",
+      "value": "周六"
+    },
+    {
+      "name": "month_jan",
+      "value": "1月"
+    },
+    {
+      "name": "month_feb",
+      "value": "2月"
+    },
+    {
+      "name": "month_mar",
+      "value": "3月"
+    },
+    {
+      "name": "month_apr",
+      "value": "4月"
+    },
+    {
+      "name": "month_may",
+      "value": "5月"
+    },
+    {
+      "name": "month_jun",
+      "value": "6月"
+    },
+    {
+      "name": "month_jul",
+      "value": "7月"
+    },
+    {
+      "name": "month_aug",
+      "value": "8月"
+    },
+    {
+      "name": "month_sep",
+      "value": "9月"
+    },
+    {
+      "name": "month_oct",
+      "value": "10月"
+    },
+    {
+      "name": "month_nov",
+      "value": "11月"
+    },
+    {
+      "name": "month_dec",
+      "value": "12月"
+    },
+    {
+      "name": "login_call_sent",
+      "value": "We're calling %s with a code"
+    },
+    {
+      "name": "login_check_email",
+      "value": "Check Your Email"
+    },
+    {
+      "name": "login_check_telegram",
+      "value": "Check your Telegram messages for the code"
+    },
+    {
+      "name": "login_code_phrase_sent",
+      "value": "A code phrase was sent to your other device"
+    },
+    {
+      "name": "login_code_sent_generic",
+      "value": "We've sent a code to %s"
+    },
+    {
+      "name": "login_code_word_sent",
+      "value": "A code word was sent to your other device"
+    },
+    {
+      "name": "login_continue",
+      "value": "Continue"
+    },
+    {
+      "name": "login_didnt_get_code",
+      "value": "Didn't get the code?"
+    },
+    {
+      "name": "login_email_sent",
+      "value": "We sent a code to your email address"
+    },
+    {
+      "name": "login_enter_code_phrase",
+      "value": "Enter Code Phrase"
+    },
+    {
+      "name": "login_enter_code_word",
+      "value": "Enter Code Word"
+    },
+    {
+      "name": "login_fragment_sent",
+      "value": "We sent the code via Fragment to %s"
+    },
+    {
+      "name": "login_missed_call",
+      "value": "We're calling %s. Enter the last digits of the number"
+    },
+    {
+      "name": "login_open_fragment",
+      "value": "Open Fragment"
+    },
+    {
+      "name": "login_recovery_unavailable",
+      "value": "Password recovery is not available for this account."
+    },
+    {
+      "name": "login_request_call",
+      "value": "Request a phone call"
+    },
+    {
+      "name": "login_request_call_in",
+      "value": "Request a call in %s"
+    },
+    {
+      "name": "login_resend_code_in",
+      "value": "Resend code in %s"
+    },
+    {
+      "name": "login_resend_sms",
+      "value": "Resend SMS"
+    },
+    {
+      "name": "login_resend_sms_in",
+      "value": "Resend SMS in %s"
+    },
+    {
+      "name": "login_reset_account",
+      "value": "Reset Account"
+    },
+    {
+      "name": "login_sms_sent",
+      "value": "We've sent an SMS with a code to %s"
+    },
+    {
+      "name": "login_two_step_protected",
+      "value": "Your account is protected with an additional password."
+    },
+    {
+      "name": "select_country",
+      "value": "Select Country"
     }
   ]
 }

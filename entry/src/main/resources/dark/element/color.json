@@ -154,11 +154,11 @@
     },
     {
       "name": "glass_nav_bg",
-      "value": "#CC1C1C1E"
+      "value": "#052C2C2E"
     },
     {
       "name": "glass_tab_bg",
-      "value": "#B31C1C1E"
+      "value": "#052C2C2E"
     },
     {
       "name": "glass_input_bg",
@@ -243,6 +243,46 @@
     {
       "name": "slider_track_dark",
       "value": "#4DFFFFFF"
+    },
+    {
+      "name": "chatlist_unpinned_avatar_bg",
+      "value": "#2C2C2E"
+    },
+    {
+      "name": "chatlist_pinned_avatar_bg",
+      "value": "#3A3A3C"
+    },
+    {
+      "name": "chatlist_pinned_item_bg",
+      "value": "#2C2C2E"
+    },
+    {
+      "name": "chatlist_separator",
+      "value": "#3A3A3C"
+    },
+    {
+      "name": "story_unseen_top",
+      "value": "#30D158"
+    },
+    {
+      "name": "story_unseen_bottom",
+      "value": "#34C759"
+    },
+    {
+      "name": "story_seen",
+      "value": "#555555"
+    },
+    {
+      "name": "unread_text",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "placeholder_bg",
+      "value": "#3A3A3C"
+    },
+    {
+      "name": "video_placeholder_bg",
+      "value": "#1C1C1E"
     }
   ]
 }
