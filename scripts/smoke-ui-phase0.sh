@@ -1,10 +1,9 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Phase 0 files that must exist
-phase0_files=(
+PHASE0_FILES=(
   "entry/src/main/ets/ui/pages/MainTabsPage.ets"
   "entry/src/main/ets/ui/pages/chatlist/ChatListPage.ets"
   "entry/src/main/ets/ui/pages/chatlist/ChatListItem.ets"
@@ -14,45 +13,39 @@ phase0_files=(
   "entry/src/main/ets/ui/components/common/AppListRow.ets"
 )
 
-echo "Checking Phase 0 file existence..."
-for file in "${phase0_files[@]}"; do
+HEX_PATTERN='#[0-9A-Fa-f]{3,8}'
+HEX_VIOLATIONS=()
+
+for file in "${PHASE0_FILES[@]}"; do
   full_path="$ROOT/$file"
+  
   if [[ ! -f "$full_path" ]]; then
-    echo "❌ Required file not found: $file"
+    echo "ERROR: Required file not found: $full_path" >&2
     exit 1
   fi
+  
+  while IFS=: read -r line_num line_content; do
+    HEX_VIOLATIONS+=("$file:$line_num -> $line_content")
+  done < <(grep -n "$HEX_PATTERN" "$full_path" || true)
 done
 
-echo "Checking for hardcoded color hex values..."
-hex_pattern='#[0-9A-Fa-f]{3,8}'
-violations=()
-
-for file in "${phase0_files[@]}"; do
-  full_path="$ROOT/$file"
-  if grep -nE "$hex_pattern" "$full_path" >/dev/null 2>&1; then
-    violations+=("$file contains hardcoded hex colors:")
-    grep -nE "$hex_pattern" "$full_path" | while IFS= read -r line; do
-      violations+=("  $line")
-    done
-  fi
-done
-
-if [[ ${#violations[@]} -gt 0 ]]; then
-  echo "❌ Hardcoded color hex detected in Phase 0 files:"
-  printf '%s\n' "${violations[@]}"
+if [[ ${#HEX_VIOLATIONS[@]} -gt 0 ]]; then
+  echo "ERROR: Hardcoded color hex detected in Phase 0 shell/chatlist files:" >&2
+  printf '%s\n' "${HEX_VIOLATIONS[@]}" >&2
   exit 1
 fi
 
-echo "Checking ChatListItem @Reusable decorator..."
-if ! grep -q "@Reusable" "$ROOT/entry/src/main/ets/ui/pages/chatlist/ChatListItem.ets"; then
-  echo "❌ ChatListItem must be marked with @Reusable"
+CHAT_LIST_ITEM="$ROOT/entry/src/main/ets/ui/pages/chatlist/ChatListItem.ets"
+CHAT_LIST_PAGE="$ROOT/entry/src/main/ets/ui/pages/chatlist/ChatListPage.ets"
+
+if ! grep -q '@Reusable' "$CHAT_LIST_ITEM"; then
+  echo "ERROR: ChatListItem must be marked with @Reusable." >&2
   exit 1
 fi
 
-echo "Checking ChatListPage reuseId() usage..."
-if ! grep -q "\.reuseId(" "$ROOT/entry/src/main/ets/ui/pages/chatlist/ChatListPage.ets"; then
-  echo "❌ ChatListPage must apply reuseId() for ChatListItem in LazyForEach"
+if ! grep -q '\.reuseId(' "$CHAT_LIST_PAGE"; then
+  echo "ERROR: ChatListPage must apply reuseId() for ChatListItem in LazyForEach." >&2
   exit 1
 fi
 
-echo "✅ Phase 0 UI smoke checks passed"
+echo "✅ Phase 0 UI smoke checks passed."
