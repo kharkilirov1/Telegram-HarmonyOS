@@ -283,6 +283,14 @@
     {
       "name": "video_placeholder_bg",
       "value": "#1C1C1E"
+    },
+    {
+      "name": "filter_highlight_bg",
+      "value": "#28FFFFFF"
+    },
+    {
+      "name": "filter_badge_inactive_bg",
+      "value": "#998B8D93"
     }
   ]
 }

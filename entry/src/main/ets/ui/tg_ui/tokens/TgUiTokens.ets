@@ -374,6 +374,36 @@ export class TgUiTokens {
   static readonly TAB_BAR_BADGE_PADDING_H: number = 5;
   static readonly TAB_BAR_CONTENT_SAFE_BOTTOM: number = 74;
 
+  // ── Filter bar (Phase G) ──
+  static readonly FILTER_BAR_HEIGHT: number = 44;
+  static readonly FILTER_BAR_RADIUS: number = 22;
+  static readonly FILTER_BAR_SIDE_INSET: number = 16;
+  static readonly FILTER_BAR_INNER_PADDING: number = 14;
+  static readonly FILTER_BAR_MAX_WIDTH: number = 560;
+  static readonly FILTER_BAR_BG: Resource = $r('app.color.glass_tab_bg');
+  static readonly FILTER_BAR_FALLBACK_BG: Resource = $r('app.color.background_secondary');
+  static readonly FILTER_BAR_BORDER_WIDTH: number = 0.5;
+  static readonly FILTER_BAR_BORDER_COLOR: Resource = $r('app.color.separator');
+  static readonly FILTER_BAR_SHADOW_COLOR: Resource = $r('app.color.glass_card_shadow');
+  static readonly FILTER_BAR_SHADOW_RADIUS: number = 20;
+  static readonly FILTER_BAR_SHADOW_OFFSET_Y: number = 8;
+  static readonly FILTER_BAR_TAB_FONT_SIZE: number = 14;
+  static readonly FILTER_BAR_TAB_TEXT_COLOR: Resource = $r('app.color.text_primary');
+  static readonly FILTER_BAR_TAB_MIN_SPACING: number = 26;
+  static readonly FILTER_BAR_TAB_VERTICAL_INSET: number = 4;
+  static readonly FILTER_BAR_HIGHLIGHT_HEIGHT: number = 36;
+  static readonly FILTER_BAR_HIGHLIGHT_PADDING_H: number = 10;
+  static readonly FILTER_BAR_HIGHLIGHT_RADIUS: number = 18;
+  static readonly FILTER_BAR_HIGHLIGHT_BG: Resource = $r('app.color.filter_highlight_bg');
+  static readonly FILTER_BAR_HIGHLIGHT_ANIM_DURATION: number = 250;
+  static readonly FILTER_BAR_BADGE_SIZE: number = 18;
+  static readonly FILTER_BAR_BADGE_FONT_SIZE: number = 14;
+  static readonly FILTER_BAR_BADGE_PADDING_H: number = 4;
+  static readonly FILTER_BAR_BADGE_TEXT_OFFSET: number = 4;
+  static readonly FILTER_BAR_BADGE_ACTIVE_BG: Resource = $r('app.color.telegram_blue');
+  static readonly FILTER_BAR_BADGE_INACTIVE_BG: Resource = $r('app.color.filter_badge_inactive_bg');
+  static readonly FILTER_BAR_BADGE_TEXT_COLOR: Resource = $r('app.color.unread_text');
+
   // ── Search bar (Phase D-2) ──
   static readonly SEARCH_BAR_HEIGHT: number = 36;
   static readonly SEARCH_BAR_RADIUS: number = 10;
@@ -403,19 +433,8 @@ export class TgUiTokens {
   static readonly COUNTRY_ROW_SEPARATOR_STROKE: number = 0.5;
   static readonly COUNTRY_ROW_SEPARATOR_INSET: number = 56;
 
-  static readonly COUNTRY_TOP_OVERLAY_BAR_HEIGHT: number = 52;
-  static readonly COUNTRY_TOP_OVERLAY_BACK_SIZE: number = 36;
-  static readonly COUNTRY_TOP_OVERLAY_BACK_ICON_SIZE: number = 20;
-  static readonly COUNTRY_TOP_OVERLAY_SIDE_INSET: number = 16;
-  static readonly COUNTRY_TOP_OVERLAY_BACK_BG: string = 'rgba(120,120,128,0.2)';
-  static readonly COUNTRY_TOP_OVERLAY_FALLBACK_BG: Resource = $r('app.color.background_secondary');
-
-  static readonly COUNTRY_SEARCH_OVERLAY_HEIGHT: number = 68;
-  static readonly COUNTRY_SEARCH_CAPSULE_HEIGHT: number = 48;
-  static readonly COUNTRY_SEARCH_SIDE_INSET: number = 16;
-  static readonly COUNTRY_SEARCH_VERTICAL_INSET: number = 10;
-  static readonly COUNTRY_SEARCH_EDGE_BLUR_RADIUS: number = 4;
-  static readonly COUNTRY_SEARCH_CAPSULE_FALLBACK_BG: Resource = $r('app.color.search_bar_bg');
+  static readonly COUNTRY_SHEET_SEARCH_HEIGHT: number = 36;
+  static readonly COUNTRY_SHEET_SEARCH_SIDE_INSET: number = 16;
 
   // ── Shared glass highlight colors ──
   static readonly GLASS_SPECULAR_TOP: string = '#22FFFFFF';
@@ -470,7 +489,109 @@ export class TgUiTokens {
   static readonly CALL_ROW_SEPARATOR_STROKE: number = 0.5;
   static readonly CALL_ROW_SEPARATOR_INSET: number = 68;
 
+  // ── Login flow (Phase F) ──
+  // Colors
+  static readonly LOGIN_BG: Resource = $r('app.color.background_primary');
+  static readonly LOGIN_TITLE_COLOR: Resource = $r('app.color.text_primary');
+  static readonly LOGIN_SUBTITLE_COLOR: Resource = $r('app.color.text_primary');
+  static readonly LOGIN_LINK_COLOR: Resource = $r('app.color.telegram_blue');
+  static readonly LOGIN_ERROR_COLOR: Resource = $r('app.color.error_red');
+  static readonly LOGIN_INPUT_TEXT_COLOR: Resource = $r('app.color.text_primary');
+  static readonly LOGIN_INPUT_PLACEHOLDER_COLOR: Resource = $r('app.color.text_secondary');
+  static readonly LOGIN_SEPARATOR_COLOR: Resource = $r('app.color.separator');
+  // Button
+  static readonly LOGIN_BUTTON_BG: Resource = $r('app.color.telegram_blue');
+  static readonly LOGIN_BUTTON_DISABLED_BG: Resource = $r('app.color.separator');
+  static readonly LOGIN_BUTTON_TEXT_COLOR: Resource = $r('app.color.icon_on_primary');
+  static readonly LOGIN_BUTTON_DISABLED_TEXT_COLOR: Resource = $r('app.color.text_secondary');
+  static readonly LOGIN_BUTTON_SPINNER_COLOR: Resource = $r('app.color.icon_on_primary');
+  // Code cells
+  static readonly LOGIN_CODE_CELL_BG: Resource = $r('app.color.background_secondary');
+  static readonly LOGIN_CODE_CELL_TEXT_COLOR: Resource = $r('app.color.text_primary');
+  static readonly LOGIN_CODE_CELL_BORDER_ACTIVE: Resource = $r('app.color.telegram_blue');
+  static readonly LOGIN_CODE_CELL_BORDER_INACTIVE: Resource = $r('app.color.separator');
+  // Typography
+  static readonly LOGIN_TITLE_SIZE: number = 28;
+  static readonly LOGIN_SUBTITLE_SIZE: number = 17;
+  static readonly LOGIN_INPUT_FONT_SIZE: number = 17;
+  static readonly LOGIN_LINK_SIZE: number = 15;
+  static readonly LOGIN_ERROR_SIZE: number = 14;
+  static readonly LOGIN_BUTTON_TEXT_SIZE: number = 17;
+  static readonly LOGIN_CODE_CELL_FONT_SIZE: number = 24;
+  // Layout
+  static readonly LOGIN_SIDE_INSET: number = 16;
+  static readonly LOGIN_MAX_WIDTH: number = 430;
+  static readonly LOGIN_MONKEY_SIZE: number = 100;
+  static readonly LOGIN_BUTTON_HEIGHT: number = 48;
+  static readonly LOGIN_BUTTON_RADIUS: number = 24;
+  static readonly LOGIN_INPUT_ROW_HEIGHT: number = 57;
+  static readonly LOGIN_COUNTRY_CODE_WIDTH: number = 71;
+  // Code cells size
+  static readonly LOGIN_CODE_CELL_WIDTH: number = 42;
+  static readonly LOGIN_CODE_CELL_HEIGHT: number = 48;
+  static readonly LOGIN_CODE_CELL_RADIUS: number = 8;
+  static readonly LOGIN_CODE_CELL_GAP: number = 12;
+  static readonly LOGIN_CODE_CELL_BORDER_ACTIVE_WIDTH: number = 2;
+  static readonly LOGIN_CODE_CELL_BORDER_INACTIVE_WIDTH: number = 1;
+
+  // ── Chatlist status (Phase F) ──
+  static readonly CHATLIST_STATUS_ICON_SIZE: number = 16;
+  static readonly CHATLIST_STATUS_TEXT_SIZE: number = 13;
+  static readonly CHATLIST_STATUS_GAP: number = 8;
+  static readonly CHATLIST_LOADING_SIZE: number = 24;
+
+  // ── Settings icon colors (Phase F-extra) ──
+  static readonly SETTINGS_ICON_COLOR_BLUE: Resource = $r('app.color.settings_icon_blue');
+  static readonly SETTINGS_ICON_COLOR_GREEN: Resource = $r('app.color.settings_icon_green');
+  static readonly SETTINGS_ICON_COLOR_RED: Resource = $r('app.color.settings_icon_red');
+  static readonly SETTINGS_ICON_COLOR_ORANGE: Resource = $r('app.color.settings_icon_orange');
+  static readonly SETTINGS_ICON_COLOR_PURPLE: Resource = $r('app.color.settings_icon_purple');
+  static readonly SETTINGS_ROW_ICON_TINT: Resource = $r('app.color.icon_on_primary');
+  static readonly SETTINGS_PROFILE_NAME_SIZE: number = 20;
+
+  // ── Tab bar badge offset (Phase F-extra) ──
+  static readonly TAB_BAR_BADGE_OFFSET_X: number = 10;
+  static readonly TAB_BAR_BADGE_OFFSET_Y: number = -7;
+
+  // ── Country indexer (Phase F-extra) ──
+  static readonly COUNTRY_INDEXER_FONT_SIZE: number = 11;
+  static readonly COUNTRY_INDEXER_ITEM_SIZE: number = 16;
+  static readonly COUNTRY_INDEXER_POPUP_FONT_SIZE: number = 30;
+  static readonly COUNTRY_INDEXER_MARGIN_RIGHT: number = 4;
+  static readonly COUNTRY_SHEET_LOADING_SIZE: number = 32;
+
+  // ── Login layout extras (Phase F-extra) ──
+  static readonly LOGIN_COUNTRY_NAME_SIZE: number = 20;
+  static readonly LOGIN_SEPARATOR_STROKE: number = 0.5;
+  static readonly LOGIN_VERTICAL_SEP_HEIGHT: number = 32;
+  static readonly LOGIN_COUNTRY_CODE_PADDING_START: number = 18;
+  static readonly LOGIN_PHONE_SEP_GAP_END: number = 16;
+  static readonly LOGIN_SPACING_MONKEY_TOP: number = 10;
+  static readonly LOGIN_SPACING_TITLE_TOP: number = 18;
+  static readonly LOGIN_SPACING_COUNTRY_TOP: number = 30;
+  static readonly LOGIN_SPACING_ERROR_TOP: number = 12;
+  static readonly COMPOSER_SEPARATOR_STROKE: number = 1;
+  static readonly LOGIN_TEXT_INPUT_HEIGHT: number = 44;
+  static readonly LOGIN_PASSWORD_FIELD_TOP: number = 32;
+  static readonly LOGIN_FORGOT_LINK_TOP: number = 48;
+  static readonly LOGIN_FORGOT_LINK_SIZE: number = 16;
+  static readonly LOGIN_RESEND_LINK_TOP: number = 24;
+  static readonly LOGIN_EYE_ICON_MARGIN_H: number = 10;
+
+  // ── Avatar color palette (Phase F-extra) ──
+  static readonly AVATAR_COLOR_1: Resource = $r('app.color.sender_color_1');
+  static readonly AVATAR_COLOR_2: Resource = $r('app.color.sender_color_2');
+  static readonly AVATAR_COLOR_3: Resource = $r('app.color.sender_color_3');
+  static readonly AVATAR_COLOR_4: Resource = $r('app.color.sender_color_4');
+  static readonly AVATAR_COLOR_5: Resource = $r('app.color.sender_color_5');
+  static readonly AVATAR_COLOR_6: Resource = $r('app.color.sender_color_6');
+  static readonly AVATAR_COLOR_7: Resource = $r('app.color.sender_color_7');
+  static readonly AVATAR_COLOR_8: Resource = $r('app.color.sender_color_8');
+
   // ── Shared icon resources for chat pipeline ──
+  static readonly ICON_RES_CHECK: Resource = $r('app.media.ic_check');
+  static readonly ICON_RES_EYE: Resource = $r('app.media.ic_eye');
+  static readonly ICON_RES_EYE_OFF: Resource = $r('app.media.ic_eye_off');
   static readonly ICON_RES_CHAT: Resource = $r('app.media.ic_chat');
   static readonly ICON_RES_BACK: Resource = $r('app.media.ic_back');
   static readonly ICON_RES_MORE: Resource = $r('app.media.ic_more');

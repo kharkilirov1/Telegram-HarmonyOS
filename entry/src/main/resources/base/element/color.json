@@ -347,6 +347,14 @@
     {
       "name": "unread_text",
       "value": "#FFFFFF"
+    },
+    {
+      "name": "filter_highlight_bg",
+      "value": "#16000000"
+    },
+    {
+      "name": "filter_badge_inactive_bg",
+      "value": "#99999999"
     }
   ]
 }
