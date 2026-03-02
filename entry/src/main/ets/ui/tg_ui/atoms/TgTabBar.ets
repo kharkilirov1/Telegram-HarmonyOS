@@ -4,17 +4,21 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 import { getString } from '../../../core/utils/AppResource';
+import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 declare function px2vp(value: number): number;
+const DOMAIN = 0x0020;
+const TAG = 'TgTabBar';
 
 @ComponentV2
 export struct TgTabBar {
   @Param selectedIndex: number = 0;
   @Param chatBadgeCount: number = 0;
   @Param glassMode: string = TgGlassPolicy.MODE_AUTO;
-  @Param onTabSelect: (index: number) => void = (_: number): void => {};
+  @Event onTabSelect: (index: number) => void = (_: number): void => {};
 
   @Local private bottomInset: number = 0;
   private mainWindow?: window.Window;
@@ -119,6 +123,9 @@ export struct TgTabBar {
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)
     .onClick(() => {
+      hilog.info(DOMAIN, TAG, 'Tab click index=%{public}d', index);
+      // Fallback path: write shared tab index even if callback channel is delayed.
+      AppStorage.set<number>(StorageKeys.MAIN_TAB_INDEX, index);
       this.onTabSelect(index);
     })
   }
@@ -138,7 +145,6 @@ export struct TgTabBar {
             [TgUiTokens.GLASS_SPECULAR_BOTTOM, 1.0]
           ]
         })
-        .hitTestBehavior(HitTestMode.Transparent)
     }
   }
 
@@ -156,7 +162,7 @@ export struct TgTabBar {
       .borderRadius(TgUiTokens.TAB_BAR_ISLAND_RADIUS)
       .backgroundColor(this.useRealtimeBlur() ? TgUiTokens.TAB_BAR_ISLAND_BG : TgUiTokens.TAB_BAR_ISLAND_FALLBACK_BG)
       .backgroundBlurStyle(TgGlassPolicy.tabBarBlurStyle())
-      .overlay(this.buildIslandSpecular())
+      // NOTE: keep click behavior stable first; specular overlay can be restored later if needed.
       .border({
         width: TgUiTokens.TAB_BAR_ISLAND_BORDER_WIDTH,
         color: TgUiTokens.TAB_BAR_ISLAND_BORDER_COLOR
@@ -169,10 +175,7 @@ export struct TgTabBar {
       })
       .margin({
         left: TgUiTokens.TAB_BAR_ISLAND_SIDE_INSET,
-        right: TgUiTokens.TAB_BAR_ISLAND_SIDE_INSET,
-        bottom: this.bottomInset > 0
-          ? this.bottomInset
-          : TgUiTokens.TAB_BAR_ISLAND_BOTTOM_MARGIN
+        right: TgUiTokens.TAB_BAR_ISLAND_SIDE_INSET
       })
       .clip(true)
     }

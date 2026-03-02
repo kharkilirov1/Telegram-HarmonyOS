@@ -18,7 +18,7 @@ import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter'
 import { localized } from '../../../core/utils/AppResource';
 import { computeTopBarHeight, computeChatBottomInset, getMainWindow, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { window } from '@kit.ArkUI';
+import { uiObserver, window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 
 const DOMAIN = 0x0021;
@@ -28,7 +28,7 @@ declare function px2vp(value: number): number;
 
 @Component
 export struct TgChatScreenPage {
-  navStack?: NavPathStack;
+  pageStack: NavPathStack = new NavPathStack();
 
   @StorageLink(StorageKeys.ACTIVE_CHAT_ID) activeChatId: number = 0;
   @StorageLink(StorageKeys.ACTIVE_CHAT_TITLE) activeChatTitle: string = '';
@@ -47,6 +47,7 @@ export struct TgChatScreenPage {
 
   aboutToAppear(): void {
     try {
+      this.bindNavigationStack();
       AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
       this.computeSafeInsets();
 
@@ -153,10 +154,28 @@ export struct TgChatScreenPage {
   }
 
   private handleBackPress(): void {
+    hilog.info(DOMAIN, TAG, 'handleBackPress called');
     AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
-    if (this.navStack !== undefined) {
-      this.navStack.pop();
+    AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, 0);
+    AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, '');
+    const navStack: NavPathStack | undefined = this.bindNavigationStack();
+    if (navStack !== undefined) {
+      hilog.info(DOMAIN, TAG, 'Popping from pageStack');
+      navStack.pop();
+    } else {
+      hilog.error(DOMAIN, TAG, 'pageStack is undefined in handleBackPress!');
     }
+  }
+
+  private bindNavigationStack(): NavPathStack | undefined {
+    try {
+      const navigationInfo: uiObserver.NavigationInfo | undefined = this.queryNavigationInfo();
+      if (navigationInfo !== undefined) {
+        this.pageStack = navigationInfo.pathStack;
+      }
+    } catch (_error) {
+    }
+    return this.pageStack;
   }
 
   private entryReuseId(entry: ChatTimelineEntryVO): string {
@@ -329,6 +348,7 @@ export struct TgChatScreenPage {
             this.handleBackPress();
           }
         })
+        .hitTestBehavior(HitTestMode.Default)
       }
       .width('100%')
       .height('100%')

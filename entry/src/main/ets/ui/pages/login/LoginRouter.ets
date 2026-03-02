@@ -12,6 +12,9 @@ import { PasswordInputPage } from './PasswordInputPage';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { CodeType } from '../../controllers/LoginController';
+import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
+import { createAuthStateChangedEvent } from '../../../core/model/AppEvent';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 // ─── Auth Context ───
 export class AuthContext {
@@ -45,6 +48,28 @@ export struct LoginRouter {
 
   // Отслеживание предыдущего статуса для определения направления перехода
   private prevStatus: string = 'notInitialized';
+
+  private forceBackToPhone(reason: string): void {
+    hilog.warn(0x0003, 'LoginRouter', 'Force back to waitPhoneNumber, reason: %{public}s', reason);
+    try {
+      getAppCoreRuntime().getStore().dispatch(createAuthStateChangedEvent('waitPhoneNumber'))
+        .catch((error: Error) => {
+          hilog.error(0x0003, 'LoginRouter', 'Store dispatch waitPhoneNumber failed: %{public}s', String(error));
+          AppStorage.set<string>(StorageKeys.AUTH_STATUS, 'waitPhoneNumber');
+        });
+    } catch (error) {
+      hilog.error(0x0003, 'LoginRouter', 'Force back dispatch threw: %{public}s', String(error));
+      AppStorage.set<string>(StorageKeys.AUTH_STATUS, 'waitPhoneNumber');
+    }
+  }
+
+  aboutToAppear(): void {
+    hilog.info(0x0003, 'LoginRouter', 'LoginRouter aboutToAppear, initial authStatus: %{public}s', this.authStatus);
+  }
+
+  aboutToDisappear(): void {
+    hilog.info(0x0003, 'LoginRouter', 'LoginRouter aboutToDisappear');
+  }
 
   build() {
     Stack() {
@@ -83,9 +108,7 @@ export struct LoginRouter {
             // Переход произойдёт автоматически через AppStorage
           },
           onWrongNumber: (): void => {
-            // Возврат к вводу номера
-            // В идеале это должно идти через TDLib команду
-            // Но для UX можно сбросить локально
+            this.forceBackToPhone('wrong_number_pressed');
           }
         })
           .transition(TransitionEffect.OPACITY.animation({ duration: 300 }))
@@ -98,7 +121,7 @@ export struct LoginRouter {
             // Переход произойдёт автоматически через AppStorage
           },
           onBackToPhone: (): void => {
-            // Возврат к вводу номера
+            this.forceBackToPhone('back_to_phone_from_password');
           }
         })
           .transition(TransitionEffect.OPACITY.animation({ duration: 300 }))
@@ -118,10 +141,46 @@ export struct LoginRouter {
         .onAppear(() => {
           this.onAuthComplete();
         })
-      }
 
-      // TODO: waitRegistration → SignUpPage
-      // TODO: waitEmailAddress → EmailSetupPage
+      } else if (this.authStatus === 'waitRegistration' ||
+                 this.authStatus === 'waitEmailAddress' ||
+                 this.authStatus === 'waitEmailCode') {
+        // Temporary fallback to keep auth flow navigable until dedicated pages are ported.
+        Column({ space: TgUiTokens.SPACE_12 }) {
+          LoadingProgress()
+            .width(32)
+            .height(32)
+            .color(TgUiTokens.COLOR_ICON_PRIMARY)
+          Text('Preparing login step...')
+            .fontSize(TgUiTokens.LOGIN_SUBTITLE_SIZE)
+            .fontColor(TgUiTokens.LOGIN_SUBTITLE_COLOR)
+        }
+        .width('100%')
+        .height('100%')
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+        .backgroundColor(TgUiTokens.LOGIN_BG)
+        .onAppear(() => {
+          this.forceBackToPhone(`unsupported_auth_state_${this.authStatus}`);
+        })
+
+      } else {
+        // Safety net to avoid blank screens on unknown auth states.
+        Column({ space: TgUiTokens.SPACE_12 }) {
+          LoadingProgress()
+            .width(32)
+            .height(32)
+            .color(TgUiTokens.COLOR_ICON_PRIMARY)
+          Text('Loading...')
+            .fontSize(TgUiTokens.LOGIN_SUBTITLE_SIZE)
+            .fontColor(TgUiTokens.LOGIN_SUBTITLE_COLOR)
+        }
+        .width('100%')
+        .height('100%')
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+        .backgroundColor(TgUiTokens.LOGIN_BG)
+      }
     }
     .width('100%')
     .height('100%')

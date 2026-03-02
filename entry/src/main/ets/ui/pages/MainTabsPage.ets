@@ -10,42 +10,97 @@ import { SettingsPage } from './settings/SettingsPage';
 import { StorageKeys } from '../../app/bridge/AppStoreBridge';
 import { TgTabBar } from '../tg_ui/atoms/TgTabBar';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { window } from '@kit.ArkUI';
+import { common } from '@kit.AbilityKit';
+import { TgUiTokens } from '../tg_ui/tokens/TgUiTokens';
 
 const DOMAIN = 0x0020;
 const TAG = 'MainTabsPage';
 
 @Component
 export struct MainTabsPage {
-  @StorageLink(StorageKeys.MAIN_TAB_INDEX) selectedIndex: number = 2;
+  @StorageLink(StorageKeys.MAIN_TAB_INDEX) @Watch('onStoredTabIndexChanged') selectedIndex: number = 2;
   @StorageLink(StorageKeys.TOTAL_UNREAD_COUNT) totalUnread: number = 0;
   @StorageLink(StorageKeys.CHAT_SCREEN_VISIBLE) chatScreenVisible: boolean = false;
   @StorageLink(StorageKeys.GLASS_MODE) glassMode: string = 'auto';
-  @State private appliedTabIndex: number = 2;
 
   // Independent NavPathStack per tab (iOS-like isolated navigation)
   private contactsNavStack: NavPathStack = new NavPathStack();
   private callsNavStack: NavPathStack = new NavPathStack();
   private chatNavStack: NavPathStack = new NavPathStack();
   private settingsNavStack: NavPathStack = new NavPathStack();
+  @State private bottomInset: number = 0;
+  private mainWindow?: window.Window;
 
   private controller: TabsController = new TabsController();
 
+  private onStoredTabIndexChanged(): void {
+    if (this.selectedIndex < 0 || this.selectedIndex > 3) {
+      return;
+    }
+    this.controller.changeIndex(this.selectedIndex);
+  }
+
   aboutToAppear(): void {
-    AppStorage.setOrCreate<number>(StorageKeys.MAIN_TAB_INDEX, 2);
+    AppStorage.setOrCreate<number>(StorageKeys.MAIN_TAB_INDEX, this.selectedIndex);
     AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
-    this.appliedTabIndex = this.selectedIndex;
     this.controller.changeIndex(this.selectedIndex);
     hilog.info(DOMAIN, TAG, 'MainTabsPage appeared with tab index: %{public}d', this.selectedIndex);
+
+    try {
+      const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      const windowStage: window.WindowStage | undefined = context.windowStage;
+      if (windowStage) {
+        this.mainWindow = windowStage.getMainWindowSync();
+        this.updateBottomInset(this.mainWindow);
+        this.mainWindow.on('windowSizeChange', (_size: window.Size) => {
+          if (this.mainWindow !== undefined) {
+            this.updateBottomInset(this.mainWindow);
+          }
+        });
+      }
+    } catch (_error) {
+      this.bottomInset = 0;
+    }
+  }
+
+  aboutToDisappear(): void {
+    if (this.mainWindow !== undefined) {
+      try {
+        this.mainWindow.off('windowSizeChange');
+      } catch (_error) {
+      }
+      this.mainWindow = undefined;
+    }
+  }
+
+  private updateBottomInset(mainWindow: window.Window): void {
+    let computedInset: number = 0;
+    try {
+      let px2vpLocal = (px: number): number => px / 3.0; // approximation if px2vp is not available
+      const systemAvoid: window.AvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+      computedInset = Math.max(computedInset, px2vpLocal(systemAvoid.bottomRect.height));
+    } catch (_error) {
+    }
+    this.bottomInset = computedInset;
   }
 
   private handleTabChange(index: number): void {
-    if (index === this.appliedTabIndex) {
+    if (index < 0 || index > 3) {
+      hilog.warn(DOMAIN, TAG, 'Ignoring invalid tab index: %{public}d', index);
       return;
     }
 
-    hilog.info(DOMAIN, TAG, 'Tab change: %{public}d -> %{public}d', this.appliedTabIndex, index);
+    if (index === this.selectedIndex) {
+      this.controller.changeIndex(index);
+      return;
+    }
 
-    this.appliedTabIndex = index;
+    hilog.info(DOMAIN, TAG, 'Tab change: %{public}d -> %{public}d', this.selectedIndex, index);
+    hilog.info(DOMAIN, TAG, 'chatNavStack exists: %{public}s', this.chatNavStack ? 'yes' : 'no');
+
+    // Important: update UI state immediately (do not rely only on AppStorage propagation).
+    this.selectedIndex = index;
     AppStorage.set<number>(StorageKeys.MAIN_TAB_INDEX, index);
     this.controller.changeIndex(index);
 
@@ -58,7 +113,7 @@ export struct MainTabsPage {
   chatPageMap(name: string) {
     if (name === 'TgChatScreenPage') {
       TgChatScreenPage({
-        navStack: this.chatNavStack
+        pageStack: this.chatNavStack
       })
     }
   }
@@ -66,7 +121,7 @@ export struct MainTabsPage {
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
       // ── Tab content (fills entire area, no built-in bar) ──
-      Tabs({ barPosition: BarPosition.End, controller: this.controller, index: this.appliedTabIndex }) {
+      Tabs({ barPosition: BarPosition.End, controller: this.controller, index: this.selectedIndex }) {
         // Tab 0: Contacts
         TabContent() {
           Navigation(this.contactsNavStack) {
@@ -113,15 +168,18 @@ export struct MainTabsPage {
       .vertical(false)
       .barHeight(0, true)
       .barOverlap(true)
-      .barBackgroundColor(Color.Transparent)
-      .barBackgroundBlurStyle(BlurStyle.NONE)
-      .barMode(BarMode.Fixed)
       .scrollable(false)
-      .animationDuration(0)
-      .fadingEdge(false)
+      .animationDuration(0) // Отключаем стандартную анимацию для чистоты
       .onChange((index: number) => {
         hilog.info(DOMAIN, TAG, 'Tabs onChange triggered: %{public}d', index);
         this.handleTabChange(index);
+      })
+      .onSelected((index: number) => {
+        hilog.info(DOMAIN, TAG, 'Tabs onSelected: %{public}d', index);
+        if (this.selectedIndex !== index) {
+          this.selectedIndex = index;
+          AppStorage.set<number>(StorageKeys.MAIN_TAB_INDEX, index);
+        }
       })
       .width('100%')
       .height('100%')
@@ -137,10 +195,11 @@ export struct MainTabsPage {
             this.handleTabChange(index);
           }
         })
+        .margin({ bottom: this.bottomInset > 0 ? this.bottomInset : TgUiTokens.TAB_BAR_ISLAND_BOTTOM_MARGIN })
       }
     }
     .width('100%')
     .height('100%')
     .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
   }
-}
+  }

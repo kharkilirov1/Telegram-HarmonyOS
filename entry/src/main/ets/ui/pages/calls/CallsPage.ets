@@ -6,13 +6,18 @@ import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { TgTopBar } from '../../tg_ui/atoms/TgTopBar';
 import { localized } from '../../../core/utils/AppResource';
 import { computeTopBarHeight } from '../../utils/SafeAreaUtils';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { common } from '@kit.AbilityKit';
+
+const DOMAIN = 0x0031;
+const TAG = 'CallsPage';
 
 @Component
 export struct CallsPage {
   @State private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
 
   aboutToAppear(): void {
+    hilog.info(DOMAIN, TAG, 'CallsPage aboutToAppear');
     try {
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
       this.topBarTotalHeight = computeTopBarHeight(context);

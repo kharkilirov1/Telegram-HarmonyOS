@@ -178,7 +178,10 @@ export struct PasswordInputPage {
     const result = await controller.requestPasswordRecovery();
 
     if (result.success) {
-      // TODO: navigate to password recovery screen
+      // Recovery flow page is not ported yet — avoid dead tap with explicit fallback state.
+      this.didForgotWithNoRecovery = true;
+      this.showResetOption = true;
+      this.errorMessage = this.getRecoveryUnavailableMessage();
     } else {
       this.didForgotWithNoRecovery = true;
       this.showResetOption = true;
@@ -188,7 +191,8 @@ export struct PasswordInputPage {
 
   // ─── Reset Account ───
   private handleReset(): void {
-    // TODO: показать AlertDialog с подтверждением
+    // Temporary fallback until full reset flow is ported.
+    this.onBackToPhone();
   }
 
   // ─── Shake Animation (HarmonyOS: animateTo with spring curve) ───

@@ -37,6 +37,7 @@ export struct ContactsPage {
   private mainWindow?: window.Window;
 
   aboutToAppear(): void {
+    hilog.info(DOMAIN, TAG, 'ContactsPage aboutToAppear');
     this.computeSafeInsets();
     this.bindWindowSizeListener();
 

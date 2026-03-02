@@ -31,6 +31,7 @@ export struct SettingsPage {
   private mainWindow?: window.Window;
 
   aboutToAppear(): void {
+    hilog.info(DOMAIN, TAG, 'SettingsPage aboutToAppear');
     this.computeSafeInsets();
     this.bindWindowSizeListener();
 

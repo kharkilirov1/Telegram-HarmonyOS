@@ -17,15 +17,23 @@ import { TgSearchBar } from '../../tg_ui/atoms/TgSearchBar';
 import { localized } from '../../../core/utils/AppResource';
 import { computeTopBarHeight, computeTabBottomInset, getMainWindow, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { window } from '@kit.ArkUI';
+import { uiObserver, window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 
 const DOMAIN = 0x0012;
 const TAG = 'ChatListPage';
 
+class ChatRouteParams {
+  chatId: number = 0;
+
+  constructor(chatId: number) {
+    this.chatId = chatId;
+  }
+}
+
 @Component
 export struct ChatListPage {
-  pageStack?: NavPathStack;
+  pageStack: NavPathStack = new NavPathStack();
 
   @StorageLink(StorageKeys.CONNECTION_STATUS) connectionStatus: string = 'connecting';
   @StorageLink(StorageKeys.CHATS_COUNT) chatsCount: number = 0;
@@ -40,6 +48,7 @@ export struct ChatListPage {
 
   aboutToAppear(): void {
     AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
+    this.bindNavigationStack();
     this.computeSafeInsets();
     this.bindWindowSizeListener();
 
@@ -165,19 +174,47 @@ export struct ChatListPage {
   }
 
   private openChat(item: ChatItemVO): void {
+    hilog.info(DOMAIN, TAG, 'openChat called for chatId: %{public}d', item.chatId);
     if (!TgUiFeatureFlags.USE_TG_CHAT_V2) {
-      return;
-    }
-    if (this.pageStack === undefined) {
+      hilog.info(DOMAIN, TAG, 'TgChatV2 feature flag is disabled');
       return;
     }
     if (item.chatId <= 0) {
+      hilog.error(DOMAIN, TAG, 'Invalid chatId: %{public}d', item.chatId);
       return;
     }
+    const navStack = this.bindNavigationStack();
+    if (navStack === undefined) {
+      hilog.error(DOMAIN, TAG, 'Navigation stack unavailable');
+      return;
+    }
+
+    const prevChatId: number = AppStorage.get<number>(StorageKeys.ACTIVE_CHAT_ID) || 0;
+    const prevTitle: string = AppStorage.get<string>(StorageKeys.ACTIVE_CHAT_TITLE) || '';
+    hilog.info(DOMAIN, TAG, 'Setting active chat and pushing TgChatScreenPage');
     AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, item.chatId);
     AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, item.title);
-    AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
-    this.pageStack.pushPathByName('TgChatScreenPage', null);
+
+    try {
+      navStack.pushPathByName('TgChatScreenPage', new ChatRouteParams(item.chatId));
+      AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
+    } catch (e) {
+      AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, prevChatId);
+      AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, prevTitle);
+      AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
+      hilog.error(DOMAIN, TAG, 'Failed to push TgChatScreenPage: %{public}s', String(e));
+    }
+  }
+
+  private bindNavigationStack(): NavPathStack | undefined {
+    try {
+      const navigationInfo: uiObserver.NavigationInfo | undefined = this.queryNavigationInfo();
+      if (navigationInfo !== undefined) {
+        this.pageStack = navigationInfo.pathStack;
+      }
+    } catch (_error) {
+    }
+    return this.pageStack;
   }
 
   @Builder
