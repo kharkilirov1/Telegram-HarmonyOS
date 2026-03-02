@@ -479,26 +479,19 @@ function parseStringArray(arrayJson: string): string[] {
     return result;
   }
 
-  // Match numbers and strings
-  const numberPattern = /-?\d+(?:\.\d+)?/g;
-  const stringPattern = /"([^"\\]*(?:\\.[^"\\]*)*)"/g;
+  // Match either a string literal OR a number literal
+  const itemPattern = /"([^"\\]*(?:\\.[^"\\]*)*)"|-?\d+(?:\.\d+)?/g;
+  let match = itemPattern.exec(inner);
 
-  // First try to find numbers
-  let match = numberPattern.exec(inner);
   while (match !== null) {
-    result.push(match[0]);
-    match = numberPattern.exec(inner);
-  }
-
-  // If no numbers found, try strings
-  if (result.length === 0) {
-    let strMatch = stringPattern.exec(inner);
-    while (strMatch !== null) {
-      if (strMatch[1] !== undefined) {
-        result.push(unescapeJsonString(strMatch[1]));
-      }
-      strMatch = stringPattern.exec(inner);
+    if (match[1] !== undefined) {
+      // It's a string literal
+      result.push(unescapeJsonString(match[1]));
+    } else {
+      // It's a number literal
+      result.push(match[0]);
     }
+    match = itemPattern.exec(inner);
   }
 
   return result;
@@ -588,7 +581,8 @@ function unescapeJsonString(str: string): string {
     .replace(/\\r/g, '\r')
     .replace(/\\t/g, '\t')
     .replace(/\\"/g, '"')
-    .replace(/\\\\/g, '\\');
+    .replace(/\\\\/g, '\\')
+    .replace(/\\u([0-9a-fA-F]{4})/g, (match: string, hex: string) => String.fromCharCode(Number.parseInt(hex, 16)));
 }
 
 /**

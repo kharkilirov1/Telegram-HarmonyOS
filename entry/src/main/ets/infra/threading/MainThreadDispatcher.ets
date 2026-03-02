@@ -1,27 +1,18 @@
-// MainThreadDispatcher — аналог iOS Telegram `deliverOnMainQueue`
+// MainThreadDispatcher — точка маршрутизации входящих JSON от TDLib.
 //
-// Проблема: нативный tdlib.startReceiveLoop() вызывает колбэк из фонового потока.
-// В HarmonyOS AppStorage / @State / UI работают ТОЛЬКО на main thread (Actor model).
+// Актуальная модель:
+// - C++ NAPI использует thread-safe function и передаёт callback в ArkTS.
+// - Для ArkTS слой получает данные как "безопасные для main-thread обработки".
+// - Этот класс разделяет поток данных на:
+//   1) responses (@extra)  2) updates (обычные апдейты)
 //
-// Решение: используем Emitter из @kit.BasicServicesKit как мост между потоками.
-// Emitter гарантирует доставку на main thread (UI thread).
-//
-// Паттерн:
-//   TDLib native thread → emitter.emit(eventId, data) → main thread → handler(data)
-//
-// Референс: iOS Telegram — SwiftSignalKit/Queue.swift + Signal_Dispatch.swift
-//   там: Signal |> deliverOn(Queue.mainQueue())
-//   у нас: MainThreadDispatcher.dispatch(data) → emitter → main thread handler
+// Цель: единая точка подписки/статистики и отсутствие прямой связки
+// между TdGateway и верхними слоями приложения.
 
-import { emitter } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const TAG = 'MainThreadDispatcher';
 const DOMAIN = 0x000B;
-
-// Уникальные ID событий для Emitter (строковые для HarmonyOS)
-const TDLIB_UPDATE_EVENT_ID: string = 'tdlib_update_event';
-const TDLIB_RESPONSE_EVENT_ID: string = 'tdlib_response_event';
 
 // Тип колбэка для обработки обновлений на main thread
 export type MainThreadHandler = (data: string) => void;
@@ -54,12 +45,15 @@ export class MainThreadDispatcher {
 
   /**
    * Отправить raw JSON обновление из любого потока → main thread.
-   * Вызывается из TdGateway внутри нативного колбэка (фоновый поток).
-   * Emitter гарантирует доставку на main thread.
+   * Вызывается из TdGateway внутри нативного колбэка.
+   * В ArkTS N-API колбэки уже приходят на Main Thread.
    */
   dispatchUpdate(rawJson: string): void {
-    // Emitter требует объект с data.string для строковых событий
-    emitter.emit(TDLIB_UPDATE_EVENT_ID, { data: rawJson });
+    if (this.updateHandler) {
+      this.updateHandler(rawJson);
+    } else {
+       this.droppedCount++;
+    }
     this.dispatchedCount++;
   }
 
@@ -67,15 +61,15 @@ export class MainThreadDispatcher {
    * Отправить raw JSON ответ (на request) из любого потока → main thread.
    */
   dispatchResponse(rawJson: string): void {
-    emitter.emit(TDLIB_RESPONSE_EVENT_ID, { data: rawJson });
+    if (this.responseHandler) {
+      this.responseHandler(rawJson);
+    }
   }
 
   /**
    * Отписаться от всех событий. Вызывать при shutdown.
    */
   unsubscribe(): void {
-    emitter.off(TDLIB_UPDATE_EVENT_ID);
-    emitter.off(TDLIB_RESPONSE_EVENT_ID);
     this.updateHandler = null;
     this.responseHandler = null;
     this.isSubscribed = false;
@@ -97,36 +91,8 @@ export class MainThreadDispatcher {
     if (this.isSubscribed) {
       return;
     }
-
-    // Подписка на обновления — Emitter доставит на main thread
-    emitter.on(TDLIB_UPDATE_EVENT_ID, (eventData: emitter.EventData) => {
-      if (!this.updateHandler) {
-        this.droppedCount++;
-        return;
-      }
-
-      const data = eventData?.data;
-      const json = typeof data === 'string' ? data : '';
-      if (json) {
-        this.updateHandler(json);
-      }
-    });
-
-    // Подписка на ответы
-    emitter.on(TDLIB_RESPONSE_EVENT_ID, (eventData: emitter.EventData) => {
-      if (!this.responseHandler) {
-        return;
-      }
-
-      const data = eventData?.data;
-      const json = typeof data === 'string' ? data : '';
-      if (json) {
-        this.responseHandler(json);
-      }
-    });
-
     this.isSubscribed = true;
-    hilog.info(DOMAIN, TAG, 'Emitter subscriptions established');
+    hilog.info(DOMAIN, TAG, 'Dispatcher subscriptions established');
   }
 }
 

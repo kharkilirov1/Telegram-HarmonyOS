@@ -15,7 +15,8 @@ import { ChatTimelineDataSource } from './ChatTimelineDataSource';
 import { ChatTimelineEntryVO, buildChatTimeline } from './ChatTimelineVO';
 import { SendMessageParams, createSendMessageUseCase, SendMessageUseCase } from '../../../domain/usecases/sendMessage';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
-import { getString } from '../../../core/utils/AppResource';
+import { localized } from '../../../core/utils/AppResource';
+import { computeTopBarHeight, computeChatBottomInset, getMainWindow, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
@@ -81,51 +82,27 @@ export struct TgChatScreenPage {
       this.unsubscribe();
       this.unsubscribe = undefined;
     }
-    if (this.mainWindow !== undefined) {
-      try {
-        this.mainWindow.off('windowSizeChange');
-      } catch (_error) {
-      }
-      this.mainWindow = undefined;
-    }
+    removeWindowSizeListener(this.mainWindow);
+    this.mainWindow = undefined;
   }
 
   private computeSafeInsets(): void {
-    this.topBarTotalHeight = TgUiTokens.TOP_BAR_HEIGHT;
-    this.bottomOverlayInset = TgUiTokens.SPACE_8;
     try {
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      const windowStage = context.windowStage;
-      if (windowStage) {
-        const mainWindow = windowStage.getMainWindowSync();
-        const systemAvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
-        const topInset = px2vp(systemAvoidArea.topRect.height);
-        this.topBarTotalHeight = topInset + TgUiTokens.TOP_BAR_HEIGHT;
-
-        let bottomInset = px2vp(systemAvoidArea.bottomRect.height);
-        try {
-          const navAvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
-          bottomInset = Math.max(bottomInset, px2vp(navAvoidArea.bottomRect.height));
-        } catch (_error) {
-        }
-
-        this.bottomOverlayInset = Math.max(bottomInset, TgUiTokens.SPACE_8);
-      }
+      this.topBarTotalHeight = computeTopBarHeight(context);
+      this.bottomOverlayInset = computeChatBottomInset(context);
     } catch (_error) {
+      this.topBarTotalHeight = TgUiTokens.TOP_BAR_HEIGHT;
+      this.bottomOverlayInset = TgUiTokens.SPACE_8;
     }
-  }
-
-  private localized(resourceId: number, fallback: string): string {
-    const value = getString(resourceId);
-    return value.length > 0 ? value : fallback;
   }
 
   private bindWindowSizeListener(): void {
     try {
+      removeWindowSizeListener(this.mainWindow);
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      const windowStage = context.windowStage;
-      if (windowStage) {
-        this.mainWindow = windowStage.getMainWindowSync();
+      this.mainWindow = getMainWindow(context);
+      if (this.mainWindow !== undefined) {
         this.updateTimelineContainerWidth(this.mainWindow.getWindowProperties().windowRect.width);
         this.mainWindow.on('windowSizeChange', (size: window.Size) => {
           this.updateTimelineContainerWidth(size.width);
@@ -149,7 +126,7 @@ export struct TgChatScreenPage {
       this.dataSource.applyDiff([]);
       this.title = this.activeChatTitle.length > 0
         ? this.activeChatTitle
-        : this.localized($r('app.string.chats_title').id, 'Chat');
+        : localized($r('app.string.chats_title').id, 'Chat');
       return;
     }
 
@@ -311,7 +288,7 @@ export struct TgChatScreenPage {
               })
             } else {
               Column({ space: TgUiTokens.SPACE_8 }) {
-                Text(this.localized($r('app.string.no_messages').id, 'No messages yet'))
+                Text(localized($r('app.string.no_messages').id, 'No messages yet'))
                   .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
                   .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
               }
@@ -322,7 +299,7 @@ export struct TgChatScreenPage {
             }
           } else {
             Column({ space: TgUiTokens.SPACE_8 }) {
-              Text(this.localized($r('app.string.chat_not_selected').id, 'Chat is not selected'))
+              Text(localized($r('app.string.chat_not_selected').id, 'Chat is not selected'))
                 .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
                 .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
             }
@@ -333,7 +310,7 @@ export struct TgChatScreenPage {
           }
 
           TgComposerInput({
-            placeholder: this.localized($r('app.string.message_placeholder').id, 'Message'),
+            placeholder: localized($r('app.string.message_placeholder').id, 'Message'),
             isDisabled: this.activeChatId === 0,
             onSendPress: (text: string): void => {
               this.handleSendMessage(text);

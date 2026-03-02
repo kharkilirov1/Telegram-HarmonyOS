@@ -3,7 +3,6 @@
 // Transition logic adapts Telegram iOS: spinner → wait for data → show tabs
 
 import { LoginRouter } from './LoginRouter';
-import { CountrySelectPage } from './CountrySelectPage';
 import { MainTabsPage } from '../MainTabsPage';
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -66,9 +65,6 @@ struct LoginRouterPage {
 
   @Builder
   PageMap(name: string) {
-    if (name === 'CountrySelectPage') {
-      CountrySelectPage()
-    }
   }
 
   build() {

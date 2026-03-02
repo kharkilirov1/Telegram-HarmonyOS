@@ -21,7 +21,6 @@ export struct MainTabsPage {
   @StorageLink(StorageKeys.CHAT_SCREEN_VISIBLE) chatScreenVisible: boolean = false;
   @StorageLink(StorageKeys.GLASS_MODE) glassMode: string = 'auto';
   @State private appliedTabIndex: number = 2;
-  @State private isTabChanging: boolean = false; // Prevent circular updates
 
   // Independent NavPathStack per tab (iOS-like isolated navigation)
   private contactsNavStack: NavPathStack = new NavPathStack();
@@ -40,33 +39,19 @@ export struct MainTabsPage {
   }
 
   private handleTabChange(index: number): void {
-    if (this.isTabChanging || index === this.appliedTabIndex) {
-      return; // Prevent recursive calls
+    if (index === this.appliedTabIndex) {
+      return;
     }
-    
-    this.isTabChanging = true;
-    hilog.info(DOMAIN, TAG, 'Tab change requested: %{public}d -> %{public}d', this.appliedTabIndex, index);
-    
-    // Update UI state first
+
+    hilog.info(DOMAIN, TAG, 'Tab change: %{public}d -> %{public}d', this.appliedTabIndex, index);
+
     this.appliedTabIndex = index;
-    
-    // Update AppStorage (triggers StorageLink update)
     AppStorage.set<number>(StorageKeys.MAIN_TAB_INDEX, index);
-    
-    // Update tabs controller
     this.controller.changeIndex(index);
-    
-    // Reset chat screen visibility when switching from chat tab
+
     if (index !== 2) {
       AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
     }
-    
-    hilog.info(DOMAIN, TAG, 'Tab change completed: %{public}d', index);
-    
-    // Reset flag after a small delay to ensure state is stable
-    setTimeout(() => {
-      this.isTabChanging = false;
-    }, 50);
   }
 
   @Builder

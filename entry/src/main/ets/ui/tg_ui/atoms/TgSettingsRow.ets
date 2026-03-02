@@ -15,7 +15,7 @@ export enum TgSettingsTrailing {
 export struct TgSettingsRow {
   @Param title: string = '';
   @Param iconRes: Resource = TgUiTokens.ICON_RES_SETTINGS;
-  @Param iconBgColor: ResourceColor = $r('app.color.settings_icon_blue');
+  @Param iconBgColor: ResourceColor = TgUiTokens.SETTINGS_ICON_COLOR_BLUE;
   @Param trailingType: TgSettingsTrailing = TgSettingsTrailing.Arrow;
   @Param trailingText: string = '';
   @Param toggleValue: boolean = false;
@@ -30,7 +30,7 @@ export struct TgSettingsRow {
       TgIcon({
         src: this.iconRes,
         iconSize: TgUiTokens.SETTINGS_ROW_ICON_SIZE,
-        tintColor: Color.White
+        tintColor: TgUiTokens.SETTINGS_ROW_ICON_TINT
       })
     }
     .width(TgUiTokens.SETTINGS_ROW_ICON_BOX_SIZE)

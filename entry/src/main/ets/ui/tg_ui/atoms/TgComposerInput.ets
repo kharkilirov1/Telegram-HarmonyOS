@@ -162,7 +162,7 @@ export struct TgComposerInput {
   build() {
     Column({ space: TgUiTokens.COMPOSER_REPLY_GAP }) {
       Divider()
-        .strokeWidth(1)
+        .strokeWidth(TgUiTokens.COMPOSER_SEPARATOR_STROKE)
         .color(TgUiTokens.COMPOSER_TOP_SEPARATOR)
 
       this.buildReplySnippet()

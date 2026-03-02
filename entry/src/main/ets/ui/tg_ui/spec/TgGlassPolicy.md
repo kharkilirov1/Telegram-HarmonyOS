@@ -22,8 +22,6 @@
 - `AppTopBar`
 - `TgTopBar`
 - `TgTabBar`
-- `TgCountryTopOverlay`
-- `TgCountryBottomSearchOverlay`
 
 ## Runtime downgrade trigger
 - `EntryAbility.onMemoryLevel` sets `StorageKeys.GLASS_MODE = 'fallback'` on moderate/low/critical memory pressure.

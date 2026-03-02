@@ -36,10 +36,10 @@ export const selectIsWaitingForAuth = (state: AppState) =>
 export const selectCanSendMessages = (state: AppState) => 
   selectIsAuthenticated(state) && selectIsConnected(state);
 
-export const selectAuthScreenNeeded = (state: AppState) => {
-  const { status } = state.auth;
-  return status === 'waitPhoneNumber' || 
-         status === 'waitCode' || 
+export const selectAuthScreenNeeded = (state: AppState): boolean => {
+  const status = state.auth.status;
+  return status === 'waitPhoneNumber' ||
+         status === 'waitCode' ||
          status === 'waitPassword' ||
          status === 'notInitialized';
 };

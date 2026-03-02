@@ -1,7 +1,4 @@
 export class TgUiFeatureFlags {
-  // Keep legacy chat list as default until tg_ui row is visually accepted.
-  static readonly USE_TG_CHATLIST_V2: boolean = true;
-
   // Keep legacy/no-chat-screen as default until tg_ui chat screen integration is accepted.
   static readonly USE_TG_CHAT_V2: boolean = true;
 

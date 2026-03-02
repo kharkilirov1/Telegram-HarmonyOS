@@ -47,3 +47,12 @@ Thumbs.db
 # Local config (API keys)
 entry/src/main/ets/services/ConfigLocal.ets
 local.properties
+
+# claude-context-mode dependencies
+claude-context-mode/node_modules/
+
+# Tool artifacts
+.appanalyzer/
+devnull
+UI_PLAN*.md
+PROJECT_ANALYSIS.md

@@ -3,23 +3,24 @@
 
 import { AppState, Chat } from '../../../core/model/AppState';
 import { compareInt64 } from '../../../core/utils/tdAccessors';
+import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 
 const AVATAR_COLORS: Resource[] = [
-  $r('app.color.sender_color_1'),
-  $r('app.color.sender_color_2'),
-  $r('app.color.sender_color_3'),
-  $r('app.color.sender_color_4'),
-  $r('app.color.sender_color_5'),
-  $r('app.color.sender_color_6'),
-  $r('app.color.sender_color_7'),
-  $r('app.color.sender_color_8')
+  TgUiTokens.AVATAR_COLOR_1,
+  TgUiTokens.AVATAR_COLOR_2,
+  TgUiTokens.AVATAR_COLOR_3,
+  TgUiTokens.AVATAR_COLOR_4,
+  TgUiTokens.AVATAR_COLOR_5,
+  TgUiTokens.AVATAR_COLOR_6,
+  TgUiTokens.AVATAR_COLOR_7,
+  TgUiTokens.AVATAR_COLOR_8
 ];
 
 export class ChatItemVO {
   chatId: number = 0;
   title: string = '';
   initials: string = '';
-  avatarColor: Resource = $r('app.color.sender_color_5');
+  avatarColor: Resource = TgUiTokens.AVATAR_COLOR_5;
   avatarImagePath: string = '';
   avatarOnline: boolean = false;
   lastMessage: string = '';

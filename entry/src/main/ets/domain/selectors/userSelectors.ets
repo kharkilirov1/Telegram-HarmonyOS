@@ -164,11 +164,11 @@ export const selectUserForUI = (userId: UserId) => (state: AppState): UserForUI 
   result.lastName = user.lastName;
   result.username = user.username;
   result.phoneNumber = user.phoneNumber;
-  result.photo = user.photo;
+  result.photo = user.photoSmall;
   result.displayName = selectUserDisplayName(userId)(state);
   result.initials = selectUserInitials(userId)(state);
   result.status = selectUserStatus(userId)(state);
-  result.hasPhoto = user.photo.length > 0;
+  result.hasPhoto = user.photoSmall.length > 0;
   result.isCurrentUser = state.auth.userId === userId;
   return result;
 };

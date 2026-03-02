@@ -38,3 +38,13 @@ export function getString(resourceId: number): string {
     return '';
   }
 }
+
+/**
+ * Получить строку из ресурсов с fallback
+ * @param resourceId - ID ресурса (из $r('app.string.xxx').id)
+ * @param fallback - значение по умолчанию, если ресурс пустой
+ */
+export function localized(resourceId: number, fallback: string): string {
+  const value = getString(resourceId);
+  return value.length > 0 ? value : fallback;
+}

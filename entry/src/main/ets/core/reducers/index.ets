@@ -3,7 +3,7 @@
 
 import { AppState, ReducerAction } from '../model/AppState';
 import { authReducer } from './authReducer';
-import { dialogsReducer } from './dialogsReducer';
+import { chatsReducer } from './chatsReducer';
 import { messagesReducer } from './messagesReducer';
 import { usersReducer } from './usersReducer';
 
@@ -19,10 +19,10 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
     return authReducer(state, action);
   }
 
-  // Dialogs / chats
+  // Chats
   if (action.type === 'newChat' || action.type === 'chatUpdated' ||
     action.type === 'chatReadInbox' || action.type === 'chatReadOutbox') {
-    return dialogsReducer(state, action);
+    return chatsReducer(state, action);
   }
 
   // Messages

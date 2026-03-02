@@ -8,23 +8,20 @@ import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState } from '../../../core/model/AppState';
 import { ChatItemVO, buildChatItemVO } from './ChatItemVO';
 import { ChatListDataSource } from './ChatListDataSource';
-import { ChatListItem } from './ChatListItem';
-import { AppShellTokens } from '../../theme/AppShellTokens';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { TgUiFeatureFlags } from '../../tg_ui/TgUiFeatureFlags';
 import { TgChatRow, TgChatRowData } from '../../tg_ui/atoms/TgChatRow';
 import { TgChatSendStatus } from '../../tg_ui/atoms/TgChatMeta';
 import { TgTopBar } from '../../tg_ui/atoms/TgTopBar';
 import { TgSearchBar } from '../../tg_ui/atoms/TgSearchBar';
-import { getString } from '../../../core/utils/AppResource';
+import { localized } from '../../../core/utils/AppResource';
+import { computeTopBarHeight, computeTabBottomInset, getMainWindow, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 
 const DOMAIN = 0x0012;
 const TAG = 'ChatListPage';
-
-declare function px2vp(value: number): number;
 
 @Component
 export struct ChatListPage {
@@ -33,7 +30,7 @@ export struct ChatListPage {
   @StorageLink(StorageKeys.CONNECTION_STATUS) connectionStatus: string = 'connecting';
   @StorageLink(StorageKeys.CHATS_COUNT) chatsCount: number = 0;
 
-  @State private topBarTotalHeight: number = 44;
+  @State private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
   @State private listBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
 
   private dataSource: ChatListDataSource = new ChatListDataSource();
@@ -77,28 +74,17 @@ export struct ChatListPage {
       this.unsubscribe();
       this.unsubscribe = undefined;
     }
-    if (this.mainWindow !== undefined) {
-      try {
-        this.mainWindow.off('windowSizeChange');
-      } catch (_error) {
-      }
-      this.mainWindow = undefined;
-    }
+    removeWindowSizeListener(this.mainWindow);
+    this.mainWindow = undefined;
     hilog.info(DOMAIN, TAG, 'Unsubscribed from store');
   }
 
   private bindWindowSizeListener(): void {
     try {
-      if (this.mainWindow !== undefined) {
-        try {
-          this.mainWindow.off('windowSizeChange');
-        } catch (_error) {
-        }
-      }
+      removeWindowSizeListener(this.mainWindow);
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      const windowStage = context.windowStage;
-      if (windowStage) {
-        this.mainWindow = windowStage.getMainWindowSync();
+      this.mainWindow = getMainWindow(context);
+      if (this.mainWindow !== undefined) {
         this.mainWindow.on('windowSizeChange', (_size: window.Size) => {
           this.computeSafeInsets();
         });
@@ -109,36 +95,14 @@ export struct ChatListPage {
   }
 
   private computeSafeInsets(): void {
-    this.topBarTotalHeight = TgUiTokens.TOP_BAR_HEIGHT;
-    this.listBottomInset = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
     try {
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      const windowStage = context.windowStage;
-      if (windowStage) {
-        const mainWindow = windowStage.getMainWindowSync();
-        const systemAvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
-        const topInset = px2vp(systemAvoidArea.topRect.height);
-        this.topBarTotalHeight = topInset + TgUiTokens.TOP_BAR_HEIGHT;
-
-        let bottomInset = px2vp(systemAvoidArea.bottomRect.height);
-        try {
-          const navAvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
-          bottomInset = Math.max(bottomInset, px2vp(navAvoidArea.bottomRect.height));
-        } catch (_error) {
-        }
-
-        const dynamicBottomInset = TgUiTokens.TAB_BAR_ISLAND_HEIGHT
-          + Math.max(bottomInset, TgUiTokens.TAB_BAR_ISLAND_BOTTOM_MARGIN)
-          + TgUiTokens.SPACE_6;
-        this.listBottomInset = dynamicBottomInset;
-      }
+      this.topBarTotalHeight = computeTopBarHeight(context);
+      this.listBottomInset = computeTabBottomInset(context);
     } catch (_error) {
+      this.topBarTotalHeight = TgUiTokens.TOP_BAR_HEIGHT;
+      this.listBottomInset = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
     }
-  }
-
-  private localized(resourceId: number, fallback: string): string {
-    const value = getString(resourceId);
-    return value.length > 0 ? value : fallback;
   }
 
   private rebuildList(state: AppState): void {
@@ -163,13 +127,6 @@ export struct ChatListPage {
     const unreadKey: string = item.unreadCount > 99 ? 'u99p' : (item.unreadCount > 0 ? 'u1' : 'u0');
     const timeKey: string = item.formattedTime.length > 0 ? 't1' : 't0';
     return `tg_chat_row_${pinnedKey}_${mutedKey}_${unreadKey}_${timeKey}_${item.sendStatus}`;
-  }
-
-  private getReuseId(item: ChatItemVO): string {
-    const pinnedKey: string = item.isPinned ? 'p1' : 'p0';
-    const unreadKey: string = item.unreadCount > 0 ? 'u1' : 'u0';
-    const timeKey: string = item.formattedTime.length > 0 ? 't1' : 't0';
-    return `chat_row_${pinnedKey}_${unreadKey}_${timeKey}`;
   }
 
   private mapSendStatus(status: 'none' | 'pending' | 'sent' | 'read' | 'failed'): TgChatSendStatus {
@@ -228,7 +185,7 @@ export struct ChatListPage {
     // Search bar (scrolls with content — hides behind top bar on scroll, iOS style)
     ListItem() {
       TgSearchBar({
-        placeholder: this.localized($r('app.string.search_placeholder').id, 'Search'),
+        placeholder: localized($r('app.string.search_placeholder').id, 'Search'),
         onTextChange: (_value: string) => {
           // TODO: filter chat list by search text
         }
@@ -240,21 +197,21 @@ export struct ChatListPage {
       ListItem() {
         Row() {
           LoadingProgress()
-            .width(AppShellTokens.LIST_ROW_STATUS_ICON_SIZE)
-            .height(AppShellTokens.LIST_ROW_STATUS_ICON_SIZE)
-            .color(AppShellTokens.ACCENT)
+            .width(TgUiTokens.CHATLIST_STATUS_ICON_SIZE)
+            .height(TgUiTokens.CHATLIST_STATUS_ICON_SIZE)
+            .color(TgUiTokens.COLOR_ICON_PRIMARY)
           Text(this.connectionStatus === 'connecting'
-            ? this.localized($r('app.string.call_connecting').id, 'Connecting...')
-            : this.localized($r('app.string.loading').id, 'Loading...'))
-            .fontSize(AppShellTokens.LIST_ROW_STATUS_TEXT_SIZE)
-            .fontColor(AppShellTokens.TEXT_SECONDARY)
-            .margin({ left: AppShellTokens.LIST_ROW_STATUS_TEXT_GAP })
+            ? localized($r('app.string.call_connecting').id, 'Connecting...')
+            : localized($r('app.string.loading').id, 'Loading...'))
+            .fontSize(TgUiTokens.CHATLIST_STATUS_TEXT_SIZE)
+            .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+            .margin({ left: TgUiTokens.CHATLIST_STATUS_GAP })
         }
         .width('100%')
         .padding({
-          left: AppShellTokens.LIST_ROW_STATUS_LEFT_PADDING,
-          top: AppShellTokens.LIST_ROW_STATUS_TOP_PADDING,
-          bottom: AppShellTokens.LIST_ROW_STATUS_BOTTOM_PADDING
+          left: TgUiTokens.SPACE_16,
+          top: TgUiTokens.SPACE_8,
+          bottom: TgUiTokens.SPACE_4
         })
       }
     }
@@ -264,62 +221,37 @@ export struct ChatListPage {
     Stack({ alignContent: Alignment.Top }) {
       // ── Content layer (list scrolls under top bar for blur) ──
       if (this.chatsCount > 0) {
-        if (TgUiFeatureFlags.USE_TG_CHATLIST_V2) {
-          List() {
-            this.buildListHeader()
-            LazyForEach(this.dataSource, (item: ChatItemVO) => {
-              ListItem() {
-                TgChatRow({
-                  data: this.toTgRowData(item),
-                  showSeparator: TgUiFeatureFlags.USE_INTERNAL_CHAT_ROW_SEPARATOR
-                })
-                  .reuseId(this.getTgReuseId(item))
-              }
-              .onClick(() => {
-                this.openChat(item);
+        List() {
+          this.buildListHeader()
+          LazyForEach(this.dataSource, (item: ChatItemVO) => {
+            ListItem() {
+              TgChatRow({
+                data: this.toTgRowData(item),
+                showSeparator: TgUiFeatureFlags.USE_INTERNAL_CHAT_ROW_SEPARATOR
               })
-            }, (item: ChatItemVO) => item.chatId.toString())
-          }
-          .cachedCount(10)
-          .width('100%')
-          .height('100%')
-          .edgeEffect(EdgeEffect.Spring)
-          .contentStartOffset(this.topBarTotalHeight)
-          .contentEndOffset(this.listBottomInset)
-        } else {
-          List() {
-            this.buildListHeader()
-            LazyForEach(this.dataSource, (item: ChatItemVO) => {
-              ListItem() {
-                ChatListItem({ item: item }).reuseId(this.getReuseId(item))
-              }
-              .onClick(() => {
-                this.openChat(item);
-              })
-            }, (item: ChatItemVO) => item.chatId.toString())
-          }
-          .divider({
-            strokeWidth: AppShellTokens.LIST_ROW_SEPARATOR_STROKE,
-            startMargin: AppShellTokens.LIST_ROW_CONTENT_START,
-            color: AppShellTokens.CHATLIST_SEPARATOR
-          })
-          .cachedCount(10)
-          .width('100%')
-          .height('100%')
-          .edgeEffect(EdgeEffect.Spring)
-          .contentStartOffset(this.topBarTotalHeight)
-          .contentEndOffset(this.listBottomInset)
+                .reuseId(this.getTgReuseId(item))
+            }
+            .onClick(() => {
+              this.openChat(item);
+            })
+          }, (item: ChatItemVO) => item.chatId.toString())
         }
+        .cachedCount(10)
+        .width('100%')
+        .height('100%')
+        .edgeEffect(EdgeEffect.Spring)
+        .contentStartOffset(this.topBarTotalHeight)
+        .contentEndOffset(this.listBottomInset)
       } else {
         Column() {
           LoadingProgress()
-            .width(AppShellTokens.LIST_ROW_LOADING_ICON_SIZE)
-            .height(AppShellTokens.LIST_ROW_LOADING_ICON_SIZE)
-            .color(AppShellTokens.ACCENT)
-          Text(this.localized($r('app.string.loading').id, 'Loading...'))
-            .fontSize(AppShellTokens.LIST_ROW_STATUS_TEXT_SIZE)
-            .fontColor(AppShellTokens.TEXT_SECONDARY)
-            .margin({ top: AppShellTokens.LIST_ROW_STATUS_TEXT_GAP })
+            .width(TgUiTokens.CHATLIST_LOADING_SIZE)
+            .height(TgUiTokens.CHATLIST_LOADING_SIZE)
+            .color(TgUiTokens.COLOR_ICON_PRIMARY)
+          Text(localized($r('app.string.loading').id, 'Loading...'))
+            .fontSize(TgUiTokens.CHATLIST_STATUS_TEXT_SIZE)
+            .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+            .margin({ top: TgUiTokens.CHATLIST_STATUS_GAP })
         }
         .width('100%')
         .height('100%')
@@ -328,14 +260,14 @@ export struct ChatListPage {
 
       // ── Top bar layer (overlays content, translucent + blur) ──
       TgTopBar({
-        title: this.localized($r('app.string.chats_title').id, 'Chats'),
+        title: localized($r('app.string.chats_title').id, 'Chats'),
         showRightAction: true,
         rightIcon: $r('app.media.ic_search')
       })
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(AppShellTokens.BACKGROUND)
+    .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
     .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
   }
 }

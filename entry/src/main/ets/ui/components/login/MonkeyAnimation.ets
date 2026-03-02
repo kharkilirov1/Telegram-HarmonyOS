@@ -9,7 +9,7 @@
 // - monkey_close_and_peek.json — переход закрыто → подглядывание
 // - monkey_close_peek_to_idle.json — переход подглядывание → закрыто
 
-import { TgSize } from '../../theme/TelegramTheme';
+import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import lottie, { AnimationItem } from '@ohos/lottie';
 
 export type MonkeyScreen = 'phone' | 'code' | 'password';
@@ -160,8 +160,8 @@ export struct MonkeyAnimation {
 
   build() {
     Canvas(this.canvasController)
-      .width(TgSize.MONKEY_SIZE)
-      .height(TgSize.MONKEY_SIZE)
+      .width(TgUiTokens.LOGIN_MONKEY_SIZE)
+      .height(TgUiTokens.LOGIN_MONKEY_SIZE)
       .backgroundColor(Color.Transparent)
       .onReady(() => {
         this.onCanvasReady();

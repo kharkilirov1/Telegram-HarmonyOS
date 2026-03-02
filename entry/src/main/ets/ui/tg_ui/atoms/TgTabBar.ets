@@ -3,7 +3,6 @@
 
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
-import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { getString } from '../../../core/utils/AppResource';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
@@ -89,7 +88,7 @@ export struct TgTabBar {
         .padding({ left: TgUiTokens.TAB_BAR_BADGE_PADDING_H, right: TgUiTokens.TAB_BAR_BADGE_PADDING_H })
         .borderRadius(TgUiTokens.TAB_BAR_BADGE_RADIUS)
         .backgroundColor(TgUiTokens.COLOR_UNREAD_BG)
-        .translate({ x: 10, y: -7 })
+        .translate({ x: TgUiTokens.TAB_BAR_BADGE_OFFSET_X, y: TgUiTokens.TAB_BAR_BADGE_OFFSET_Y })
     }
   }
 
@@ -120,7 +119,6 @@ export struct TgTabBar {
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)
     .onClick(() => {
-      AppStorage.setOrCreate<number>(StorageKeys.MAIN_TAB_INDEX, index);
       this.onTabSelect(index);
     })
   }

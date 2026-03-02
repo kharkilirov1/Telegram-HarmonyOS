@@ -20,7 +20,7 @@
         "description": "$string:ability_desc",
         "icon": "$media:app_icon",
         "label": "$string:ability_label",
-        "startWindowIcon": "$media:app_icon",
+        "startWindowIcon": "$media:app_icon_transparent",
         "startWindowBackground": "$color:start_window_background",
         "exported": true,
         "skills": [

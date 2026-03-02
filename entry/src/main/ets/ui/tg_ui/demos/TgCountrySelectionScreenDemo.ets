@@ -47,8 +47,6 @@ export struct TgCountrySelectionScreenDemo {
   build() {
     TgCountrySelectionScreen({
       isLoaded: true,
-      topInset: 44,
-      bottomInset: 34,
       searchText: this.searchText,
       groupedCountries: this.groups,
       alphabet: this.alphabet,

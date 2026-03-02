@@ -1,7 +1,7 @@
 // SolidRoundedButton — широкая кнопка Continue
 // HarmonyOS Guidelines: animateTo для анимаций, Image для иконок, $r() для ресурсов
 
-import { TgColor, TgSize, TgIcon } from '../../theme/TelegramTheme';
+import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { curves } from '@kit.ArkUI';
 
 export type ButtonState = 'default' | 'progress' | 'success';
@@ -20,26 +20,26 @@ export struct SolidRoundedButton {
       if (this.buttonState === 'progress') {
         // Spinner внутри кнопки
         LoadingProgress()
-          .width(24)
-          .height(24)
-          .color(Color.White)
+          .width(TgUiTokens.ICON_SIZE_LG)
+          .height(TgUiTokens.ICON_SIZE_LG)
+          .color(TgUiTokens.LOGIN_BUTTON_SPINNER_COLOR)
       } else if (this.buttonState === 'success') {
         // Галочка — Image вместо эмодзи
-        Image(TgIcon.CHECK)
-          .width(24)
-          .height(24)
-          .fillColor(Color.White)
+        Image(TgUiTokens.ICON_RES_CHECK)
+          .width(TgUiTokens.ICON_SIZE_LG)
+          .height(TgUiTokens.ICON_SIZE_LG)
+          .fillColor(TgUiTokens.LOGIN_BUTTON_TEXT_COLOR)
       } else {
         Text(this.title)
-          .fontSize(17)
+          .fontSize(TgUiTokens.LOGIN_BUTTON_TEXT_SIZE)
           .fontWeight(FontWeight.Medium)
-          .fontColor(this.isEnabled ? Color.White : $r('app.color.text_secondary'))
+          .fontColor(this.isEnabled ? TgUiTokens.LOGIN_BUTTON_TEXT_COLOR : TgUiTokens.LOGIN_BUTTON_DISABLED_TEXT_COLOR)
       }
     }
     .width('100%')
-    .height(TgSize.BUTTON_HEIGHT)
-    .borderRadius(TgSize.BUTTON_RADIUS)
-    .backgroundColor(this.isEnabled ? $r('app.color.telegram_blue') : $r('app.color.separator'))
+    .height(TgUiTokens.LOGIN_BUTTON_HEIGHT)
+    .borderRadius(TgUiTokens.LOGIN_BUTTON_RADIUS)
+    .backgroundColor(this.isEnabled ? TgUiTokens.LOGIN_BUTTON_BG : TgUiTokens.LOGIN_BUTTON_DISABLED_BG)
     .enabled(this.isEnabled && this.buttonState === 'default')
     .scale({ x: this.btnScale, y: this.btnScale })
     .onClick(() => {

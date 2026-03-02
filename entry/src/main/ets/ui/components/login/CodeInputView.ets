@@ -4,7 +4,8 @@
 // iOS: CodeInputView с UITextField (hidden), визуальные ячейки для каждой цифры
 // Auto-submit при заполнении всех ячеек
 
-import { TgColorRes, TgSize } from '../../theme/TelegramTheme';
+import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
+import { getString } from '../../../core/utils/AppResource';
 
 export type CodeInputType = 'numeric' | 'word' | 'phrase';
 
@@ -46,23 +47,23 @@ export struct CodeInputView {
   @Builder
   private buildDigitCells() {
     // iOS: CodeInputView — визуальные ячейки
-    Row({ space: 12 }) {
+    Row({ space: TgUiTokens.LOGIN_CODE_CELL_GAP }) {
       ForEach(this.getDigitArray(), (item: DigitItem) => {
         Column() {
           Text(item.digit)
-            .fontSize(24)
+            .fontSize(TgUiTokens.LOGIN_CODE_CELL_FONT_SIZE)
             .fontWeight(FontWeight.Medium)
-            .fontColor(TgColorRes.PRIMARY)
+            .fontColor(TgUiTokens.LOGIN_CODE_CELL_TEXT_COLOR)
             .textAlign(TextAlign.Center)
         }
-        .width(42)
-        .height(48)
-        .borderRadius(8)
-        .backgroundColor(TgColorRes.BACKGROUND_SECONDARY)
+        .width(TgUiTokens.LOGIN_CODE_CELL_WIDTH)
+        .height(TgUiTokens.LOGIN_CODE_CELL_HEIGHT)
+        .borderRadius(TgUiTokens.LOGIN_CODE_CELL_RADIUS)
+        .backgroundColor(TgUiTokens.LOGIN_CODE_CELL_BG)
         .justifyContent(FlexAlign.Center)
         .border({
-          width: item.isActive ? 2 : 1,
-          color: item.isActive ? TgColorRes.ACCENT : TgColorRes.SEPARATOR
+          width: item.isActive ? TgUiTokens.LOGIN_CODE_CELL_BORDER_ACTIVE_WIDTH : TgUiTokens.LOGIN_CODE_CELL_BORDER_INACTIVE_WIDTH,
+          color: item.isActive ? TgUiTokens.LOGIN_CODE_CELL_BORDER_ACTIVE : TgUiTokens.LOGIN_CODE_CELL_BORDER_INACTIVE
         })
       }, (item: DigitItem) => item.index.toString())
     }
@@ -71,7 +72,7 @@ export struct CodeInputView {
     // Реальное поле ввода (скрытое, как в iOS)
     TextInput({ text: this.code })
       .width('100%')
-      .height(48)
+      .height(TgUiTokens.LOGIN_CODE_CELL_HEIGHT)
       .opacity(0)
       .type(InputType.Number)
       .maxLength(this.codeLength)
@@ -95,12 +96,12 @@ export struct CodeInputView {
   private buildTextField() {
     // iOS: для word/phrase — обычный TextFieldNode
     Column({ space: 0 }) {
-      TextInput({ text: this.code, placeholder: this.inputType === 'word' ? 'Enter word' : 'Enter phrase' })
+      TextInput({ text: this.code, placeholder: this.inputType === 'word' ? this.wordPlaceholder() : this.phrasePlaceholder() })
         .width('100%')
-        .height(44)
-        .fontSize(TgSize.INPUT_FONT)
-        .fontColor(TgColorRes.PRIMARY)
-        .placeholderColor(TgColorRes.PLACEHOLDER)
+        .height(TgUiTokens.LOGIN_TEXT_INPUT_HEIGHT)
+        .fontSize(TgUiTokens.LOGIN_INPUT_FONT_SIZE)
+        .fontColor(TgUiTokens.LOGIN_INPUT_TEXT_COLOR)
+        .placeholderColor(TgUiTokens.LOGIN_INPUT_PLACEHOLDER_COLOR)
         .backgroundColor(Color.Transparent)
         .padding({ left: 0, right: 0 })
         .onChange((value: string) => {
@@ -111,10 +112,10 @@ export struct CodeInputView {
       // iOS: codeSeparatorNode
       Divider()
         .width('100%')
-        .height(0.5)
-        .color(this.isFocused ? TgColorRes.ACCENT : TgColorRes.SEPARATOR)
+        .height(TgUiTokens.LOGIN_SEPARATOR_STROKE)
+        .color(this.isFocused ? TgUiTokens.LOGIN_CODE_CELL_BORDER_ACTIVE : TgUiTokens.LOGIN_SEPARATOR_COLOR)
     }
-    .padding({ left: TgSize.SIDE_INSET, right: TgSize.SIDE_INSET })
+    .padding({ left: TgUiTokens.LOGIN_SIDE_INSET, right: TgUiTokens.LOGIN_SIDE_INSET })
   }
 
   // Shake анимация при ошибке
@@ -131,6 +132,16 @@ export struct CodeInputView {
   // Сброс кода
   resetCode(): void {
     this.code = '';
+  }
+
+  private wordPlaceholder(): string {
+    const value = getString($r('app.string.code_input_enter_word').id);
+    return value.length > 0 ? value : 'Enter word';
+  }
+
+  private phrasePlaceholder(): string {
+    const value = getString($r('app.string.code_input_enter_phrase').id);
+    return value.length > 0 ? value : 'Enter phrase';
   }
 
   private getDigitArray(): DigitItem[] {

@@ -85,8 +85,12 @@ export class AppStore {
   }
 
   private notifyListeners(newState: AppState, prevState: AppState): void {
+    // Snapshot listeners перед отложенным вызовом —
+    // Set может измениться к моменту выполнения Promise.resolve().then()
+    const listenersSnapshot: StateListener[] = Array.from(this.listeners);
+
     Promise.resolve().then(() => {
-      for (const listener of this.listeners) {
+      for (const listener of listenersSnapshot) {
         try {
           listener(newState, prevState);
         } catch (error) {

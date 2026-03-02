@@ -3,6 +3,10 @@
 
 import { ChatId } from '../EntityId';
 import { TdObject, tdGetString, tdGetNumber, tdGetBoolean, tdGetInt64, tdGetObject, tdGetArray, tdHasKeys } from '../../utils/tdAccessors';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const DTO_DOMAIN = 0x0003;
+const DTO_TAG = 'ChatDto';
 
 export enum ChatType {
   PRIVATE = 'private',
@@ -25,9 +29,13 @@ export class ChatPhoto {
 export class ChatDto {
   id: ChatId = 0;
   type: ChatType = ChatType.PRIVATE;
+  peerUserId: number = 0;
   title: string = '';
   unreadCount: number = 0;
   unreadMentionCount: number = 0;
+  muteFor: number = 0;
+  lastReadOutboxMessageId: string = '0';
+  lastReadInboxMessageId: string = '0';
   lastMessage?: ChatLastMessage;
   isPinned: boolean = false;
   photo?: ChatPhoto;
@@ -57,6 +65,20 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   chatDto.type = type;
   chatDto.title = tdGetString(tdChat, 'title');
   chatDto.unreadCount = tdGetNumber(tdChat, 'unread_count');
+  chatDto.lastReadOutboxMessageId = tdGetInt64(tdChat, 'last_read_outbox_message_id');
+  chatDto.lastReadInboxMessageId = tdGetInt64(tdChat, 'last_read_inbox_message_id');
+
+  const notificationSettings = tdGetObject(tdChat, 'notification_settings');
+  if (tdHasKeys(notificationSettings)) {
+    chatDto.muteFor = tdGetNumber(notificationSettings, 'mute_for');
+  }
+
+  if (type === ChatType.PRIVATE) {
+    chatDto.peerUserId = tdGetNumber(tdTypeObj, 'user_id');
+  }
+
+  hilog.info(DTO_DOMAIN, DTO_TAG, 'chatFromTd id=%{public}d title="%{public}s" type=%{public}s',
+    chatDto.id, chatDto.title || '(empty)', tdGetString(tdGetObject(tdChat, 'type'), '@type'));
 
   // Extract isPinned and order from positions
   const positions = tdGetArray(tdChat, 'positions');
@@ -145,9 +167,13 @@ export function extractMainListPosition(tdPosition: TdObject): ChatPositionInfo 
 
 // Helper for partial updates (chatUpdated event)
 export class ChatUpdateDto {
+  peerUserId?: number;
   title?: string;
   unreadCount?: number;
   unreadMentionCount?: number;
+  muteFor?: number;
+  lastReadOutboxMessageId?: string;
+  lastReadInboxMessageId?: string;
   lastMessage?: ChatLastMessage;
   photo?: ChatPhoto;
   isPinned?: boolean;
@@ -162,9 +188,13 @@ export function applyChatUpdate(chat: ChatDto, update: ChatUpdateDto): ChatDto {
   // Copy all fields from original chat
   updatedChat.id = chat.id;
   updatedChat.type = chat.type;
+  updatedChat.peerUserId = chat.peerUserId;
   updatedChat.title = chat.title;
   updatedChat.unreadCount = chat.unreadCount;
   updatedChat.unreadMentionCount = chat.unreadMentionCount;
+  updatedChat.muteFor = chat.muteFor;
+  updatedChat.lastReadOutboxMessageId = chat.lastReadOutboxMessageId;
+  updatedChat.lastReadInboxMessageId = chat.lastReadInboxMessageId;
   updatedChat.isPinned = chat.isPinned;
   updatedChat.lastMessage = chat.lastMessage;
   updatedChat.photo = chat.photo;
@@ -173,6 +203,9 @@ export function applyChatUpdate(chat: ChatDto, update: ChatUpdateDto): ChatDto {
   updatedChat.draftReplyToMessageId = chat.draftReplyToMessageId;
 
   // Apply updates
+  if (update.peerUserId !== undefined) {
+    updatedChat.peerUserId = update.peerUserId;
+  }
   if (update.title !== undefined) {
     updatedChat.title = update.title;
   }
@@ -181,6 +214,15 @@ export function applyChatUpdate(chat: ChatDto, update: ChatUpdateDto): ChatDto {
   }
   if (update.unreadMentionCount !== undefined) {
     updatedChat.unreadMentionCount = update.unreadMentionCount;
+  }
+  if (update.muteFor !== undefined) {
+    updatedChat.muteFor = update.muteFor;
+  }
+  if (update.lastReadOutboxMessageId !== undefined) {
+    updatedChat.lastReadOutboxMessageId = update.lastReadOutboxMessageId;
+  }
+  if (update.lastReadInboxMessageId !== undefined) {
+    updatedChat.lastReadInboxMessageId = update.lastReadInboxMessageId;
   }
   if (update.isPinned !== undefined) {
     updatedChat.isPinned = update.isPinned;

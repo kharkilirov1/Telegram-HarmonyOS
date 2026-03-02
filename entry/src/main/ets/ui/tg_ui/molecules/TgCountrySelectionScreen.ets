@@ -2,9 +2,6 @@ import { CountryInfo, CountryService } from '../../services/CountryService';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgCountrySectionHeader } from '../atoms/TgCountrySectionHeader';
 import { TgCountryRow } from '../atoms/TgCountryRow';
-import { TgCountryTopOverlay } from '../atoms/TgCountryTopOverlay';
-import { TgCountryBottomSearchOverlay } from '../atoms/TgCountryBottomSearchOverlay';
-import { LengthMetrics } from '@kit.ArkUI';
 
 export class TgCountryGroup {
   letter: string = '';
@@ -19,14 +16,11 @@ export class TgCountryGroup {
 @ComponentV2
 export struct TgCountrySelectionScreen {
   @Param isLoaded: boolean = false;
-  @Param topInset: number = 44;
-  @Param bottomInset: number = 34;
   @Param searchText: string = '';
   @Param searchPlaceholder: string = 'Search';
   @Param groupedCountries: TgCountryGroup[] = [];
   @Param alphabet: string[] = [];
 
-  @Event onBackPress: () => void = (): void => {};
   @Event onSearchChange: (value: string) => void = (_value: string): void => {};
   @Event onCountryPress: (country: CountryInfo) => void = (_country: CountryInfo): void => {};
 
@@ -49,14 +43,23 @@ export struct TgCountrySelectionScreen {
   }
 
   build() {
-    Stack({ alignContent: Alignment.TopStart }) {
+    Column() {
+      Search({ placeholder: this.searchPlaceholder, value: this.searchText })
+        .height(TgUiTokens.COUNTRY_SHEET_SEARCH_HEIGHT)
+        .backgroundColor(TgUiTokens.SEARCH_BAR_BG)
+        .margin({
+          left: TgUiTokens.COUNTRY_SHEET_SEARCH_SIDE_INSET,
+          right: TgUiTokens.COUNTRY_SHEET_SEARCH_SIDE_INSET,
+          top: TgUiTokens.SPACE_8,
+          bottom: TgUiTokens.SPACE_8
+        })
+        .onChange((value: string) => {
+          this.onSearchChange(value);
+        })
+
       if (this.isLoaded) {
         Stack({ alignContent: Alignment.End }) {
           List() {
-            ListItem() {
-              Row().height(this.topInset + TgUiTokens.COUNTRY_TOP_OVERLAY_BAR_HEIGHT)
-            }
-
             ForEach(this.groupedCountries, (group: TgCountryGroup) => {
               ListItemGroup({ header: this.buildSectionHeader(group.letter) }) {
                 ForEach(group.countries, (country: CountryInfo, index: number) => {
@@ -66,10 +69,6 @@ export struct TgCountrySelectionScreen {
                 }, (country: CountryInfo) => country.code)
               }
             }, (group: TgCountryGroup) => group.letter)
-
-            ListItem() {
-              Row().height(TgUiTokens.COUNTRY_SEARCH_OVERLAY_HEIGHT + this.bottomInset + TgUiTokens.SPACE_16)
-            }
           }
           .width('100%')
           .height('100%')
@@ -78,58 +77,33 @@ export struct TgCountrySelectionScreen {
 
           if (this.alphabet.length > 0) {
             AlphabetIndexer({ arrayValue: this.alphabet, selected: 0 })
-              .font({ size: 11 })
-              .selectedFont({ size: 11, weight: FontWeight.Bold })
+              .font({ size: TgUiTokens.COUNTRY_INDEXER_FONT_SIZE })
+              .selectedFont({ size: TgUiTokens.COUNTRY_INDEXER_FONT_SIZE, weight: FontWeight.Bold })
               .color(TgUiTokens.COLOR_ICON_PRIMARY)
               .selectedColor(TgUiTokens.COLOR_TEXT_TITLE)
               .selectedBackgroundColor(Color.Transparent)
               .usingPopup(true)
-              .popupFont({ size: 30, weight: FontWeight.Bold })
+              .popupFont({ size: TgUiTokens.COUNTRY_INDEXER_POPUP_FONT_SIZE, weight: FontWeight.Bold })
               .popupBackground(TgUiTokens.COLOR_OVERLAY_DIM)
               .alignStyle(IndexerAlign.Right)
-              .itemSize(16)
-              .margin({
-                end: LengthMetrics.vp(4),
-                bottom: LengthMetrics.vp(TgUiTokens.COUNTRY_SEARCH_OVERLAY_HEIGHT + this.bottomInset)
-              })
+              .itemSize(TgUiTokens.COUNTRY_INDEXER_ITEM_SIZE)
+              .margin({ right: TgUiTokens.COUNTRY_INDEXER_MARGIN_RIGHT })
           }
         }
         .width('100%')
-        .height('100%')
+        .layoutWeight(1)
       } else {
         Column() {
           LoadingProgress()
-            .width(32)
-            .height(32)
+            .width(TgUiTokens.COUNTRY_SHEET_LOADING_SIZE)
+            .height(TgUiTokens.COUNTRY_SHEET_LOADING_SIZE)
             .color(TgUiTokens.COLOR_ICON_PRIMARY)
         }
         .width('100%')
-        .height('100%')
+        .layoutWeight(1)
         .justifyContent(FlexAlign.Center)
         .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
       }
-
-      TgCountryTopOverlay({
-        topInset: this.topInset,
-        onBackPress: (): void => {
-          this.onBackPress();
-        }
-      })
-
-      Column() {
-        Blank()
-        TgCountryBottomSearchOverlay({
-          query: this.searchText,
-          bottomInset: this.bottomInset,
-          placeholder: this.searchPlaceholder,
-          onQueryChange: (value: string): void => {
-            this.onSearchChange(value);
-          }
-        })
-      }
-      .width('100%')
-      .height('100%')
-      .hitTestBehavior(HitTestMode.Transparent)
     }
     .width('100%')
     .height('100%')

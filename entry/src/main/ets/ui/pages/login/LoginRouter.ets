@@ -9,7 +9,7 @@
 import { PhoneInputPage } from './PhoneInputPage';
 import { CodeInputPage } from './CodeInputPage';
 import { PasswordInputPage } from './PasswordInputPage';
-import { TgColor } from '../../theme/TelegramTheme';
+import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { CodeType } from '../../controllers/LoginController';
 
@@ -57,12 +57,12 @@ export struct LoginRouter {
           LoadingProgress()
             .width(40)
             .height(40)
-            .color($r('app.color.telegram_blue'))
+            .color(TgUiTokens.COLOR_ICON_PRIMARY)
         }
         .width('100%')
         .height('100%')
         .justifyContent(FlexAlign.Center)
-        .backgroundColor($r('app.color.background_primary'))
+        .backgroundColor(TgUiTokens.LOGIN_BG)
 
       } else if (this.authStatus === 'waitPhoneNumber') {
         PhoneInputPage({
@@ -109,12 +109,12 @@ export struct LoginRouter {
           LoadingProgress()
             .width(40)
             .height(40)
-            .color($r('app.color.telegram_blue'))
+            .color(TgUiTokens.COLOR_ICON_PRIMARY)
         }
         .width('100%')
         .height('100%')
         .justifyContent(FlexAlign.Center)
-        .backgroundColor($r('app.color.background_primary'))
+        .backgroundColor(TgUiTokens.LOGIN_BG)
         .onAppear(() => {
           this.onAuthComplete();
         })

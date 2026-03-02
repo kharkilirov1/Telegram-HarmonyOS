@@ -2379,6 +2379,14 @@
     {
       "name": "month_dec",
       "value": "дек"
+    },
+    {
+      "name": "code_input_enter_word",
+      "value": "Введите слово"
+    },
+    {
+      "name": "code_input_enter_phrase",
+      "value": "Введите фразу"
     }
   ]
 }

@@ -12,6 +12,7 @@
 import { TdGatewayPort, GatewayError, GatewayErrorCode } from '../../../domain/ports/TdGatewayPort';
 import { TdGateway, getTdGateway } from '../gateway/TdGateway';
 import { AnyAppCommand } from '../../../core/model/AppCommand';
+import { AnyAppEvent } from '../../../core/model/AppEvent';
 import { serializeCommand } from '../serialization/CommandSerializer';
 import { TdObject } from '../../../models/TdTypes';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -63,11 +64,15 @@ export class TdGatewayAdapter implements TdGatewayPort {
       const err = error as Error;
       hilog.error(DOMAIN, TAG, 'Command %{public}s failed: %{public}s',
         serialized.method, err.message);
-      throw error;
+      throw new GatewayError(
+        GatewayErrorCode.CONNECTION_FAILED,
+        err.message,
+        serialized.method
+      );
     }
   }
 
-  subscribeUpdates(handler: (event: Object) => void): () => void {
+  subscribeUpdates(_handler: (event: AnyAppEvent) => void): () => void {
     // ВАЖНО: Use cases НЕ должны подписываться на обновления напрямую.
     // Все обновления идут через pipeline в AppCoreRuntime:
     //   TdGateway → MainThreadDispatcher → EventNormalizer → AppStore

@@ -1,13 +1,17 @@
 // CodeInputPage — экран ввода кода подтверждения
 // HarmonyOS Guidelines: $r() для локализации, animateTo для анимаций
 
-import { TgColor, TgSize } from '../../theme/TelegramTheme';
+import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { MonkeyAnimation } from '../../components/login/MonkeyAnimation';
 import { CodeInputView, CodeInputType } from '../../components/login/CodeInputView';
 import { SolidRoundedButton, ButtonState } from '../../components/login/SolidRoundedButton';
 import { LoginController, CheckCodeFailure, CodeType } from '../../controllers/LoginController';
 import { curves } from '@kit.ArkUI';
 import { getString } from '../../../core/utils/AppResource';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const DOMAIN = 0x0040;
+const TAG = 'CodeInputPage';
 
 @Component
 export struct CodeInputPage {
@@ -41,23 +45,23 @@ export struct CodeInputPage {
         Column({ space: 0 }) {
           // Monkey animation
           MonkeyAnimation({ screen: 'code' })
-            .margin({ top: 10 })
+            .margin({ top: TgUiTokens.LOGIN_SPACING_MONKEY_TOP })
 
           // Title
           Text(this.getTitleForType())
-            .fontSize($r('app.float.font_size_title_large'))
+            .fontSize(TgUiTokens.LOGIN_TITLE_SIZE)
             .fontWeight(FontWeight.Bold)
-            .fontColor($r('app.color.text_primary'))
+            .fontColor(TgUiTokens.LOGIN_TITLE_COLOR)
             .textAlign(TextAlign.Center)
-            .margin({ top: 18 })
+            .margin({ top: TgUiTokens.LOGIN_SPACING_TITLE_TOP })
 
           // Description
           Text(this.getDescriptionForType())
-            .fontSize($r('app.float.font_size_headline'))
-            .fontColor($r('app.color.text_primary'))
+            .fontSize(TgUiTokens.LOGIN_SUBTITLE_SIZE)
+            .fontColor(TgUiTokens.LOGIN_SUBTITLE_COLOR)
             .textAlign(TextAlign.Center)
-            .margin({ top: 18 })
-            .padding({ left: TgSize.SIDE_INSET, right: TgSize.SIDE_INSET })
+            .margin({ top: TgUiTokens.LOGIN_SPACING_TITLE_TOP })
+            .padding({ left: TgUiTokens.LOGIN_SIDE_INSET, right: TgUiTokens.LOGIN_SIDE_INSET })
 
           // ─── Code Input ───
           Column() {
@@ -71,25 +75,25 @@ export struct CodeInputPage {
               }
             })
           }
-          .margin({ top: 30 })
+          .margin({ top: TgUiTokens.LOGIN_SPACING_COUNTRY_TOP })
           .offset({ x: this.shakeOffset })
 
           // Error text
           if (this.errorMessage.length > 0) {
             Text(this.errorMessage)
-              .fontSize(14)
-              .fontColor($r('app.color.error_red'))
+              .fontSize(TgUiTokens.LOGIN_ERROR_SIZE)
+              .fontColor(TgUiTokens.LOGIN_ERROR_COLOR)
               .textAlign(TextAlign.Center)
-              .margin({ top: 12 })
-              .padding({ left: TgSize.SIDE_INSET, right: TgSize.SIDE_INSET })
+              .margin({ top: TgUiTokens.LOGIN_SPACING_ERROR_TOP })
+              .padding({ left: TgUiTokens.LOGIN_SIDE_INSET, right: TgUiTokens.LOGIN_SIDE_INSET })
           }
 
           // ─── Fragment Link ───
           if (this.codeType === 'fragment') {
             Text($r('app.string.login_open_fragment'))
-              .fontSize($r('app.float.font_size_headline'))
-              .fontColor($r('app.color.telegram_blue'))
-              .margin({ top: 16 })
+              .fontSize(TgUiTokens.LOGIN_SUBTITLE_SIZE)
+              .fontColor(TgUiTokens.LOGIN_LINK_COLOR)
+              .margin({ top: TgUiTokens.SPACE_16 })
               .onClick(() => {
                 // TODO: open fragment.com URL
               })
@@ -97,10 +101,10 @@ export struct CodeInputPage {
 
           // ─── Next Option / Resend ───
           Text(this.getNextOptionText())
-            .fontSize(15)
-            .fontColor(this.remainingTime > 0 ? $r('app.color.text_secondary') : $r('app.color.telegram_blue'))
+            .fontSize(TgUiTokens.LOGIN_LINK_SIZE)
+            .fontColor(this.remainingTime > 0 ? TgUiTokens.LOGIN_INPUT_PLACEHOLDER_COLOR : TgUiTokens.LOGIN_LINK_COLOR)
             .textAlign(TextAlign.Center)
-            .margin({ top: 24 })
+            .margin({ top: TgUiTokens.LOGIN_RESEND_LINK_TOP })
             .onClick(() => {
               if (this.remainingTime <= 0) {
                 this.requestResend();
@@ -110,13 +114,13 @@ export struct CodeInputPage {
 
           // ─── Wrong Number? ───
           Text($r('app.string.login_wrong_number'))
-            .fontSize(15)
-            .fontColor($r('app.color.telegram_blue'))
-            .margin({ top: 16 })
+            .fontSize(TgUiTokens.LOGIN_LINK_SIZE)
+            .fontColor(TgUiTokens.LOGIN_LINK_COLOR)
+            .margin({ top: TgUiTokens.SPACE_16 })
             .onClick(() => { this.onWrongNumber(); })
         }
         .width('100%')
-        .constraintSize({ maxWidth: TgSize.MAX_WIDTH })
+        .constraintSize({ maxWidth: TgUiTokens.LOGIN_MAX_WIDTH })
       }
       .layoutWeight(1)
 
@@ -132,15 +136,15 @@ export struct CodeInputPage {
         }
         .width('100%')
         .padding({
-          left: TgSize.SIDE_INSET,
-          right: TgSize.SIDE_INSET,
-          bottom: TgSize.SIDE_INSET
+          left: TgUiTokens.LOGIN_SIDE_INSET,
+          right: TgUiTokens.LOGIN_SIDE_INSET,
+          bottom: TgUiTokens.LOGIN_SIDE_INSET
         })
       }
     }
     .width('100%')
     .height('100%')
-    .backgroundColor($r('app.color.background_primary'))
+    .backgroundColor(TgUiTokens.LOGIN_BG)
   }
 
   // ─── Submit ───
@@ -239,7 +243,7 @@ export struct CodeInputPage {
       if (this.codeType === 'phrase') return getString($r('app.string.login_enter_code_phrase').id);
       return this.phoneNumber;
     } catch (e) {
-      console.error('Failed to get title for type:', String(e));
+      hilog.warn(DOMAIN, TAG, 'Failed to get title for type: %{public}s', String(e));
       return this.phoneNumber;
     }
   }
@@ -278,7 +282,7 @@ export struct CodeInputPage {
       const template: string = getString($r('app.string.login_code_sent_generic').id);
       return template.replace('%s', this.phoneNumber);
     } catch (e) {
-      console.error('Failed to get description for type:', String(e));
+      hilog.warn(DOMAIN, TAG, 'Failed to get description for type: %{public}s', String(e));
       return '';
     }
   }
@@ -306,7 +310,7 @@ export struct CodeInputPage {
       if (this.nextType === 'sms') return getString($r('app.string.login_resend_sms').id);
       return getString($r('app.string.login_didnt_get_code').id);
     } catch (e) {
-      console.error('Failed to get next option text:', String(e));
+      hilog.warn(DOMAIN, TAG, 'Failed to get next option text: %{public}s', String(e));
       return '';
     }
   }
@@ -315,7 +319,7 @@ export struct CodeInputPage {
     try {
       return getString($r('app.string.login_continue').id);
     } catch (e) {
-      console.error('Failed to get continue title:', String(e));
+      hilog.warn(DOMAIN, TAG, 'Failed to get continue title: %{public}s', String(e));
       return 'Continue';
     }
   }

@@ -4,19 +4,17 @@
 
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, User } from '../../../core/model/AppState';
-import { AppShellTokens } from '../../theme/AppShellTokens';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { TgTopBar } from '../../tg_ui/atoms/TgTopBar';
 import { TgContactRow } from '../../tg_ui/atoms/TgContactRow';
-import { getString } from '../../../core/utils/AppResource';
+import { localized } from '../../../core/utils/AppResource';
+import { computeTopBarHeight, computeTabBottomInset, getMainWindow, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 
 const DOMAIN = 0x0030;
 const TAG = 'ContactsPage';
-
-declare function px2vp(value: number): number;
 
 class ContactVO {
   userId: number = 0;
@@ -71,27 +69,16 @@ export struct ContactsPage {
       this.unsubscribe();
       this.unsubscribe = undefined;
     }
-    if (this.mainWindow !== undefined) {
-      try {
-        this.mainWindow.off('windowSizeChange');
-      } catch (_error) {
-      }
-      this.mainWindow = undefined;
-    }
+    removeWindowSizeListener(this.mainWindow);
+    this.mainWindow = undefined;
   }
 
   private bindWindowSizeListener(): void {
     try {
-      if (this.mainWindow !== undefined) {
-        try {
-          this.mainWindow.off('windowSizeChange');
-        } catch (_error) {
-        }
-      }
+      removeWindowSizeListener(this.mainWindow);
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      const windowStage = context.windowStage;
-      if (windowStage) {
-        this.mainWindow = windowStage.getMainWindowSync();
+      this.mainWindow = getMainWindow(context);
+      if (this.mainWindow !== undefined) {
         this.mainWindow.on('windowSizeChange', (_size: window.Size) => {
           this.computeSafeInsets();
         });
@@ -102,52 +89,30 @@ export struct ContactsPage {
   }
 
   private computeSafeInsets(): void {
-    this.topBarTotalHeight = TgUiTokens.TOP_BAR_HEIGHT;
-    this.listBottomInset = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
     try {
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      const windowStage = context.windowStage;
-      if (windowStage) {
-        const mainWindow = windowStage.getMainWindowSync();
-        const systemAvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
-        const topInset = px2vp(systemAvoidArea.topRect.height);
-        this.topBarTotalHeight = topInset + TgUiTokens.TOP_BAR_HEIGHT;
-
-        let bottomInset = px2vp(systemAvoidArea.bottomRect.height);
-        try {
-          const navAvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
-          bottomInset = Math.max(bottomInset, px2vp(navAvoidArea.bottomRect.height));
-        } catch (_error) {
-        }
-
-        const dynamicBottomInset = TgUiTokens.TAB_BAR_ISLAND_HEIGHT
-          + Math.max(bottomInset, TgUiTokens.TAB_BAR_ISLAND_BOTTOM_MARGIN)
-          + TgUiTokens.SPACE_6;
-        this.listBottomInset = dynamicBottomInset;
-      }
+      this.topBarTotalHeight = computeTopBarHeight(context);
+      this.listBottomInset = computeTabBottomInset(context);
     } catch (_error) {
+      this.topBarTotalHeight = TgUiTokens.TOP_BAR_HEIGHT;
+      this.listBottomInset = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
     }
-  }
-
-  private localized(resourceId: number, fallback: string): string {
-    const value = getString(resourceId);
-    return value.length > 0 ? value : fallback;
   }
 
   private formatUserStatus(user: User): string {
     switch (user.status) {
       case 'online':
-        return this.localized($r('app.string.online').id, 'online');
+        return localized($r('app.string.online').id, 'online');
       case 'recently':
-        return this.localized($r('app.string.last_seen_recently').id, 'last seen recently');
+        return localized($r('app.string.last_seen_recently').id, 'last seen recently');
       case 'lastWeek':
-        return this.localized($r('app.string.last_seen_within_week').id, 'last seen within a week');
+        return localized($r('app.string.last_seen_within_week').id, 'last seen within a week');
       case 'lastMonth':
-        return this.localized($r('app.string.last_seen_within_month').id, 'last seen within a month');
+        return localized($r('app.string.last_seen_within_month').id, 'last seen within a month');
       case 'longTimeAgo':
-        return this.localized($r('app.string.last_seen_long_ago').id, 'last seen a long time ago');
+        return localized($r('app.string.last_seen_long_ago').id, 'last seen a long time ago');
       default:
-        return this.localized($r('app.string.offline').id, 'offline');
+        return localized($r('app.string.offline').id, 'offline');
     }
   }
 
@@ -232,7 +197,7 @@ export struct ContactsPage {
         .contentEndOffset(this.listBottomInset)
       } else {
         Column() {
-          Text(this.localized($r('app.string.no_contacts').id, 'No contacts yet'))
+          Text(localized($r('app.string.no_contacts').id, 'No contacts yet'))
             .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
             .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
         }
@@ -242,11 +207,11 @@ export struct ContactsPage {
         .alignItems(HorizontalAlign.Center)
       }
 
-      TgTopBar({ title: this.localized($r('app.string.contacts_title').id, 'Contacts') })
+      TgTopBar({ title: localized($r('app.string.contacts_title').id, 'Contacts') })
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(AppShellTokens.BACKGROUND)
+    .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
     .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
   }
 }

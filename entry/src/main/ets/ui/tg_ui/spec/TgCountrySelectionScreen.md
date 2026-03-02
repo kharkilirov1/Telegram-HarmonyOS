@@ -3,47 +3,62 @@
 ## 1) Scope
 - Molecule: `TgCountrySelectionScreen`
 - Target layer: `molecules`
-- Status: `in-progress`
+- Status: `done`
 
 ## 2) iOS source mapping
 - `submodules/CountrySelectionUI/Sources/AuthorizationSequenceCountrySelectionController.swift`
 - `submodules/CountrySelectionUI/Sources/AuthorizationSequenceCountrySelectionControllerNode.swift`
 
-## 3) Props / inputs
+## 3) Presentation
+- Displayed inside `bindSheet(SheetSize.LARGE)` from `PhoneInputPage`
+- Sheet provides built-in title (`select_country` resource) and close button (`showClose: true`)
+- No separate page or NavDestination required
+
+## 4) Props / inputs
 - `isLoaded: boolean`
-- `topInset: number`
-- `bottomInset: number`
 - `searchText: string`
 - `searchPlaceholder: string`
 - `groupedCountries: TgCountryGroup[]`
 - `alphabet: string[]`
 - callbacks:
-  - `onBackPress`
-  - `onSearchChange`
-  - `onCountryPress`
+  - `onSearchChange: (value: string) => void`
+  - `onCountryPress: (country: CountryInfo) => void`
 
-## 4) State matrix
-- loading state
+## 5) State matrix
+- loading state (spinner)
 - grouped list state
 - alphabet index visible/hidden
 - active search query
 
-## 5) Layout rules
-- full-screen stack: list layer + top glass overlay + bottom search overlay.
-- list has spacer items for overlay regions to avoid clipping.
-- index rail anchored above bottom search overlay.
+## 6) Layout rules
+```
+Column (100% x 100%)
+  Search (search bar, always visible at top)
+  if isLoaded:
+    Stack (layoutWeight 1)
+      List (sticky headers, full size)
+        ForEach(groups) -> ListItemGroup
+          Header: TgCountrySectionHeader
+          ForEach(countries) -> TgCountryRow
+      AlphabetIndexer (right-aligned)
+  else:
+    LoadingProgress (centered, layoutWeight 1)
+```
 
-## 6) Token mapping
-- `COUNTRY_TOP_OVERLAY_BAR_HEIGHT`
-- `COUNTRY_SEARCH_OVERLAY_HEIGHT`
-- `SPACE_16`
+## 7) Token mapping
+- `COUNTRY_SHEET_SEARCH_HEIGHT`
+- `COUNTRY_SHEET_SEARCH_SIDE_INSET`
+- `SEARCH_BAR_BG`
+- `SPACE_8`
 - `COLOR_BG_PRIMARY`
 - `COLOR_ICON_PRIMARY`
 - `COLOR_TEXT_TITLE`
 - `COLOR_OVERLAY_DIM`
 
-## 7) Acceptance checklist
-- [x] page-level country UI composed through tg_ui atoms only
+## 8) Acceptance checklist
+- [x] country UI composed through tg_ui atoms only
 - [x] no inline back/search/header/row render code in page
 - [x] molecule remains stateless w.r.t. business logic (inputs/callbacks only)
-
+- [x] search bar at top (inside sheet, below built-in title)
+- [x] no overlays (sheet provides title + close)
+- [x] alphabet indexer works without bottom margin offset

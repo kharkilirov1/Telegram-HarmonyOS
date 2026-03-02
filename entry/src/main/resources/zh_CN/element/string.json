@@ -2379,6 +2379,14 @@
     {
       "name": "select_country",
       "value": "Select Country"
+    },
+    {
+      "name": "code_input_enter_word",
+      "value": "输入单词"
+    },
+    {
+      "name": "code_input_enter_phrase",
+      "value": "输入短语"
     }
   ]
 }
