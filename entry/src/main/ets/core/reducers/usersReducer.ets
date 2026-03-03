@@ -23,7 +23,7 @@ export function usersReducer(state: AppState, action: ReducerAction): AppState {
       const event = action as UserUpdatedEvent;
       
       // Check if userData is provided (full user update) or just updates (partial)
-      if (event.userData) {
+      if (event.userData && event.userData.id > 0) {
         // Full user update from userData
         const user = new User();
         user.id = event.userData.id;

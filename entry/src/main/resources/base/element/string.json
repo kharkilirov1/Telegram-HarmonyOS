@@ -2395,6 +2395,10 @@
     {
       "name": "code_input_enter_phrase",
       "value": "Enter phrase"
+    },
+    {
+      "name": "retry",
+      "value": "Retry"
     }
   ]
 }

@@ -92,9 +92,20 @@ export const selectChatsBySearchQuery = (query: string) => (state: AppState): Ch
   }
 
   const result: Chat[] = [];
+  const chats = state.chats.chats;
+  const orderedChatIds = state.chats.orderedChatIds;
 
-  for (const chat of state.chats.chats.values()) {
-    if (chat.title.toLowerCase().includes(normalizedQuery)) {
+  for (const chatId of orderedChatIds) {
+    const chat = chats.get(chatId);
+    if (!chat) {
+      continue;
+    }
+    const title = chat.title.toLowerCase();
+    if (title.includes(normalizedQuery)) {
+      result.push(chat);
+      continue;
+    }
+    if (chat.lastMessage && chat.lastMessage.text.toLowerCase().includes(normalizedQuery)) {
       result.push(chat);
     }
   }
@@ -168,7 +179,12 @@ export const selectChatForUI = (chatId: ChatId) => (state: AppState): ChatForUI 
   result.unreadCount = chat.unreadCount;
   result.isPinned = chat.isPinned;
   result.isMuted = chat.muteForSeconds > 0;
-  result.isVerified = false; // TODO: Add to Chat type
+  if (chat.peerUserId > 0) {
+    const peerUser = state.users.users.get(chat.peerUserId);
+    result.isVerified = peerUser !== undefined && peerUser.isVerified;
+  } else {
+    result.isVerified = false;
+  }
   return result;
 };
 

@@ -14,6 +14,11 @@ import { TgTopBar } from '../../tg_ui/atoms/TgTopBar';
 import { ChatTimelineDataSource } from './ChatTimelineDataSource';
 import { ChatTimelineEntryVO, buildChatTimeline } from './ChatTimelineVO';
 import { SendMessageParams, createSendMessageUseCase, SendMessageUseCase } from '../../../domain/usecases/sendMessage';
+import {
+  LoadChatHistoryUseCase,
+  LoadChatHistoryParams,
+  createLoadChatHistoryUseCase
+} from '../../../domain/usecases/loadChatHistory';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { localized } from '../../../core/utils/AppResource';
 import { computeTopBarHeight, computeChatBottomInset, getMainWindow, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
@@ -23,6 +28,10 @@ import { common } from '@kit.AbilityKit';
 
 const DOMAIN = 0x0021;
 const TAG = 'TgChatScreenPage';
+const CHAT_NAV_TRANSITION_LOCK_MS = 760;
+const HISTORY_INITIAL_DELAY_MS = 80;
+const HISTORY_MAX_RETRY_ATTEMPTS = 4;
+const HISTORY_RETRY_BASE_DELAY_MS = 450;
 
 declare function px2vp(value: number): number;
 
@@ -30,7 +39,7 @@ declare function px2vp(value: number): number;
 export struct TgChatScreenPage {
   pageStack: NavPathStack = new NavPathStack();
 
-  @StorageLink(StorageKeys.ACTIVE_CHAT_ID) activeChatId: number = 0;
+  @StorageLink(StorageKeys.ACTIVE_CHAT_ID) @Watch('onActiveChatChanged') activeChatId: number = 0;
   @StorageLink(StorageKeys.ACTIVE_CHAT_TITLE) activeChatTitle: string = '';
 
   @State private title: string = 'Chat';
@@ -43,7 +52,18 @@ export struct TgChatScreenPage {
   private rebuildScheduled: boolean = false;
   private mainWindow?: window.Window;
   private sendUseCase?: SendMessageUseCase;
+  private loadChatHistoryUseCase?: LoadChatHistoryUseCase;
   private isSending: boolean = false;
+  private historyFallbackTimerId: number = -1;
+
+  private onActiveChatChanged(): void {
+    try {
+      const state = getAppCoreRuntime().getStore().getState();
+      this.rebuildTimeline(state);
+      this.scheduleHistoryLoad(this.activeChatId, 0);
+    } catch (_error) {
+    }
+  }
 
   aboutToAppear(): void {
     try {
@@ -54,7 +74,9 @@ export struct TgChatScreenPage {
       const runtime = getAppCoreRuntime();
       const store = runtime.getStore();
       this.sendUseCase = createSendMessageUseCase(getTdGatewayAdapter());
+      this.loadChatHistoryUseCase = createLoadChatHistoryUseCase(store, getTdGatewayAdapter());
       this.rebuildTimeline(store.getState());
+      this.scheduleHistoryLoad(this.activeChatId, 0);
 
       this.unsubscribe = store.subscribe((_newState: AppState, _prevState: AppState) => {
         if (!this.rebuildScheduled) {
@@ -78,7 +100,15 @@ export struct TgChatScreenPage {
   }
 
   aboutToDisappear(): void {
+    AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, Date.now() + CHAT_NAV_TRANSITION_LOCK_MS);
     AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
+    AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, 0);
+    AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, '');
+    if (this.historyFallbackTimerId >= 0) {
+      clearTimeout(this.historyFallbackTimerId);
+      this.historyFallbackTimerId = -1;
+    }
+    this.loadChatHistoryUseCase = undefined;
     if (this.unsubscribe !== undefined) {
       this.unsubscribe();
       this.unsubscribe = undefined;
@@ -155,6 +185,7 @@ export struct TgChatScreenPage {
 
   private handleBackPress(): void {
     hilog.info(DOMAIN, TAG, 'handleBackPress called');
+    AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, Date.now() + CHAT_NAV_TRANSITION_LOCK_MS);
     AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
     AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, 0);
     AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, '');
@@ -165,6 +196,64 @@ export struct TgChatScreenPage {
     } else {
       hilog.error(DOMAIN, TAG, 'pageStack is undefined in handleBackPress!');
     }
+  }
+
+  private scheduleHistoryLoad(chatId: number, attempt: number): void {
+    if (this.historyFallbackTimerId >= 0) {
+      clearTimeout(this.historyFallbackTimerId);
+      this.historyFallbackTimerId = -1;
+    }
+    if (chatId === 0) {
+      return;
+    }
+    const delayMs = attempt === 0
+      ? HISTORY_INITIAL_DELAY_MS
+      : HISTORY_RETRY_BASE_DELAY_MS * attempt;
+    this.historyFallbackTimerId = setTimeout(() => {
+      this.historyFallbackTimerId = -1;
+      this.requestHistoryWithRetry(chatId, attempt);
+    }, delayMs);
+  }
+
+  private shouldRetryHistoryLoad(chatId: number): boolean {
+    if (!this.loadChatHistoryUseCase) {
+      return false;
+    }
+    return this.loadChatHistoryUseCase.shouldRetry(chatId);
+  }
+
+  private requestHistoryWithRetry(chatId: number, attempt: number): void {
+    const historyUseCase = this.loadChatHistoryUseCase;
+    if (!historyUseCase || chatId === 0 || this.activeChatId !== chatId) {
+      return;
+    }
+    if (historyUseCase.isLoading(chatId)) {
+      return;
+    }
+    if (historyUseCase.hasNonPendingMessages(chatId)) {
+      return;
+    }
+
+    const params = new LoadChatHistoryParams();
+    params.chatId = chatId;
+    params.limit = 50;
+    historyUseCase.execute(params)
+      .then(() => {
+        if (this.shouldRetryHistoryLoad(chatId) &&
+          attempt + 1 < HISTORY_MAX_RETRY_ATTEMPTS &&
+          this.activeChatId === chatId) {
+          this.scheduleHistoryLoad(chatId, attempt + 1);
+        }
+      })
+      .catch((error: Object) => {
+        hilog.warn(DOMAIN, TAG, 'history load attempt %{public}d failed: %{public}s',
+          attempt + 1, String(error));
+        if (this.shouldRetryHistoryLoad(chatId) &&
+          attempt + 1 < HISTORY_MAX_RETRY_ATTEMPTS &&
+          this.activeChatId === chatId) {
+          this.scheduleHistoryLoad(chatId, attempt + 1);
+        }
+      });
   }
 
   private bindNavigationStack(): NavPathStack | undefined {
@@ -281,7 +370,7 @@ export struct TgChatScreenPage {
       Stack({ alignContent: Alignment.Top }) {
         // ── Content layer (scrolls under top bar) ──
         Column() {
-          if (this.activeChatId > 0) {
+          if (this.activeChatId !== 0) {
             if (this.dataSource.totalCount() > 0) {
               List() {
                 LazyForEach(this.dataSource, (entry: ChatTimelineEntryVO) => {

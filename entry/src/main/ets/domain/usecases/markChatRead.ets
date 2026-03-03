@@ -7,6 +7,7 @@ import { TdGatewayPort } from '../ports/TdGatewayPort';
 import { ChatId, MessageId } from '../../core/model/EntityId';
 import { createViewMessagesCommand } from '../../core/model/AppCommand';
 import { AppError, AppErrorKind } from '../../core/model/AppError';
+import { compareInt64 } from '../../core/utils/tdAccessors';
 
 const TAG = 'MarkChatRead';
 const DOMAIN = 0x0009;
@@ -71,21 +72,80 @@ export class MarkChatReadUseCase {
   private async markAllMessagesRead(chatId: ChatId): Promise<void> {
     hilog.debug(DOMAIN, TAG, 'Marking all messages as read for chat %{public}d', chatId);
 
-    // TODO: In TDLib, use viewMessages with last message ID
-    // or toggleChatIsMarkedAsUnread
+    const targetMessageId = this.resolveReadTargetMessageId(chatId, false);
+    if (targetMessageId === '0') {
+      return;
+    }
+    await this.markMessagesRead(chatId, [targetMessageId]);
   }
 
   // Mark last message as read
   private async markLastMessageRead(chatId: ChatId): Promise<void> {
     hilog.debug(DOMAIN, TAG, 'Marking last message as read for chat %{public}d', chatId);
 
-    // TODO: Get last message ID from store state via selectors
+    const targetMessageId = this.resolveReadTargetMessageId(chatId, true);
+    if (targetMessageId === '0') {
+      return;
+    }
+    await this.markMessagesRead(chatId, [targetMessageId]);
   }
 
   // Check if chat has unread messages
   hasUnreadMessages(chatId: ChatId): boolean {
-    // TODO: Use selectChatById selector
-    return false;
+    const state = this.store.getState();
+    const chat = state.chats.chats.get(chatId);
+    return chat !== undefined && chat.unreadCount > 0;
+  }
+
+  private resolveReadTargetMessageId(chatId: ChatId, preferUnreadIncoming: boolean): MessageId {
+    const state = this.store.getState();
+    const chat = state.chats.chats.get(chatId);
+    if (!chat) {
+      return '0';
+    }
+
+    const messagesByChat = state.messages.messages.get(chatId);
+    let selectedId: MessageId = '0';
+    let selectedTimestamp: number = 0;
+
+    if (messagesByChat) {
+      for (const message of messagesByChat.values()) {
+        if (preferUnreadIncoming) {
+          if (message.isOutgoing || message.isRead) {
+            continue;
+          }
+          if (chat.lastReadInboxMessageId !== '0' && compareInt64(message.id, chat.lastReadInboxMessageId) <= 0) {
+            continue;
+          }
+        }
+
+        if (selectedId === '0') {
+          selectedId = message.id;
+          selectedTimestamp = message.timestamp;
+          continue;
+        }
+
+        if (message.timestamp > selectedTimestamp) {
+          selectedId = message.id;
+          selectedTimestamp = message.timestamp;
+          continue;
+        }
+
+        if (message.timestamp === selectedTimestamp && compareInt64(message.id, selectedId) > 0) {
+          selectedId = message.id;
+        }
+      }
+    }
+
+    if (selectedId !== '0') {
+      return selectedId;
+    }
+
+    if (chat.lastMessage) {
+      return chat.lastMessage.id;
+    }
+
+    return '0';
   }
 }
 

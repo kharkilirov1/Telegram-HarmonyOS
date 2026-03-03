@@ -1,8 +1,9 @@
 // ChatItemVO — View Object for chat list cell rendering
 // Built from AppState Chat model, contains only data needed for UI
 
-import { AppState, Chat } from '../../../core/model/AppState';
+import { AppState, Chat, Message } from '../../../core/model/AppState';
 import { compareInt64 } from '../../../core/utils/tdAccessors';
+import { getString } from '../../../core/utils/AppResource';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 
 const AVATAR_COLORS: Resource[] = [
@@ -65,6 +66,32 @@ function padTwo(n: number): string {
   return n < 10 ? '0' + n.toString() : n.toString();
 }
 
+function localizedString(resourceId: number, fallback: string): string {
+  const localized = getString(resourceId);
+  return localized.length > 0 ? localized : fallback;
+}
+
+function weekdayShort(day: number): string {
+  switch (day) {
+    case 0:
+      return localizedString($r('app.string.weekday_sun').id, 'Sun');
+    case 1:
+      return localizedString($r('app.string.weekday_mon').id, 'Mon');
+    case 2:
+      return localizedString($r('app.string.weekday_tue').id, 'Tue');
+    case 3:
+      return localizedString($r('app.string.weekday_wed').id, 'Wed');
+    case 4:
+      return localizedString($r('app.string.weekday_thu').id, 'Thu');
+    case 5:
+      return localizedString($r('app.string.weekday_fri').id, 'Fri');
+    case 6:
+      return localizedString($r('app.string.weekday_sat').id, 'Sat');
+    default:
+      return localizedString($r('app.string.weekday_sun').id, 'Sun');
+  }
+}
+
 function formatMessageTime(timestampSec: number): string {
   if (timestampSec === 0) return '';
 
@@ -80,28 +107,129 @@ function formatMessageTime(timestampSec: number): string {
     return padTwo(msgDate.getHours()) + ':' + padTwo(msgDate.getMinutes());
   }
   if (diffDays === 1) {
-    return 'Вчера';
+    return localizedString($r('app.string.yesterday').id, 'Yesterday');
   }
   if (diffDays < 7) {
-    const days: string[] = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-    return days[msgDate.getDay()];
+    return weekdayShort(msgDate.getDay());
   }
   // Older: dd.MM.yy
   return padTwo(msgDate.getDate()) + '.' + padTwo(msgDate.getMonth() + 1) + '.' +
     padTwo(msgDate.getFullYear() % 100);
 }
 
-function resolveSendStatusForChat(chat: Chat, state: AppState): 'none' | 'pending' | 'sent' | 'read' | 'failed' {
-  if (!chat.lastMessage) {
-    return 'none';
+class LastMessageSnapshot {
+  id: string = '0';
+  text: string = '';
+  timestamp: number = 0;
+}
+
+function fallbackMessageTextForType(contentType: string): string {
+  switch (contentType) {
+    case 'photo':
+      return '[Photo]';
+    case 'video':
+      return '[Video]';
+    case 'document':
+      return '[File]';
+    case 'audio':
+      return '[Audio]';
+    case 'voice':
+      return '[Voice message]';
+    case 'sticker':
+      return '[Sticker]';
+    case 'animation':
+      return '[GIF]';
+    case 'videoNote':
+      return '[Video message]';
+    case 'location':
+      return '[Location]';
+    case 'contact':
+      return '[Contact]';
+    case 'poll':
+      return '[Poll]';
+    default:
+      return '[Message]';
+  }
+}
+
+function snapshotFromMessage(message: Message): LastMessageSnapshot {
+  const snapshot = new LastMessageSnapshot();
+  snapshot.id = message.id;
+  snapshot.timestamp = message.timestamp;
+  const text = message.content.text.trim();
+  snapshot.text = text.length > 0 ? text : fallbackMessageTextForType(message.content.type);
+  return snapshot;
+}
+
+function isSnapshotNewer(current: LastMessageSnapshot, next: LastMessageSnapshot): boolean {
+  if (next.timestamp !== current.timestamp) {
+    return next.timestamp > current.timestamp;
+  }
+  return compareInt64(next.id, current.id) > 0;
+}
+
+function resolveLastMessageSnapshot(chat: Chat, state: AppState): LastMessageSnapshot {
+  const fromChat = new LastMessageSnapshot();
+  if (chat.lastMessage) {
+    fromChat.id = chat.lastMessage.id;
+    fromChat.text = chat.lastMessage.text;
+    fromChat.timestamp = chat.lastMessage.timestamp;
+    if (fromChat.text.trim().length === 0) {
+      fromChat.text = '[Message]';
+    }
   }
 
   const chatMessages = state.messages.messages.get(chat.id);
-  if (!chatMessages) {
+  if (!chatMessages || chatMessages.size === 0) {
+    return fromChat;
+  }
+
+  let newestFromMessages: LastMessageSnapshot | undefined = undefined;
+  for (const message of chatMessages.values()) {
+    const candidate = snapshotFromMessage(message);
+    if (newestFromMessages === undefined || isSnapshotNewer(newestFromMessages, candidate)) {
+      newestFromMessages = candidate;
+    }
+  }
+
+  if (newestFromMessages === undefined) {
+    return fromChat;
+  }
+
+  if (fromChat.timestamp === 0) {
+    return newestFromMessages;
+  }
+
+  return isSnapshotNewer(fromChat, newestFromMessages) ? newestFromMessages : fromChat;
+}
+
+function resolveSendStatusForChat(chat: Chat, state: AppState): 'none' | 'pending' | 'sent' | 'read' | 'failed' {
+  const chatMessages = state.messages.messages.get(chat.id);
+  if (!chatMessages || chatMessages.size === 0) {
     return 'none';
   }
 
-  const lastMessage = chatMessages.get(chat.lastMessage.id);
+  let lastMessage: Message | undefined = undefined;
+  if (chat.lastMessage) {
+    lastMessage = chatMessages.get(chat.lastMessage.id);
+  }
+
+  if (!lastMessage) {
+    for (const message of chatMessages.values()) {
+      if (!lastMessage) {
+        lastMessage = message;
+        continue;
+      }
+      if (message.timestamp > lastMessage.timestamp) {
+        lastMessage = message;
+        continue;
+      }
+      if (message.timestamp === lastMessage.timestamp && compareInt64(message.id, lastMessage.id) > 0) {
+        lastMessage = message;
+      }
+    }
+  }
+
   if (!lastMessage || !lastMessage.isOutgoing) {
     return 'none';
   }
@@ -156,9 +284,10 @@ export function buildChatItemVO(chat: Chat, state: AppState): ChatItemVO {
   }
   vo.initials = getInitials(vo.title);
 
-  if (chat.lastMessage) {
-    vo.lastMessage = chat.lastMessage.text;
-    vo.formattedTime = formatMessageTime(chat.lastMessage.timestamp);
+  const lastMessage = resolveLastMessageSnapshot(chat, state);
+  if (lastMessage.timestamp > 0) {
+    vo.lastMessage = lastMessage.text;
+    vo.formattedTime = formatMessageTime(lastMessage.timestamp);
   }
 
   return vo;

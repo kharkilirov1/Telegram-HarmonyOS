@@ -103,6 +103,31 @@ export class TdObject {
     return 0;
   }
 
+  /**
+   * Get int64 property as exact string (without Number precision loss).
+   * Works for both JSON numbers and quoted numeric strings.
+   */
+  getInt64String(prop: string): string {
+    if (this.cache.has(prop)) {
+      const cached = this.cache.get(prop);
+      if (typeof cached === 'string') {
+        return cached;
+      }
+      if (typeof cached === 'number') {
+        // May already be precision-lost, but keep backward compatibility fallback.
+        return Math.trunc(cached).toString();
+      }
+    }
+
+    const int64Val = extractInt64Value(this.rawJson, prop);
+    if (int64Val !== null) {
+      this.cache.set(prop, int64Val);
+      return int64Val;
+    }
+
+    return '0';
+  }
+
   getBool(prop: string): boolean {
     const val = this.get(prop);
     if (typeof val === 'boolean') return val;
@@ -335,6 +360,28 @@ function extractNumberValue(json: string, prop: string): number | null {
   if (match && match[1] !== undefined) {
     const num = parseFloat(match[1]);
     return isNaN(num) ? null : num;
+  }
+  return null;
+}
+
+/**
+ * Extract int64 value from JSON by property name as exact string.
+ * Handles both:
+ *   "prop": 1234567890123456789
+ *   "prop": "1234567890123456789"
+ */
+function extractInt64Value(json: string, prop: string): string | null {
+  const escapedProp = prop.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(`"${escapedProp}"\\s*:\\s*(?:"(-?\\d+)"|(-?\\d+))`);
+  const match = json.match(pattern);
+  if (!match) {
+    return null;
+  }
+  if (match[1] !== undefined) {
+    return match[1];
+  }
+  if (match[2] !== undefined) {
+    return match[2];
   }
   return null;
 }

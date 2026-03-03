@@ -196,6 +196,12 @@ function resolveSenderName(message: Message, state: AppState): string {
     const senderUser = state.users.users.get(message.senderId);
     return userDisplayName(senderUser);
   }
+  if (message.senderChatId !== 0) {
+    const senderChat = state.chats.chats.get(message.senderChatId);
+    if (senderChat && senderChat.title.length > 0) {
+      return senderChat.title;
+    }
+  }
   return message.isOutgoing ? 'You' : 'Unknown';
 }
 
@@ -380,7 +386,7 @@ export function buildChatTimeline(chatId: number, state: AppState): ChatTimeline
       previousDay = currentDay;
       const dateEntry = new ChatTimelineEntryVO();
       dateEntry.kind = 'date';
-      dateEntry.key = 'date_' + currentDay;
+      dateEntry.key = 'date_' + currentDay + '_' + message.id;
       dateEntry.dateText = formatDateSeparatorLabel(message.timestamp);
       result.entries.push(dateEntry);
     }

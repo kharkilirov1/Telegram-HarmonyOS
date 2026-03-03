@@ -179,7 +179,8 @@ export function createMessageDtoFromTd(tdMessage: TdObject): MessageDto {
 
   messageDto.content = parsedContent;
 
-  messageDto.timestamp = tdGetNumber(tdMessage, 'date') || Date.now();
+  const tdDate = tdGetNumber(tdMessage, 'date');
+  messageDto.timestamp = tdDate > 0 ? tdDate : Math.floor(Date.now() / 1000);
   messageDto.isOutgoing = tdGetBoolean(tdMessage, 'is_outgoing');
   messageDto.isRead = tdGetBoolean(tdMessage, 'is_read');
   messageDto.replyToMessageId = tdGetInt64(tdMessage, 'reply_to_message_id');

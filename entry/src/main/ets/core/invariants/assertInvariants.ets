@@ -4,9 +4,12 @@
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppState, Chat, Message } from '../model/AppState';
+import { compareInt64 } from '../utils/tdAccessors';
 
 const TAG = 'Invariants';
 const DOMAIN = 0x000A;
+const SOFT_LOG_COOLDOWN_MS = 15000;
+const softViolationLastLoggedAt: Map<string, number> = new Map<string, number>();
 
 export enum InvariantSeverity {
   HARD = 'hard',   // Throws error, indicates critical bug
@@ -34,6 +37,34 @@ export class InvariantViolation {
   severity: InvariantSeverity = InvariantSeverity.SOFT;
   message: string = '';
   details: ViolationDetails = new ViolationDetails();
+}
+
+function softViolationKey(violation: InvariantViolation): string {
+  if (violation.details.senderId > 0 &&
+    violation.message.includes('Message references non-existent user')) {
+    return `missing-user-${violation.details.senderId}`;
+  }
+
+  if (violation.details.chatId !== 0 &&
+    violation.message.includes('lastMessage is older than newest message in map')) {
+    return `chat-last-message-${violation.details.chatId}`;
+  }
+
+  if (violation.message.includes('Auth status is ready but userId is currently missing')) {
+    return 'auth-ready-user-missing';
+  }
+
+  return violation.message;
+}
+
+function shouldLogSoftViolation(violation: InvariantViolation, nowMs: number): boolean {
+  const key = softViolationKey(violation);
+  const lastLoggedAt = softViolationLastLoggedAt.get(key) || 0;
+  if ((nowMs - lastLoggedAt) < SOFT_LOG_COOLDOWN_MS) {
+    return false;
+  }
+  softViolationLastLoggedAt.set(key, nowMs);
+  return true;
 }
 
 
@@ -138,27 +169,48 @@ function checkSoftInvariants(state: AppState): InvariantViolation[] {
     }
   }
 
-  // 2. Message timestamps should be sequential within chat
+  // 2. Chat lastMessage should not lag behind messages map newest item
   state.messages.messages.forEach((messagesMap: Map<string, Message>, chatId: number) => {
-    const messages: Message[] = [];
-    messagesMap.forEach((message) => {
-      messages.push(message);
-    });
-    for (let i = 1; i < messages.length; i++) {
-      if (messages[i].timestamp < messages[i - 1].timestamp) {
-        const violation = new InvariantViolation();
-        violation.severity = InvariantSeverity.SOFT;
-        violation.message = `Messages out of order in chat ${chatId}`;
-        const details = new ViolationDetails();
-        details.chatId = chatId;
-        details.messageId1 = messages[i - 1].id;
-        details.messageId2 = messages[i].id;
-        details.timestamp1 = messages[i - 1].timestamp;
-        details.timestamp2 = messages[i].timestamp;
-        violation.details = details;
-        violations.push(violation);
-        break; // One warning per chat is enough
+    let hasNewestMessage: boolean = false;
+    let newestMessageId: string = '0';
+    let newestMessageTimestamp: number = 0;
+    messagesMap.forEach((message: Message) => {
+      if (!hasNewestMessage) {
+        hasNewestMessage = true;
+        newestMessageId = message.id;
+        newestMessageTimestamp = message.timestamp;
+        return;
       }
+      const isNewer = message.timestamp > newestMessageTimestamp ||
+        (message.timestamp === newestMessageTimestamp &&
+        compareInt64(message.id, newestMessageId) > 0);
+      if (isNewer) {
+        newestMessageId = message.id;
+        newestMessageTimestamp = message.timestamp;
+      }
+    });
+
+    const chat = state.chats.chats.get(chatId);
+    if (!chat || !chat.lastMessage || !hasNewestMessage) {
+      return;
+    }
+
+    const isNewerThanChatLast = newestMessageTimestamp > chat.lastMessage.timestamp ||
+      (newestMessageTimestamp === chat.lastMessage.timestamp &&
+      compareInt64(newestMessageId, chat.lastMessage.id) > 0);
+
+    if (isNewerThanChatLast) {
+      const violation = new InvariantViolation();
+      violation.severity = InvariantSeverity.SOFT;
+      violation.message = `Chat ${chatId} lastMessage is older than newest message in map`;
+      const details = new ViolationDetails();
+      details.chatId = chatId;
+      details.messageId1 = chat.lastMessage.id;
+      details.messageId2 = newestMessageId;
+      details.timestamp1 = chat.lastMessage.timestamp;
+      details.timestamp2 = newestMessageTimestamp;
+      violation.details = details;
+      violations.push(violation);
     }
   });
 
@@ -220,16 +272,28 @@ export function assertInvariants(state: AppState, isDevMode: boolean = true): vo
 
   // Log soft violations
   if (softViolations.length > 0) {
-    hilog.warn(DOMAIN, TAG, 'Soft violations found: %{public}d', softViolations.length);
+    const nowMs = Date.now();
+    const loggableSoftViolations: InvariantViolation[] = [];
+    for (const violation of softViolations) {
+      if (shouldLogSoftViolation(violation, nowMs)) {
+        loggableSoftViolations.push(violation);
+      }
+    }
+    if (loggableSoftViolations.length === 0) {
+      return;
+    }
+
+    hilog.warn(DOMAIN, TAG, 'Soft violations found: %{public}d (logging %{public}d)',
+      softViolations.length, loggableSoftViolations.length);
 
     const SOFT_LOG_MAX = 20;
-    const limit = Math.min(softViolations.length, SOFT_LOG_MAX);
+    const limit = Math.min(loggableSoftViolations.length, SOFT_LOG_MAX);
     for (let i = 0; i < limit; i++) {
-      const violation = softViolations[i];
+      const violation = loggableSoftViolations[i];
       hilog.warn(DOMAIN, TAG, '[Soft] %{public}s', violation.message);
     }
-    if (softViolations.length > SOFT_LOG_MAX) {
-      hilog.warn(DOMAIN, TAG, '[Soft] ... +%{public}d more', softViolations.length - SOFT_LOG_MAX);
+    if (loggableSoftViolations.length > SOFT_LOG_MAX) {
+      hilog.warn(DOMAIN, TAG, '[Soft] ... +%{public}d more', loggableSoftViolations.length - SOFT_LOG_MAX);
     }
   }
 }

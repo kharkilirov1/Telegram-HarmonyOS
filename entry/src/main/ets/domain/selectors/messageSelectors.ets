@@ -4,6 +4,7 @@
 import { AppState } from '../../core/model/AppState';
 import { ChatId, MessageId } from '../../core/model/EntityId';
 import { Message } from '../../core/model/AppState';
+import { compareInt64 } from '../../core/utils/tdAccessors';
 
 // Basic selectors
 export const selectMessagesState = (state: AppState) => state.messages;
@@ -29,7 +30,12 @@ export const selectChatMessages = (chatId: ChatId) => (state: AppState): Message
 
   // Convert Map to array and sort by timestamp (newest first)
   const messages = Array.from(chatMessages.values());
-  return messages.sort((a: Message, b: Message): number => b.timestamp - a.timestamp);
+  return messages.sort((a: Message, b: Message): number => {
+    if (a.timestamp !== b.timestamp) {
+      return b.timestamp - a.timestamp;
+    }
+    return compareInt64(b.id, a.id);
+  });
 };
 
 /**
@@ -57,15 +63,12 @@ export const selectChatMessagesForChatView = (chatId: ChatId) => (state: AppStat
     }
   }
 
-  // Подтверждённые сортируем по id (oldest first = меньший id первым)
+  // Подтверждённые сортируем по времени (oldest first), при равенстве — по id.
   confirmed.sort((a: Message, b: Message): number => {
-    // String comparison for int64 IDs
-    if (a.id.length !== b.id.length) {
-      return a.id.length - b.id.length;
+    if (a.timestamp !== b.timestamp) {
+      return a.timestamp - b.timestamp;
     }
-    if (a.id < b.id) return -1;
-    if (a.id > b.id) return 1;
-    return 0;
+    return compareInt64(a.id, b.id);
   });
 
   // Pending сортируем по timestamp (oldest first)

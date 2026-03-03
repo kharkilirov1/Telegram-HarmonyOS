@@ -9,6 +9,7 @@ import {
   createSetPhoneNumberCommand,
   createCheckAuthCodeCommand,
   createCheckAuthPasswordCommand,
+  createRequestPasswordRecoveryCommand,
   createResendAuthCodeCommand
 } from '../../core/model/AppCommand';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -279,8 +280,9 @@ export class LoginController {
   // ─── Request Password Recovery ───
   async requestPasswordRecovery(): Promise<RecoveryResult> {
     try {
-      // TODO: Добавить команду в AppCommand
       hilog.info(DOMAIN, TAG, 'Requesting password recovery');
+      const command = createRequestPasswordRecoveryCommand();
+      await this.gateway.send(command);
       return new RecoverySuccess();
     } catch (e) {
       const err = e as Error;

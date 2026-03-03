@@ -14,8 +14,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 const DOMAIN = 0x0003;
 const TAG = 'UserNormalizer';
 
-function handleUser(events: AnyAppEvent[], update: TdObject): void {
-  const user = tdGetObject(update, 'user');
+function pushUserUpdatedEvent(events: AnyAppEvent[], user: TdObject): void {
   const userId = tdGetNumber(user, 'id');
   if (!userId) return;
 
@@ -30,6 +29,16 @@ function handleUser(events: AnyAppEvent[], update: TdObject): void {
   } catch (error) {
     hilog.error(DOMAIN, TAG, 'Failed to parse user: %{public}s', String(error));
   }
+}
+
+function handleUser(events: AnyAppEvent[], update: TdObject): void {
+  const user = tdGetObject(update, 'user');
+  pushUserUpdatedEvent(events, user);
+}
+
+function handleDirectUser(events: AnyAppEvent[], update: TdObject): void {
+  // Direct response to getUser has shape {"@type":"user", ...fields}
+  pushUserUpdatedEvent(events, update);
 }
 
 function handleUserStatus(events: AnyAppEvent[], update: TdObject): void {
@@ -50,5 +59,6 @@ export function registerUserHandlers(
   handlers: Map<string, (events: AnyAppEvent[], update: TdObject) => void>
 ): void {
   handlers.set('updateUser', handleUser);
+  handlers.set('user', handleDirectUser);
   handlers.set('updateUserStatus', handleUserStatus);
 }

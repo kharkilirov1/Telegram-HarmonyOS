@@ -7,6 +7,7 @@ import { CodeInputView, CodeInputType } from '../../components/login/CodeInputVi
 import { SolidRoundedButton, ButtonState } from '../../components/login/SolidRoundedButton';
 import { LoginController, CheckCodeFailure, CodeType } from '../../controllers/LoginController';
 import { curves } from '@kit.ArkUI';
+import { common, Want } from '@kit.AbilityKit';
 import { getString } from '../../../core/utils/AppResource';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
@@ -95,7 +96,7 @@ export struct CodeInputPage {
               .fontColor(TgUiTokens.LOGIN_LINK_COLOR)
               .margin({ top: TgUiTokens.SPACE_16 })
               .onClick(() => {
-                // TODO: open fragment.com URL
+                this.openFragmentWebsite();
               })
           }
 
@@ -227,6 +228,22 @@ export struct CodeInputPage {
         event: () => { this.shakeOffset = 0; }
       }
     ]);
+  }
+
+  private openFragmentWebsite(): void {
+    try {
+      const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      const want: Want = {
+        action: 'ohos.want.action.viewData',
+        uri: 'https://fragment.com'
+      };
+      context.startAbility(want)
+        .catch((error: Object) => {
+          hilog.error(DOMAIN, TAG, 'Failed to open fragment.com: %{public}s', String(error));
+        });
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, 'Failed to build browser want: %{public}s', String(error));
+    }
   }
 
   // ─── Helpers ───

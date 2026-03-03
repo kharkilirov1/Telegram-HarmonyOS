@@ -89,6 +89,10 @@
       "value": "转发自 %s"
     },
     {
+      "name": "forwarded_message",
+      "value": "转发的消息"
+    },
+    {
       "name": "document_label",
       "value": "文档"
     },
@@ -1003,6 +1007,10 @@
     {
       "name": "message_call_missed_voice",
       "value": "未接语音通话"
+    },
+    {
+      "name": "invalid_phone_format",
+      "value": "电话号码格式无效"
     },
     {
       "name": "message_call_missed_video",
@@ -2387,6 +2395,10 @@
     {
       "name": "code_input_enter_phrase",
       "value": "输入短语"
+    },
+    {
+      "name": "retry",
+      "value": "重试"
     }
   ]
 }

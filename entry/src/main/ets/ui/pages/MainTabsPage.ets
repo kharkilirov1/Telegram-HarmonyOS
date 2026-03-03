@@ -17,6 +17,8 @@ import { TgUiTokens } from '../tg_ui/tokens/TgUiTokens';
 const DOMAIN = 0x0020;
 const TAG = 'MainTabsPage';
 
+declare function px2vp(value: number): number;
+
 @Component
 export struct MainTabsPage {
   @StorageLink(StorageKeys.MAIN_TAB_INDEX) @Watch('onStoredTabIndexChanged') selectedIndex: number = 2;
@@ -77,9 +79,13 @@ export struct MainTabsPage {
   private updateBottomInset(mainWindow: window.Window): void {
     let computedInset: number = 0;
     try {
-      let px2vpLocal = (px: number): number => px / 3.0; // approximation if px2vp is not available
       const systemAvoid: window.AvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
-      computedInset = Math.max(computedInset, px2vpLocal(systemAvoid.bottomRect.height));
+      computedInset = Math.max(computedInset, px2vp(systemAvoid.bottomRect.height));
+      try {
+        const navAvoid: window.AvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
+        computedInset = Math.max(computedInset, px2vp(navAvoid.bottomRect.height));
+      } catch (_error) {
+      }
     } catch (_error) {
     }
     this.bottomInset = computedInset;

@@ -41,6 +41,7 @@ export class StorageKeys {
   static readonly ACTIVE_CHAT_ID: string = 'tg_activeChatId';
   static readonly ACTIVE_CHAT_TITLE: string = 'tg_activeChatTitle';
   static readonly CHAT_SCREEN_VISIBLE: string = 'tg_chatScreenVisible';
+  static readonly CHAT_NAV_LOCK_UNTIL: string = 'tg_chatNavLockUntil';
   static readonly MAIN_TAB_INDEX: string = 'tg_mainTabIndex';
 
   // Code info (for login flow)
@@ -129,6 +130,7 @@ export class AppStoreBridge {
     AppStorage.setOrCreate<number>(StorageKeys.ACTIVE_CHAT_ID, 0);
     AppStorage.setOrCreate<string>(StorageKeys.ACTIVE_CHAT_TITLE, '');
     AppStorage.setOrCreate<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
+    AppStorage.setOrCreate<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, 0);
     AppStorage.setOrCreate<number>(StorageKeys.MAIN_TAB_INDEX, 2);
 
     // Code info
@@ -160,7 +162,7 @@ export class AppStoreBridge {
     AppStorage.set<boolean>(StorageKeys.IS_CONNECTED, state.connection.status === 'ready');
 
     // Chats
-    AppStorage.set<number>(StorageKeys.CHATS_COUNT, state.chats.chats.size);
+    AppStorage.set<number>(StorageKeys.CHATS_COUNT, state.chats.orderedChatIds.length);
     AppStorage.set<boolean>(StorageKeys.CHATS_IS_LOADING, state.chats.isLoading);
 
     // Total unread count across all chats

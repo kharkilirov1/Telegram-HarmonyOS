@@ -34,14 +34,7 @@ export function tdGetBoolean(obj: TdObject, propName: string): boolean {
  * Int64 values stored as strings to avoid precision loss.
  */
 export function tdGetInt64(obj: TdObject, propName: string): string {
-  const value = obj.get(propName);
-  if (typeof value === 'string') {
-    return value;
-  }
-  if (typeof value === 'number') {
-    return value.toString();
-  }
-  return '0';
+  return obj.getInt64String(propName);
 }
 
 /**

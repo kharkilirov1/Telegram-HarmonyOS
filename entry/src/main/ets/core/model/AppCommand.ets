@@ -40,6 +40,18 @@ export class ViewMessagesPayload {
   messageIds: MessageId[] = [];
 }
 
+export class GetChatHistoryPayload {
+  chatId: ChatId = 0;
+  fromMessageId: MessageId = '0';
+  offset: number = 0;
+  limit: number = 50;
+  onlyLocal: boolean = false;
+}
+
+export class GetUserPayload {
+  userId: UserId = 0;
+}
+
 // Command classes
 export class SetPhoneNumberCommand extends AppCommand {
   type: string = 'setPhoneNumber';
@@ -54,6 +66,10 @@ export class CheckAuthCodeCommand extends AppCommand {
 export class CheckAuthPasswordCommand extends AppCommand {
   type: string = 'checkAuthPassword';
   payload: CheckAuthPasswordPayload = new CheckAuthPasswordPayload();
+}
+
+export class RequestPasswordRecoveryCommand extends AppCommand {
+  type: string = 'requestPasswordRecovery';
 }
 
 export class ResendAuthCodeCommand extends AppCommand {
@@ -80,6 +96,16 @@ export class ViewMessagesCommand extends AppCommand {
   payload: ViewMessagesPayload = new ViewMessagesPayload();
 }
 
+export class GetChatHistoryCommand extends AppCommand {
+  type: string = 'getChatHistory';
+  payload: GetChatHistoryPayload = new GetChatHistoryPayload();
+}
+
+export class GetUserCommand extends AppCommand {
+  type: string = 'getUser';
+  payload: GetUserPayload = new GetUserPayload();
+}
+
 export class LogoutCommand extends AppCommand {
   type: string = 'logout';
 }
@@ -89,11 +115,14 @@ export type AnyAppCommand =
   | SetPhoneNumberCommand
   | CheckAuthCodeCommand
   | CheckAuthPasswordCommand
+  | RequestPasswordRecoveryCommand
   | ResendAuthCodeCommand
   | LoadChatsCommand
   | OpenChatCommand
   | SendMessageCommand
   | ViewMessagesCommand
+  | GetChatHistoryCommand
+  | GetUserCommand
   | LogoutCommand;
 
 // Helper functions to create commands
@@ -113,6 +142,10 @@ export function createCheckAuthPasswordCommand(password: string): CheckAuthPassw
   const cmd = new CheckAuthPasswordCommand();
   cmd.payload.password = password;
   return cmd;
+}
+
+export function createRequestPasswordRecoveryCommand(): RequestPasswordRecoveryCommand {
+  return new RequestPasswordRecoveryCommand();
 }
 
 export function createResendAuthCodeCommand(): ResendAuthCodeCommand {
@@ -147,6 +180,28 @@ export function createViewMessagesCommand(chatId: ChatId, messageIds: MessageId[
   const cmd = new ViewMessagesCommand();
   cmd.payload.chatId = chatId;
   cmd.payload.messageIds = messageIds;
+  return cmd;
+}
+
+export function createGetChatHistoryCommand(
+  chatId: ChatId,
+  fromMessageId: MessageId = '0',
+  offset: number = 0,
+  limit: number = 50,
+  onlyLocal: boolean = false
+): GetChatHistoryCommand {
+  const cmd = new GetChatHistoryCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.fromMessageId = fromMessageId;
+  cmd.payload.offset = offset;
+  cmd.payload.limit = limit;
+  cmd.payload.onlyLocal = onlyLocal;
+  return cmd;
+}
+
+export function createGetUserCommand(userId: UserId): GetUserCommand {
+  const cmd = new GetUserCommand();
+  cmd.payload.userId = userId;
   return cmd;
 }
 

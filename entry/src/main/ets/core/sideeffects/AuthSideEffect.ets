@@ -217,10 +217,20 @@ class AuthSideEffect {
     params.setBool('use_message_database', true);
     params.setBool('enable_storage_optimizer', true);
     params.setBool('ignore_file_names', false);
-    
+
+    let systemLanguageCode: string = 'en';
+    try {
+      const locale = Intl.DateTimeFormat().resolvedOptions().locale;
+      if (locale && locale.length >= 2) {
+        systemLanguageCode = locale.substring(0, 2);
+      }
+    } catch (_error) {
+      systemLanguageCode = 'en';
+    }
+
     // ВАЖНО: TDLib требует эти параметры как обязательные! 
     // Без них setTdlibParameters падает с ошибкой 400.
-    params.setString('system_language_code', 'en'); // TODO: можно брать из i18n
+    params.setString('system_language_code', systemLanguageCode);
     params.setString('device_model', 'HarmonyOS Device');
     params.setString('system_version', 'HarmonyOS 4.0'); // или Next
     params.setString('application_version', '1.0.0');

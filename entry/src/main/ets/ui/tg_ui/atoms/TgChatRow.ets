@@ -26,12 +26,8 @@ export class TgChatRowData {
 @Reusable
 @Component
 export struct TgChatRow {
-  @State data: TgChatRowData = new TgChatRowData();
+  @Prop data: TgChatRowData = new TgChatRowData();
   @Prop showSeparator: boolean = true;
-
-  aboutToReuse(params: Record<string, ESObject>): void {
-    this.data = params.data as TgChatRowData;
-  }
 
   private previewText(): string {
     return this.data.preview.length > 0 ? this.data.preview : ' ';

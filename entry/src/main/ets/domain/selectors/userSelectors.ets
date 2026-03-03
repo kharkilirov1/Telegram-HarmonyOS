@@ -79,9 +79,8 @@ export const selectUserStatus = (userId: UserId) => (state: AppState): string =>
   if (!user) {
     return 'offline';
   }
-  
-  // TODO: Add status field to User type
-  return 'online'; // Placeholder
+
+  return user.status;
 };
 
 // Search users
@@ -110,13 +109,14 @@ export const selectUsersBySearchQuery = (query: string) => (state: AppState): Us
   return result;
 };
 
-// Contacts (all users for now - TODO: add isContact field to User)
+// Contacts
 export const selectContacts = (state: AppState): User[] => {
   const result: User[] = [];
 
   for (const user of state.users.users.values()) {
-    // TODO: Add isContact field to User type
-    result.push(user);
+    if (user.isContact) {
+      result.push(user);
+    }
   }
 
   return result;
@@ -127,10 +127,9 @@ export const selectOnlineUsers = (state: AppState): User[] => {
   const result: User[] = [];
   
   for (const user of state.users.users.values()) {
-    // TODO: Check status field
-    // if (user.status === 'online') {
-    //   result.push(user);
-    // }
+    if (user.status === 'online') {
+      result.push(user);
+    }
   }
   
   return result;

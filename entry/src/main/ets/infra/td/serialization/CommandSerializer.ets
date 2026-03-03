@@ -12,7 +12,9 @@ import {
   LoadChatsCommand,
   OpenChatCommand,
   SendMessageCommand,
-  ViewMessagesCommand
+  ViewMessagesCommand,
+  GetChatHistoryCommand,
+  GetUserCommand
 } from '../../../core/model/AppCommand';
 import { TdObject } from '../../../models/TdTypes';
 
@@ -55,6 +57,11 @@ export function serializeCommand(command: AnyAppCommand): SerializedCommand {
       const cmd = command as CheckAuthPasswordCommand;
       result.method = 'checkAuthenticationPassword';
       result.params.setString('password', cmd.payload.password);
+      break;
+    }
+
+    case 'requestPasswordRecovery': {
+      result.method = 'requestAuthenticationPasswordRecovery';
       break;
     }
 
@@ -113,6 +120,25 @@ export function serializeCommand(command: AnyAppCommand): SerializedCommand {
       break;
     }
 
+    case 'getChatHistory': {
+      const cmd = command as GetChatHistoryCommand;
+      result.method = 'getChatHistory';
+      result.params.setNumber('chat_id', cmd.payload.chatId);
+      // int64 must be kept as raw json number to avoid precision loss in JS number.
+      result.params.setString('_from_message_id_json', cmd.payload.fromMessageId);
+      result.params.setNumber('offset', cmd.payload.offset);
+      result.params.setNumber('limit', cmd.payload.limit);
+      result.params.setBool('only_local', cmd.payload.onlyLocal);
+      break;
+    }
+
+    case 'getUser': {
+      const cmd = command as GetUserCommand;
+      result.method = 'getUser';
+      result.params.setNumber('user_id', cmd.payload.userId);
+      break;
+    }
+
     default:
       hilog.warn(DOMAIN, TAG, 'Unknown command type: %{public}s', command.type);
       result.method = '';
@@ -136,20 +162,11 @@ export function buildTdlibRequestJson(method: string, params: TdObject): string 
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
 
-    // Специальные поля для вложенных JSON
-    if (key === '_input_message_content_json') {
+    // Специальные поля для вложенных JSON: _field_json -> "field": <raw json>
+    if (key.startsWith('_') && key.endsWith('_json')) {
+      const realKey = key.substring(1, key.length - 5);
       const value = params.getString(key);
-      parts.push(`"input_message_content":${value}`);
-      continue;
-    }
-    if (key === '_reply_to_json') {
-      const value = params.getString(key);
-      parts.push(`"reply_to":${value}`);
-      continue;
-    }
-    if (key === '_message_ids_json') {
-      const value = params.getString(key);
-      parts.push(`"message_ids":${value}`);
+      parts.push(`"${realKey}":${value}`);
       continue;
     }
 
