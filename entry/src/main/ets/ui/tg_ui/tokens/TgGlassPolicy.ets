@@ -48,6 +48,10 @@ export class TgGlassPolicy {
     return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.Thin : BlurStyle.NONE;
   }
 
+  static composerBlurStyle(): BlurStyle {
+    return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.Thin : BlurStyle.NONE;
+  }
+
   static searchBlurStyle(): BlurStyle {
     return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.Thin : BlurStyle.NONE;
   }

@@ -20,7 +20,7 @@ jobs:
           test -f docs/ai/UI_MIGRATION_PLAN.md
           test -f docs/ai/VISUAL_QA_CHECKLIST.md
 
-      - name: Phase 0 UI smoke checks
+      - name: tg_ui shell smoke checks
         shell: bash
         run: bash ./scripts/smoke-ui-phase0.sh
 

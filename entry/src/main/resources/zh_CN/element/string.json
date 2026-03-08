@@ -205,6 +205,10 @@
       "value": "暂无消息"
     },
     {
+      "name": "no_more_chats",
+      "value": "没有更多聊天"
+    },
+    {
       "name": "reply",
       "value": "回复"
     },

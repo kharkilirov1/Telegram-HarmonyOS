@@ -355,6 +355,10 @@
     {
       "name": "filter_badge_inactive_bg",
       "value": "#99999999"
+    },
+    {
+      "name": "comp_background_tertiary",
+      "value": "#F2F2F7"
     }
   ]
 }

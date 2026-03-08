@@ -15,7 +15,7 @@ const DOMAIN = 0x0003;
 const TAG = 'UserNormalizer';
 
 function pushUserUpdatedEvent(events: AnyAppEvent[], user: TdObject): void {
-  const userId = tdGetNumber(user, 'id');
+  const userId = user.getTopLevelNumber('id');
   if (!userId) return;
 
   try {

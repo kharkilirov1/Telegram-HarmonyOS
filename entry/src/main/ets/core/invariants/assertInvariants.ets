@@ -215,23 +215,29 @@ function checkSoftInvariants(state: AppState): InvariantViolation[] {
   });
 
   // 3. User references should exist
-  const missingSenderIds = new Set<number>();
-  state.messages.messages.forEach((messagesMap: Map<string, Message>, chatId: number) => {
-    messagesMap.forEach((message: Message) => {
-      if (message.senderId !== 0 && !state.users.users.has(message.senderId) && !missingSenderIds.has(message.senderId)) {
-        missingSenderIds.add(message.senderId);
-        const violation = new InvariantViolation();
-        violation.severity = InvariantSeverity.SOFT;
-        violation.message = `Message references non-existent user ${message.senderId}`;
-        const details = new ViolationDetails();
-        details.chatId = chatId;
-        details.messageId = message.id;
-        details.senderId = message.senderId;
-        violation.details = details;
-        violations.push(violation);
-      }
+  const skipTransientMissingUserCheck = state.lastEvent !== undefined &&
+    (state.lastEvent.type === 'newMessage' || state.lastEvent.type === 'messageSendSucceeded');
+  if (!skipTransientMissingUserCheck) {
+    const missingSenderIds = new Set<number>();
+    state.messages.messages.forEach((messagesMap: Map<string, Message>, chatId: number) => {
+      messagesMap.forEach((message: Message) => {
+        if (message.senderId !== 0 &&
+          !state.users.users.has(message.senderId) &&
+          !missingSenderIds.has(message.senderId)) {
+          missingSenderIds.add(message.senderId);
+          const violation = new InvariantViolation();
+          violation.severity = InvariantSeverity.SOFT;
+          violation.message = `Message references non-existent user ${message.senderId}`;
+          const details = new ViolationDetails();
+          details.chatId = chatId;
+          details.messageId = message.id;
+          details.senderId = message.senderId;
+          violation.details = details;
+          violations.push(violation);
+        }
+      });
     });
-  });
+  }
 
   // 4. (Из Hard) Auth state consistency
   // Мы ожидаем userId после ready, но он может подгрузиться асинхронно через доли секунды.

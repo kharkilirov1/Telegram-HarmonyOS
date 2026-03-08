@@ -6,6 +6,7 @@
 .aider*
 CLAUDE.md
 AGENTS.md
+GEMINI.md
 .clinerules
 .windsurfrules
 
@@ -54,5 +55,8 @@ claude-context-mode/node_modules/
 # Tool artifacts
 .appanalyzer/
 devnull
+hvigor-debug.txt
+.project-memory-backups/
+рефенсы/
 UI_PLAN*.md
 PROJECT_ANALYSIS.md

@@ -6,11 +6,12 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PHASE0_FILES=(
   "entry/src/main/ets/ui/pages/MainTabsPage.ets"
   "entry/src/main/ets/ui/pages/chatlist/ChatListPage.ets"
-  "entry/src/main/ets/ui/pages/chatlist/ChatListItem.ets"
-  "entry/src/main/ets/ui/pages/chatlist/ChatItemVO.ets"
-  "entry/src/main/ets/ui/components/common/AppTopBar.ets"
-  "entry/src/main/ets/ui/components/common/AppTabBarItem.ets"
-  "entry/src/main/ets/ui/components/common/AppListRow.ets"
+  "entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets"
+  "entry/src/main/ets/ui/tg_ui/atoms/TgChatRow.ets"
+  "entry/src/main/ets/ui/tg_ui/atoms/TgTopBar.ets"
+  "entry/src/main/ets/ui/tg_ui/atoms/TgChatTopBar.ets"
+  "entry/src/main/ets/ui/tg_ui/atoms/TgTabBar.ets"
+  "entry/src/main/ets/ui/tg_ui/atoms/TgSearchBar.ets"
 )
 
 HEX_PATTERN='#[0-9A-Fa-f]{3,8}'
@@ -35,17 +36,44 @@ if [[ ${#HEX_VIOLATIONS[@]} -gt 0 ]]; then
   exit 1
 fi
 
-CHAT_LIST_ITEM="$ROOT/entry/src/main/ets/ui/pages/chatlist/ChatListItem.ets"
+CHAT_ROW="$ROOT/entry/src/main/ets/ui/tg_ui/atoms/TgChatRow.ets"
 CHAT_LIST_PAGE="$ROOT/entry/src/main/ets/ui/pages/chatlist/ChatListPage.ets"
+MAIN_TABS_PAGE="$ROOT/entry/src/main/ets/ui/pages/MainTabsPage.ets"
+CHAT_SCREEN_PAGE="$ROOT/entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets"
 
-if ! grep -q '@Reusable' "$CHAT_LIST_ITEM"; then
-  echo "ERROR: ChatListItem must be marked with @Reusable." >&2
+if ! grep -q '@Reusable' "$CHAT_ROW"; then
+  echo "ERROR: TgChatRow must be marked with @Reusable." >&2
   exit 1
 fi
 
 if ! grep -q '\.reuseId(' "$CHAT_LIST_PAGE"; then
-  echo "ERROR: ChatListPage must apply reuseId() for ChatListItem in LazyForEach." >&2
+  echo "ERROR: ChatListPage must apply reuseId() for TgChatRow in LazyForEach." >&2
   exit 1
 fi
 
-echo "✅ Phase 0 UI smoke checks passed."
+if ! grep -q 'TgTabBar(' "$MAIN_TABS_PAGE"; then
+  echo "ERROR: MainTabsPage must compose TgTabBar." >&2
+  exit 1
+fi
+
+if ! grep -q 'TgTopBar(' "$CHAT_LIST_PAGE"; then
+  echo "ERROR: ChatListPage must compose TgTopBar." >&2
+  exit 1
+fi
+
+if ! grep -q 'TgSearchBar(' "$CHAT_LIST_PAGE"; then
+  echo "ERROR: ChatListPage must compose TgSearchBar." >&2
+  exit 1
+fi
+
+if ! grep -q 'TgChatTopBar(' "$CHAT_SCREEN_PAGE"; then
+  echo "ERROR: TgChatScreenPage must compose TgChatTopBar." >&2
+  exit 1
+fi
+
+if ! grep -q 'TgMessageRouter(' "$CHAT_SCREEN_PAGE"; then
+  echo "ERROR: TgChatScreenPage must compose TgMessageRouter." >&2
+  exit 1
+fi
+
+echo "✅ tg_ui shell smoke checks passed."

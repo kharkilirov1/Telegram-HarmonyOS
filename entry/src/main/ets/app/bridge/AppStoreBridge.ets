@@ -35,6 +35,8 @@ export class StorageKeys {
   // Chats
   static readonly CHATS_COUNT: string = 'tg_chatsCount';
   static readonly CHATS_IS_LOADING: string = 'tg_chatsIsLoading';
+  static readonly CHATS_HAS_MORE: string = 'tg_chatsHasMore';
+  static readonly CHATS_LOAD_PHASE: string = 'tg_chatsLoadPhase';
   static readonly TOTAL_UNREAD_COUNT: string = 'tg_totalUnreadCount';
 
   // Active chat navigation context (UI-only)
@@ -126,6 +128,8 @@ export class AppStoreBridge {
     // Chats
     AppStorage.setOrCreate<number>(StorageKeys.CHATS_COUNT, 0);
     AppStorage.setOrCreate<boolean>(StorageKeys.CHATS_IS_LOADING, false);
+    AppStorage.setOrCreate<boolean>(StorageKeys.CHATS_HAS_MORE, true);
+    AppStorage.setOrCreate<string>(StorageKeys.CHATS_LOAD_PHASE, 'idle');
     AppStorage.setOrCreate<number>(StorageKeys.TOTAL_UNREAD_COUNT, 0);
     AppStorage.setOrCreate<number>(StorageKeys.ACTIVE_CHAT_ID, 0);
     AppStorage.setOrCreate<string>(StorageKeys.ACTIVE_CHAT_TITLE, '');
@@ -164,6 +168,8 @@ export class AppStoreBridge {
     // Chats
     AppStorage.set<number>(StorageKeys.CHATS_COUNT, state.chats.orderedChatIds.length);
     AppStorage.set<boolean>(StorageKeys.CHATS_IS_LOADING, state.chats.isLoading);
+    AppStorage.set<boolean>(StorageKeys.CHATS_HAS_MORE, state.chats.hasMore);
+    AppStorage.set<string>(StorageKeys.CHATS_LOAD_PHASE, state.chats.loadPhase);
 
     // Total unread count across all chats
     let totalUnread = 0;

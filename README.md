@@ -92,22 +92,25 @@ The script runs:
 
 > Note: it requires DevEco/HarmonyOS command-line tooling (`hvigorw` or `hvigor`) available in `PATH`.
 
-### Phase 0 UI smoke script (PowerShell)
+### tg_ui shell smoke script (PowerShell)
 
 ```powershell
 ./scripts/smoke-ui-phase0.ps1
 ```
 
 Checks:
-- no hardcoded hex colors in shell/chatlist Phase 0 files
-- `ChatListItem` uses `@Reusable`
+- no hardcoded hex colors in current shell/chatlist/chat-screen tg_ui files
+- `TgChatRow` uses `@Reusable`
 - `ChatListPage` applies `.reuseId(...)` in `LazyForEach`
+- `MainTabsPage` composes `TgTabBar`
+- `ChatListPage` composes `TgTopBar` + `TgSearchBar`
+- `TgChatScreenPage` composes `TgChatTopBar` + `TgMessageRouter`
 
 ## CI
 
 GitHub Actions workflow: `.github/workflows/smoke.yml`
 
-- `smoke-static` (always): documentation + Phase 0 UI checks.
+- `smoke-static` (always): documentation + tg_ui shell smoke checks.
 - `smoke-build-harmony` (optional): real `hvigor` build on a self-hosted Windows HarmonyOS runner.
 
 To enable build job, set repository variable:

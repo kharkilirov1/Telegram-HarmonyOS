@@ -36,6 +36,7 @@ const METHOD_TIMEOUTS: MethodTimeout = {
 function getMethodTimeout(method: string): number {
   if (method === 'getChats' || method === 'loadChats') return METHOD_TIMEOUTS.getChats;
   if (method === 'getChatHistory') return METHOD_TIMEOUTS.getChats;
+  if (method === 'searchCallMessages' || method === 'getChat') return METHOD_TIMEOUTS.getChats;
   if (method === 'sendMessage') return METHOD_TIMEOUTS.sendMessage;
   if (method === 'downloadFile') return METHOD_TIMEOUTS.downloadFile;
   if (method === 'close') return METHOD_TIMEOUTS.close;

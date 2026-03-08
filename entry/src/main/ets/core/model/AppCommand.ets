@@ -52,6 +52,20 @@ export class GetUserPayload {
   userId: UserId = 0;
 }
 
+export class SearchCallMessagesPayload {
+  fromMessageId: MessageId = '0';
+  limit: number = 50;
+  onlyMissed: boolean = false;
+}
+
+export class GetChatPayload {
+  chatId: ChatId = 0;
+}
+
+export class CloseChatPayload {
+  chatId: ChatId = 0;
+}
+
 // Command classes
 export class SetPhoneNumberCommand extends AppCommand {
   type: string = 'setPhoneNumber';
@@ -106,6 +120,21 @@ export class GetUserCommand extends AppCommand {
   payload: GetUserPayload = new GetUserPayload();
 }
 
+export class SearchCallMessagesCommand extends AppCommand {
+  type: string = 'searchCallMessages';
+  payload: SearchCallMessagesPayload = new SearchCallMessagesPayload();
+}
+
+export class GetChatCommand extends AppCommand {
+  type: string = 'getChat';
+  payload: GetChatPayload = new GetChatPayload();
+}
+
+export class CloseChatCommand extends AppCommand {
+  type: string = 'closeChat';
+  payload: CloseChatPayload = new CloseChatPayload();
+}
+
 export class LogoutCommand extends AppCommand {
   type: string = 'logout';
 }
@@ -123,6 +152,9 @@ export type AnyAppCommand =
   | ViewMessagesCommand
   | GetChatHistoryCommand
   | GetUserCommand
+  | SearchCallMessagesCommand
+  | GetChatCommand
+  | CloseChatCommand
   | LogoutCommand;
 
 // Helper functions to create commands
@@ -202,6 +234,30 @@ export function createGetChatHistoryCommand(
 export function createGetUserCommand(userId: UserId): GetUserCommand {
   const cmd = new GetUserCommand();
   cmd.payload.userId = userId;
+  return cmd;
+}
+
+export function createSearchCallMessagesCommand(
+  fromMessageId: MessageId = '0',
+  limit: number = 50,
+  onlyMissed: boolean = false
+): SearchCallMessagesCommand {
+  const cmd = new SearchCallMessagesCommand();
+  cmd.payload.fromMessageId = fromMessageId;
+  cmd.payload.limit = limit;
+  cmd.payload.onlyMissed = onlyMissed;
+  return cmd;
+}
+
+export function createGetChatCommand(chatId: ChatId): GetChatCommand {
+  const cmd = new GetChatCommand();
+  cmd.payload.chatId = chatId;
+  return cmd;
+}
+
+export function createCloseChatCommand(chatId: ChatId): CloseChatCommand {
+  const cmd = new CloseChatCommand();
+  cmd.payload.chatId = chatId;
   return cmd;
 }
 

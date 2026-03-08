@@ -205,6 +205,10 @@
       "value": "No messages yet"
     },
     {
+      "name": "no_more_chats",
+      "value": "No more chats"
+    },
+    {
       "name": "reply",
       "value": "Reply"
     },

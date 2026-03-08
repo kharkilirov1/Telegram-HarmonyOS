@@ -21,7 +21,8 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
 
   // Chats
   if (action.type === 'newChat' || action.type === 'chatUpdated' ||
-    action.type === 'chatReadInbox' || action.type === 'chatReadOutbox') {
+    action.type === 'chatReadInbox' || action.type === 'chatReadOutbox' ||
+    action.type === 'chatsLoadStateChanged') {
     return chatsReducer(state, action);
   }
 

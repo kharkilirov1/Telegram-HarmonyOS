@@ -1,9 +1,10 @@
-// TgComposerInput — message composer bar (Phase F-1)
+// TgComposerInput — glass capsule message composer bar
 // TextArea for real input + attach/emoji/send buttons + reply snippet
 
 import { TgIcon } from './TgIcon';
 import { TgReplySnippet } from './TgReplySnippet';
 import { TgUiTokens } from '../tokens/TgUiTokens';
+import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 
 @ComponentV2
 export struct TgComposerInput {
@@ -21,6 +22,7 @@ export struct TgComposerInput {
   @Param replyHasThumbnail: boolean = false;
 
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
+  @Param glassMode: string = TgGlassPolicy.MODE_AUTO;
 
   @Event onSendPress: (text: string) => void = (_: string) => {};
   @Event onTextChange: (text: string) => void = (_: string) => {};
@@ -61,6 +63,40 @@ export struct TgComposerInput {
     this.inputText = '';
   }
 
+  // ── Glass helpers (same pattern as TgChatTopBar) ──
+
+  private useBlur(): boolean {
+    return TgGlassPolicy.shouldUseRealtimeBlurForMode(this.glassMode);
+  }
+
+  private capsuleBg(): ResourceColor {
+    return this.useBlur() ? TgUiTokens.COMPOSER_CAPSULE_BG : TgUiTokens.COMPOSER_CAPSULE_FALLBACK_BG;
+  }
+
+  private capsuleBlurStyle(): BlurStyle {
+    return TgGlassPolicy.composerBlurStyle();
+  }
+
+  @Builder
+  private buildGlassSpecular() {
+    if (this.useBlur()) {
+      Column()
+        .width('100%')
+        .height('100%')
+        .linearGradient({
+          angle: 110,
+          colors: [
+            [TgUiTokens.GLASS_SPECULAR_TOP, 0.0],
+            [TgUiTokens.GLASS_SPECULAR_MID, 0.38],
+            [TgUiTokens.GLASS_SPECULAR_BOTTOM, 1.0]
+          ]
+        })
+        .hitTestBehavior(HitTestMode.Transparent)
+    }
+  }
+
+  // ── Sub-builders ──
+
   @Builder
   private buildAttachButton() {
     if (this.showAttachButton) {
@@ -75,6 +111,12 @@ export struct TgComposerInput {
       .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
       .justifyContent(FlexAlign.Center)
       .alignItems(VerticalAlign.Center)
+      .backgroundColor(this.capsuleBg())
+      .backgroundBlurStyle(this.capsuleBlurStyle())
+      .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
+      .border({ width: TgUiTokens.COMPOSER_CAPSULE_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
+      .overlay(this.buildGlassSpecular())
+      .clip(true)
     }
   }
 
@@ -108,8 +150,14 @@ export struct TgComposerInput {
     .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
-    .backgroundColor(this.actionBackgroundColor())
+    .backgroundColor(this.canSend() ? this.actionBackgroundColor() : this.capsuleBg())
+    .backgroundBlurStyle(this.canSend() ? BlurStyle.NONE : this.capsuleBlurStyle())
     .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
+    .border(this.canSend()
+      ? { width: 0, color: Color.Transparent }
+      : { width: TgUiTokens.COMPOSER_CAPSULE_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
+    .overlay(this.canSend() ? undefined : this.buildGlassSpecular())
+    .clip(true)
     .onClick(() => {
       this.handleSend();
     })
@@ -143,28 +191,33 @@ export struct TgComposerInput {
   @Builder
   private buildReplySnippet() {
     if (this.showReplySnippet) {
-      TgReplySnippet({
-        author: this.replyAuthor,
-        preview: this.replyPreview,
-        isOutgoing: this.replyIsOutgoing,
-        isQuote: this.replyIsQuote,
-        hasThumbnail: this.replyHasThumbnail,
-        containerWidth: this.containerWidth
-      })
-        .width('100%')
-        .padding({
-          left: TgUiTokens.COMPOSER_SIDE_INSET,
-          right: TgUiTokens.COMPOSER_SIDE_INSET
+      Row() {
+        TgReplySnippet({
+          author: this.replyAuthor,
+          preview: this.replyPreview,
+          isOutgoing: this.replyIsOutgoing,
+          isQuote: this.replyIsQuote,
+          hasThumbnail: this.replyHasThumbnail,
+          containerWidth: this.containerWidth
         })
+          .layoutWeight(1)
+      }
+      .width('100%')
+      .padding({
+        left: TgUiTokens.COMPOSER_SIDE_INSET,
+        right: TgUiTokens.COMPOSER_SIDE_INSET
+      })
+      .backgroundColor(this.capsuleBg())
+      .backgroundBlurStyle(this.capsuleBlurStyle())
+      .borderRadius(TgUiTokens.COMPOSER_INPUT_RADIUS)
+      .border({ width: TgUiTokens.COMPOSER_CAPSULE_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
+      .overlay(this.buildGlassSpecular())
+      .clip(true)
     }
   }
 
   build() {
     Column({ space: TgUiTokens.COMPOSER_REPLY_GAP }) {
-      Divider()
-        .strokeWidth(TgUiTokens.COMPOSER_SEPARATOR_STROKE)
-        .color(TgUiTokens.COMPOSER_TOP_SEPARATOR)
-
       this.buildReplySnippet()
 
       Row({ space: TgUiTokens.COMPOSER_ROW_GAP }) {
@@ -181,8 +234,12 @@ export struct TgComposerInput {
           top: TgUiTokens.COMPOSER_INPUT_PADDING_V,
           bottom: TgUiTokens.COMPOSER_INPUT_PADDING_V
         })
-        .backgroundColor(TgUiTokens.COMPOSER_INPUT_BG)
+        .backgroundColor(this.capsuleBg())
+        .backgroundBlurStyle(this.capsuleBlurStyle())
         .borderRadius(TgUiTokens.COMPOSER_INPUT_RADIUS)
+        .border({ width: TgUiTokens.COMPOSER_CAPSULE_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
+        .overlay(this.buildGlassSpecular())
+        .clip(true)
         .constraintSize({
           minHeight: TgUiTokens.COMPOSER_MIN_HEIGHT,
           maxHeight: TgUiTokens.COMPOSER_MAX_HEIGHT
@@ -201,7 +258,7 @@ export struct TgComposerInput {
       })
     }
     .width('100%')
-    .backgroundColor(TgUiTokens.COMPOSER_BG)
+    .backgroundColor(Color.Transparent)
     .opacity(this.composerOpacity())
   }
 }

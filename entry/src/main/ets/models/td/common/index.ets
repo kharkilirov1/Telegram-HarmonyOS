@@ -128,6 +128,35 @@ export class TdObject {
     return '0';
   }
 
+  /**
+   * Get a top-level int64 property as exact string.
+   * Unlike getInt64String(), this ignores nested objects/arrays with the same key.
+   * Needed for payloads like TDLib `user`, where nested `profile_photo.id`
+   * can otherwise shadow the real top-level `id`.
+   */
+  getTopLevelInt64String(prop: string): string {
+    const int64Val = extractTopLevelInt64Value(this.rawJson, prop);
+    if (int64Val !== null) {
+      this.cache.set(prop, int64Val);
+      return int64Val;
+    }
+
+    return this.getInt64String(prop);
+  }
+
+  /**
+   * Get a top-level number property.
+   * Falls back to exact top-level int64 extraction first, then converts to number.
+   */
+  getTopLevelNumber(prop: string): number {
+    const exact = this.getTopLevelInt64String(prop);
+    if (exact && exact !== '0') {
+      const parsed = parseFloat(exact);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    return 0;
+  }
+
   getBool(prop: string): boolean {
     const val = this.get(prop);
     if (typeof val === 'boolean') return val;
@@ -383,6 +412,152 @@ function extractInt64Value(json: string, prop: string): string | null {
   if (match[2] !== undefined) {
     return match[2];
   }
+  return null;
+}
+
+/**
+ * Extract top-level int64 value from a JSON object by property name as exact string.
+ * Ignores nested objects and arrays that may contain the same property name.
+ */
+function extractTopLevelInt64Value(json: string, prop: string): string | null {
+  if (!json || json.length === 0) {
+    return null;
+  }
+
+  let objectDepth = 0;
+  let arrayDepth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < json.length; i++) {
+    const char = json.charAt(i);
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+
+    if (char === '"') {
+      if (inString) {
+        inString = false;
+        continue;
+      }
+
+      if (objectDepth === 1 && arrayDepth === 0) {
+        const keyStart = i + 1;
+        let keyEnd = keyStart;
+        let keyEscaped = false;
+
+        for (; keyEnd < json.length; keyEnd++) {
+          const keyChar = json.charAt(keyEnd);
+          if (keyEscaped) {
+            keyEscaped = false;
+            continue;
+          }
+          if (keyChar === '\\') {
+            keyEscaped = true;
+            continue;
+          }
+          if (keyChar === '"') {
+            break;
+          }
+        }
+
+        if (keyEnd >= json.length) {
+          return null;
+        }
+
+        const key = json.substring(keyStart, keyEnd);
+        i = keyEnd;
+
+        if (key !== prop) {
+          continue;
+        }
+
+        let valueStart = keyEnd + 1;
+        while (valueStart < json.length && /\s/.test(json.charAt(valueStart))) {
+          valueStart++;
+        }
+        if (valueStart >= json.length || json.charAt(valueStart) !== ':') {
+          return null;
+        }
+
+        valueStart++;
+        while (valueStart < json.length && /\s/.test(json.charAt(valueStart))) {
+          valueStart++;
+        }
+        if (valueStart >= json.length) {
+          return null;
+        }
+
+        const valueLead = json.charAt(valueStart);
+        if (valueLead === '"') {
+          const numberStart = valueStart + 1;
+          let numberEnd = numberStart;
+          let valueEscaped = false;
+
+          for (; numberEnd < json.length; numberEnd++) {
+            const valueChar = json.charAt(numberEnd);
+            if (valueEscaped) {
+              valueEscaped = false;
+              continue;
+            }
+            if (valueChar === '\\') {
+              valueEscaped = true;
+              continue;
+            }
+            if (valueChar === '"') {
+              break;
+            }
+          }
+
+          if (numberEnd <= numberStart) {
+            return null;
+          }
+
+          const quotedValue = json.substring(numberStart, numberEnd);
+          return /^-?\d+$/.test(quotedValue) ? quotedValue : null;
+        }
+
+        let numberEnd = valueStart;
+        if (json.charAt(numberEnd) === '-') {
+          numberEnd++;
+        }
+        while (numberEnd < json.length && /\d/.test(json.charAt(numberEnd))) {
+          numberEnd++;
+        }
+
+        if (numberEnd <= valueStart) {
+          return null;
+        }
+
+        return json.substring(valueStart, numberEnd);
+      }
+
+      inString = true;
+      continue;
+    }
+
+    if (inString) {
+      continue;
+    }
+
+    if (char === '{') {
+      objectDepth++;
+    } else if (char === '}') {
+      objectDepth--;
+    } else if (char === '[') {
+      arrayDepth++;
+    } else if (char === ']') {
+      arrayDepth--;
+    }
+  }
+
   return null;
 }
 

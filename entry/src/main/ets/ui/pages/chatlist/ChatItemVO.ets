@@ -123,6 +123,25 @@ class LastMessageSnapshot {
   timestamp: number = 0;
 }
 
+function collapsePreviewWhitespace(text: string): string {
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+function previewTextScore(text: string): number {
+  const normalized = collapsePreviewWhitespace(text);
+  if (normalized.length === 0) {
+    return 0;
+  }
+  if (normalized.startsWith('[') && normalized.endsWith(']')) {
+    return 1;
+  }
+  return 2;
+}
+
+function isSameMessageSnapshot(lhs: LastMessageSnapshot, rhs: LastMessageSnapshot): boolean {
+  return lhs.timestamp === rhs.timestamp && lhs.id === rhs.id;
+}
+
 function fallbackMessageTextForType(contentType: string): string {
   switch (contentType) {
     case 'photo':
@@ -156,7 +175,7 @@ function snapshotFromMessage(message: Message): LastMessageSnapshot {
   const snapshot = new LastMessageSnapshot();
   snapshot.id = message.id;
   snapshot.timestamp = message.timestamp;
-  const text = message.content.text.trim();
+  const text = collapsePreviewWhitespace(message.content.text);
   snapshot.text = text.length > 0 ? text : fallbackMessageTextForType(message.content.type);
   return snapshot;
 }
@@ -172,11 +191,8 @@ function resolveLastMessageSnapshot(chat: Chat, state: AppState): LastMessageSna
   const fromChat = new LastMessageSnapshot();
   if (chat.lastMessage) {
     fromChat.id = chat.lastMessage.id;
-    fromChat.text = chat.lastMessage.text;
+    fromChat.text = collapsePreviewWhitespace(chat.lastMessage.text);
     fromChat.timestamp = chat.lastMessage.timestamp;
-    if (fromChat.text.trim().length === 0) {
-      fromChat.text = '[Message]';
-    }
   }
 
   const chatMessages = state.messages.messages.get(chat.id);
@@ -200,7 +216,21 @@ function resolveLastMessageSnapshot(chat: Chat, state: AppState): LastMessageSna
     return newestFromMessages;
   }
 
+  if (isSameMessageSnapshot(fromChat, newestFromMessages) &&
+    previewTextScore(newestFromMessages.text) > previewTextScore(fromChat.text)) {
+    return newestFromMessages;
+  }
+
   return isSnapshotNewer(fromChat, newestFromMessages) ? newestFromMessages : fromChat;
+}
+
+function buildDraftPreview(chat: Chat): string {
+  const normalizedDraft = collapsePreviewWhitespace(chat.draftText);
+  if (normalizedDraft.length === 0) {
+    return '';
+  }
+  const prefix = localizedString($r('app.string.chat_draft_prefix').id, 'Draft: ');
+  return prefix + normalizedDraft;
 }
 
 function resolveSendStatusForChat(chat: Chat, state: AppState): 'none' | 'pending' | 'sent' | 'read' | 'failed' {
@@ -284,10 +314,20 @@ export function buildChatItemVO(chat: Chat, state: AppState): ChatItemVO {
   }
   vo.initials = getInitials(vo.title);
 
-  const lastMessage = resolveLastMessageSnapshot(chat, state);
-  if (lastMessage.timestamp > 0) {
-    vo.lastMessage = lastMessage.text;
-    vo.formattedTime = formatMessageTime(lastMessage.timestamp);
+  const draftPreview = buildDraftPreview(chat);
+  const lastMessageSnapshot = resolveLastMessageSnapshot(chat, state);
+  if (draftPreview.length > 0) {
+    vo.lastMessage = draftPreview;
+  } else {
+    if (lastMessageSnapshot.timestamp > 0) {
+      const normalizedPreview = collapsePreviewWhitespace(lastMessageSnapshot.text);
+      vo.lastMessage = normalizedPreview.length > 0 ? normalizedPreview : '[Message]';
+      vo.formattedTime = formatMessageTime(lastMessageSnapshot.timestamp);
+    }
+  }
+
+  if (vo.formattedTime.length === 0 && lastMessageSnapshot.timestamp > 0) {
+    vo.formattedTime = formatMessageTime(lastMessageSnapshot.timestamp);
   }
 
   return vo;

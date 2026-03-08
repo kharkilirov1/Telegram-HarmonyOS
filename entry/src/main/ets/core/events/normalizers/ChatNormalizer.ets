@@ -40,6 +40,18 @@ function handleNewChat(events: AnyAppEvent[], update: TdObject): void {
   }
 }
 
+function handleDirectChat(events: AnyAppEvent[], update: TdObject): void {
+  const chatId = tdGetNumber(update, 'id');
+  if (!chatId) return;
+
+  try {
+    const chatDto = createChatDtoFromTd(update);
+    events.push(createNewChatEvent(chatId, chatDto));
+  } catch (error) {
+    hilog.error(DOMAIN, TAG, 'Failed to parse direct chat: %{public}s', String(error));
+  }
+}
+
 function handleChatTitle(events: AnyAppEvent[], update: TdObject): void {
   const chatId = tdGetNumber(update, 'chat_id');
   if (!chatId) return;
@@ -217,6 +229,7 @@ export function registerChatHandlers(
   handlers: Map<string, (events: AnyAppEvent[], update: TdObject) => void>
 ): void {
   handlers.set('updateNewChat', handleNewChat);
+  handlers.set('chat', handleDirectChat);
   handlers.set('updateChatTitle', handleChatTitle);
   handlers.set('updateChatPhoto', handleChatPhoto);
   handlers.set('updateChatLastMessage', handleChatLastMessage);

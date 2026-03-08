@@ -3,6 +3,7 @@ import { ChatTimelineEntryVO, ChatMessageRowVO } from './ChatTimelineVO';
 export class ChatTimelineDataSource implements IDataSource {
   private items: ChatTimelineEntryVO[] = [];
   private listeners: DataChangeListener[] = [];
+  private lastPrependCount: number = 0;
 
   totalCount(): number {
     return this.items.length;
@@ -10,6 +11,10 @@ export class ChatTimelineDataSource implements IDataSource {
 
   getData(index: number): ChatTimelineEntryVO {
     return this.items[index];
+  }
+
+  getLastPrependCount(): number {
+    return this.lastPrependCount;
   }
 
   registerDataChangeListener(listener: DataChangeListener): void {
@@ -122,6 +127,19 @@ export class ChatTimelineDataSource implements IDataSource {
     return true;
   }
 
+  private isPrependToHead(oldItems: ChatTimelineEntryVO[], newItems: ChatTimelineEntryVO[]): boolean {
+    if (newItems.length <= oldItems.length) {
+      return false;
+    }
+    const offset = newItems.length - oldItems.length;
+    for (let i = 0; i < oldItems.length; i++) {
+      if (oldItems[i].key !== newItems[i + offset].key) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   private isTrimFromTail(oldItems: ChatTimelineEntryVO[], newItems: ChatTimelineEntryVO[]): boolean {
     if (newItems.length >= oldItems.length) {
       return false;
@@ -135,6 +153,7 @@ export class ChatTimelineDataSource implements IDataSource {
   }
 
   applyDiff(newItems: ChatTimelineEntryVO[]): void {
+    this.lastPrependCount = 0;
     const oldItems = this.items;
 
     if (oldItems.length === 0) {
@@ -186,6 +205,23 @@ export class ChatTimelineDataSource implements IDataSource {
       }
       for (let i = oldItems.length - 1; i >= newItems.length; i--) {
         this.notifyDataDelete(i);
+      }
+      return;
+    }
+
+    if (this.isPrependToHead(oldItems, newItems)) {
+      const offset = newItems.length - oldItems.length;
+      this.lastPrependCount = offset;
+      this.items = newItems;
+      // Insert new items at head (oldest messages prepended)
+      for (let i = 0; i < offset; i++) {
+        this.notifyDataAdd(i);
+      }
+      // Update changed existing items (shifted by offset)
+      for (let i = 0; i < oldItems.length; i++) {
+        if (!this.sameEntry(oldItems[i], newItems[i + offset])) {
+          this.notifyDataChange(i + offset);
+        }
       }
       return;
     }

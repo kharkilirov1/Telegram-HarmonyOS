@@ -8,10 +8,22 @@ function Resolve-HvigorCommand {
     'hvigor'
   )
 
+  $defaultInstallCandidates = @(
+    (Join-Path ${env:ProgramFiles} 'Huawei\DevEco Studio\tools\hvigor\bin\hvigorw.bat'),
+    (Join-Path ${env:ProgramFiles} 'Huawei\DevEco Studio\tools\hvigor\bin\hvigorw'),
+    (Join-Path ${env:ProgramFiles} 'Huawei\DevEco Studio\tools\hvigor\bin\hvigorw.js')
+  )
+
   foreach ($candidate in $candidates) {
     $cmd = Get-Command $candidate -ErrorAction SilentlyContinue
     if ($cmd) {
       return $cmd.Source
+    }
+  }
+
+  foreach ($candidate in $defaultInstallCandidates) {
+    if ($candidate -and (Test-Path $candidate)) {
+      return $candidate
     }
   }
 

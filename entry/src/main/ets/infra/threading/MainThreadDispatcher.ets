@@ -52,7 +52,9 @@ export class MainThreadDispatcher {
     if (this.updateHandler) {
       this.updateHandler(rawJson);
     } else {
-       this.droppedCount++;
+      this.droppedCount++;
+      hilog.warn(DOMAIN, TAG, 'Update dropped (handler not attached yet), total dropped: %{public}d',
+        this.droppedCount);
     }
     this.dispatchedCount++;
   }

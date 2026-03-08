@@ -6,6 +6,11 @@ Last updated: 2026-02-25
 - Source of truth: `docs/ai/MASTER_PLAN_TELEGRAM_UI.md`
 - If this file conflicts with the master plan, follow the master plan.
 
+## Status sync (2026-03-06)
+- Current shell/chatlist/chat-screen runtime path is tg_ui-first: `TgTabBar`, `TgTopBar`, `TgSearchBar`, `TgChatRow`, `TgChatTopBar`, `TgMessageRouter`.
+- Current runtime gate is `TgUiFeatureFlags.USE_TG_CHAT_V2`; older mentions of `USE_TG_CHATLIST_V2`, `ChatListItem`, `AppTopBar`, or `AppTabBarItem` below should be treated as historical notes.
+- `scripts/smoke-ui-phase0.*` now validate the active tg_ui shell path rather than removed legacy shell files.
+
 ## Goal
 Bring the app UI to a mature Telegram-like quality level using iOS as reference, while preserving current architecture and staged delivery.
 
@@ -32,7 +37,7 @@ Bring the app UI to a mature Telegram-like quality level using iOS as reference,
   - `Display/Source/NavigationBar.swift`
 - Harmony target:
   - `entry/src/main/ets/ui/pages/MainTabsPage.ets`
-  - new reusable shell components in `entry/src/main/ets/ui/components/*`
+  - reusable shell atoms in `entry/src/main/ets/ui/tg_ui/atoms/*`
 
 ### C. Chat List Surface
 - iOS refs:
@@ -62,7 +67,7 @@ Bring the app UI to a mature Telegram-like quality level using iOS as reference,
 - iOS refs:
   - `TelegramUI/Sources/ChatController*.swift`
 - Harmony target:
-  - future `entry/src/main/ets/ui/pages/chat/*` (not started)
+  - `entry/src/main/ets/ui/pages/chat/*` (`TgChatScreenPage` integrated for current MVP path)
 
 ---
 
@@ -83,7 +88,7 @@ Done when:
 
 Status update (2026-02-25):
 - `MainTabsPage` + chat list shell now rely on shared tokens/resources (hex color hardcode removed from Phase 0 files).
-- `ChatListItem` migrated to `@Reusable`, and `LazyForEach` now uses `reuseId(...)` for list reuse groups.
+- `TgChatRow` is `@Reusable`, and `ChatListPage` uses `reuseId(...)` for list reuse groups.
 - Added smoke checks:
   - `scripts/smoke-ui-phase0.ps1`
   - `scripts/smoke-build.ps1`
@@ -146,7 +151,7 @@ Status update (2026-02-25):
       - failed-state checks (`failed only` and `failed + unread`)
       - separator strategy set to internal row separator for tg_ui path
   - Integration step:
-    - `ChatListPage` now has feature-flagged tg_ui row path (`USE_TG_CHATLIST_V2`), legacy path preserved as default
+    - `ChatListPage` now drives tg_ui row path by default; chat-screen navigation is gated by `USE_TG_CHAT_V2`
   - Phase B gate prep:
     - real store-driven row mapping wired:
       - `isMuted` from `updateChatNotificationSettings` (`mute_for`)
@@ -243,7 +248,7 @@ Status update (2026-02-25):
   - iOS reference baseline:
     - `ChatTextInputPanelNode.swift`
     - `ChatTextInputPanelComponent.swift`
-- Phase C / Step 6 integration started for real chat route:
+- Phase C / Step 6 integration completed for current real chat route:
   - new chat screen page: `entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets`
   - timeline VO builder: `entry/src/main/ets/ui/pages/chat/ChatTimelineVO.ets`
   - timeline datasource: `entry/src/main/ets/ui/pages/chat/ChatTimelineDataSource.ets`

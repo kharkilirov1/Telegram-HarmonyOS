@@ -18,6 +18,7 @@ export struct TgCallRow {
   @Param avatarPath: string = '';
   @Param callType: TgCallType = TgCallType.Outgoing;
   @Param dateText: string = '';
+  @Param labelText: string = '';
   @Param isVideo: boolean = false;
   @Param showSeparator: boolean = true;
   @Param avatarBgColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG;
@@ -43,6 +44,9 @@ export struct TgCallRow {
   }
 
   private callLabel(): string {
+    if (this.labelText.length > 0) {
+      return this.labelText;
+    }
     if (this.isVideo) {
       return this.callType === TgCallType.Incoming ? 'Incoming Video'
         : this.callType === TgCallType.Missed ? 'Missed Video'

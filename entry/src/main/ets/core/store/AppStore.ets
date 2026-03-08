@@ -44,37 +44,77 @@ export class AppStore {
    */
   dispatch(event: AnyAppEvent): Promise<void> {
     this.pendingPromise = this.pendingPromise.then(() => {
-      return this.processEvent(event);
+      this.processEvent(event);
     }).catch((error: Error) => {
-      // НЕ throw — логируем и продолжаем, чтобы не ломать serial queue
       hilog.error(DOMAIN, TAG, 'Error processing event %{public}s: %{public}s',
         event.type, String(error));
-      // Опционально: можно emit error event для UI обработки
     });
 
     return this.pendingPromise;
   }
 
-  private async processEvent(event: AnyAppEvent): Promise<void> {
+  /**
+   * Dispatch batch of events — single notification at the end.
+   * Use for getChatHistory (50+ messages) to avoid 50 separate notify cycles.
+   */
+  dispatchBatch(events: AnyAppEvent[]): Promise<void> {
+    if (events.length === 0) {
+      return this.pendingPromise;
+    }
+    if (events.length === 1) {
+      return this.dispatch(events[0]);
+    }
+
+    this.pendingPromise = this.pendingPromise.then(() => {
+      this.processEventBatch(events);
+    }).catch((error: Error) => {
+      hilog.error(DOMAIN, TAG, 'Error processing batch (%{public}d events): %{public}s',
+        events.length, String(error));
+    });
+
+    return this.pendingPromise;
+  }
+
+  private processEvent(event: AnyAppEvent): void {
     if (this.isDispatching) {
       throw new Error('[AppStore] Recursive dispatch detected');
     }
 
+    const prevState = this.state;
     try {
       this.isDispatching = true;
-
-      const prevState = this.state;
-      const newState = this.reducer(prevState, event);
-      this.state = newState;
+      this.state = this.reducer(prevState, event);
 
       if (this.devMode) {
-        assertInvariants(newState, this.devMode);
+        assertInvariants(this.state, this.devMode);
       }
-
-      this.notifyListeners(newState, prevState);
     } finally {
       this.isDispatching = false;
     }
+
+    this.notifyListeners(this.state, prevState);
+  }
+
+  private processEventBatch(events: AnyAppEvent[]): void {
+    if (this.isDispatching) {
+      throw new Error('[AppStore] Recursive dispatch detected');
+    }
+
+    const prevState = this.state;
+    try {
+      this.isDispatching = true;
+      for (const event of events) {
+        this.state = this.reducer(this.state, event);
+      }
+
+      if (this.devMode) {
+        assertInvariants(this.state, this.devMode);
+      }
+    } finally {
+      this.isDispatching = false;
+    }
+
+    this.notifyListeners(this.state, prevState);
   }
 
   subscribe(listener: StateListener): () => void {
@@ -85,19 +125,15 @@ export class AppStore {
   }
 
   private notifyListeners(newState: AppState, prevState: AppState): void {
-    // Snapshot listeners перед отложенным вызовом —
-    // Set может измениться к моменту выполнения Promise.resolve().then()
+    // Snapshot — Set может измениться если listener вызовет subscribe/unsubscribe
     const listenersSnapshot: StateListener[] = Array.from(this.listeners);
-
-    Promise.resolve().then(() => {
-      for (const listener of listenersSnapshot) {
-        try {
-          listener(newState, prevState);
-        } catch (error) {
-          hilog.error(DOMAIN, TAG, 'Listener error: %{public}s', String(error));
-        }
+    for (const listener of listenersSnapshot) {
+      try {
+        listener(newState, prevState);
+      } catch (error) {
+        hilog.error(DOMAIN, TAG, 'Listener error: %{public}s', String(error));
       }
-    });
+    }
   }
 
   select<T>(selector: (state: AppState) => T): T {

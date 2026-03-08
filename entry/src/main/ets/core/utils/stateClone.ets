@@ -56,6 +56,7 @@ export function cloneChatsState(chats: ChatsState): ChatsState {
   newChats.orderedChatIds = chats.orderedChatIds.slice();
   newChats.isLoading = chats.isLoading;
   newChats.hasMore = chats.hasMore;
+  newChats.loadPhase = chats.loadPhase;
   return newChats;
 }
 
@@ -96,6 +97,8 @@ export function cloneChat(chat: Chat): Chat {
   newChat.muteForSeconds = chat.muteForSeconds;
   newChat.lastReadOutboxMessageId = chat.lastReadOutboxMessageId;
   newChat.lastReadInboxMessageId = chat.lastReadInboxMessageId;
+  newChat.draftText = chat.draftText;
+  newChat.draftReplyToMessageId = chat.draftReplyToMessageId;
   newChat.isPinned = chat.isPinned;
   newChat.photoSmall = chat.photoSmall;
   newChat.order = chat.order;

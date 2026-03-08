@@ -14,7 +14,10 @@ import {
   SendMessageCommand,
   ViewMessagesCommand,
   GetChatHistoryCommand,
-  GetUserCommand
+  GetUserCommand,
+  SearchCallMessagesCommand,
+  GetChatCommand,
+  CloseChatCommand
 } from '../../../core/model/AppCommand';
 import { TdObject } from '../../../models/TdTypes';
 
@@ -136,6 +139,29 @@ export function serializeCommand(command: AnyAppCommand): SerializedCommand {
       const cmd = command as GetUserCommand;
       result.method = 'getUser';
       result.params.setNumber('user_id', cmd.payload.userId);
+      break;
+    }
+
+    case 'searchCallMessages': {
+      const cmd = command as SearchCallMessagesCommand;
+      result.method = 'searchCallMessages';
+      result.params.setString('_from_message_id_json', cmd.payload.fromMessageId);
+      result.params.setNumber('limit', cmd.payload.limit);
+      result.params.setBool('only_missed', cmd.payload.onlyMissed);
+      break;
+    }
+
+    case 'getChat': {
+      const cmd = command as GetChatCommand;
+      result.method = 'getChat';
+      result.params.setNumber('chat_id', cmd.payload.chatId);
+      break;
+    }
+
+    case 'closeChat': {
+      const cmd = command as CloseChatCommand;
+      result.method = 'closeChat';
+      result.params.setNumber('chat_id', cmd.payload.chatId);
       break;
     }
 

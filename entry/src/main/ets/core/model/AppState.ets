@@ -8,6 +8,7 @@ import { AnyAppEvent } from './AppEvent';
 export type AuthStatus = 'notInitialized' | 'waitTdlibParameters' | 'waitPhoneNumber' | 'waitCode' | 'waitPassword' | 'waitRegistration' | 'ready' | 'loggingOut' | 'closing' | 'closed';
 export type ConnectionStatus = 'updating' | 'ready' | 'connecting' | 'waitingForNetwork';
 export type ChatType = 'private' | 'group' | 'supergroup' | 'channel';
+export type ChatsLoadPhase = 'idle' | 'bootstrap' | 'pagination';
 export type MessageContentType = 'text' | 'photo' | 'video' | 'document' | 'audio' | 'voice' | 'sticker' | 'location' | 'contact' | 'poll' | 'animation' | 'videoNote' | 'unknown';
 export type MessageSendStatus = 'none' | 'pending' | 'sent' | 'failed';
 export type UserStatusType = 'online' | 'offline' | 'recently' | 'lastWeek' | 'lastMonth' | 'longTimeAgo';
@@ -49,6 +50,8 @@ export class Chat {
   lastReadOutboxMessageId: MessageId = '0';
   lastReadInboxMessageId: MessageId = '0';
   lastMessage?: ChatLastMessage;
+  draftText: string = '';
+  draftReplyToMessageId: MessageId = '0';
   isPinned: boolean = false;
   photoSmall: string = '';
   order: string = '0'; // TDLib int64 sort key as string; '0' = not in chatListMain
@@ -59,6 +62,7 @@ export class ChatsState {
   orderedChatIds: ChatId[] = [];
   isLoading: boolean = false;
   hasMore: boolean = true;
+  loadPhase: ChatsLoadPhase = 'idle';
 }
 
 // Message content

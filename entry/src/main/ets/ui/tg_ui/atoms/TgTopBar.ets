@@ -14,8 +14,8 @@ export struct TgTopBar {
   @Param rightIcon: Resource = TgUiTokens.ICON_RES_MORE;
   @Param glassMode: string = TgGlassPolicy.MODE_AUTO;
 
-  @Param onBackPress: () => void = (): void => {};
-  @Param onRightPress: () => void = (): void => {};
+  @Event onBackPress: () => void = (): void => {};
+  @Event onRightPress: () => void = (): void => {};
 
   @Local topInset: number = 0;
 

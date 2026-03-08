@@ -5,6 +5,7 @@
 // Референс: iOS Telegram — AuthStateController + Config
 
 import { TdGateway, getTdGateway } from '../../infra/td/gateway/TdGateway';
+import { getTdGatewayAdapter } from '../../infra/td/adapter/TdGatewayAdapter';
 import { TdObject } from '../../models/td/common';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { getAppContext } from '../../core/utils/AppResource';
@@ -13,6 +14,7 @@ import { AppStore } from '../store/AppStore';
 import { createMyUserResolvedEvent } from '../model/AppEvent';
 import { common } from '@kit.AbilityKit';
 import { TELEGRAM_API_HASH, TELEGRAM_API_ID } from '../../services/ConfigLocal';
+import { createLoadChatsUseCase } from '../../domain/usecases/loadChats';
 
 const DOMAIN = 0x0004;
 const TAG = 'AuthSideEffect';
@@ -58,8 +60,6 @@ class AuthSideEffect {
     this.tdlibParamsAccepted = false;
     this.didHandleReady = false;
     this.unsubscribe = this.gateway.subscribeUpdates((update: TdObject): void => {
-      const type: string = update.getType();
-      hilog.info(DOMAIN, TAG, 'Gateway update: ' + type);
       this.handleUpdate(update);
     });
 
@@ -112,32 +112,28 @@ class AuthSideEffect {
 
   private async onAuthReady(): Promise<void> {
     await this.resolveCurrentUser();
-    this.loadInitialChats();
+    this.warmChatsCache();
   }
 
-  private async loadInitialChats(): Promise<void> {
-    hilog.info(DOMAIN, TAG, 'Loading initial chats...');
+  private async warmChatsCache(): Promise<void> {
+    hilog.info(DOMAIN, TAG, 'Warming chats cache with a single loadChats request...');
 
-    const BATCH_SIZE = 100;
-    const MAX_BATCHES = 20; // safety limit: 100*20 = 2000 chats max
+    if (!storeRef) {
+      hilog.warn(DOMAIN, TAG, 'Chats warmup skipped: storeRef is null');
+      return;
+    }
 
-    for (let batch = 0; batch < MAX_BATCHES; batch++) {
-      try {
-        const params: TdObject = new TdObject();
-        params.setString('_chat_list_json', '{"@type":"chatListMain"}');
-        params.setNumber('limit', BATCH_SIZE);
-
-        await this.gateway.send('loadChats', params);
-        hilog.info(DOMAIN, TAG, 'loadChats batch %{public}d ok', batch + 1);
-      } catch (error) {
-        const err = error as AppError;
-        if (err.tdlibCode === 404) {
-          hilog.info(DOMAIN, TAG, 'All chats loaded after %{public}d batches', batch + 1);
-        } else {
-          hilog.error(DOMAIN, TAG, 'loadChats error: code=%{public}d msg=%{public}s', err.tdlibCode, err.message);
-        }
-        break;
+    try {
+      const loadChatsUseCase = createLoadChatsUseCase(storeRef, getTdGatewayAdapter());
+      await loadChatsUseCase.warmup();
+      hilog.info(DOMAIN, TAG, 'Chats cache warmup finished via LoadChatsUseCase');
+    } catch (error) {
+      const err = error as AppError;
+      if (err.tdlibCode === 404) {
+        hilog.info(DOMAIN, TAG, 'Chats cache warmup reached end of dialogs immediately');
+        return;
       }
+      hilog.error(DOMAIN, TAG, 'Chats cache warmup failed: code=%{public}d msg=%{public}s', err.tdlibCode, err.message);
     }
   }
 
@@ -149,7 +145,7 @@ class AuthSideEffect {
       const responseType: string = response.getType();
 
       if (responseType === 'user') {
-        const userId: number = response.getNumber('id');
+        const userId: number = response.getTopLevelNumber('id');
         hilog.info(DOMAIN, TAG, 'getMe resolved: userId=' + userId);
 
         if (!storeRef) {

@@ -71,6 +71,13 @@ export class ChatReadOutboxEvent extends AppEvent {
   lastReadOutboxMessageId: MessageId = '0';
 }
 
+export class ChatsLoadStateChangedEvent extends AppEvent {
+  type: string = 'chatsLoadStateChanged';
+  isLoading: boolean = false;
+  hasMore: boolean = true;
+  phase: string = 'idle';
+}
+
 // --- Message events ---
 
 export class NewMessageEvent extends AppEvent {
@@ -162,6 +169,7 @@ export type AnyAppEvent =
   | ChatUpdatedEvent
   | ChatReadInboxEvent
   | ChatReadOutboxEvent
+  | ChatsLoadStateChangedEvent
   | NewMessageEvent
   | MessageUpdatedEvent
   | MessageContentUpdatedEvent
@@ -222,6 +230,19 @@ export function createChatUpdatedEvent(
   const event = new ChatUpdatedEvent();
   event.chatId = chatId;
   event.updates = updates;
+  event.timestamp = Date.now();
+  return event;
+}
+
+export function createChatsLoadStateChangedEvent(
+  isLoading: boolean,
+  hasMore: boolean,
+  phase: string = 'idle'
+): ChatsLoadStateChangedEvent {
+  const event = new ChatsLoadStateChangedEvent();
+  event.isLoading = isLoading;
+  event.hasMore = hasMore;
+  event.phase = phase;
   event.timestamp = Date.now();
   return event;
 }

@@ -71,6 +71,7 @@ function localizedString(resourceId: number, fallback: string): string {
 export class ChatTimelineBuildResult {
   chatId: number = 0;
   chatTitle: string = '';
+  unreadEntryIndex: number = -1;
   entries: ChatTimelineEntryVO[] = [];
 }
 
@@ -396,6 +397,7 @@ export function buildChatTimeline(chatId: number, state: AppState): ChatTimeline
       unreadEntry.kind = 'unread';
       unreadEntry.key = 'unread_before_' + message.id + '_' + i.toString();
       unreadEntry.unreadText = localizedString($r('app.string.unread').id, 'Unread');
+      result.unreadEntryIndex = result.entries.length;
       result.entries.push(unreadEntry);
     }
 

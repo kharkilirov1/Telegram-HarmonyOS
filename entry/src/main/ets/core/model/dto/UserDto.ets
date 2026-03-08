@@ -2,7 +2,7 @@
 // ArkTS compliant - uses TdObject wrapper class
 
 import { UserId } from '../EntityId';
-import { TdObject, tdGetString, tdGetNumber, tdGetBoolean, tdGetObject, tdHasKeys } from '../../utils/tdAccessors';
+import { TdObject, tdGetString, tdGetBoolean, tdGetObject, tdHasKeys } from '../../utils/tdAccessors';
 
 // Type for user status
 export type UserStatus = 'online' | 'offline' | 'recently' | 'lastWeek' | 'lastMonth' | 'longTimeAgo';
@@ -68,7 +68,7 @@ export function createUserDtoFromTd(tdUser: TdObject): UserDto {
   const status = parseUserStatus(tdStatus);
 
   const userDto = new UserDto();
-  userDto.id = tdGetNumber(tdUser, 'id');
+  userDto.id = tdUser.getTopLevelNumber('id');
   userDto.firstName = tdGetString(tdUser, 'first_name');
   userDto.lastName = tdGetString(tdUser, 'last_name');
   userDto.phoneNumber = tdGetString(tdUser, 'phone_number');

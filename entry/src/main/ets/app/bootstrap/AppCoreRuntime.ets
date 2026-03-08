@@ -11,15 +11,20 @@
 // Гарантия: шаги 3-5 ВСЕГДА выполняются на main thread.
 
 import { TdGateway, getTdGateway, TdGatewayImpl } from '../../infra/td/gateway/TdGateway';
+import { getTdGatewayAdapter } from '../../infra/td/adapter/TdGatewayAdapter';
 import { getMainThreadDispatcher } from '../../infra/threading/MainThreadDispatcher';
 import { EventNormalizer, getEventNormalizer, NormalizerStats } from '../../core/events/EventNormalizer';
 import { AppStore } from '../../core/store/AppStore';
 import { appReducer } from '../../core/reducers/index';
-import { AnyAppEvent } from '../../core/model/AppEvent';
+import { AnyAppEvent, createChatUpdatedEvent } from '../../core/model/AppEvent';
 import { AppError, AppErrorKind } from '../../core/model/AppError';
 import { TdObject, tdGetProperty, safeString } from '../../models/TdTypes';
 import { initAppStoreBridge, resetAppStoreBridge } from '../bridge/AppStoreBridge';
 import { setAuthSideEffectStore, startAuthSideEffect, stopAuthSideEffect } from '../../core/sideeffects/AuthSideEffect';
+import { LoadChatHistoryUseCase, createLoadChatHistoryUseCase } from '../../domain/usecases/loadChatHistory';
+import { resetLoadChatsUseCase } from '../../domain/usecases/loadChats';
+import { ChatUpdateDto, extractLastMessage } from '../../core/model/dto/ChatDto';
+import { tdGetNumber, tdGetObject, tdGetString } from '../../core/utils/tdAccessors';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN = 0x0003;
@@ -36,15 +41,16 @@ export class AppCoreRuntime {
   private gateway: TdGateway;
   private normalizer: EventNormalizer;
   private store: AppStore;
+  private liveHistoryHydrator: LoadChatHistoryUseCase;
 
   private isRunning: boolean = false;
   private unsubscribeGateway?: () => void;
-  private pendingDispatch: Promise<void> = Promise.resolve();
 
   constructor() {
     this.gateway = getTdGateway();
     this.normalizer = getEventNormalizer();
     this.store = new AppStore(appReducer);
+    this.liveHistoryHydrator = createLoadChatHistoryUseCase(this.store, getTdGatewayAdapter());
   }
 
   async initialize(): Promise<void> {
@@ -68,20 +74,23 @@ export class AppCoreRuntime {
       // 2. Подписываемся на parsed обновления из Gateway (уже на main thread)
       this.setupPipeline();
 
-      // 3. Инициализируем Gateway (запустит receive loop)
+      // 3. Устанавливаем isRunning ДО gateway.initialize() —
+      //    иначе ранние updates от receive loop дропаются в handleUpdate()
+      this.isRunning = true;
+
+      // 4. Инициализируем Gateway (запустит receive loop)
       await this.gateway.initialize();
       hilog.info(DOMAIN, TAG, 'Gateway initialized');
 
-      // 4. AppStoreBridge: Store → AppStorage (UI reads via @StorageLink)
+      // 5. AppStoreBridge: Store → AppStorage (UI reads via @StorageLink)
       initAppStoreBridge(this.store);
       hilog.info(DOMAIN, TAG, 'AppStoreBridge initialized');
 
-      // 5. AuthSideEffect: auto-send TDLib params + resolve user
+      // 6. AuthSideEffect: auto-send TDLib params + resolve user
       setAuthSideEffectStore(this.store);
       startAuthSideEffect();
       hilog.info(DOMAIN, TAG, 'AuthSideEffect started');
 
-      this.isRunning = true;
       hilog.info(DOMAIN, TAG, 'Pipeline ready. Threading: TDLib→Dispatcher→Normalizer→Store');
     } catch (error) {
       const err = error as Error;
@@ -109,9 +118,11 @@ export class AppCoreRuntime {
     if (!this.isRunning) return;
 
     try {
+      await this.hydrateMissingUsersForLiveMessage(rawUpdate);
       const events = this.normalizer.normalize(rawUpdate);
       if (events.length === 0) return;
 
+      this.appendSyntheticChatUpdateForLiveMessage(rawUpdate, events);
       await this.dispatchEvents(events);
     } catch (error) {
       const err = error as Error;
@@ -119,21 +130,50 @@ export class AppCoreRuntime {
     }
   }
 
-  private async dispatchEvents(events: AnyAppEvent[]): Promise<void> {
-    // Serial dispatch queue — события обрабатываются строго по порядку
-    const currentDispatch = this.pendingDispatch.then(async () => {
-      try {
-        for (const event of events) {
-          await this.store.dispatch(event);
-        }
-      } catch (error) {
-        const err = error as Error;
-        hilog.error(DOMAIN, TAG, 'Error dispatching: %{public}s', err.message);
-      }
-    });
+  private async hydrateMissingUsersForLiveMessage(rawUpdate: TdObject): Promise<void> {
+    const updateType = rawUpdate.getType();
+    if (updateType !== 'updateNewMessage' && updateType !== 'updateMessageSendSucceeded') {
+      return;
+    }
 
-    this.pendingDispatch = currentDispatch;
-    await currentDispatch;
+    const message = tdGetObject(rawUpdate, 'message');
+    const sender = tdGetObject(message, 'sender_id');
+    if (tdGetString(sender, '@type') !== 'messageSenderUser') {
+      return;
+    }
+
+    const senderId = tdGetNumber(sender, 'user_id');
+    if (senderId <= 0) {
+      return;
+    }
+
+    await this.liveHistoryHydrator.hydrateUsersIfMissing([senderId]);
+  }
+
+  private appendSyntheticChatUpdateForLiveMessage(rawUpdate: TdObject, events: AnyAppEvent[]): void {
+    const updateType = rawUpdate.getType();
+    if (updateType !== 'updateNewMessage' && updateType !== 'updateMessageSendSucceeded') {
+      return;
+    }
+
+    const message = tdGetObject(rawUpdate, 'message');
+    const chatId = tdGetNumber(message, 'chat_id');
+    if (!chatId) {
+      return;
+    }
+
+    const updates = new ChatUpdateDto();
+    updates.lastMessage = extractLastMessage(message);
+    events.push(createChatUpdatedEvent(chatId, updates));
+  }
+
+  private async dispatchEvents(events: AnyAppEvent[]): Promise<void> {
+    try {
+      await this.store.dispatchBatch(events);
+    } catch (error) {
+      const err = error as Error;
+      hilog.error(DOMAIN, TAG, 'Error dispatching batch: %{public}s', err.message);
+    }
   }
 
   getStore(): AppStore {
@@ -166,10 +206,18 @@ export class AppCoreRuntime {
     stopAuthSideEffect();
     resetAppStoreBridge();
 
+    // Clear static use-case caches — prevents stale "already fetched" flags
+    // when a new runtime + store is created after reset
+    LoadChatHistoryUseCase.resetState();
+    resetLoadChatsUseCase();
+
     if (this.unsubscribeGateway) {
       this.unsubscribeGateway();
       this.unsubscribeGateway = undefined;
     }
+
+    // Detach dispatcher handlers so old callbacks don't fire into destroyed gateway
+    getMainThreadDispatcher().unsubscribe();
 
     await this.gateway.destroy();
     this.isRunning = false;

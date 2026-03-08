@@ -48,11 +48,14 @@ struct LoginRouterPage {
       const elapsed = Date.now() - startTime;
       const connStatus = AppStorage.get<string>(StorageKeys.CONNECTION_STATUS) || '';
       const chatCount = AppStorage.get<number>(StorageKeys.CHATS_COUNT) || 0;
-      const dataReady = connStatus === 'ready' || chatCount > 0;
+      const chatsIsLoading = AppStorage.get<boolean>(StorageKeys.CHATS_IS_LOADING) || false;
+      const chatsLoadPhase = AppStorage.get<string>(StorageKeys.CHATS_LOAD_PHASE) || 'idle';
+      const dataReady = (connStatus === 'ready' && !chatsIsLoading && chatsLoadPhase !== 'bootstrap') || chatCount > 0;
 
       if ((dataReady && elapsed >= MIN_WAIT_MS) || elapsed >= MAX_WAIT_MS) {
-        hilog.info(DOMAIN, TAG, 'Transitioning to main UI (elapsed=%{public}dms, chats=%{public}d, conn=%{public}s)',
-          elapsed, chatCount, connStatus);
+        hilog.info(DOMAIN, TAG,
+          'Transitioning to main UI (elapsed=%{public}dms, chats=%{public}d, conn=%{public}s, chatsLoading=%{public}s, chatsPhase=%{public}s)',
+          elapsed, chatCount, connStatus, chatsIsLoading ? 'true' : 'false', chatsLoadPhase);
         this.showMainUI = true;
       } else {
         setTimeout(check, POLL_INTERVAL_MS);

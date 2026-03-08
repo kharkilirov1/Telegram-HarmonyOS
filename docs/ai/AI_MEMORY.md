@@ -1,5 +1,12 @@
 # AI Memory — Telegram-HarmonyOS
 
+## 0) Maintenance sync (2026-03-06)
+- Current `tg_ui` inventory: **26 atoms / 2 molecules / 30 demos / 33 spec files**.
+- Active shell path is now `TgTabBar` / `TgTopBar` / `TgSearchBar` / `TgChatRow` / `TgChatTopBar` / `TgMessageRouter`; older mentions of `AppTopBar`, `AppTabBarItem`, `AppListRow`, `ChatListItem`, and `USE_TG_CHATLIST_V2` below are historical.
+- `scripts/smoke-ui-phase0.ps1` and `.sh` were resynced to the current tg_ui shell path.
+- Dark-theme parity was repaired for `sender_color_8` plus attach/call/reaction/story colors.
+- Current `entry/src/main/ets` TODO/FIXME scan returns 0 hits.
+
 Last updated: 2026-02-26  
 Project root: `C:\Users\Kharki\Desktop\Telegram-HarmonyOS`  
 Branch: `refactor/appcore-reset`

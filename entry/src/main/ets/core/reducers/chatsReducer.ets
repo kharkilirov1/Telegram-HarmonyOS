@@ -8,7 +8,8 @@ import {
   NewChatEvent,
   ChatUpdatedEvent,
   ChatReadInboxEvent,
-  ChatReadOutboxEvent
+  ChatReadOutboxEvent,
+  ChatsLoadStateChangedEvent
 } from '../model/AppEvent';
 import { ChatDto, ChatType as DtoChatType } from '../model/dto/ChatDto';
 import { compareInt64 } from '../utils/tdAccessors';
@@ -17,7 +18,8 @@ import { cloneStateForChats, cloneChat } from '../utils/stateClone';
 // Events this reducer handles
 function isChatEvent(type: string): boolean {
   return type === 'newChat' || type === 'chatUpdated' ||
-    type === 'chatReadInbox' || type === 'chatReadOutbox';
+    type === 'chatReadInbox' || type === 'chatReadOutbox' ||
+    type === 'chatsLoadStateChanged';
 }
 
 // Map DTO ChatType enum to AppState ChatType string
@@ -42,6 +44,8 @@ function chatFromDto(dto: ChatDto): Chat {
   chat.muteForSeconds = dto.muteFor;
   chat.lastReadOutboxMessageId = dto.lastReadOutboxMessageId;
   chat.lastReadInboxMessageId = dto.lastReadInboxMessageId;
+  chat.draftText = dto.draftText;
+  chat.draftReplyToMessageId = dto.draftReplyToMessageId;
   chat.isPinned = dto.isPinned;
   chat.order = dto.order;
 
@@ -135,6 +139,12 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         if (chat.lastReadInboxMessageId === '0' && existing.lastReadInboxMessageId !== '0') {
           chat.lastReadInboxMessageId = existing.lastReadInboxMessageId;
         }
+        if (chat.draftText.length === 0 && existing.draftText.length > 0) {
+          chat.draftText = existing.draftText;
+        }
+        if (chat.draftReplyToMessageId === '0' && existing.draftReplyToMessageId !== '0') {
+          chat.draftReplyToMessageId = existing.draftReplyToMessageId;
+        }
         if (chat.order === '0' && existing.order !== '0') {
           chat.order = existing.order;
         }
@@ -166,6 +176,12 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         if (event.updates.isPinned !== undefined) {
           placeholder.isPinned = event.updates.isPinned;
         }
+        if (event.updates.draftText !== undefined) {
+          placeholder.draftText = event.updates.draftText;
+        }
+        if (event.updates.draftReplyToMessageId !== undefined) {
+          placeholder.draftReplyToMessageId = event.updates.draftReplyToMessageId;
+        }
         newState.chats.chats.set(event.chatId, placeholder);
         orderChanged = true;
         break;
@@ -191,6 +207,12 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
       }
       if (event.updates.lastReadInboxMessageId !== undefined) {
         updatedChat.lastReadInboxMessageId = event.updates.lastReadInboxMessageId;
+      }
+      if (event.updates.draftText !== undefined) {
+        updatedChat.draftText = event.updates.draftText;
+      }
+      if (event.updates.draftReplyToMessageId !== undefined) {
+        updatedChat.draftReplyToMessageId = event.updates.draftReplyToMessageId;
       }
       if (event.updates.isPinned !== undefined) {
         updatedChat.isPinned = event.updates.isPinned;
@@ -236,6 +258,18 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
       const updatedChat = cloneChat(existingChat);
       updatedChat.lastReadOutboxMessageId = event.lastReadOutboxMessageId;
       newState.chats.chats.set(event.chatId, updatedChat);
+      break;
+    }
+
+    case 'chatsLoadStateChanged': {
+      const event = action as ChatsLoadStateChangedEvent;
+      newState.chats.isLoading = event.isLoading;
+      newState.chats.hasMore = event.hasMore;
+      if (event.phase === 'bootstrap' || event.phase === 'pagination' || event.phase === 'idle') {
+        newState.chats.loadPhase = event.phase;
+      } else {
+        newState.chats.loadPhase = 'idle';
+      }
       break;
     }
   }

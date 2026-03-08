@@ -326,21 +326,22 @@ export class TgUiTokens {
   static readonly UNREAD_MARKER_MAX_WIDTH_RATIO: number = 1.0;
 
   // ── Composer input (Phase C Step 5) ──
-  static readonly COMPOSER_BG: Resource = $r('app.color.background_primary');
-  static readonly COMPOSER_TOP_SEPARATOR: Resource = $r('app.color.separator');
-  static readonly COMPOSER_INPUT_BG: Resource = $r('app.color.glass_input_bg');
+  static readonly COMPOSER_CAPSULE_BG: Resource = $r('app.color.glass_nav_bg');
+  static readonly COMPOSER_CAPSULE_FALLBACK_BG: Resource = $r('app.color.comp_background_tertiary');
+  static readonly COMPOSER_CAPSULE_BORDER: Resource = $r('app.color.separator');
+  static readonly COMPOSER_CAPSULE_BORDER_WIDTH: number = 0.5;
   static readonly COMPOSER_TEXT: Resource = $r('app.color.text_primary');
   static readonly COMPOSER_PLACEHOLDER: Resource = $r('app.color.text_secondary');
   static readonly COMPOSER_ACTION_ACTIVE: Resource = $r('app.color.telegram_blue');
   static readonly COMPOSER_ACTION_INACTIVE: Resource = $r('app.color.text_secondary');
   static readonly COMPOSER_DISABLED_OPACITY: number = 0.55;
 
-  static readonly COMPOSER_MIN_HEIGHT: number = 52;
+  static readonly COMPOSER_MIN_HEIGHT: number = 44;
   static readonly COMPOSER_MAX_HEIGHT: number = 120;
   static readonly COMPOSER_SIDE_INSET: number = 8;
   static readonly COMPOSER_VERTICAL_INSET: number = 6;
   static readonly COMPOSER_ROW_GAP: number = 6;
-  static readonly COMPOSER_INPUT_RADIUS: number = 20;
+  static readonly COMPOSER_INPUT_RADIUS: number = 22;
   static readonly COMPOSER_INPUT_PADDING_H: number = 12;
   static readonly COMPOSER_INPUT_PADDING_V: number = 8;
   static readonly COMPOSER_BUTTON_SIZE: number = 34;
@@ -570,7 +571,6 @@ export class TgUiTokens {
   static readonly LOGIN_SPACING_TITLE_TOP: number = 18;
   static readonly LOGIN_SPACING_COUNTRY_TOP: number = 30;
   static readonly LOGIN_SPACING_ERROR_TOP: number = 12;
-  static readonly COMPOSER_SEPARATOR_STROKE: number = 1;
   static readonly LOGIN_TEXT_INPUT_HEIGHT: number = 44;
   static readonly LOGIN_PASSWORD_FIELD_TOP: number = 32;
   static readonly LOGIN_FORGOT_LINK_TOP: number = 48;
@@ -587,6 +587,18 @@ export class TgUiTokens {
   static readonly AVATAR_COLOR_6: Resource = $r('app.color.sender_color_6');
   static readonly AVATAR_COLOR_7: Resource = $r('app.color.sender_color_7');
   static readonly AVATAR_COLOR_8: Resource = $r('app.color.sender_color_8');
+
+  // ── Chat top bar capsules ──
+  static readonly CHAT_TOP_BAR_CAPSULE_SIZE: number = 44;
+  static readonly CHAT_TOP_BAR_CAPSULE_RADIUS: number = 22;
+  static readonly CHAT_TOP_BAR_AVATAR_INNER: number = 37;
+  static readonly CHAT_TOP_BAR_CAPSULE_GAP: number = 8;
+  static readonly CHAT_TOP_BAR_TITLE_PADDING_H: number = 12;
+  static readonly CHAT_TOP_BAR_SUBTITLE_SIZE: number = 13;
+  static readonly CHAT_TOP_BAR_CAPSULE_BG: Resource = $r('app.color.glass_nav_bg');
+  static readonly CHAT_TOP_BAR_CAPSULE_FALLBACK_BG: Resource = $r('app.color.comp_background_tertiary');
+  static readonly CHAT_TOP_BAR_CAPSULE_BORDER: Resource = $r('app.color.separator');
+  static readonly CHAT_TOP_BAR_CAPSULE_BORDER_WIDTH: number = 0.5;
 
   // ── Shared icon resources for chat pipeline ──
   static readonly ICON_RES_CHECK: Resource = $r('app.media.ic_check');

@@ -5,7 +5,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppStore } from '../../core/store/AppStore';
 import { TdGatewayPort } from '../ports/TdGatewayPort';
 import { ChatId } from '../../core/model/EntityId';
-import { createOpenChatCommand } from '../../core/model/AppCommand';
+import { createOpenChatCommand, createCloseChatCommand } from '../../core/model/AppCommand';
 import { AppError, AppErrorKind } from '../../core/model/AppError';
 import { LoadChatHistoryUseCase, LoadChatHistoryParams, createLoadChatHistoryUseCase } from './loadChatHistory';
 
@@ -19,6 +19,7 @@ export interface OpenChatParams {
 }
 
 export class OpenChatUseCase {
+  private store: AppStore;
   private gateway: TdGatewayPort;
   private currentlyOpenedChatId: ChatId | null = null;
   private openInFlightChatIds: Set<ChatId> = new Set<ChatId>();
@@ -26,6 +27,7 @@ export class OpenChatUseCase {
   private historyLoader: LoadChatHistoryUseCase;
 
   constructor(store: AppStore, gateway: TdGatewayPort, historyLoader?: LoadChatHistoryUseCase) {
+    this.store = store;
     this.gateway = gateway;
     this.historyLoader = historyLoader || createLoadChatHistoryUseCase(store, gateway);
   }
@@ -57,6 +59,8 @@ export class OpenChatUseCase {
         hilog.info(DOMAIN, TAG, 'Stale openChat response ignored for %{public}d', chatId);
         return;
       }
+
+      await this.hydratePrivatePeerIfMissing(chatId);
 
       // 2. Load messages if requested
       if (loadMessages) {
@@ -92,11 +96,42 @@ export class OpenChatUseCase {
     return requestSeq === this.openRequestSeq;
   }
 
+  private async hydratePrivatePeerIfMissing(chatId: ChatId): Promise<void> {
+    const chat = this.store.getState().chats.chats.get(chatId);
+    if (!chat || chat.peerUserId <= 0) {
+      return;
+    }
+
+    try {
+      await this.historyLoader.hydrateUsersIfMissing([chat.peerUserId]);
+    } catch (error) {
+      hilog.info(DOMAIN, TAG, 'Peer user hydration skipped for chat %{public}d: %{public}s',
+        chatId, String(error));
+    }
+  }
+
   // Load messages for a chat when local cache is empty.
   private async loadChatMessagesIfNeeded(chatId: ChatId, limit: number): Promise<void> {
     const params = new LoadChatHistoryParams();
     params.chatId = chatId;
     params.limit = limit;
+    params.direction = 'initial';
+    params.reason = 'default';
+
+    const chat = this.store.getState().chats.chats.get(chatId);
+    if (chat &&
+      chat.unreadCount > 0 &&
+      chat.lastReadInboxMessageId !== '0' &&
+      (!chat.lastMessage || chat.lastReadInboxMessageId !== chat.lastMessage.id)) {
+      params.fromMessageId = chat.lastReadInboxMessageId;
+      params.offset = -10;
+      params.limit = Math.max(limit, 60);
+      params.reason = 'aroundUnread';
+      hilog.info(DOMAIN, TAG,
+        'Loading initial history around unread boundary for %{public}d from %{public}s',
+        chatId, chat.lastReadInboxMessageId);
+    }
+
     try {
       await this.historyLoader.execute(params);
     } catch (error) {
@@ -111,10 +146,19 @@ export class OpenChatUseCase {
     return this.currentlyOpenedChatId;
   }
 
-  // Close current chat
-  closeCurrentChat(): void {
-    hilog.info(DOMAIN, TAG, 'Closing chat %{public}d', this.currentlyOpenedChatId || 0);
+  // Close current chat — send closeChat to TDLib
+  async closeCurrentChat(): Promise<void> {
+    const chatId = this.currentlyOpenedChatId;
+    if (chatId === null || chatId === 0) {
+      return;
+    }
+    hilog.info(DOMAIN, TAG, 'Closing chat %{public}d', chatId);
     this.currentlyOpenedChatId = null;
+    try {
+      await this.gateway.send(createCloseChatCommand(chatId));
+    } catch (_) {
+      // best effort — TDLib closeChat is not critical
+    }
   }
 
   // Check if a chat is currently opened

@@ -37,7 +37,7 @@ class ChatRouteParams {
 
 class OpenChatRequest implements OpenChatParams {
   chatId: number = 0;
-  loadMessages?: boolean = false;
+  loadMessages?: boolean = true;
   limit?: number = 50;
 
   constructor(chatId: number) {
@@ -51,6 +51,9 @@ export struct ChatListPage {
 
   @StorageLink(StorageKeys.CONNECTION_STATUS) connectionStatus: string = 'connecting';
   @StorageLink(StorageKeys.CHATS_COUNT) chatsCount: number = 0;
+  @StorageLink(StorageKeys.CHATS_IS_LOADING) chatsIsLoading: boolean = false;
+  @StorageLink(StorageKeys.CHATS_HAS_MORE) chatsHasMore: boolean = true;
+  @StorageLink(StorageKeys.CHATS_LOAD_PHASE) chatsLoadPhase: string = 'idle';
 
   @State private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
   @State private listBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
@@ -59,8 +62,10 @@ export struct ChatListPage {
   @State private isRetryingLoad: boolean = false;
 
   private dataSource: ChatListDataSource = new ChatListDataSource();
+  private lastVisibleListEndIndex: number = -1;
   private unsubscribe?: () => void;
   private rebuildScheduled: boolean = false;
+  private autoInitialLoadRequested: boolean = false;
   private mainWindow?: window.Window;
   private loadChatsUseCase?: LoadChatsUseCase;
   private openChatUseCase?: OpenChatUseCase;
@@ -121,6 +126,7 @@ export struct ChatListPage {
   aboutToAppear(): void {
     AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
     this.isOpeningChat = false;
+    this.autoInitialLoadRequested = false;
     this.bindNavigationStack();
     this.computeSafeInsets();
     this.bindWindowSizeListener();
@@ -131,8 +137,13 @@ export struct ChatListPage {
       this.loadChatsUseCase = createLoadChatsUseCase(store, getTdGatewayAdapter());
       this.openChatUseCase = createOpenChatUseCase(store, getTdGatewayAdapter());
       this.rebuildList(store.getState());
+      this.maybeLoadInitialChats(store.getState());
 
-      this.unsubscribe = store.subscribe((_newState: AppState, _prevState: AppState) => {
+      this.unsubscribe = store.subscribe((newState: AppState, prevState: AppState) => {
+        this.maybeLoadInitialChats(newState);
+        if (!this.shouldScheduleListRebuild(newState, prevState)) {
+          return;
+        }
         if (!this.rebuildScheduled) {
           this.rebuildScheduled = true;
           setTimeout(() => {
@@ -140,6 +151,7 @@ export struct ChatListPage {
             try {
               const currentState = getAppCoreRuntime().getStore().getState();
               this.rebuildList(currentState);
+              this.maybeLoadInitialChats(currentState);
             } catch (e) {
               hilog.error(DOMAIN, TAG, 'Rebuild failed: %{public}s', String(e));
             }
@@ -156,6 +168,7 @@ export struct ChatListPage {
   aboutToDisappear(): void {
     this.clearDeferredOpen();
     this.isOpeningChat = false;
+    this.autoInitialLoadRequested = false;
     if (this.unsubscribe !== undefined) {
       this.unsubscribe();
       this.unsubscribe = undefined;
@@ -191,6 +204,73 @@ export struct ChatListPage {
       this.topBarTotalHeight = TgUiTokens.TOP_BAR_HEIGHT;
       this.listBottomInset = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
     }
+  }
+
+  private shouldScheduleListRebuild(newState: AppState, prevState: AppState): boolean {
+    return newState.chats !== prevState.chats ||
+      newState.messages !== prevState.messages ||
+      newState.users !== prevState.users;
+  }
+
+  private maybeLoadInitialChats(state: AppState): void {
+    if (!this.loadChatsUseCase || this.autoInitialLoadRequested) {
+      return;
+    }
+    if (state.connection.status !== 'ready') {
+      return;
+    }
+    if (state.chats.orderedChatIds.length > 0 || !state.chats.hasMore) {
+      return;
+    }
+    if (this.loadChatsUseCase.isLoadingInProgress()) {
+      return;
+    }
+
+    this.autoInitialLoadRequested = true;
+    this.loadChatsUseCase.loadInitial()
+      .then(() => {
+        try {
+          const currentState = getAppCoreRuntime().getStore().getState();
+          if (currentState.chats.orderedChatIds.length === 0 &&
+            this.loadChatsUseCase !== undefined &&
+            this.loadChatsUseCase.hasMoreChats()) {
+            this.autoInitialLoadRequested = false;
+            hilog.info(DOMAIN, TAG, 'Initial load finished without visible dialogs growth, auto-load unlocked');
+          }
+        } catch (error) {
+          hilog.warn(DOMAIN, TAG, 'Initial load post-check failed: %{public}s', String(error));
+        }
+      })
+      .catch((error: Object) => {
+        this.autoInitialLoadRequested = false;
+        hilog.warn(DOMAIN, TAG, 'Auto initial chat load failed: %{public}s', String(error));
+      });
+  }
+
+  private maybeLoadMoreChats(endIndex: number): void {
+    this.lastVisibleListEndIndex = endIndex;
+    if (!this.loadChatsUseCase) {
+      return;
+    }
+    if (this.connectionStatus !== 'ready' || this.searchQuery.length > 0) {
+      return;
+    }
+    if (this.filteredChatsCount === 0) {
+      return;
+    }
+    if (this.loadChatsUseCase.isLoadingInProgress() || !this.loadChatsUseCase.hasMoreChats()) {
+      return;
+    }
+
+    const totalListItemsApprox = this.dataSource.totalCount() + 1;
+    if (endIndex < totalListItemsApprox - 5) {
+      return;
+    }
+
+    this.loadChatsUseCase.loadMore()
+      .catch((error: Object) => {
+        hilog.warn(DOMAIN, TAG, 'loadMore chats failed: %{public}s', String(error));
+      });
   }
 
   private rebuildList(state: AppState): void {
@@ -235,6 +315,13 @@ export struct ChatListPage {
     return `tg_chat_row_${pinnedKey}_${mutedKey}_${unreadKey}_${timeKey}_${item.sendStatus}`;
   }
 
+  private getChatListKey(item: ChatItemVO, index: number): string {
+    if (item.chatId !== 0) {
+      return item.chatId.toString();
+    }
+    return 'chat_row_' + index.toString();
+  }
+
   private mapSendStatus(status: 'none' | 'pending' | 'sent' | 'read' | 'failed'): TgChatSendStatus {
     switch (status) {
       case 'pending':
@@ -276,7 +363,7 @@ export struct ChatListPage {
     const navLockUntil = AppStorage.get<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL) || 0;
     if (nowMs < navLockUntil) {
       hilog.info(DOMAIN, TAG, 'openChat blocked by nav lock until %{public}d', navLockUntil);
-      this.scheduleDeferredOpen(item.chatId, item.title, navLockUntil - nowMs + 16);
+      this.clearDeferredOpen();
       return;
     }
     if (item.chatId === this.deferredOpenChatId) {
@@ -393,14 +480,53 @@ export struct ChatListPage {
   }
 
   private shouldShowListLoading(): boolean {
-    return this.connectionStatus !== 'ready' && this.searchQuery.length === 0 && this.chatsCount === 0;
+    if (this.chatsLoadPhase === 'bootstrap' && this.searchQuery.length === 0) {
+      return true;
+    }
+    return this.searchQuery.length === 0 &&
+      this.chatsCount === 0 &&
+      (this.connectionStatus !== 'ready' || this.chatsIsLoading);
   }
 
   private shouldShowRetryAction(): boolean {
     return !this.shouldShowListLoading() &&
-      this.connectionStatus !== 'ready' &&
+      this.connectionStatus === 'ready' &&
       this.searchQuery.length === 0 &&
-      this.filteredChatsCount === 0;
+      this.filteredChatsCount === 0 &&
+      !this.chatsIsLoading &&
+      this.chatsHasMore;
+  }
+
+  private shouldShowPaginationFooter(): boolean {
+    return this.searchQuery.length === 0 &&
+      this.filteredChatsCount > 0 &&
+      (this.chatsLoadPhase === 'pagination' || (!this.chatsHasMore && !this.chatsIsLoading));
+  }
+
+  @Builder
+  private buildPaginationFooter() {
+    Row() {
+      if (this.chatsLoadPhase === 'pagination') {
+        LoadingProgress()
+          .width(TgUiTokens.CHATLIST_STATUS_ICON_SIZE)
+          .height(TgUiTokens.CHATLIST_STATUS_ICON_SIZE)
+          .color(TgUiTokens.COLOR_ICON_PRIMARY)
+      }
+      Text(this.chatsLoadPhase === 'pagination'
+        ? localized($r('app.string.loading').id, 'Loading...')
+        : localized($r('app.string.no_more_chats').id, 'No more chats'))
+        .fontSize(TgUiTokens.CHATLIST_STATUS_TEXT_SIZE)
+        .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+        .margin({ left: this.chatsLoadPhase === 'pagination' ? TgUiTokens.CHATLIST_STATUS_GAP : 0 })
+    }
+    .width('100%')
+    .padding({
+      left: TgUiTokens.SPACE_16,
+      right: TgUiTokens.SPACE_16,
+      top: TgUiTokens.SPACE_8,
+      bottom: TgUiTokens.SPACE_12
+    })
+    .justifyContent(FlexAlign.Center)
   }
 
   private retryLoadChats(): void {
@@ -487,7 +613,12 @@ export struct ChatListPage {
             .onClick(() => {
               this.openChat(item);
             })
-          }, (item: ChatItemVO) => item.chatId.toString())
+          }, (item: ChatItemVO, index?: number) => this.getChatListKey(item, index ?? 0))
+          if (this.shouldShowPaginationFooter()) {
+            ListItem() {
+              this.buildPaginationFooter()
+            }
+          }
         } else {
           ListItem() {
             this.buildListPlaceholder()
@@ -500,6 +631,9 @@ export struct ChatListPage {
       .edgeEffect(EdgeEffect.Spring)
       .contentStartOffset(this.topBarTotalHeight)
       .contentEndOffset(this.listBottomInset)
+      .onScrollIndex((_start: number, end: number) => {
+        this.maybeLoadMoreChats(end);
+      })
 
       // ── Top bar layer (overlays content, translucent + blur) ──
       TgTopBar({
