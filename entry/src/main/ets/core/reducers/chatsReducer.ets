@@ -10,7 +10,8 @@ import {
   ChatReadInboxEvent,
   ChatReadOutboxEvent,
   ChatsLoadStateChangedEvent,
-  ChatActionEvent
+  ChatActionEvent,
+  ChatFullInfoEvent
 } from '../model/AppEvent';
 import { ChatDto, ChatType as DtoChatType } from '../model/dto/ChatDto';
 import { compareInt64 } from '../utils/tdAccessors';
@@ -20,7 +21,7 @@ import { cloneStateForChats, cloneChat } from '../utils/stateClone';
 function isChatEvent(type: string): boolean {
   return type === 'newChat' || type === 'chatUpdated' ||
     type === 'chatReadInbox' || type === 'chatReadOutbox' ||
-    type === 'chatsLoadStateChanged' || type === 'chatAction';
+    type === 'chatsLoadStateChanged' || type === 'chatAction' || type === 'chatFullInfo';
 }
 
 // Map DTO ChatType enum to AppState ChatType string
@@ -49,6 +50,7 @@ function chatFromDto(dto: ChatDto): Chat {
   chat.draftReplyToMessageId = dto.draftReplyToMessageId;
   chat.isPinned = dto.isPinned;
   chat.order = dto.order;
+  chat.supergroupId = dto.supergroupId;
 
   if (dto.photo) {
     chat.photoSmall = dto.photo.small;
@@ -295,6 +297,17 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         info.timestamp = event.timestamp;
         newState.chats.typingActions.set(event.chatId, info);
       }
+      break;
+    }
+
+    case 'chatFullInfo': {
+      const event = action as ChatFullInfoEvent;
+      const existingChat = newState.chats.chats.get(event.chatId);
+      if (!existingChat) break;
+      const updatedChat = cloneChat(existingChat);
+      updatedChat.description = event.description;
+      updatedChat.memberCount = event.memberCount;
+      newState.chats.chats.set(event.chatId, updatedChat);
       break;
     }
   }

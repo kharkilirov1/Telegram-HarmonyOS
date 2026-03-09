@@ -169,6 +169,21 @@ export class ChatActionEvent extends AppEvent {
   actionType: string = ''; // 'typing', 'cancel', 'recordingVideo', 'uploadingPhoto', etc.
 }
 
+// --- Full info events (profile screen) ---
+
+export class UserFullInfoEvent extends AppEvent {
+  type: string = 'userFullInfo';
+  userId: UserId = 0;
+  bio: string = '';
+}
+
+export class ChatFullInfoEvent extends AppEvent {
+  type: string = 'chatFullInfo';
+  chatId: ChatId = 0;
+  description: string = '';
+  memberCount: number = 0;
+}
+
 // --- File events ---
 
 export class FileDownloadedEvent extends AppEvent {
@@ -198,6 +213,8 @@ export type AnyAppEvent =
   | UserUpdatedEvent
   | UserStatusChangedEvent
   | ChatActionEvent
+  | UserFullInfoEvent
+  | ChatFullInfoEvent
   | FileDownloadedEvent;
 
 // --- Factory helpers ---

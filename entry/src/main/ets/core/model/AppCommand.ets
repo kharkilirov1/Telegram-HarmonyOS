@@ -66,6 +66,14 @@ export class CloseChatPayload {
   chatId: ChatId = 0;
 }
 
+export class GetUserFullInfoPayload {
+  userId: UserId = 0;
+}
+
+export class GetSupergroupFullInfoPayload {
+  supergroupId: number = 0;
+}
+
 export class DownloadFilePayload {
   fileId: number = 0;
   priority: number = 1;
@@ -141,6 +149,16 @@ export class CloseChatCommand extends AppCommand {
   payload: CloseChatPayload = new CloseChatPayload();
 }
 
+export class GetUserFullInfoCommand extends AppCommand {
+  type: string = 'getUserFullInfo';
+  payload: GetUserFullInfoPayload = new GetUserFullInfoPayload();
+}
+
+export class GetSupergroupFullInfoCommand extends AppCommand {
+  type: string = 'getSupergroupFullInfo';
+  payload: GetSupergroupFullInfoPayload = new GetSupergroupFullInfoPayload();
+}
+
 export class DownloadFileCommand extends AppCommand {
   type: string = 'downloadFile';
   payload: DownloadFilePayload = new DownloadFilePayload();
@@ -166,6 +184,8 @@ export type AnyAppCommand =
   | SearchCallMessagesCommand
   | GetChatCommand
   | CloseChatCommand
+  | GetUserFullInfoCommand
+  | GetSupergroupFullInfoCommand
   | DownloadFileCommand
   | LogoutCommand;
 
@@ -270,6 +290,18 @@ export function createGetChatCommand(chatId: ChatId): GetChatCommand {
 export function createCloseChatCommand(chatId: ChatId): CloseChatCommand {
   const cmd = new CloseChatCommand();
   cmd.payload.chatId = chatId;
+  return cmd;
+}
+
+export function createGetUserFullInfoCommand(userId: UserId): GetUserFullInfoCommand {
+  const cmd = new GetUserFullInfoCommand();
+  cmd.payload.userId = userId;
+  return cmd;
+}
+
+export function createGetSupergroupFullInfoCommand(supergroupId: number): GetSupergroupFullInfoCommand {
+  const cmd = new GetSupergroupFullInfoCommand();
+  cmd.payload.supergroupId = supergroupId;
   return cmd;
 }
 

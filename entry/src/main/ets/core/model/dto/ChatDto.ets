@@ -44,6 +44,7 @@ export class ChatDto {
   order: string = '0';
   draftText: string = '';
   draftReplyToMessageId: string = '0';
+  supergroupId: number = 0;
 }
 
 // Helper to create DTO from raw TDLib chat object
@@ -63,6 +64,10 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   }
 
   const chatDto = new ChatDto();
+  // Extract supergroup_id for later getSupergroupFullInfo calls
+  if (tdTypeStr === 'chatTypeSupergroup') {
+    chatDto.supergroupId = tdGetNumber(tdTypeObj, 'supergroup_id');
+  }
   chatDto.id = tdChat.getTopLevelNumber('id');
   chatDto.type = type;
   chatDto.title = tdGetString(tdChat, 'title');

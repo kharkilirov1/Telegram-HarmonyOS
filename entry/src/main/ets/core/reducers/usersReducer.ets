@@ -3,12 +3,12 @@
 // Uses real data from DTOs instead of hardcoded values
 
 import { AppState, User, ReducerAction } from '../model/AppState';
-import { UserUpdatedEvent, UserStatusChangedEvent } from '../model/AppEvent';
+import { UserUpdatedEvent, UserStatusChangedEvent, UserFullInfoEvent } from '../model/AppEvent';
 import { cloneStateForUsers, cloneUser } from '../utils/stateClone';
 
 // Events this reducer handles
 function isUserEvent(type: string): boolean {
-  return type === 'userUpdated' || type === 'userStatusChanged';
+  return type === 'userUpdated' || type === 'userStatusChanged' || type === 'userFullInfo';
 }
 
 export function usersReducer(state: AppState, action: ReducerAction): AppState {
@@ -65,6 +65,16 @@ export function usersReducer(state: AppState, action: ReducerAction): AppState {
         
         newState.users.users.set(event.userId, updatedUser);
       }
+      break;
+    }
+
+    case 'userFullInfo': {
+      const event = action as UserFullInfoEvent;
+      const existingUser = newState.users.users.get(event.userId);
+      if (!existingUser) break;
+      const updatedUser = cloneUser(existingUser);
+      updatedUser.bio = event.bio;
+      newState.users.users.set(event.userId, updatedUser);
       break;
     }
 

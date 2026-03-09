@@ -4,6 +4,7 @@
 
 import { ChatListPage } from './chatlist/ChatListPage';
 import { TgChatScreenPage } from './chat/TgChatScreenPage';
+import { TgProfilePage } from './profile/TgProfilePage';
 import { ContactsPage } from './contacts/ContactsPage';
 import { CallsPage } from './calls/CallsPage';
 import { SettingsPage } from './settings/SettingsPage';
@@ -119,6 +120,10 @@ export struct MainTabsPage {
   chatPageMap(name: string) {
     if (name === 'TgChatScreenPage') {
       TgChatScreenPage({
+        pageStack: this.chatNavStack
+      })
+    } else if (name === 'TgProfilePage') {
+      TgProfilePage({
         pageStack: this.chatNavStack
       })
     }

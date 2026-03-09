@@ -56,6 +56,9 @@ export class Chat {
   photoSmall: string = '';
   photoSmallFileId: number = 0;
   order: string = '0'; // TDLib int64 sort key as string; '0' = not in chatListMain
+  memberCount: number = 0;
+  description: string = '';
+  supergroupId: number = 0; // TDLib supergroup_id for fetching full info
 }
 
 // Typing indicator per chat
@@ -177,6 +180,7 @@ export class User {
   isContact: boolean = false;
   isVerified: boolean = false;
   isPremium: boolean = false;
+  bio: string = '';
 }
 
 export class UsersState {

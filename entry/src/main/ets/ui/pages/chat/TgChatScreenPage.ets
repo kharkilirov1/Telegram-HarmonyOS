@@ -12,6 +12,7 @@ import { TgMessageMeta } from '../../tg_ui/atoms/TgMessageMeta';
 import { TgReplySnippet } from '../../tg_ui/atoms/TgReplySnippet';
 import { TgComposerInput } from '../../tg_ui/atoms/TgComposerInput';
 import { TgChatTopBar } from '../../tg_ui/atoms/TgChatTopBar';
+import { ProfileRouteParams } from '../profile/TgProfilePage';
 import { ChatTimelineDataSource } from './ChatTimelineDataSource';
 import { ChatTimelineEntryVO, buildChatTimeline } from './ChatTimelineVO';
 import { SendMessageParams, createSendMessageUseCase, SendMessageUseCase } from '../../../domain/usecases/sendMessage';
@@ -563,6 +564,16 @@ export struct TgChatScreenPage {
       });
   }
 
+  private openProfile(): void {
+    if (this.activeChatId <= 0) return;
+    hilog.info(DOMAIN, TAG, 'openProfile chatId=%{public}d', this.activeChatId);
+    const navStack: NavPathStack | undefined = this.bindNavigationStack();
+    if (navStack !== undefined) {
+      const params = new ProfileRouteParams(this.activeChatId);
+      navStack.pushPathByName('TgProfilePage', params);
+    }
+  }
+
   private handleBackPress(): void {
     hilog.info(DOMAIN, TAG, 'handleBackPress called');
     this.saveScrollPosition();
@@ -920,6 +931,12 @@ export struct TgChatScreenPage {
           isOnline: this.chatIsOnline,
           onBackPress: (): void => {
             this.handleBackPress();
+          },
+          onTitlePress: (): void => {
+            this.openProfile();
+          },
+          onAvatarPress: (): void => {
+            this.openProfile();
           }
         })
         .hitTestBehavior(HitTestMode.Transparent)

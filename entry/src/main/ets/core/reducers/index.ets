@@ -23,7 +23,8 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
   // Chats
   if (action.type === 'newChat' || action.type === 'chatUpdated' ||
     action.type === 'chatReadInbox' || action.type === 'chatReadOutbox' ||
-    action.type === 'chatsLoadStateChanged' || action.type === 'chatAction') {
+    action.type === 'chatsLoadStateChanged' || action.type === 'chatAction' ||
+    action.type === 'chatFullInfo') {
     return chatsReducer(state, action);
   }
 
@@ -35,7 +36,8 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
   }
 
   // Users
-  if (action.type === 'userUpdated' || action.type === 'userStatusChanged') {
+  if (action.type === 'userUpdated' || action.type === 'userStatusChanged' ||
+    action.type === 'userFullInfo') {
     return usersReducer(state, action);
   }
 

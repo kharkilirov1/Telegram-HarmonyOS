@@ -104,6 +104,9 @@ export function cloneChat(chat: Chat): Chat {
   newChat.photoSmall = chat.photoSmall;
   newChat.photoSmallFileId = chat.photoSmallFileId;
   newChat.order = chat.order;
+  newChat.memberCount = chat.memberCount;
+  newChat.description = chat.description;
+  newChat.supergroupId = chat.supergroupId;
   if (chat.lastMessage) {
     const lm = new ChatLastMessage();
     lm.id = chat.lastMessage.id;
@@ -131,6 +134,7 @@ export function cloneUser(user: User): User {
   newUser.isContact = user.isContact;
   newUser.isVerified = user.isVerified;
   newUser.isPremium = user.isPremium;
+  newUser.bio = user.bio;
   return newUser;
 }
 

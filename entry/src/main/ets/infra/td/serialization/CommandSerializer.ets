@@ -18,6 +18,8 @@ import {
   SearchCallMessagesCommand,
   GetChatCommand,
   CloseChatCommand,
+  GetUserFullInfoCommand,
+  GetSupergroupFullInfoCommand,
   DownloadFileCommand
 } from '../../../core/model/AppCommand';
 import { TdObject } from '../../../models/TdTypes';
@@ -163,6 +165,20 @@ export function serializeCommand(command: AnyAppCommand): SerializedCommand {
       const cmd = command as CloseChatCommand;
       result.method = 'closeChat';
       result.params.setNumber('chat_id', cmd.payload.chatId);
+      break;
+    }
+
+    case 'getUserFullInfo': {
+      const cmd = command as GetUserFullInfoCommand;
+      result.method = 'getUserFullInfo';
+      result.params.setNumber('user_id', cmd.payload.userId);
+      break;
+    }
+
+    case 'getSupergroupFullInfo': {
+      const cmd = command as GetSupergroupFullInfoCommand;
+      result.method = 'getSupergroupFullInfo';
+      result.params.setNumber('supergroup_id', cmd.payload.supergroupId);
       break;
     }
 
