@@ -29,19 +29,21 @@ const TAG = 'ChatNormalizer';
 
 function handleNewChat(events: AnyAppEvent[], update: TdObject): void {
   const chat = tdGetObject(update, 'chat');
-  const chatId = tdGetNumber(chat, 'id');
-  if (!chatId) return;
+  const chatId = chat.getTopLevelNumber('id');
+  if (!chatId) {
+    return;
+  }
 
   try {
     const chatDto = createChatDtoFromTd(chat);
     events.push(createNewChatEvent(chatId, chatDto));
   } catch (error) {
-    hilog.error(DOMAIN, TAG, 'Failed to parse newChat: %{public}s', String(error));
+    hilog.error(DOMAIN, TAG, 'Failed to parse newChat id=%{public}d: %{public}s', chatId, String(error));
   }
 }
 
 function handleDirectChat(events: AnyAppEvent[], update: TdObject): void {
-  const chatId = tdGetNumber(update, 'id');
+  const chatId = update.getTopLevelNumber('id');
   if (!chatId) return;
 
   try {
@@ -56,8 +58,13 @@ function handleChatTitle(events: AnyAppEvent[], update: TdObject): void {
   const chatId = tdGetNumber(update, 'chat_id');
   if (!chatId) return;
 
+  const nextTitle = tdGetString(update, 'title');
+  if (nextTitle.trim().length === 0) {
+    return;
+  }
+
   const updates = new ChatUpdateDto();
-  updates.title = tdGetString(update, 'title');
+  updates.title = nextTitle;
   events.push(createChatUpdatedEvent(chatId, updates));
 }
 
@@ -122,12 +129,10 @@ function handleChatAddedToList(events: AnyAppEvent[], update: TdObject): void {
   const listType = tdGetString(listObj, '@type');
   if (listType !== 'chatListMain') return;
 
-  // Chat added to main list but no order yet — set fallback order from timestamp
-  // so it appears in the list. Real order comes via updateChatPosition or updateChatLastMessage.
+  hilog.info(DOMAIN, TAG, 'chatAddedToList chatId=%{public}d (main list)', chatId);
   const updates = new ChatUpdateDto();
   const fallbackOrder = (Math.floor(Date.now() / 1000)).toString();
   updates.order = fallbackOrder;
-  hilog.info(DOMAIN, TAG, 'Chat %{public}d added to main list, fallback order=%{public}s', chatId, fallbackOrder);
   events.push(createChatUpdatedEvent(chatId, updates));
 }
 

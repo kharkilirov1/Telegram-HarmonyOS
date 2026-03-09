@@ -1,6 +1,6 @@
 # TODO — observed current work
 
-Last updated: 2026-03-08
+Last updated: 2026-03-09
 
 This is a **working snapshot**, not a product roadmap. It is derived from:
 - current git status on branch `refactor/appcore-reset`
@@ -11,6 +11,16 @@ Canonical execution order for agents now lives in:
 - `TASKS/AGENT_EXECUTION_PLAN.md`
 
 ## Active now
+
+### 0. Device-verify chat-list blank-cell regression fix
+- **Evidence:** local code updates in:
+  - `entry/src/main/ets/ui/pages/chatlist/ChatListPage.ets`
+  - `entry/src/main/ets/ui/tg_ui/atoms/TgChatRow.ets`
+  - `entry/src/main/ets/core/events/normalizers/ChatNormalizer.ets`
+  - `entry/src/main/ets/core/reducers/chatsReducer.ets`
+  - `entry/src/main/ets/ui/pages/chatlist/ChatItemVO.ets`
+- **What changed locally:** restored stable `LazyForEach` identity (`chatId` key + per-chat `reuseId`), removed debug row instrumentation, blocked empty `updateChatTitle` overwrite path, and added phone-number private-title fallback.
+- **Current action:** run device HiLog/UI pass to confirm blank/empty chat cells no longer reproduce under fast scroll + initial hydration.
 
 ### 1. Stabilize runtime reset and chat loading flows
 - **Evidence:** modified files in:

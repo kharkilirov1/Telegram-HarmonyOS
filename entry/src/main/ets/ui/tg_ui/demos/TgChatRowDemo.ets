@@ -74,46 +74,46 @@ export struct TgChatRowDemo {
           })
 
         this.label('01 normal (no unread)')
-        TgChatRow({ data: this.makeVariant('12:37'), showSeparator: true })
+        TgChatRow({ ...this.makeVariant('12:37'), showSeparator: true })
 
         this.label('02 unread = 1')
-        TgChatRow({ data: this.makeVariant('12:38', 1), showSeparator: true })
+        TgChatRow({ ...this.makeVariant('12:38', 1), showSeparator: true })
 
         this.label('03 unread = 99')
-        TgChatRow({ data: this.makeVariant('12:39', 99), showSeparator: true })
+        TgChatRow({ ...this.makeVariant('12:39', 99), showSeparator: true })
 
         this.label('04 unread = 207 (99+)')
-        TgChatRow({ data: this.makeVariant('12:40', 207), showSeparator: true })
+        TgChatRow({ ...this.makeVariant('12:40', 207), showSeparator: true })
 
         this.label('05 pinned (no unread)')
-        TgChatRow({ data: this.makeVariant('12:41', 0, false, true), showSeparator: true })
+        TgChatRow({ ...this.makeVariant('12:41', 0, false, true), showSeparator: true })
 
         this.label('06 muted (no unread)')
-        TgChatRow({ data: this.makeVariant('12:42', 0, true), showSeparator: true })
+        TgChatRow({ ...this.makeVariant('12:42', 0, true), showSeparator: true })
 
         this.label('07 muted + unread')
-        TgChatRow({ data: this.makeVariant('12:43', 11, true), showSeparator: true })
+        TgChatRow({ ...this.makeVariant('12:43', 11, true), showSeparator: true })
 
         this.label('08 sending')
-        TgChatRow({ data: this.makeVariant('12:44', 0, false, false, TgChatSendStatus.Sending), showSeparator: true })
+        TgChatRow({ ...this.makeVariant('12:44', 0, false, false, TgChatSendStatus.Sending), showSeparator: true })
 
         this.label('09 sent')
-        TgChatRow({ data: this.makeVariant('12:45', 0, false, false, TgChatSendStatus.Sent), showSeparator: true })
+        TgChatRow({ ...this.makeVariant('12:45', 0, false, false, TgChatSendStatus.Sent), showSeparator: true })
 
         this.label('10 read')
-        TgChatRow({ data: this.makeVariant('12:46', 0, false, false, TgChatSendStatus.Read), showSeparator: true })
+        TgChatRow({ ...this.makeVariant('12:46', 0, false, false, TgChatSendStatus.Read), showSeparator: true })
 
         this.label('11 online avatar')
-        TgChatRow({ data: this.makeVariant('12:47', 0, false, false, TgChatSendStatus.None, true), showSeparator: true })
+        TgChatRow({ ...this.makeVariant('12:47', 0, false, false, TgChatSendStatus.None, true), showSeparator: true })
 
         this.label('12 ellipsis torture')
-        TgChatRow({ data: this.makeLongTextRowData(), showSeparator: true })
+        TgChatRow({ ...this.makeLongTextRowData(), showSeparator: true })
 
         this.label('13 failed only')
-        TgChatRow({ data: this.makeVariant('12:48', 0, false, false, TgChatSendStatus.Failed), showSeparator: true })
+        TgChatRow({ ...this.makeVariant('12:48', 0, false, false, TgChatSendStatus.Failed), showSeparator: true })
 
         this.label('14 failed + unread')
-        TgChatRow({ data: this.makeVariant('12:49', 3, false, false, TgChatSendStatus.Failed), showSeparator: true })
+        TgChatRow({ ...this.makeVariant('12:49', 3, false, false, TgChatSendStatus.Failed), showSeparator: true })
 
         Divider()
           .color(TgUiTokens.COLOR_SEPARATOR)
@@ -135,10 +135,10 @@ export struct TgChatRowDemo {
             bottom: TgUiTokens.SPACE_8
           })
 
-        TgChatRow({ data: this.makeLongVariant(), showSeparator: true })
-        TgChatRow({ data: this.makeLongVariant(0, false, TgChatSendStatus.Read), showSeparator: true })
-        TgChatRow({ data: this.makeLongVariant(12), showSeparator: true })
-        TgChatRow({ data: this.makeLongVariant(0, true), showSeparator: true })
+        TgChatRow({ ...this.makeLongVariant(), showSeparator: true })
+        TgChatRow({ ...this.makeLongVariant(0, false, TgChatSendStatus.Read), showSeparator: true })
+        TgChatRow({ ...this.makeLongVariant(12), showSeparator: true })
+        TgChatRow({ ...this.makeLongVariant(0, true), showSeparator: true })
       }
       .width('100%')
       .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)

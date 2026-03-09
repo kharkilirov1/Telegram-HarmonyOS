@@ -33,13 +33,16 @@ export class ChatItemVO {
   isGroup: boolean = false;
 }
 
-function resolvePrivateTitle(firstName: string, lastName: string, username: string): string {
+function resolvePrivateTitle(firstName: string, lastName: string, username: string, phoneNumber: string): string {
   const fullName = (firstName + ' ' + lastName).trim();
   if (fullName.length > 0) {
     return fullName;
   }
   if (username.length > 0) {
     return '@' + username;
+  }
+  if (phoneNumber.length > 0) {
+    return phoneNumber;
   }
   return '';
 }
@@ -298,7 +301,7 @@ export function buildChatItemVO(chat: Chat, state: AppState): ChatItemVO {
   if (chat.peerUserId > 0) {
     const user = state.users.users.get(chat.peerUserId);
     if (user) {
-      const privateTitle = resolvePrivateTitle(user.firstName, user.lastName, user.username);
+      const privateTitle = resolvePrivateTitle(user.firstName, user.lastName, user.username, user.phoneNumber);
       if (privateTitle.length > 0) {
         vo.title = privateTitle;
       }

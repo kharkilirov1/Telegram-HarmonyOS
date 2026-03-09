@@ -369,7 +369,9 @@ export class TdObject {
 function extractStringValue(json: string, prop: string): string | null {
   // Escape special regex chars in property name
   const escapedProp = prop.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const pattern = new RegExp(`"${escapedProp}"\\s*:\\s*"([^"\\\\]*(?:\\\\.[^"\\\\]*)*)"`);
+  // More robust pattern: looks for "prop" : "value"
+  // Handles escaped quotes \" and handles different spacing
+  const pattern = new RegExp(`"${escapedProp}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`);
   const match = json.match(pattern);
   if (match && match[1] !== undefined) {
     // Unescape JSON string escapes

@@ -10,7 +10,7 @@ import { ChatItemVO, buildChatItemVO } from './ChatItemVO';
 import { ChatListDataSource } from './ChatListDataSource';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { TgUiFeatureFlags } from '../../tg_ui/TgUiFeatureFlags';
-import { TgChatRow, TgChatRowData } from '../../tg_ui/atoms/TgChatRow';
+import { TgChatRow } from '../../tg_ui/atoms/TgChatRow';
 import { TgChatSendStatus } from '../../tg_ui/atoms/TgChatMeta';
 import { TgTopBar } from '../../tg_ui/atoms/TgTopBar';
 import { TgSearchBar } from '../../tg_ui/atoms/TgSearchBar';
@@ -291,6 +291,15 @@ export struct ChatListPage {
         }
       }
     }
+    if (items.length > 0 && items.length <= 5) {
+      for (let i = 0; i < items.length; i++) {
+        hilog.info(DOMAIN, TAG, 'rebuildList[%{public}d] chatId=%{public}d title="%{public}s" preview="%{public}s"',
+          i, items[i].chatId, items[i].title, items[i].lastMessage.substring(0, 30));
+      }
+    } else if (items.length > 5) {
+      hilog.info(DOMAIN, TAG, 'rebuildList: %{public}d items, first="%{public}s", last="%{public}s"',
+        items.length, items[0].title, items[items.length - 1].title);
+    }
     this.dataSource.applyDiff(items);
     this.filteredChatsCount = items.length;
   }
@@ -308,11 +317,7 @@ export struct ChatListPage {
   }
 
   private getTgReuseId(item: ChatItemVO): string {
-    const pinnedKey: string = item.isPinned ? 'p1' : 'p0';
-    const mutedKey: string = item.isMuted ? 'm1' : 'm0';
-    const unreadKey: string = item.unreadCount > 99 ? 'u99p' : (item.unreadCount > 0 ? 'u1' : 'u0');
-    const timeKey: string = item.formattedTime.length > 0 ? 't1' : 't0';
-    return `tg_chat_row_${pinnedKey}_${mutedKey}_${unreadKey}_${timeKey}_${item.sendStatus}`;
+    return 'tg_chat_row_' + item.chatId.toString();
   }
 
   private getChatListKey(item: ChatItemVO, index: number): string {
@@ -335,26 +340,6 @@ export struct ChatListPage {
       default:
         return TgChatSendStatus.None;
     }
-  }
-
-  private toTgRowData(item: ChatItemVO): TgChatRowData {
-    const row = new TgChatRowData();
-    row.chatId = item.chatId;
-    row.title = item.title;
-    row.preview = item.lastMessage;
-    row.timeText = item.formattedTime;
-    row.unreadCount = item.unreadCount;
-    row.isMuted = item.isMuted;
-    row.isPinned = item.isPinned;
-    row.sendStatus = this.mapSendStatus(item.sendStatus);
-    row.avatarInitials = item.initials;
-    row.avatarBackgroundColor = item.avatarColor;
-    row.avatarUseImage = item.avatarImagePath.length > 0;
-    if (item.avatarImagePath.length > 0) {
-      row.avatarImageSrc = item.avatarImagePath;
-    }
-    row.avatarIsOnline = item.avatarOnline;
-    return row;
   }
 
   private openChat(item: ChatItemVO): void {
@@ -605,7 +590,19 @@ export struct ChatListPage {
           LazyForEach(this.dataSource, (item: ChatItemVO) => {
             ListItem() {
               TgChatRow({
-                data: this.toTgRowData(item),
+                chatId: item.chatId,
+                title: item.title,
+                preview: item.lastMessage,
+                timeText: item.formattedTime,
+                unreadCount: item.unreadCount,
+                isMuted: item.isMuted,
+                isPinned: item.isPinned,
+                sendStatus: this.mapSendStatus(item.sendStatus),
+                avatarInitials: item.initials,
+                avatarBackgroundColor: item.avatarColor,
+                avatarUseImage: item.avatarImagePath.length > 0,
+                avatarImageSrc: item.avatarImagePath.length > 0 ? item.avatarImagePath : $r('app.media.app_icon_transparent'),
+                avatarIsOnline: item.avatarOnline,
                 showSeparator: TgUiFeatureFlags.USE_INTERNAL_CHAT_ROW_SEPARATOR
               })
                 .reuseId(this.getTgReuseId(item))

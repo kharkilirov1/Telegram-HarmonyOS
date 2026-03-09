@@ -1,6 +1,6 @@
 # STATUS — Telegram-HarmonyOS
 
-Snapshot date: 2026-03-08
+Snapshot date: 2026-03-09
 
 ## Current snapshot
 - **Branch:** `refactor/appcore-reset`
@@ -35,6 +35,8 @@ Snapshot date: 2026-03-08
   - `TgMessageRouter`
 
 ## What is clearly in progress right now
+- Latest local patch from 2026-03-09: fixed chat-list blank-cell regression by restoring stable `LazyForEach` identity (`chatId` key + per-chat `reuseId`), removing debug render noise from `TgChatRow`/`ChatListPage`, and guarding chat title updates against empty overwrite in normalizer/reducer.
+- Latest local UX fallback from 2026-03-09: private chat row title can now fall back to `user.phoneNumber` before `Unknown`, reducing empty/placeholder rows for incomplete contact profiles.
 - Runtime stabilization around:
   - `AppCoreRuntime`
   - `AppStore`

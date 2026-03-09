@@ -1,6 +1,6 @@
 # LESSONS — repeated mistakes and project-specific pitfalls
 
-Last updated: 2026-03-08
+Last updated: 2026-03-09
 
 ## 1. Do not mix V1 and V2 ArkUI decorators casually
 - `tg_ui` is largely `@ComponentV2`.
@@ -103,3 +103,8 @@ Last updated: 2026-03-08
 ## 23. One top-up can still be too shallow for Telegram history
 - Real device HiLogs showed chats where the first default batch was `1` message and the first older top-up only added **one more** message, while `canLoadOlder` still remained true.
 - Therefore the initial stabilization path should use a **bounded top-up loop** while oldest-message progress continues, instead of assuming a single extra request is enough.
+
+## 24. In `LazyForEach`, mutable content must not be part of item identity
+- Chat list regressions reappeared when `getChatListKey()` started including mutable row fields (`title`, `preview`, `unreadCount`, avatar path) and `reuseId` was collapsed into coarse buckets.
+- For reusable Telegram rows, keep identity stable by dialog id (`chatId`) and avoid broad reuse pools that let unrelated rows share one cached component shape.
+- If title updates are partial/empty (`updateChatTitle`), block empty overwrite in normalizer/reducer; otherwise list identity churn and placeholder rows amplify each other.

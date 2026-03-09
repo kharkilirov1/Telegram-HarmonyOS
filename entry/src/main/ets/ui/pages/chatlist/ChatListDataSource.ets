@@ -53,10 +53,11 @@ export class ChatListDataSource implements IDataSource {
   }
 
   private isSameChatRow(prev: ChatItemVO, next: ChatItemVO): boolean {
+    // Note: avatarColor (Resource) is excluded — reference comparison is unreliable for Resource objects.
+    // Each $r() call creates a new object, so === would always return false.
     return prev.chatId === next.chatId &&
       prev.title === next.title &&
       prev.initials === next.initials &&
-      prev.avatarColor === next.avatarColor &&
       prev.avatarImagePath === next.avatarImagePath &&
       prev.avatarOnline === next.avatarOnline &&
       prev.lastMessage === next.lastMessage &&

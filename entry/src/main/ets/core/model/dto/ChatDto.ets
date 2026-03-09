@@ -61,7 +61,7 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   }
 
   const chatDto = new ChatDto();
-  chatDto.id = tdGetNumber(tdChat, 'id');
+  chatDto.id = tdChat.getTopLevelNumber('id');
   chatDto.type = type;
   chatDto.title = tdGetString(tdChat, 'title');
   chatDto.unreadCount = tdGetNumber(tdChat, 'unread_count');

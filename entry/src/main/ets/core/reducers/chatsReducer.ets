@@ -168,7 +168,10 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         const placeholder = new Chat();
         placeholder.id = event.chatId;
         if (event.updates.title !== undefined) {
-          placeholder.title = event.updates.title;
+          const nextTitle = event.updates.title.trim();
+          if (nextTitle.length > 0) {
+            placeholder.title = event.updates.title;
+          }
         }
         if (event.updates.order !== undefined) {
           placeholder.order = event.updates.order;
@@ -191,7 +194,10 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
       const updatedChat = cloneChat(existingChat);
 
       if (event.updates.title !== undefined) {
-        updatedChat.title = event.updates.title;
+        const nextTitle = event.updates.title.trim();
+        if (nextTitle.length > 0 || updatedChat.title.trim().length === 0) {
+          updatedChat.title = event.updates.title;
+        }
       }
       if (event.updates.peerUserId !== undefined) {
         updatedChat.peerUserId = event.updates.peerUserId;

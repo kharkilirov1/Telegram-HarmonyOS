@@ -26,11 +26,50 @@ export class TgChatRowData {
 @Reusable
 @Component
 export struct TgChatRow {
-  @Prop data: TgChatRowData = new TgChatRowData();
-  @Prop showSeparator: boolean = true;
+  @State chatId: number = 0;
+  @State title: string = '';
+  @State preview: string = '';
+  @State timeText: string = '';
+  @State unreadCount: number = 0;
+  @State isMuted: boolean = false;
+  @State isPinned: boolean = false;
+  @State sendStatus: TgChatSendStatus = TgChatSendStatus.None;
+  @State avatarInitials: string = 'TG';
+  @State avatarUseImage: boolean = false;
+  @State avatarImageSrc: ResourceStr = $r('app.media.app_icon_transparent');
+  @State avatarIsOnline: boolean = false;
+  @State avatarBackgroundColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG;
+  @State avatarTextColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT;
+  @State showSeparator: boolean = true;
+
+  aboutToReuse(params: Record<string, Object>): void {
+    this.chatId = params['chatId'] as number ?? 0;
+    this.title = params['title'] as string ?? '';
+    this.preview = params['preview'] as string ?? '';
+    this.timeText = params['timeText'] as string ?? '';
+    this.unreadCount = params['unreadCount'] as number ?? 0;
+    this.isMuted = params['isMuted'] as boolean ?? false;
+    this.isPinned = params['isPinned'] as boolean ?? false;
+    this.sendStatus = params['sendStatus'] as TgChatSendStatus ?? TgChatSendStatus.None;
+    this.avatarInitials = params['avatarInitials'] as string ?? 'TG';
+    this.avatarUseImage = params['avatarUseImage'] as boolean ?? false;
+    this.avatarImageSrc = params['avatarImageSrc'] as ResourceStr ?? $r('app.media.app_icon_transparent');
+    this.avatarIsOnline = params['avatarIsOnline'] as boolean ?? false;
+    this.avatarBackgroundColor = params['avatarBackgroundColor'] as ResourceColor ?? TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG;
+    this.avatarTextColor = params['avatarTextColor'] as ResourceColor ?? TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT;
+    this.showSeparator = params['showSeparator'] as boolean ?? true;
+  }
 
   private previewText(): string {
-    return this.data.preview.length > 0 ? this.data.preview : ' ';
+    return this.preview.length > 0 ? this.preview : ' ';
+  }
+
+  private titleText(): string {
+    const trimmed = this.title.trim();
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
+    return 'Unknown';
   }
 
   build() {
@@ -38,18 +77,18 @@ export struct TgChatRow {
       Row() {
         TgAvatar({
           avatarSize: TgUiTokens.AVATAR_SIZE_DEFAULT,
-          initials: this.data.avatarInitials,
-          useImage: this.data.avatarUseImage,
-          imageSrc: this.data.avatarImageSrc,
-          isOnline: this.data.avatarIsOnline,
-          avatarBackgroundColor: this.data.avatarBackgroundColor,
-          textColor: this.data.avatarTextColor
+          initials: this.avatarInitials,
+          useImage: this.avatarUseImage,
+          imageSrc: this.avatarImageSrc,
+          isOnline: this.avatarIsOnline,
+          avatarBackgroundColor: this.avatarBackgroundColor,
+          textColor: this.avatarTextColor
         })
 
         Row() {
           Column({ space: TgUiTokens.CHAT_ROW_TITLE_PREVIEW_GAP }) {
             Row() {
-              Text(this.data.title)
+              Text(this.titleText())
                 .fontSize(TgUiTokens.FONT_TITLE_SIZE)
                 .fontWeight(FontWeight.Medium)
                 .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
@@ -57,7 +96,7 @@ export struct TgChatRow {
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
                 .layoutWeight(1)
 
-              if (this.data.isMuted) {
+              if (this.isMuted) {
                 TgIcon({
                   src: TgUiTokens.ICON_RES_MUTE,
                   iconSize: TgUiTokens.CHAT_ROW_MUTE_ICON_SIZE,
@@ -81,13 +120,14 @@ export struct TgChatRow {
           .justifyContent(FlexAlign.Center)
 
           TgChatMeta({
-            timeText: this.data.timeText,
-            sendStatus: this.data.sendStatus,
-            unreadCount: this.data.unreadCount,
-            isMuted: this.data.isMuted,
-            isPinned: this.data.isPinned,
+            timeText: this.timeText,
+            sendStatus: this.sendStatus,
+            unreadCount: this.unreadCount,
+            isMuted: this.isMuted,
+            isPinned: this.isPinned,
             minWidth: TgUiTokens.CHAT_ROW_META_FIXED_WIDTH
           })
+            .width(TgUiTokens.CHAT_ROW_META_FIXED_WIDTH)
         }
         .layoutWeight(1)
         .margin({ left: TgUiTokens.CHAT_ROW_AVATAR_TEXT_GAP })
@@ -100,7 +140,7 @@ export struct TgChatRow {
         right: TgUiTokens.CHAT_ROW_SIDE_INSET
       })
       .alignItems(VerticalAlign.Center)
-      .backgroundColor(this.data.isPinned ? TgUiTokens.COLOR_CHAT_ROW_PINNED_BG : TgUiTokens.COLOR_BG_PRIMARY)
+      .backgroundColor(this.isPinned ? TgUiTokens.COLOR_CHAT_ROW_PINNED_BG : TgUiTokens.COLOR_BG_PRIMARY)
 
       if (this.showSeparator) {
         Divider()
