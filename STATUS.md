@@ -50,6 +50,14 @@ Snapshot date: 2026-03-09
 - **P4 TgTopBar actions:** Edit + Compose buttons added to ChatListPage TgTopBar
 - **P5 Pinned separator:** `isLastPinned` detection + visual gap after last pinned chat
 
+## Profile screen (2026-03-09)
+- **TgProfilePage** created: large avatar, name, online status, phone, username, bio (users), description + member count (groups/channels), notifications toggle
+- Full info pipeline: `getUserFullInfo` / `getSupergroupFullInfo` commands → serializer → direct response → `UserFullInfoEvent` / `ChatFullInfoEvent` → reducers update `User.bio`, `Chat.description`, `Chat.memberCount`
+- Model extended: `User.bio`, `Chat.memberCount`, `Chat.description`, `Chat.supergroupId`
+- Navigation: `onTitlePress` + `onAvatarPress` in TgChatScreenPage push to TgProfilePage via chatNavStack
+- Registered in MainTabsPage `chatPageMap`
+- Needs device verification
+
 ## What is clearly in progress right now
 - Latest local patch from 2026-03-09: fixed chat-list blank-cell regression by restoring stable `LazyForEach` identity (`chatId` key + per-chat `reuseId`), removing debug render noise from `TgChatRow`/`ChatListPage`, and guarding chat title updates against empty overwrite in normalizer/reducer.
 - Latest local UX fallback from 2026-03-09: private chat row title can now fall back to `user.phoneNumber` before `Unknown`, reducing empty/placeholder rows for incomplete contact profiles.

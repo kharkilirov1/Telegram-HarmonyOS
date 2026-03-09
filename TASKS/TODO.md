@@ -96,11 +96,16 @@ Priority order is by **visual/functional impact**, not by architectural purity.
 - **P4 TgTopBar actions:** ✅ Edit + Compose buttons in ChatListPage
 - **P5 Pinned separator:** ✅ `isLastPinned` + 8vp gap after last pinned chat
 
+### P6 Profile screen — COMPLETE (2026-03-09)
+- **TgProfilePage**: full pipeline from model through usecase to UI
+- Navigation wired from TgChatScreenPage (avatar + title taps)
+- getUserFullInfo (bio), getSupergroupFullInfo (description, memberCount)
+- Needs device verification
+
 ### Future (beyond current sprint)
 - Media download/open (photos, videos, documents)
 - Voice message playback
 - Push notifications
-- User/chat profile screen
 - Create new chat/group
 - Search within messages
 
