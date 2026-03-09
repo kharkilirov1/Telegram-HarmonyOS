@@ -8,6 +8,7 @@ import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, User } from '../../../core/model/AppState';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { TgTopBar } from '../../tg_ui/atoms/TgTopBar';
+import { fileUri } from '@kit.CoreFileKit';
 import { TgCallRow, TgCallType } from '../../tg_ui/atoms/TgCallRow';
 import { localized } from '../../../core/utils/AppResource';
 import {
@@ -328,7 +329,7 @@ export struct CallsPage {
       if (user !== undefined) {
         row.name = displayNameForUser(user);
         row.initials = initialsForUser(user);
-        row.avatarPath = user.photoSmall;
+        row.avatarPath = user.photoSmall.length > 0 ? fileUri.getUriFromPath(user.photoSmall) : '';
       } else {
         const fallbackName = record.fallbackTitle.length > 0
           ? record.fallbackTitle

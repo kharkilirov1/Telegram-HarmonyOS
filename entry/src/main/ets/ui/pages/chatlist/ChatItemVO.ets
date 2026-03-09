@@ -5,6 +5,33 @@ import { AppState, Chat, Message } from '../../../core/model/AppState';
 import { compareInt64 } from '../../../core/utils/tdAccessors';
 import { getString } from '../../../core/utils/AppResource';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
+import { fileUri } from '@kit.CoreFileKit';
+
+// Convert sandbox path to file:// URI for Image component
+function toFileUri(path: string): string {
+  if (path.length === 0) return '';
+  try {
+    return fileUri.getUriFromPath(path);
+  } catch (_e) {
+    return '';
+  }
+}
+
+function typingActionLabel(actionType: string): string {
+  switch (actionType) {
+    case 'typing': return 'typing...';
+    case 'recordingVideo': return 'recording video...';
+    case 'uploadingVideo': return 'sending video...';
+    case 'recordingVoice': return 'recording voice...';
+    case 'uploadingVoice': return 'sending voice...';
+    case 'uploadingPhoto': return 'sending photo...';
+    case 'uploadingDocument': return 'sending file...';
+    case 'choosingSticker': return 'choosing sticker...';
+    case 'recordingVideoNote': return 'recording video message...';
+    case 'uploadingVideoNote': return 'sending video message...';
+    default: return 'typing...';
+  }
+}
 
 const AVATAR_COLORS: Resource[] = [
   TgUiTokens.AVATAR_COLOR_1,
@@ -28,9 +55,12 @@ export class ChatItemVO {
   formattedTime: string = '';
   unreadCount: number = 0;
   isPinned: boolean = false;
+  isLastPinned: boolean = false;
   isMuted: boolean = false;
   sendStatus: 'none' | 'pending' | 'sent' | 'read' | 'failed' = 'none';
   isGroup: boolean = false;
+  isTyping: boolean = false;
+  typingText: string = '';
 }
 
 function resolvePrivateTitle(firstName: string, lastName: string, username: string, phoneNumber: string): string {
@@ -115,7 +145,10 @@ function formatMessageTime(timestampSec: number): string {
   if (diffDays < 7) {
     return weekdayShort(msgDate.getDay());
   }
-  // Older: dd.MM.yy
+  // Older: dd.MM (same year) or dd.MM.yy (different year)
+  if (msgDate.getFullYear() === now.getFullYear()) {
+    return padTwo(msgDate.getDate()) + '.' + padTwo(msgDate.getMonth() + 1);
+  }
   return padTwo(msgDate.getDate()) + '.' + padTwo(msgDate.getMonth() + 1) + '.' +
     padTwo(msgDate.getFullYear() % 100);
 }
@@ -124,6 +157,8 @@ class LastMessageSnapshot {
   id: string = '0';
   text: string = '';
   timestamp: number = 0;
+  senderId: number = 0;
+  isOutgoing: boolean = false;
 }
 
 function collapsePreviewWhitespace(text: string): string {
@@ -178,6 +213,8 @@ function snapshotFromMessage(message: Message): LastMessageSnapshot {
   const snapshot = new LastMessageSnapshot();
   snapshot.id = message.id;
   snapshot.timestamp = message.timestamp;
+  snapshot.senderId = message.senderId;
+  snapshot.isOutgoing = message.isOutgoing;
   const text = collapsePreviewWhitespace(message.content.text);
   snapshot.text = text.length > 0 ? text : fallbackMessageTextForType(message.content.type);
   return snapshot;
@@ -291,7 +328,7 @@ export function buildChatItemVO(chat: Chat, state: AppState): ChatItemVO {
   vo.chatId = chat.id;
   vo.title = chat.title;
   vo.avatarColor = getAvatarColor(chat.id);
-  vo.avatarImagePath = chat.photoSmall;
+  vo.avatarImagePath = toFileUri(chat.photoSmall);
   vo.unreadCount = chat.unreadCount;
   vo.isPinned = chat.isPinned;
   vo.isMuted = chat.muteForSeconds > 0;
@@ -307,7 +344,7 @@ export function buildChatItemVO(chat: Chat, state: AppState): ChatItemVO {
       }
       vo.avatarOnline = user.status === 'online';
       if (vo.avatarImagePath.length === 0 && user.photoSmall.length > 0) {
-        vo.avatarImagePath = user.photoSmall;
+        vo.avatarImagePath = toFileUri(user.photoSmall);
       }
     }
   }
@@ -324,13 +361,45 @@ export function buildChatItemVO(chat: Chat, state: AppState): ChatItemVO {
   } else {
     if (lastMessageSnapshot.timestamp > 0) {
       const normalizedPreview = collapsePreviewWhitespace(lastMessageSnapshot.text);
-      vo.lastMessage = normalizedPreview.length > 0 ? normalizedPreview : '[Message]';
+      let previewText = normalizedPreview.length > 0 ? normalizedPreview : '[Message]';
+
+      // P1: prepend sender name for group/channel chats
+      if (vo.isGroup && lastMessageSnapshot.senderId > 0) {
+        if (lastMessageSnapshot.isOutgoing) {
+          const youPrefix = localizedString($r('app.string.chat_you_prefix').id, 'You');
+          previewText = youPrefix + ': ' + previewText;
+        } else {
+          const sender = state.users.users.get(lastMessageSnapshot.senderId);
+          if (sender) {
+            const senderName = sender.firstName.length > 0 ? sender.firstName : sender.username;
+            if (senderName.length > 0) {
+              previewText = senderName + ': ' + previewText;
+            }
+          }
+        }
+      }
+
+      vo.lastMessage = previewText;
       vo.formattedTime = formatMessageTime(lastMessageSnapshot.timestamp);
     }
   }
 
   if (vo.formattedTime.length === 0 && lastMessageSnapshot.timestamp > 0) {
     vo.formattedTime = formatMessageTime(lastMessageSnapshot.timestamp);
+  }
+
+  // Typing indicator — expires after 6 seconds
+  const typingInfo = state.chats.typingActions.get(chat.id);
+  if (typingInfo && (Date.now() - typingInfo.timestamp) < 6000) {
+    vo.isTyping = true;
+    const actionLabel = typingActionLabel(typingInfo.actionType);
+    if (vo.isGroup && typingInfo.senderUserId > 0) {
+      const sender = state.users.users.get(typingInfo.senderUserId);
+      const name = sender ? (sender.firstName.length > 0 ? sender.firstName : sender.username) : '';
+      vo.typingText = name.length > 0 ? name + ' ' + actionLabel : actionLabel;
+    } else {
+      vo.typingText = actionLabel;
+    }
   }
 
   return vo;

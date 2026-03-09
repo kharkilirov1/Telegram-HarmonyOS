@@ -2189,6 +2189,10 @@
       "value": "Черновик: "
     },
     {
+      "name": "chat_you_prefix",
+      "value": "Вы"
+    },
+    {
       "name": "permission_microphone_reason",
       "value": "Telegram необходим доступ к микрофону для голосовых сообщений и звонков."
     },

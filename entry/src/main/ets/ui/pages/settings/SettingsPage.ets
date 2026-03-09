@@ -7,8 +7,8 @@ import { AppState, User } from '../../../core/model/AppState';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { TgTopBar } from '../../tg_ui/atoms/TgTopBar';
 import { TgAvatar } from '../../tg_ui/atoms/TgAvatar';
-import { TgSettingsSection } from '../../tg_ui/atoms/TgSettingsSection';
 import { TgSettingsRow, TgSettingsTrailing } from '../../tg_ui/atoms/TgSettingsRow';
+import { fileUri } from '@kit.CoreFileKit';
 import { localized } from '../../../core/utils/AppResource';
 import { computeTopBarHeight, computeTabBottomInset, getMainWindow, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -102,7 +102,7 @@ export struct SettingsPage {
       ? full
       : (user.username.length > 0 ? '@' + user.username : localized($r('app.string.profile_title').id, 'User'));
     this.userPhone = user.phoneNumber.length > 0 ? '+' + user.phoneNumber : '';
-    this.userPhoto = user.photoSmall;
+    this.userPhoto = user.photoSmall.length > 0 ? fileUri.getUriFromPath(user.photoSmall) : '';
 
     const first = user.firstName.length > 0 ? user.firstName.charAt(0) : '';
     const last = user.lastName.length > 0 ? user.lastName.charAt(0) : '';
@@ -158,7 +158,7 @@ export struct SettingsPage {
           this.buildProfileHeader()
 
           // ── Account section ──
-          TgSettingsSection({ header: '' }) {
+          Column() {
             TgSettingsRow({
               title: localized($r('app.string.saved_messages').id, 'Saved Messages'),
               iconRes: TgUiTokens.ICON_RES_CHAT,
@@ -174,9 +174,18 @@ export struct SettingsPage {
               showSeparator: false
             })
           }
+          .width('100%')
+          .backgroundColor(TgUiTokens.SETTINGS_SECTION_BG)
+          .borderRadius(TgUiTokens.SETTINGS_SECTION_RADIUS)
+          .clip(true)
+          .margin({
+            left: TgUiTokens.SETTINGS_SECTION_SIDE_INSET,
+            right: TgUiTokens.SETTINGS_SECTION_SIDE_INSET,
+            top: TgUiTokens.SETTINGS_SECTION_TOP_GAP
+          })
 
           // ── Settings section ──
-          TgSettingsSection({ header: '' }) {
+          Column() {
             TgSettingsRow({
               title: localized($r('app.string.settings_notifications_sounds').id, 'Notifications and Sounds'),
               iconRes: TgUiTokens.ICON_RES_MIC,
@@ -214,9 +223,18 @@ export struct SettingsPage {
               showSeparator: false
             })
           }
+          .width('100%')
+          .backgroundColor(TgUiTokens.SETTINGS_SECTION_BG)
+          .borderRadius(TgUiTokens.SETTINGS_SECTION_RADIUS)
+          .clip(true)
+          .margin({
+            left: TgUiTokens.SETTINGS_SECTION_SIDE_INSET,
+            right: TgUiTokens.SETTINGS_SECTION_SIDE_INSET,
+            top: TgUiTokens.SETTINGS_SECTION_TOP_GAP
+          })
 
           // ── Help section ──
-          TgSettingsSection({ header: '' }) {
+          Column() {
             TgSettingsRow({
               title: localized($r('app.string.settings_ask_question').id, 'Ask a Question'),
               iconRes: TgUiTokens.ICON_RES_CHAT,
@@ -232,6 +250,15 @@ export struct SettingsPage {
               showSeparator: false
             })
           }
+          .width('100%')
+          .backgroundColor(TgUiTokens.SETTINGS_SECTION_BG)
+          .borderRadius(TgUiTokens.SETTINGS_SECTION_RADIUS)
+          .clip(true)
+          .margin({
+            left: TgUiTokens.SETTINGS_SECTION_SIDE_INSET,
+            right: TgUiTokens.SETTINGS_SECTION_SIDE_INSET,
+            top: TgUiTokens.SETTINGS_SECTION_TOP_GAP
+          })
 
           // Bottom safe padding
           Row().width('100%').height(this.contentBottomInset)

@@ -17,7 +17,8 @@ import {
   GetUserCommand,
   SearchCallMessagesCommand,
   GetChatCommand,
-  CloseChatCommand
+  CloseChatCommand,
+  DownloadFileCommand
 } from '../../../core/model/AppCommand';
 import { TdObject } from '../../../models/TdTypes';
 
@@ -162,6 +163,15 @@ export function serializeCommand(command: AnyAppCommand): SerializedCommand {
       const cmd = command as CloseChatCommand;
       result.method = 'closeChat';
       result.params.setNumber('chat_id', cmd.payload.chatId);
+      break;
+    }
+
+    case 'downloadFile': {
+      const cmd = command as DownloadFileCommand;
+      result.method = 'downloadFile';
+      result.params.setNumber('file_id', cmd.payload.fileId);
+      result.params.setNumber('priority', cmd.payload.priority);
+      result.params.setBool('synchronous', cmd.payload.synchronous);
       break;
     }
 

@@ -54,6 +54,7 @@ export function cloneChatsState(chats: ChatsState): ChatsState {
     newChats.chats.set(chatId, chat);
   });
   newChats.orderedChatIds = chats.orderedChatIds.slice();
+  newChats.typingActions = chats.typingActions; // shallow share — cloned in reducer when modified
   newChats.isLoading = chats.isLoading;
   newChats.hasMore = chats.hasMore;
   newChats.loadPhase = chats.loadPhase;
@@ -101,6 +102,7 @@ export function cloneChat(chat: Chat): Chat {
   newChat.draftReplyToMessageId = chat.draftReplyToMessageId;
   newChat.isPinned = chat.isPinned;
   newChat.photoSmall = chat.photoSmall;
+  newChat.photoSmallFileId = chat.photoSmallFileId;
   newChat.order = chat.order;
   if (chat.lastMessage) {
     const lm = new ChatLastMessage();
@@ -124,6 +126,7 @@ export function cloneUser(user: User): User {
   newUser.phoneNumber = user.phoneNumber;
   newUser.photoSmall = user.photoSmall;
   newUser.photoBig = user.photoBig;
+  newUser.photoSmallFileId = user.photoSmallFileId;
   newUser.status = user.status;
   newUser.isContact = user.isContact;
   newUser.isVerified = user.isVerified;

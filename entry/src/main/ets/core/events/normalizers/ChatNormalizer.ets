@@ -3,6 +3,7 @@
 
 import {
   AnyAppEvent,
+  ChatActionEvent,
   ChatReadInboxEvent,
   ChatReadOutboxEvent,
   createNewChatEvent,
@@ -230,6 +231,51 @@ function handleChatNotificationSettings(events: AnyAppEvent[], update: TdObject)
   events.push(createChatUpdatedEvent(chatId, updates));
 }
 
+// Map TDLib chatAction @type to short action name
+function parseChatActionType(actionTypeStr: string): string {
+  switch (actionTypeStr) {
+    case 'chatActionTyping': return 'typing';
+    case 'chatActionRecordingVideo': return 'recordingVideo';
+    case 'chatActionUploadingVideo': return 'uploadingVideo';
+    case 'chatActionRecordingVoiceNote': return 'recordingVoice';
+    case 'chatActionUploadingVoiceNote': return 'uploadingVoice';
+    case 'chatActionUploadingPhoto': return 'uploadingPhoto';
+    case 'chatActionUploadingDocument': return 'uploadingDocument';
+    case 'chatActionChoosingSticker': return 'choosingSticker';
+    case 'chatActionChoosingLocation': return 'choosingLocation';
+    case 'chatActionChoosingContact': return 'choosingContact';
+    case 'chatActionStartPlayingGame': return 'playingGame';
+    case 'chatActionRecordingVideoNote': return 'recordingVideoNote';
+    case 'chatActionUploadingVideoNote': return 'uploadingVideoNote';
+    case 'chatActionCancel': return 'cancel';
+    default: return 'cancel';
+  }
+}
+
+function handleChatAction(events: AnyAppEvent[], update: TdObject): void {
+  const chatId = update.getTopLevelNumber('chat_id');
+  if (!chatId) return;
+
+  const actionObj = tdGetObject(update, 'action');
+  const actionTypeStr = tdGetString(actionObj, '@type');
+  const actionType = parseChatActionType(actionTypeStr);
+
+  // Extract sender user id from messageSender
+  const senderObj = tdGetObject(update, 'sender_id');
+  const senderType = tdGetString(senderObj, '@type');
+  let senderUserId = 0;
+  if (senderType === 'messageSenderUser') {
+    senderUserId = tdGetNumber(senderObj, 'user_id');
+  }
+
+  const event = new ChatActionEvent();
+  event.chatId = chatId;
+  event.senderUserId = senderUserId;
+  event.actionType = actionType;
+  event.timestamp = Date.now();
+  events.push(event);
+}
+
 export function registerChatHandlers(
   handlers: Map<string, (events: AnyAppEvent[], update: TdObject) => void>
 ): void {
@@ -245,4 +291,5 @@ export function registerChatHandlers(
   handlers.set('updateChatDraftMessage', handleChatDraftMessage);
   handlers.set('updateChatUnreadMentionCount', handleChatUnreadMentionCount);
   handlers.set('updateChatNotificationSettings', handleChatNotificationSettings);
+  handlers.set('updateChatAction', handleChatAction);
 }

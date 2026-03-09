@@ -56,9 +56,10 @@ Last updated: 2026-03-09
 - In `TgChatScreenPage`, a programmatic `scrollToIndex()` used for unread-boundary or saved-position restore can still lead to later `onScrollIndex` callbacks near the top edge.
 - Use `onDidScroll` + `ScrollState` to unlock pagination only after a real user scroll; otherwise the restored `start < 10` state can trigger an unwanted `loadOlder` storm on chat open/reopen.
 
-## 13. Edge pagination needs re-entry latches
-- Even after restore is guarded, staying near the same top/bottom edge after a page fetch can retrigger `loadOlder` / `loadNewer` repeatedly on subsequent `onScrollIndex` callbacks.
-- Keep explicit top/bottom edge latches and only re-arm them after the list leaves that edge zone; this matches the intent of Telegram-style paged history loading better than firing on every callback while `start < threshold` or `end >= total - threshold`.
+## 13. Edge pagination must auto-recheck after fetch, not require scroll-away
+- The original latch pattern required the user to scroll away from the edge and back to trigger the next page load. iOS Telegram uses **continuous checking** (threshold = 5 items, no latch).
+- After each completed `loadOlder`/`loadNewer`, call `recheckPaginationEdge()` to see if the viewport is still near the edge; if so, re-arm and fire the next batch automatically.
+- This gives iOS-like continuous loading without removing the anti-spam latch for normal scroll events.
 
 ## 14. History sender hydration caps must cover the whole default page
 - `getChatHistory` batches can easily contain more than 8 distinct `messageSenderUser` authors in a group/channel page.
@@ -105,6 +106,44 @@ Last updated: 2026-03-09
 - Therefore the initial stabilization path should use a **bounded top-up loop** while oldest-message progress continues, instead of assuming a single extra request is enough.
 
 ## 24. In `LazyForEach`, mutable content must not be part of item identity
+
 - Chat list regressions reappeared when `getChatListKey()` started including mutable row fields (`title`, `preview`, `unreadCount`, avatar path) and `reuseId` was collapsed into coarse buckets.
 - For reusable Telegram rows, keep identity stable by dialog id (`chatId`) and avoid broad reuse pools that let unrelated rows share one cached component shape.
 - If title updates are partial/empty (`updateChatTitle`), block empty overwrite in normalizer/reducer; otherwise list identity churn and placeholder rows amplify each other.
+
+## 25. Prefer stock ArkUI components over thin wrapper atoms
+- Custom atoms that only wrap a stock component with token styling (e.g. `Search`, `ListItemGroup`) add a file and abstraction layer without real value.
+- Only create an atom when it adds genuine logic beyond styling: enums, computed state, composite layout, custom drawing.
+- For new screens, use stock ArkUI components directly with token styling inline. Save atoms for truly custom Telegram-specific UI.
+- Removed: `TgSearchBar` (was just `Search`), `TgSettingsSection` (was just rounded `Column`), `TgContactRow` (was `TgAvatar` + two `Text`).
+
+## 26. Avatar photos are the single biggest "demo vs real app" visual signal
+- Without real avatar photos (only colored initials circles), the entire app looks like a prototype regardless of UI polish.
+- TDLib provides `file.id` in `profile_photo.small` but does NOT auto-download — explicit `downloadFile` call is required.
+- Current codebase stores `TdLocalFile.path` but never triggers download, so path is always empty.
+- Priority: implement `downloadFile` flow before any further UI polish work.
+
+## 27. File download architecture: cross-cutting reducer for fileId→path mapping
+- `updateFile` from TDLib only carries `file.id` + `local.path` — no entity context (which user/chat owns it).
+- The `filesReducer` scans both `users` and `chats` maps for matching `photoSmallFileId` on each `fileDownloaded` event. This is O(n) but only fires on download completion (rare event).
+- Alternative approaches (fileId→entity registry in usecase, or normalizer with store access) were rejected for architecture cleanliness.
+- The `downloadAvatars` usecase watches store for new users/chats with `fileId > 0` and empty `photoSmall`, then triggers `downloadFile` command. It maintains a `pendingFileIds` set to avoid duplicate requests.
+
+## 28. TDLib file objects: `getNumber('id')` fails due to nested `remote.id` string
+- TDLib `file` objects contain `"id": 123` (number) at top level AND `"remote": {"id": "AQA..."}` (string) nested inside.
+- The regex-based `extractValue('id')` tries `extractStringValue` FIRST, which finds the nested `remote.id` string before the top-level numeric `id`.
+- Result: `getNumber('id')` returns 0 because `parseFloat("AQA...")` is NaN.
+- Fix: use `getTopLevelNumber('id')` which does character-by-character parsing respecting JSON nesting depth.
+- This affects ALL file ID extraction: UserDto, ChatDto, FileNormalizer — anywhere `tdGetNumber(fileObj, 'id')` is used on a TDLib file object.
+
+## 29. `JSON.stringify(TdObject)` produces empty/truncated output — use native accessors
+- `TdObject` stores its data in a `private rawJson: string` field. `JSON.stringify()` cannot access private fields in ArkTS, so the result is a near-empty object (only pre-cached `@type` and `@extra` appear).
+- This broke the `downloadAvatars` direct-response handler: `JSON.stringify(response)` → `JSON.parse()` → empty `local` object → download completions from direct `downloadFile` responses were silently lost.
+- Fix: cast `response as TdObject` and use native accessor methods (`.getObject('local')`, `.getBool('is_downloading_completed')`, `.getString('path')`).
+- Rule: **never** `JSON.stringify` a TdObject for data extraction. Always use the `.getString()` / `.getNumber()` / `.getBool()` / `.getObject()` API.
+
+## 30. ArkUI `Image()` requires `file://` URI, not raw sandbox paths
+- TDLib stores downloaded files at raw sandbox paths like `/data/storage/el2/database/entry/profile_photos/xxx.jpg`.
+- ArkUI `Image()` component does NOT load raw sandbox paths — it requires `file://<bundleName>/<sandboxPath>` format.
+- Fix: use `fileUri.getUriFromPath(path)` from `@kit.CoreFileKit` to convert before passing to any UI component.
+- This must be done at the UI mapping boundary (VO builders, page state setters), not in the store/reducer layer.

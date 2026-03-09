@@ -66,6 +66,12 @@ export class CloseChatPayload {
   chatId: ChatId = 0;
 }
 
+export class DownloadFilePayload {
+  fileId: number = 0;
+  priority: number = 1;
+  synchronous: boolean = false;
+}
+
 // Command classes
 export class SetPhoneNumberCommand extends AppCommand {
   type: string = 'setPhoneNumber';
@@ -135,6 +141,11 @@ export class CloseChatCommand extends AppCommand {
   payload: CloseChatPayload = new CloseChatPayload();
 }
 
+export class DownloadFileCommand extends AppCommand {
+  type: string = 'downloadFile';
+  payload: DownloadFilePayload = new DownloadFilePayload();
+}
+
 export class LogoutCommand extends AppCommand {
   type: string = 'logout';
 }
@@ -155,6 +166,7 @@ export type AnyAppCommand =
   | SearchCallMessagesCommand
   | GetChatCommand
   | CloseChatCommand
+  | DownloadFileCommand
   | LogoutCommand;
 
 // Helper functions to create commands
@@ -258,6 +270,18 @@ export function createGetChatCommand(chatId: ChatId): GetChatCommand {
 export function createCloseChatCommand(chatId: ChatId): CloseChatCommand {
   const cmd = new CloseChatCommand();
   cmd.payload.chatId = chatId;
+  return cmd;
+}
+
+export function createDownloadFileCommand(
+  fileId: number,
+  priority: number = 1,
+  synchronous: boolean = false
+): DownloadFileCommand {
+  const cmd = new DownloadFileCommand();
+  cmd.payload.fileId = fileId;
+  cmd.payload.priority = priority;
+  cmd.payload.synchronous = synchronous;
   return cmd;
 }
 

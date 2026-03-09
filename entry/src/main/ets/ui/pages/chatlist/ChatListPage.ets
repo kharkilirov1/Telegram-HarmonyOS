@@ -13,7 +13,6 @@ import { TgUiFeatureFlags } from '../../tg_ui/TgUiFeatureFlags';
 import { TgChatRow } from '../../tg_ui/atoms/TgChatRow';
 import { TgChatSendStatus } from '../../tg_ui/atoms/TgChatMeta';
 import { TgTopBar } from '../../tg_ui/atoms/TgTopBar';
-import { TgSearchBar } from '../../tg_ui/atoms/TgSearchBar';
 import { localized } from '../../../core/utils/AppResource';
 import { computeTopBarHeight, computeTabBottomInset, getMainWindow, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
@@ -300,6 +299,14 @@ export struct ChatListPage {
       hilog.info(DOMAIN, TAG, 'rebuildList: %{public}d items, first="%{public}s", last="%{public}s"',
         items.length, items[0].title, items[items.length - 1].title);
     }
+    // Mark last pinned item for visual separator
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].isPinned && (i + 1 >= items.length || !items[i + 1].isPinned)) {
+        items[i].isLastPinned = true;
+        break;
+      }
+    }
+
     this.dataSource.applyDiff(items);
     this.filteredChatsCount = items.length;
   }
@@ -421,21 +428,42 @@ export struct ChatListPage {
   private buildListHeader() {
     // Search bar (scrolls with content — hides behind top bar on scroll, iOS style)
     ListItem() {
-      TgSearchBar({
-        placeholder: localized($r('app.string.search_placeholder').id, 'Search'),
-        onTextChange: (value: string) => {
-          const normalized = value.trim().toLowerCase();
-          if (normalized === this.searchQuery) {
-            return;
-          }
-          this.searchQuery = normalized;
-          try {
-            const state = getAppCoreRuntime().getStore().getState();
-            this.rebuildList(state);
-          } catch (error) {
-            hilog.error(DOMAIN, TAG, 'Search rebuild failed: %{public}s', String(error));
-          }
-        }
+      Row() {
+        Search({ placeholder: localized($r('app.string.search_placeholder').id, 'Search') })
+          .searchIcon({
+            src: TgUiTokens.ICON_RES_SEARCH,
+            size: TgUiTokens.SEARCH_BAR_ICON_SIZE,
+            color: TgUiTokens.SEARCH_BAR_ICON_COLOR
+          })
+          .cancelButton({ style: CancelButtonStyle.INPUT })
+          .searchButton('')
+          .height(TgUiTokens.SEARCH_BAR_HEIGHT)
+          .backgroundColor(TgUiTokens.SEARCH_BAR_BG)
+          .borderRadius(TgUiTokens.SEARCH_BAR_RADIUS)
+          .placeholderColor(TgUiTokens.SEARCH_BAR_PLACEHOLDER_COLOR)
+          .placeholderFont({ size: TgUiTokens.SEARCH_BAR_FONT_SIZE })
+          .textFont({ size: TgUiTokens.SEARCH_BAR_FONT_SIZE })
+          .fontColor(TgUiTokens.SEARCH_BAR_TEXT_COLOR)
+          .onChange((value: string) => {
+            const normalized = value.trim().toLowerCase();
+            if (normalized === this.searchQuery) {
+              return;
+            }
+            this.searchQuery = normalized;
+            try {
+              const state = getAppCoreRuntime().getStore().getState();
+              this.rebuildList(state);
+            } catch (error) {
+              hilog.error(DOMAIN, TAG, 'Search rebuild failed: %{public}s', String(error));
+            }
+          })
+      }
+      .width('100%')
+      .padding({
+        left: TgUiTokens.SEARCH_BAR_SIDE_INSET,
+        right: TgUiTokens.SEARCH_BAR_SIDE_INSET,
+        top: TgUiTokens.SEARCH_BAR_VERTICAL_INSET,
+        bottom: TgUiTokens.SEARCH_BAR_VERTICAL_INSET
       })
     }
 
@@ -589,23 +617,33 @@ export struct ChatListPage {
         if (this.filteredChatsCount > 0) {
           LazyForEach(this.dataSource, (item: ChatItemVO) => {
             ListItem() {
-              TgChatRow({
-                chatId: item.chatId,
-                title: item.title,
-                preview: item.lastMessage,
-                timeText: item.formattedTime,
-                unreadCount: item.unreadCount,
-                isMuted: item.isMuted,
-                isPinned: item.isPinned,
-                sendStatus: this.mapSendStatus(item.sendStatus),
-                avatarInitials: item.initials,
-                avatarBackgroundColor: item.avatarColor,
-                avatarUseImage: item.avatarImagePath.length > 0,
-                avatarImageSrc: item.avatarImagePath.length > 0 ? item.avatarImagePath : $r('app.media.app_icon_transparent'),
-                avatarIsOnline: item.avatarOnline,
-                showSeparator: TgUiFeatureFlags.USE_INTERNAL_CHAT_ROW_SEPARATOR
-              })
-                .reuseId(this.getTgReuseId(item))
+              Column() {
+                TgChatRow({
+                  chatId: item.chatId,
+                  title: item.title,
+                  preview: item.isTyping ? item.typingText : item.lastMessage,
+                  isTyping: item.isTyping,
+                  timeText: item.formattedTime,
+                  unreadCount: item.unreadCount,
+                  isMuted: item.isMuted,
+                  isPinned: item.isPinned,
+                  sendStatus: this.mapSendStatus(item.sendStatus),
+                  avatarInitials: item.initials,
+                  avatarBackgroundColor: item.avatarColor,
+                  avatarUseImage: item.avatarImagePath.length > 0,
+                  avatarImageSrc: item.avatarImagePath.length > 0 ? item.avatarImagePath : $r('app.media.app_icon_transparent'),
+                  avatarIsOnline: item.avatarOnline,
+                  showSeparator: TgUiFeatureFlags.USE_INTERNAL_CHAT_ROW_SEPARATOR
+                })
+                  .reuseId(this.getTgReuseId(item))
+
+                if (item.isLastPinned) {
+                  Row()
+                    .width('100%')
+                    .height(TgUiTokens.SPACE_8)
+                    .backgroundColor(TgUiTokens.COLOR_BG_SECONDARY)
+                }
+              }
             }
             .onClick(() => {
               this.openChat(item);
@@ -635,8 +673,12 @@ export struct ChatListPage {
       // ── Top bar layer (overlays content, translucent + blur) ──
       TgTopBar({
         title: localized($r('app.string.chats_title').id, 'Chats'),
+        showLeftText: true,
+        leftText: localized($r('app.string.edit').id, 'Edit'),
         showRightAction: true,
-        rightIcon: $r('app.media.ic_search')
+        rightIcon: $r('app.media.ic_search'),
+        showSecondRightAction: true,
+        secondRightIcon: $r('app.media.ic_edit')
       })
     }
     .width('100%')

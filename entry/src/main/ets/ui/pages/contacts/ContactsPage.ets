@@ -6,8 +6,9 @@ import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, User } from '../../../core/model/AppState';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { TgTopBar } from '../../tg_ui/atoms/TgTopBar';
-import { TgContactRow } from '../../tg_ui/atoms/TgContactRow';
+import { TgAvatar } from '../../tg_ui/atoms/TgAvatar';
 import { localized } from '../../../core/utils/AppResource';
+import { fileUri } from '@kit.CoreFileKit';
 import { computeTopBarHeight, computeTabBottomInset, getMainWindow, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
@@ -157,7 +158,7 @@ export struct ContactsPage {
       vo.name = this.userDisplayName(user);
       vo.initials = this.userInitials(user);
       vo.statusText = this.formatUserStatus(user);
-      vo.avatarPath = user.photoSmall;
+      vo.avatarPath = user.photoSmall.length > 0 ? fileUri.getUriFromPath(user.photoSmall) : '';
       vo.isOnline = user.status === 'online';
       vo.sortKey = vo.name.toLowerCase();
       result.push(vo);
@@ -180,14 +181,55 @@ export struct ContactsPage {
         List() {
           ForEach(this.contacts, (contact: ContactVO, index: number) => {
             ListItem() {
-              TgContactRow({
-                name: contact.name,
-                statusText: contact.statusText,
-                initials: contact.initials,
-                avatarPath: contact.avatarPath,
-                isOnline: contact.isOnline,
-                showSeparator: index < this.contacts.length - 1
-              })
+              Column() {
+                Row() {
+                  TgAvatar({
+                    avatarSize: TgUiTokens.CONTACT_ROW_AVATAR_SIZE,
+                    initials: contact.initials,
+                    useImage: contact.avatarPath.length > 0,
+                    imageSrc: contact.avatarPath,
+                    isOnline: contact.isOnline,
+                    avatarBackgroundColor: TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG
+                  })
+
+                  Column() {
+                    Text(contact.name)
+                      .fontSize(TgUiTokens.CONTACT_ROW_NAME_SIZE)
+                      .fontWeight(FontWeight.Regular)
+                      .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+                      .maxLines(1)
+                      .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+                    if (contact.statusText.length > 0) {
+                      Text(contact.statusText)
+                        .fontSize(TgUiTokens.CONTACT_ROW_STATUS_SIZE)
+                        .fontColor(contact.isOnline ? TgUiTokens.COLOR_ONLINE_DOT : TgUiTokens.COLOR_TEXT_PREVIEW)
+                        .maxLines(1)
+                        .textOverflow({ overflow: TextOverflow.Ellipsis })
+                        .margin({ top: TgUiTokens.SPACE_2 })
+                    }
+                  }
+                  .layoutWeight(1)
+                  .alignItems(HorizontalAlign.Start)
+                  .margin({ left: TgUiTokens.CONTACT_ROW_GAP })
+                }
+                .width('100%')
+                .height(TgUiTokens.CONTACT_ROW_HEIGHT)
+                .padding({
+                  left: TgUiTokens.CONTACT_ROW_PADDING_H,
+                  right: TgUiTokens.CONTACT_ROW_PADDING_H
+                })
+                .alignItems(VerticalAlign.Center)
+
+                if (index < this.contacts.length - 1) {
+                  Row()
+                    .width('100%')
+                    .height(TgUiTokens.CONTACT_ROW_SEPARATOR_STROKE)
+                    .backgroundColor(TgUiTokens.COLOR_SEPARATOR)
+                    .margin({ left: TgUiTokens.CONTACT_ROW_SEPARATOR_INSET })
+                }
+              }
+              .width('100%')
             }
           }, (contact: ContactVO) => contact.userId.toString())
         }

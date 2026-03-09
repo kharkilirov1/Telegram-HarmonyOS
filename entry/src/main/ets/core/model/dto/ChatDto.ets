@@ -24,6 +24,8 @@ export class ChatLastMessage {
 export class ChatPhoto {
   small: string = '';
   big: string = '';
+  smallFileId: number = 0;
+  bigFileId: number = 0;
 }
 
 export class ChatDto {
@@ -143,6 +145,9 @@ export function extractChatPhoto(photoObj: TdObject): ChatPhoto {
   const photo = new ChatPhoto();
   photo.small = tdGetString(smallLocal, 'path');
   photo.big = tdGetString(bigLocal, 'path');
+  // Use getTopLevelNumber to avoid nested remote.id (string) shadowing the numeric file id
+  photo.smallFileId = smallObj.getTopLevelNumber('id');
+  photo.bigFileId = bigObj.getTopLevelNumber('id');
   return photo;
 }
 

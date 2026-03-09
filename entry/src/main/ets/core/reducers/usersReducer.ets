@@ -33,6 +33,7 @@ export function usersReducer(state: AppState, action: ReducerAction): AppState {
         user.phoneNumber = event.userData.phoneNumber;
         user.photoSmall = event.userData.photo?.small || '';
         user.photoBig = event.userData.photo?.big || '';
+        user.photoSmallFileId = event.userData.photo?.smallFileId || 0;
         user.status = event.userData.status;
         user.isContact = event.userData.isContact;
         user.isVerified = event.userData.isVerified;
@@ -50,9 +51,10 @@ export function usersReducer(state: AppState, action: ReducerAction): AppState {
         if (event.updates.lastName !== undefined) { updatedUser.lastName = event.updates.lastName; }
         if (event.updates.username !== undefined) { updatedUser.username = event.updates.username; }
         if (event.updates.phoneNumber !== undefined) { updatedUser.phoneNumber = event.updates.phoneNumber; }
-        if (event.updates.photo !== undefined) { 
+        if (event.updates.photo !== undefined) {
           updatedUser.photoSmall = event.updates.photo.small;
           updatedUser.photoBig = event.updates.photo.big;
+          updatedUser.photoSmallFileId = event.updates.photo.smallFileId || 0;
         }
         if (event.updates.status !== undefined) { 
           updatedUser.status = event.updates.status as 'online' | 'offline' | 'recently' | 'lastWeek' | 'lastMonth' | 'longTimeAgo'; 

@@ -2,7 +2,11 @@
 // ArkTS compliant - uses TdObject wrapper class
 
 import { UserId } from '../EntityId';
-import { TdObject, tdGetString, tdGetBoolean, tdGetObject, tdHasKeys } from '../../utils/tdAccessors';
+import { TdObject, tdGetString, tdGetNumber, tdGetBoolean, tdGetObject, tdHasKeys } from '../../utils/tdAccessors';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const DTO_DOMAIN = 0x0003;
+const DTO_TAG = 'UserDto';
 
 // Type for user status
 export type UserStatus = 'online' | 'offline' | 'recently' | 'lastWeek' | 'lastMonth' | 'longTimeAgo';
@@ -11,6 +15,8 @@ export type UserStatus = 'online' | 'offline' | 'recently' | 'lastWeek' | 'lastM
 export class UserPhoto {
   small: string = '';
   big: string = '';
+  smallFileId: number = 0;
+  bigFileId: number = 0;
 }
 
 export class UserDto {
@@ -59,6 +65,11 @@ function extractUserPhoto(profilePhoto: TdObject): UserPhoto | undefined {
   const photo = new UserPhoto();
   photo.small = tdGetString(smallLocal, 'path');
   photo.big = tdGetString(bigLocal, 'path');
+  // Use getTopLevelNumber to avoid nested remote.id (string) shadowing the numeric file id
+  photo.smallFileId = smallObj.getTopLevelNumber('id');
+  photo.bigFileId = bigObj.getTopLevelNumber('id');
+  hilog.info(DTO_DOMAIN, DTO_TAG, 'extractUserPhoto smallFileId=%{public}d path=%{public}s',
+    photo.smallFileId, photo.small.length > 0 ? photo.small : '(empty)');
   return photo;
 }
 

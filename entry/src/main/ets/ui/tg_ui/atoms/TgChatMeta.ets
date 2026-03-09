@@ -88,21 +88,21 @@ export struct TgChatMeta {
   @Builder
   private buildTopRow() {
     Row() {
-      if (this.hasTimeText()) {
-        Text(this.timeText)
-          .fontSize(TgUiTokens.FONT_META_SIZE)
-          .fontColor(TgUiTokens.COLOR_TEXT_META)
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.Clip })
-      }
-
       if (this.hasStatusIcon()) {
         TgIcon({
           src: this.statusIconResource(),
           iconSize: TgUiTokens.CHAT_META_STATUS_ICON_SIZE,
           tintColor: this.statusIconColor()
         })
-          .margin({ left: this.statusGap() })
+          .margin({ right: this.statusGap() })
+      }
+
+      if (this.hasTimeText()) {
+        Text(this.timeText)
+          .fontSize(TgUiTokens.FONT_META_SIZE)
+          .fontColor(TgUiTokens.COLOR_TEXT_META)
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Clip })
       }
     }
     .width('100%')

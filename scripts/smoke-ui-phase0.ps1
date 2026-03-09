@@ -10,7 +10,6 @@ $phase0Files = @(
   'entry/src/main/ets/ui/tg_ui/atoms/TgTopBar.ets',
   'entry/src/main/ets/ui/tg_ui/atoms/TgChatTopBar.ets',
   'entry/src/main/ets/ui/tg_ui/atoms/TgTabBar.ets',
-  'entry/src/main/ets/ui/tg_ui/atoms/TgSearchBar.ets'
 ) | ForEach-Object { Join-Path $root $_ }
 
 $hexPattern = '#[0-9A-Fa-f]{3,8}'
@@ -58,8 +57,8 @@ if (-not (Select-String -Path $chatListPageFile -Pattern 'TgTopBar\(')) {
   exit 1
 }
 
-if (-not (Select-String -Path $chatListPageFile -Pattern 'TgSearchBar\(')) {
-  Write-Error 'ChatListPage must compose TgSearchBar.'
+if (-not (Select-String -Path $chatListPageFile -Pattern 'Search\(')) {
+  Write-Error 'ChatListPage must compose a Search component.'
   exit 1
 }
 

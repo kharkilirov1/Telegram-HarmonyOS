@@ -10,12 +10,18 @@ declare function px2vp(value: number): number;
 export struct TgTopBar {
   @Param title: string = '';
   @Param showBackAction: boolean = false;
+  @Param showLeftText: boolean = false;
+  @Param leftText: string = '';
   @Param showRightAction: boolean = false;
   @Param rightIcon: Resource = TgUiTokens.ICON_RES_MORE;
+  @Param showSecondRightAction: boolean = false;
+  @Param secondRightIcon: Resource = TgUiTokens.ICON_RES_MORE;
   @Param glassMode: string = TgGlassPolicy.MODE_AUTO;
 
   @Event onBackPress: () => void = (): void => {};
+  @Event onLeftTextPress: () => void = (): void => {};
   @Event onRightPress: () => void = (): void => {};
+  @Event onSecondRightPress: () => void = (): void => {};
 
   @Local topInset: number = 0;
 
@@ -56,7 +62,7 @@ export struct TgTopBar {
   }
 
   @Builder
-  private buildBackSlot() {
+  private buildLeftSlot() {
     Row() {
       if (this.showBackAction) {
         TgIcon({
@@ -64,6 +70,11 @@ export struct TgTopBar {
           iconSize: TgUiTokens.TOP_BAR_ACTION_ICON_SIZE,
           tintColor: TgUiTokens.COLOR_ICON_PRIMARY
         })
+      } else if (this.showLeftText && this.leftText.length > 0) {
+        Text(this.leftText)
+          .fontSize(TgUiTokens.TOP_BAR_TITLE_SIZE)
+          .fontColor(TgUiTokens.COLOR_ICON_PRIMARY)
+          .maxLines(1)
       }
     }
     .width(TgUiTokens.TOP_BAR_ACTION_TOUCH)
@@ -73,6 +84,8 @@ export struct TgTopBar {
     .onClick(() => {
       if (this.showBackAction) {
         this.onBackPress();
+      } else if (this.showLeftText) {
+        this.onLeftTextPress();
       }
     })
   }
@@ -80,6 +93,18 @@ export struct TgTopBar {
   @Builder
   private buildRightSlot() {
     Row() {
+      if (this.showSecondRightAction) {
+        TgIcon({
+          src: this.secondRightIcon,
+          iconSize: TgUiTokens.TOP_BAR_ACTION_ICON_SIZE,
+          tintColor: TgUiTokens.COLOR_ICON_PRIMARY
+        })
+          .margin({ right: TgUiTokens.SPACE_16 })
+          .onClick(() => {
+            this.onSecondRightPress();
+          })
+      }
+
       if (this.showRightAction) {
         TgIcon({
           src: this.rightIcon,
@@ -88,12 +113,11 @@ export struct TgTopBar {
         })
       }
     }
-    .width(TgUiTokens.TOP_BAR_ACTION_TOUCH)
     .height(TgUiTokens.TOP_BAR_ACTION_TOUCH)
-    .justifyContent(FlexAlign.Center)
+    .justifyContent(FlexAlign.End)
     .alignItems(VerticalAlign.Center)
     .onClick(() => {
-      if (this.showRightAction) {
+      if (this.showRightAction && !this.showSecondRightAction) {
         this.onRightPress();
       }
     })
@@ -106,7 +130,7 @@ export struct TgTopBar {
         .height(this.topInset)
 
       Row() {
-        this.buildBackSlot()
+        this.buildLeftSlot()
 
         Text(this.title)
           .layoutWeight(1)

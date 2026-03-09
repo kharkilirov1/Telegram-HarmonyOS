@@ -21,6 +21,7 @@ export class TgChatRowData {
   avatarIsOnline: boolean = false;
   avatarBackgroundColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG;
   avatarTextColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT;
+  isTyping: boolean = false;
 }
 
 @Reusable
@@ -41,6 +42,7 @@ export struct TgChatRow {
   @State avatarBackgroundColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG;
   @State avatarTextColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT;
   @State showSeparator: boolean = true;
+  @State isTyping: boolean = false;
 
   aboutToReuse(params: Record<string, Object>): void {
     this.chatId = params['chatId'] as number ?? 0;
@@ -58,6 +60,7 @@ export struct TgChatRow {
     this.avatarBackgroundColor = params['avatarBackgroundColor'] as ResourceColor ?? TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG;
     this.avatarTextColor = params['avatarTextColor'] as ResourceColor ?? TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT;
     this.showSeparator = params['showSeparator'] as boolean ?? true;
+    this.isTyping = params['isTyping'] as boolean ?? false;
   }
 
   private previewText(): string {
@@ -110,7 +113,7 @@ export struct TgChatRow {
 
             Text(this.previewText())
               .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
-              .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+              .fontColor(this.isTyping ? TgUiTokens.COLOR_ICON_PRIMARY : TgUiTokens.COLOR_TEXT_PREVIEW)
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
               .width('100%')

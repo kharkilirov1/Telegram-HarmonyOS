@@ -9,6 +9,7 @@ import { registerAuthHandlers } from './normalizers/AuthNormalizer';
 import { registerChatHandlers } from './normalizers/ChatNormalizer';
 import { registerMessageHandlers } from './normalizers/MessageNormalizer';
 import { registerUserHandlers } from './normalizers/UserNormalizer';
+import { registerFileHandlers } from './normalizers/FileNormalizer';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN = 0x0003;
@@ -36,6 +37,7 @@ export class EventNormalizerImpl implements EventNormalizer {
     registerChatHandlers(this.handlers);
     registerMessageHandlers(this.handlers);
     registerUserHandlers(this.handlers);
+    registerFileHandlers(this.handlers);
 
     hilog.info(DOMAIN, TAG, 'Registered %{public}d update handlers', this.handlers.size);
   }

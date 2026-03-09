@@ -6,6 +6,7 @@ import { authReducer } from './authReducer';
 import { chatsReducer } from './chatsReducer';
 import { messagesReducer } from './messagesReducer';
 import { usersReducer } from './usersReducer';
+import { filesReducer } from './filesReducer';
 
 export type AppReducerFn = (state: AppState, action: ReducerAction) => AppState;
 
@@ -22,7 +23,7 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
   // Chats
   if (action.type === 'newChat' || action.type === 'chatUpdated' ||
     action.type === 'chatReadInbox' || action.type === 'chatReadOutbox' ||
-    action.type === 'chatsLoadStateChanged') {
+    action.type === 'chatsLoadStateChanged' || action.type === 'chatAction') {
     return chatsReducer(state, action);
   }
 
@@ -36,6 +37,11 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
   // Users
   if (action.type === 'userUpdated' || action.type === 'userStatusChanged') {
     return usersReducer(state, action);
+  }
+
+  // Files (avatar downloads)
+  if (action.type === 'fileDownloaded') {
+    return filesReducer(state, action);
   }
 
   // Unknown event type — no state change

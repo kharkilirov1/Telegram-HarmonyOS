@@ -23,6 +23,7 @@ import { initAppStoreBridge, resetAppStoreBridge } from '../bridge/AppStoreBridg
 import { setAuthSideEffectStore, startAuthSideEffect, stopAuthSideEffect } from '../../core/sideeffects/AuthSideEffect';
 import { LoadChatHistoryUseCase, createLoadChatHistoryUseCase } from '../../domain/usecases/loadChatHistory';
 import { resetLoadChatsUseCase } from '../../domain/usecases/loadChats';
+import { createDownloadAvatarsUseCase, resetDownloadAvatarsUseCase } from '../../domain/usecases/downloadAvatars';
 import { ChatUpdateDto, extractLastMessage } from '../../core/model/dto/ChatDto';
 import { tdGetNumber, tdGetObject, tdGetString } from '../../core/utils/tdAccessors';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -90,6 +91,11 @@ export class AppCoreRuntime {
       setAuthSideEffectStore(this.store);
       startAuthSideEffect();
       hilog.info(DOMAIN, TAG, 'AuthSideEffect started');
+
+      // 7. Avatar download watcher
+      const avatarUseCase = createDownloadAvatarsUseCase(this.store, getTdGatewayAdapter());
+      avatarUseCase.start();
+      hilog.info(DOMAIN, TAG, 'DownloadAvatars watcher started');
 
       hilog.info(DOMAIN, TAG, 'Pipeline ready. Threading: TDLib→Dispatcher→Normalizer→Store');
     } catch (error) {
@@ -205,6 +211,7 @@ export class AppCoreRuntime {
 
     stopAuthSideEffect();
     resetAppStoreBridge();
+    resetDownloadAvatarsUseCase();
 
     // Clear static use-case caches — prevents stale "already fetched" flags
     // when a new runtime + store is created after reset

@@ -20,23 +20,40 @@ Snapshot date: 2026-03-09
 - Calls tab now has a **local real TDLib-backed data path** via `searchCallMessages`, but this Phase 4 pass is still **not device-runtime-verified**
 
 ## Current tg_ui inventory
-- **26 atoms**
+- **23 atoms** (3 removed: TgSearchBar, TgSettingsSection, TgContactRow → replaced with stock ArkUI)
 - **2 molecules**
-- **30 demos**
-- **33 spec files**
+- **30 demos** (orphaned demos for removed atoms still present)
+- **33 spec files** (orphaned specs for removed atoms still present)
 
 ## Current active UI path
 - Shell/chat runtime currently routes through:
   - `TgTabBar`
   - `TgTopBar`
-  - `TgSearchBar`
+  - Stock `Search` (inline in ChatListPage, was TgSearchBar)
   - `TgChatRow`
   - `TgChatTopBar`
   - `TgMessageRouter`
 
+## Stock ArkUI migration (2026-03-09)
+- Replaced thin wrapper atoms with stock components used inline in pages:
+  - `TgSearchBar` → stock `Search` in ChatListPage
+  - `TgSettingsSection` → inline `Column` with tokens in SettingsPage
+  - `TgContactRow` → inline `TgAvatar` + Row/Column in ContactsPage
+- Kept atoms with real custom logic: TgTabBar, TgTopBar, TgCallRow, TgSettingsRow
+- Smoke scripts updated to match new structure
+
+## P0-P5 improvement plan (2026-03-09) — COMPLETE
+- **P0 Avatar download:** full pipeline implemented — fileId stored in User/Chat, `DownloadFileCommand` + serialization, `FileNormalizer` handles `updateFile`, `filesReducer` updates photo paths, `downloadAvatars` usecase watches store and triggers downloads, wired in AppCoreRuntime. Fixed: direct response parsing was broken (`JSON.stringify(TdObject)` can't access private `rawJson`), switched to native TdObject accessors. Needs device verification.
+- **P1 Sender names in groups:** `buildChatItemVO()` prepends "You: " / "firstName: " for group chat previews
+- **P2 Checkmark order:** TgChatMeta renders status icon BEFORE time (iOS pattern: ✓✓ 17:47)
+- **P3 Date format:** same-year dates now show `dd.MM` instead of `dd.MM.yy`
+- **P4 TgTopBar actions:** Edit + Compose buttons added to ChatListPage TgTopBar
+- **P5 Pinned separator:** `isLastPinned` detection + visual gap after last pinned chat
+
 ## What is clearly in progress right now
 - Latest local patch from 2026-03-09: fixed chat-list blank-cell regression by restoring stable `LazyForEach` identity (`chatId` key + per-chat `reuseId`), removing debug render noise from `TgChatRow`/`ChatListPage`, and guarding chat title updates against empty overwrite in normalizer/reducer.
 - Latest local UX fallback from 2026-03-09: private chat row title can now fall back to `user.phoneNumber` before `Unknown`, reducing empty/placeholder rows for incomplete contact profiles.
+- Latest local pagination fix from 2026-03-09: `TgChatScreenPage` now auto-rechecks pagination edge after each completed load via `recheckPaginationEdge()`. Fixes iOS-style continuous older/newer loading — no longer requires scroll-away-and-back to trigger the next batch. Added `lastVisibleEndIndex` tracking for accurate bottom-edge detection.
 - Runtime stabilization around:
   - `AppCoreRuntime`
   - `AppStore`

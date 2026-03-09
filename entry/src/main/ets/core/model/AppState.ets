@@ -54,12 +54,21 @@ export class Chat {
   draftReplyToMessageId: MessageId = '0';
   isPinned: boolean = false;
   photoSmall: string = '';
+  photoSmallFileId: number = 0;
   order: string = '0'; // TDLib int64 sort key as string; '0' = not in chatListMain
+}
+
+// Typing indicator per chat
+export class ChatTypingInfo {
+  senderUserId: UserId = 0;
+  actionType: string = 'typing'; // 'typing', 'recordingVideo', 'uploadingPhoto', etc.
+  timestamp: number = 0;
 }
 
 export class ChatsState {
   chats: Map<ChatId, Chat> = new Map<ChatId, Chat>();
   orderedChatIds: ChatId[] = [];
+  typingActions: Map<ChatId, ChatTypingInfo> = new Map<ChatId, ChatTypingInfo>();
   isLoading: boolean = false;
   hasMore: boolean = true;
   loadPhase: ChatsLoadPhase = 'idle';
@@ -163,6 +172,7 @@ export class User {
   phoneNumber: string = '';
   photoSmall: string = '';
   photoBig: string = '';
+  photoSmallFileId: number = 0;
   status: UserStatusType = 'offline';
   isContact: boolean = false;
   isVerified: boolean = false;

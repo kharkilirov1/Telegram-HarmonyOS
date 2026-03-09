@@ -143,6 +143,7 @@ export interface UserUpdateFields {
 export interface UserPhotoFields {
   small: string;
   big: string;
+  smallFileId?: number;
 }
 
 export class UserUpdatedEvent extends AppEvent {
@@ -157,6 +158,24 @@ export class UserStatusChangedEvent extends AppEvent {
   type: string = 'userStatusChanged';
   userId: UserId = 0;
   status: string = 'offline';
+}
+
+// --- Chat action events (typing indicators) ---
+
+export class ChatActionEvent extends AppEvent {
+  type: string = 'chatAction';
+  chatId: ChatId = 0;
+  senderUserId: UserId = 0;
+  actionType: string = ''; // 'typing', 'cancel', 'recordingVideo', 'uploadingPhoto', etc.
+}
+
+// --- File events ---
+
+export class FileDownloadedEvent extends AppEvent {
+  type: string = 'fileDownloaded';
+  fileId: number = 0;
+  localPath: string = '';
+  isComplete: boolean = false;
 }
 
 // --- Unified type for all events ---
@@ -177,7 +196,9 @@ export type AnyAppEvent =
   | MessageSendFailedEvent
   | MessagesDeletedEvent
   | UserUpdatedEvent
-  | UserStatusChangedEvent;
+  | UserStatusChangedEvent
+  | ChatActionEvent
+  | FileDownloadedEvent;
 
 // --- Factory helpers ---
 

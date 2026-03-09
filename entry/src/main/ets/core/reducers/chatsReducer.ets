@@ -3,13 +3,14 @@
 // Uses real data from DTOs instead of hardcoded values
 // Maintains orderedChatIds sorted by TDLib order (descending); order=0 → removed from list
 
-import { AppState, Chat, ChatLastMessage, ReducerAction } from '../model/AppState';
+import { AppState, Chat, ChatLastMessage, ChatTypingInfo, ReducerAction } from '../model/AppState';
 import {
   NewChatEvent,
   ChatUpdatedEvent,
   ChatReadInboxEvent,
   ChatReadOutboxEvent,
-  ChatsLoadStateChangedEvent
+  ChatsLoadStateChangedEvent,
+  ChatActionEvent
 } from '../model/AppEvent';
 import { ChatDto, ChatType as DtoChatType } from '../model/dto/ChatDto';
 import { compareInt64 } from '../utils/tdAccessors';
@@ -19,7 +20,7 @@ import { cloneStateForChats, cloneChat } from '../utils/stateClone';
 function isChatEvent(type: string): boolean {
   return type === 'newChat' || type === 'chatUpdated' ||
     type === 'chatReadInbox' || type === 'chatReadOutbox' ||
-    type === 'chatsLoadStateChanged';
+    type === 'chatsLoadStateChanged' || type === 'chatAction';
 }
 
 // Map DTO ChatType enum to AppState ChatType string
@@ -51,6 +52,7 @@ function chatFromDto(dto: ChatDto): Chat {
 
   if (dto.photo) {
     chat.photoSmall = dto.photo.small;
+    chat.photoSmallFileId = dto.photo.smallFileId;
   }
 
   if (dto.lastMessage) {
@@ -225,6 +227,7 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
       }
       if (event.updates.photo !== undefined) {
         updatedChat.photoSmall = event.updates.photo.small;
+        updatedChat.photoSmallFileId = event.updates.photo.smallFileId;
       }
       if (event.updates.lastMessage !== undefined) {
         const lm = new ChatLastMessage();
@@ -275,6 +278,22 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         newState.chats.loadPhase = event.phase;
       } else {
         newState.chats.loadPhase = 'idle';
+      }
+      break;
+    }
+
+    case 'chatAction': {
+      const event = action as ChatActionEvent;
+      // Clone the typing map
+      newState.chats.typingActions = new Map<number, ChatTypingInfo>(state.chats.typingActions);
+      if (event.actionType === 'cancel') {
+        newState.chats.typingActions.delete(event.chatId);
+      } else {
+        const info = new ChatTypingInfo();
+        info.senderUserId = event.senderUserId;
+        info.actionType = event.actionType;
+        info.timestamp = event.timestamp;
+        newState.chats.typingActions.set(event.chatId, info);
       }
       break;
     }

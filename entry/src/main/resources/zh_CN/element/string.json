@@ -2189,6 +2189,10 @@
       "value": "草稿："
     },
     {
+      "name": "chat_you_prefix",
+      "value": "你"
+    },
+    {
       "name": "permission_microphone_reason",
       "value": "Telegram需要麦克风权限来发送语音消息和拨打电话。"
     },

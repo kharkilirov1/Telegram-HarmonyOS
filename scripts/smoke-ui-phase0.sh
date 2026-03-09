@@ -11,7 +11,6 @@ PHASE0_FILES=(
   "entry/src/main/ets/ui/tg_ui/atoms/TgTopBar.ets"
   "entry/src/main/ets/ui/tg_ui/atoms/TgChatTopBar.ets"
   "entry/src/main/ets/ui/tg_ui/atoms/TgTabBar.ets"
-  "entry/src/main/ets/ui/tg_ui/atoms/TgSearchBar.ets"
 )
 
 HEX_PATTERN='#[0-9A-Fa-f]{3,8}'
@@ -61,8 +60,8 @@ if ! grep -q 'TgTopBar(' "$CHAT_LIST_PAGE"; then
   exit 1
 fi
 
-if ! grep -q 'TgSearchBar(' "$CHAT_LIST_PAGE"; then
-  echo "ERROR: ChatListPage must compose TgSearchBar." >&2
+if ! grep -q 'Search(' "$CHAT_LIST_PAGE"; then
+  echo "ERROR: ChatListPage must compose a Search component." >&2
   exit 1
 fi
 

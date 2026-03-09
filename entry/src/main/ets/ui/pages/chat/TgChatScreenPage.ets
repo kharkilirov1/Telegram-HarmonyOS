@@ -4,6 +4,7 @@
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState } from '../../../core/model/AppState';
+import { fileUri } from '@kit.CoreFileKit';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { TgDateSeparator, TgUnreadMarker } from '../../tg_ui/atoms/TgDateSeparator';
 import { TgMessageRouter } from '../../tg_ui/molecules/TgMessageRouter';
@@ -73,6 +74,7 @@ export struct TgChatScreenPage {
   private isMarkingChatRead: boolean = false;
   private historyFallbackTimerId: number = -1;
   private lastVisibleStartIndex: number = -1;
+  private lastVisibleEndIndex: number = -1;
   private previousDataCount: number = 0;
   private needsScrollRestore: boolean = true;
   private currentScrollChatId: number = 0;
@@ -100,6 +102,7 @@ export struct TgChatScreenPage {
       this.saveScrollPosition();
       this.needsScrollRestore = true;
       this.lastVisibleStartIndex = -1;
+      this.lastVisibleEndIndex = -1;
       this.previousDataCount = 0;
       this.isLoadingOlder = false;
       this.isLoadingNewer = false;
@@ -133,6 +136,7 @@ export struct TgChatScreenPage {
       this.lastOpenedChatId = this.activeChatId;
       this.needsScrollRestore = true;
       this.lastVisibleStartIndex = -1;
+      this.lastVisibleEndIndex = -1;
       this.previousDataCount = 0;
       this.suppressLoadOlderUntil = 0;
       this.isLoadingNewer = false;
@@ -287,7 +291,7 @@ export struct TgChatScreenPage {
     this.chatAvatarInitials = this.computeInitials(chat.title);
     const colorSeed = chat.peerUserId > 0 ? chat.peerUserId : chat.id;
     this.chatAvatarColorIndex = colorSeed % 8;
-    this.chatAvatarImageSrc = chat.photoSmall;
+    this.chatAvatarImageSrc = chat.photoSmall.length > 0 ? fileUri.getUriFromPath(chat.photoSmall) : '';
 
     if (chat.peerUserId > 0) {
       const user = state.users.users.get(chat.peerUserId);
@@ -301,6 +305,12 @@ export struct TgChatScreenPage {
     } else {
       this.chatSubtitle = '';
       this.chatIsOnline = false;
+    }
+
+    // Typing indicator overrides subtitle
+    const typingInfo = state.chats.typingActions.get(this.activeChatId);
+    if (typingInfo && (Date.now() - typingInfo.timestamp) < 6000) {
+      this.chatSubtitle = 'typing...';
     }
   }
 
@@ -444,7 +454,26 @@ export struct TgChatScreenPage {
       .catch((_: Error) => {})
       .finally(() => {
         this.isLoadingOlder = false;
+        this.recheckPaginationEdge();
       });
+  }
+
+  private recheckPaginationEdge(): void {
+    const start = this.lastVisibleStartIndex;
+    const end = this.lastVisibleEndIndex;
+    if (start < 0 || end < 0) {
+      return;
+    }
+    const totalCount = this.dataSource.totalCount();
+
+    if (this.isNearTopPaginationEdge(start) && !this.isLoadingOlder) {
+      this.olderPaginationEdgeArmed = true;
+      this.loadOlderMessages();
+    }
+    if (this.isNearBottomPaginationEdge(end, totalCount) && !this.isLoadingNewer) {
+      this.newerPaginationEdgeArmed = true;
+      this.loadNewerMessages();
+    }
   }
 
   private loadNewerMessages(): void {
@@ -477,6 +506,7 @@ export struct TgChatScreenPage {
       .catch((_: Error) => {})
       .finally(() => {
         this.isLoadingNewer = false;
+        this.recheckPaginationEdge();
       });
   }
 
@@ -824,6 +854,7 @@ export struct TgChatScreenPage {
               })
               .onScrollIndex((start: number, end: number) => {
                 this.lastVisibleStartIndex = start;
+                this.lastVisibleEndIndex = end;
                 const totalCount = this.dataSource.totalCount();
                 const nearTopEdge = this.isNearTopPaginationEdge(start);
                 const nearBottomEdge = this.isNearBottomPaginationEdge(end, totalCount);

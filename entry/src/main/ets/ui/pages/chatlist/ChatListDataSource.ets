@@ -66,7 +66,9 @@ export class ChatListDataSource implements IDataSource {
       prev.isPinned === next.isPinned &&
       prev.isMuted === next.isMuted &&
       prev.sendStatus === next.sendStatus &&
-      prev.isGroup === next.isGroup;
+      prev.isGroup === next.isGroup &&
+      prev.isTyping === next.isTyping &&
+      prev.typingText === next.typingText;
   }
 
   private hasSameOrder(oldItems: ChatItemVO[], newItems: ChatItemVO[]): boolean {
