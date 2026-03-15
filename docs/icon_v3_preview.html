@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Telegram-HarmonyOS Icon v3 Preview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a1a; color: #fff; font-family: -apple-system, sans-serif; padding: 40px; }
+  h1 { font-size: 20px; font-weight: 400; margin-bottom: 30px; color: #aaa; }
+  .grid { display: flex; flex-wrap: wrap; gap: 40px; align-items: end; }
+  .preview { text-align: center; }
+  .preview img { border-radius: 22%; display: block; margin: 0 auto 8px; }
+  .preview .label { font-size: 12px; color: #666; }
+  .section { margin-bottom: 50px; }
+  .section h2 { font-size: 14px; color: #555; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+  .dark-bg { background: #000; padding: 30px; border-radius: 16px; }
+  .light-bg { background: #f5f5f5; padding: 30px; border-radius: 16px; }
+  .row { display: flex; gap: 40px; margin-bottom: 40px; }
+</style>
+</head>
+<body>
+  <h1>Telegram-HarmonyOS / Icon v3</h1>
+
+  <div class="section">
+    <h2>Composite (dark context)</h2>
+    <div class="dark-bg">
+      <div class="grid">
+        <div class="preview">
+          <img src="icon_v3_composite.svg" width="512" height="512">
+          <div class="label">512px</div>
+        </div>
+        <div class="preview">
+          <img src="icon_v3_composite.svg" width="256" height="256">
+          <div class="label">256px</div>
+        </div>
+        <div class="preview">
+          <img src="icon_v3_composite.svg" width="128" height="128">
+          <div class="label">128px</div>
+        </div>
+        <div class="preview">
+          <img src="icon_v3_composite.svg" width="96" height="96">
+          <div class="label">96px</div>
+        </div>
+        <div class="preview">
+          <img src="icon_v3_composite.svg" width="64" height="64">
+          <div class="label">64px</div>
+        </div>
+        <div class="preview">
+          <img src="icon_v3_composite.svg" width="48" height="48">
+          <div class="label">48px</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Composite (light context)</h2>
+    <div class="light-bg">
+      <div class="grid">
+        <div class="preview">
+          <img src="icon_v3_composite.svg" width="256" height="256">
+          <div class="label" style="color:#999">256px</div>
+        </div>
+        <div class="preview">
+          <img src="icon_v3_composite.svg" width="128" height="128">
+          <div class="label" style="color:#999">128px</div>
+        </div>
+        <div class="preview">
+          <img src="icon_v3_composite.svg" width="96" height="96">
+          <div class="label" style="color:#999">96px</div>
+        </div>
+        <div class="preview">
+          <img src="icon_v3_composite.svg" width="64" height="64">
+          <div class="label" style="color:#999">64px</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Layers</h2>
+    <div class="dark-bg">
+      <div class="grid">
+        <div class="preview">
+          <img src="icon_v3_background.svg" width="256" height="256">
+          <div class="label">Background</div>
+        </div>
+        <div class="preview" style="font-size: 40px; align-self: center; color: #333;">+</div>
+        <div class="preview">
+          <img src="icon_v3_foreground.svg" width="256" height="256" style="background: repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 50% / 20px 20px;">
+          <div class="label">Foreground</div>
+        </div>
+        <div class="preview" style="font-size: 40px; align-self: center; color: #333;">=</div>
+        <div class="preview">
+          <img src="icon_v3_composite.svg" width="256" height="256">
+          <div class="label">Composite</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

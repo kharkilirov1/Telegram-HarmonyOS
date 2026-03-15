@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#0E1B3D"/>
+      <stop offset="40%" stop-color="#060C1A"/>
+      <stop offset="100%" stop-color="#010204"/>
+    </radialGradient>
+    <radialGradient id="ringGlow" cx="50%" cy="38%" r="45%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="60%" stop-color="#B0D4FF" stop-opacity="0.08"/>
+      <stop offset="85%" stop-color="#7AB8FF" stop-opacity="0.03"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="horizon" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6CB8FF" stop-opacity="0"/>
+      <stop offset="30%" stop-color="#8CD0FF" stop-opacity="0.5"/>
+      <stop offset="50%" stop-color="#A8E0FF" stop-opacity="0.9"/>
+      <stop offset="70%" stop-color="#8CD0FF" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#6CB8FF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="ringBlur" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="outerRingBlur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="28"/>
+    </filter>
+    <filter id="horizonBlur" x="-20%" y="-200%" width="140%" height="500%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+    <filter id="reflectionBlur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+    <filter id="softReflect" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+    <clipPath id="belowHorizon"><rect x="0" y="510" width="1024" height="514"/></clipPath>
+    <clipPath id="aboveHorizon"><rect x="0" y="0" width="1024" height="510"/></clipPath>
+  </defs>
+
+  <!-- Dark base -->
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#ringGlow)"/>
+
+  <!-- Outer glow -->
+  <circle cx="512" cy="390" r="260" fill="none" stroke="#4A8BCC" stroke-width="80" opacity="0.06" filter="url(#outerRingBlur)"/>
+  <circle cx="512" cy="390" r="230" fill="none" stroke="#1A3565" stroke-width="14" opacity="0.5"/>
+
+  <!-- Upper ring arc -->
+  <g clip-path="url(#aboveHorizon)">
+    <circle cx="512" cy="390" r="210" fill="none" stroke="#E8F4FF" stroke-width="65" opacity="0.15" filter="url(#ringBlur)"/>
+    <circle cx="512" cy="390" r="210" fill="none" stroke="#F0F8FF" stroke-width="45" filter="url(#ringBlur)"/>
+    <circle cx="512" cy="390" r="190" fill="none" stroke="#FFFFFF" stroke-width="4" opacity="0.6"/>
+    <circle cx="512" cy="390" r="230" fill="none" stroke="#C0DDFF" stroke-width="3" opacity="0.4"/>
+  </g>
+
+  <!-- Horizon -->
+  <rect x="60" y="506" width="904" height="8" fill="url(#horizon)" filter="url(#horizonBlur)"/>
+
+  <!-- Reflection -->
+  <g clip-path="url(#belowHorizon)">
+    <circle cx="512" cy="390" r="210" fill="none" stroke="#D0E8FF" stroke-width="6" opacity="0.35" filter="url(#reflectionBlur)"/>
+    <circle cx="512" cy="390" r="225" fill="none" stroke="#B0D4FF" stroke-width="5" opacity="0.28" filter="url(#reflectionBlur)"/>
+    <circle cx="512" cy="390" r="240" fill="none" stroke="#90C0FF" stroke-width="4.5" opacity="0.22" filter="url(#reflectionBlur)"/>
+    <circle cx="512" cy="390" r="258" fill="none" stroke="#78B0FF" stroke-width="4" opacity="0.17" filter="url(#reflectionBlur)"/>
+    <circle cx="512" cy="390" r="278" fill="none" stroke="#60A0FF" stroke-width="3.5" opacity="0.13" filter="url(#reflectionBlur)"/>
+    <circle cx="512" cy="390" r="300" fill="none" stroke="#4890FF" stroke-width="3" opacity="0.10" filter="url(#reflectionBlur)"/>
+    <circle cx="512" cy="390" r="325" fill="none" stroke="#3880FF" stroke-width="2.5" opacity="0.07" filter="url(#reflectionBlur)"/>
+    <circle cx="512" cy="390" r="352" fill="none" stroke="#2870FF" stroke-width="2" opacity="0.05" filter="url(#reflectionBlur)"/>
+    <circle cx="512" cy="390" r="382" fill="none" stroke="#2060EE" stroke-width="1.5" opacity="0.04" filter="url(#reflectionBlur)"/>
+    <ellipse cx="512" cy="640" rx="280" ry="90" fill="#6CB8FF" opacity="0.06" filter="url(#softReflect)"/>
+  </g>
+</svg>
