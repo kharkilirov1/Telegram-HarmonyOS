@@ -7,6 +7,7 @@ import { TdGatewayPort } from '../ports/TdGatewayPort';
 import { ChatId, MessageId } from '../../core/model/EntityId';
 import { createGetChatHistoryCommand, createGetUserCommand } from '../../core/model/AppCommand';
 import { getEventNormalizer } from '../../core/events/EventNormalizer';
+import { AnyAppEvent } from '../../core/model/AppEvent';
 import { AppError, AppErrorKind } from '../../core/model/AppError';
 import { TdObject } from '../../models/TdTypes';
 import { tdGetArray, tdGetObject, tdGetNumber, tdGetString, tdGetInt64, compareInt64 } from '../../core/utils/tdAccessors';
@@ -17,6 +18,7 @@ const DOMAIN = 0x000D;
 // can fully hydrate its sender set before the batch hits invariants/UI.
 const MAX_MISSING_USER_HYDRATION_PER_LOAD = 64;
 const MISSING_USER_HYDRATION_COOLDOWN_MS = 30000;
+const MAX_PARALLEL_USER_HYDRATION_REQUESTS = 6;
 const NEWER_PAGE_OFFSET_DELTA = 1;
 // TDLib can legally return much fewer messages than requested even when more
 // history still exists, so treat tiny initial batches as ambiguous and top up
@@ -376,7 +378,27 @@ export class LoadChatHistoryUseCase {
     return missingSenderIds;
   }
 
-  private async hydrateMissingUsers(userIds: number[]): Promise<void> {
+  private async requestUserHydration(userId: number): Promise<AnyAppEvent[]> {
+    try {
+      const response = await this.gateway.send(createGetUserCommand(userId));
+      const normalizedResponse = response as TdObject;
+      if (!(normalizedResponse instanceof TdObject)) {
+        return [];
+      }
+
+      return getEventNormalizer().normalize(normalizedResponse);
+    } catch (error) {
+      hilog.info(DOMAIN, TAG,
+        'Unable to hydrate user %{public}d from history sender set: %{public}s',
+        userId, String(error));
+      return [];
+    } finally {
+      LoadChatHistoryUseCase.inFlightUserIds.delete(userId);
+    }
+  }
+
+  private async hydrateMissingUsers(userIds: number[]): Promise<number> {
+    const queuedUserIds: number[] = [];
     for (const userId of userIds) {
       if (userId <= 0 || this.store.getState().users.users.has(userId)) {
         continue;
@@ -387,25 +409,29 @@ export class LoadChatHistoryUseCase {
 
       LoadChatHistoryUseCase.inFlightUserIds.add(userId);
       LoadChatHistoryUseCase.lastUserHydrationAt.set(userId, Date.now());
-      try {
-        const response = await this.gateway.send(createGetUserCommand(userId));
-        const normalizedResponse = response as TdObject;
-        if (!(normalizedResponse instanceof TdObject)) {
-          continue;
-        }
+      queuedUserIds.push(userId);
+    }
 
-        const events = getEventNormalizer().normalize(normalizedResponse);
+    if (queuedUserIds.length === 0) {
+      return 0;
+    }
+
+    const batchedEvents: AnyAppEvent[] = [];
+    for (let index = 0; index < queuedUserIds.length; index += MAX_PARALLEL_USER_HYDRATION_REQUESTS) {
+      const chunk = queuedUserIds.slice(index, index + MAX_PARALLEL_USER_HYDRATION_REQUESTS);
+      const chunkResults = await Promise.all(chunk.map((userId: number) => this.requestUserHydration(userId)));
+      for (const events of chunkResults) {
         if (events.length > 0) {
-          await this.store.dispatchBatch(events);
+          batchedEvents.push(...events);
         }
-      } catch (error) {
-        hilog.info(DOMAIN, TAG,
-          'Unable to hydrate user %{public}d from history sender set: %{public}s',
-          userId, String(error));
-      } finally {
-        LoadChatHistoryUseCase.inFlightUserIds.delete(userId);
       }
     }
+
+    if (batchedEvents.length > 0) {
+      await this.store.dispatchBatch(batchedEvents);
+    }
+
+    return queuedUserIds.length;
   }
 
   async hydrateUsersIfMissing(userIds: number[]): Promise<number> {
@@ -442,8 +468,7 @@ export class LoadChatHistoryUseCase {
       return 0;
     }
 
-    await this.hydrateMissingUsers(eligibleUserIds);
-    return eligibleUserIds.length;
+    return await this.hydrateMissingUsers(eligibleUserIds);
   }
 
   async execute(params: LoadChatHistoryParams): Promise<boolean> {
@@ -502,13 +527,6 @@ export class LoadChatHistoryUseCase {
         await this.requestInitialOlderTopUp(chatId, messageWindow.oldestId, params.limit);
       }
 
-      const missingSenderIds = this.collectMissingSenderIds(normalizedResponse);
-      if (missingSenderIds.length > 0) {
-        hilog.info(DOMAIN, TAG, 'Hydrating %{public}d missing users for chat %{public}d',
-          missingSenderIds.length, chatId);
-        await this.hydrateMissingUsers(missingSenderIds);
-      }
-
       const events = getEventNormalizer().normalize(normalizedResponse);
       if (events.length > 0) {
         await this.store.dispatchBatch(events);
@@ -523,6 +541,26 @@ export class LoadChatHistoryUseCase {
 
       // Track pagination state: oldest message and whether more history exists
       this.refreshPaginationState(chatId, params, messageWindow, previousOldestId, previousNewestId);
+
+      const missingSenderIds = this.collectMissingSenderIds(normalizedResponse);
+      if (missingSenderIds.length > 0) {
+        hilog.info(DOMAIN, TAG,
+          'Scheduling background hydration for %{public}d missing users in chat %{public}d',
+          missingSenderIds.length, chatId);
+        this.hydrateMissingUsers(missingSenderIds)
+          .then((hydratedCount: number) => {
+            if (hydratedCount > 0) {
+              hilog.info(DOMAIN, TAG,
+                'Background user hydration completed for chat %{public}d (%{public}d users)',
+                chatId, hydratedCount);
+            }
+          })
+          .catch((error: Object) => {
+            hilog.warn(DOMAIN, TAG,
+              'Background user hydration failed for chat %{public}d: %{public}s',
+              chatId, String(error));
+          });
+      }
 
       return true;
     } catch (error) {

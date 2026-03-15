@@ -307,6 +307,12 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
       const updatedChat = cloneChat(existingChat);
       updatedChat.description = event.description;
       updatedChat.memberCount = event.memberCount;
+      if (event.inviteLink.length > 0) {
+        updatedChat.inviteLink = event.inviteLink;
+      }
+      if (event.administratorCount > 0) {
+        updatedChat.administratorCount = event.administratorCount;
+      }
       newState.chats.chats.set(event.chatId, updatedChat);
       break;
     }

@@ -13,7 +13,8 @@ import { AppError } from '../model/AppError';
 import { AppStore } from '../store/AppStore';
 import { createMyUserResolvedEvent } from '../model/AppEvent';
 import { common } from '@kit.AbilityKit';
-import { TELEGRAM_API_HASH, TELEGRAM_API_ID } from '../../services/ConfigLocal';
+import { deviceInfo } from '@kit.BasicServicesKit';
+import { TELEGRAM_API_HASH, TELEGRAM_API_ID, USE_TEST_DC } from '../../services/ConfigLocal';
 import { createLoadChatsUseCase } from '../../domain/usecases/loadChats';
 
 const DOMAIN = 0x0004;
@@ -204,6 +205,7 @@ class AuthSideEffect {
     hilog.info(DOMAIN, TAG, 'Sending setTdlibParameters...');
 
     const params: TdObject = new TdObject();
+    params.setBool('use_test_dc', USE_TEST_DC);
     params.setNumber('api_id', TELEGRAM_API_ID);
     params.setString('api_hash', TELEGRAM_API_HASH);
     params.setString('database_directory', databaseDir);
@@ -224,12 +226,19 @@ class AuthSideEffect {
       systemLanguageCode = 'en';
     }
 
-    // ВАЖНО: TDLib требует эти параметры как обязательные! 
+    // ВАЖНО: TDLib требует эти параметры как обязательные!
     // Без них setTdlibParameters падает с ошибкой 400.
     params.setString('system_language_code', systemLanguageCode);
-    params.setString('device_model', 'HarmonyOS Device');
-    params.setString('system_version', 'HarmonyOS 4.0'); // или Next
-    params.setString('application_version', '1.0.0');
+
+    // Реальные данные устройства вместо хардкода
+    const brand: string = deviceInfo.brand || 'HUAWEI';
+    const marketName: string = deviceInfo.marketName || 'Unknown';
+    const osFullName: string = deviceInfo.osFullName || 'HarmonyOS NEXT';
+    const model: string = marketName.length > 0 ? `${brand} ${marketName}` : brand;
+
+    params.setString('device_model', model);
+    params.setString('system_version', osFullName);
+    params.setString('application_version', '0.1.0');
 
     try {
       const response: TdObject = await this.gateway.send('setTdlibParameters', params);

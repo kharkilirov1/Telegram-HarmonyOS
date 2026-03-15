@@ -164,6 +164,10 @@ export class DownloadFileCommand extends AppCommand {
   payload: DownloadFilePayload = new DownloadFilePayload();
 }
 
+export class RequestQrCodeAuthCommand extends AppCommand {
+  type: string = 'requestQrCodeAuth';
+}
+
 export class LogoutCommand extends AppCommand {
   type: string = 'logout';
 }
@@ -187,6 +191,7 @@ export type AnyAppCommand =
   | GetUserFullInfoCommand
   | GetSupergroupFullInfoCommand
   | DownloadFileCommand
+  | RequestQrCodeAuthCommand
   | LogoutCommand;
 
 // Helper functions to create commands

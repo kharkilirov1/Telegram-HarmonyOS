@@ -9,7 +9,7 @@
 
 import { AppError, AppErrorKind, classifyTdlibError } from '../../../core/model/AppError';
 import { TdObject } from '../../../models/TdTypes';
-import { getMainThreadDispatcher } from '../../threading/MainThreadDispatcher';
+import { getMainThreadDispatcher, MainThreadDispatcher } from '../../threading/MainThreadDispatcher';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import tdlib from 'libtdlib_napi.so';
 
@@ -149,16 +149,11 @@ export class TdGatewayImpl implements TdGateway {
       // Запускаем нативный receive loop.
       // Мы НЕ смешиваем бизнес-логику с callback слоем:
       // только определяем тип payload и передаём в dispatcher.
-      tdlib.startReceiveLoop((rawJson: string) => {
+      // NAPI receive loop теперь отправляет батчи — JSON-массив: [obj1, obj2, ...]
+      // Парсим массив и диспатчим каждый элемент отдельно.
+      tdlib.startReceiveLoop((batchJson: string) => {
         try {
-          // Huawei Best Practice: валидация JSON через parsing вместо string.includes
-          // string.includes('@extra') может дать false positive если '@extra' в теле сообщения
-          const isResponse = this.isResponseJson(rawJson);
-          if (isResponse) {
-            dispatcher.dispatchResponse(rawJson);
-          } else {
-            dispatcher.dispatchUpdate(rawJson);
-          }
+          this.dispatchBatch(batchJson, dispatcher);
         } catch (error) {
           Logger.error('Error in receive loop relay', String(error));
         }
@@ -437,6 +432,42 @@ export class TdGatewayImpl implements TdGateway {
         handler(update);
       } catch (e) {
         Logger.error('Error in update handler', String(e));
+      }
+    }
+  }
+
+  /**
+   * Парсит батч JSON-массив из NAPI и диспатчит каждый элемент.
+   * NAPI receive loop шлёт: [obj1, obj2, ...] — один callback вместо N.
+   */
+  private dispatchBatch(batchJson: string, dispatcher: MainThreadDispatcher): void {
+    let items: Object[];
+    try {
+      items = JSON.parse(batchJson) as Object[];
+    } catch {
+      Logger.error('Malformed batch JSON');
+      return;
+    }
+
+    if (!Array.isArray(items)) {
+      // Fallback: shouldn't happen with new NAPI, but safe
+      if (this.isResponseJson(batchJson)) {
+        dispatcher.dispatchResponse(batchJson);
+      } else {
+        dispatcher.dispatchUpdate(batchJson);
+      }
+      return;
+    }
+
+    for (let i = 0; i < items.length; i++) {
+      const obj = items[i] as Record<string, Object>;
+      const rawJson = JSON.stringify(obj);
+      // Check @extra directly on parsed object — avoids double-parse
+      const hasExtra = obj !== null && obj !== undefined && obj['@extra'] !== undefined;
+      if (hasExtra) {
+        dispatcher.dispatchResponse(rawJson);
+      } else {
+        dispatcher.dispatchUpdate(rawJson);
       }
     }
   }

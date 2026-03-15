@@ -58,6 +58,13 @@ export function authReducer(state: AppState, action: ReducerAction): AppState {
       } else {
         newState.auth.passwordHint = authEvent.passwordHint;
       }
+
+      // QR code link (waitQrCode state)
+      if (authEvent.state === 'waitQrCode' && authEvent.qrCodeLink.length > 0) {
+        newState.auth.qrCodeLink = authEvent.qrCodeLink;
+      } else if (authEvent.state !== 'waitQrCode') {
+        newState.auth.qrCodeLink = '';
+      }
       break;
     }
 

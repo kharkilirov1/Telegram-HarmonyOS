@@ -10,7 +10,8 @@ import {
   createCheckAuthCodeCommand,
   createCheckAuthPasswordCommand,
   createRequestPasswordRecoveryCommand,
-  createResendAuthCodeCommand
+  createResendAuthCodeCommand,
+  RequestQrCodeAuthCommand
 } from '../../core/model/AppCommand';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
@@ -287,6 +288,24 @@ export class LoginController {
     } catch (e) {
       const err = e as Error;
       const failure = new RecoveryFailure();
+      failure.error = parseTdError(0, err.message);
+      return failure;
+    }
+  }
+
+  // ─── Request QR Code Login ───
+  async requestQrLogin(): Promise<SendCodeResult> {
+    try {
+      hilog.info(DOMAIN, TAG, 'Requesting QR code authentication');
+      const command = new RequestQrCodeAuthCommand();
+      await this.gateway.send(command);
+      const result = new SendCodeSuccess();
+      result.codeInfo = this.createDefaultCodeInfo();
+      return result;
+    } catch (e) {
+      const err = e as Error;
+      hilog.error(DOMAIN, TAG, 'requestQrLogin failed: %{public}s', err.message);
+      const failure = new SendCodeFailure();
       failure.error = parseTdError(0, err.message);
       return failure;
     }

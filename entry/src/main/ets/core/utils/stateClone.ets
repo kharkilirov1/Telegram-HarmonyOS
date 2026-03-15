@@ -29,6 +29,7 @@ export function cloneAuthState(auth: AuthState): AuthState {
   newAuth.codeTimeout = auth.codeTimeout;
   newAuth.nextCodeType = auth.nextCodeType;
   newAuth.passwordHint = auth.passwordHint;
+  newAuth.qrCodeLink = auth.qrCodeLink;
   newAuth.error = auth.error;
   return newAuth;
 }
@@ -107,6 +108,8 @@ export function cloneChat(chat: Chat): Chat {
   newChat.memberCount = chat.memberCount;
   newChat.description = chat.description;
   newChat.supergroupId = chat.supergroupId;
+  newChat.inviteLink = chat.inviteLink;
+  newChat.administratorCount = chat.administratorCount;
   if (chat.lastMessage) {
     const lm = new ChatLastMessage();
     lm.id = chat.lastMessage.id;

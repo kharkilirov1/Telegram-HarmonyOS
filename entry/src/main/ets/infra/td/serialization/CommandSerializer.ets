@@ -20,7 +20,8 @@ import {
   CloseChatCommand,
   GetUserFullInfoCommand,
   GetSupergroupFullInfoCommand,
-  DownloadFileCommand
+  DownloadFileCommand,
+  RequestQrCodeAuthCommand
 } from '../../../core/model/AppCommand';
 import { TdObject } from '../../../models/TdTypes';
 
@@ -49,6 +50,14 @@ export function serializeCommand(command: AnyAppCommand): SerializedCommand {
       const cmd = command as SetPhoneNumberCommand;
       result.method = 'setAuthenticationPhoneNumber';
       result.params.setString('phone_number', cmd.payload.phoneNumber);
+      // TelegramX reference: PhoneNumberAuthenticationSettings (via _*_json pattern)
+      const settingsJson = '{"@type":"phoneNumberAuthenticationSettings",'
+        + '"allow_flash_call":false,'
+        + '"allow_missed_call":true,'
+        + '"is_current_phone_number":false,'
+        + '"allow_sms_retriever_api":false,'
+        + '"has_unknown_phone_number":false}';
+      result.params.setString('_settings_json', settingsJson);
       break;
     }
 
@@ -188,6 +197,11 @@ export function serializeCommand(command: AnyAppCommand): SerializedCommand {
       result.params.setNumber('file_id', cmd.payload.fileId);
       result.params.setNumber('priority', cmd.payload.priority);
       result.params.setBool('synchronous', cmd.payload.synchronous);
+      break;
+    }
+
+    case 'requestQrCodeAuth': {
+      result.method = 'requestQrCodeAuthentication';
       break;
     }
 

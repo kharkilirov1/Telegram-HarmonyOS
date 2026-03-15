@@ -14,7 +14,7 @@ export class AppEvent {
 
 // Type definitions for event states
 export type AuthState = 'waitPhoneNumber' | 'waitCode' | 'waitPassword' | 'waitRegistration' |
-  'waitTdlibParameters' | 'ready' | 'loggingOut' | 'closing' | 'closed';
+  'waitTdlibParameters' | 'waitQrCode' | 'ready' | 'loggingOut' | 'closing' | 'closed';
 export type ConnectionState = 'updating' | 'ready' | 'connecting' | 'waitingForNetwork';
 
 // --- Auth events ---
@@ -29,6 +29,7 @@ export class AuthStateChangedEvent extends AppEvent {
   codeTimeout: number = -1;
   nextCodeType: string = '';
   passwordHint: string = '';
+  qrCodeLink: string = '';
 }
 
 // Fired after getMe() resolves — sets the current user's ID
@@ -182,6 +183,8 @@ export class ChatFullInfoEvent extends AppEvent {
   chatId: ChatId = 0;
   description: string = '';
   memberCount: number = 0;
+  inviteLink: string = '';
+  administratorCount: number = 0;
 }
 
 // --- File events ---

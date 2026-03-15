@@ -190,14 +190,23 @@ export struct PhoneInputPage {
       }
       .layoutWeight(1)
 
-      // ─── Continue Button ───
-      Column() {
+      // ─── Continue Button + QR Login ───
+      Column({ space: 12 }) {
         SolidRoundedButton({
           title: this.getContinueTitle(),
           isEnabled: this.hasNumber,
           buttonState: this.buttonState,
           onPress: (): void => { this.handleNext(); }
         })
+
+        // QR login link (like Nicegram — under country selector area)
+        Text('Log in by QR Code')
+          .fontSize(TgUiTokens.LOGIN_SUBTITLE_SIZE)
+          .fontColor(TgUiTokens.LOGIN_LINK_COLOR)
+          .textAlign(TextAlign.Center)
+          .onClick(() => {
+            this.requestQrLogin();
+          })
       }
       .width('100%')
       .padding({
@@ -205,6 +214,7 @@ export struct PhoneInputPage {
         end: LengthMetrics.vp(TgUiTokens.LOGIN_SIDE_INSET),
         bottom: LengthMetrics.vp(TgUiTokens.LOGIN_SIDE_INSET)
       })
+      .alignItems(HorizontalAlign.Center)
     }
     .width('100%')
     .height('100%')
@@ -230,15 +240,20 @@ export struct PhoneInputPage {
 
     const digits = this.countryCode.replace('+', '') + this.phoneNumber.replace(/\D/g, '');
 
+    // Telegram test DC numbers (99966XXXXX) bypass client-side validation
+    const isTestNumber = digits.startsWith('99966') && digits.length >= 10;
+
     // Клиентская валидация телефона через HarmonyOS i18n API
-    let isValidNumber = false;
-    try {
-      const format = new i18n.PhoneNumberFormat(this.countryFlag);
-      isValidNumber = format.isValidNumber(digits);
-    } catch (e) {
-      // Если i18n API недоступен, используем базовую валидацию
-      const phoneRegex = /^[1-9]\d{7,14}$/; // Базовая проверка: 8-15 цифр, начинается не с 0
-      isValidNumber = phoneRegex.test(digits.replace(/\D/g, ''));
+    let isValidNumber = isTestNumber;
+    if (!isValidNumber) {
+      try {
+        const format = new i18n.PhoneNumberFormat(this.countryFlag);
+        isValidNumber = format.isValidNumber(digits);
+      } catch (e) {
+        // Если i18n API недоступен, используем базовую валидацию
+        const phoneRegex = /^[1-9]\d{7,14}$/; // Базовая проверка: 8-15 цифр, начинается не с 0
+        isValidNumber = phoneRegex.test(digits.replace(/\D/g, ''));
+      }
     }
 
     if (!isValidNumber) {
@@ -258,6 +273,17 @@ export struct PhoneInputPage {
       const failure = result as SendCodeFailure;
       this.errorMessage = failure.error.message;
     }
+  }
+
+  private async requestQrLogin(): Promise<void> {
+    this.errorMessage = '';
+    const controller = LoginController.getInstance();
+    const result = await controller.requestQrLogin();
+    if (!result.success) {
+      const failure = result as SendCodeFailure;
+      this.errorMessage = failure.error.message;
+    }
+    // На успех: TDLib пришлёт waitOtherDeviceConfirmation → LoginRouter переключится на QrLoginPage
   }
 
   private updateCountryFromCode(code: string): void {

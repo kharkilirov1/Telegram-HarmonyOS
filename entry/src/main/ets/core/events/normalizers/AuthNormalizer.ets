@@ -75,6 +75,9 @@ function normalizeAuthState(events: AnyAppEvent[], update: TdObject): void {
     case 'authorizationStateWaitRegistration':
       appAuthState = 'waitRegistration';
       break;
+    case 'authorizationStateWaitOtherDeviceConfirmation':
+      appAuthState = 'waitQrCode';
+      break;
     case 'authorizationStateReady':
       appAuthState = 'ready';
       break;
@@ -137,6 +140,12 @@ function normalizeAuthState(events: AnyAppEvent[], update: TdObject): void {
         event.codeTimeout >= 0 ? event.codeTimeout : 0,
         event.nextCodeType.length > 0 ? event.nextCodeType : 'none'
       );
+    }
+
+    if (stateType === 'authorizationStateWaitOtherDeviceConfirmation') {
+      const link = tdGetString(authState, 'link');
+      event.qrCodeLink = link;
+      hilog.info(DOMAIN, TAG, 'waitQrCode: link length=%{public}d', link.length);
     }
 
     if (stateType === 'authorizationStateWaitPassword') {

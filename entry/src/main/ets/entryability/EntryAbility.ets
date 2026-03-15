@@ -1,7 +1,7 @@
 // Minimal EntryAbility - no UI, only core initialization
 // UI layers will be added separately in presentation/ui
 
-import { UIAbility, AbilityConstant, common } from '@kit.AbilityKit';
+import { UIAbility, AbilityConstant, Configuration, ConfigurationConstant, common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window, KeyboardAvoidMode } from '@kit.ArkUI';
 import { getAppCoreRuntime } from '../app/bootstrap/AppCoreRuntime';
@@ -14,11 +14,16 @@ const TAG = 'EntryAbility';
 const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {
+  private mainWindow: window.Window | null = null;
+
   async onCreate(): Promise<void> {
     hilog.info(DOMAIN, TAG, 'onCreate');
 
     // Инициализируем глобальный контекст для доступа к ресурсам
     setAppContext(this.context);
+
+    // Сохраняем текущий colorMode для UI-слоя
+    AppStorage.setOrCreate<number>('colorMode', this.context.config.colorMode ?? ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT);
 
     // Initialize AppCoreRuntime (TdGateway + EventNormalizer + AppStore)
     try {
@@ -47,25 +52,19 @@ export default class EntryAbility extends UIAbility {
   async onWindowStageCreate(windowStage: window.WindowStage): Promise<void> {
     hilog.info(DOMAIN, TAG, 'onWindowStageCreate');
 
-    let mainWindow: window.Window;
     try {
       // Immersive fullscreen — контент на весь экран
-      mainWindow = windowStage.getMainWindowSync();
-      mainWindow.setWindowLayoutFullScreen(true);
+      this.mainWindow = windowStage.getMainWindowSync();
+      this.mainWindow.setWindowLayoutFullScreen(true);
 
-      // System bars прозрачные, цвет контента адаптивный
-      const sysBarProps: window.SystemBarProperties = {
-        statusBarColor: '#00000000',
-        navigationBarColor: '#00000000',
-        isStatusBarLightIcon: false,
-        isNavigationBarLightIcon: false
-      };
-      mainWindow.setWindowSystemBarProperties(sysBarProps);
+      // System bars прозрачные, контент (часы/батарея/сеть) — цвет по теме
+      this.applyStatusBarColors();
     } catch (error) {
       const err: BusinessError = error as BusinessError;
       hilog.error(DOMAIN, TAG, 'Failed to set window properties: %{public}s', err.message);
       return;
     }
+    const mainWindow = this.mainWindow;
 
     // Load login router page
     windowStage.loadContent('ui/pages/login/LoginRouterPage', (err) => {
@@ -99,6 +98,35 @@ export default class EntryAbility extends UIAbility {
 
   onBackground(): void {
     hilog.info(DOMAIN, TAG, 'onBackground');
+  }
+
+  onConfigurationUpdate(newConfig: Configuration): void {
+    hilog.info(DOMAIN, TAG, 'onConfigurationUpdate colorMode=%{public}d', newConfig.colorMode ?? -1);
+    if (newConfig.colorMode !== undefined) {
+      AppStorage.setOrCreate<number>('colorMode', newConfig.colorMode);
+      this.applyStatusBarColors();
+    }
+  }
+
+  private applyStatusBarColors(): void {
+    if (!this.mainWindow) {
+      return;
+    }
+    const isDark = (AppStorage.get<number>('colorMode') ?? ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT)
+      === ConfigurationConstant.ColorMode.COLOR_MODE_DARK;
+    const contentColor = isDark ? '#FFFFFF' : '#000000';
+    const sysBarProps: window.SystemBarProperties = {
+      statusBarColor: '#00000000',
+      navigationBarColor: '#00000000',
+      statusBarContentColor: contentColor,
+      navigationBarContentColor: contentColor
+    };
+    try {
+      this.mainWindow.setWindowSystemBarProperties(sysBarProps);
+      hilog.info(DOMAIN, TAG, 'Status bar content color set to %{public}s', contentColor);
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Failed to update status bar colors: %{public}s', String(error));
+    }
   }
 
   onMemoryLevel(level: AbilityConstant.MemoryLevel): void {

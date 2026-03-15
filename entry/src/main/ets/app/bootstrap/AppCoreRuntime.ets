@@ -24,6 +24,7 @@ import { setAuthSideEffectStore, startAuthSideEffect, stopAuthSideEffect } from 
 import { LoadChatHistoryUseCase, createLoadChatHistoryUseCase } from '../../domain/usecases/loadChatHistory';
 import { resetLoadChatsUseCase } from '../../domain/usecases/loadChats';
 import { createDownloadAvatarsUseCase, resetDownloadAvatarsUseCase } from '../../domain/usecases/downloadAvatars';
+import { createDownloadMessageMediaUseCase, resetDownloadMessageMediaUseCase } from '../../domain/usecases/downloadMessageMedia';
 import { ChatUpdateDto, extractLastMessage } from '../../core/model/dto/ChatDto';
 import { tdGetNumber, tdGetObject, tdGetString } from '../../core/utils/tdAccessors';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -96,6 +97,11 @@ export class AppCoreRuntime {
       const avatarUseCase = createDownloadAvatarsUseCase(this.store, getTdGatewayAdapter());
       avatarUseCase.start();
       hilog.info(DOMAIN, TAG, 'DownloadAvatars watcher started');
+
+      // 8. Message media download watcher
+      const mediaUseCase = createDownloadMessageMediaUseCase(this.store, getTdGatewayAdapter());
+      mediaUseCase.start();
+      hilog.info(DOMAIN, TAG, 'DownloadMessageMedia watcher started');
 
       hilog.info(DOMAIN, TAG, 'Pipeline ready. Threading: TDLib→Dispatcher→Normalizer→Store');
     } catch (error) {
@@ -212,6 +218,7 @@ export class AppCoreRuntime {
     stopAuthSideEffect();
     resetAppStoreBridge();
     resetDownloadAvatarsUseCase();
+    resetDownloadMessageMediaUseCase();
 
     // Clear static use-case caches — prevents stale "already fetched" flags
     // when a new runtime + store is created after reset

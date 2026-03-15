@@ -9,6 +9,7 @@
 import { PhoneInputPage } from './PhoneInputPage';
 import { CodeInputPage } from './CodeInputPage';
 import { PasswordInputPage } from './PasswordInputPage';
+import { QrLoginPage } from './QrLoginPage';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { CodeType } from '../../controllers/LoginController';
@@ -93,6 +94,14 @@ export struct LoginRouter {
         PhoneInputPage({
           onPhoneSent: (): void => {
             // Переход произойдёт автоматически через AppStorage
+          }
+        })
+          .transition(TransitionEffect.OPACITY.animation({ duration: 300 }))
+
+      } else if (this.authStatus === 'waitQrCode') {
+        QrLoginPage({
+          onBackToPhone: (): void => {
+            this.forceBackToPhone('back_from_qr');
           }
         })
           .transition(TransitionEffect.OPACITY.animation({ duration: 300 }))
@@ -191,6 +200,7 @@ export struct LoginRouter {
 export type AuthStatus =
   | 'notInitialized'
   | 'waitPhoneNumber'
+  | 'waitQrCode'
   | 'waitCode'
   | 'waitPassword'
   | 'waitRegistration'

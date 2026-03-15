@@ -1,5 +1,6 @@
 #include "tdlib_napi.h"
 #include <string>
+#include <vector>
 #include <thread>
 #include <atomic>
 #include <mutex>
@@ -201,19 +202,24 @@ napi_value Execute(napi_env env, napi_callback_info info) {
     return result;
 }
 
-// Called from the receive thread to forward response to ArkTS
+// Batching constants
+static constexpr size_t BATCH_MAX_SIZE = 50;       // Max responses per batch
+static constexpr double RECEIVE_TIMEOUT = 0.05;    // 50ms — short poll for batching
+
+// Called from the receive thread to forward a batch of responses to ArkTS.
+// data is a std::string* containing a JSON array: [obj1, obj2, ...]
 static void CallJs(napi_env env, napi_value js_callback, void* context, void* data) {
     if (env == nullptr || data == nullptr) return;
 
-    std::string* response = static_cast<std::string*>(data);
+    std::string* batch = static_cast<std::string*>(data);
     napi_value argv[1];
-    napi_create_string_utf8(env, response->c_str(), response->length(), &argv[0]);
+    napi_create_string_utf8(env, batch->c_str(), batch->length(), &argv[0]);
 
     napi_value undefined;
     napi_get_undefined(env, &undefined);
     napi_call_function(env, undefined, js_callback, 1, argv, nullptr);
 
-    delete response;
+    delete batch;
 }
 
 napi_value StartReceiveLoop(napi_env env, napi_callback_info info) {
@@ -258,21 +264,40 @@ napi_value StartReceiveLoop(napi_env env, napi_callback_info info) {
     loop_state = LoopState::Running;
 
     receive_thread = std::thread([]() {
-        OH_LOG_INFO(LogType::LOG_APP, "TDLib receive loop started");
+        OH_LOG_INFO(LogType::LOG_APP, "TDLib receive loop started (batched, max=%{public}zu)", BATCH_MAX_SIZE);
 
         while (loop_state == LoopState::Running) {
-            const char* response = td_receive(1.0);
-            if (response != nullptr) {
-                auto* data = new std::string(response);
-                // Thread-safe access к callback с mutex защитой
-                {
-                    std::lock_guard<std::mutex> cb_guard(callback_mutex);
-                    if (threadsafe_callback != nullptr) {
-                        napi_call_threadsafe_function(threadsafe_callback, data, napi_tsfn_blocking);
-                    } else {
-                        delete data;  // Callback уже освобождён
-                    }
+            // Phase 1: blocking wait for first response (up to 1s)
+            const char* first = td_receive(1.0);
+            if (first == nullptr) continue;
+
+            // Phase 2: drain available responses with short timeout
+            std::string batch = "[";
+            batch += first;
+            size_t count = 1;
+
+            while (count < BATCH_MAX_SIZE) {
+                const char* next = td_receive(RECEIVE_TIMEOUT);
+                if (next == nullptr) break;
+                batch += ',';
+                batch += next;
+                count++;
+            }
+            batch += ']';
+
+            // Send the entire batch as one callback
+            auto* data = new std::string(std::move(batch));
+            {
+                std::lock_guard<std::mutex> cb_guard(callback_mutex);
+                if (threadsafe_callback != nullptr) {
+                    napi_call_threadsafe_function(threadsafe_callback, data, napi_tsfn_blocking);
+                } else {
+                    delete data;
                 }
+            }
+
+            if (count > 1) {
+                OH_LOG_INFO(LogType::LOG_APP, "TDLib batch sent: %{public}zu responses", count);
             }
         }
         OH_LOG_INFO(LogType::LOG_APP, "TDLib receive loop stopped");

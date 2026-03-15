@@ -52,6 +52,7 @@ export class StorageKeys {
   static readonly CODE_TIMEOUT: string = 'tg_codeTimeout';
   static readonly CODE_NEXT_TYPE: string = 'tg_codeNextType';
   static readonly PASSWORD_HINT: string = 'tg_passwordHint';
+  static readonly QR_CODE_LINK: string = 'tg_qrCodeLink';
 
   // UI effects / glass quality policy
   static readonly GLASS_MODE: string = 'tg_glassMode'; // auto | high | fallback
@@ -137,6 +138,9 @@ export class AppStoreBridge {
     AppStorage.setOrCreate<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, 0);
     AppStorage.setOrCreate<number>(StorageKeys.MAIN_TAB_INDEX, 2);
 
+    // QR code
+    AppStorage.setOrCreate<string>(StorageKeys.QR_CODE_LINK, '');
+
     // Code info
     AppStorage.setOrCreate<string>(StorageKeys.CODE_TYPE, 'sms');
     AppStorage.setOrCreate<number>(StorageKeys.CODE_LENGTH, 5);
@@ -171,12 +175,17 @@ export class AppStoreBridge {
     AppStorage.set<boolean>(StorageKeys.CHATS_HAS_MORE, state.chats.hasMore);
     AppStorage.set<string>(StorageKeys.CHATS_LOAD_PHASE, state.chats.loadPhase);
 
-    // Total unread count across all chats
+    // Number of chats with unread messages (iOS-style: count of chats, not total messages)
     let totalUnread = 0;
     state.chats.chats.forEach((chat: Chat) => {
-      totalUnread += chat.unreadCount;
+      if (chat.unreadCount > 0) {
+        totalUnread++;
+      }
     });
     AppStorage.set<number>(StorageKeys.TOTAL_UNREAD_COUNT, totalUnread);
+
+    // QR code link
+    AppStorage.set<string>(StorageKeys.QR_CODE_LINK, state.auth.qrCodeLink);
 
     // Auth code metadata (waitCode / waitPassword)
     AppStorage.set<string>(StorageKeys.CODE_TYPE, state.auth.codeType);

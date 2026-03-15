@@ -8,7 +8,7 @@ import {
   createGetSupergroupFullInfoCommand
 } from '../../core/model/AppCommand';
 import { UserFullInfoEvent, ChatFullInfoEvent, AnyAppEvent } from '../../core/model/AppEvent';
-import { TdObject, tdGetString, tdGetNumber } from '../../core/utils/tdAccessors';
+import { TdObject, tdGetString, tdGetNumber, tdGetObject } from '../../core/utils/tdAccessors';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN = 0x0030;
@@ -56,12 +56,24 @@ export async function loadSupergroupFullInfo(chatId: number, supergroupId: numbe
 
     const description = tdGetString(tdResponse, 'description');
     const memberCount = tdGetNumber(tdResponse, 'member_count');
-    hilog.info(DOMAIN, TAG, 'getSupergroupFullInfo chatId=%{public}d members=%{public}d', chatId, memberCount);
+    const administratorCount = tdGetNumber(tdResponse, 'administrator_count');
+
+    // invite_link is a chatInviteLink object with an 'invite_link' string field
+    let inviteLink = '';
+    const inviteLinkObj = tdGetObject(tdResponse, 'invite_link');
+    if (inviteLinkObj && inviteLinkObj.hasType()) {
+      inviteLink = tdGetString(inviteLinkObj, 'invite_link');
+    }
+
+    hilog.info(DOMAIN, TAG, 'getSupergroupFullInfo chatId=%{public}d members=%{public}d admins=%{public}d link=%{public}s',
+      chatId, memberCount, administratorCount, inviteLink.length > 0 ? 'yes' : 'no');
 
     const event = new ChatFullInfoEvent();
     event.chatId = chatId;
     event.description = description;
     event.memberCount = memberCount;
+    event.administratorCount = administratorCount;
+    event.inviteLink = inviteLink;
     event.timestamp = Date.now();
 
     const events: AnyAppEvent[] = [event];

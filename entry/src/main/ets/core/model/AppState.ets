@@ -5,7 +5,7 @@ import { ChatId, UserId, MessageId } from './EntityId';
 import { AnyAppEvent } from './AppEvent';
 
 // Type definitions
-export type AuthStatus = 'notInitialized' | 'waitTdlibParameters' | 'waitPhoneNumber' | 'waitCode' | 'waitPassword' | 'waitRegistration' | 'ready' | 'loggingOut' | 'closing' | 'closed';
+export type AuthStatus = 'notInitialized' | 'waitTdlibParameters' | 'waitPhoneNumber' | 'waitCode' | 'waitPassword' | 'waitRegistration' | 'waitQrCode' | 'ready' | 'loggingOut' | 'closing' | 'closed';
 export type ConnectionStatus = 'updating' | 'ready' | 'connecting' | 'waitingForNetwork';
 export type ChatType = 'private' | 'group' | 'supergroup' | 'channel';
 export type ChatsLoadPhase = 'idle' | 'bootstrap' | 'pagination';
@@ -23,6 +23,7 @@ export class AuthState {
   codeTimeout: number = 60;
   nextCodeType: string = 'call';
   passwordHint: string = '';
+  qrCodeLink: string = '';
   error: string = '';
 }
 
@@ -59,6 +60,8 @@ export class Chat {
   memberCount: number = 0;
   description: string = '';
   supergroupId: number = 0; // TDLib supergroup_id for fetching full info
+  inviteLink: string = '';
+  administratorCount: number = 0;
 }
 
 // Typing indicator per chat
@@ -86,36 +89,44 @@ export class MessageContent {
   // Photo
   photoPath: string = '';
   photoThumbPath: string = '';
+  photoFileId: number = 0;
+  photoThumbFileId: number = 0;
   photoWidth: number = 0;
   photoHeight: number = 0;
 
   // Video
   videoPath: string = '';
   videoThumbPath: string = '';
+  videoFileId: number = 0;
+  videoThumbFileId: number = 0;
   videoDuration: number = 0;
   videoWidth: number = 0;
   videoHeight: number = 0;
 
   // Document
   documentPath: string = '';
+  documentFileId: number = 0;
   fileName: string = '';
   fileSize: number = 0;
   mimeType: string = '';
 
   // Audio
   audioPath: string = '';
+  audioFileId: number = 0;
   audioDuration: number = 0;
   audioTitle: string = '';
   audioPerformer: string = '';
 
   // Voice note
   voicePath: string = '';
+  voiceFileId: number = 0;
   voiceDuration: number = 0;
   voiceWaveform: string = '';
   isVoiceListened: boolean = false;
 
   // Sticker
   stickerPath: string = '';
+  stickerFileId: number = 0;
   stickerEmoji: string = '';
   stickerWidth: number = 0;
   stickerHeight: number = 0;
@@ -125,12 +136,14 @@ export class MessageContent {
 
   // Animation
   animationPath: string = '';
+  animationFileId: number = 0;
   animationDuration: number = 0;
   animationWidth: number = 0;
   animationHeight: number = 0;
 
   // Video note
   videoNotePath: string = '';
+  videoNoteFileId: number = 0;
   videoNoteDuration: number = 0;
   videoNoteLength: number = 0;
 }
@@ -141,6 +154,7 @@ export class Message {
   chatId: ChatId = 0;
   senderId: UserId = 0;
   senderChatId: ChatId = 0;
+  mediaAlbumId: MessageId = '0';
   content: MessageContent = new MessageContent();
   timestamp: number = 0;
   isOutgoing: boolean = false;

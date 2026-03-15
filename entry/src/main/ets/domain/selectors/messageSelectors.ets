@@ -6,6 +6,14 @@ import { ChatId, MessageId } from '../../core/model/EntityId';
 import { Message } from '../../core/model/AppState';
 import { compareInt64 } from '../../core/utils/tdAccessors';
 
+class ChatMessagesMemoEntry {
+  source?: Map<string, Message>;
+  result: Message[] = [];
+}
+
+const newestFirstMessagesMemo: Map<ChatId, ChatMessagesMemoEntry> = new Map<ChatId, ChatMessagesMemoEntry>();
+const oldestFirstMessagesMemo: Map<ChatId, ChatMessagesMemoEntry> = new Map<ChatId, ChatMessagesMemoEntry>();
+
 // Basic selectors
 export const selectMessagesState = (state: AppState) => state.messages;
 
@@ -28,14 +36,24 @@ export const selectChatMessages = (chatId: ChatId) => (state: AppState): Message
     return [];
   }
 
+  const cached = newestFirstMessagesMemo.get(chatId);
+  if (cached && cached.source === chatMessages) {
+    return cached.result;
+  }
+
   // Convert Map to array and sort by timestamp (newest first)
   const messages = Array.from(chatMessages.values());
-  return messages.sort((a: Message, b: Message): number => {
+  const sorted = messages.sort((a: Message, b: Message): number => {
     if (a.timestamp !== b.timestamp) {
       return b.timestamp - a.timestamp;
     }
     return compareInt64(b.id, a.id);
   });
+  const nextCache = new ChatMessagesMemoEntry();
+  nextCache.source = chatMessages;
+  nextCache.result = sorted;
+  newestFirstMessagesMemo.set(chatId, nextCache);
+  return sorted;
 };
 
 /**
@@ -47,6 +65,11 @@ export const selectChatMessagesForChatView = (chatId: ChatId) => (state: AppStat
   const chatMessages = state.messages.messages.get(chatId);
   if (!chatMessages) {
     return [];
+  }
+
+  const cached = oldestFirstMessagesMemo.get(chatId);
+  if (cached && cached.source === chatMessages) {
+    return cached.result;
   }
 
   const all = Array.from(chatMessages.values());
@@ -75,7 +98,12 @@ export const selectChatMessagesForChatView = (chatId: ChatId) => (state: AppStat
   pending.sort((a: Message, b: Message): number => a.timestamp - b.timestamp);
 
   // Confirmed + Pending в конце
-  return confirmed.concat(pending);
+  const sorted = confirmed.concat(pending);
+  const nextCache = new ChatMessagesMemoEntry();
+  nextCache.source = chatMessages;
+  nextCache.result = sorted;
+  oldestFirstMessagesMemo.set(chatId, nextCache);
+  return sorted;
 };
 
 // Specific message by ID
