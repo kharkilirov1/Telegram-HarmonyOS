@@ -27,31 +27,39 @@ export class MessageContentDto {
 
   photoPath: string = '';
   photoThumbPath: string = '';
+  photoFileId: number = 0;
+  photoThumbFileId: number = 0;
   photoWidth: number = 0;
   photoHeight: number = 0;
 
   videoPath: string = '';
   videoThumbPath: string = '';
+  videoFileId: number = 0;
+  videoThumbFileId: number = 0;
   videoDuration: number = 0;
   videoWidth: number = 0;
   videoHeight: number = 0;
 
   documentPath: string = '';
+  documentFileId: number = 0;
   fileName: string = '';
   fileSize: number = 0;
   mimeType: string = '';
 
   audioPath: string = '';
+  audioFileId: number = 0;
   audioDuration: number = 0;
   audioTitle: string = '';
   audioPerformer: string = '';
 
   voicePath: string = '';
+  voiceFileId: number = 0;
   voiceDuration: number = 0;
   voiceWaveform: string = '';
   isVoiceListened: boolean = false;
 
   stickerPath: string = '';
+  stickerFileId: number = 0;
   stickerEmoji: string = '';
   stickerWidth: number = 0;
   stickerHeight: number = 0;
@@ -60,11 +68,13 @@ export class MessageContentDto {
   isPremiumSticker: boolean = false;
 
   animationPath: string = '';
+  animationFileId: number = 0;
   animationDuration: number = 0;
   animationWidth: number = 0;
   animationHeight: number = 0;
 
   videoNotePath: string = '';
+  videoNoteFileId: number = 0;
   videoNoteDuration: number = 0;
   videoNoteLength: number = 0;
 }
@@ -74,6 +84,7 @@ export class MessageDto {
   chatId: ChatId = 0;
   senderId: UserId = 0;
   senderChatId: ChatId = 0;
+  mediaAlbumId: MessageId = '0';
   content: MessageContentDto = new MessageContentDto();
   timestamp: number = 0;
   isOutgoing: boolean = false;
@@ -90,7 +101,15 @@ function extractCaption(contentObj: TdObject): string {
 
 function extractLocalFilePath(fileObj: TdObject): string {
   const localObj = tdGetObject(fileObj, 'local');
+  // Only return path if download is fully complete — partial paths break ArkUI Image
+  const isComplete = tdGetBoolean(localObj, 'is_downloading_completed');
+  if (!isComplete) return '';
   return tdGetString(localObj, 'path');
+}
+
+function extractFileId(fileObj: TdObject): number {
+  // Use getTopLevelNumber to avoid nested remote.id (string) shadowing numeric file id
+  return fileObj.getTopLevelNumber('id');
 }
 
 function extractThumbnailPath(parentObj: TdObject): string {
@@ -99,39 +118,52 @@ function extractThumbnailPath(parentObj: TdObject): string {
   return extractLocalFilePath(fileObj);
 }
 
-function extractPhotoMainPath(photoObj: TdObject): string {
+function extractThumbnailFileId(parentObj: TdObject): number {
+  const thumbnailObj = tdGetObject(parentObj, 'thumbnail');
+  const fileObj = tdGetObject(thumbnailObj, 'file');
+  return extractFileId(fileObj);
+}
+
+class PhotoFileInfo {
+  path: string = '';
+  fileId: number = 0;
+}
+
+function extractPhotoMain(photoObj: TdObject): PhotoFileInfo {
   const sizes = tdGetArray(photoObj, 'sizes');
-  let bestPath = '';
+  const result = new PhotoFileInfo();
   let bestArea = 0;
   for (const size of sizes) {
     const fileObj = tdGetObject(size, 'photo');
-    const path = extractLocalFilePath(fileObj);
-    if (path.length === 0) {
-      continue;
-    }
     const width = tdGetNumber(size, 'width');
     const height = tdGetNumber(size, 'height');
     const area = width * height;
     if (area >= bestArea) {
       bestArea = area;
-      bestPath = path;
+      result.path = extractLocalFilePath(fileObj);
+      result.fileId = extractFileId(fileObj);
     }
   }
-  return bestPath;
+  return result;
 }
 
-function extractPhotoThumbPath(photoObj: TdObject): string {
+function extractPhotoThumb(photoObj: TdObject): PhotoFileInfo {
   const sizes = tdGetArray(photoObj, 'sizes');
-  let firstPath = '';
+  const result = new PhotoFileInfo();
+  // Pick smallest size as thumbnail
+  let smallestArea = Number.MAX_VALUE;
   for (const size of sizes) {
     const fileObj = tdGetObject(size, 'photo');
-    const path = extractLocalFilePath(fileObj);
-    if (path.length > 0) {
-      firstPath = path;
-      break;
+    const width = tdGetNumber(size, 'width');
+    const height = tdGetNumber(size, 'height');
+    const area = width * height;
+    if (area > 0 && area < smallestArea) {
+      smallestArea = area;
+      result.path = extractLocalFilePath(fileObj);
+      result.fileId = extractFileId(fileObj);
     }
   }
-  return firstPath;
+  return result;
 }
 
 class PhotoDimensions {
@@ -176,6 +208,7 @@ export function createMessageDtoFromTd(tdMessage: TdObject): MessageDto {
   messageDto.chatId = tdGetNumber(tdMessage, 'chat_id');
   messageDto.senderId = senderId;
   messageDto.senderChatId = senderChatId;
+  messageDto.mediaAlbumId = tdGetInt64(tdMessage, 'media_album_id');
 
   messageDto.content = parsedContent;
 
@@ -210,11 +243,15 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       const caption = extractCaption(contentObj);
       const photoObj = tdGetObject(contentObj, 'photo');
       const dimensions = extractPhotoDimensions(photoObj);
+      const photoMain = extractPhotoMain(photoObj);
+      const photoThumb = extractPhotoThumb(photoObj);
       contentDto.type = MessageContentType.PHOTO;
       contentDto.caption = caption;
       contentDto.text = caption.length > 0 ? caption : '[Photo]';
-      contentDto.photoPath = extractPhotoMainPath(photoObj);
-      contentDto.photoThumbPath = extractPhotoThumbPath(photoObj);
+      contentDto.photoPath = photoMain.path;
+      contentDto.photoFileId = photoMain.fileId;
+      contentDto.photoThumbPath = photoThumb.path;
+      contentDto.photoThumbFileId = photoThumb.fileId;
       contentDto.photoWidth = dimensions.width;
       contentDto.photoHeight = dimensions.height;
       break;
@@ -227,7 +264,9 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.caption = caption;
       contentDto.text = caption.length > 0 ? caption : '[Video]';
       contentDto.videoPath = extractLocalFilePath(videoFile);
+      contentDto.videoFileId = extractFileId(videoFile);
       contentDto.videoThumbPath = extractThumbnailPath(videoObj);
+      contentDto.videoThumbFileId = extractThumbnailFileId(videoObj);
       contentDto.videoDuration = tdGetNumber(videoObj, 'duration');
       contentDto.videoWidth = tdGetNumber(videoObj, 'width');
       contentDto.videoHeight = tdGetNumber(videoObj, 'height');
@@ -244,6 +283,7 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.caption = caption;
       contentDto.text = caption.length > 0 ? caption : '[File]';
       contentDto.documentPath = extractLocalFilePath(documentFile);
+      contentDto.documentFileId = extractFileId(documentFile);
       contentDto.fileName = tdGetString(documentObj, 'file_name');
       contentDto.fileSize = tdGetNumber(documentFile, 'size');
       contentDto.mimeType = tdGetString(documentObj, 'mime_type');
@@ -257,6 +297,7 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.caption = caption;
       contentDto.text = caption.length > 0 ? caption : '[Audio]';
       contentDto.audioPath = extractLocalFilePath(audioFile);
+      contentDto.audioFileId = extractFileId(audioFile);
       contentDto.audioDuration = tdGetNumber(audioObj, 'duration');
       contentDto.audioTitle = tdGetString(audioObj, 'title');
       contentDto.audioPerformer = tdGetString(audioObj, 'performer');
@@ -273,6 +314,7 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.caption = caption;
       contentDto.text = caption.length > 0 ? caption : '[Voice message]';
       contentDto.voicePath = extractLocalFilePath(voiceFile);
+      contentDto.voiceFileId = extractFileId(voiceFile);
       contentDto.voiceDuration = tdGetNumber(voiceObj, 'duration');
       contentDto.voiceWaveform = tdGetString(voiceObj, 'waveform');
       contentDto.isVoiceListened = tdGetBoolean(contentObj, 'is_listened');
@@ -285,6 +327,7 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       const formatType = tdGetString(formatObj, '@type');
       contentDto.type = MessageContentType.STICKER;
       contentDto.stickerPath = extractLocalFilePath(stickerFile);
+      contentDto.stickerFileId = extractFileId(stickerFile);
       contentDto.stickerEmoji = tdGetString(stickerObj, 'emoji');
       contentDto.stickerWidth = tdGetNumber(stickerObj, 'width');
       contentDto.stickerHeight = tdGetNumber(stickerObj, 'height');
@@ -314,6 +357,9 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.caption = caption;
       contentDto.text = caption.length > 0 ? caption : '[GIF]';
       contentDto.animationPath = extractLocalFilePath(animationFile);
+      contentDto.animationFileId = extractFileId(animationFile);
+      contentDto.videoThumbPath = extractThumbnailPath(animationObj);
+      contentDto.videoThumbFileId = extractThumbnailFileId(animationObj);
       contentDto.animationDuration = tdGetNumber(animationObj, 'duration');
       contentDto.animationWidth = tdGetNumber(animationObj, 'width');
       contentDto.animationHeight = tdGetNumber(animationObj, 'height');
@@ -328,6 +374,9 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.type = MessageContentType.VIDEO_NOTE;
       contentDto.text = '[Video message]';
       contentDto.videoNotePath = extractLocalFilePath(videoNoteFile);
+      contentDto.videoNoteFileId = extractFileId(videoNoteFile);
+      contentDto.videoThumbPath = extractThumbnailPath(videoNoteObj);
+      contentDto.videoThumbFileId = extractThumbnailFileId(videoNoteObj);
       contentDto.videoNoteDuration = tdGetNumber(videoNoteObj, 'duration');
       contentDto.videoNoteLength = tdGetNumber(videoNoteObj, 'length');
       break;
@@ -353,6 +402,7 @@ export function applyMessageUpdate(message: MessageDto, update: MessageUpdateDto
   updatedMessage.chatId = message.chatId;
   updatedMessage.senderId = message.senderId;
   updatedMessage.senderChatId = message.senderChatId;
+  updatedMessage.mediaAlbumId = message.mediaAlbumId;
   updatedMessage.content = message.content;
   updatedMessage.timestamp = message.timestamp;
   updatedMessage.isOutgoing = message.isOutgoing;

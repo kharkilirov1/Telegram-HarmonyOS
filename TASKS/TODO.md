@@ -1,9 +1,9 @@
 # TODO — observed current work
 
-Last updated: 2026-03-09
+Last updated: 2026-03-15
 
 This is a **working snapshot**, not a product roadmap. It is derived from:
-- current git status on branch `refactor/appcore-reset`
+- current git status on branch `dev`
 - current repo docs
 - current file layout
 
@@ -11,6 +11,222 @@ Canonical execution order for agents now lives in:
 - `TASKS/AGENT_EXECUTION_PLAN.md`
 
 ## Active now
+
+### 0r. Device-verify bubble improvements: GIF, reply quotes, meta overlay, avatars (2026-03-14)
+- **Evidence:** TgMessageRouter rewritten with avatar support, media sizing fix, tighter inline meta, media overlay tokens, regular-width bubble helper, and avatar-lane fallback logic. Rounded media/avatar/reply images now use `.clip(true)`. TgPhotoViewerPage + TgVideoPlayerPage added. Bubble colors aligned to iOS. overlayMode wired in TgMessageMeta.
+- **Current action:** device-check:
+  1. Wider bubbles (0.85 ratio) — text and media fill more of screen width,
+  2. Avatars appear left of incoming group messages (last in sender group),
+  3. Avatar space stays reserved for all incoming group messages even before avatar photo hydration,
+  4. GIFs auto-play without play button overlay,
+  5. Reply quotes have subtle background tint plus top-right quote accent inside bubbles,
+  6. Photo/video/avatar/reply thumbnail corners stay cleanly clipped (no square bleed),
+  7. Photo/video without caption: time overlays on bottom-right dark pill with white text and no oversized empty width,
+  8. Photo/video with caption: time below caption (normal style) and no overlap with trailing text,
+  9. Photo tap opens fullscreen viewer with pinch-to-zoom,
+  10. Video tap opens fullscreen player with controls,
+  11. Bubble colors match iOS (outgoing green #E1FFC7, dark incoming #182533),
+  12. On tablet/regular width chats, bubbles shrink to the iOS-style narrower lane instead of staying phone-wide.
+  13. Media captions no longer lose the first characters on the left edge (especially channel/photo posts).
+  14. Tall portrait photos fit fully inside the bubble instead of cropping the lower part.
+  15. Bubble body/caption text now reads less oversized in HarmonyOS runtime after the 16/21 typography tightening.
+
+### 0s. Device-verify grouped photo albums + voice playback path (2026-03-15)
+- **Evidence:** `media_album_id` now flows through DTO/state/reducer, `ChatTimelineVO` collapses album clusters into `photoAlbum`, `TgGroupedPhotoBubble` renders the mosaic, and `TgMessageRouter` / `TgChatScreenPage` now drive real voice download+playback via `VoicePlaybackController`.
+- **Current action:** device-check:
+  1. paired photos now render as one grouped bubble instead of two separate photo bubbles,
+  2. 3-up / 4-up / `5+` album layouts look stable and clipped,
+  3. tapping the `+N` overlay cell still opens the tapped photo,
+  4. album caption/time layout still reads correctly under the grouped bubble,
+  5. voice bubble shows download icon before file exists, then play/pause after download,
+  6. voice playback starts from local file, pauses/resumes, and progress colors move across the waveform,
+  7. listened-state styling stays correct after local playback,
+  8. switching chats or reopening the same chat does not leave stale active voice state behind.
+
+### 0t. Emulator/device-verify hardened media viewers (2026-03-15)
+- **Evidence:** `TgChatScreenPage` no longer uses `bindContentCover` for photo/video viewing; fullscreen viewers are rendered as direct overlay layers in the root `Stack`. `TgVideoBubble` now opens on tap anywhere on the preview, not only on the center play button.
+- **Current action:** verify on emulator/device:
+  1. tapping a photo bubble opens `TgPhotoViewerPage`,
+  2. tapping an album cell opens the selected photo in the viewer,
+  3. tapping a video bubble preview opens `TgVideoPlayerPage`,
+  4. tapping a GIF/animation preview opens the viewer path again,
+  5. dismiss/close returns cleanly to the chat without leaving a stale black overlay.
+
+### 0u. Device-verify document bubbles + empty-bubble fallback fix (2026-03-15)
+- **Evidence:** `TgDocumentRow` now renders a Telegram-style extension badge in the leading tile and allows a 2-line file title; `TgMessageRouter` now routes `unknown` / `location` / `contact` / `poll` through the text-fallback path instead of letting them fall into an empty visual shell.
+- **Current action:** verify on emulator/device:
+  1. document/file bubbles show an extension badge (`PDF`, etc.) when not downloading,
+  2. long file names wrap to two lines without breaking the meta row,
+  3. download-progress document rows still show the progress state instead of the extension badge,
+  4. previously blank bubbles now render fallback text for location/contact/poll/unknown content,
+  5. no new width/alignment regression appeared in file bubbles after the leading-tile change.
+
+### 0v. Device-verify voice bubble meta alignment fix (2026-03-15)
+- **Evidence:** `TgUiTokens.resolveVoiceBubbleWidth(...)` now drives both `TgVoiceBubble` and `TgMessageRouter`, and the router no longer uses a generic `width('100%')` meta row for voice messages.
+- **Current action:** verify on emulator/device:
+  1. time/status stays inside outgoing voice bubbles,
+  2. time/status stays inside incoming voice bubbles,
+  3. short voice messages do not push time off the right edge,
+  4. long voice messages still keep the time cluster aligned to the bubble body,
+  5. group-chat voice messages with sender name / reply snippet do not reintroduce width drift.
+
+### 0w. Device-verify channel bubble width / wrap parity pass (2026-03-15)
+- **Evidence:** channel posts no longer reserve the hidden group avatar lane, and text/caption paths now use `lineBreakStrategy(LineBreakStrategy.HIGH_QUALITY)` in addition to the existing word-break rules.
+- **Current action:** verify on emulator/device:
+  1. incoming channel posts are visibly wider than before,
+  2. channel text bubbles stop wrapping too early because of a hidden avatar lane,
+  3. long Russian/Cyrillic text reads closer to iOS rhythm,
+  4. media captions in channels also wrap more naturally,
+  5. normal group chats still keep the reserved avatar lane behavior.
+
+### 0x. Device-verify P0 media reliability pass (2026-03-15)
+- **Evidence:** `MessageDto` now extracts thumbnails for `messageAnimation` / `messageVideoNote`; `ChatTimelineVO` propagates their `videoFileId` and thumb-first preview path; `TgChatScreenPage` now queues pending video opens and auto-opens after `downloadFile` makes the local path available; grouped photo albums no longer drop empty-path cells.
+- **Current action:** verify on emulator/device:
+  1. tapping a not-yet-local video opens it automatically after download instead of requiring a second tap,
+  2. GIF/animation bubbles show preview thumbnails before the full animation file is downloaded,
+  3. videoNote bubbles show preview thumbnails before the full file is local,
+  4. partially downloaded photo albums stay grouped and show placeholder cells instead of collapsing into one photo,
+  5. special-media fullscreen open still works when the file is already local,
+  6. switching chats clears any stale pending-video-open state.
+
+### 0q. Device-verify media pipeline + badge reset (2026-03-14)
+- **Evidence:** Full media pipeline activated: file:// URI conversion, on-demand document download, badge reset fix, badge styling alignment.
+- **Current action:** device-check:
+  1. Photos display in chat bubbles (not placeholder icons),
+  2. Stickers display correctly,
+  3. Video thumbnails show in video bubbles,
+  4. Document tap triggers download, icon changes after completion,
+  5. Unread badges reset when exiting a previously unread chat,
+  6. Tab bar badge decrements correctly,
+  7. Muted chat badges show gray (#B6B6BB) not text_secondary gray,
+  8. Voice messages auto-download (bubble should show waveform ready for playback).
+
+### 0p. Device-verify chat opening performance + unread marker (2026-03-14)
+- **Evidence:** TgChatScreenPage rewritten for instant chat positioning via `List({ initialIndex })`, race condition fix (`HISTORY_INITIAL_DELAY_MS=600`), placeholder release deadlock fix (`INITIAL_HISTORY_PLACEHOLDER_RELEASE_COUNT=1`), sticky unread marker (`stickyLastReadMessageId`).
+- **Current action:** device-check:
+  1. Chat opens at correct position (bottom for read chats, unread boundary for unread),
+  2. No eternal loading spinner on any chat,
+  3. Old messages load normally via pagination (not broken by delay change),
+  4. Unread marker ("Unread Messages") persists while in chat, disappears on re-entry after reading,
+  5. Chats with <12 messages render content immediately (no spinner),
+  6. Saved scroll position restored correctly on back-navigate to previously opened chat.
+
+### 0n. Device-verify glass system overhaul + composer + status bar (2026-03-14)
+- **Evidence:** Full glass/blur/composer/status bar rework in session 5.
+- **Current action:** device-check:
+  1. Status bar icons visible and correct color in both light/dark themes,
+  2. Composer no longer shows blue focus outline on tap,
+  3. Composer sizing/padding feels closer to iOS (slightly thicker capsule),
+  4. Glass elements (top bar, tab bar, composer, filter bar) show frosted tint (not nearly-invisible),
+  5. Glass edge highlights visible as thin light border on all glass capsules,
+  6. Tab bar pill is gray (not blue) with glass blur effect,
+  7. Tab bar island still full capsule shape (radius 999),
+  8. BlurStyle.COMPONENT_REGULAR renders properly on device (not all devices support it equally).
+
+### 0j. Device-verify long-press context menu + reply bar
+- **Evidence:** TgChatScreenPage now uses LongPressGesture(300ms) → `promptAction.showActionMenu()` with Reply/Copy actions. Old PanGesture swipe-to-reply removed (was hacky, caused perf issues with shared @State). Reply bar uses proper tokens (REPLY_SNIPPET_*), height 45vp (iOS reference). Member count uses localized string resources.
+- **Current action:** device-check:
+  1. long-press on message shows action menu (Reply + Copy),
+  2. Reply action opens reply bar above composer,
+  3. Copy action copies text to clipboard with toast feedback,
+  4. reply bar appears/disappears properly,
+  5. sent message includes reply-to reference,
+  6. reply state clears after send,
+  7. group/channel subtitle shows localized member count.
+
+### 0k. Device-verify emoji media prefixes in chat list
+- **Evidence:** `fallbackMessageTextForType()` now returns emoji prefixes (`📷 Photo`, `📹 Video`, etc.) instead of brackets.
+- **Current action:** device-check chat list to confirm media type previews show emoji.
+
+### 0l. Device-verify group/channel member count in top bar
+- **Evidence:** `updateChatTopBarData()` now shows "X members"/"X subscribers" for groups/channels.
+- **Current action:** device-check group and channel chat screens to confirm subtitle shows member count.
+
+### 0m. Device-verify long-press copy
+- **Evidence:** parallelGesture(LongPressGesture) on message bubbles copies text to clipboard.
+- **Current action:** device-check long-press on text message, paste elsewhere to verify.
+
+### 0d. Device-verify controlled TgComposerInput + emoji lane
+- **Evidence:** `TgComposerInput` was brought back to a controlled contract: `TgChatScreenPage` now owns the live draft text, the atom exposes `text` + `onTextChange`, the optional emoji lane is present again, and the main geometry moved into `TgUiTokens`.
+- **HarmonyOS grounding:** the atom now uses `TextArea.style(TextContentStyle.INLINE)` plus `onSubmit(..., SubmitEvent).keepEditableState()` for send-style keyboard behavior.
+- **Current action:** device-check the live chat composer and confirm:
+  1. typing updates stay stable across page rebuilds,
+  2. send-style Enter does not unnecessarily dismiss the keyboard,
+  3. emoji/send/mic spacing reads correctly inside the unified capsule,
+  4. draft clearing after send still feels natural.
+
+### 0e. Device-verify TgChatRow prefix states
+- **Evidence:** `ChatItemVO` + `TgChatRow` now split preview prefixes from the preview body instead of flattening everything into one plain string.
+- **What changed locally:**
+  - drafts now render as a red `Draft:` prefix + normal body text,
+  - group sender prefixes (`You:` / sender name) now render as a separate accent fragment,
+  - group typing rows now use the same split-prefix rhythm (`Alice` + `typing...`) instead of one flat string.
+- **Current action:** device-check the Chats tab and confirm:
+  1. draft rows read like Telegram instead of one monochrome sentence,
+  2. group sender prefixes visually separate from the body,
+  3. typing rows still ellipsize correctly on narrow widths,
+  4. right meta cluster does not jump when prefix states change.
+
+### 0f. Device-verify TgChatMeta optical tuning
+- **Evidence:** `TgChatMeta` / `TgUnreadBadge` were re-tuned against current iOS refs:
+  - time text now uses a dedicated 14pt-style token,
+  - unread badge text uses a dedicated 14pt token plus tighter horizontal padding,
+  - pin icon size was reduced,
+  - status icon size was increased.
+- **Current action:** device-check several row states and confirm:
+  1. time/status cluster no longer looks undersized,
+  2. unread badge width/weight feels closer to Telegram iOS,
+  3. pin icon no longer looks oversized beside the badge lane,
+  4. no jump/regression appeared in the right meta cluster.
+
+### 0g. Device-verify typing preview correction
+- **Evidence:** iOS `ChatListTypingNode.swift` renders typing activity through `ChatListInputActivitiesNode` using the regular chat-list message text color, not the draft/error accent and not the split author-prefix accent path.
+- **What changed locally:** group typing rows went back to a single preview string (`Alice typing...`), and `TgChatRow` no longer paints typing body text in the primary accent color.
+- **Current action:** device-check typing states and confirm:
+  1. typing rows no longer look over-accented,
+  2. group typing text still reads clearly,
+  3. ellipsis still behaves correctly on narrow rows,
+  4. the state feels closer to Telegram iOS than the previous blue/accent version.
+
+### 0h. Device-verify row rhythm / separator lane tuning
+- **Evidence:** `ChatListItem.swift` shows a tighter vertical title/preview rhythm than the old tg_ui row, and the iOS separator lane for the standard avatar path lands around `80pt`, not at the full text-start inset.
+- **What changed locally:** `TgUiTokens` now use a tighter title/preview gap and an explicit iOS-like separator inset lane.
+- **Current action:** device-check the Chats tab and confirm:
+  1. rows no longer feel too airy vertically,
+  2. separator starts closer to Telegram iOS,
+  3. pinned/background transitions still look clean,
+  4. no clipping/regression appeared in narrow rows.
+
+### 0i. Device-verify row typography tuning
+- **Evidence:** `ChatListItem.swift` uses row-specific title/preview typography (`16/17`-scaled title, `15/17`-scaled preview) rather than generic screen-title sizing.
+- **What changed locally:** `TgChatRow` now uses dedicated row typography tokens (`CHAT_ROW_TITLE_FONT_SIZE`, `CHAT_ROW_PREVIEW_FONT_SIZE`) instead of the shared global title token.
+- **Current action:** device-check the Chats tab and confirm:
+  1. row titles no longer feel oversized,
+  2. preview/body balance looks closer to Telegram iOS,
+  3. nothing else in the app regressed because the old global token is no longer driving chat rows.
+
+### 0c. Device-verify corrected iOS-style tab bar capsule
+- **Evidence:** same-day re-check of current Telegram iOS refs showed that the active tab shell is still a centered glass capsule (`TabBarComponent` / `GlassBackgroundContainerView`), so the brief full-width shelf rewrite was wrong.
+- **What changed locally:** `entry/src/main/ets/ui/tg_ui/atoms/TgTabBar.ets` was corrected back toward a centered capsule model; dead atom-local bottom-inset bookkeeping was removed so the page remains the only owner of bottom safe-area math; `entry/src/main/ets/ui/pages/MainTabsPage.ets` again positions it above the bottom safe area; `entry/src/main/ets/ui/utils/SafeAreaUtils.ets` again reserves capsule height + safe area + breathing gap.
+- **Current action:** device-check root tabs and confirm:
+  1. the capsule sits at the correct bottom offset safely,
+  2. all 4 tabs remain easy to tap,
+  3. unread badge placement still looks right,
+  4. the overall bottom chrome reads like the current Telegram iOS capsule.
+
+### 0a. Device-verify TgChatTopBar centering on chat screen
+- **Evidence:** screenshot `C:\Users\Kharki\Pictures\Screenshot_2026-03-12T022356.png` showed the chat top bar cluster packed to the left instead of using the full width.
+- **What changed locally:** `entry/src/main/ets/ui/tg_ui/atoms/TgChatTopBar.ets` now uses fixed left/right capsules plus a weighted center lane for the title capsule; title/subtitle text are centered inside the capsule; each capsule is now a layered `Stack` so glass blur/specular stay behind the content instead of compositing over it; the atom again exposes `glassMode` and no longer hardcodes opaque fallback surfaces as the only path.
+- **Current action:** run device check on the same chat screen and confirm (1) avatar is pinned right, (2) title capsule is centered, and (3) text/icons look crisp above the glass on a dark chat background.
+
+### 0b. Device-verify new integrated ChatList header
+- **Evidence:** the previous ChatList shell used `TgTopBar` plus a separate scrolling `Search` list item, which visually produced a double-strip header and clipped left `Edit` text in Russian (`C:\Users\Kharki\Pictures\Screenshot_2026-03-12T101849.png`).
+- **What changed locally:** `ChatListPage` now uses the new atom `entry/src/main/ets/ui/tg_ui/atoms/TgChatListNavigationBar.ets`; the search field moved into the header surface; the page now offsets list content by a tokenized integrated header height instead of rendering search as the first list row. A follow-up fix on 2026-03-13 gave the header atom an explicit root height, because without it the `Stack` overlay could expand and swallow all chat-list gestures/taps.
+- **Current action:** device-check the Chats tab and confirm:
+  1. the left action text is no longer clipped,
+  2. the search field reads as part of the header chrome,
+  3. list content scrolls under the header cleanly with no extra strip/gap,
+  4. the list is scrollable and rows are tappable again.
 
 ### 0. Device-verify chat-list blank-cell regression fix
 - **Evidence:** local code updates in:
@@ -45,6 +261,12 @@ Canonical execution order for agents now lives in:
 - **Newest finding from 2026-03-08 `[21342]` HiLog:** the defer-placeholder path worked, but one top-up was not always enough — at least one chat still progressed only `1 -> 2` messages while `canLoadOlder` stayed true.
 - **Newest local refinement completed:** initial top-up now retries in a bounded loop while oldest-message progress continues, and the chat screen keeps the loading placeholder until the initial timeline is large enough or older history is genuinely exhausted.
 - **Current action:** device-verify that problematic chats now land on a fuller first-open timeline without showing a misleading tiny partial history in between.
+- **Newest local fix (2026-03-11):** prepend compensation for older-history loading in `TgChatScreenPage` now freezes the viewport and re-anchors the saved visible item synchronously in the same turn as `applyDiff()`. The delayed second-pass `setTimeout(16ms)` compensation was removed from the prepend path because it still allowed a visible jump/autoscroll when older rows were inserted above the viewport.
+- **Newest local perf fix (2026-03-12):** initial `getChatHistory` dispatch now lands in store/UI before missing sender hydration. Sender users are hydrated in background, in parallel chunks, and their normalized events are dispatched as one batch instead of one store update per user. Message selectors now memoize per-chat sorted arrays by message-map reference, so those follow-up user updates no longer force a full re-sort of the active chat.
+- **Newest local scroll fix attempt (2026-03-12):** chat history `List` now enables native `maintainVisibleContentPosition(true)` and the old custom prepend `scrollToIndex` compensation hot path was removed. Prepend now relies on ArkUI's built-in off-screen insert preservation and only keeps the anti-cascade guard.
+- **Newest local runtime fix (2026-03-12):** `ChatTimelineDataSource` stopped mixing `onDatasetChange(...)` with `onDataAdd/onDataDelete/onDataChange`, which was matching the device HiLog error `onDatasetChange cannot be used with other interface`. `TgChatScreenPage` now also blocks pagination callbacks while `applyDiff()` is running and defers `recheckPaginationEdge()` to the next tick so it does not fire against stale pre-prepend indices/counts.
+- **Verification status:** `bash ./scripts/smoke-ui-phase0.sh` ✅, `./scripts/smoke-build.ps1` ✅, `./scripts/smoke-ui-phase0.ps1` ✅.
+- **Current action:** device-verify three runtime cases on a long/big chat: (1) hitting the top edge loads older messages without shifting the visible viewport under native `maintainVisibleContentPosition`, (2) the `Loading older messages...` loop no longer cascades without user scroll after each batch, and (3) `Timeline rebuild failed: onDatasetChange cannot be used with other interface` no longer appears in HiLog.
 
 ### 2. Finish and commit the new tg_ui docs/demo batch
 - **Evidence:** untracked files include:
@@ -102,12 +324,34 @@ Priority order is by **visual/functional impact**, not by architectural purity.
 - getUserFullInfo (bio), getSupergroupFullInfo (description, memberCount)
 - Needs device verification
 
+### P8 TgTabBar Android-style rewrite — COMPLETE (2026-03-11)
+- Pill highlight replaces ring (full-tab capsule, 9% alpha, scale+opacity animation 320ms)
+- Sizes: 56vp height, 24vp icon, 12vp text, Bold font on selection
+- Reference: Android `GlassTabView.java`
+
+### P9 Pagination Android/iOS alignment — COMPLETE (2026-03-11)
+- Older threshold 10→25, newer 6→5 (Android/iOS values)
+- Latch system removed → simple `!isLoading` guard (Android pattern)
+- Scroll compensation: synchronous (removed setTimeout 16ms flicker)
+- Reason: `'restore'` → `'default'` for scroll pagination
+
+### P7 Unified bubble container — COMPLETE (2026-03-10)
+- TgMessageRouter: sender name, reply, content, meta all INSIDE bubble
+- Stack(BottomEnd) for text bubble shrink-wrap + meta overlay
+- All bubble atoms gained noBubbleWrap support
+- Nav lock double-tap fix (ChatListPage.onPageShow + aboutToDisappear)
+- Composer safe area fix (margin→padding, expandSafeArea BOTTOM)
+
 ### Future (beyond current sprint)
 - Media download/open (photos, videos, documents)
 - Voice message playback
 - Push notifications
 - Create new chat/group
 - Search within messages
+- Message context menu (reply, copy, forward, delete)
+- Unread counter badge on chat list tab
+- Typing indicator in chat screen
+- Online status in chat list
 
 ## Next after the current patchset
 
