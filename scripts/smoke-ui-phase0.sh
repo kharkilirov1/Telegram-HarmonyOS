@@ -9,6 +9,7 @@ PHASE0_FILES=(
   "entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets"
   "entry/src/main/ets/ui/tg_ui/atoms/TgChatRow.ets"
   "entry/src/main/ets/ui/tg_ui/atoms/TgTopBar.ets"
+  "entry/src/main/ets/ui/tg_ui/atoms/TgChatListNavigationBar.ets"
   "entry/src/main/ets/ui/tg_ui/atoms/TgChatTopBar.ets"
   "entry/src/main/ets/ui/tg_ui/atoms/TgTabBar.ets"
 )
@@ -37,6 +38,7 @@ fi
 
 CHAT_ROW="$ROOT/entry/src/main/ets/ui/tg_ui/atoms/TgChatRow.ets"
 CHAT_LIST_PAGE="$ROOT/entry/src/main/ets/ui/pages/chatlist/ChatListPage.ets"
+CHAT_LIST_NAV="$ROOT/entry/src/main/ets/ui/tg_ui/atoms/TgChatListNavigationBar.ets"
 MAIN_TABS_PAGE="$ROOT/entry/src/main/ets/ui/pages/MainTabsPage.ets"
 CHAT_SCREEN_PAGE="$ROOT/entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets"
 
@@ -55,13 +57,13 @@ if ! grep -q 'TgTabBar(' "$MAIN_TABS_PAGE"; then
   exit 1
 fi
 
-if ! grep -q 'TgTopBar(' "$CHAT_LIST_PAGE"; then
-  echo "ERROR: ChatListPage must compose TgTopBar." >&2
+if ! grep -q 'TgChatListNavigationBar(' "$CHAT_LIST_PAGE"; then
+  echo "ERROR: ChatListPage must compose TgChatListNavigationBar." >&2
   exit 1
 fi
 
-if ! grep -q 'Search(' "$CHAT_LIST_PAGE"; then
-  echo "ERROR: ChatListPage must compose a Search component." >&2
+if ! grep -q 'Search(' "$CHAT_LIST_NAV"; then
+  echo "ERROR: TgChatListNavigationBar must compose a Search component." >&2
   exit 1
 fi
 

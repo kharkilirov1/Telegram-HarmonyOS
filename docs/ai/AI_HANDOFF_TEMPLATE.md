@@ -4,7 +4,7 @@ Use this template when handing work to another AI agent.
 
 ## Project
 - Path: `C:\Users\Kharki\Desktop\Telegram-HarmonyOS`
-- Branch: `refactor/appcore-reset`
+- Branch: `dev`
 
 ## Read first
 1. `docs/ai/AI_MEMORY.md`

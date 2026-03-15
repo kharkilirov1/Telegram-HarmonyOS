@@ -1,8 +1,8 @@
 // TgProfilePage — user/chat profile screen
 // Opens from TgChatScreenPage via avatar/title tap
 // V1 @Component — same as other shell pages
+// Reference: iOS Telegram PeerInfoScreen
 
-import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, User, Chat } from '../../../core/model/AppState';
 import { loadUserFullInfo, loadSupergroupFullInfo } from '../../../domain/usecases/loadProfileInfo';
@@ -83,6 +83,16 @@ function memberCountText(count: number, chatType: string): string {
   return count.toString() + ' members';
 }
 
+function formatMemberCount(count: number): string {
+  if (count >= 1000000) {
+    return (count / 1000000).toFixed(1) + 'M';
+  }
+  if (count >= 1000) {
+    return (count / 1000).toFixed(1) + 'K';
+  }
+  return count.toString();
+}
+
 @Component
 export struct TgProfilePage {
   pageStack: NavPathStack = new NavPathStack();
@@ -101,13 +111,19 @@ export struct TgProfilePage {
   @State private bio: string = '';
   @State private chatType: string = 'private';
   @State private memberCount: number = 0;
+  @State private administratorCount: number = 0;
   @State private description: string = '';
+  @State private inviteLink: string = '';
   @State private isMuted: boolean = false;
   @State private isVerified: boolean = false;
   @State private isPremium: boolean = false;
 
   @State private topInset: number = 0;
   private storeUnsubscribe: (() => void) | undefined = undefined;
+
+  private isGroupOrChannel(): boolean {
+    return this.chatType === 'supergroup' || this.chatType === 'channel' || this.chatType === 'group';
+  }
 
   aboutToAppear(): void {
     try {
@@ -131,7 +147,6 @@ export struct TgProfilePage {
     const state = runtime.getStore().getState();
     this.applyState(state);
 
-    // Subscribe to store changes
     if (this.storeUnsubscribe) {
       this.storeUnsubscribe();
     }
@@ -158,6 +173,8 @@ export struct TgProfilePage {
     this.isMuted = chat.muteForSeconds > 0;
     this.memberCount = chat.memberCount;
     this.description = chat.description;
+    this.inviteLink = chat.inviteLink;
+    this.administratorCount = chat.administratorCount;
 
     if (chat.type === 'private' && chat.peerUserId > 0) {
       const user = state.users.users.get(chat.peerUserId);
@@ -206,19 +223,22 @@ export struct TgProfilePage {
     }
   }
 
+  // ─── Builders ───
+
   @Builder
-  private buildInfoRow(icon: Resource, label: string, value: string) {
+  private buildInfoRowAccent(label: string, value: string, showSeparator: boolean = true) {
     Column() {
       Row() {
         Column() {
           Text(value)
-            .fontSize(TgUiTokens.FONT_TITLE_SIZE)
-            .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
-            .maxLines(3)
+            .fontSize(17)
+            .fontColor(TgUiTokens.COLOR_ICON_PRIMARY)
+            .maxLines(5)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .copyOption(CopyOptions.LocalDevice)
 
           Text(label)
-            .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+            .fontSize(14)
             .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
             .margin({ top: 2 })
         }
@@ -226,110 +246,281 @@ export struct TgProfilePage {
         .layoutWeight(1)
       }
       .width('100%')
-      .padding({
-        left: TgUiTokens.CHAT_ROW_SIDE_INSET,
-        right: TgUiTokens.CHAT_ROW_SIDE_INSET,
-        top: 12,
-        bottom: 12
-      })
+      .padding({ left: 16, right: 16, top: 11, bottom: 11 })
 
-      Divider()
-        .strokeWidth(0.5)
-        .color(TgUiTokens.COLOR_SEPARATOR)
-        .margin({ left: TgUiTokens.CHAT_ROW_SIDE_INSET })
+      if (showSeparator) {
+        Divider()
+          .strokeWidth(0.5)
+          .color(TgUiTokens.COLOR_SEPARATOR)
+          .margin({ left: 16 })
+      }
     }
   }
 
+  @Builder
+  private buildInfoRow(label: string, value: string, showSeparator: boolean = true) {
+    Column() {
+      Row() {
+        Column() {
+          Text(value)
+            .fontSize(17)
+            .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+            .maxLines(5)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .copyOption(CopyOptions.LocalDevice)
+
+          Text(label)
+            .fontSize(14)
+            .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+            .margin({ top: 2 })
+        }
+        .alignItems(HorizontalAlign.Start)
+        .layoutWeight(1)
+      }
+      .width('100%')
+      .padding({ left: 16, right: 16, top: 11, bottom: 11 })
+
+      if (showSeparator) {
+        Divider()
+          .strokeWidth(0.5)
+          .color(TgUiTokens.COLOR_SEPARATOR)
+          .margin({ left: 16 })
+      }
+    }
+  }
+
+  @Builder
+  private buildDisclosureRow(label: string, value: string, showSeparator: boolean = true) {
+    Column() {
+      Row() {
+        Text(label)
+          .fontSize(TgUiTokens.FONT_TITLE_SIZE)
+          .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+          .layoutWeight(1)
+
+        if (value.length > 0) {
+          Text(value)
+            .fontSize(TgUiTokens.FONT_TITLE_SIZE)
+            .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+            .margin({ right: 4 })
+        }
+
+        Image(TgUiTokens.ICON_RES_ARROW_RIGHT)
+          .width(16)
+          .height(16)
+          .fillColor(TgUiTokens.COLOR_ICON_SECONDARY)
+      }
+      .width('100%')
+      .padding({ left: 16, right: 16, top: 14, bottom: 14 })
+      .alignItems(VerticalAlign.Center)
+
+      if (showSeparator) {
+        Divider()
+          .strokeWidth(0.5)
+          .color(TgUiTokens.COLOR_SEPARATOR)
+          .margin({ left: 16 })
+      }
+    }
+  }
+
+  @Builder
+  private buildSwitchRow(label: string, isOn: boolean, showSeparator: boolean = false) {
+    Column() {
+      Row() {
+        Text(label)
+          .fontSize(TgUiTokens.FONT_TITLE_SIZE)
+          .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+          .layoutWeight(1)
+
+        Toggle({ type: ToggleType.Switch, isOn: isOn })
+          .selectedColor(TgUiTokens.COLOR_ICON_PRIMARY)
+      }
+      .width('100%')
+      .padding({ left: 16, right: 16, top: 10, bottom: 10 })
+      .alignItems(VerticalAlign.Center)
+
+      if (showSeparator) {
+        Divider()
+          .strokeWidth(0.5)
+          .color(TgUiTokens.COLOR_SEPARATOR)
+          .margin({ left: 16 })
+      }
+    }
+  }
+
+  @Builder
+  private buildSectionHeader(title: string) {
+    Text(title.toUpperCase())
+      .fontSize(13)
+      .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+      .padding({ left: 16, right: 16, top: 6, bottom: 6 })
+  }
+
+  // ─── Section: Header ───
+  @Builder
+  private buildHeader() {
+    Column({ space: 8 }) {
+      TgAvatar({
+        avatarSize: 100,
+        initials: this.avatarInitials,
+        useImage: this.avatarImageSrc.length > 0,
+        imageSrc: this.avatarImageSrc,
+        isOnline: this.isOnline,
+        avatarBackgroundColor: this.avatarColor,
+        textColor: TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT
+      })
+
+      Text(this.title)
+        .fontSize(28)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+        .maxLines(2)
+        .textAlign(TextAlign.Center)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+      if (this.subtitle.length > 0) {
+        Text(this.subtitle)
+          .fontSize(17)
+          .fontColor(this.isOnline ? TgUiTokens.COLOR_ONLINE_DOT : TgUiTokens.COLOR_TEXT_PREVIEW)
+          .textAlign(TextAlign.Center)
+      }
+    }
+    .width('100%')
+    .padding({ top: 24, bottom: 20 })
+    .alignItems(HorizontalAlign.Center)
+  }
+
+  // ─── Section: User Info ───
+  @Builder
+  private buildUserInfoSection() {
+    Column() {
+      if (this.phoneNumber.length > 0) {
+        this.buildInfoRowAccent('phone', this.phoneNumber, this.username.length > 0 || this.bio.length > 0)
+      }
+      if (this.username.length > 0) {
+        this.buildInfoRow('username', '@' + this.username, this.bio.length > 0)
+      }
+      if (this.bio.length > 0) {
+        this.buildInfoRow('bio', this.bio, false)
+      }
+    }
+    .width('100%')
+    .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
+    .borderRadius(12)
+    .margin({ left: 16, right: 16 })
+    .clip(true)
+  }
+
+  // ─── Section: Group/Channel Info ───
+  @Builder
+  private buildGroupInfoSection() {
+    Column() {
+      // Description
+      if (this.description.length > 0) {
+        this.buildInfoRow('info', this.description, this.inviteLink.length > 0)
+      }
+      // Invite link
+      if (this.inviteLink.length > 0) {
+        this.buildInfoRow('link', this.inviteLink, false)
+      }
+    }
+    .width('100%')
+    .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
+    .borderRadius(12)
+    .margin({ left: 16, right: 16 })
+    .clip(true)
+  }
+
+  // ─── Section: Notifications ───
+  @Builder
+  private buildNotificationsSection() {
+    Column() {
+      this.buildSwitchRow('Notifications', !this.isMuted)
+    }
+    .width('100%')
+    .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
+    .borderRadius(12)
+    .margin({ left: 16, right: 16, top: 16 })
+    .clip(true)
+  }
+
+  // ─── Section: Members (groups/channels) ───
+  @Builder
+  private buildMembersSection() {
+    Column() {
+      if (this.memberCount > 0) {
+        this.buildDisclosureRow('Members', formatMemberCount(this.memberCount),
+          this.administratorCount > 0)
+      }
+      if (this.administratorCount > 0) {
+        this.buildDisclosureRow('Administrators', this.administratorCount.toString(), false)
+      }
+    }
+    .width('100%')
+    .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
+    .borderRadius(12)
+    .margin({ left: 16, right: 16, top: 16 })
+    .clip(true)
+  }
+
+  // ─── Section: Shared Media ───
+  @Builder
+  private buildSharedMediaSection() {
+    Column() {
+      this.buildSectionHeader('Shared Media')
+
+      Column() {
+        this.buildDisclosureRow('Media', '', true)
+        this.buildDisclosureRow('Files', '', true)
+        this.buildDisclosureRow('Links', '', true)
+        this.buildDisclosureRow('Voice', '', false)
+      }
+      .width('100%')
+      .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
+      .borderRadius(12)
+      .margin({ left: 16, right: 16 })
+      .clip(true)
+    }
+    .width('100%')
+    .alignItems(HorizontalAlign.Start)
+    .margin({ top: 16 })
+  }
+
+  // ─── Main Build ───
   build() {
     NavDestination() {
       Column() {
-        // Scroll content
         Scroll() {
           Column() {
-            // ── Header section ──
-            Column({ space: 8 }) {
-              // Large avatar
-              TgAvatar({
-                avatarSize: 100,
-                initials: this.avatarInitials,
-                useImage: this.avatarImageSrc.length > 0,
-                imageSrc: this.avatarImageSrc,
-                isOnline: this.isOnline,
-                avatarBackgroundColor: this.avatarColor,
-                textColor: TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT
-              })
+            // Header (avatar + name + status)
+            this.buildHeader()
 
-              // Name
-              Text(this.title)
-                .fontSize(22)
-                .fontWeight(FontWeight.Bold)
-                .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
-                .maxLines(2)
-                .textAlign(TextAlign.Center)
-                .textOverflow({ overflow: TextOverflow.Ellipsis })
-
-              // Status / member count
-              if (this.subtitle.length > 0) {
-                Text(this.subtitle)
-                  .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
-                  .fontColor(this.isOnline ? TgUiTokens.COLOR_ICON_PRIMARY : TgUiTokens.COLOR_TEXT_PREVIEW)
-                  .textAlign(TextAlign.Center)
+            // Info section
+            if (this.isGroupOrChannel()) {
+              // Group/Channel: description + link
+              if (this.description.length > 0 || this.inviteLink.length > 0) {
+                this.buildGroupInfoSection()
+              }
+            } else {
+              // User: phone + username + bio
+              if (this.phoneNumber.length > 0 || this.username.length > 0 || this.bio.length > 0) {
+                this.buildUserInfoSection()
               }
             }
-            .width('100%')
-            .padding({ top: 24, bottom: 20 })
-            .alignItems(HorizontalAlign.Center)
 
-            // ── Info section ──
-            Column() {
-              // Phone number (private chats only)
-              if (this.phoneNumber.length > 0) {
-                this.buildInfoRow(TgUiTokens.ICON_RES_PHONE_CALL, 'phone', this.phoneNumber)
-              }
+            // Notifications
+            this.buildNotificationsSection()
 
-              // Username
-              if (this.username.length > 0) {
-                this.buildInfoRow(TgUiTokens.ICON_RES_SETTINGS, 'username', '@' + this.username)
-              }
-
-              // Bio (private) or Description (group/channel)
-              if (this.bio.length > 0) {
-                this.buildInfoRow(TgUiTokens.ICON_RES_SETTINGS, 'bio', this.bio)
-              }
-              if (this.description.length > 0 && this.chatType !== 'private') {
-                this.buildInfoRow(TgUiTokens.ICON_RES_SETTINGS, 'info', this.description)
-              }
+            // Members (groups/channels only)
+            if (this.isGroupOrChannel() && (this.memberCount > 0 || this.administratorCount > 0)) {
+              this.buildMembersSection()
             }
-            .width('100%')
-            .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
-            .borderRadius(12)
-            .margin({ left: 16, right: 16 })
-            .clip(true)
 
-            // ── Notifications section ──
-            Column() {
-              Row() {
-                Text('Notifications')
-                  .fontSize(TgUiTokens.FONT_TITLE_SIZE)
-                  .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
-                  .layoutWeight(1)
+            // Shared Media (all chat types)
+            this.buildSharedMediaSection()
 
-                Toggle({ type: ToggleType.Switch, isOn: !this.isMuted })
-                  .selectedColor(TgUiTokens.COLOR_ICON_PRIMARY)
-              }
-              .width('100%')
-              .padding({
-                left: TgUiTokens.CHAT_ROW_SIDE_INSET,
-                right: TgUiTokens.CHAT_ROW_SIDE_INSET,
-                top: 12,
-                bottom: 12
-              })
-            }
-            .width('100%')
-            .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
-            .borderRadius(12)
-            .margin({ left: 16, right: 16, top: 16 })
-            .clip(true)
+            // Bottom spacer
+            Column().height(40)
           }
           .width('100%')
         }

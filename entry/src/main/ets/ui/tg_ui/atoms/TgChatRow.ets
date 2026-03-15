@@ -8,6 +8,8 @@ export class TgChatRowData {
 
   title: string = '';
   preview: string = '';
+  previewPrefix: string = '';
+  previewPrefixStyle: 'none' | 'draft' | 'author' = 'none';
   timeText: string = '';
 
   unreadCount: number = 0;
@@ -22,6 +24,7 @@ export class TgChatRowData {
   avatarBackgroundColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG;
   avatarTextColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT;
   isTyping: boolean = false;
+  isDraft: boolean = false;
 }
 
 @Reusable
@@ -30,6 +33,8 @@ export struct TgChatRow {
   @State chatId: number = 0;
   @State title: string = '';
   @State preview: string = '';
+  @State previewPrefix: string = '';
+  @State previewPrefixStyle: 'none' | 'draft' | 'author' = 'none';
   @State timeText: string = '';
   @State unreadCount: number = 0;
   @State isMuted: boolean = false;
@@ -43,11 +48,14 @@ export struct TgChatRow {
   @State avatarTextColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT;
   @State showSeparator: boolean = true;
   @State isTyping: boolean = false;
+  @State isDraft: boolean = false;
 
   aboutToReuse(params: Record<string, Object>): void {
     this.chatId = params['chatId'] as number ?? 0;
     this.title = params['title'] as string ?? '';
     this.preview = params['preview'] as string ?? '';
+    this.previewPrefix = params['previewPrefix'] as string ?? '';
+    this.previewPrefixStyle = params['previewPrefixStyle'] as 'none' | 'draft' | 'author' ?? 'none';
     this.timeText = params['timeText'] as string ?? '';
     this.unreadCount = params['unreadCount'] as number ?? 0;
     this.isMuted = params['isMuted'] as boolean ?? false;
@@ -61,10 +69,22 @@ export struct TgChatRow {
     this.avatarTextColor = params['avatarTextColor'] as ResourceColor ?? TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT;
     this.showSeparator = params['showSeparator'] as boolean ?? true;
     this.isTyping = params['isTyping'] as boolean ?? false;
+    this.isDraft = params['isDraft'] as boolean ?? false;
   }
 
   private previewText(): string {
     return this.preview.length > 0 ? this.preview : ' ';
+  }
+
+  private previewPrefixText(): string {
+    if (this.previewPrefixStyle === 'none') {
+      return '';
+    }
+    const trimmed = this.previewPrefix.trim();
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
+    return this.previewPrefixStyle === 'draft' ? 'Draft:' : '';
   }
 
   private titleText(): string {
@@ -73,6 +93,40 @@ export struct TgChatRow {
       return trimmed;
     }
     return 'Unknown';
+  }
+
+  private previewBodyColor(): ResourceColor {
+    return TgUiTokens.COLOR_TEXT_PREVIEW;
+  }
+
+  private previewPrefixColor(): ResourceColor {
+    if (this.previewPrefixStyle === 'author') {
+      return TgUiTokens.COLOR_AUTHOR_NAME;
+    }
+    return TgUiTokens.COLOR_TEXT_ERROR;
+  }
+
+  @Builder
+  private buildPreviewLine() {
+    Row() {
+      if (this.previewPrefixText().length > 0) {
+        Text(this.previewPrefixText())
+          .fontSize(TgUiTokens.CHAT_ROW_PREVIEW_FONT_SIZE)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(this.previewPrefixColor())
+          .margin({ right: TgUiTokens.CHAT_ROW_PREVIEW_PREFIX_GAP })
+      }
+
+      Text(this.previewText())
+        .fontSize(TgUiTokens.CHAT_ROW_PREVIEW_FONT_SIZE)
+        .fontColor(this.previewBodyColor())
+        .fontWeight(FontWeight.Regular)
+        .maxLines(TgUiTokens.CHAT_ROW_PREVIEW_MAX_LINES)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .layoutWeight(1)
+    }
+    .width('100%')
+    .alignItems(VerticalAlign.Center)
   }
 
   build() {
@@ -92,7 +146,7 @@ export struct TgChatRow {
           Column({ space: TgUiTokens.CHAT_ROW_TITLE_PREVIEW_GAP }) {
             Row() {
               Text(this.titleText())
-                .fontSize(TgUiTokens.FONT_TITLE_SIZE)
+                .fontSize(TgUiTokens.CHAT_ROW_TITLE_FONT_SIZE)
                 .fontWeight(FontWeight.Medium)
                 .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
                 .maxLines(1)
@@ -111,12 +165,7 @@ export struct TgChatRow {
             .width('100%')
             .alignItems(VerticalAlign.Center)
 
-            Text(this.previewText())
-              .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
-              .fontColor(this.isTyping ? TgUiTokens.COLOR_ICON_PRIMARY : TgUiTokens.COLOR_TEXT_PREVIEW)
-              .maxLines(1)
-              .textOverflow({ overflow: TextOverflow.Ellipsis })
-              .width('100%')
+            this.buildPreviewLine()
           }
           .layoutWeight(1)
           .padding({ right: TgUiTokens.CHAT_ROW_TEXT_META_GAP })

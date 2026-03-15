@@ -31,8 +31,16 @@ export struct TgReplySnippet {
     return this.isOutgoing ? TgUiTokens.REPLY_SNIPPET_BAR_OUTGOING : TgUiTokens.REPLY_SNIPPET_BAR_INCOMING;
   }
 
+  private bgColor(): ResourceColor {
+    return this.isOutgoing ? TgUiTokens.REPLY_SNIPPET_BG_OUTGOING : TgUiTokens.REPLY_SNIPPET_BG_INCOMING;
+  }
+
   private maxSnippetWidth(): number {
-    return Math.max(1, Math.floor(this.containerWidth * this.maxWidthRatio));
+    return TgUiTokens.resolveBubbleMaxWidth(this.containerWidth, this.maxWidthRatio);
+  }
+
+  private quoteMarkColor(): ResourceColor {
+    return this.titleColor();
   }
 
   private maxTitleLines(): number {
@@ -51,56 +59,75 @@ export struct TgReplySnippet {
         .height(TgUiTokens.REPLY_SNIPPET_THUMB_SIZE)
         .objectFit(ImageFit.Cover)
         .borderRadius(TgUiTokens.REPLY_SNIPPET_THUMB_RADIUS)
+        .clip(true)
         .margin({ left: TgUiTokens.REPLY_SNIPPET_THUMB_GAP })
     }
   }
 
   build() {
-    Row() {
-      Row()
-        .width(TgUiTokens.REPLY_SNIPPET_BAR_WIDTH)
-        .height('100%')
-        .backgroundColor(this.barColor())
-        .borderRadius(TgUiTokens.REPLY_SNIPPET_BAR_RADIUS)
-
+    Stack({ alignContent: Alignment.TopEnd }) {
       Row() {
-        Column({ space: TgUiTokens.REPLY_SNIPPET_TEXT_GAP }) {
-          Text(this.resolvedAuthor())
-            .fontSize(TgUiTokens.REPLY_SNIPPET_TITLE_SIZE)
-            .fontWeight(TgUiTokens.REPLY_SNIPPET_TITLE_WEIGHT)
-            .lineHeight(TgUiTokens.REPLY_SNIPPET_TITLE_LINE_HEIGHT)
-            .fontColor(this.titleColor())
-            .maxLines(this.maxTitleLines())
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .width('100%')
+        Row()
+          .width(TgUiTokens.REPLY_SNIPPET_BAR_WIDTH)
+          .height('100%')
+          .backgroundColor(this.barColor())
+          .borderRadius(TgUiTokens.REPLY_SNIPPET_BAR_RADIUS)
 
-          Text(this.resolvedPreview())
-            .fontSize(TgUiTokens.REPLY_SNIPPET_PREVIEW_SIZE)
-            .fontWeight(TgUiTokens.REPLY_SNIPPET_PREVIEW_WEIGHT)
-            .lineHeight(TgUiTokens.REPLY_SNIPPET_PREVIEW_LINE_HEIGHT)
-            .fontColor(this.previewColor())
-            .maxLines(this.maxPreviewLines())
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .width('100%')
+        Row() {
+          Column({ space: TgUiTokens.REPLY_SNIPPET_TEXT_GAP }) {
+            Text(this.resolvedAuthor())
+              .fontSize(TgUiTokens.REPLY_SNIPPET_TITLE_SIZE)
+              .fontWeight(TgUiTokens.REPLY_SNIPPET_TITLE_WEIGHT)
+              .lineHeight(TgUiTokens.REPLY_SNIPPET_TITLE_LINE_HEIGHT)
+              .fontColor(this.titleColor())
+              .maxLines(this.maxTitleLines())
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .width('100%')
+
+            Text(this.resolvedPreview())
+              .fontSize(TgUiTokens.REPLY_SNIPPET_PREVIEW_SIZE)
+              .fontWeight(TgUiTokens.REPLY_SNIPPET_PREVIEW_WEIGHT)
+              .lineHeight(TgUiTokens.REPLY_SNIPPET_PREVIEW_LINE_HEIGHT)
+              .fontColor(this.previewColor())
+              .maxLines(this.maxPreviewLines())
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .width('100%')
+          }
+          .layoutWeight(1)
+
+          this.buildThumbnailSlot()
         }
         .layoutWeight(1)
-
-        this.buildThumbnailSlot()
+        .alignItems(this.isQuote ? VerticalAlign.Top : VerticalAlign.Center)
+        .margin({ left: TgUiTokens.REPLY_SNIPPET_BAR_GAP })
       }
-      .layoutWeight(1)
-      .alignItems(VerticalAlign.Center)
-      .margin({ left: TgUiTokens.REPLY_SNIPPET_BAR_GAP })
+      .constraintSize({
+        maxWidth: this.maxSnippetWidth(),
+        minHeight: TgUiTokens.REPLY_SNIPPET_MIN_HEIGHT
+      })
+      .padding({
+        left: TgUiTokens.REPLY_SNIPPET_PADDING_H,
+        right: TgUiTokens.REPLY_SNIPPET_PADDING_H,
+        top: TgUiTokens.REPLY_SNIPPET_PADDING_V,
+        bottom: TgUiTokens.REPLY_SNIPPET_PADDING_V
+      })
+      .alignItems(this.isQuote ? VerticalAlign.Top : VerticalAlign.Center)
+      .backgroundColor(this.bgColor())
+      .borderRadius(TgUiTokens.REPLY_SNIPPET_BG_RADIUS)
+      .clip(true)
+
+      if (this.isQuote) {
+        Text('❞')
+          .fontSize(TgUiTokens.REPLY_SNIPPET_QUOTE_MARK_SIZE)
+          .lineHeight(TgUiTokens.REPLY_SNIPPET_QUOTE_MARK_LINE_HEIGHT)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(this.quoteMarkColor())
+          .opacity(0.7)
+          .margin({
+            top: TgUiTokens.REPLY_SNIPPET_QUOTE_MARK_TOP,
+            right: TgUiTokens.REPLY_SNIPPET_QUOTE_MARK_RIGHT
+          })
+      }
     }
-    .constraintSize({
-      maxWidth: this.maxSnippetWidth(),
-      minHeight: TgUiTokens.REPLY_SNIPPET_MIN_HEIGHT
-    })
-    .padding({
-      left: TgUiTokens.REPLY_SNIPPET_PADDING_H,
-      right: TgUiTokens.REPLY_SNIPPET_PADDING_H,
-      top: TgUiTokens.REPLY_SNIPPET_PADDING_V,
-      bottom: TgUiTokens.REPLY_SNIPPET_PADDING_V
-    })
-    .alignItems(VerticalAlign.Center)
   }
 }

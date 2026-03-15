@@ -9,7 +9,7 @@
 
 Last updated: 2026-02-26  
 Project root: `C:\Users\Kharki\Desktop\Telegram-HarmonyOS`  
-Branch: `refactor/appcore-reset`
+Branch: `dev`
 
 ## 1) Mission
 - Build HarmonyOS client UI with **Telegram iOS visual reference**.

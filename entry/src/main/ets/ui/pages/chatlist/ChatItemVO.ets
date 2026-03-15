@@ -61,6 +61,9 @@ export class ChatItemVO {
   isGroup: boolean = false;
   isTyping: boolean = false;
   typingText: string = '';
+  isDraft: boolean = false;
+  previewPrefix: string = '';
+  previewPrefixStyle: 'none' | 'draft' | 'author' = 'none';
 }
 
 function resolvePrivateTitle(firstName: string, lastName: string, username: string, phoneNumber: string): string {
@@ -183,29 +186,29 @@ function isSameMessageSnapshot(lhs: LastMessageSnapshot, rhs: LastMessageSnapsho
 function fallbackMessageTextForType(contentType: string): string {
   switch (contentType) {
     case 'photo':
-      return '[Photo]';
+      return '📷 Photo';
     case 'video':
-      return '[Video]';
+      return '📹 Video';
     case 'document':
-      return '[File]';
+      return '📎 File';
     case 'audio':
-      return '[Audio]';
+      return '🎵 Audio';
     case 'voice':
-      return '[Voice message]';
+      return '🎤 Voice message';
     case 'sticker':
-      return '[Sticker]';
+      return 'Sticker';
     case 'animation':
-      return '[GIF]';
+      return 'GIF';
     case 'videoNote':
-      return '[Video message]';
+      return '📹 Video message';
     case 'location':
-      return '[Location]';
+      return '📍 Location';
     case 'contact':
-      return '[Contact]';
+      return '👤 Contact';
     case 'poll':
-      return '[Poll]';
+      return '📊 Poll';
     default:
-      return '[Message]';
+      return 'Message';
   }
 }
 
@@ -269,8 +272,7 @@ function buildDraftPreview(chat: Chat): string {
   if (normalizedDraft.length === 0) {
     return '';
   }
-  const prefix = localizedString($r('app.string.chat_draft_prefix').id, 'Draft: ');
-  return prefix + normalizedDraft;
+  return normalizedDraft;
 }
 
 function resolveSendStatusForChat(chat: Chat, state: AppState): 'none' | 'pending' | 'sent' | 'read' | 'failed' {
@@ -357,6 +359,9 @@ export function buildChatItemVO(chat: Chat, state: AppState): ChatItemVO {
   const draftPreview = buildDraftPreview(chat);
   const lastMessageSnapshot = resolveLastMessageSnapshot(chat, state);
   if (draftPreview.length > 0) {
+    vo.isDraft = true;
+    vo.previewPrefix = localizedString($r('app.string.chat_draft_prefix').id, 'Draft: ').trim();
+    vo.previewPrefixStyle = 'draft';
     vo.lastMessage = draftPreview;
   } else {
     if (lastMessageSnapshot.timestamp > 0) {
@@ -367,13 +372,15 @@ export function buildChatItemVO(chat: Chat, state: AppState): ChatItemVO {
       if (vo.isGroup && lastMessageSnapshot.senderId > 0) {
         if (lastMessageSnapshot.isOutgoing) {
           const youPrefix = localizedString($r('app.string.chat_you_prefix').id, 'You');
-          previewText = youPrefix + ': ' + previewText;
+          vo.previewPrefix = youPrefix + ':';
+          vo.previewPrefixStyle = 'author';
         } else {
           const sender = state.users.users.get(lastMessageSnapshot.senderId);
           if (sender) {
             const senderName = sender.firstName.length > 0 ? sender.firstName : sender.username;
             if (senderName.length > 0) {
-              previewText = senderName + ': ' + previewText;
+              vo.previewPrefix = senderName + ':';
+              vo.previewPrefixStyle = 'author';
             }
           }
         }
@@ -392,6 +399,8 @@ export function buildChatItemVO(chat: Chat, state: AppState): ChatItemVO {
   const typingInfo = state.chats.typingActions.get(chat.id);
   if (typingInfo && (Date.now() - typingInfo.timestamp) < 6000) {
     vo.isTyping = true;
+    vo.previewPrefix = '';
+    vo.previewPrefixStyle = 'none';
     const actionLabel = typingActionLabel(typingInfo.actionType);
     if (vo.isGroup && typingInfo.senderUserId > 0) {
       const sender = state.users.users.get(typingInfo.senderUserId);

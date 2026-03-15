@@ -25,6 +25,8 @@
   - `chatId`
   - `title`
   - `preview`
+  - `previewPrefix`
+  - `previewPrefixStyle`
   - `timeText`
   - `unreadCount`
   - `isMuted`
@@ -32,6 +34,8 @@
   - `sendStatus`
   - `avatarInitials/avatarUseImage/avatarImageSrc/avatarIsOnline`
   - `avatarBackgroundColor/avatarTextColor`
+  - `isDraft`
+  - `isTyping`
 - `showSeparator: boolean`
 
 ## 4) State matrix (demo coverage)
@@ -40,6 +44,9 @@
 - pinned (no unread)
 - muted (no unread)
 - muted + unread
+- draft prefix (`Draft:` accent + normal body text)
+- group sender prefix accent (`You:` / sender name)
+- typing preview (normal preview tone, dedicated activity state)
 - sending / sent / read
 - online avatar dot
 - long title + long preview (ellipsis torture)
@@ -53,19 +60,24 @@
   - left: `TgAvatar` (fixed size)
   - center: title(+mute icon) + preview
   - right: `TgChatMeta` (fixed min width)
+- Vertical rhythm is intentionally compact; title and preview sit closer together than a generic `Column(space: 4)` list row.
 - Text rules:
   - title and preview are `maxLines(1)` + ellipsis.
+  - draft preview keeps the prefix visually separate from the body, matching Telegram's red `Draft:` treatment without letting the prefix collapse into the preview text color.
+  - group sender prefix keeps the author part visually separate from the body, matching the iOS author-name accent pattern for group rows.
+  - typing preview should not borrow the group sender accent color; current iOS `ChatListInputActivitiesNode` renders the full activity string in the chat-list message text color.
 - Right cluster anti-jump:
   - width reserve comes from `TgChatMeta.constraintSize(minWidth)`.
   - bottom geometry reserve handled inside `TgChatMeta` with placeholder.
 - Separator policy:
   - for tg_ui path use **internal row separator**;
   - disable `List.divider` in integration branch to avoid double separator.
+  - separator inset follows the iOS chat-list lane (`~80pt` with 60pt avatar path), not the full text-start inset.
 
 ## 6) Token mapping
 - Source: `entry/src/main/ets/ui/tg_ui/tokens/TgUiTokens.ets`
   - `CHAT_ROW_*` metrics (height/sideInset/gaps/separator)
-  - `FONT_TITLE_SIZE`, `FONT_PREVIEW_SIZE`
+  - `CHAT_ROW_TITLE_FONT_SIZE`, `CHAT_ROW_PREVIEW_FONT_SIZE`
   - colors (`COLOR_TEXT_TITLE`, `COLOR_TEXT_PREVIEW`, `COLOR_CHAT_ROW_PINNED_BG`, separator)
   - mute icon sizing and resources
   - meta/badge tokens consumed transitively via `TgChatMeta` and `TgUnreadBadge`

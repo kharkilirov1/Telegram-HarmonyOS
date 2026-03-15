@@ -3,7 +3,7 @@
 ## Goal
 Build Telegram-like bottom composer panel:
 - attach button
-- rounded input field with placeholder/text
+- unified rounded glass capsule with placeholder/text
 - emoji button
 - mic/send action button
 - optional reply snippet block on top
@@ -16,19 +16,17 @@ UI-only scope for this step. No message send logic, no keyboard controller integ
   - min/max input height behavior and action buttons
 - `submodules/TelegramUI/Components/Chat/ChatTextInputPanelNode/Sources/ChatTextInputPanelComponent.swift`
   - panel composition integration contract
-- `submodules/TelegramUI/Components/Chat/ChatInputPanelNode/Sources/ChatInputPanelNode.swift`
-  - base panel lifecycle/structure
+- `submodules/ChatPresentationInterfaceState/Sources/ChatTextInputPanelState.swift`
+  - accessory/input mode state (`keyboard` / `emoji`)
 - `submodules/TelegramUI/Components/Chat/ChatMessageReplyInfoNode/Sources/ChatMessageReplyInfoNode.swift`
   - reply snippet header style used above composer input
 
 ## Props / Inputs
 - `text: string`
 - `placeholder: string`
-- `isFocused: boolean` (visual state only in this step)
 - `isDisabled: boolean`
 - `showAttachButton: boolean`
 - `showEmojiButton: boolean`
-- `canSend: boolean` (switch mic/send icon)
 - `showReplySnippet: boolean`
 - `replyAuthor: string`
 - `replyPreview: string`
@@ -36,10 +34,13 @@ UI-only scope for this step. No message send logic, no keyboard controller integ
 - `replyIsQuote: boolean`
 - `replyHasThumbnail: boolean`
 - `containerWidth: number`
+- `bottomInset: number`
+- callbacks:
+  - `onTextChange(text)`
+  - `onSendPress(text)`
 
 ## State Matrix (demo)
-- empty idle (mic)
-- empty focused
+- empty idle (interactive)
 - short text (send)
 - long text (send)
 - multiline text
@@ -47,40 +48,42 @@ UI-only scope for this step. No message send logic, no keyboard controller integ
 - no attach button
 - no emoji button
 - disabled
-- narrow/wide container
+- narrow container
+- wide container
 
 ## Layout Rules
-1) Panel has top separator and tokenized container paddings.
-2) Main row composition:
+1) Main row is a **single unified glass capsule**:
    - optional attach button
-   - rounded input capsule with text/placeholder + optional emoji button
+   - inline `TextArea`
+   - optional emoji button
    - action button (mic or send)
-3) Input capsule keeps min/max height token limits for stability.
-4) Reply snippet is optional and rendered above main input row with tokenized gap.
-5) All colors/sizes/weights/radii are tokenized.
+2) The input field uses ArkUI `TextContentStyle.INLINE` so stock text-box chrome does not fight the custom capsule shell.
+3) The send-style Enter key uses `onSubmit(..., SubmitEvent)` + `keepEditableState()` so the keyboard can stay visible after submit.
+4) Reply snippet is optional and rendered above the main input row with a tokenized gap.
+5) All colors/sizes/weights/radii are tokenized in `TgUiTokens`.
 
 ## Token Mapping
 - Colors:
-  - `COMPOSER_BG`
-  - `COMPOSER_TOP_SEPARATOR`
-  - `COMPOSER_INPUT_BG`
+  - `COMPOSER_CAPSULE_BG`
+  - `COMPOSER_CAPSULE_FALLBACK_BG`
+  - `COMPOSER_CAPSULE_BORDER`
   - `COMPOSER_TEXT`
   - `COMPOSER_PLACEHOLDER`
   - `COMPOSER_ACTION_ACTIVE`
   - `COMPOSER_ACTION_INACTIVE`
 - Geometry:
-  - `COMPOSER_MIN_HEIGHT`
-  - `COMPOSER_MAX_HEIGHT`
-  - `COMPOSER_SIDE_INSET`
-  - `COMPOSER_VERTICAL_INSET`
-  - `COMPOSER_ROW_GAP`
-  - `COMPOSER_INPUT_RADIUS`
-  - `COMPOSER_INPUT_PADDING_H/V`
   - `COMPOSER_BUTTON_SIZE`
   - `COMPOSER_ICON_SIZE`
+  - `COMPOSER_MIN_CAPSULE_HEIGHT`
+  - `COMPOSER_CAPSULE_RADIUS`
+  - `COMPOSER_SIDE_INSET`
+  - `COMPOSER_VERTICAL_INSET`
   - `COMPOSER_REPLY_GAP`
+  - `COMPOSER_TEXT_PADDING_TOP/BOTTOM/LEFT/RIGHT`
+  - `COMPOSER_ATTACH_LEFT_INSET`
+  - `COMPOSER_BORDER_WIDTH`
 - Typography:
-  - `COMPOSER_TEXT_SIZE/WEIGHT/LINE_HEIGHT`
+  - `COMPOSER_TEXT_SIZE/WEIGHT`
   - `COMPOSER_MAX_LINES`
 - Icons:
   - `ICON_RES_ATTACH`
@@ -91,6 +94,7 @@ UI-only scope for this step. No message send logic, no keyboard controller integ
 ## Acceptance Checklist
 - [ ] Mic/send state switch is stable and centered
 - [ ] Input capsule keeps stable geometry on empty/long/multiline text
+- [ ] Emoji lane is optional and does not collapse the send button hit target
 - [ ] Placeholder/text typography stays telegram-like and tokenized
 - [ ] Reply snippet integration does not break panel alignment
 - [ ] Narrow/wide container behavior is stable
@@ -98,16 +102,21 @@ UI-only scope for this step. No message send logic, no keyboard controller integ
 
 ## Demo Requirements (`TgComposerInputDemo.ets`)
 At least 10 states:
-1) empty idle
-2) empty focused
-3) short text send
-4) long text send
-5) multiline text
-6) with reply snippet
-7) no attach
-8) no emoji
-9) disabled
-10) narrow/wide container
+1) empty idle (interactive)
+2) short text send
+3) long text send
+4) multiline text
+5) with reply snippet
+6) no attach
+7) no emoji
+8) disabled
+9) narrow container
+10) wide container
+
+## HarmonyOS grounding
+- `TextArea.style(TextContentStyle.INLINE)` — inline input style for custom shells
+- `TextArea.enterKeyType(EnterKeyType.Send)`
+- `TextArea.onSubmit((enterKey, event) => event.keepEditableState())` — keep keyboard visible after send-style submit
 
 ## Known Risks
 - Real keyboard avoid mode and caret behavior are integration concerns (screen-level).

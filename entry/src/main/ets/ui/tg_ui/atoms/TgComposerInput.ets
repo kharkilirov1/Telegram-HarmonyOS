@@ -1,5 +1,8 @@
-// TgComposerInput — glass capsule message composer bar
-// TextArea for real input + attach/emoji/send buttons + reply snippet
+// TgComposerInput — iOS Telegram-style glass composer bar
+//
+// iOS layout: [attach glass button] [text field glass capsule] [send/mic glass button]
+// Three separate glass elements, not one unified capsule.
+// Text input is controlled by the screen, while the atom stays UI-only.
 
 import { TgIcon } from './TgIcon';
 import { TgReplySnippet } from './TgReplySnippet';
@@ -8,9 +11,9 @@ import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 
 @ComponentV2
 export struct TgComposerInput {
+  @Param text: string = '';
   @Param placeholder: string = 'Message';
   @Param isDisabled: boolean = false;
-
   @Param showAttachButton: boolean = true;
   @Param showEmojiButton: boolean = true;
 
@@ -23,47 +26,27 @@ export struct TgComposerInput {
 
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
   @Param glassMode: string = TgGlassPolicy.MODE_AUTO;
+  @Param bottomInset: number = 0;
 
   @Event onSendPress: (text: string) => void = (_: string) => {};
   @Event onTextChange: (text: string) => void = (_: string) => {};
   @Event onReplyCancelPress: () => void = () => {};
 
-  @Local private inputText: string = '';
-
   private hasText(): boolean {
-    return this.inputText.trim().length > 0;
+    return this.text.trim().length > 0;
   }
 
   private canSend(): boolean {
     return this.hasText() && !this.isDisabled;
   }
 
-  private actionIconRes(): Resource {
-    return this.canSend() ? TgUiTokens.ICON_RES_SEND : TgUiTokens.ICON_RES_MIC;
-  }
-
-  private actionIconTint(): ResourceColor {
-    return this.canSend() ? TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT : TgUiTokens.COMPOSER_ACTION_INACTIVE;
-  }
-
-  private actionBackgroundColor(): ResourceColor {
-    return this.canSend() ? TgUiTokens.COMPOSER_ACTION_ACTIVE : Color.Transparent;
-  }
-
-  private composerOpacity(): number {
-    return this.isDisabled ? TgUiTokens.COMPOSER_DISABLED_OPACITY : 1;
-  }
-
   private handleSend(): void {
-    const trimmed = this.inputText.trim();
+    const trimmed = this.text.trim();
     if (trimmed.length === 0) {
       return;
     }
     this.onSendPress(trimmed);
-    this.inputText = '';
   }
-
-  // ── Glass helpers (same pattern as TgChatTopBar) ──
 
   private useBlur(): boolean {
     return TgGlassPolicy.shouldUseRealtimeBlurForMode(this.glassMode);
@@ -75,117 +58,6 @@ export struct TgComposerInput {
 
   private capsuleBlurStyle(): BlurStyle {
     return TgGlassPolicy.composerBlurStyle();
-  }
-
-  @Builder
-  private buildGlassSpecular() {
-    if (this.useBlur()) {
-      Column()
-        .width('100%')
-        .height('100%')
-        .linearGradient({
-          angle: 110,
-          colors: [
-            [TgUiTokens.GLASS_SPECULAR_TOP, 0.0],
-            [TgUiTokens.GLASS_SPECULAR_MID, 0.38],
-            [TgUiTokens.GLASS_SPECULAR_BOTTOM, 1.0]
-          ]
-        })
-        .hitTestBehavior(HitTestMode.Transparent)
-    }
-  }
-
-  // ── Sub-builders ──
-
-  @Builder
-  private buildAttachButton() {
-    if (this.showAttachButton) {
-      Row() {
-        TgIcon({
-          src: TgUiTokens.ICON_RES_ATTACH,
-          iconSize: TgUiTokens.COMPOSER_ICON_SIZE,
-          tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
-        })
-      }
-      .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
-      .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(VerticalAlign.Center)
-      .backgroundColor(this.capsuleBg())
-      .backgroundBlurStyle(this.capsuleBlurStyle())
-      .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
-      .border({ width: TgUiTokens.COMPOSER_CAPSULE_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
-      .overlay(this.buildGlassSpecular())
-      .clip(true)
-    }
-  }
-
-  @Builder
-  private buildEmojiButton() {
-    if (this.showEmojiButton) {
-      Row() {
-        TgIcon({
-          src: TgUiTokens.ICON_RES_EMOJI,
-          iconSize: TgUiTokens.COMPOSER_ICON_SIZE,
-          tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
-        })
-      }
-      .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
-      .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(VerticalAlign.Center)
-    }
-  }
-
-  @Builder
-  private buildActionButton() {
-    Row() {
-      TgIcon({
-        src: this.actionIconRes(),
-        iconSize: TgUiTokens.COMPOSER_ICON_SIZE,
-        tintColor: this.actionIconTint()
-      })
-    }
-    .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
-    .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
-    .justifyContent(FlexAlign.Center)
-    .alignItems(VerticalAlign.Center)
-    .backgroundColor(this.canSend() ? this.actionBackgroundColor() : this.capsuleBg())
-    .backgroundBlurStyle(this.canSend() ? BlurStyle.NONE : this.capsuleBlurStyle())
-    .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
-    .border(this.canSend()
-      ? { width: 0, color: Color.Transparent }
-      : { width: TgUiTokens.COMPOSER_CAPSULE_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
-    .overlay(this.canSend() ? undefined : this.buildGlassSpecular())
-    .clip(true)
-    .onClick(() => {
-      this.handleSend();
-    })
-  }
-
-  @Builder
-  private buildTextInput() {
-    TextArea({ text: this.inputText, placeholder: this.placeholder })
-      .fontSize(TgUiTokens.COMPOSER_TEXT_SIZE)
-      .fontWeight(TgUiTokens.COMPOSER_TEXT_WEIGHT)
-      .fontColor(TgUiTokens.COMPOSER_TEXT)
-      .placeholderColor(TgUiTokens.COMPOSER_PLACEHOLDER)
-      .placeholderFont({ size: TgUiTokens.COMPOSER_TEXT_SIZE, weight: TgUiTokens.COMPOSER_TEXT_WEIGHT })
-      .backgroundColor(Color.Transparent)
-      .padding(0)
-      .layoutWeight(1)
-      .maxLines(TgUiTokens.COMPOSER_MAX_LINES)
-      .onChange((value: string) => {
-        this.inputText = value;
-        this.onTextChange(value);
-      })
-      .onSubmit((enterKey: EnterKeyType) => {
-        if (enterKey === EnterKeyType.Send) {
-          this.handleSend();
-        }
-      })
-      .enterKeyType(EnterKeyType.Send)
-      .enableKeyboardOnFocus(true)
   }
 
   @Builder
@@ -203,15 +75,11 @@ export struct TgComposerInput {
           .layoutWeight(1)
       }
       .width('100%')
-      .padding({
-        left: TgUiTokens.COMPOSER_SIDE_INSET,
-        right: TgUiTokens.COMPOSER_SIDE_INSET
-      })
+      .padding({ left: TgUiTokens.COMPOSER_SIDE_INSET, right: TgUiTokens.COMPOSER_SIDE_INSET })
       .backgroundColor(this.capsuleBg())
-      .backgroundBlurStyle(this.capsuleBlurStyle())
-      .borderRadius(TgUiTokens.COMPOSER_INPUT_RADIUS)
-      .border({ width: TgUiTokens.COMPOSER_CAPSULE_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
-      .overlay(this.buildGlassSpecular())
+      .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+      .borderRadius(TgUiTokens.COMPOSER_CAPSULE_RADIUS)
+      .border({ width: TgUiTokens.COMPOSER_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
       .clip(true)
     }
   }
@@ -220,33 +88,118 @@ export struct TgComposerInput {
     Column({ space: TgUiTokens.COMPOSER_REPLY_GAP }) {
       this.buildReplySnippet()
 
-      Row({ space: TgUiTokens.COMPOSER_ROW_GAP }) {
-        this.buildAttachButton()
+      // Main row: [attach] [text capsule] [send/mic]
+      Row({ space: TgUiTokens.COMPOSER_ELEMENT_GAP }) {
 
-        Row({ space: TgUiTokens.COMPOSER_ROW_GAP }) {
-          this.buildTextInput()
-          this.buildEmojiButton()
+        // ── Attach button (separate glass circle) ──
+        if (this.showAttachButton) {
+          Row() {
+            TgIcon({
+              src: TgUiTokens.ICON_RES_ATTACH,
+              iconSize: TgUiTokens.COMPOSER_ICON_SIZE,
+              tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
+            })
+          }
+          .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
+          .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
+          .flexShrink(0)
+          .justifyContent(FlexAlign.Center)
+          .alignItems(VerticalAlign.Center)
+          .backgroundColor(this.capsuleBg())
+          .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+          .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
+          .border({ width: TgUiTokens.COMPOSER_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
+          .clip(true)
+        }
+
+        // ── Text field (separate glass capsule) ──
+        Row() {
+          TextArea({ text: this.text, placeholder: this.placeholder })
+            .style(TextContentStyle.DEFAULT)
+            .fontSize(TgUiTokens.COMPOSER_TEXT_SIZE)
+            .fontWeight(TgUiTokens.COMPOSER_TEXT_WEIGHT)
+            .fontColor(TgUiTokens.COMPOSER_TEXT)
+            .caretColor(TgUiTokens.COMPOSER_ACTION_ACTIVE)
+            .placeholderColor(TgUiTokens.COMPOSER_PLACEHOLDER)
+            .placeholderFont({
+              size: TgUiTokens.COMPOSER_TEXT_SIZE,
+              weight: TgUiTokens.COMPOSER_TEXT_WEIGHT
+            })
+            .backgroundColor(Color.Transparent)
+            .borderRadius(0)
+            .padding({
+              top: TgUiTokens.COMPOSER_TEXT_PADDING_TOP,
+              bottom: TgUiTokens.COMPOSER_TEXT_PADDING_BOTTOM,
+              left: TgUiTokens.COMPOSER_TEXT_PADDING_LEFT,
+              right: this.showEmojiButton ? 0 : TgUiTokens.COMPOSER_TEXT_PADDING_LEFT
+            })
+            .margin(0)
+            .layoutWeight(1)
+            .maxLines(TgUiTokens.COMPOSER_MAX_LINES)
+            .onChange((value: string) => {
+              this.onTextChange(value);
+            })
+            .onSubmit((enterKey: EnterKeyType, event?: SubmitEvent) => {
+              if (enterKey === EnterKeyType.Send) {
+                event?.keepEditableState();
+                this.handleSend();
+              }
+            })
+            .enterKeyType(EnterKeyType.Send)
+            .enableKeyboardOnFocus(true)
+
+          // Emoji button inside text capsule (right side, like iOS accessory)
+          if (this.showEmojiButton) {
+            Row() {
+              TgIcon({
+                src: TgUiTokens.ICON_RES_EMOJI,
+                iconSize: TgUiTokens.COMPOSER_ICON_SIZE,
+                tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
+              })
+            }
+            .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
+            .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
+            .flexShrink(0)
+            .justifyContent(FlexAlign.Center)
+            .alignItems(VerticalAlign.Center)
+          }
         }
         .layoutWeight(1)
-        .padding({
-          left: TgUiTokens.COMPOSER_INPUT_PADDING_H,
-          right: TgUiTokens.COMPOSER_INPUT_PADDING_H,
-          top: TgUiTokens.COMPOSER_INPUT_PADDING_V,
-          bottom: TgUiTokens.COMPOSER_INPUT_PADDING_V
-        })
-        .backgroundColor(this.capsuleBg())
-        .backgroundBlurStyle(this.capsuleBlurStyle())
-        .borderRadius(TgUiTokens.COMPOSER_INPUT_RADIUS)
-        .border({ width: TgUiTokens.COMPOSER_CAPSULE_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
-        .overlay(this.buildGlassSpecular())
-        .clip(true)
-        .constraintSize({
-          minHeight: TgUiTokens.COMPOSER_MIN_HEIGHT,
-          maxHeight: TgUiTokens.COMPOSER_MAX_HEIGHT
-        })
         .alignItems(VerticalAlign.Center)
+        .constraintSize({ minHeight: TgUiTokens.COMPOSER_MIN_CAPSULE_HEIGHT })
+        .padding({ left: TgUiTokens.COMPOSER_ATTACH_LEFT_INSET, right: TgUiTokens.COMPOSER_ATTACH_LEFT_INSET })
+        .backgroundColor(this.capsuleBg())
+        .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+        .borderRadius(TgUiTokens.COMPOSER_CAPSULE_RADIUS)
+        .border({ width: TgUiTokens.COMPOSER_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
+        .clip(true)
 
-        this.buildActionButton()
+        // ── Send / Mic button (separate glass circle) ──
+        Row() {
+          TgIcon({
+            src: this.canSend() ? TgUiTokens.ICON_RES_SEND : TgUiTokens.ICON_RES_MIC,
+            iconSize: TgUiTokens.COMPOSER_ICON_SIZE,
+            tintColor: this.canSend()
+              ? TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT
+              : TgUiTokens.COMPOSER_ACTION_INACTIVE
+          })
+        }
+        .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
+        .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
+        .flexShrink(0)
+        .justifyContent(FlexAlign.Center)
+        .alignItems(VerticalAlign.Center)
+        .backgroundColor(this.canSend() ? TgUiTokens.COMPOSER_ACTION_ACTIVE : this.capsuleBg())
+        .backgroundBlurStyle(this.canSend() ? BlurStyle.NONE : this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+        .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
+        .border({
+          width: this.canSend() ? 0 : TgUiTokens.COMPOSER_BORDER_WIDTH,
+          color: TgUiTokens.COMPOSER_CAPSULE_BORDER
+        })
+        .clip(true)
+        .onClick(() => {
+          this.handleSend();
+        })
       }
       .width('100%')
       .alignItems(VerticalAlign.Bottom)
@@ -258,7 +211,8 @@ export struct TgComposerInput {
       })
     }
     .width('100%')
+    .padding({ bottom: this.bottomInset })
     .backgroundColor(Color.Transparent)
-    .opacity(this.composerOpacity())
+    .opacity(this.isDisabled ? TgUiTokens.COMPOSER_DISABLED_OPACITY : 1)
   }
 }

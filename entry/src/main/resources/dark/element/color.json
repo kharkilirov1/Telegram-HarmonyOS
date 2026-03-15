@@ -18,7 +18,7 @@
     },
     {
       "name": "chat_bubble_incoming",
-      "value": "#1E2C3A"
+      "value": "#182533"
     },
     {
       "name": "text_primary",
@@ -154,11 +154,11 @@
     },
     {
       "name": "glass_nav_bg",
-      "value": "#052C2C2E"
+      "value": "#032C2C2E"
     },
     {
       "name": "glass_tab_bg",
-      "value": "#052C2C2E"
+      "value": "#032C2C2E"
     },
     {
       "name": "glass_input_bg",
@@ -170,7 +170,15 @@
     },
     {
       "name": "glass_card_shadow",
-      "value": "#20000000"
+      "value": "#40000000"
+    },
+    {
+      "name": "glass_edge_highlight",
+      "value": "#33FFFFFF"
+    },
+    {
+      "name": "tab_pill_bg",
+      "value": "#1AFFFFFF"
     },
     {
       "name": "search_chip_bg",
@@ -210,7 +218,15 @@
     },
     {
       "name": "unread_badge",
-      "value": "#FF453A"
+      "value": "#3390EC"
+    },
+    {
+      "name": "unread_badge_muted",
+      "value": "#B6B6BB"
+    },
+    {
+      "name": "author_name",
+      "value": "#FFFFFF"
     },
     {
       "name": "secret_green",

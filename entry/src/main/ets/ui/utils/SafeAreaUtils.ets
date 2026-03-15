@@ -18,7 +18,7 @@ export function computeTopBarHeight(context: common.UIAbilityContext): number {
       const mainWindow = windowStage.getMainWindowSync();
       const systemAvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
       const topInset = px2vp(systemAvoidArea.topRect.height);
-      return topInset + TgUiTokens.TOP_BAR_HEIGHT;
+      return topInset + TgUiTokens.TOP_BAR_HEIGHT + TgUiTokens.TOP_BAR_BOTTOM_PADDING;
     }
   } catch (_error) {
   }
@@ -26,7 +26,25 @@ export function computeTopBarHeight(context: common.UIAbilityContext): number {
 }
 
 /**
- * Compute the bottom content inset for tab pages (accounts for tab-bar island + system nav).
+ * Compute the chat-list header height including the integrated search lane.
+ * Falls back to the tokenized chat-list navigation height when the window stage is unavailable.
+ */
+export function computeChatListTopBarHeight(context: common.UIAbilityContext): number {
+  try {
+    const windowStage = context.windowStage;
+    if (windowStage) {
+      const mainWindow = windowStage.getMainWindowSync();
+      const systemAvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+      const topInset = px2vp(systemAvoidArea.topRect.height);
+      return topInset + TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT;
+    }
+  } catch (_error) {
+  }
+  return TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT;
+}
+
+/**
+ * Compute the bottom content inset for tab pages (accounts for the overlaid tab-bar capsule + system nav).
  * Falls back to TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM.
  */
 export function computeTabBottomInset(context: common.UIAbilityContext): number {

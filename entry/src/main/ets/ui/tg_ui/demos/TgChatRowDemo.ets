@@ -36,6 +36,36 @@ export struct TgChatRowDemo {
     return data;
   }
 
+  private makeDraftVariant(): TgChatRowData {
+    const data = this.makeBaseRowData();
+    data.chatId = 3;
+    data.timeText = '12:50';
+    data.previewPrefix = 'Draft:';
+    data.previewPrefixStyle = 'draft';
+    data.preview = 'Need one more pass on the glass capsule proportions';
+    data.isDraft = true;
+    return data;
+  }
+
+  private makeTypingVariant(): TgChatRowData {
+    const data = this.makeBaseRowData();
+    data.chatId = 4;
+    data.timeText = '12:51';
+    data.preview = 'Alice typing...';
+    data.isTyping = true;
+    return data;
+  }
+
+  private makeAuthorPrefixVariant(): TgChatRowData {
+    const data = this.makeBaseRowData();
+    data.chatId = 5;
+    data.timeText = '12:52';
+    data.previewPrefix = 'You:';
+    data.previewPrefixStyle = 'author';
+    data.preview = 'Ship the chat-list row parity pass today';
+    return data;
+  }
+
   private makeLongVariant(unreadCount: number = 0, isPinned: boolean = false, sendStatus: TgChatSendStatus = TgChatSendStatus.None): TgChatRowData {
     const data = this.makeLongTextRowData();
     data.unreadCount = unreadCount;
@@ -114,6 +144,15 @@ export struct TgChatRowDemo {
 
         this.label('14 failed + unread')
         TgChatRow({ ...this.makeVariant('12:49', 3, false, false, TgChatSendStatus.Failed), showSeparator: true })
+
+        this.label('15 draft prefix styling')
+        TgChatRow({ ...this.makeDraftVariant(), showSeparator: true })
+
+        this.label('16 typing preview (no author accent)')
+        TgChatRow({ ...this.makeTypingVariant(), showSeparator: true })
+
+        this.label('17 group sender prefix accent')
+        TgChatRow({ ...this.makeAuthorPrefixVariant(), showSeparator: true })
 
         Divider()
           .color(TgUiTokens.COLOR_SEPARATOR)

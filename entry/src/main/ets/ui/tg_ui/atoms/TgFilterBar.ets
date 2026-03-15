@@ -235,7 +235,7 @@ export struct TgFilterBar {
       .constraintSize({ maxWidth: TgUiTokens.FILTER_BAR_MAX_WIDTH })
       .borderRadius(TgUiTokens.FILTER_BAR_RADIUS)
       .backgroundColor(this.useRealtimeBlur() ? TgUiTokens.FILTER_BAR_BG : TgUiTokens.FILTER_BAR_FALLBACK_BG)
-      .backgroundBlurStyle(TgGlassPolicy.filterBarBlurStyle())
+      .backgroundBlurStyle(TgGlassPolicy.filterBarBlurStyle(), TgGlassPolicy.glassOptions())
       .overlay(this.buildIslandSpecular())
       .border({
         width: TgUiTokens.FILTER_BAR_BORDER_WIDTH,

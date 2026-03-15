@@ -1,5 +1,6 @@
 import { TgChatTopBar } from '../atoms/TgChatTopBar';
 import { TgUiTokens } from '../tokens/TgUiTokens';
+import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 
 @ComponentV2
 export struct TgChatTopBarDemo {
@@ -27,6 +28,15 @@ export struct TgChatTopBarDemo {
         avatarInitials: 'VL',
         avatarColorIndex: 7,
         isOnline: false
+      })
+
+      TgChatTopBar({
+        title: 'Fallback glass mode',
+        subtitle: 'blur disabled',
+        avatarInitials: 'FG',
+        avatarColorIndex: 5,
+        isOnline: false,
+        glassMode: TgGlassPolicy.MODE_FALLBACK
       })
 
       Blank()

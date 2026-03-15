@@ -12,6 +12,14 @@ export struct TgVideoBubble {
   @Param maxWidthRatio: number = TgUiTokens.BUBBLE_MAX_WIDTH_RATIO;
   @Param videoWidth: number = 0;
   @Param videoHeight: number = 0;
+  @Param noBubbleWrap: boolean = false;
+  @Param hidePlayButton: boolean = false;
+  @Param useRegularMaxDimensions: boolean = false;
+  @Event onVideoPlayTap: () => void = () => {};
+
+  private usesRegularDimensions(): boolean {
+    return this.useRegularMaxDimensions || TgUiTokens.isRegularMessageWidth(this.containerWidth);
+  }
 
   private hasPath(path: string | Resource): boolean {
     if (typeof path === 'string') {
@@ -48,8 +56,9 @@ export struct TgVideoBubble {
   }
 
   private computedBubbleWidth(): number {
-    const byRatio = Math.floor(this.containerWidth * this.maxWidthRatio);
-    const maxAllowed = Math.min(byRatio, TgUiTokens.VIDEO_BUBBLE_MAX_WIDTH);
+    const byRatio = TgUiTokens.resolveBubbleMaxWidth(this.containerWidth, this.maxWidthRatio);
+    const maxAllowed = Math.min(byRatio,
+      this.usesRegularDimensions() ? TgUiTokens.VIDEO_BUBBLE_MAX_WIDTH_REGULAR : TgUiTokens.VIDEO_BUBBLE_MAX_WIDTH);
     const minAllowed = Math.min(TgUiTokens.VIDEO_BUBBLE_MIN_WIDTH, Math.max(1, Math.floor(this.containerWidth)));
     return Math.max(minAllowed, maxAllowed);
   }
@@ -62,10 +71,13 @@ export struct TgVideoBubble {
     const mediaWidth = this.computedMediaWidth();
     if (this.videoWidth > 0 && this.videoHeight > 0) {
       const scaled = Math.floor(mediaWidth * this.videoHeight / this.videoWidth);
-      return Math.max(TgUiTokens.VIDEO_BUBBLE_MIN_HEIGHT, Math.min(scaled, TgUiTokens.VIDEO_BUBBLE_MAX_HEIGHT));
+      return Math.max(TgUiTokens.VIDEO_BUBBLE_MIN_HEIGHT,
+        Math.min(scaled,
+          this.usesRegularDimensions() ? TgUiTokens.VIDEO_BUBBLE_MAX_HEIGHT_REGULAR : TgUiTokens.VIDEO_BUBBLE_MAX_HEIGHT));
     }
     const fallback = Math.max(TgUiTokens.VIDEO_BUBBLE_MIN_HEIGHT, mediaWidth);
-    return Math.min(fallback, TgUiTokens.VIDEO_BUBBLE_MAX_HEIGHT);
+    return Math.min(fallback,
+      this.usesRegularDimensions() ? TgUiTokens.VIDEO_BUBBLE_MAX_HEIGHT_REGULAR : TgUiTokens.VIDEO_BUBBLE_MAX_HEIGHT);
   }
 
   private formatDuration(): string {
@@ -136,28 +148,34 @@ export struct TgVideoBubble {
           .height(this.computedMediaHeight())
           .objectFit(ImageFit.Cover)
           .borderRadius(TgUiTokens.VIDEO_BUBBLE_RADIUS - TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET)
+          .clip(true)
       } else {
         this.buildPlaceholder()
       }
 
-      Row() {
-        TgIcon({
-          src: TgUiTokens.ICON_RES_PLAY,
-          iconSize: TgUiTokens.VIDEO_BUBBLE_PLAY_ICON_SIZE,
-          tintColor: TgUiTokens.VIDEO_BUBBLE_PLAY_ICON
-        })
+      if (!this.hidePlayButton) {
+        Row() {
+          TgIcon({
+            src: TgUiTokens.ICON_RES_PLAY,
+            iconSize: TgUiTokens.VIDEO_BUBBLE_PLAY_ICON_SIZE,
+            tintColor: TgUiTokens.VIDEO_BUBBLE_PLAY_ICON
+          })
+        }
+        .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+        .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+        .justifyContent(FlexAlign.Center)
+        .alignItems(VerticalAlign.Center)
+        .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
+        .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
       }
-      .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-      .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(VerticalAlign.Center)
-      .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
-      .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
 
       this.buildDurationBadge()
     }
     .width(this.computedMediaWidth())
     .height(this.computedMediaHeight())
+    .borderRadius(TgUiTokens.VIDEO_BUBBLE_RADIUS - TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET)
+    .clip(true)
+    .onClick(() => { this.onVideoPlayTap(); })
   }
 
   @Builder
@@ -169,6 +187,7 @@ export struct TgVideoBubble {
         .fontWeight(TgUiTokens.MSG_TEXT_WEIGHT)
         .fontColor(this.captionColor())
         .wordBreak(WordBreak.BREAK_WORD)
+        .lineBreakStrategy(LineBreakStrategy.HIGH_QUALITY)
         .maxLines(TgUiTokens.VIDEO_BUBBLE_CAPTION_MAX_LINES)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .width('100%')
@@ -201,13 +220,32 @@ export struct TgVideoBubble {
     .width(this.computedBubbleWidth())
     .backgroundColor(this.bubbleColor())
     .borderRadius(TgUiTokens.VIDEO_BUBBLE_RADIUS)
+    .clip(true)
   }
 
   build() {
-    Row() {
-      this.buildBubble()
+    if (this.noBubbleWrap) {
+      // noBubbleWrap: media only — caption rendered by TgMessageRouter for inline meta
+      Column() {
+        Row() {
+          this.buildMedia()
+        }
+        .width('100%')
+        .justifyContent(FlexAlign.Center)
+        .padding({
+          left: TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET,
+          right: TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET,
+          top: TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET,
+          bottom: TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET
+        })
+      }
+      .width(this.computedBubbleWidth())
+    } else {
+      Row() {
+        this.buildBubble()
+      }
+      .width('100%')
+      .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
     }
-    .width('100%')
-    .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
   }
 }

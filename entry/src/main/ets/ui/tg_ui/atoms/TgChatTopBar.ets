@@ -1,7 +1,11 @@
+// TgChatTopBar — iOS-style capsule chat navigation bar
+// Layout: [← Back ○]  [Title capsule (content-width)]  [Avatar ○]
+// Title capsule stays centered between side controls.
+
 import { TgUiTokens } from '../tokens/TgUiTokens';
-import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 import { TgIcon } from './TgIcon';
 import { TgAvatar } from './TgAvatar';
+import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 
@@ -9,7 +13,6 @@ declare function px2vp(value: number): number;
 
 @ComponentV2
 export struct TgChatTopBar {
-  // Data
   @Param title: string = '';
   @Param subtitle: string = '';
   @Param avatarInitials: string = '';
@@ -18,12 +21,10 @@ export struct TgChatTopBar {
   @Param isOnline: boolean = false;
   @Param glassMode: string = TgGlassPolicy.MODE_AUTO;
 
-  // Events
   @Event onBackPress: () => void = (): void => {};
   @Event onTitlePress: () => void = (): void => {};
   @Event onAvatarPress: () => void = (): void => {};
 
-  // Internal
   @Local topInset: number = 0;
 
   aboutToAppear(): void {
@@ -49,7 +50,7 @@ export struct TgChatTopBar {
   }
 
   private capsuleBlurStyle(): BlurStyle {
-    return TgGlassPolicy.topBarBlurStyle();
+    return this.useBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE;
   }
 
   private avatarColor(): Resource {
@@ -63,22 +64,8 @@ export struct TgChatTopBar {
     return palette[idx];
   }
 
-  @Builder
-  private buildGlassSpecular() {
-    if (this.useBlur()) {
-      Column()
-        .width('100%')
-        .height('100%')
-        .linearGradient({
-          angle: 110,
-          colors: [
-            [TgUiTokens.GLASS_SPECULAR_TOP, 0.0],
-            [TgUiTokens.GLASS_SPECULAR_MID, 0.38],
-            [TgUiTokens.GLASS_SPECULAR_BOTTOM, 1.0]
-          ]
-        })
-        .hitTestBehavior(HitTestMode.Transparent)
-    }
+  private subtitleColor(): ResourceColor {
+    return this.isOnline ? TgUiTokens.COLOR_ONLINE_DOT : TgUiTokens.COLOR_TEXT_PREVIEW;
   }
 
   @Builder
@@ -95,11 +82,11 @@ export struct TgChatTopBar {
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
     .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle())
+    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
-    .border({ width: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
-    .overlay(this.buildGlassSpecular())
+    .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .clip(true)
+    .renderGroup(true)
     .onClick(() => {
       this.onBackPress();
     })
@@ -107,33 +94,39 @@ export struct TgChatTopBar {
 
   @Builder
   private buildTitleCapsule() {
+    // Title capsule hugs content width — Column drives the width, Stack wraps it
     Column() {
       Text(this.title)
-        .fontSize(TgUiTokens.TOP_BAR_TITLE_SIZE)
-        .fontWeight(FontWeight.Medium)
+        .fontSize(TgUiTokens.CHAT_TOP_BAR_TITLE_SIZE)
+        .fontWeight(TgUiTokens.CHAT_TOP_BAR_TITLE_WEIGHT)
         .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
         .maxLines(1)
+        .textAlign(TextAlign.Center)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
 
       if (this.subtitle.length > 0) {
         Text(this.subtitle)
           .fontSize(TgUiTokens.CHAT_TOP_BAR_SUBTITLE_SIZE)
-          .fontColor(this.isOnline ? TgUiTokens.COLOR_ICON_PRIMARY : TgUiTokens.COLOR_TEXT_PREVIEW)
+          .fontColor(this.subtitleColor())
           .maxLines(1)
+          .textAlign(TextAlign.Center)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
       }
     }
-    .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
-    .layoutWeight(1)
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)
-    .padding({ left: TgUiTokens.CHAT_TOP_BAR_TITLE_PADDING_H, right: TgUiTokens.CHAT_TOP_BAR_TITLE_PADDING_H })
+    .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
+    .constraintSize({ minWidth: TgUiTokens.CHAT_TOP_BAR_TITLE_MIN_WIDTH })
+    .padding({
+      left: TgUiTokens.CHAT_TOP_BAR_TITLE_PADDING_H,
+      right: TgUiTokens.CHAT_TOP_BAR_TITLE_PADDING_H
+    })
     .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle())
+    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
-    .border({ width: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
-    .overlay(this.buildGlassSpecular())
+    .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .clip(true)
+    .renderGroup(true)
     .onClick(() => {
       this.onTitlePress();
     })
@@ -147,7 +140,7 @@ export struct TgChatTopBar {
         initials: this.avatarInitials,
         useImage: this.avatarImageSrc.length > 0,
         imageSrc: this.avatarImageSrc,
-        isOnline: false,
+        isOnline: this.isOnline,
         avatarBackgroundColor: this.avatarColor()
       })
     }
@@ -156,11 +149,11 @@ export struct TgChatTopBar {
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
     .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle())
+    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
-    .border({ width: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
-    .overlay(this.buildGlassSpecular())
+    .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .clip(true)
+    .renderGroup(true)
     .onClick(() => {
       this.onAvatarPress();
     })
@@ -168,22 +161,34 @@ export struct TgChatTopBar {
 
   build() {
     Column() {
-      // Status bar spacer
       Row()
         .width('100%')
         .height(this.topInset)
 
-      // Content row: [back] [title] [avatar]
-      Row({ space: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP }) {
+      Row() {
         this.buildBackCapsule()
-        this.buildTitleCapsule()
+
+        Row() {
+          this.buildTitleCapsule()
+        }
+        .layoutWeight(1)
+        .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
+        .justifyContent(FlexAlign.Center)
+        .alignItems(VerticalAlign.Center)
+        .padding({
+          left: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP,
+          right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP
+        })
+
         this.buildAvatarCapsule()
       }
       .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
       .width('100%')
-      .padding({ left: TgUiTokens.SPACE_12, right: TgUiTokens.SPACE_12 })
+      .padding({ left: TgUiTokens.TOP_BAR_SIDE_PADDING, right: TgUiTokens.TOP_BAR_SIDE_PADDING })
+      .alignItems(VerticalAlign.Center)
     }
     .width('100%')
+    .padding({ bottom: TgUiTokens.TOP_BAR_BOTTOM_PADDING })
     .backgroundColor(Color.Transparent)
   }
 }

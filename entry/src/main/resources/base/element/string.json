@@ -2407,6 +2407,26 @@
     {
       "name": "retry",
       "value": "Retry"
+    },
+    {
+      "name": "action_reply",
+      "value": "Reply"
+    },
+    {
+      "name": "action_copy",
+      "value": "Copy"
+    },
+    {
+      "name": "subscribers_count",
+      "value": "%s subscribers"
+    },
+    {
+      "name": "channel_label",
+      "value": "channel"
+    },
+    {
+      "name": "group_label",
+      "value": "group"
     }
   ]
 }

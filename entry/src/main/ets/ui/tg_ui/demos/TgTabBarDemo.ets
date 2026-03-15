@@ -8,7 +8,7 @@ export struct TgTabBarDemo {
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
       Column({ space: TgUiTokens.SPACE_12 }) {
-        Text('Tap tabs to preview active/inactive states and unread badge placement.')
+        Text('Tap tabs to preview glass capsule states and unread badge placement.')
           .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
           .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
           .padding({

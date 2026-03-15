@@ -10,6 +10,13 @@ export struct TgPhotoBubble {
   @Param maxWidthRatio: number = TgUiTokens.BUBBLE_MAX_WIDTH_RATIO;
   @Param photoWidth: number = 0;
   @Param photoHeight: number = 0;
+  @Param noBubbleWrap: boolean = false;
+  @Param useRegularMaxDimensions: boolean = false;
+  @Event onPhotoTap: () => void = () => {};
+
+  private usesRegularDimensions(): boolean {
+    return this.useRegularMaxDimensions || TgUiTokens.isRegularMessageWidth(this.containerWidth);
+  }
 
   private hasPhoto(): boolean {
     if (typeof this.photoPath === 'string') {
@@ -30,25 +37,68 @@ export struct TgPhotoBubble {
     return this.isOutgoing ? TgUiTokens.PHOTO_BUBBLE_CAPTION_TEXT_OUTGOING : TgUiTokens.PHOTO_BUBBLE_CAPTION_TEXT_INCOMING;
   }
 
-  private computedBubbleWidth(): number {
-    const byRatio = Math.floor(this.containerWidth * this.maxWidthRatio);
-    const maxAllowed = Math.min(byRatio, TgUiTokens.PHOTO_BUBBLE_MAX_WIDTH);
+  private maxBubbleBoxWidth(): number {
+    const byRatio = TgUiTokens.resolveBubbleMaxWidth(this.containerWidth, this.maxWidthRatio);
+    const maxAllowed = Math.min(byRatio,
+      this.usesRegularDimensions() ? TgUiTokens.PHOTO_BUBBLE_MAX_WIDTH_REGULAR : TgUiTokens.PHOTO_BUBBLE_MAX_WIDTH);
     const minAllowed = Math.min(TgUiTokens.PHOTO_BUBBLE_MIN_WIDTH, Math.max(1, Math.floor(this.containerWidth)));
     return Math.max(minAllowed, maxAllowed);
   }
 
+  private maxMediaWidth(): number {
+    return Math.max(1, this.maxBubbleBoxWidth() - TgUiTokens.PHOTO_BUBBLE_IMAGE_INSET * 2);
+  }
+
+  private maxMediaHeight(): number {
+    return this.usesRegularDimensions() ? TgUiTokens.PHOTO_BUBBLE_MAX_HEIGHT_REGULAR : TgUiTokens.PHOTO_BUBBLE_MAX_HEIGHT;
+  }
+
+  private computedMediaSize(): SizeOptions {
+    const maxWidth = this.maxMediaWidth();
+    const maxHeight = this.maxMediaHeight();
+    if (this.photoWidth > 0 && this.photoHeight > 0) {
+      let scale = Math.min(maxWidth / this.photoWidth, maxHeight / this.photoHeight);
+      if (!isFinite(scale) || scale <= 0) {
+        scale = 1;
+      }
+
+      let fittedWidth = Math.max(1, Math.floor(this.photoWidth * scale));
+      let fittedHeight = Math.max(1, Math.floor(this.photoHeight * scale));
+
+      const minMediaWidth = Math.max(1, TgUiTokens.PHOTO_BUBBLE_MIN_WIDTH - TgUiTokens.PHOTO_BUBBLE_IMAGE_INSET * 2);
+      if (fittedWidth < minMediaWidth) {
+        const expandedHeight = Math.max(1, Math.floor(minMediaWidth * this.photoHeight / this.photoWidth));
+        if (expandedHeight <= maxHeight) {
+          fittedWidth = minMediaWidth;
+          fittedHeight = expandedHeight;
+        }
+      }
+
+      return {
+        width: Math.min(maxWidth, fittedWidth),
+        height: Math.min(maxHeight, fittedHeight)
+      };
+    }
+
+    const squareSide = Math.min(maxWidth, Math.max(TgUiTokens.PHOTO_BUBBLE_MIN_HEIGHT, maxWidth));
+    return {
+      width: squareSide,
+      height: Math.min(squareSide, maxHeight)
+    };
+  }
+
+  private computedBubbleWidth(): number {
+    const mediaSize = this.computedMediaSize();
+    const mediaWidth = Number(mediaSize.width) || this.maxMediaWidth();
+    return Math.max(1, mediaWidth + TgUiTokens.PHOTO_BUBBLE_IMAGE_INSET * 2);
+  }
+
   private computedMediaWidth(): number {
-    return Math.max(1, this.computedBubbleWidth() - TgUiTokens.PHOTO_BUBBLE_IMAGE_INSET * 2);
+    return Number(this.computedMediaSize().width) || this.maxMediaWidth();
   }
 
   private computedMediaHeight(): number {
-    const mediaWidth = this.computedMediaWidth();
-    if (this.photoWidth > 0 && this.photoHeight > 0) {
-      const scaled = Math.floor(mediaWidth * this.photoHeight / this.photoWidth);
-      return Math.max(TgUiTokens.PHOTO_BUBBLE_MIN_HEIGHT, Math.min(scaled, TgUiTokens.PHOTO_BUBBLE_MAX_HEIGHT));
-    }
-    const square = Math.max(TgUiTokens.PHOTO_BUBBLE_MIN_HEIGHT, mediaWidth);
-    return Math.min(square, TgUiTokens.PHOTO_BUBBLE_MAX_HEIGHT);
+    return Number(this.computedMediaSize().height) || this.maxMediaHeight();
   }
 
   @Builder
@@ -64,8 +114,8 @@ export struct TgPhotoBubble {
         .fontSize(TgUiTokens.FONT_META_SIZE)
         .fontColor(TgUiTokens.PHOTO_BUBBLE_PLACEHOLDER_ICON)
     }
-    .width(this.computedMediaWidth())
-    .height(this.computedMediaHeight())
+    .width(this.maxMediaWidth())
+    .height(this.maxMediaHeight())
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)
     .backgroundColor(TgUiTokens.PHOTO_BUBBLE_PLACEHOLDER_BG)
@@ -79,8 +129,10 @@ export struct TgPhotoBubble {
         Image(this.photoPath)
           .width(this.computedMediaWidth())
           .height(this.computedMediaHeight())
-          .objectFit(ImageFit.Cover)
+          .objectFit(ImageFit.Contain)
           .borderRadius(TgUiTokens.PHOTO_BUBBLE_RADIUS - TgUiTokens.PHOTO_BUBBLE_IMAGE_INSET)
+          .clip(true)
+          .onClick(() => { this.onPhotoTap(); })
       } else {
         this.buildPlaceholder()
       }
@@ -104,6 +156,7 @@ export struct TgPhotoBubble {
         .fontWeight(TgUiTokens.MSG_TEXT_WEIGHT)
         .fontColor(this.captionColor())
         .wordBreak(WordBreak.BREAK_WORD)
+        .lineBreakStrategy(LineBreakStrategy.HIGH_QUALITY)
         .maxLines(TgUiTokens.PHOTO_BUBBLE_CAPTION_MAX_LINES)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .width('100%')
@@ -125,13 +178,22 @@ export struct TgPhotoBubble {
     .width(this.computedBubbleWidth())
     .backgroundColor(this.bubbleColor())
     .borderRadius(TgUiTokens.PHOTO_BUBBLE_RADIUS)
+    .clip(true)
   }
 
   build() {
-    Row() {
-      this.buildBubble()
+    if (this.noBubbleWrap) {
+      // noBubbleWrap: media only — caption rendered by TgMessageRouter for inline meta
+      Column() {
+        this.buildMedia()
+      }
+      .width(this.computedBubbleWidth())
+    } else {
+      Row() {
+        this.buildBubble()
+      }
+      .width('100%')
+      .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
     }
-    .width('100%')
-    .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
   }
 }

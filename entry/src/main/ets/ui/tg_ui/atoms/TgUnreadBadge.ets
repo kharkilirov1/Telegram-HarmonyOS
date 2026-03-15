@@ -41,8 +41,8 @@ export struct TgUnreadBadge {
     if (this.shouldRender()) {
       Row() {
         Text(this.displayText())
-          .fontSize(TgUiTokens.FONT_BADGE_SIZE)
-          .fontWeight(FontWeight.Medium)
+          .fontSize(TgUiTokens.CHAT_META_BADGE_FONT_SIZE)
+          .fontWeight(FontWeight.Regular)
           .fontColor(this.textColor)
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Clip })

@@ -153,7 +153,7 @@ export struct TgTopBar {
     .height(this.topInset + TgUiTokens.TOP_BAR_HEIGHT)
     .width('100%')
     .backgroundColor(this.useRealtimeBlur() ? TgUiTokens.TOP_BAR_GLASS_BG : TgUiTokens.TOP_BAR_GLASS_FALLBACK_BG)
-    .backgroundBlurStyle(TgGlassPolicy.topBarBlurStyle())
+    .backgroundBlurStyle(TgGlassPolicy.topBarBlurStyle(), TgGlassPolicy.glassOptions())
     .overlay(this.buildGlassSpecular())
     .border({
       width: { bottom: TgUiTokens.TOP_BAR_SEPARATOR_STROKE },

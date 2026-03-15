@@ -8,8 +8,9 @@ $phase0Files = @(
   'entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets',
   'entry/src/main/ets/ui/tg_ui/atoms/TgChatRow.ets',
   'entry/src/main/ets/ui/tg_ui/atoms/TgTopBar.ets',
+  'entry/src/main/ets/ui/tg_ui/atoms/TgChatListNavigationBar.ets',
   'entry/src/main/ets/ui/tg_ui/atoms/TgChatTopBar.ets',
-  'entry/src/main/ets/ui/tg_ui/atoms/TgTabBar.ets',
+  'entry/src/main/ets/ui/tg_ui/atoms/TgTabBar.ets'
 ) | ForEach-Object { Join-Path $root $_ }
 
 $hexPattern = '#[0-9A-Fa-f]{3,8}'
@@ -34,6 +35,7 @@ if ($hexViolations.Count -gt 0) {
 
 $chatRowFile = Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgChatRow.ets'
 $chatListPageFile = Join-Path $root 'entry/src/main/ets/ui/pages/chatlist/ChatListPage.ets'
+$chatListNavFile = Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgChatListNavigationBar.ets'
 $mainTabsFile = Join-Path $root 'entry/src/main/ets/ui/pages/MainTabsPage.ets'
 $chatScreenFile = Join-Path $root 'entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets'
 
@@ -52,13 +54,13 @@ if (-not (Select-String -Path $mainTabsFile -Pattern 'TgTabBar\(')) {
   exit 1
 }
 
-if (-not (Select-String -Path $chatListPageFile -Pattern 'TgTopBar\(')) {
-  Write-Error 'ChatListPage must compose TgTopBar.'
+if (-not (Select-String -Path $chatListPageFile -Pattern 'TgChatListNavigationBar\(')) {
+  Write-Error 'ChatListPage must compose TgChatListNavigationBar.'
   exit 1
 }
 
-if (-not (Select-String -Path $chatListPageFile -Pattern 'Search\(')) {
-  Write-Error 'ChatListPage must compose a Search component.'
+if (-not (Select-String -Path $chatListNavFile -Pattern 'Search\(')) {
+  Write-Error 'TgChatListNavigationBar must compose a Search component.'
   exit 1
 }
 

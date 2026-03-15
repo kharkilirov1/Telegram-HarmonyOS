@@ -195,7 +195,7 @@ export struct MainTabsPage {
       .width('100%')
       .height('100%')
 
-      // ── Floating island tab bar (overlays content) ──
+      // ── Custom bottom tab bar capsule (overlays content) ──
       if (!(this.selectedIndex === 2 && this.chatScreenVisible)) {
         TgTabBar({
           selectedIndex: this.selectedIndex,

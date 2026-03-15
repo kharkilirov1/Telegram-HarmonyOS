@@ -7,9 +7,12 @@ export struct TgDocumentRow {
   @Param fileSize: number = 0;
   @Param mimeType: string = '';
   @Param isOutgoing: boolean = false;
+  @Param documentPath: string = ''; // file:// URI when downloaded
   @Param downloadProgress: number = -1; // -1: hidden, 0..1: visible
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
   @Param maxWidthRatio: number = TgUiTokens.BUBBLE_MAX_WIDTH_RATIO;
+  @Param noBubbleWrap: boolean = false;
+  @Event onTap: () => void = () => {};
 
   private safeFileName(): string {
     const trimmed = this.fileName.trim();
@@ -29,7 +32,7 @@ export struct TgDocumentRow {
   }
 
   private computedBubbleWidth(): number {
-    const byRatio = Math.floor(this.containerWidth * this.maxWidthRatio);
+    const byRatio = TgUiTokens.resolveBubbleMaxWidth(this.containerWidth, this.maxWidthRatio);
     const maxAllowed = Math.min(byRatio, TgUiTokens.DOCUMENT_ROW_MAX_WIDTH);
     const minAllowed = Math.min(TgUiTokens.DOCUMENT_ROW_MIN_WIDTH, Math.max(1, Math.floor(this.containerWidth)));
     return Math.max(minAllowed, maxAllowed);
@@ -98,6 +101,19 @@ export struct TgDocumentRow {
     return bytes.toString() + ' B';
   }
 
+  private extensionBadgeText(): string {
+    const ext = this.detectExtension();
+    const label = ext.length > 0 ? ext : this.mimeLabel();
+    if (label.length <= TgUiTokens.DOCUMENT_ROW_EXTENSION_MAX_LEN) {
+      return label;
+    }
+    return label.substring(0, TgUiTokens.DOCUMENT_ROW_EXTENSION_MAX_LEN);
+  }
+
+  private shouldShowExtensionBadge(): boolean {
+    return !this.hasProgress() && this.extensionBadgeText().trim().length > 0;
+  }
+
   private metaLine(): string {
     const sizeLabel = this.formatFileSize(this.fileSize);
     if (this.hasProgress()) {
@@ -113,11 +129,18 @@ export struct TgDocumentRow {
     return mime;
   }
 
+  private isDownloaded(): boolean {
+    return this.documentPath.length > 0;
+  }
+
   private leadingIconResource(): Resource {
     if (this.hasProgress()) {
       return TgUiTokens.ICON_RES_DOWNLOAD;
     }
-    return TgUiTokens.ICON_RES_DOCUMENT;
+    if (this.isDownloaded()) {
+      return TgUiTokens.ICON_RES_DOCUMENT;
+    }
+    return TgUiTokens.ICON_RES_DOWNLOAD;
   }
 
   @Builder
@@ -142,21 +165,36 @@ export struct TgDocumentRow {
   }
 
   @Builder
-  private buildBubble() {
-    Row({ space: TgUiTokens.DOCUMENT_ROW_CONTENT_GAP }) {
-      Row() {
+  private buildLeadingTile() {
+    Row() {
+      if (this.shouldShowExtensionBadge()) {
+        Text(this.extensionBadgeText())
+          .fontSize(TgUiTokens.DOCUMENT_ROW_EXTENSION_SIZE)
+          .lineHeight(TgUiTokens.DOCUMENT_ROW_EXTENSION_LINE_HEIGHT)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(this.titleColor())
+          .maxLines(1)
+          .textAlign(TextAlign.Center)
+      } else {
         TgIcon({
           src: this.leadingIconResource(),
           iconSize: TgUiTokens.DOCUMENT_ROW_ICON_SIZE,
           tintColor: TgUiTokens.DOCUMENT_ROW_ICON_TINT
         })
       }
-      .width(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
-      .height(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(VerticalAlign.Center)
-      .backgroundColor(TgUiTokens.DOCUMENT_ROW_ICON_BG)
-      .borderRadius(TgUiTokens.DOCUMENT_ROW_ICON_RADIUS)
+    }
+    .width(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
+    .height(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
+    .justifyContent(FlexAlign.Center)
+    .alignItems(VerticalAlign.Center)
+    .backgroundColor(TgUiTokens.DOCUMENT_ROW_ICON_BG)
+    .borderRadius(TgUiTokens.DOCUMENT_ROW_ICON_RADIUS)
+  }
+
+  @Builder
+  private buildBubble() {
+    Row({ space: TgUiTokens.DOCUMENT_ROW_CONTENT_GAP }) {
+      this.buildLeadingTile()
 
       Column({ space: TgUiTokens.DOCUMENT_ROW_TEXT_GAP }) {
         Text(this.safeFileName())
@@ -164,7 +202,7 @@ export struct TgDocumentRow {
           .lineHeight(TgUiTokens.DOCUMENT_ROW_TITLE_LINE_HEIGHT)
           .fontWeight(FontWeight.Medium)
           .fontColor(this.titleColor())
-          .maxLines(1)
+          .maxLines(2)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .width('100%')
 
@@ -193,12 +231,58 @@ export struct TgDocumentRow {
     .alignItems(VerticalAlign.Center)
   }
 
-  build() {
-    Row() {
-      this.buildBubble()
+  @Builder
+  private buildContent() {
+    Row({ space: TgUiTokens.DOCUMENT_ROW_CONTENT_GAP }) {
+      this.buildLeadingTile()
+
+      Column({ space: TgUiTokens.DOCUMENT_ROW_TEXT_GAP }) {
+        Text(this.safeFileName())
+          .fontSize(TgUiTokens.DOCUMENT_ROW_TITLE_SIZE)
+          .lineHeight(TgUiTokens.DOCUMENT_ROW_TITLE_LINE_HEIGHT)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(this.titleColor())
+          .maxLines(2)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .width('100%')
+
+        Text(this.metaLine())
+          .fontSize(TgUiTokens.DOCUMENT_ROW_META_SIZE)
+          .lineHeight(TgUiTokens.DOCUMENT_ROW_META_LINE_HEIGHT)
+          .fontColor(this.metaColor())
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .width('100%')
+
+        this.buildProgressBar()
+      }
+      .layoutWeight(1)
+      .alignItems(HorizontalAlign.Start)
     }
-    .width('100%')
-    .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
+    .width(this.computedBubbleWidth())
+    .padding({
+      left: TgUiTokens.DOCUMENT_ROW_PADDING_H,
+      right: TgUiTokens.DOCUMENT_ROW_PADDING_H,
+      top: TgUiTokens.DOCUMENT_ROW_PADDING_V,
+      bottom: TgUiTokens.DOCUMENT_ROW_PADDING_V
+    })
+    .alignItems(VerticalAlign.Center)
+  }
+
+  build() {
+    if (this.noBubbleWrap) {
+      Column() {
+        this.buildContent()
+      }
+      .onClick(() => this.onTap())
+    } else {
+      Row() {
+        this.buildBubble()
+      }
+      .width('100%')
+      .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
+      .onClick(() => this.onTap())
+    }
   }
 }
 

@@ -12,9 +12,14 @@ import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { TgUiFeatureFlags } from '../../tg_ui/TgUiFeatureFlags';
 import { TgChatRow } from '../../tg_ui/atoms/TgChatRow';
 import { TgChatSendStatus } from '../../tg_ui/atoms/TgChatMeta';
-import { TgTopBar } from '../../tg_ui/atoms/TgTopBar';
+import { TgChatListNavigationBar } from '../../tg_ui/atoms/TgChatListNavigationBar';
 import { localized } from '../../../core/utils/AppResource';
-import { computeTopBarHeight, computeTabBottomInset, getMainWindow, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
+import {
+  computeChatListTopBarHeight,
+  computeTabBottomInset,
+  getMainWindow,
+  removeWindowSizeListener
+} from '../../utils/SafeAreaUtils';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { createLoadChatsUseCase, LoadChatsUseCase } from '../../../domain/usecases/loadChats';
 import { createOpenChatUseCase, OpenChatUseCase, OpenChatParams } from '../../../domain/usecases/openChat';
@@ -54,7 +59,7 @@ export struct ChatListPage {
   @StorageLink(StorageKeys.CHATS_HAS_MORE) chatsHasMore: boolean = true;
   @StorageLink(StorageKeys.CHATS_LOAD_PHASE) chatsLoadPhase: string = 'idle';
 
-  @State private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
+  @State private topBarTotalHeight: number = TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT;
   @State private listBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
   @State private searchQuery: string = '';
   @State private filteredChatsCount: number = 0;
@@ -116,10 +121,8 @@ export struct ChatListPage {
   onPageShow(): void {
     this.clearDeferredOpen();
     this.isOpeningChat = false;
-    const navLockUntil = AppStorage.get<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL) || 0;
-    if (Date.now() >= navLockUntil && navLockUntil !== 0) {
-      AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, 0);
-    }
+    // Always clear nav lock — ChatListPage is visible, transition is complete
+    AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, 0);
   }
 
   aboutToAppear(): void {
@@ -197,10 +200,10 @@ export struct ChatListPage {
   private computeSafeInsets(): void {
     try {
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      this.topBarTotalHeight = computeTopBarHeight(context);
+      this.topBarTotalHeight = computeChatListTopBarHeight(context);
       this.listBottomInset = computeTabBottomInset(context);
     } catch (_error) {
-      this.topBarTotalHeight = TgUiTokens.TOP_BAR_HEIGHT;
+      this.topBarTotalHeight = TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT;
       this.listBottomInset = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
     }
   }
@@ -251,7 +254,7 @@ export struct ChatListPage {
     if (!this.loadChatsUseCase) {
       return;
     }
-    if (this.connectionStatus !== 'ready' || this.searchQuery.length > 0) {
+    if (this.connectionStatus !== 'ready' || this.hasActiveSearch()) {
       return;
     }
     if (this.filteredChatsCount === 0) {
@@ -319,8 +322,12 @@ export struct ChatListPage {
     if (title.includes(normalizedQuery)) {
       return true;
     }
-    const preview = item.lastMessage.toLowerCase();
+    const preview = (item.previewPrefix + ' ' + item.lastMessage).toLowerCase();
     return preview.includes(normalizedQuery);
+  }
+
+  private hasActiveSearch(): boolean {
+    return this.searchQuery.trim().length > 0;
   }
 
   private getTgReuseId(item: ChatItemVO): string {
@@ -426,47 +433,6 @@ export struct ChatListPage {
 
   @Builder
   private buildListHeader() {
-    // Search bar (scrolls with content — hides behind top bar on scroll, iOS style)
-    ListItem() {
-      Row() {
-        Search({ placeholder: localized($r('app.string.search_placeholder').id, 'Search') })
-          .searchIcon({
-            src: TgUiTokens.ICON_RES_SEARCH,
-            size: TgUiTokens.SEARCH_BAR_ICON_SIZE,
-            color: TgUiTokens.SEARCH_BAR_ICON_COLOR
-          })
-          .cancelButton({ style: CancelButtonStyle.INPUT })
-          .searchButton('')
-          .height(TgUiTokens.SEARCH_BAR_HEIGHT)
-          .backgroundColor(TgUiTokens.SEARCH_BAR_BG)
-          .borderRadius(TgUiTokens.SEARCH_BAR_RADIUS)
-          .placeholderColor(TgUiTokens.SEARCH_BAR_PLACEHOLDER_COLOR)
-          .placeholderFont({ size: TgUiTokens.SEARCH_BAR_FONT_SIZE })
-          .textFont({ size: TgUiTokens.SEARCH_BAR_FONT_SIZE })
-          .fontColor(TgUiTokens.SEARCH_BAR_TEXT_COLOR)
-          .onChange((value: string) => {
-            const normalized = value.trim().toLowerCase();
-            if (normalized === this.searchQuery) {
-              return;
-            }
-            this.searchQuery = normalized;
-            try {
-              const state = getAppCoreRuntime().getStore().getState();
-              this.rebuildList(state);
-            } catch (error) {
-              hilog.error(DOMAIN, TAG, 'Search rebuild failed: %{public}s', String(error));
-            }
-          })
-      }
-      .width('100%')
-      .padding({
-        left: TgUiTokens.SEARCH_BAR_SIDE_INSET,
-        right: TgUiTokens.SEARCH_BAR_SIDE_INSET,
-        top: TgUiTokens.SEARCH_BAR_VERTICAL_INSET,
-        bottom: TgUiTokens.SEARCH_BAR_VERTICAL_INSET
-      })
-    }
-
     // Connection status banner
     if (this.connectionStatus !== 'ready') {
       ListItem() {
@@ -493,10 +459,10 @@ export struct ChatListPage {
   }
 
   private shouldShowListLoading(): boolean {
-    if (this.chatsLoadPhase === 'bootstrap' && this.searchQuery.length === 0) {
+    if (this.chatsLoadPhase === 'bootstrap' && !this.hasActiveSearch()) {
       return true;
     }
-    return this.searchQuery.length === 0 &&
+    return !this.hasActiveSearch() &&
       this.chatsCount === 0 &&
       (this.connectionStatus !== 'ready' || this.chatsIsLoading);
   }
@@ -504,14 +470,14 @@ export struct ChatListPage {
   private shouldShowRetryAction(): boolean {
     return !this.shouldShowListLoading() &&
       this.connectionStatus === 'ready' &&
-      this.searchQuery.length === 0 &&
+      !this.hasActiveSearch() &&
       this.filteredChatsCount === 0 &&
       !this.chatsIsLoading &&
       this.chatsHasMore;
   }
 
   private shouldShowPaginationFooter(): boolean {
-    return this.searchQuery.length === 0 &&
+    return !this.hasActiveSearch() &&
       this.filteredChatsCount > 0 &&
       (this.chatsLoadPhase === 'pagination' || (!this.chatsHasMore && !this.chatsIsLoading));
   }
@@ -565,7 +531,7 @@ export struct ChatListPage {
     if (this.shouldShowListLoading()) {
       return localized($r('app.string.loading').id, 'Loading...');
     }
-    if (this.searchQuery.length > 0) {
+    if (this.hasActiveSearch()) {
       return localized($r('app.string.search_no_results').id, 'No results found');
     }
     return localized($r('app.string.no_messages').id, 'No messages yet');
@@ -622,6 +588,9 @@ export struct ChatListPage {
                   chatId: item.chatId,
                   title: item.title,
                   preview: item.isTyping ? item.typingText : item.lastMessage,
+                  previewPrefix: item.previewPrefix,
+                  previewPrefixStyle: item.previewPrefixStyle,
+                  isDraft: item.isTyping ? false : item.isDraft,
                   isTyping: item.isTyping,
                   timeText: item.formattedTime,
                   unreadCount: item.unreadCount,
@@ -671,14 +640,23 @@ export struct ChatListPage {
       })
 
       // ── Top bar layer (overlays content, translucent + blur) ──
-      TgTopBar({
+      TgChatListNavigationBar({
         title: localized($r('app.string.chats_title').id, 'Chats'),
-        showLeftText: true,
-        leftText: localized($r('app.string.edit').id, 'Edit'),
-        showRightAction: true,
-        rightIcon: $r('app.media.ic_search'),
-        showSecondRightAction: true,
-        secondRightIcon: $r('app.media.ic_edit')
+        searchValue: this.searchQuery,
+        searchPlaceholder: localized($r('app.string.search_placeholder').id, 'Search'),
+        editText: localized($r('app.string.edit').id, 'Edit'),
+        onSearchChange: (value: string): void => {
+          if (value === this.searchQuery) {
+            return;
+          }
+          this.searchQuery = value;
+          try {
+            const state = getAppCoreRuntime().getStore().getState();
+            this.rebuildList(state);
+          } catch (error) {
+            hilog.error(DOMAIN, TAG, 'Search rebuild failed: %{public}s', String(error));
+          }
+        }
       })
     }
     .width('100%')

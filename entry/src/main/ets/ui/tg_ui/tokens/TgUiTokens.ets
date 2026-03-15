@@ -24,8 +24,9 @@ export class TgUiTokens {
 
   static readonly COLOR_UNREAD_BG: Resource = $r('app.color.unread_badge');
   static readonly COLOR_UNREAD_TEXT: Resource = $r('app.color.unread_text');
-  static readonly COLOR_UNREAD_BG_MUTED: Resource = $r('app.color.text_secondary');
+  static readonly COLOR_UNREAD_BG_MUTED: Resource = $r('app.color.unread_badge_muted');
   static readonly COLOR_ONLINE_DOT: Resource = $r('app.color.online_indicator');
+  static readonly COLOR_AUTHOR_NAME: Resource = $r('app.color.author_name');
   static readonly COLOR_AVATAR_PLACEHOLDER_BG: Resource = $r('app.color.placeholder_bg');
   static readonly COLOR_AVATAR_PLACEHOLDER_TEXT: Resource = $r('app.color.icon_on_primary');
   static readonly COLOR_CHAT_ROW_PINNED_BG: Resource = $r('app.color.chatlist_pinned_item_bg');
@@ -76,7 +77,7 @@ export class TgUiTokens {
   static readonly STICKER_VIEW_EMOJI_TEXT: Resource = $r('app.color.text_secondary');
 
   // ── Typography ──
-  static readonly FONT_TITLE_SIZE: number = 17;
+  static readonly FONT_TITLE_SIZE: number = 16;
   static readonly FONT_PREVIEW_SIZE: number = 15;
   static readonly FONT_META_SIZE: number = 13;
   static readonly FONT_BADGE_SIZE: number = 13;
@@ -84,13 +85,13 @@ export class TgUiTokens {
   static readonly FONT_AVATAR_INITIALS_SIZE_MD: number = 20;
   static readonly FONT_AVATAR_INITIALS_SIZE_LG: number = 24;
   static readonly TOP_BAR_TITLE_SIZE: number = 17;
-  static readonly MSG_TEXT_SIZE: number = 17;
+  static readonly MSG_TEXT_SIZE: number = 16;
   static readonly MSG_TEXT_WEIGHT = FontWeight.Regular;
-  static readonly MSG_TEXT_LINE_HEIGHT: number = 22;
+  static readonly MSG_TEXT_LINE_HEIGHT: number = 21;
   static readonly MSG_TEXT_LETTER_SPACING: number = 0;
   static readonly MSG_EMOJI_ONLY_SIZE: number = 40;
   static readonly MSG_EMOJI_ONLY_LINE_HEIGHT: number = 44;
-  static readonly MSG_META_SIZE: number = 12;
+  static readonly MSG_META_SIZE: number = 11;
   static readonly TEXT_MAX_LINES: number = 0;
 
   // ── Spacing ──
@@ -119,10 +120,24 @@ export class TgUiTokens {
 
   // ── Top bar ──
   static readonly TOP_BAR_HEIGHT: number = 44;
+  static readonly TOP_BAR_BOTTOM_PADDING: number = 6;
   static readonly TOP_BAR_SIDE_PADDING: number = 12;
   static readonly TOP_BAR_ACTION_TOUCH: number = 44;
   static readonly TOP_BAR_ACTION_ICON_SIZE: number = 22;
   static readonly TOP_BAR_SEPARATOR_STROKE: number = 1;
+  static readonly CHAT_TOP_BAR_CAPSULE_SIZE: number = 44;
+  static readonly CHAT_TOP_BAR_CAPSULE_RADIUS: number = 22;
+  static readonly CHAT_TOP_BAR_AVATAR_INNER: number = 37;
+  static readonly CHAT_TOP_BAR_CAPSULE_GAP: number = 8;
+  static readonly CHAT_TOP_BAR_TITLE_PADDING_H: number = 14;
+  static readonly CHAT_TOP_BAR_TITLE_MIN_WIDTH: number = 150;
+  static readonly CHAT_TOP_BAR_TITLE_SIZE: number = 17;
+  static readonly CHAT_TOP_BAR_TITLE_WEIGHT = FontWeight.Bold;
+  static readonly CHAT_TOP_BAR_SUBTITLE_SIZE: number = 13;
+  static readonly CHAT_TOP_BAR_BORDER_WIDTH: number = 0.75;
+  static readonly CHAT_LIST_NAV_SEARCH_AREA_HEIGHT: number = 54;
+  static readonly CHAT_LIST_NAV_TOTAL_HEIGHT: number =
+    TgUiTokens.TOP_BAR_HEIGHT + TgUiTokens.CHAT_LIST_NAV_SEARCH_AREA_HEIGHT;
 
   // NOTE:
   // ArkUI Image.fillColor applies to SVG drawables when SVG elements define fill (fill != none).
@@ -147,49 +162,79 @@ export class TgUiTokens {
 
   // legacy aliases (keep while atoms are landing incrementally)
   static readonly UNREAD_BADGE_MIN_SIZE: number = 20;
-  static readonly UNREAD_BADGE_H_PADDING: number = 6;
+  static readonly UNREAD_BADGE_H_PADDING: number = 5;
   static readonly UNREAD_BADGE_RADIUS: number = 10;
 
   // ── Chat row baseline metrics ──
-  static readonly CHAT_ROW_HEIGHT: number = 72;
-  static readonly CHAT_ROW_SIDE_INSET: number = 16;
+  static readonly CHAT_ROW_HEIGHT: number = 76;
+  static readonly CHAT_ROW_SIDE_INSET: number = 10;
   static readonly CHAT_ROW_AVATAR_TEXT_GAP: number = 12;
   static readonly CHAT_ROW_TEXT_META_GAP: number = 8;
-  static readonly CHAT_ROW_TITLE_PREVIEW_GAP: number = 4;
+  static readonly CHAT_ROW_TITLE_PREVIEW_GAP: number = 0;
+  static readonly CHAT_ROW_TITLE_FONT_SIZE: number = 16;
+  static readonly CHAT_ROW_PREVIEW_FONT_SIZE: number = 15;
   static readonly CHAT_ROW_TITLE_MUTE_GAP: number = 4;
+  static readonly CHAT_ROW_PREVIEW_PREFIX_GAP: number = 4;
   static readonly CHAT_ROW_MUTE_ICON_SIZE: number = TgUiTokens.ICON_SIZE_XS;
-  static readonly CHAT_ROW_SEPARATOR_STROKE: number = 1;
+  static readonly CHAT_ROW_SEPARATOR_STROKE: number = 0.5;
   static readonly CHAT_ROW_META_FIXED_WIDTH: number = 76;
   static readonly CHAT_META_MIN_WIDTH: number = 76;
   static readonly CHAT_META_TOP_ROW_HEIGHT: number = 18;
   static readonly CHAT_META_BOTTOM_ROW_HEIGHT: number = 20;
   static readonly CHAT_META_ROW_GAP: number = 2;
-  static readonly CHAT_META_STATUS_ICON_SIZE: number = TgUiTokens.ICON_SIZE_XS;
+  static readonly CHAT_META_TIME_FONT_SIZE: number = 14;
+  static readonly CHAT_META_BADGE_FONT_SIZE: number = 14;
+  static readonly CHAT_META_STATUS_ICON_SIZE: number = 14;
   static readonly CHAT_META_STATUS_GAP: number = 4;
+  static readonly CHAT_META_PIN_ICON_SIZE: number = 12;
   static readonly CHAT_META_BOTTOM_PLACEHOLDER_WIDTH: number = TgUiTokens.UNREAD_BADGE_MAX_WIDTH;
   static readonly CHAT_META_BOTTOM_PLACEHOLDER_HEIGHT: number = TgUiTokens.UNREAD_BADGE_HEIGHT;
-  static readonly CHAT_ROW_SEPARATOR_INSET: number =
-    TgUiTokens.CHAT_ROW_SIDE_INSET + TgUiTokens.AVATAR_SIZE_DEFAULT + TgUiTokens.CHAT_ROW_AVATAR_TEXT_GAP;
+  static readonly CHAT_ROW_SEPARATOR_INSET: number = 82;
+  static readonly CHAT_ROW_PREVIEW_MAX_LINES: number = 2;
 
   // ── Message text / bubble groundwork (Phase C Step 0) ──
-  static readonly BUBBLE_MAX_WIDTH_RATIO: number = 0.8;
-  static readonly BUBBLE_PADDING_H: number = 12;
-  static readonly BUBBLE_PADDING_V: number = 8;
-  static readonly BUBBLE_RADIUS_INCOMING: number = 18;
-  static readonly BUBBLE_RADIUS_OUTGOING: number = 18;
-  static readonly MSG_BUBBLE_RADIUS: number = 18;
+  // iOS: 0.85 compact, 0.65 regular; Android: ~screenWidth - 80dp
+  static readonly BUBBLE_COMPACT_WIDTH_BOUNDARY: number = 500;
+  static readonly BUBBLE_MAX_WIDTH_RATIO: number = 0.85;
+  static readonly BUBBLE_MAX_WIDTH_RATIO_REGULAR: number = 0.65;
+  // iOS: 10-11pt; Android: 9-12dp
+  static readonly BUBBLE_PADDING_H: number = 11;
+  // iOS: ~6pt; Android: 8dp
+  static readonly BUBBLE_PADDING_V: number = 6;
+  // iOS: 16pt; Android: 17dp (configurable default)
+  static readonly BUBBLE_RADIUS_INCOMING: number = 17;
+  static readonly BUBBLE_RADIUS_OUTGOING: number = 17;
+  static readonly MSG_BUBBLE_RADIUS: number = 17;
   static readonly MSG_DEMO_BASE_CONTAINER_WIDTH: number = 360;
   static readonly MSG_DEMO_NARROW_CONTAINER_WIDTH: number = 220;
   static readonly MSG_DEMO_WIDE_CONTAINER_WIDTH: number = 340;
   static readonly MSG_DEMO_SIDE_NARROW_CONTAINER_WIDTH: number = 136;
   static readonly MSG_DEMO_SIDE_WIDE_CONTAINER_WIDTH: number = 164;
   static readonly MSG_DEMO_WRAP_INJECT_EVERY: number = 10;
+  // ── Sender name in bubbles (iOS: 14pt Semibold) ──
+  static readonly MSG_SENDER_NAME_SIZE: number = 14;
+  static readonly MSG_SENDER_NAME_WEIGHT = FontWeight.Bold;
+
+  // ── Message avatar (iOS: 34pt, group chats incoming) ──
+  static readonly MSG_AVATAR_SIZE: number = 34;
+  static readonly MSG_AVATAR_GAP: number = 4;
+  static readonly MSG_AVATAR_FONT_SIZE: number = 14;
+
+  // ── Message spacing (iOS: defaultSpacing=2.33, mergedSpacing=0) ──
+  static readonly MSG_SPACING_SAME_SENDER: number = 2;
+  static readonly MSG_SPACING_DIFF_SENDER: number = 8;
+
   static readonly MSG_META_ROW_HEIGHT: number = 18;
   static readonly MSG_META_MIN_WIDTH: number = 56;
   static readonly MSG_META_ICON_SIZE: number = TgUiTokens.ICON_SIZE_XS;
   static readonly MSG_META_ICON_GAP: number = 4;
   static readonly MSG_META_TIME_PLACEHOLDER_WIDTH: number = 32;
   static readonly MSG_META_STATUS_PLACEHOLDER_WIDTH: number = 12;
+  static readonly MSG_MEDIA_META_OVERLAY_PADDING_H: number = 6;
+  static readonly MSG_MEDIA_META_OVERLAY_PADDING_V: number = 3;
+  static readonly MSG_MEDIA_META_OVERLAY_RADIUS: number = 10;
+  static readonly MSG_MEDIA_META_OVERLAY_MARGIN: number = 6;
+  static readonly MSG_MEDIA_META_OVERLAY_BG: string = 'rgba(0,0,0,0.4)';
 
   // ── Photo bubble (Phase C.1-1) ──
   static readonly PHOTO_BUBBLE_RADIUS: number = 16;
@@ -198,12 +243,25 @@ export class TgUiTokens {
   static readonly PHOTO_BUBBLE_MIN_HEIGHT: number = 74;
   static readonly PHOTO_BUBBLE_MAX_WIDTH: number = 300;
   static readonly PHOTO_BUBBLE_MAX_HEIGHT: number = 380;
+  static readonly PHOTO_BUBBLE_MAX_WIDTH_REGULAR: number = 440;
+  static readonly PHOTO_BUBBLE_MAX_HEIGHT_REGULAR: number = 440;
   static readonly PHOTO_BUBBLE_CAPTION_TOP_GAP: number = 6;
   static readonly PHOTO_BUBBLE_CAPTION_PADDING_H: number = 10;
   static readonly PHOTO_BUBBLE_CAPTION_PADDING_BOTTOM: number = 8;
-  static readonly PHOTO_BUBBLE_CAPTION_SIZE: number = 17;
-  static readonly PHOTO_BUBBLE_CAPTION_LINE_HEIGHT: number = 22;
+  static readonly PHOTO_BUBBLE_CAPTION_SIZE: number = 16;
+  static readonly PHOTO_BUBBLE_CAPTION_LINE_HEIGHT: number = 21;
   static readonly PHOTO_BUBBLE_CAPTION_MAX_LINES: number = 6;
+  static readonly PHOTO_ALBUM_RADIUS: number = 16;
+  static readonly PHOTO_ALBUM_GAP: number = 2;
+  static readonly PHOTO_ALBUM_MAX_WIDTH: number = 300;
+  static readonly PHOTO_ALBUM_MAX_WIDTH_REGULAR: number = 440;
+  static readonly PHOTO_ALBUM_MAX_HEIGHT: number = 380;
+  static readonly PHOTO_ALBUM_MAX_HEIGHT_REGULAR: number = 440;
+  static readonly PHOTO_ALBUM_TWO_HEIGHT_RATIO: number = 0.74;
+  static readonly PHOTO_ALBUM_THREE_HEIGHT_RATIO: number = 0.92;
+  static readonly PHOTO_ALBUM_THREE_PRIMARY_WIDTH_RATIO: number = 0.58;
+  static readonly PHOTO_ALBUM_OVERLAY_TEXT_SIZE: number = 22;
+  static readonly PHOTO_ALBUM_OVERLAY_BG: string = 'rgba(0,0,0,0.34)';
 
   // ── Video bubble (Phase C.1-2) ──
   static readonly VIDEO_BUBBLE_RADIUS: number = 16;
@@ -212,6 +270,8 @@ export class TgUiTokens {
   static readonly VIDEO_BUBBLE_MIN_HEIGHT: number = 74;
   static readonly VIDEO_BUBBLE_MAX_WIDTH: number = 300;
   static readonly VIDEO_BUBBLE_MAX_HEIGHT: number = 380;
+  static readonly VIDEO_BUBBLE_MAX_WIDTH_REGULAR: number = 440;
+  static readonly VIDEO_BUBBLE_MAX_HEIGHT_REGULAR: number = 440;
   static readonly VIDEO_BUBBLE_PLAY_BG_SIZE: number = 38;
   static readonly VIDEO_BUBBLE_PLAY_ICON_SIZE: number = 20;
   static readonly VIDEO_BUBBLE_DURATION_FONT_SIZE: number = 12;
@@ -223,8 +283,8 @@ export class TgUiTokens {
   static readonly VIDEO_BUBBLE_CAPTION_TOP_GAP: number = 6;
   static readonly VIDEO_BUBBLE_CAPTION_PADDING_H: number = 10;
   static readonly VIDEO_BUBBLE_CAPTION_PADDING_BOTTOM: number = 8;
-  static readonly VIDEO_BUBBLE_CAPTION_SIZE: number = 17;
-  static readonly VIDEO_BUBBLE_CAPTION_LINE_HEIGHT: number = 22;
+  static readonly VIDEO_BUBBLE_CAPTION_SIZE: number = 16;
+  static readonly VIDEO_BUBBLE_CAPTION_LINE_HEIGHT: number = 21;
   static readonly VIDEO_BUBBLE_CAPTION_MAX_LINES: number = 6;
 
   // ── Document row (Phase C.1-3) ──
@@ -232,12 +292,15 @@ export class TgUiTokens {
   static readonly DOCUMENT_ROW_MIN_WIDTH: number = 170;
   static readonly DOCUMENT_ROW_MAX_WIDTH: number = 300;
   static readonly DOCUMENT_ROW_PADDING_H: number = 12;
-  static readonly DOCUMENT_ROW_PADDING_V: number = 10;
+  static readonly DOCUMENT_ROW_PADDING_V: number = 15;
   static readonly DOCUMENT_ROW_ICON_BOX_SIZE: number = 44;
   static readonly DOCUMENT_ROW_ICON_SIZE: number = 22;
   static readonly DOCUMENT_ROW_ICON_RADIUS: number = 10;
   static readonly DOCUMENT_ROW_CONTENT_GAP: number = 8;
   static readonly DOCUMENT_ROW_TEXT_GAP: number = 2;
+  static readonly DOCUMENT_ROW_EXTENSION_SIZE: number = 12;
+  static readonly DOCUMENT_ROW_EXTENSION_LINE_HEIGHT: number = 14;
+  static readonly DOCUMENT_ROW_EXTENSION_MAX_LEN: number = 4;
   static readonly DOCUMENT_ROW_TITLE_SIZE: number = 16;
   static readonly DOCUMENT_ROW_TITLE_LINE_HEIGHT: number = 20;
   static readonly DOCUMENT_ROW_META_SIZE: number = 13;
@@ -249,13 +312,17 @@ export class TgUiTokens {
 
   // ── Voice bubble (Phase C.1-4) ──
   static readonly VOICE_BUBBLE_RADIUS: number = 18;
-  static readonly VOICE_BUBBLE_MIN_WIDTH: number = 170;
+  static readonly VOICE_BUBBLE_MIN_WIDTH: number = 120;
   static readonly VOICE_BUBBLE_MAX_WIDTH: number = 300;
+  static readonly VOICE_BUBBLE_MAX_WIDTH_REGULAR: number = 360;
   static readonly VOICE_BUBBLE_PADDING_H: number = 10;
   static readonly VOICE_BUBBLE_PADDING_V: number = 8;
   static readonly VOICE_BUBBLE_CONTENT_GAP: number = 8;
   static readonly VOICE_BUBBLE_BUTTON_SIZE: number = 36;
   static readonly VOICE_BUBBLE_BUTTON_ICON_SIZE: number = 18;
+  static readonly VOICE_BUBBLE_DURATION_MIN_SEC: number = 2;
+  static readonly VOICE_BUBBLE_DURATION_MAX_SEC: number = 30;
+  static readonly VOICE_BUBBLE_MIN_WAVEFORM_WIDTH: number = 52;
   static readonly VOICE_BUBBLE_WAVE_BARS_COUNT: number = 28;
   static readonly VOICE_BUBBLE_WAVE_BAR_WIDTH: number = 2;
   static readonly VOICE_BUBBLE_WAVE_BAR_GAP: number = 2;
@@ -264,6 +331,7 @@ export class TgUiTokens {
   static readonly VOICE_BUBBLE_WAVE_AREA_HEIGHT: number = 20;
   static readonly VOICE_BUBBLE_DURATION_SIZE: number = 12;
   static readonly VOICE_BUBBLE_DURATION_LINE_HEIGHT: number = 14;
+  static readonly VOICE_BUBBLE_DURATION_MIN_WIDTH: number = 34;
 
   // ── Sticker view (Phase C.1-5) ──
   static readonly STICKER_VIEW_MAX_SIZE: number = 184;
@@ -282,10 +350,10 @@ export class TgUiTokens {
   static readonly REPLY_SNIPPET_BAR_RADIUS: number = 2;
   static readonly REPLY_SNIPPET_BAR_GAP: number = 8;
   static readonly REPLY_SNIPPET_TEXT_GAP: number = 2;
-  static readonly REPLY_SNIPPET_TITLE_SIZE: number = 13;
-  static readonly REPLY_SNIPPET_TITLE_WEIGHT = FontWeight.Medium;
+  static readonly REPLY_SNIPPET_TITLE_SIZE: number = 14;
+  static readonly REPLY_SNIPPET_TITLE_WEIGHT = FontWeight.Bold;
   static readonly REPLY_SNIPPET_TITLE_LINE_HEIGHT: number = 16;
-  static readonly REPLY_SNIPPET_PREVIEW_SIZE: number = 13;
+  static readonly REPLY_SNIPPET_PREVIEW_SIZE: number = 14;
   static readonly REPLY_SNIPPET_PREVIEW_WEIGHT = FontWeight.Regular;
   static readonly REPLY_SNIPPET_PREVIEW_LINE_HEIGHT: number = 16;
   static readonly REPLY_SNIPPET_TITLE_INCOMING: Resource = $r('app.color.telegram_blue');
@@ -294,13 +362,98 @@ export class TgUiTokens {
   static readonly REPLY_SNIPPET_PREVIEW_OUTGOING: Resource = $r('app.color.text_primary');
   static readonly REPLY_SNIPPET_BAR_INCOMING: Resource = $r('app.color.telegram_blue');
   static readonly REPLY_SNIPPET_BAR_OUTGOING: Resource = $r('app.color.telegram_blue');
+  static readonly REPLY_SNIPPET_BG_INCOMING: string = '#0A0088CC'; // 4% alpha blue tint
+  static readonly REPLY_SNIPPET_BG_OUTGOING: string = '#0A000000'; // 4% alpha dark tint
+  static readonly REPLY_SNIPPET_BG_RADIUS: number = 6;
   static readonly REPLY_SNIPPET_THUMB_SIZE: number = 28;
   static readonly REPLY_SNIPPET_THUMB_RADIUS: number = 6;
   static readonly REPLY_SNIPPET_THUMB_GAP: number = 8;
+  static readonly REPLY_SNIPPET_QUOTE_MARK_SIZE: number = 12;
+  static readonly REPLY_SNIPPET_QUOTE_MARK_LINE_HEIGHT: number = 12;
+  static readonly REPLY_SNIPPET_QUOTE_MARK_TOP: number = 4;
+  static readonly REPLY_SNIPPET_QUOTE_MARK_RIGHT: number = 4;
   static readonly REPLY_SNIPPET_MAX_TITLE_LINES: number = 1;
   static readonly REPLY_SNIPPET_MAX_PREVIEW_LINES: number = 1;
   static readonly REPLY_SNIPPET_QUOTE_MAX_TITLE_LINES: number = 2;
   static readonly REPLY_SNIPPET_QUOTE_MAX_PREVIEW_LINES: number = 5;
+
+  static isRegularMessageWidth(containerWidth: number): boolean {
+    return containerWidth >= TgUiTokens.BUBBLE_COMPACT_WIDTH_BOUNDARY;
+  }
+
+  static resolveBubbleMaxWidthRatio(containerWidth: number, requestedRatio: number = TgUiTokens.BUBBLE_MAX_WIDTH_RATIO): number {
+    if (Math.abs(requestedRatio - TgUiTokens.BUBBLE_MAX_WIDTH_RATIO) < 0.001) {
+      return TgUiTokens.isRegularMessageWidth(containerWidth)
+        ? TgUiTokens.BUBBLE_MAX_WIDTH_RATIO_REGULAR
+        : TgUiTokens.BUBBLE_MAX_WIDTH_RATIO;
+    }
+    return requestedRatio;
+  }
+
+  static resolveBubbleMaxWidth(containerWidth: number, requestedRatio: number = TgUiTokens.BUBBLE_MAX_WIDTH_RATIO): number {
+    const effectiveRatio = TgUiTokens.resolveBubbleMaxWidthRatio(containerWidth, requestedRatio);
+    return Math.max(1, Math.floor(containerWidth * effectiveRatio));
+  }
+
+  static resolvePhotoBubbleMaxWidth(containerWidth: number): number {
+    return TgUiTokens.isRegularMessageWidth(containerWidth)
+      ? TgUiTokens.PHOTO_BUBBLE_MAX_WIDTH_REGULAR
+      : TgUiTokens.PHOTO_BUBBLE_MAX_WIDTH;
+  }
+
+  static resolvePhotoBubbleMaxHeight(containerWidth: number): number {
+    return TgUiTokens.isRegularMessageWidth(containerWidth)
+      ? TgUiTokens.PHOTO_BUBBLE_MAX_HEIGHT_REGULAR
+      : TgUiTokens.PHOTO_BUBBLE_MAX_HEIGHT;
+  }
+
+  static resolveVideoBubbleMaxWidth(containerWidth: number): number {
+    return TgUiTokens.isRegularMessageWidth(containerWidth)
+      ? TgUiTokens.VIDEO_BUBBLE_MAX_WIDTH_REGULAR
+      : TgUiTokens.VIDEO_BUBBLE_MAX_WIDTH;
+  }
+
+  static resolveVideoBubbleMaxHeight(containerWidth: number): number {
+    return TgUiTokens.isRegularMessageWidth(containerWidth)
+      ? TgUiTokens.VIDEO_BUBBLE_MAX_HEIGHT_REGULAR
+      : TgUiTokens.VIDEO_BUBBLE_MAX_HEIGHT;
+  }
+
+  static resolvePhotoAlbumMaxWidth(containerWidth: number): number {
+    return TgUiTokens.isRegularMessageWidth(containerWidth)
+      ? TgUiTokens.PHOTO_ALBUM_MAX_WIDTH_REGULAR
+      : TgUiTokens.PHOTO_ALBUM_MAX_WIDTH;
+  }
+
+  static resolvePhotoAlbumMaxHeight(containerWidth: number): number {
+    return TgUiTokens.isRegularMessageWidth(containerWidth)
+      ? TgUiTokens.PHOTO_ALBUM_MAX_HEIGHT_REGULAR
+      : TgUiTokens.PHOTO_ALBUM_MAX_HEIGHT;
+  }
+
+  static resolveVoiceBubbleMaxWidth(containerWidth: number): number {
+    return TgUiTokens.isRegularMessageWidth(containerWidth)
+      ? TgUiTokens.VOICE_BUBBLE_MAX_WIDTH_REGULAR
+      : TgUiTokens.VOICE_BUBBLE_MAX_WIDTH;
+  }
+
+  static resolveVoiceBubbleWidth(containerWidth: number, maxWidthRatio: number, durationSec: number): number {
+    const byRatio = TgUiTokens.resolveBubbleMaxWidth(containerWidth, maxWidthRatio);
+    const maxAllowed = Math.min(byRatio, TgUiTokens.resolveVoiceBubbleMaxWidth(containerWidth));
+    const minAllowed = Math.min(TgUiTokens.VOICE_BUBBLE_MIN_WIDTH, Math.max(1, Math.floor(containerWidth)));
+    const clampedDuration = Math.max(TgUiTokens.VOICE_BUBBLE_DURATION_MIN_SEC,
+      Math.min(TgUiTokens.VOICE_BUBBLE_DURATION_MAX_SEC, durationSec));
+    const scaledWidth = minAllowed + (maxAllowed - minAllowed) *
+      (clampedDuration - TgUiTokens.VOICE_BUBBLE_DURATION_MIN_SEC) /
+      (TgUiTokens.VOICE_BUBBLE_DURATION_MAX_SEC - TgUiTokens.VOICE_BUBBLE_DURATION_MIN_SEC);
+    const contentMinWidth = TgUiTokens.VOICE_BUBBLE_PADDING_H * 2 +
+      TgUiTokens.VOICE_BUBBLE_BUTTON_SIZE +
+      TgUiTokens.VOICE_BUBBLE_CONTENT_GAP +
+      TgUiTokens.VOICE_BUBBLE_MIN_WAVEFORM_WIDTH +
+      TgUiTokens.VOICE_BUBBLE_CONTENT_GAP +
+      TgUiTokens.VOICE_BUBBLE_DURATION_MIN_WIDTH;
+    return Math.max(minAllowed, Math.min(maxAllowed, Math.max(contentMinWidth, Math.floor(scaledWidth))));
+  }
 
   // ── Date separator + unread marker (Phase C Step 4) ──
   static readonly DATE_SEPARATOR_BG: Resource = $r('app.color.date_separator_bg');
@@ -308,10 +461,10 @@ export class TgUiTokens {
   static readonly DATE_SEPARATOR_FONT_SIZE: number = 13;
   static readonly DATE_SEPARATOR_FONT_WEIGHT = FontWeight.Medium;
   static readonly DATE_SEPARATOR_LINE_HEIGHT: number = 16;
-  static readonly DATE_SEPARATOR_PADDING_H: number = 10;
+  static readonly DATE_SEPARATOR_PADDING_H: number = 6;
   static readonly DATE_SEPARATOR_PADDING_V: number = 4;
   static readonly DATE_SEPARATOR_RADIUS: number = 12;
-  static readonly DATE_SEPARATOR_MIN_HEIGHT: number = 24;
+  static readonly DATE_SEPARATOR_MIN_HEIGHT: number = 34;
   static readonly DATE_SEPARATOR_SIDE_INSET: number = 16;
   static readonly DATE_SEPARATOR_MAX_WIDTH_RATIO: number = 0.72;
 
@@ -325,55 +478,55 @@ export class TgUiTokens {
   static readonly UNREAD_MARKER_SIDE_INSET: number = 0;
   static readonly UNREAD_MARKER_MAX_WIDTH_RATIO: number = 1.0;
 
-  // ── Composer input (Phase C Step 5) ──
+  // ── Composer input (iOS-aligned) ──
+  static readonly COMPOSER_BUTTON_SIZE: number = 36;
+  static readonly COMPOSER_ICON_SIZE: number = 22;
+  static readonly COMPOSER_TEXT_SIZE: number = 17;
+  static readonly COMPOSER_TEXT_WEIGHT = FontWeight.Regular;
+  static readonly COMPOSER_MAX_LINES: number = 12;
+  static readonly COMPOSER_MIN_CAPSULE_HEIGHT: number = 38;
+  static readonly COMPOSER_CAPSULE_RADIUS: number = 19;
+  static readonly COMPOSER_TEXT_PADDING_TOP: number = 5;
+  static readonly COMPOSER_TEXT_PADDING_BOTTOM: number = 4;
+  static readonly COMPOSER_TEXT_PADDING_LEFT: number = 12;
+  static readonly COMPOSER_TEXT_PADDING_RIGHT: number = 0;
+  static readonly COMPOSER_SIDE_INSET: number = 8;
+  static readonly COMPOSER_VERTICAL_INSET: number = 5;
+  static readonly COMPOSER_REPLY_GAP: number = 4;
+  static readonly COMPOSER_BORDER_WIDTH: number = 0.75;
+  static readonly COMPOSER_ATTACH_LEFT_INSET: number = 4;
+  static readonly COMPOSER_ELEMENT_GAP: number = 6;
   static readonly COMPOSER_CAPSULE_BG: Resource = $r('app.color.glass_nav_bg');
   static readonly COMPOSER_CAPSULE_FALLBACK_BG: Resource = $r('app.color.comp_background_tertiary');
-  static readonly COMPOSER_CAPSULE_BORDER: Resource = $r('app.color.separator');
-  static readonly COMPOSER_CAPSULE_BORDER_WIDTH: number = 0.5;
+  static readonly COMPOSER_CAPSULE_BORDER: Resource = $r('app.color.glass_edge_highlight');
   static readonly COMPOSER_TEXT: Resource = $r('app.color.text_primary');
   static readonly COMPOSER_PLACEHOLDER: Resource = $r('app.color.text_secondary');
   static readonly COMPOSER_ACTION_ACTIVE: Resource = $r('app.color.telegram_blue');
   static readonly COMPOSER_ACTION_INACTIVE: Resource = $r('app.color.text_secondary');
   static readonly COMPOSER_DISABLED_OPACITY: number = 0.55;
 
-  static readonly COMPOSER_MIN_HEIGHT: number = 44;
-  static readonly COMPOSER_MAX_HEIGHT: number = 120;
-  static readonly COMPOSER_SIDE_INSET: number = 8;
-  static readonly COMPOSER_VERTICAL_INSET: number = 6;
-  static readonly COMPOSER_ROW_GAP: number = 6;
-  static readonly COMPOSER_INPUT_RADIUS: number = 22;
-  static readonly COMPOSER_INPUT_PADDING_H: number = 12;
-  static readonly COMPOSER_INPUT_PADDING_V: number = 8;
-  static readonly COMPOSER_BUTTON_SIZE: number = 34;
-  static readonly COMPOSER_ICON_SIZE: number = 22;
-
-  static readonly COMPOSER_TEXT_SIZE: number = 17;
-  static readonly COMPOSER_TEXT_WEIGHT = FontWeight.Regular;
-  static readonly COMPOSER_TEXT_LINE_HEIGHT: number = 21;
-  static readonly COMPOSER_MAX_LINES: number = 4;
-  static readonly COMPOSER_REPLY_GAP: number = 6;
-
-  // ── Tab bar island (Phase D-1) ──
-  static readonly TAB_BAR_ISLAND_HEIGHT: number = 50;
+  // ── Tab bar capsule (iOS-aligned) ──
+  static readonly TAB_BAR_ISLAND_HEIGHT: number = 57;
   static readonly TAB_BAR_ISLAND_RADIUS: number = 999;
-  static readonly TAB_BAR_ISLAND_SIDE_INSET: number = 20;
   static readonly TAB_BAR_ISLAND_BOTTOM_MARGIN: number = 10;
-  static readonly TAB_BAR_ISLAND_MAX_WIDTH: number = 560;
+  static readonly TAB_BAR_ISLAND_MAX_WIDTH: number = 328;
   static readonly TAB_BAR_ISLAND_BG: Resource = $r('app.color.glass_tab_bg');
   static readonly TAB_BAR_ISLAND_FALLBACK_BG: Resource = $r('app.color.background_secondary');
-  static readonly TAB_BAR_ISLAND_BORDER_WIDTH: number = 0.5;
-  static readonly TAB_BAR_ISLAND_BORDER_COLOR: Resource = $r('app.color.separator');
+  static readonly TAB_BAR_ISLAND_BORDER_WIDTH: number = 0.75;
+  static readonly TAB_BAR_ISLAND_BORDER_COLOR: Resource = $r('app.color.glass_edge_highlight');
   static readonly TAB_BAR_ISLAND_SHADOW_COLOR: Resource = $r('app.color.glass_card_shadow');
   static readonly TAB_BAR_ISLAND_SHADOW_RADIUS: number = 20;
   static readonly TAB_BAR_ISLAND_SHADOW_OFFSET_Y: number = 8;
-  static readonly TAB_BAR_ICON_SIZE: number = 23;
+  static readonly TAB_BAR_ICON_SIZE: number = 24;
   static readonly TAB_BAR_TEXT_SIZE: number = 10;
+  static readonly TAB_BAR_PILL_BG: Resource = $r('app.color.tab_pill_bg');
+  static readonly TAB_BAR_PILL_ANIM_DURATION: number = 320;
   static readonly TAB_BAR_BADGE_HEIGHT: number = 18;
   static readonly TAB_BAR_BADGE_MIN_WIDTH: number = 18;
   static readonly TAB_BAR_BADGE_RADIUS: number = 9;
   static readonly TAB_BAR_BADGE_FONT_SIZE: number = 11;
-  static readonly TAB_BAR_BADGE_PADDING_H: number = 5;
-  static readonly TAB_BAR_CONTENT_SAFE_BOTTOM: number = 74;
+  static readonly TAB_BAR_BADGE_PADDING_H: number = 4;
+  static readonly TAB_BAR_CONTENT_SAFE_BOTTOM: number = 82;
 
   // ── Filter bar (Phase G) ──
   static readonly FILTER_BAR_HEIGHT: number = 44;
@@ -383,8 +536,8 @@ export class TgUiTokens {
   static readonly FILTER_BAR_MAX_WIDTH: number = 560;
   static readonly FILTER_BAR_BG: Resource = $r('app.color.glass_tab_bg');
   static readonly FILTER_BAR_FALLBACK_BG: Resource = $r('app.color.background_secondary');
-  static readonly FILTER_BAR_BORDER_WIDTH: number = 0.5;
-  static readonly FILTER_BAR_BORDER_COLOR: Resource = $r('app.color.separator');
+  static readonly FILTER_BAR_BORDER_WIDTH: number = 0.75;
+  static readonly FILTER_BAR_BORDER_COLOR: Resource = $r('app.color.glass_edge_highlight');
   static readonly FILTER_BAR_SHADOW_COLOR: Resource = $r('app.color.glass_card_shadow');
   static readonly FILTER_BAR_SHADOW_RADIUS: number = 20;
   static readonly FILTER_BAR_SHADOW_OFFSET_Y: number = 8;
@@ -551,8 +704,8 @@ export class TgUiTokens {
   static readonly SETTINGS_PROFILE_NAME_SIZE: number = 20;
 
   // ── Tab bar badge offset (Phase F-extra) ──
-  static readonly TAB_BAR_BADGE_OFFSET_X: number = 10;
-  static readonly TAB_BAR_BADGE_OFFSET_Y: number = -7;
+  static readonly TAB_BAR_BADGE_OFFSET_X: number = 12;
+  static readonly TAB_BAR_BADGE_OFFSET_Y: number = -6;
 
   // ── Country indexer (Phase F-extra) ──
   static readonly COUNTRY_INDEXER_FONT_SIZE: number = 11;
@@ -589,16 +742,11 @@ export class TgUiTokens {
   static readonly AVATAR_COLOR_8: Resource = $r('app.color.sender_color_8');
 
   // ── Chat top bar capsules ──
-  static readonly CHAT_TOP_BAR_CAPSULE_SIZE: number = 44;
-  static readonly CHAT_TOP_BAR_CAPSULE_RADIUS: number = 22;
-  static readonly CHAT_TOP_BAR_AVATAR_INNER: number = 37;
-  static readonly CHAT_TOP_BAR_CAPSULE_GAP: number = 8;
-  static readonly CHAT_TOP_BAR_TITLE_PADDING_H: number = 12;
-  static readonly CHAT_TOP_BAR_SUBTITLE_SIZE: number = 13;
+  // ── Chat top bar (glass capsules) ──
+  // Sizing constants are local to TgChatTopBar; only color/resource tokens here.
   static readonly CHAT_TOP_BAR_CAPSULE_BG: Resource = $r('app.color.glass_nav_bg');
   static readonly CHAT_TOP_BAR_CAPSULE_FALLBACK_BG: Resource = $r('app.color.comp_background_tertiary');
-  static readonly CHAT_TOP_BAR_CAPSULE_BORDER: Resource = $r('app.color.separator');
-  static readonly CHAT_TOP_BAR_CAPSULE_BORDER_WIDTH: number = 0.5;
+  static readonly CHAT_TOP_BAR_CAPSULE_BORDER: Resource = $r('app.color.glass_edge_highlight');
 
   // ── Shared icon resources for chat pipeline ──
   static readonly ICON_RES_CHECK: Resource = $r('app.media.ic_check');
@@ -625,6 +773,7 @@ export class TgUiTokens {
   static readonly ICON_RES_PLAY: Resource = $r('app.media.ic_play');
   static readonly ICON_RES_PAUSE: Resource = $r('app.media.ic_pause');
   static readonly ICON_RES_SEARCH: Resource = $r('app.media.ic_search');
+  static readonly ICON_RES_EDIT: Resource = $r('app.media.ic_edit');
   static readonly ICON_RES_CONTACT: Resource = $r('app.media.ic_contact');
   static readonly ICON_RES_CONTACT_ADD: Resource = $r('app.media.ic_contact_add');
   static readonly ICON_RES_PHONE_CALL: Resource = $r('app.media.ic_phone_call');

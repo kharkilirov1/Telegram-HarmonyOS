@@ -19,6 +19,7 @@ export struct TgMessageMeta {
   @Param rowHeight: number = TgUiTokens.MSG_META_ROW_HEIGHT;
   @Param reserveTimeSlot: boolean = true;
   @Param reserveStatusSlot: boolean = true;
+  @Param overlayMode: boolean = false; // white text on dark overlay (for media)
 
   private hasTimeText(): boolean {
     return this.timeText.trim().length > 0;
@@ -44,6 +45,9 @@ export struct TgMessageMeta {
   }
 
   private statusIconColor(): ResourceColor {
+    if (this.overlayMode) {
+      return this.sendStatus === TgMessageSendStatus.Failed ? TgUiTokens.MSG_META_STATUS_FAILED : Color.White;
+    }
     switch (this.sendStatus) {
       case TgMessageSendStatus.Sending:
         return TgUiTokens.MSG_META_STATUS_PENDING;
@@ -59,6 +63,7 @@ export struct TgMessageMeta {
   }
 
   private timeColor(): ResourceColor {
+    if (this.overlayMode) return Color.White;
     return this.isOutgoing ? TgUiTokens.MSG_META_TEXT_OUTGOING : TgUiTokens.MSG_META_TEXT_INCOMING;
   }
 

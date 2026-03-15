@@ -1,5 +1,5 @@
-// TgTabBar — Floating glass island tab bar (Phase D-1).
-// iOS Telegram–style capsule shape with blur-over-content.
+// TgTabBar — centered glass capsule tab bar.
+// Visual grounding: current Telegram iOS TabBarComponent / GlassBackgroundContainerView.
 
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
@@ -12,6 +12,8 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 declare function px2vp(value: number): number;
 const DOMAIN = 0x0020;
 const TAG = 'TgTabBar';
+const PILL_SCALE_MIN: number = 0.6;
+const ISLAND_SCREEN_RATIO: number = 0.8;
 
 @ComponentV2
 export struct TgTabBar {
@@ -20,8 +22,10 @@ export struct TgTabBar {
   @Param glassMode: string = TgGlassPolicy.MODE_AUTO;
   @Event onTabSelect: (index: number) => void = (_: number): void => {};
 
-  @Local private bottomInset: number = 0;
+  @Local private islandWidth: number = TgUiTokens.TAB_BAR_ISLAND_MAX_WIDTH;
+  @Local private pillGlassActive: boolean = false;
   private mainWindow?: window.Window;
+  private pillGlassTimer: number = -1;
 
   aboutToAppear(): void {
     try {
@@ -29,19 +33,22 @@ export struct TgTabBar {
       const windowStage = context.windowStage;
       if (windowStage) {
         this.mainWindow = windowStage.getMainWindowSync();
-        this.updateBottomInset(this.mainWindow);
+        this.updateWindowMetrics(this.mainWindow);
         this.mainWindow.on('windowSizeChange', (_size: window.Size) => {
           if (this.mainWindow !== undefined) {
-            this.updateBottomInset(this.mainWindow);
+            this.updateWindowMetrics(this.mainWindow);
           }
         });
       }
     } catch (_error) {
-      this.bottomInset = 0;
     }
   }
 
   aboutToDisappear(): void {
+    if (this.pillGlassTimer !== -1) {
+      clearTimeout(this.pillGlassTimer);
+      this.pillGlassTimer = -1;
+    }
     if (this.mainWindow !== undefined) {
       try {
         this.mainWindow.off('windowSizeChange');
@@ -51,19 +58,16 @@ export struct TgTabBar {
     }
   }
 
-  private updateBottomInset(mainWindow: window.Window): void {
-    let computedInset: number = 0;
+  private updateWindowMetrics(mainWindow: window.Window): void {
     try {
-      const systemAvoid = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
-      computedInset = Math.max(computedInset, px2vp(systemAvoid.bottomRect.height));
+      const props = mainWindow.getWindowProperties();
+      const screenWidthVp: number = px2vp(props.windowRect.width);
+      this.islandWidth = Math.min(
+        screenWidthVp * ISLAND_SCREEN_RATIO,
+        TgUiTokens.TAB_BAR_ISLAND_MAX_WIDTH
+      );
     } catch (_error) {
     }
-    try {
-      const navAvoid = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
-      computedInset = Math.max(computedInset, px2vp(navAvoid.bottomRect.height));
-    } catch (_error) {
-    }
-    this.bottomInset = computedInset;
   }
 
   private tabLabel(resourceId: number, fallback: string): string {
@@ -75,8 +79,16 @@ export struct TgTabBar {
     return TgGlassPolicy.shouldUseRealtimeBlurForMode(this.glassMode);
   }
 
-  private iconColor(index: number): Resource {
-    return this.selectedIndex === index ? TgUiTokens.COLOR_ICON_PRIMARY : TgUiTokens.COLOR_ICON_SECONDARY;
+  private isSelected(index: number): boolean {
+    return this.selectedIndex === index;
+  }
+
+  private tabIconColor(index: number): Resource {
+    return this.isSelected(index) ? TgUiTokens.COLOR_ICON_PRIMARY : TgUiTokens.COLOR_ICON_SECONDARY;
+  }
+
+  private tabFontWeight(index: number): FontWeight {
+    return FontWeight.Medium;
   }
 
   @Builder
@@ -92,60 +104,87 @@ export struct TgTabBar {
         .padding({ left: TgUiTokens.TAB_BAR_BADGE_PADDING_H, right: TgUiTokens.TAB_BAR_BADGE_PADDING_H })
         .borderRadius(TgUiTokens.TAB_BAR_BADGE_RADIUS)
         .backgroundColor(TgUiTokens.COLOR_UNREAD_BG)
+        .position({ right: 0, top: 0 })
         .translate({ x: TgUiTokens.TAB_BAR_BADGE_OFFSET_X, y: TgUiTokens.TAB_BAR_BADGE_OFFSET_Y })
     }
   }
 
   @Builder
   private buildTab(index: number, title: string, icon: Resource, showBadge: boolean) {
-    Column() {
-      Stack({ alignContent: Alignment.Center }) {
-        Image(icon)
-          .width(TgUiTokens.TAB_BAR_ICON_SIZE)
-          .height(TgUiTokens.TAB_BAR_ICON_SIZE)
-          .fillColor(this.iconColor(index))
-
-        if (showBadge) {
-          this.buildBadge()
-        }
-      }
-      .width(TgUiTokens.TAB_BAR_ICON_SIZE)
-      .height(TgUiTokens.TAB_BAR_ICON_SIZE)
-
-      Text(title)
-        .fontSize(TgUiTokens.TAB_BAR_TEXT_SIZE)
-        .fontColor(this.iconColor(index))
-        .margin({ top: TgUiTokens.SPACE_2 })
-        .maxLines(1)
-    }
-    .layoutWeight(1)
-    .height('100%')
-    .justifyContent(FlexAlign.Center)
-    .alignItems(HorizontalAlign.Center)
-    .onClick(() => {
-      hilog.info(DOMAIN, TAG, 'Tab click index=%{public}d', index);
-      // Fallback path: write shared tab index even if callback channel is delayed.
-      AppStorage.set<number>(StorageKeys.MAIN_TAB_INDEX, index);
-      this.onTabSelect(index);
-    })
-  }
-
-  @Builder
-  private buildIslandSpecular() {
-    if (this.useRealtimeBlur()) {
+    Stack({ alignContent: Alignment.Center }) {
       Column()
         .width('100%')
         .height('100%')
-        .borderRadius(TgUiTokens.TAB_BAR_ISLAND_RADIUS)
-        .linearGradient({
-          angle: 115,
-          colors: [
-            [TgUiTokens.GLASS_SPECULAR_TOP, 0.0],
-            [TgUiTokens.GLASS_SPECULAR_MID, 0.36],
-            [TgUiTokens.GLASS_SPECULAR_BOTTOM, 1.0]
-          ]
+        .borderRadius(TgUiTokens.TAB_BAR_ISLAND_HEIGHT / 2)
+        .backgroundColor(TgUiTokens.TAB_BAR_PILL_BG)
+        .backgroundBlurStyle(
+          this.pillGlassActive && this.isSelected(index) ? BlurStyle.COMPONENT_THIN : BlurStyle.NONE,
+          TgGlassPolicy.glassOptions()
+        )
+        .border({
+          width: this.pillGlassActive && this.isSelected(index) ? 0.5 : 0,
+          color: $r('app.color.glass_edge_highlight')
         })
+        .clip(true)
+        .opacity(this.isSelected(index) ? 1 : 0)
+        .scale({
+          x: this.isSelected(index) ? 1 : PILL_SCALE_MIN,
+          y: this.isSelected(index) ? 1 : PILL_SCALE_MIN
+        })
+        .animation({
+          duration: TgUiTokens.TAB_BAR_PILL_ANIM_DURATION,
+          curve: Curve.EaseOut
+        })
+
+      Column() {
+        Stack({ alignContent: Alignment.TopEnd }) {
+          Image(icon)
+            .width(TgUiTokens.TAB_BAR_ICON_SIZE)
+            .height(TgUiTokens.TAB_BAR_ICON_SIZE)
+            .fillColor(this.tabIconColor(index))
+            .animation({
+              duration: TgUiTokens.TAB_BAR_PILL_ANIM_DURATION,
+              curve: Curve.EaseOut
+            })
+
+          if (showBadge) {
+            this.buildBadge()
+          }
+        }
+        .width(TgUiTokens.TAB_BAR_ICON_SIZE)
+        .height(TgUiTokens.TAB_BAR_ICON_SIZE)
+        .clip(false)
+
+        Text(title)
+          .fontSize(TgUiTokens.TAB_BAR_TEXT_SIZE)
+          .fontWeight(this.tabFontWeight(index))
+          .fontColor(this.tabIconColor(index))
+          .margin({ top: TgUiTokens.SPACE_2 })
+          .maxLines(1)
+          .animation({
+            duration: TgUiTokens.TAB_BAR_PILL_ANIM_DURATION,
+            curve: Curve.EaseOut
+          })
+      }
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
     }
+    .layoutWeight(1)
+    .height('100%')
+    .clip(false)
+    .onClick(() => {
+      hilog.info(DOMAIN, TAG, 'Tab click index=%{public}d', index);
+      if (this.pillGlassTimer !== -1) {
+        clearTimeout(this.pillGlassTimer);
+      }
+      this.pillGlassActive = true;
+      AppStorage.set<number>(StorageKeys.MAIN_TAB_INDEX, index);
+      this.onTabSelect(index);
+      this.pillGlassTimer = setTimeout(() => {
+        this.pillGlassActive = false;
+        this.pillGlassTimer = -1;
+      }, TgUiTokens.TAB_BAR_PILL_ANIM_DURATION);
+    })
   }
 
   build() {
@@ -153,16 +192,15 @@ export struct TgTabBar {
       Row() {
         this.buildTab(0, this.tabLabel($r('app.string.contacts_title').id, 'Contacts'), $r('app.media.ic_contact'), false)
         this.buildTab(1, this.tabLabel($r('app.string.calls_title').id, 'Calls'), $r('app.media.ic_phone_call'), false)
-        this.buildTab(2, this.tabLabel($r('app.string.chats_title').id, 'Chats'), $r('app.media.ic_chat'), true)
+        this.buildTab(2, this.tabLabel($r('app.string.chats_title').id, 'Chats'), $r('app.media.ic_chat'), false)
         this.buildTab(3, this.tabLabel($r('app.string.settings').id, 'Settings'), $r('app.media.ic_settings'), false)
       }
-      .width('100%')
       .height(TgUiTokens.TAB_BAR_ISLAND_HEIGHT)
-      .constraintSize({ maxWidth: TgUiTokens.TAB_BAR_ISLAND_MAX_WIDTH })
+      .width(this.islandWidth)
       .borderRadius(TgUiTokens.TAB_BAR_ISLAND_RADIUS)
       .backgroundColor(this.useRealtimeBlur() ? TgUiTokens.TAB_BAR_ISLAND_BG : TgUiTokens.TAB_BAR_ISLAND_FALLBACK_BG)
-      .backgroundBlurStyle(TgGlassPolicy.tabBarBlurStyle())
-      // NOTE: keep click behavior stable first; specular overlay can be restored later if needed.
+      .backgroundBlurStyle(TgGlassPolicy.tabBarBlurStyle(), TgGlassPolicy.glassOptions())
+      .padding(4)
       .border({
         width: TgUiTokens.TAB_BAR_ISLAND_BORDER_WIDTH,
         color: TgUiTokens.TAB_BAR_ISLAND_BORDER_COLOR
@@ -173,11 +211,7 @@ export struct TgTabBar {
         offsetY: TgUiTokens.TAB_BAR_ISLAND_SHADOW_OFFSET_Y,
         color: TgUiTokens.TAB_BAR_ISLAND_SHADOW_COLOR
       })
-      .margin({
-        left: TgUiTokens.TAB_BAR_ISLAND_SIDE_INSET,
-        right: TgUiTokens.TAB_BAR_ISLAND_SIDE_INSET
-      })
-      .clip(true)
+      .clip(false)
     }
     .width('100%')
     .alignItems(HorizontalAlign.Center)

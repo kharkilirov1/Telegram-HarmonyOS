@@ -74,7 +74,7 @@ export struct TgChatMeta {
     } else if (this.isPinned) {
       TgIcon({
         src: TgUiTokens.ICON_RES_PIN,
-        iconSize: TgUiTokens.ICON_SIZE_SM,
+        iconSize: TgUiTokens.CHAT_META_PIN_ICON_SIZE,
         tintColor: TgUiTokens.COLOR_ICON_SECONDARY
       })
     } else {
@@ -99,7 +99,7 @@ export struct TgChatMeta {
 
       if (this.hasTimeText()) {
         Text(this.timeText)
-          .fontSize(TgUiTokens.FONT_META_SIZE)
+          .fontSize(TgUiTokens.CHAT_META_TIME_FONT_SIZE)
           .fontColor(TgUiTokens.COLOR_TEXT_META)
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Clip })

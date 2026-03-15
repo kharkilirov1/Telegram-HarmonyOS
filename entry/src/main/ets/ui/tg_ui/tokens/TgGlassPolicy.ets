@@ -37,23 +37,31 @@ export class TgGlassPolicy {
   }
 
   static topBarBlurStyle(): BlurStyle {
-    return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.Thin : BlurStyle.NONE;
+    return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE;
   }
 
   static tabBarBlurStyle(): BlurStyle {
-    return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.Thin : BlurStyle.NONE;
+    return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE;
   }
 
   static filterBarBlurStyle(): BlurStyle {
-    return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.Thin : BlurStyle.NONE;
+    return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE;
   }
 
   static composerBlurStyle(): BlurStyle {
-    return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.Thin : BlurStyle.NONE;
+    return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE;
   }
 
   static searchBlurStyle(): BlurStyle {
-    return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.Thin : BlurStyle.NONE;
+    return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE;
+  }
+
+  // Adaptive glass options — blur picks up background content colors (like iOS)
+  static glassOptions(): BackgroundBlurStyleOptions {
+    return {
+      adaptiveColor: AdaptiveColor.AVERAGE,
+      scale: 1.0
+    };
   }
 
   static edgeBlurRadius(defaultRadius: number): number {

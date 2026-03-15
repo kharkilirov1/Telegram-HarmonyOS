@@ -6,8 +6,9 @@
 - Status: `done`
 
 ## 2) iOS source mapping
+- `Telegram-iOS-master/submodules/TelegramUI/Components/TabBarComponent/Sources/TabBarComponent.swift`
+- `Telegram-iOS-master/submodules/TabBarUI/Sources/TabBarContollerNode.swift`
 - `Telegram-iOS-master/submodules/TabBarUI/Sources/TabBarNode.swift`
-- `Telegram-iOS-master/submodules/Display/Source/TabBarController.swift`
 - `Telegram-iOS-master/submodules/PresentationDataUtils/Sources/SpecialTabBarIcons.swift`
 
 ## 3) Props / inputs
@@ -24,11 +25,11 @@
 - safe-area bottom inset changes
 
 ## 5) Layout rules
-- Floating island container with max width and rounded capsule radius.
+- Centered glass capsule aligned above the bottom safe area, not a full-width shelf.
 - Four tabs share equal width and identical icon/text vertical alignment.
 - Chats tab overlays unread badge above icon.
-- Island surface owns blur, border, and shadow; page owns outer bottom margin.
-- Tab color reflects selected vs inactive state only through tokens.
+- Capsule surface owns blur, border, and shadow; page owns outer bottom offset above the safe area.
+- Selection uses a compact liquid-lens / capsule highlight inside the larger glass container.
 
 ## 6) Token mapping
 - `TAB_BAR_*`
