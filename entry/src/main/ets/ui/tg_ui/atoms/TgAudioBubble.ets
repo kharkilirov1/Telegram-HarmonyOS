@@ -213,8 +213,8 @@ export struct TgAudioBubble {
       })
         .width('100%')
         .height(TgUiTokens.AUDIO_BUBBLE_SEEK_HEIGHT * 3) // slightly taller for touch area
-        .trackThickness(TgUiTokens.AUDIO_BUBBLE_SEEK_HEIGHT)
-        .blockColor(TgUiTokens.AUDIO_BUBBLE_SEEK_FILL)
+        .trackThickness(4) // Thicker track for iOS feel
+        .blockColor(Color.Transparent) // Hide thumb to match iOS
         .selectedColor(TgUiTokens.AUDIO_BUBBLE_SEEK_FILL)
         .trackColor(TgUiTokens.AUDIO_BUBBLE_SEEK_BG)
         .onChange((value: number, mode: SliderChangeMode) => {

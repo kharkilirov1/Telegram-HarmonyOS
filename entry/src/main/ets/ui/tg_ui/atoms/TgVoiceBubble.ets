@@ -189,7 +189,7 @@ export struct TgVoiceBubble {
   }
 
   private inactiveColorHex(): string {
-    return '#4DFFFFFF'; // Fallback if tokens can't be resolved synchronously
+    return this.isOutgoing ? '#4DFFFFFF' : '#333390EC'; // Faded white / faded blue
   }
   
   private activeColorHex(): string {
@@ -199,19 +199,28 @@ export struct TgVoiceBubble {
   @Builder
   private buildWaveform() {
     Canvas(this.canvasContext)
-      .width(TgUiTokens.VOICE_BUBBLE_WAVE_BARS_COUNT * (TgUiTokens.VOICE_BUBBLE_WAVE_BAR_WIDTH + TgUiTokens.VOICE_BUBBLE_WAVE_BAR_GAP))
+      .width('100%')
       .height(TgUiTokens.VOICE_BUBBLE_WAVE_AREA_HEIGHT)
       .onReady(() => {
         const context = this.canvasContext;
         const bars = this.waveformBars();
-        const barWidth = TgUiTokens.VOICE_BUBBLE_WAVE_BAR_WIDTH;
-        const barGap = TgUiTokens.VOICE_BUBBLE_WAVE_BAR_GAP;
-        const totalWidth = bars.length * (barWidth + barGap);
-        const activeWidth = totalWidth * this.normalizedProgress();
+        if (bars.length === 0) return;
+
+        // Dynamically calculate width instead of hardcoding
+        const totalCanvasWidth = context.width;
+        // Total parts = (bars.length * barWidth) + ((bars.length - 1) * gapWidth)
+        // Let gapWidth = barWidth * 0.6 to keep aspect ratio
+        const partsPerBar = 1.6; 
+        const totalParts = (bars.length * partsPerBar) - 0.6;
+        const barWidth = Math.max(1, totalCanvasWidth / totalParts);
+        const barGap = barWidth * 0.6;
+
+        const totalDrawWidth = bars.length * (barWidth + barGap);
+        const activeWidth = totalDrawWidth * this.normalizedProgress();
         const areaHeight = TgUiTokens.VOICE_BUBBLE_WAVE_AREA_HEIGHT;
 
-        context.clearRect(0, 0, totalWidth, areaHeight);
-        
+        context.clearRect(0, 0, totalCanvasWidth, areaHeight);
+
         const isReady = this.hasLocalFile && !this.isDownloading;
 
         // Draw Inactive
@@ -231,7 +240,7 @@ export struct TgVoiceBubble {
           context.beginPath();
           context.rect(0, 0, activeWidth, areaHeight);
           context.clip();
-          
+
           context.fillStyle = this.activeColorHex();
           context.beginPath();
           for (let i = 0; i < bars.length; i++) {
@@ -245,7 +254,6 @@ export struct TgVoiceBubble {
         }
       })
   }
-
   @Builder
   private buildInnerContent() {
     Row({ space: TgUiTokens.VOICE_BUBBLE_CONTENT_GAP }) {
