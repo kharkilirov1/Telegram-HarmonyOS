@@ -106,9 +106,6 @@ export struct TgGroupedPhotoBubble {
           .objectFit(ImageFit.Cover)
           .borderRadius(TgUiTokens.RADIUS_6)
           .clip(true)
-          .onClick(() => {
-            this.onPhotoTap(this.cellPath(index));
-          })
       } else {
         this.buildPlaceholder(width, height)
       }
@@ -127,13 +124,13 @@ export struct TgGroupedPhotoBubble {
         .backgroundColor(TgUiTokens.PHOTO_ALBUM_OVERLAY_BG)
         .borderRadius(TgUiTokens.RADIUS_6)
         .clip(true)
-        .onClick(() => {
-          this.onPhotoTap(this.cellPath(index));
-        })
       }
     }
     .width(width)
     .height(height)
+    .onClick(() => {
+      this.onPhotoTap(this.cellPath(index));
+    })
   }
 
   @Builder

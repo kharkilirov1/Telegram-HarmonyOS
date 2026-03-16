@@ -395,7 +395,14 @@ export struct TgMessageRouter {
         noBubbleWrap: true,
         isDownloadPending: this.isVideoDownloading,
         downloadProgress: this.videoDownloadProgress,
-        onTap: () => { this.onVideoTap(); }
+        onTap: () => { this.onVideoTap(); },
+        onPlayToggle: () => { this.onVideoTap(); },
+        onDownloadToggle: () => {
+          if (!this.videoPath && !this.isVideoDownloading && this.videoDownloadProgress < 0) {
+            // Need to use the generic video file logic, assume using photoFileId/video thumb
+            this.onMediaDownloadRequest(this.voiceFileId);
+          }
+        }
       })
     } else if (this.contentType === 'video' || this.contentType === 'animation') {
       TgVideoBubble({

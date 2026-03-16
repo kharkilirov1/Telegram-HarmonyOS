@@ -18,6 +18,7 @@ export struct TgVideoBubble {
   @Param isDownloadPending: boolean = false;
   @Param downloadProgress: number = -1;
   @Event onVideoPlayTap: () => void = () => {};
+  @Event onDownloadToggle: () => void = () => {};
 
   private usesRegularDimensions(): boolean {
     return this.useRegularMaxDimensions || TgUiTokens.isRegularMessageWidth(this.containerWidth);
@@ -172,38 +173,33 @@ export struct TgVideoBubble {
         this.buildPlaceholder()
       }
 
-      if (this.isDownloadPending && this.hasDeterminateProgress()) {
-        Column({ space: TgUiTokens.SPACE_2 }) {
-          LoadingProgress()
-            .width(TgUiTokens.VIDEO_BUBBLE_PLAY_ICON_SIZE)
-            .height(TgUiTokens.VIDEO_BUBBLE_PLAY_ICON_SIZE)
-            .color(TgUiTokens.VIDEO_BUBBLE_PLAY_ICON)
-          Text(this.downloadPercentLabel())
-            .fontSize(TgUiTokens.MSG_META_SIZE)
-            .fontColor(TgUiTokens.VIDEO_BUBBLE_PLAY_ICON)
-            .fontWeight(FontWeight.Medium)
-        }
-        .padding({
-          left: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_H,
-          right: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_H,
-          top: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_V + 2,
-          bottom: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_V + 2
-        })
-        .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
-        .borderRadius(TgUiTokens.VIDEO_BUBBLE_DURATION_RADIUS + 6)
-      } else if (this.isDownloadPending) {
-        Row() {
-          LoadingProgress()
-            .width(TgUiTokens.VIDEO_BUBBLE_PLAY_ICON_SIZE)
-            .height(TgUiTokens.VIDEO_BUBBLE_PLAY_ICON_SIZE)
-            .color(TgUiTokens.VIDEO_BUBBLE_PLAY_ICON)
+      if (this.isDownloadPending) {
+        Stack({ alignContent: Alignment.Center }) {
+          if (this.hasDeterminateProgress()) {
+            Progress({
+              value: this.normalizedDownloadProgress() * 100,
+              total: 100,
+              type: ProgressType.Ring
+            })
+              .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+              .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+              .color('#FFFFFF')
+              .backgroundColor(Color.Transparent)
+              .style({ strokeWidth: 3 })
+          } else {
+            LoadingProgress()
+              .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+              .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+              .color('#FFFFFF')
+          }
+          Image($r('sys.media.ohos_ic_public_cancel'))
+            .width(16).height(16).fillColor('#FFFFFF')
         }
         .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
         .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-        .justifyContent(FlexAlign.Center)
-        .alignItems(VerticalAlign.Center)
-        .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
+        .backgroundColor('#40000000')
         .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
+        .onClick(() => this.onDownloadToggle())
       } else if (!this.hasLocalVideo()) {
         Row() {
           TgIcon({
@@ -218,6 +214,7 @@ export struct TgVideoBubble {
         .alignItems(VerticalAlign.Center)
         .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
         .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
+        .onClick(() => this.onDownloadToggle())
       } else if (!this.hidePlayButton) {
         Row() {
           TgIcon({
@@ -232,6 +229,7 @@ export struct TgVideoBubble {
         .alignItems(VerticalAlign.Center)
         .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
         .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
+        .onClick(() => this.onVideoPlayTap())
       }
 
       this.buildDurationBadge()
@@ -240,7 +238,6 @@ export struct TgVideoBubble {
     .height(this.computedMediaHeight())
     .borderRadius(TgUiTokens.VIDEO_BUBBLE_RADIUS - TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET)
     .clip(true)
-    .onClick(() => { this.onVideoPlayTap(); })
   }
 
   @Builder

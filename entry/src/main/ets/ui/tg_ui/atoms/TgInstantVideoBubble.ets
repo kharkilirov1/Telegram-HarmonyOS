@@ -11,6 +11,8 @@ export struct TgInstantVideoBubble {
   @Param isDownloadPending: boolean = false;
   @Param downloadProgress: number = -1;
   @Event onTap: () => void = () => {};
+  @Event onPlayToggle: () => void = () => {};
+  @Event onDownloadToggle: () => void = () => {};
 
   private hasPath(path: string | Resource): boolean {
     if (typeof path === 'string') {
@@ -132,34 +134,51 @@ export struct TgInstantVideoBubble {
 
   @Builder
   private buildCenterOverlay() {
-    if (this.isDownloadPending && this.hasDeterminateProgress()) {
-      // Downloading with progress: radial ring + percent text
-      Column({ space: TgUiTokens.SPACE_2 }) {
-        this.buildRadialProgress()
+    if (this.isDownloadPending) {
+      Stack({ alignContent: Alignment.Center }) {
+        if (this.hasDeterminateProgress()) {
+          this.buildRadialProgress()
+        } else {
+          LoadingProgress()
+            .width(this.bubbleSize() - 4)
+            .height(this.bubbleSize() - 4)
+            .color('#FFFFFF')
+        }
+        Image($r('sys.media.ohos_ic_public_cancel'))
+          .width(20).height(20).fillColor('#FFFFFF')
       }
-
-    } else if (this.isDownloadPending) {
-      // Downloading indeterminate: radial spinner (no bg circle)
-      LoadingProgress()
-        .width(TgUiTokens.INSTANT_VIDEO_BUBBLE_PLAY_ICON_SIZE + 8)
-        .height(TgUiTokens.INSTANT_VIDEO_BUBBLE_PLAY_ICON_SIZE + 8)
-        .color('#99FFFFFF')
-
+      .width(this.bubbleSize())
+      .height(this.bubbleSize())
+      .backgroundColor('#40000000') // Dark overlay
+      .borderRadius(this.bubbleSize() / 2)
+      .onClick(() => this.onDownloadToggle())
     } else if (!this.hasLocalVideo()) {
-      // Not downloaded: semi-transparent download icon (no opaque bg)
-      TgIcon({
-        src: TgUiTokens.ICON_RES_DOWNLOAD,
-        iconSize: TgUiTokens.INSTANT_VIDEO_BUBBLE_PLAY_ICON_SIZE + 4,
-        tintColor: '#99FFFFFF'
-      })
-
+      Stack() {
+        TgIcon({
+          src: TgUiTokens.ICON_RES_DOWNLOAD,
+          iconSize: TgUiTokens.INSTANT_VIDEO_BUBBLE_PLAY_ICON_SIZE + 4,
+          tintColor: '#FFFFFF'
+        })
+      }
+      .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+      .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+      .backgroundColor('#40000000')
+      .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
+      .onClick(() => this.onDownloadToggle())
     } else {
-      // Downloaded: semi-transparent play triangle (no opaque bg circle — iOS style)
-      TgIcon({
-        src: TgUiTokens.ICON_RES_PLAY,
-        iconSize: TgUiTokens.INSTANT_VIDEO_BUBBLE_PLAY_ICON_SIZE + 4,
-        tintColor: '#99FFFFFF'
-      })
+      // Downloaded: play button
+      Stack() {
+        TgIcon({
+          src: TgUiTokens.ICON_RES_PLAY,
+          iconSize: TgUiTokens.INSTANT_VIDEO_BUBBLE_PLAY_ICON_SIZE + 4,
+          tintColor: '#FFFFFF'
+        })
+      }
+      .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+      .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+      .backgroundColor('#40000000')
+      .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
+      .onClick(() => this.onPlayToggle())
     }
   }
 
@@ -175,15 +194,6 @@ export struct TgInstantVideoBubble {
           .clip(true)
       } else {
         this.buildPlaceholder()
-      }
-
-      // Dim overlay when downloading or showing play button
-      if (this.isDownloadPending || this.hasLocalVideo()) {
-        Column()
-          .width(this.bubbleSize())
-          .height(this.bubbleSize())
-          .borderRadius(this.bubbleSize() / 2)
-          .backgroundColor(this.isDownloadPending ? '#33000000' : Color.Transparent)
       }
 
       this.buildCenterOverlay()
