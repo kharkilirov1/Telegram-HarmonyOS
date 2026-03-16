@@ -181,29 +181,37 @@ export struct TgDocumentRow {
 
   @Builder
   private buildTilePrimaryFace() {
-    if (this.hasProgress()) {
+    if (this.isDownloading) {
       Stack({ alignContent: Alignment.Center }) {
-        Progress({
-          value: this.normalizedProgress() * 100,
-          total: 100,
-          type: ProgressType.Ring
-        })
-          .width(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
-          .height(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
-          .color(TgUiTokens.DOCUMENT_ROW_ICON_TINT)
-          .style({ strokeWidth: TgUiTokens.DOCUMENT_ROW_PROGRESS_RING_STROKE })
-
-        Text(this.progressPercentLabel())
-          .fontSize(TgUiTokens.FONT_META_SIZE)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(TgUiTokens.DOCUMENT_ROW_ICON_TINT)
-          .maxLines(1)
+        if (this.hasProgress()) {
+          Progress({
+            value: this.normalizedProgress() * 100,
+            total: 100,
+            type: ProgressType.Ring
+          })
+            .width(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
+            .height(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
+            .color('#FFFFFF')
+            .backgroundColor(Color.Transparent)
+            .style({ strokeWidth: TgUiTokens.DOCUMENT_ROW_PROGRESS_RING_STROKE })
+        } else {
+          LoadingProgress()
+            .width(TgUiTokens.DOCUMENT_ROW_ICON_SIZE)
+            .height(TgUiTokens.DOCUMENT_ROW_ICON_SIZE)
+            .color('#FFFFFF')
+        }
+        Image($r('sys.media.ohos_ic_public_cancel'))
+          .width(16).height(16).fillColor('#FFFFFF')
       }
-    } else if (this.isDownloading) {
-      LoadingProgress()
-        .width(TgUiTokens.DOCUMENT_ROW_ICON_SIZE)
-        .height(TgUiTokens.DOCUMENT_ROW_ICON_SIZE)
-        .color(TgUiTokens.DOCUMENT_ROW_ICON_TINT)
+      .width(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
+      .height(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
+      .backgroundColor('#40000000') // Dark overlay
+      .borderRadius(TgUiTokens.DOCUMENT_ROW_ICON_RADIUS)
+    } else if (this.isDownloaded() && this.isImageOrPdf()) {
+      Image('file://' + this.documentPath)
+        .width('100%')
+        .height('100%')
+        .objectFit(ImageFit.Cover)
     } else if (this.shouldShowExtensionBadge()) {
       Text(this.extensionBadgeText())
         .fontSize(TgUiTokens.DOCUMENT_ROW_EXTENSION_SIZE)

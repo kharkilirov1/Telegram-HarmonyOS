@@ -152,23 +152,32 @@ export struct TgAudioBubble {
           ]
         })
 
-      if (this.hasDownloadProgress()) {
-        // Ring progress over art tile during download
-        Progress({
-          value: this.normalizedDownloadProgress() * 100,
-          total: 100,
-          type: ProgressType.Ring
-        })
-          .width(TgUiTokens.AUDIO_BUBBLE_ART_SIZE - 6)
-          .height(TgUiTokens.AUDIO_BUBBLE_ART_SIZE - 6)
-          .color(Color.White)
-          .style({ strokeWidth: TgUiTokens.AUDIO_BUBBLE_BUTTON_RING_STROKE })
-      } else if (this.isDownloading) {
-        // Spinner during indeterminate download
-        LoadingProgress()
-          .width(TgUiTokens.AUDIO_BUBBLE_BUTTON_ICON_SIZE)
-          .height(TgUiTokens.AUDIO_BUBBLE_BUTTON_ICON_SIZE)
-          .color(TgUiTokens.AUDIO_BUBBLE_ART_ICON)
+      if (this.isDownloading) {
+        Stack({ alignContent: Alignment.Center }) {
+          if (this.hasDownloadProgress()) {
+            Progress({
+              value: this.normalizedDownloadProgress() * 100,
+              total: 100,
+              type: ProgressType.Ring
+            })
+              .width(TgUiTokens.AUDIO_BUBBLE_ART_SIZE)
+              .height(TgUiTokens.AUDIO_BUBBLE_ART_SIZE)
+              .color('#FFFFFF')
+              .backgroundColor(Color.Transparent)
+              .style({ strokeWidth: 2 })
+          } else {
+            LoadingProgress()
+              .width(TgUiTokens.AUDIO_BUBBLE_ART_SIZE)
+              .height(TgUiTokens.AUDIO_BUBBLE_ART_SIZE)
+              .color('#FFFFFF')
+          }
+          Image($r('sys.media.ohos_ic_public_cancel'))
+            .width(16).height(16).fillColor('#FFFFFF')
+        }
+        .width(TgUiTokens.AUDIO_BUBBLE_ART_SIZE)
+        .height(TgUiTokens.AUDIO_BUBBLE_ART_SIZE)
+        .backgroundColor('#40000000') // Dark overlay
+        .borderRadius(TgUiTokens.AUDIO_BUBBLE_ART_RADIUS)
       } else if (this.isDownloaded() && this.isPlaying) {
         // Pause icon when playing
         TgIcon({
@@ -204,27 +213,37 @@ export struct TgAudioBubble {
   // ── Seek bar: playback progress (horizontal bar — always visible) ──
   @Builder
   private buildSeekBar() {
-    Column() {
-      Slider({
-        value: this.normalizedPlaybackProgress() * 100,
-        min: 0,
-        max: 100,
-        style: SliderStyle.OutSet
-      })
+    Stack({ alignContent: Alignment.Start }) {
+      Row()
         .width('100%')
-        .height(TgUiTokens.AUDIO_BUBBLE_SEEK_HEIGHT * 3) // slightly taller for touch area
-        .trackThickness(4) // Thicker track for iOS feel
-        .blockColor(Color.Transparent) // Hide thumb to match iOS
-        .selectedColor(TgUiTokens.AUDIO_BUBBLE_SEEK_FILL)
-        .trackColor(TgUiTokens.AUDIO_BUBBLE_SEEK_BG)
-        .onChange((value: number, mode: SliderChangeMode) => {
-          if (mode === SliderChangeMode.End || mode === SliderChangeMode.Moving) {
-            this.onSeek(value / 100.0);
-          }
-        })
+        .height(TgUiTokens.AUDIO_BUBBLE_SEEK_HEIGHT)
+        .backgroundColor(TgUiTokens.AUDIO_BUBBLE_SEEK_BG)
+        .borderRadius(TgUiTokens.AUDIO_BUBBLE_SEEK_RADIUS)
+
+      if (this.normalizedPlaybackProgress() > 0) {
+        Row()
+          .width(Math.max(2, this.normalizedPlaybackProgress() * 100).toString() + '%')
+          .height(TgUiTokens.AUDIO_BUBBLE_SEEK_HEIGHT)
+          .backgroundColor(TgUiTokens.AUDIO_BUBBLE_SEEK_FILL)
+          .borderRadius(TgUiTokens.AUDIO_BUBBLE_SEEK_RADIUS)
+      }
     }
     .width('100%')
+    .height(TgUiTokens.AUDIO_BUBBLE_SEEK_HEIGHT * 3) // Taller hit area
     .onClick(() => {}) // isolate click
+    .gesture(
+      PanGesture({ direction: PanDirection.Horizontal })
+        .onActionUpdate((event: GestureEvent) => {
+          // Approximate width for seeking calculation. 
+          // For exactness, we rely on the gesture's overall displacement or calculate relative to typical bubble sizes.
+          // Since we can't easily get the Stack's true width synchronously, we assume ~200vp for scrubbing sensitivity
+          // or we use event.offsetX delta. A better way: attach onAreaChange to get exact width.
+          // However, for simplicity:
+          const targetWidth = TgUiTokens.resolveAudioBubbleWidth(this.containerWidth, this.maxWidthRatio) - (TgUiTokens.AUDIO_BUBBLE_PADDING_H * 2) - TgUiTokens.AUDIO_BUBBLE_ART_SIZE - TgUiTokens.AUDIO_BUBBLE_CONTENT_GAP;
+          const progress = Math.max(0, Math.min(1, event.offsetX / targetWidth));
+          this.onSeek(progress);
+        })
+    )
   }
 
   // ── Download progress bar (replaces seek bar during download) ──
