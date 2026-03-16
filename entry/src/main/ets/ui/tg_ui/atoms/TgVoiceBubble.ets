@@ -14,10 +14,13 @@ export struct TgVoiceBubble {
   @Param downloadProgress: number = -1;
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
   @Param maxWidthRatio: number = TgUiTokens.BUBBLE_MAX_WIDTH_RATIO;
+  @Param groupingFlags: string = 'none'; // none, top, bottom, both
   @Param noBubbleWrap: boolean = false;
   @Event onTap: () => void = () => {};
   @Event onPlayToggle: () => void = () => {};
   @Event onSeek: (progress: number) => void = (_: number) => {};
+
+  private canvasContext: CanvasRenderingContext2D = new CanvasRenderingContext2D();
 
   private normalizedProgress(): number {
     return Math.max(0, Math.min(1, this.playbackProgress));
@@ -185,30 +188,62 @@ export struct TgVoiceBubble {
     return bars;
   }
 
-  private waveColor(index: number): ResourceColor {
-    if (!this.hasLocalFile || this.isDownloading) {
-      return TgUiTokens.VOICE_BUBBLE_WAVE_INACTIVE;
-    }
-    const activeUntil = Math.floor(this.normalizedProgress() * TgUiTokens.VOICE_BUBBLE_WAVE_BARS_COUNT);
-    if (index < activeUntil) {
-      return this.isOutgoing ? TgUiTokens.VOICE_BUBBLE_WAVE_ACTIVE_OUTGOING : TgUiTokens.VOICE_BUBBLE_WAVE_ACTIVE;
-    }
-    return TgUiTokens.VOICE_BUBBLE_WAVE_INACTIVE;
+  private inactiveColorHex(): string {
+    return '#4DFFFFFF'; // Fallback if tokens can't be resolved synchronously
+  }
+  
+  private activeColorHex(): string {
+    return this.isOutgoing ? '#FFFFFF' : '#3390EC';
   }
 
   @Builder
   private buildWaveform() {
-    Row({ space: TgUiTokens.VOICE_BUBBLE_WAVE_BAR_GAP }) {
-      ForEach(this.waveformBars(), (height: number, index: number) => {
-        Row()
-          .width(TgUiTokens.VOICE_BUBBLE_WAVE_BAR_WIDTH)
-          .height(height)
-          .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
-          .backgroundColor(this.waveColor(index))
-      }, (height: number, index: number): string => 'voice_bar_' + index.toString() + '_' + height.toString())
-    }
-    .height(TgUiTokens.VOICE_BUBBLE_WAVE_AREA_HEIGHT)
-    .alignItems(VerticalAlign.Center)
+    Canvas(this.canvasContext)
+      .width(TgUiTokens.VOICE_BUBBLE_WAVE_BARS_COUNT * (TgUiTokens.VOICE_BUBBLE_WAVE_BAR_WIDTH + TgUiTokens.VOICE_BUBBLE_WAVE_BAR_GAP))
+      .height(TgUiTokens.VOICE_BUBBLE_WAVE_AREA_HEIGHT)
+      .onReady(() => {
+        const context = this.canvasContext;
+        const bars = this.waveformBars();
+        const barWidth = TgUiTokens.VOICE_BUBBLE_WAVE_BAR_WIDTH;
+        const barGap = TgUiTokens.VOICE_BUBBLE_WAVE_BAR_GAP;
+        const totalWidth = bars.length * (barWidth + barGap);
+        const activeWidth = totalWidth * this.normalizedProgress();
+        const areaHeight = TgUiTokens.VOICE_BUBBLE_WAVE_AREA_HEIGHT;
+
+        context.clearRect(0, 0, totalWidth, areaHeight);
+        
+        const isReady = this.hasLocalFile && !this.isDownloading;
+
+        // Draw Inactive
+        context.fillStyle = this.inactiveColorHex();
+        context.beginPath();
+        for (let i = 0; i < bars.length; i++) {
+          const h = bars[i];
+          const x = i * (barWidth + barGap);
+          const y = (areaHeight - h) / 2;
+          context.rect(x, y, barWidth, h);
+        }
+        context.fill();
+
+        // Draw Active (clipped)
+        if (isReady && activeWidth > 0) {
+          context.save();
+          context.beginPath();
+          context.rect(0, 0, activeWidth, areaHeight);
+          context.clip();
+          
+          context.fillStyle = this.activeColorHex();
+          context.beginPath();
+          for (let i = 0; i < bars.length; i++) {
+            const h = bars[i];
+            const x = i * (barWidth + barGap);
+            const y = (areaHeight - h) / 2;
+            context.rect(x, y, barWidth, h);
+          }
+          context.fill();
+          context.restore();
+        }
+      })
   }
 
   @Builder

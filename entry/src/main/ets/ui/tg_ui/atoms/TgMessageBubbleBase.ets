@@ -16,6 +16,7 @@ export struct TgMessageBubbleBase {
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
   @Param forceBreakAll: boolean = false;
   @Param maxWidthRatio: number = TgUiTokens.BUBBLE_MAX_WIDTH_RATIO;
+  @Param groupingFlags: string = 'none'; // none, top, bottom, both
   // When true, renders ONLY content (no Row wrapper, no bg, no radius)
   @Param noBubbleWrap: boolean = false;
   // Invisible trailing text to reserve space for inline time overlay (iOS/Android pattern)
@@ -36,8 +37,36 @@ export struct TgMessageBubbleBase {
     return this.isOutgoing ? TgUiTokens.COLOR_MSG_BUBBLE_OUTGOING_BG : TgUiTokens.COLOR_MSG_BUBBLE_INCOMING_BG;
   }
 
-  private bubbleRadius(): number {
-    return this.isOutgoing ? TgUiTokens.BUBBLE_RADIUS_OUTGOING : TgUiTokens.BUBBLE_RADIUS_INCOMING;
+  private bubbleRadius(): number | BorderRadiuses {
+    const defaultRadius = this.isOutgoing ? TgUiTokens.BUBBLE_RADIUS_OUTGOING : TgUiTokens.BUBBLE_RADIUS_INCOMING;
+    const smallRadius = 6;
+    
+    if (this.groupingFlags === 'none') {
+      return defaultRadius;
+    }
+    
+    if (this.isOutgoing) {
+      if (this.groupingFlags === 'both') {
+        return { topLeft: defaultRadius, bottomLeft: defaultRadius, topRight: smallRadius, bottomRight: smallRadius };
+      }
+      if (this.groupingFlags === 'top') {
+        return { topLeft: defaultRadius, bottomLeft: defaultRadius, topRight: smallRadius, bottomRight: defaultRadius };
+      }
+      if (this.groupingFlags === 'bottom') {
+        return { topLeft: defaultRadius, bottomLeft: defaultRadius, topRight: defaultRadius, bottomRight: smallRadius };
+      }
+    } else {
+      if (this.groupingFlags === 'both') {
+        return { topRight: defaultRadius, bottomRight: defaultRadius, topLeft: smallRadius, bottomLeft: smallRadius };
+      }
+      if (this.groupingFlags === 'top') {
+        return { topRight: defaultRadius, bottomRight: defaultRadius, topLeft: smallRadius, bottomLeft: defaultRadius };
+      }
+      if (this.groupingFlags === 'bottom') {
+        return { topRight: defaultRadius, bottomRight: defaultRadius, topLeft: defaultRadius, bottomLeft: smallRadius };
+      }
+    }
+    return defaultRadius;
   }
 
   private maxBubbleWidth(): number {
