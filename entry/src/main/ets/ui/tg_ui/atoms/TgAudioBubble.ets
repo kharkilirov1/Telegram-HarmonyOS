@@ -216,29 +216,24 @@ export struct TgAudioBubble {
     Stack({ alignContent: Alignment.Start }) {
       Row()
         .width('100%')
-        .height(TgUiTokens.AUDIO_BUBBLE_SEEK_HEIGHT)
-        .backgroundColor(TgUiTokens.AUDIO_BUBBLE_SEEK_BG)
-        .borderRadius(TgUiTokens.AUDIO_BUBBLE_SEEK_RADIUS)
+        .height(4) // Hardcode 4vp thickness for visibility
+        .backgroundColor('#40888888') // Darker semi-transparent gray for clear visibility
+        .borderRadius(2)
 
       if (this.normalizedPlaybackProgress() > 0) {
         Row()
           .width(Math.max(2, this.normalizedPlaybackProgress() * 100).toString() + '%')
-          .height(TgUiTokens.AUDIO_BUBBLE_SEEK_HEIGHT)
-          .backgroundColor(TgUiTokens.AUDIO_BUBBLE_SEEK_FILL)
-          .borderRadius(TgUiTokens.AUDIO_BUBBLE_SEEK_RADIUS)
+          .height(4)
+          .backgroundColor(TgUiTokens.AUDIO_BUBBLE_SEEK_FILL) // Usually blue or white, should be visible
+          .borderRadius(2)
       }
     }
     .width('100%')
-    .height(TgUiTokens.AUDIO_BUBBLE_SEEK_HEIGHT * 3) // Taller hit area
+    .height(16) // Hit area height
     .onClick(() => {}) // isolate click
     .gesture(
       PanGesture({ direction: PanDirection.Horizontal })
         .onActionUpdate((event: GestureEvent) => {
-          // Approximate width for seeking calculation. 
-          // For exactness, we rely on the gesture's overall displacement or calculate relative to typical bubble sizes.
-          // Since we can't easily get the Stack's true width synchronously, we assume ~200vp for scrubbing sensitivity
-          // or we use event.offsetX delta. A better way: attach onAreaChange to get exact width.
-          // However, for simplicity:
           const targetWidth = TgUiTokens.resolveAudioBubbleWidth(this.containerWidth, this.maxWidthRatio) - (TgUiTokens.AUDIO_BUBBLE_PADDING_H * 2) - TgUiTokens.AUDIO_BUBBLE_ART_SIZE - TgUiTokens.AUDIO_BUBBLE_CONTENT_GAP;
           const progress = Math.max(0, Math.min(1, event.offsetX / targetWidth));
           this.onSeek(progress);
@@ -252,18 +247,18 @@ export struct TgAudioBubble {
     Stack({ alignContent: Alignment.Start }) {
       Row()
         .width('100%')
-        .height(TgUiTokens.AUDIO_BUBBLE_SEEK_HEIGHT)
-        .backgroundColor(TgUiTokens.DOCUMENT_ROW_PROGRESS_BG)
-        .borderRadius(TgUiTokens.AUDIO_BUBBLE_SEEK_RADIUS)
+        .height(4) // 4vp thickness
+        .backgroundColor('#40888888') // Darker semi-transparent gray
+        .borderRadius(2)
 
       Row()
         .width(Math.max(2, this.normalizedDownloadProgress() * 100).toString() + '%')
-        .height(TgUiTokens.AUDIO_BUBBLE_SEEK_HEIGHT)
+        .height(4)
         .backgroundColor(TgUiTokens.DOCUMENT_ROW_PROGRESS_FILL)
-        .borderRadius(TgUiTokens.AUDIO_BUBBLE_SEEK_RADIUS)
+        .borderRadius(2)
     }
     .width('100%')
-    .height(TgUiTokens.AUDIO_BUBBLE_SEEK_HEIGHT)
+    .height(16) // Match seek bar hit area height for visual stability
   }
 
   @Builder
