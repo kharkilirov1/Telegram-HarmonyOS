@@ -1,10 +1,10 @@
-// Files reducer — handles file download events
-// When a file download completes, scans users, chats, and message content
-// for matching fileId and updates the local file path.
+// Files reducer — handles file transfer state + file download completion events
+// Keeps a fileId -> transfer-state map for UI download indicators and,
+// when a file completes, scans users/chats/messages to apply the local path.
 
-import { AppState, Message, MessageContent, ReducerAction } from '../model/AppState';
-import { FileDownloadedEvent } from '../model/AppEvent';
-import { cloneAppState, cloneUser, cloneChat } from '../utils/stateClone';
+import { AppState, FileTransfer, Message, MessageContent, ReducerAction } from '../model/AppState';
+import { FileDownloadedEvent, FileTransferUpdatedEvent } from '../model/AppEvent';
+import { cloneAppState, cloneChat, cloneStateForFiles, cloneUser } from '../utils/stateClone';
 
 function contentMatchesFileId(content: MessageContent, fileId: number): boolean {
   return content.photoFileId === fileId ||
@@ -88,6 +88,7 @@ function cloneMessageWithContent(msg: Message, newContent: MessageContent): Mess
   clone.chatId = msg.chatId;
   clone.senderId = msg.senderId;
   clone.senderChatId = msg.senderChatId;
+  clone.mediaAlbumId = msg.mediaAlbumId;
   clone.content = newContent;
   clone.timestamp = msg.timestamp;
   clone.isOutgoing = msg.isOutgoing;
@@ -101,7 +102,72 @@ function cloneMessageWithContent(msg: Message, newContent: MessageContent): Mess
   return clone;
 }
 
+function cloneFileTransfer(existing?: FileTransfer): FileTransfer {
+  const next = new FileTransfer();
+  if (!existing) {
+    return next;
+  }
+  next.fileId = existing.fileId;
+  next.localPath = existing.localPath;
+  next.isDownloadingActive = existing.isDownloadingActive;
+  next.isDownloadingCompleted = existing.isDownloadingCompleted;
+  next.size = existing.size;
+  next.expectedSize = existing.expectedSize;
+  next.downloadOffset = existing.downloadOffset;
+  next.downloadedPrefixSize = existing.downloadedPrefixSize;
+  next.downloadedSize = existing.downloadedSize;
+  return next;
+}
+
+function applyTransferEvent(existing: FileTransfer | undefined, event: FileTransferUpdatedEvent): FileTransfer {
+  const next = cloneFileTransfer(existing);
+  next.fileId = event.fileId;
+  next.localPath = event.localPath;
+  next.isDownloadingActive = event.isDownloadingActive;
+  next.isDownloadingCompleted = event.isComplete;
+  next.size = event.size;
+  next.expectedSize = event.expectedSize;
+  next.downloadOffset = event.downloadOffset;
+  next.downloadedPrefixSize = event.downloadedPrefixSize;
+  next.downloadedSize = event.downloadedSize;
+  return next;
+}
+
+function sameTransfer(a: FileTransfer | undefined, b: FileTransfer): boolean {
+  if (!a) {
+    return false;
+  }
+  return a.fileId === b.fileId &&
+    a.localPath === b.localPath &&
+    a.isDownloadingActive === b.isDownloadingActive &&
+    a.isDownloadingCompleted === b.isDownloadingCompleted &&
+    a.size === b.size &&
+    a.expectedSize === b.expectedSize &&
+    a.downloadOffset === b.downloadOffset &&
+    a.downloadedPrefixSize === b.downloadedPrefixSize &&
+    a.downloadedSize === b.downloadedSize;
+}
+
 export function filesReducer(state: AppState, action: ReducerAction): AppState {
+  if (action.type === 'fileTransferUpdated') {
+    const event = action as FileTransferUpdatedEvent;
+    if (!event.fileId) {
+      return state;
+    }
+
+    const existing = state.files.transfers.get(event.fileId);
+    const nextTransfer = applyTransferEvent(existing, event);
+    if (sameTransfer(existing, nextTransfer)) {
+      return state;
+    }
+
+    const newState = cloneStateForFiles(state);
+    newState.files.transfers.set(event.fileId, nextTransfer);
+    newState.version = state.version + 1;
+    newState.lastEvent = action;
+    return newState;
+  }
+
   if (action.type !== 'fileDownloaded') {
     return state;
   }
@@ -163,6 +229,21 @@ export function filesReducer(state: AppState, action: ReducerAction): AppState {
 
   // Clone state and apply updates
   const newState = cloneAppState(state);
+
+  const completedTransfer = cloneFileTransfer(newState.files.transfers.get(fileId));
+  completedTransfer.fileId = fileId;
+  completedTransfer.localPath = localPath;
+  completedTransfer.isDownloadingActive = false;
+  completedTransfer.isDownloadingCompleted = true;
+  if (completedTransfer.size <= 0 && completedTransfer.expectedSize > 0) {
+    completedTransfer.size = completedTransfer.expectedSize;
+  }
+  const effectiveSize = Math.max(completedTransfer.size, completedTransfer.expectedSize);
+  if (effectiveSize > 0) {
+    completedTransfer.downloadedPrefixSize = effectiveSize;
+    completedTransfer.downloadedSize = effectiveSize;
+  }
+  newState.files.transfers.set(fileId, completedTransfer);
 
   // Update user avatars
   newState.users.users.forEach((user, userId) => {

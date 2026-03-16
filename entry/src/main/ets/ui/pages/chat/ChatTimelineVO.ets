@@ -1,4 +1,4 @@
-import { AppState, Chat, Message, User } from '../../../core/model/AppState';
+import { AppState, Chat, FileTransfer, Message, User } from '../../../core/model/AppState';
 import { selectChatMessagesForChatView } from '../../../domain/selectors/messageSelectors';
 import { compareInt64 } from '../../../core/utils/tdAccessors';
 import { getString } from '../../../core/utils/AppResource';
@@ -53,6 +53,10 @@ export class ChatMessageRowVO {
 
   // Photo
   photoPath: string = '';
+  photoFileId: number = 0;
+  hasLocalPhoto: boolean = false;
+  isPhotoDownloading: boolean = false;
+  photoDownloadProgress: number = -1;
   photoWidth: number = 0;
   photoHeight: number = 0;
   albumPhotoPaths: string[] = [];
@@ -65,12 +69,21 @@ export class ChatMessageRowVO {
   videoDuration: number = 0;
   videoWidth: number = 0;
   videoHeight: number = 0;
+  isVideoDownloading: boolean = false;
+  videoDownloadProgress: number = -1;
 
   // Document / Audio
   documentPath: string = '';
   documentFileId: number = 0;
+  isDocumentDownloading: boolean = false;
+  documentDownloadProgress: number = -1;
   audioPath: string = '';
   audioFileId: number = 0;
+  isAudioDownloading: boolean = false;
+  audioDownloadProgress: number = -1;
+  audioDuration: number = 0;
+  audioTitle: string = '';
+  audioPerformer: string = '';
   fileName: string = '';
   fileSize: number = 0;
   mimeType: string = '';
@@ -78,6 +91,8 @@ export class ChatMessageRowVO {
   // Voice
   voicePath: string = '';
   voiceFileId: number = 0;
+  isVoiceDownloading: boolean = false;
+  voiceDownloadProgress: number = -1;
   voiceDuration: number = 0;
   voiceWaveform: string = '';
   isVoiceListened: boolean = false;
@@ -313,6 +328,43 @@ function shouldForceBreakAll(text: string): boolean {
   return false;
 }
 
+function resolveTransfer(fileId: number, state: AppState): FileTransfer | undefined {
+  if (fileId <= 0) {
+    return undefined;
+  }
+  return state.files.transfers.get(fileId);
+}
+
+function resolveTransferTotalSize(transfer: FileTransfer | undefined): number {
+  if (!transfer) {
+    return 0;
+  }
+  const knownDownloaded = Math.max(
+    transfer.downloadedSize,
+    transfer.downloadOffset + transfer.downloadedPrefixSize
+  );
+  return Math.max(transfer.size, transfer.expectedSize, knownDownloaded);
+}
+
+function resolveTransferProgress(transfer: FileTransfer | undefined): number {
+  if (!transfer) {
+    return -1;
+  }
+  const total = resolveTransferTotalSize(transfer);
+  if (total <= 0) {
+    return -1;
+  }
+  const downloaded = Math.max(
+    transfer.downloadedSize,
+    transfer.downloadOffset + transfer.downloadedPrefixSize
+  );
+  return Math.max(0, Math.min(1, downloaded / total));
+}
+
+function isTransferActive(transfer: FileTransfer | undefined): boolean {
+  return transfer !== undefined && transfer.isDownloadingActive && !transfer.isDownloadingCompleted;
+}
+
 function isPhotoAlbumCandidate(message: Message): boolean {
   return message.mediaAlbumId !== '0' && message.content.type === 'photo';
 }
@@ -436,12 +488,18 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   }
 
   // Photo — convert sandbox path to file:// URI
+  const photoTransfer = resolveTransfer(content.photoFileId, state);
   const rawPhotoPath = content.photoPath.length > 0 ? content.photoPath : content.photoThumbPath;
   row.photoPath = toFileUri(rawPhotoPath);
+  row.photoFileId = content.photoFileId;
+  row.hasLocalPhoto = content.photoPath.length > 0;
+  row.isPhotoDownloading = isTransferActive(photoTransfer);
+  row.photoDownloadProgress = resolveTransferProgress(photoTransfer);
   row.photoWidth = content.photoWidth;
   row.photoHeight = content.photoHeight;
 
   // Video — thumbnail as file:// URI, full video path for playback
+  const videoTransfer = resolveTransfer(content.videoFileId, state);
   const rawVideoThumb = content.videoThumbPath.length > 0 ? content.videoThumbPath : content.videoPath;
   row.videoThumbPath = toFileUri(rawVideoThumb);
   row.videoPath = toFileUri(content.videoPath);
@@ -449,9 +507,12 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   row.videoWidth = content.videoWidth;
   row.videoHeight = content.videoHeight;
   row.videoFileId = content.videoFileId;
+  row.isVideoDownloading = isTransferActive(videoTransfer);
+  row.videoDownloadProgress = resolveTransferProgress(videoTransfer);
 
   // Animation → video fields (router sends animation to TgVideoBubble)
   if (content.type === 'animation') {
+    const animationTransfer = resolveTransfer(content.animationFileId, state);
     const rawAnimThumb = content.videoThumbPath.length > 0 ? content.videoThumbPath : content.animationPath;
     row.videoThumbPath = toFileUri(rawAnimThumb);
     row.videoPath = toFileUri(content.animationPath);
@@ -459,10 +520,13 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
     row.videoWidth = content.animationWidth;
     row.videoHeight = content.animationHeight;
     row.videoFileId = content.animationFileId;
+    row.isVideoDownloading = isTransferActive(animationTransfer);
+    row.videoDownloadProgress = resolveTransferProgress(animationTransfer);
   }
 
   // Video note → video fields (router sends videoNote to TgVideoBubble)
   if (content.type === 'videoNote') {
+    const videoNoteTransfer = resolveTransfer(content.videoNoteFileId, state);
     const rawVideoNoteThumb = content.videoThumbPath.length > 0 ? content.videoThumbPath : content.videoNotePath;
     row.videoThumbPath = toFileUri(rawVideoNoteThumb);
     row.videoPath = toFileUri(content.videoNotePath);
@@ -470,25 +534,39 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
     row.videoWidth = content.videoNoteLength;
     row.videoHeight = content.videoNoteLength;
     row.videoFileId = content.videoNoteFileId;
+    row.isVideoDownloading = isTransferActive(videoNoteTransfer);
+    row.videoDownloadProgress = resolveTransferProgress(videoNoteTransfer);
   }
 
   // Document
+  const documentTransfer = resolveTransfer(content.documentFileId, state);
   row.documentPath = toFileUri(content.documentPath);
   row.documentFileId = content.documentFileId;
+  row.isDocumentDownloading = isTransferActive(documentTransfer);
+  row.documentDownloadProgress = resolveTransferProgress(documentTransfer);
   row.fileName = content.fileName;
   row.fileSize = content.fileSize;
   row.mimeType = content.mimeType;
 
-  // Audio → document fields (router sends audio to TgDocumentRow)
+  // Audio / music
   if (content.type === 'audio') {
+    const audioTransfer = resolveTransfer(content.audioFileId, state);
     row.audioPath = toFileUri(content.audioPath);
     row.audioFileId = content.audioFileId;
+    row.isAudioDownloading = isTransferActive(audioTransfer);
+    row.audioDownloadProgress = resolveTransferProgress(audioTransfer);
+    row.audioDuration = content.audioDuration;
+    row.audioTitle = content.audioTitle;
+    row.audioPerformer = content.audioPerformer;
     row.fileName = content.audioTitle.length > 0 ? content.audioTitle : content.fileName;
   }
 
   // Voice — convert path for playback
+  const voiceTransfer = resolveTransfer(content.voiceFileId, state);
   row.voicePath = content.voicePath;
   row.voiceFileId = content.voiceFileId;
+  row.isVoiceDownloading = isTransferActive(voiceTransfer);
+  row.voiceDownloadProgress = resolveTransferProgress(voiceTransfer);
   row.voiceDuration = content.voiceDuration;
   row.voiceWaveform = content.voiceWaveform;
   row.isVoiceListened = content.isVoiceListened;

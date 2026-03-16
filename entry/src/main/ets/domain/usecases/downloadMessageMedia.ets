@@ -1,7 +1,7 @@
 // DownloadMessageMedia use case — triggers TDLib downloadFile for message media
 //
 // Subscribes to store changes. When a message has a fileId > 0 but empty path,
-// enqueues a download. Priority: thumbnails first (10), full media second (5).
+// enqueues a download. Priority: thumbnails first (10), selective small-media second (5).
 // TDLib responds with updateFile → FileNormalizer → FileDownloadedEvent → filesReducer.
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -69,7 +69,8 @@ export class DownloadMessageMediaUseCase {
   private scanContent(content: MessageContent): number {
     let count = 0;
 
-    // Photo — download thumbnail first, then full
+    // Photo — keep thumbnail + full photo auto-download so fullscreen photo viewing
+    // can still open the real asset without an extra photo-specific transfer state machine.
     if (content.photoThumbFileId > 0 && content.photoThumbPath.length === 0) {
       this.enqueueDownload(content.photoThumbFileId, THUMB_PRIORITY);
       count++;
@@ -91,25 +92,25 @@ export class DownloadMessageMediaUseCase {
       count++;
     }
 
-    // Voice — auto-download (small files)
+    // Voice — auto-download (small files, Telegram iOS/Android always auto-download voice)
     if (content.voiceFileId > 0 && content.voicePath.length === 0) {
       this.enqueueDownload(content.voiceFileId, MEDIA_PRIORITY);
       count++;
     }
 
-    // Animation/GIF — auto-download
+    // Animation (GIF) — auto-download (Telegram auto-downloads GIFs)
     if (content.animationFileId > 0 && content.animationPath.length === 0) {
       this.enqueueDownload(content.animationFileId, MEDIA_PRIORITY);
       count++;
     }
 
-    // Video note — auto-download (short circular videos)
+    // Video note (circles) — auto-download (small, Telegram always auto-downloads)
     if (content.videoNoteFileId > 0 && content.videoNotePath.length === 0) {
       this.enqueueDownload(content.videoNoteFileId, MEDIA_PRIORITY);
       count++;
     }
 
-    // Document, Audio, full Video — NOT auto-downloaded (user taps to download)
+    // Document / Audio / full Video stay on-demand — user taps to download.
 
     return count;
   }
@@ -131,6 +132,7 @@ export class DownloadMessageMediaUseCase {
 
           if (isComplete && path.length > 0) {
             hilog.info(DOMAIN, TAG, 'File %{public}d ready: %{public}s', fileId, path);
+            this.pendingFileIds.delete(fileId);
             const event = new FileDownloadedEvent();
             event.fileId = fileId;
             event.localPath = path;
@@ -138,8 +140,11 @@ export class DownloadMessageMediaUseCase {
             event.timestamp = Date.now();
             store.dispatch(event);
           }
+          // If not complete yet, TDLib will send updateFile callbacks → FileNormalizer handles progress.
+          // pendingFileIds stays set to prevent duplicate enqueue; syncResolvedPendingDownloads cleans up.
         } catch (e) {
           hilog.warn(DOMAIN, TAG, 'Parse error fileId=%{public}d: %{public}s', fileId, String(e));
+          this.pendingFileIds.delete(fileId);
         }
       })
       .catch((error: Error): void => {

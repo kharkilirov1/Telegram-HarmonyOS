@@ -13,7 +13,7 @@ import { TgChatTopBar } from '../../tg_ui/atoms/TgChatTopBar';
 import { ProfileRouteParams } from '../profile/TgProfilePage';
 import { ChatTimelineDataSource } from './ChatTimelineDataSource';
 import { ChatTimelineEntryVO, buildChatTimeline } from './ChatTimelineVO';
-import { VoicePlaybackController, VoicePlaybackSnapshot } from './VoicePlaybackController';
+import { MediaPlaybackController, MediaPlaybackSnapshot, MediaContentType } from './VoicePlaybackController';
 import { SendMessageParams, createSendMessageUseCase, SendMessageUseCase } from '../../../domain/usecases/sendMessage';
 import {
   LoadChatHistoryUseCase,
@@ -31,7 +31,7 @@ import { localized } from '../../../core/utils/AppResource';
 import { computeTopBarHeight, computeChatBottomInset, getMainWindow, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { promptAction, uiObserver, window } from '@kit.ArkUI';
-import { common } from '@kit.AbilityKit';
+import { common, Want, wantConstant } from '@kit.AbilityKit';
 import { pasteboard } from '@kit.BasicServicesKit';
 
 const DOMAIN = 0x0021;
@@ -79,6 +79,8 @@ export struct TgChatScreenPage {
   // ── Media viewer state ──
   @State private showPhotoViewer: boolean = false;
   @State private viewerPhotoPath: string = '';
+  @State private viewerPhotoPaths: string[] = [];
+  @State private viewerPhotoInitialIndex: number = 0;
   @State private viewerPhotoCaption: string = '';
   @State private showVideoPlayer: boolean = false;
   @State private viewerVideoPath: string = '';
@@ -87,6 +89,10 @@ export struct TgChatScreenPage {
   @State private activeVoiceMessageId: string = '0';
   @State private activeVoiceProgress: number = 0;
   @State private activeVoicePlaying: boolean = false;
+  @State private activeAudioMessageId: string = '0';
+  @State private activeAudioProgress: number = 0;
+  @State private activeAudioPlaying: boolean = false;
+  @State private pendingMediaDownloadVersion: number = 0;
   private dataSource: ChatTimelineDataSource = new ChatTimelineDataSource();
   private listScroller: Scroller = new Scroller();
   private unsubscribe?: () => void;
@@ -114,8 +120,9 @@ export struct TgChatScreenPage {
   private isApplyingTimelineDiff: boolean = false;
   private paginationRecheckTimerId: number = -1;
   private static scrollPositionCache: Map<number, string> = new Map<number, string>();
-  private voicePlaybackController?: VoicePlaybackController;
+  private mediaPlaybackController?: MediaPlaybackController;
   private locallyListenedVoiceIds: Set<string> = new Set<string>();
+  private pendingMediaDownloadFileIds: Set<number> = new Set<number>();
   private pendingVideoOpenFileId: number = 0;
   private pendingVideoOpenCaption: string = '';
   private pendingVideoOpenThumbPath: string = '';
@@ -147,14 +154,15 @@ export struct TgChatScreenPage {
       this.listInitialIndex = 0;
       this.composerDraftText = '';
       this.clearPendingVideoOpen();
+      this.clearPendingMediaDownloads();
       if (this.paginationRecheckTimerId >= 0) {
         clearTimeout(this.paginationRecheckTimerId);
         this.paginationRecheckTimerId = -1;
       }
       this.resetPaginationState();
-      this.teardownVoicePlaybackController();
+      this.teardownMediaPlaybackController();
       if (this.activeChatId !== 0) {
-        this.setupVoicePlaybackController();
+        this.setupMediaPlaybackController();
       }
       this.awaitingInitialTimeline = this.activeChatId !== 0;
       this.currentScrollChatId = this.activeChatId;
@@ -199,7 +207,7 @@ export struct TgChatScreenPage {
         this.paginationRecheckTimerId = -1;
       }
       this.resetPaginationState();
-      this.setupVoicePlaybackController();
+      this.setupMediaPlaybackController();
       this.awaitingInitialTimeline = this.activeChatId !== 0;
       // Capture lastReadInboxMessageId at chat entry — survives markChatRead
       const initialState = store.getState();
@@ -267,6 +275,7 @@ export struct TgChatScreenPage {
     this.blockAutoPaginationUntilUserScroll = false;
     this.isApplyingTimelineDiff = false;
     this.clearPendingVideoOpen();
+    this.clearPendingMediaDownloads();
     if (this.paginationRecheckTimerId >= 0) {
       clearTimeout(this.paginationRecheckTimerId);
       this.paginationRecheckTimerId = -1;
@@ -281,7 +290,7 @@ export struct TgChatScreenPage {
     }
     removeWindowSizeListener(this.mainWindow);
     this.mainWindow = undefined;
-    this.teardownVoicePlaybackController();
+    this.teardownMediaPlaybackController();
   }
 
   private shouldReactToStoreChange(newState: AppState, prevState: AppState): boolean {
@@ -296,6 +305,10 @@ export struct TgChatScreenPage {
       return true;
     }
     if (newState.chats.typingActions.get(chatId) !== prevState.chats.typingActions.get(chatId)) {
+      return true;
+    }
+    // File transfer progress updates (download indicators for media bubbles)
+    if (newState.files.transfers !== prevState.files.transfers) {
       return true;
     }
     return newState.users.users !== prevState.users.users;
@@ -336,41 +349,104 @@ export struct TgChatScreenPage {
     this.timelineContainerWidth = Math.max(1, computed);
   }
 
-  private resetVoicePlaybackState(): void {
+  private resetPlaybackState(): void {
     this.activeVoiceMessageId = '0';
     this.activeVoiceProgress = 0;
     this.activeVoicePlaying = false;
+    this.activeAudioMessageId = '0';
+    this.activeAudioProgress = 0;
+    this.activeAudioPlaying = false;
     this.locallyListenedVoiceIds.clear();
   }
 
-  private setupVoicePlaybackController(): void {
-    const previous = this.voicePlaybackController;
+  private setupMediaPlaybackController(): void {
+    const previous = this.mediaPlaybackController;
     if (previous) {
-      this.voicePlaybackController = undefined;
+      this.mediaPlaybackController = undefined;
       previous.release().catch((_error: Object) => {});
     }
-    this.resetVoicePlaybackState();
-    const controller = new VoicePlaybackController();
-    this.voicePlaybackController = controller;
-    controller.setListener((snapshot: VoicePlaybackSnapshot): void => {
-      if (this.voicePlaybackController !== controller) {
+    this.resetPlaybackState();
+    const controller = new MediaPlaybackController();
+    this.mediaPlaybackController = controller;
+    controller.setListener((snapshot: MediaPlaybackSnapshot): void => {
+      if (this.mediaPlaybackController !== controller) {
         return;
       }
-      this.activeVoiceMessageId = snapshot.messageId;
-      this.activeVoiceProgress = snapshot.progress;
-      this.activeVoicePlaying = snapshot.isPlaying;
+      if (snapshot.contentType === 'voice') {
+        this.activeVoiceMessageId = snapshot.messageId;
+        this.activeVoiceProgress = snapshot.progress;
+        this.activeVoicePlaying = snapshot.isPlaying;
+        // Clear audio state when voice is active
+        if (snapshot.isPlaying) {
+          this.activeAudioMessageId = '0';
+          this.activeAudioProgress = 0;
+          this.activeAudioPlaying = false;
+        }
+      } else {
+        this.activeAudioMessageId = snapshot.messageId;
+        this.activeAudioProgress = snapshot.progress;
+        this.activeAudioPlaying = snapshot.isPlaying;
+        // Clear voice state when audio is active
+        if (snapshot.isPlaying) {
+          this.activeVoiceMessageId = '0';
+          this.activeVoiceProgress = 0;
+          this.activeVoicePlaying = false;
+        }
+      }
+    });
+    controller.setOnCompleted((messageId: string, contentType: MediaContentType): void => {
+      if (this.mediaPlaybackController !== controller) {
+        return;
+      }
+      this.handlePlaybackCompleted(messageId, contentType);
     });
   }
 
-  private teardownVoicePlaybackController(): void {
-    const controller = this.voicePlaybackController;
-    this.voicePlaybackController = undefined;
-    this.resetVoicePlaybackState();
+  private teardownMediaPlaybackController(): void {
+    const controller = this.mediaPlaybackController;
+    this.mediaPlaybackController = undefined;
+    this.resetPlaybackState();
     if (!controller) {
       return;
     }
     controller.release()
       .catch((_error: Object) => {});
+  }
+
+  private handlePlaybackCompleted(messageId: string, contentType: MediaContentType): void {
+    // Auto-advance: find next voice/audio message and play it
+    const entries = this.dataSource.getAllEntries();
+    let foundCurrent = false;
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      if (entry.kind !== 'message') continue;
+      if (entry.message.messageId === messageId) {
+        foundCurrent = true;
+        continue;
+      }
+      if (!foundCurrent) continue;
+      // Found next message after current — check if same type
+      const msg = entry.message;
+      if (contentType === 'voice' && msg.contentType === 'voice' && msg.voicePath.length > 0) {
+        this.locallyListenedVoiceIds.add(msg.messageId);
+        const controller = this.mediaPlaybackController;
+        if (controller) {
+          controller.toggle(msg.messageId, msg.voicePath, 'voice')
+            .catch((_error: Object) => {});
+        }
+        return;
+      }
+      if (contentType === 'audio' && msg.contentType === 'audio' && msg.audioPath.length > 0) {
+        const controller = this.mediaPlaybackController;
+        if (controller) {
+          controller.toggle(msg.messageId, msg.audioPath, 'audio')
+            .catch((_error: Object) => {});
+        }
+        return;
+      }
+      // Different type or no local file — stop auto-advance
+      break;
+    }
   }
 
   private computeInitials(title: string): string {
@@ -467,6 +543,7 @@ export struct TgChatScreenPage {
       this.chatIsOnline = false;
       this.awaitingInitialTimeline = false;
       this.clearPendingVideoOpen();
+      this.clearPendingMediaDownloads();
       return;
     }
 
@@ -492,6 +569,7 @@ export struct TgChatScreenPage {
       this.isApplyingTimelineDiff = false;
     }
     this.maybeOpenPendingVideo(result.entries);
+    this.syncResolvedPendingDownloads(result.entries);
     const newCount = this.dataSource.totalCount();
     this.previousDataCount = newCount;
 
@@ -759,6 +837,12 @@ export struct TgChatScreenPage {
 
   private requestMediaDownload(fileId: number): void {
     if (fileId <= 0) return;
+    if (this.pendingMediaDownloadFileIds.has(fileId)) {
+      hilog.info(DOMAIN, TAG, 'Skip duplicate on-demand download request: fileId=%{public}d', fileId);
+      return;
+    }
+    this.pendingMediaDownloadFileIds.add(fileId);
+    this.pendingMediaDownloadVersion++;
     hilog.info(DOMAIN, TAG, 'On-demand media download requested: fileId=%{public}d', fileId);
     const command = createDownloadFileCommand(fileId, 5, false);
     getTdGatewayAdapter().send(command)
@@ -776,12 +860,74 @@ export struct TgChatScreenPage {
             event.isComplete = true;
             event.timestamp = Date.now();
             getAppCoreRuntime().getStore().dispatch(event);
+            if (this.pendingMediaDownloadFileIds.delete(fileId)) {
+              this.pendingMediaDownloadVersion++;
+            }
           }
-        } catch (_e) {}
+        } catch (_e) {
+          if (this.pendingMediaDownloadFileIds.delete(fileId)) {
+            this.pendingMediaDownloadVersion++;
+          }
+        }
       })
       .catch((error: Error): void => {
         hilog.warn(DOMAIN, TAG, 'On-demand download failed: fileId=%{public}d: %{public}s', fileId, error.message);
+        if (this.pendingMediaDownloadFileIds.delete(fileId)) {
+          this.pendingMediaDownloadVersion++;
+        }
       });
+  }
+
+  private clearPendingMediaDownloads(): void {
+    if (this.pendingMediaDownloadFileIds.size === 0) {
+      return;
+    }
+    this.pendingMediaDownloadFileIds.clear();
+    this.pendingMediaDownloadVersion++;
+  }
+
+  private isMediaDownloadPending(fileId: number): boolean {
+    if (fileId <= 0) {
+      return false;
+    }
+    return this.pendingMediaDownloadFileIds.has(fileId);
+  }
+
+  private syncResolvedPendingDownloads(entries: ChatTimelineEntryVO[]): void {
+    if (this.pendingMediaDownloadFileIds.size === 0 || entries.length === 0) {
+      return;
+    }
+    const resolved: Set<number> = new Set<number>();
+    for (const entry of entries) {
+      if (entry.kind !== 'message') {
+        continue;
+      }
+      const message = entry.message;
+      if (message.documentFileId > 0 && message.documentPath.length > 0) {
+        resolved.add(message.documentFileId);
+      }
+      if (message.audioFileId > 0 && message.audioPath.length > 0) {
+        resolved.add(message.audioFileId);
+      }
+      if (message.voiceFileId > 0 && message.voicePath.length > 0) {
+        resolved.add(message.voiceFileId);
+      }
+      if (message.videoFileId > 0 && message.videoPath.length > 0) {
+        resolved.add(message.videoFileId);
+      }
+    }
+    if (resolved.size === 0) {
+      return;
+    }
+    let changed = false;
+    resolved.forEach((fileId: number) => {
+      if (this.pendingMediaDownloadFileIds.delete(fileId)) {
+        changed = true;
+      }
+    });
+    if (changed) {
+      this.pendingMediaDownloadVersion++;
+    }
   }
 
   private queuePendingVideoOpen(fileId: number, caption: string, thumbPath: string): void {
@@ -830,21 +976,55 @@ export struct TgChatScreenPage {
       }
       return;
     }
-    if (!this.voicePlaybackController) {
-      this.setupVoicePlaybackController();
+    if (!this.mediaPlaybackController) {
+      this.setupMediaPlaybackController();
     }
     this.locallyListenedVoiceIds.add(messageId);
-    const controller = this.voicePlaybackController;
+    const controller = this.mediaPlaybackController;
     if (!controller) {
       return;
     }
-    controller.toggle(messageId, voicePath)
+    controller.toggle(messageId, voicePath, 'voice')
       .catch((_error: Object) => {});
   }
 
-  private openPhotoViewer(photoPath: string, caption: string): void {
+  private normalizeViewerPhotoPaths(photoPath: string, galleryPaths?: string[]): string[] {
+    const result: string[] = [];
+    if (galleryPaths) {
+      for (let i = 0; i < galleryPaths.length; i++) {
+        const current = galleryPaths[i];
+        if (current.trim().length > 0) {
+          result.push(current);
+        }
+      }
+    }
+    if (result.length === 0 && photoPath.trim().length > 0) {
+      result.push(photoPath);
+    }
+    return result;
+  }
+
+  private closePhotoViewer(): void {
+    this.showPhotoViewer = false;
+    this.viewerPhotoPath = '';
+    this.viewerPhotoPaths = [];
+    this.viewerPhotoInitialIndex = 0;
+    this.viewerPhotoCaption = '';
+  }
+
+  private openPhotoViewer(photoPath: string, caption: string, galleryPaths?: string[]): void {
     if (photoPath.length === 0) return;
-    this.viewerPhotoPath = photoPath;
+    const normalizedPaths = this.normalizeViewerPhotoPaths(photoPath, galleryPaths);
+    let initialIndex = 0;
+    if (normalizedPaths.length > 1) {
+      const foundIndex = normalizedPaths.indexOf(photoPath);
+      if (foundIndex >= 0) {
+        initialIndex = foundIndex;
+      }
+    }
+    this.viewerPhotoPath = normalizedPaths.length > 0 ? normalizedPaths[initialIndex] : photoPath;
+    this.viewerPhotoPaths = normalizedPaths;
+    this.viewerPhotoInitialIndex = initialIndex;
     this.viewerPhotoCaption = caption;
     this.showPhotoViewer = true;
   }
@@ -864,13 +1044,80 @@ export struct TgChatScreenPage {
     }
   }
 
+  private openAudioFile(audioPath: string, mimeType: string): void {
+    if (audioPath.trim().length === 0) {
+      return;
+    }
+    try {
+      const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      const want: Want = {
+        action: 'ohos.want.action.viewData',
+        uri: audioPath,
+        type: mimeType.trim().length > 0 ? mimeType : 'audio/*',
+        flags: wantConstant.Flags.FLAG_AUTH_READ_URI_PERMISSION |
+          wantConstant.Flags.FLAG_AUTH_WRITE_URI_PERMISSION
+      };
+      context.startAbility(want)
+        .catch((_error: Object) => {});
+    } catch (_error) {}
+  }
+
+  private openDocumentFile(documentPath: string, mimeType: string): void {
+    if (documentPath.trim().length === 0) {
+      return;
+    }
+    try {
+      const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      const want: Want = {
+        action: 'ohos.want.action.viewData',
+        uri: documentPath,
+        type: mimeType.trim().length > 0 ? mimeType : 'application/octet-stream',
+        flags: wantConstant.Flags.FLAG_AUTH_READ_URI_PERMISSION |
+          wantConstant.Flags.FLAG_AUTH_WRITE_URI_PERMISSION
+      };
+      context.startAbility(want)
+        .catch((_error: Object) => {});
+    } catch (_error) {}
+  }
+
+  private handleDocumentTap(documentPath: string, documentFileId: number, mimeType: string): void {
+    if (documentPath.trim().length === 0) {
+      if (documentFileId > 0) {
+        this.requestMediaDownload(documentFileId);
+      }
+      return;
+    }
+    this.openDocumentFile(documentPath, mimeType);
+  }
+
+  private handleAudioTap(audioPath: string, audioFileId: number, mimeType: string, messageId: string = '0'): void {
+    if (audioPath.trim().length === 0) {
+      if (audioFileId > 0) {
+        this.requestMediaDownload(audioFileId);
+      }
+      return;
+    }
+    // Inline playback via unified MediaPlaybackController (like Telegram iOS/Android)
+    if (!this.mediaPlaybackController) {
+      this.setupMediaPlaybackController();
+    }
+    const controller = this.mediaPlaybackController;
+    if (!controller) {
+      return;
+    }
+    controller.toggle(messageId, audioPath, 'audio')
+      .catch((_error: Object) => {});
+  }
+
   @Builder
   private buildPhotoViewer() {
     TgPhotoViewerPage({
       photoPath: this.viewerPhotoPath,
+      photoPaths: this.viewerPhotoPaths,
+      initialIndex: this.viewerPhotoInitialIndex,
       caption: this.viewerPhotoCaption,
       onDismiss: (): void => {
-        this.showPhotoViewer = false;
+        this.closePhotoViewer();
       }
     })
   }
@@ -919,6 +1166,10 @@ export struct TgChatScreenPage {
 
   private isActiveVoiceEntry(entry: ChatTimelineEntryVO): boolean {
     return this.activeVoiceMessageId === entry.message.messageId;
+  }
+
+  private isActiveAudioEntry(entry: ChatTimelineEntryVO): boolean {
+    return this.activeAudioMessageId === entry.message.messageId;
   }
 
   private resolveReplyPreviewForEntry(entry: ChatTimelineEntryVO): string {
@@ -1262,6 +1513,9 @@ export struct TgChatScreenPage {
         forceBreakAll: entry.message.forceBreakAll,
         caption: entry.message.caption,
         photoPath: entry.message.photoPath,
+        hasLocalPhoto: entry.message.hasLocalPhoto,
+        isPhotoDownloading: entry.message.isPhotoDownloading || this.isMediaDownloadPending(entry.message.photoFileId),
+        photoDownloadProgress: entry.message.photoDownloadProgress,
         photoWidth: entry.message.photoWidth,
         photoHeight: entry.message.photoHeight,
         albumPhotoPaths: entry.message.albumPhotoPaths,
@@ -1269,23 +1523,37 @@ export struct TgChatScreenPage {
         albumPhotoHeights: entry.message.albumPhotoHeights,
         videoThumbPath: entry.message.videoThumbPath,
         videoPath: entry.message.videoPath,
+        isVideoDownloading: entry.message.isVideoDownloading || this.isMediaDownloadPending(entry.message.videoFileId),
+        videoDownloadProgress: entry.message.videoDownloadProgress,
         videoDuration: entry.message.videoDuration,
         videoWidth: entry.message.videoWidth,
         videoHeight: entry.message.videoHeight,
         documentPath: entry.message.documentPath,
         documentFileId: entry.message.documentFileId,
+        isDocumentDownloading: entry.message.isDocumentDownloading ||
+          this.isMediaDownloadPending(entry.message.documentFileId),
+        documentDownloadProgress: entry.message.documentDownloadProgress,
         audioPath: entry.message.audioPath,
         audioFileId: entry.message.audioFileId,
+        isAudioDownloading: entry.message.isAudioDownloading || this.isMediaDownloadPending(entry.message.audioFileId),
+        audioDownloadProgress: entry.message.audioDownloadProgress,
+        audioDuration: entry.message.audioDuration,
+        audioTitle: entry.message.audioTitle,
+        audioPerformer: entry.message.audioPerformer,
         fileName: entry.message.fileName,
         fileSize: entry.message.fileSize,
         mimeType: entry.message.mimeType,
         voicePath: entry.message.voicePath,
         voiceFileId: entry.message.voiceFileId,
+        isVoiceDownloading: entry.message.isVoiceDownloading || this.isMediaDownloadPending(entry.message.voiceFileId),
+        voiceDownloadProgress: entry.message.voiceDownloadProgress,
         voiceDuration: entry.message.voiceDuration,
         voiceWaveform: entry.message.voiceWaveform,
         isVoiceListened: this.effectiveVoiceListened(entry),
         isVoicePlaying: this.isActiveVoiceEntry(entry) ? this.activeVoicePlaying : false,
         voicePlaybackProgress: this.isActiveVoiceEntry(entry) ? this.activeVoiceProgress : 0,
+        isAudioPlaying: this.isActiveAudioEntry(entry) ? this.activeAudioPlaying : false,
+        audioPlaybackProgress: this.isActiveAudioEntry(entry) ? this.activeAudioProgress : 0,
         stickerPath: entry.message.stickerPath,
         stickerWidth: entry.message.stickerWidth,
         stickerHeight: entry.message.stickerHeight,
@@ -1313,7 +1581,7 @@ export struct TgChatScreenPage {
           this.openPhotoViewer(entry.message.photoPath, entry.message.caption);
         },
         onAlbumPhotoTap: (photoPath: string, caption: string): void => {
-          this.openPhotoViewer(photoPath, caption);
+          this.openPhotoViewer(photoPath, caption, entry.message.albumPhotoPaths);
         },
         onVideoTap: (): void => {
           this.openVideoPlayer(
@@ -1322,6 +1590,12 @@ export struct TgChatScreenPage {
             entry.message.videoThumbPath,
             entry.message.videoFileId
           );
+        },
+        onDocumentTap: (documentPath: string, documentFileId: number, mimeType: string): void => {
+          this.handleDocumentTap(documentPath, documentFileId, mimeType);
+        },
+        onAudioTap: (audioPath: string, audioFileId: number, mimeType: string): void => {
+          this.handleAudioTap(audioPath, audioFileId, mimeType, entry.message.messageId);
         },
         onVoiceTap: (messageId: string, voicePath: string, voiceFileId: number): void => {
           this.handleVoiceTap(messageId, voicePath, voiceFileId);

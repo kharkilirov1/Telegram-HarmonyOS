@@ -10,13 +10,25 @@ export struct TgVoiceBubble {
   @Param playbackProgress: number = 0;
   @Param isListened: boolean = false;
   @Param hasLocalFile: boolean = true;
+  @Param isDownloading: boolean = false;
+  @Param downloadProgress: number = -1;
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
   @Param maxWidthRatio: number = TgUiTokens.BUBBLE_MAX_WIDTH_RATIO;
   @Param noBubbleWrap: boolean = false;
   @Event onTap: () => void = () => {};
+  @Event onPlayToggle: () => void = () => {};
+  @Event onSeek: (progress: number) => void = (_: number) => {};
 
   private normalizedProgress(): number {
     return Math.max(0, Math.min(1, this.playbackProgress));
+  }
+
+  private hasDownloadProgress(): boolean {
+    return this.downloadProgress >= 0 && this.downloadProgress < 1;
+  }
+
+  private normalizedDownloadProgress(): number {
+    return Math.max(0, Math.min(1, this.downloadProgress));
   }
 
   private bubbleColor(): ResourceColor {
@@ -28,6 +40,9 @@ export struct TgVoiceBubble {
   }
 
   private durationColor(): ResourceColor {
+    if (!this.hasLocalFile || this.isDownloading) {
+      return this.isOutgoing ? TgUiTokens.VOICE_BUBBLE_DURATION_OUTGOING : TgUiTokens.VOICE_BUBBLE_DURATION_INCOMING;
+    }
     if (!this.isListened && !this.isOutgoing) {
       return TgUiTokens.COLOR_ICON_PRIMARY;
     }
@@ -40,6 +55,17 @@ export struct TgVoiceBubble {
     const remain = seconds % 60;
     const ss = remain < 10 ? '0' + remain.toString() : remain.toString();
     return minutes.toString() + ':' + ss;
+  }
+
+  private trailingLabel(): string {
+    if (this.hasDownloadProgress()) {
+      const percent = Math.floor(this.normalizedDownloadProgress() * 100);
+      return Math.max(1, Math.min(99, percent)).toString() + '%';
+    }
+    if (this.isDownloading) {
+      return '...';
+    }
+    return this.formatDuration();
   }
 
   private buttonIconResource(): Resource {
@@ -160,6 +186,9 @@ export struct TgVoiceBubble {
   }
 
   private waveColor(index: number): ResourceColor {
+    if (!this.hasLocalFile || this.isDownloading) {
+      return TgUiTokens.VOICE_BUBBLE_WAVE_INACTIVE;
+    }
     const activeUntil = Math.floor(this.normalizedProgress() * TgUiTokens.VOICE_BUBBLE_WAVE_BARS_COUNT);
     if (index < activeUntil) {
       return this.isOutgoing ? TgUiTokens.VOICE_BUBBLE_WAVE_ACTIVE_OUTGOING : TgUiTokens.VOICE_BUBBLE_WAVE_ACTIVE;
@@ -186,11 +215,18 @@ export struct TgVoiceBubble {
   private buildInnerContent() {
     Row({ space: TgUiTokens.VOICE_BUBBLE_CONTENT_GAP }) {
       Row() {
-        TgIcon({
-          src: this.buttonIconResource(),
-          iconSize: TgUiTokens.VOICE_BUBBLE_BUTTON_ICON_SIZE,
-          tintColor: TgUiTokens.VOICE_BUBBLE_BUTTON_ICON
-        })
+        if (this.isDownloading) {
+          LoadingProgress()
+            .width(TgUiTokens.VOICE_BUBBLE_BUTTON_ICON_SIZE)
+            .height(TgUiTokens.VOICE_BUBBLE_BUTTON_ICON_SIZE)
+            .color(TgUiTokens.VOICE_BUBBLE_BUTTON_ICON)
+        } else {
+          TgIcon({
+            src: this.buttonIconResource(),
+            iconSize: TgUiTokens.VOICE_BUBBLE_BUTTON_ICON_SIZE,
+            tintColor: TgUiTokens.VOICE_BUBBLE_BUTTON_ICON
+          })
+        }
       }
       .width(TgUiTokens.VOICE_BUBBLE_BUTTON_SIZE)
       .height(TgUiTokens.VOICE_BUBBLE_BUTTON_SIZE)
@@ -198,8 +234,8 @@ export struct TgVoiceBubble {
       .alignItems(VerticalAlign.Center)
       .backgroundColor(TgUiTokens.VOICE_BUBBLE_BUTTON_BG)
       .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
-      .onClick(() => {
-        this.onTap();
+      .onClick((event: ClickEvent) => {
+        this.onPlayToggle();
       })
 
       Row() {
@@ -208,11 +244,17 @@ export struct TgVoiceBubble {
       .layoutWeight(1)
       .alignItems(VerticalAlign.Center)
       .constraintSize({ minWidth: TgUiTokens.VOICE_BUBBLE_MIN_WAVEFORM_WIDTH })
-      .onClick(() => {
-        this.onTap();
-      })
+      .onClick(() => {})
+      .gesture(
+        PanGesture({ direction: PanDirection.Horizontal })
+          .onActionUpdate((event: GestureEvent) => {
+            const width = Math.max(1, TgUiTokens.VOICE_BUBBLE_WAVE_BARS_COUNT * (TgUiTokens.VOICE_BUBBLE_WAVE_BAR_WIDTH + TgUiTokens.VOICE_BUBBLE_WAVE_BAR_GAP));
+            const progress = Math.max(0, Math.min(1, event.offsetX / width));
+            this.onSeek(progress);
+          })
+      )
 
-      Text(this.formatDuration())
+      Text(this.trailingLabel())
         .fontSize(TgUiTokens.VOICE_BUBBLE_DURATION_SIZE)
         .lineHeight(TgUiTokens.VOICE_BUBBLE_DURATION_LINE_HEIGHT)
         .fontColor(this.durationColor())

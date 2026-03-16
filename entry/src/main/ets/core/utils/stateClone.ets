@@ -8,12 +8,14 @@ import {
   ConnectionState,
   ChatsState,
   MessagesState,
+  FilesState,
   UsersState,
   Chat,
   ChatLastMessage,
   Message,
   PendingMessage,
-  User
+  User,
+  FileTransfer
 } from '../model/AppState';
 
 /**
@@ -75,6 +77,15 @@ export function cloneMessagesState(messages: MessagesState): MessagesState {
   });
   newMessages.pendingMessages = new Map<string, PendingMessage>(messages.pendingMessages);
   return newMessages;
+}
+
+/**
+ * Clone FilesState immutably
+ */
+export function cloneFilesState(files: FilesState): FilesState {
+  const newFiles = new FilesState();
+  newFiles.transfers = new Map<number, FileTransfer>(files.transfers);
+  return newFiles;
 }
 
 /**
@@ -151,6 +162,7 @@ export function cloneAppState(state: AppState): AppState {
   newState.connection = cloneConnectionState(state.connection);
   newState.chats = cloneChatsState(state.chats);
   newState.messages = cloneMessagesState(state.messages);
+  newState.files = cloneFilesState(state.files);
   newState.users = cloneUsersState(state.users);
   newState.lastEvent = state.lastEvent;
   newState.version = state.version;
@@ -169,6 +181,7 @@ export function cloneStateForAuth(state: AppState): AppState {
   newState.connection = cloneConnectionState(state.connection);
   newState.chats = state.chats;            // shared — not modified by authReducer
   newState.messages = state.messages;      // shared
+  newState.files = state.files;            // shared
   newState.users = state.users;            // shared
   newState.lastEvent = state.lastEvent;
   newState.version = state.version;
@@ -184,6 +197,7 @@ export function cloneStateForChats(state: AppState): AppState {
   newState.connection = state.connection;  // shared
   newState.chats = cloneChatsState(state.chats);
   newState.messages = state.messages;      // shared
+  newState.files = state.files;            // shared
   newState.users = state.users;            // shared
   newState.lastEvent = state.lastEvent;
   newState.version = state.version;
@@ -199,6 +213,23 @@ export function cloneStateForMessages(state: AppState): AppState {
   newState.connection = state.connection;  // shared
   newState.chats = state.chats;             // shared
   newState.messages = cloneMessagesState(state.messages);
+  newState.files = state.files;            // shared
+  newState.users = state.users;            // shared
+  newState.lastEvent = state.lastEvent;
+  newState.version = state.version;
+  return newState;
+}
+
+/**
+ * Clone state for filesReducer - only files slice is modified
+ */
+export function cloneStateForFiles(state: AppState): AppState {
+  const newState = new AppState();
+  newState.auth = state.auth;              // shared
+  newState.connection = state.connection;  // shared
+  newState.chats = state.chats;            // shared
+  newState.messages = state.messages;      // shared
+  newState.files = cloneFilesState(state.files);
   newState.users = state.users;            // shared
   newState.lastEvent = state.lastEvent;
   newState.version = state.version;
@@ -214,6 +245,7 @@ export function cloneStateForUsers(state: AppState): AppState {
   newState.connection = state.connection;  // shared
   newState.chats = state.chats;             // shared
   newState.messages = state.messages;      // shared
+  newState.files = state.files;            // shared
   newState.users = cloneUsersState(state.users);
   newState.lastEvent = state.lastEvent;
   newState.version = state.version;

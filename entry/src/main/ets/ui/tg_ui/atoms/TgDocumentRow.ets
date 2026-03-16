@@ -9,10 +9,12 @@ export struct TgDocumentRow {
   @Param isOutgoing: boolean = false;
   @Param documentPath: string = ''; // file:// URI when downloaded
   @Param downloadProgress: number = -1; // -1: hidden, 0..1: visible
+  @Param isDownloading: boolean = false;
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
   @Param maxWidthRatio: number = TgUiTokens.BUBBLE_MAX_WIDTH_RATIO;
   @Param noBubbleWrap: boolean = false;
   @Event onTap: () => void = () => {};
+  @Event onDownloadToggle: () => void = () => {};
 
   private safeFileName(): string {
     const trimmed = this.fileName.trim();
@@ -111,7 +113,7 @@ export struct TgDocumentRow {
   }
 
   private shouldShowExtensionBadge(): boolean {
-    return !this.hasProgress() && this.extensionBadgeText().trim().length > 0;
+    return !this.hasProgress() && !this.isDownloading && this.extensionBadgeText().trim().length > 0;
   }
 
   private metaLine(): string {
@@ -121,6 +123,12 @@ export struct TgDocumentRow {
         return this.progressPercentLabel() + ' • ' + sizeLabel;
       }
       return this.progressPercentLabel();
+    }
+    if (this.isDownloading) {
+      if (sizeLabel.length > 0) {
+        return 'Downloading • ' + sizeLabel;
+      }
+      return 'Downloading';
     }
     const mime = this.mimeLabel();
     if (sizeLabel.length > 0) {
@@ -133,14 +141,84 @@ export struct TgDocumentRow {
     return this.documentPath.length > 0;
   }
 
+  private isImageOrPdf(): boolean {
+    const mime = this.mimeType.toLowerCase();
+    return mime.startsWith('image/') || mime === 'application/pdf';
+  }
+
   private leadingIconResource(): Resource {
-    if (this.hasProgress()) {
-      return TgUiTokens.ICON_RES_DOWNLOAD;
-    }
     if (this.isDownloaded()) {
       return TgUiTokens.ICON_RES_DOCUMENT;
     }
     return TgUiTokens.ICON_RES_DOWNLOAD;
+  }
+
+  @Builder
+  private buildActionChip() {
+    if (!this.hasProgress() && !this.isDownloading) {
+      Row() {
+        TgIcon({
+          src: this.leadingIconResource(),
+          iconSize: TgUiTokens.DOCUMENT_ROW_ACTION_ICON_SIZE,
+          tintColor: TgUiTokens.DOCUMENT_ROW_ACTION_ICON
+        })
+      }
+      .width(TgUiTokens.DOCUMENT_ROW_ACTION_SIZE)
+      .height(TgUiTokens.DOCUMENT_ROW_ACTION_SIZE)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(VerticalAlign.Center)
+      .backgroundColor(TgUiTokens.DOCUMENT_ROW_ACTION_BG)
+      .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
+      .margin({
+        right: TgUiTokens.DOCUMENT_ROW_ACTION_OFFSET,
+        bottom: TgUiTokens.DOCUMENT_ROW_ACTION_OFFSET
+      })
+      .onClick((event: ClickEvent) => {
+        this.onDownloadToggle();
+      })
+    }
+  }
+
+  @Builder
+  private buildTilePrimaryFace() {
+    if (this.hasProgress()) {
+      Stack({ alignContent: Alignment.Center }) {
+        Progress({
+          value: this.normalizedProgress() * 100,
+          total: 100,
+          type: ProgressType.Ring
+        })
+          .width(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
+          .height(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
+          .color(TgUiTokens.DOCUMENT_ROW_ICON_TINT)
+          .style({ strokeWidth: TgUiTokens.DOCUMENT_ROW_PROGRESS_RING_STROKE })
+
+        Text(this.progressPercentLabel())
+          .fontSize(TgUiTokens.FONT_META_SIZE)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(TgUiTokens.DOCUMENT_ROW_ICON_TINT)
+          .maxLines(1)
+      }
+    } else if (this.isDownloading) {
+      LoadingProgress()
+        .width(TgUiTokens.DOCUMENT_ROW_ICON_SIZE)
+        .height(TgUiTokens.DOCUMENT_ROW_ICON_SIZE)
+        .color(TgUiTokens.DOCUMENT_ROW_ICON_TINT)
+    } else if (this.shouldShowExtensionBadge()) {
+      Text(this.extensionBadgeText())
+        .fontSize(TgUiTokens.DOCUMENT_ROW_EXTENSION_SIZE)
+        .lineHeight(TgUiTokens.DOCUMENT_ROW_EXTENSION_LINE_HEIGHT)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(TgUiTokens.DOCUMENT_ROW_ICON_TINT)
+        .maxLines(1)
+        .textAlign(TextAlign.Center)
+    } else {
+      TgIcon({
+        src: this.leadingIconResource(),
+        iconSize: TgUiTokens.DOCUMENT_ROW_ICON_SIZE,
+        tintColor: TgUiTokens.DOCUMENT_ROW_ICON_TINT
+      })
+    }
   }
 
   @Builder
@@ -166,29 +244,27 @@ export struct TgDocumentRow {
 
   @Builder
   private buildLeadingTile() {
-    Row() {
-      if (this.shouldShowExtensionBadge()) {
-        Text(this.extensionBadgeText())
-          .fontSize(TgUiTokens.DOCUMENT_ROW_EXTENSION_SIZE)
-          .lineHeight(TgUiTokens.DOCUMENT_ROW_EXTENSION_LINE_HEIGHT)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(this.titleColor())
-          .maxLines(1)
-          .textAlign(TextAlign.Center)
-      } else {
-        TgIcon({
-          src: this.leadingIconResource(),
-          iconSize: TgUiTokens.DOCUMENT_ROW_ICON_SIZE,
-          tintColor: TgUiTokens.DOCUMENT_ROW_ICON_TINT
-        })
+    Stack({ alignContent: Alignment.BottomEnd }) {
+      Row() {
+        this.buildTilePrimaryFace()
       }
+      .width(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
+      .height(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(VerticalAlign.Center)
+      .backgroundColor(TgUiTokens.DOCUMENT_ROW_ICON_BG)
+      .borderRadius(TgUiTokens.DOCUMENT_ROW_ICON_RADIUS)
+      .clip(true)
+      .onClick((event: ClickEvent) => {
+        if (!this.isDownloaded() || this.hasProgress() || this.isDownloading) {
+          this.onDownloadToggle();
+        }
+      })
+
+      this.buildActionChip()
     }
     .width(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
     .height(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
-    .justifyContent(FlexAlign.Center)
-    .alignItems(VerticalAlign.Center)
-    .backgroundColor(TgUiTokens.DOCUMENT_ROW_ICON_BG)
-    .borderRadius(TgUiTokens.DOCUMENT_ROW_ICON_RADIUS)
   }
 
   @Builder

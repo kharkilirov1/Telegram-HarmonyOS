@@ -1,11 +1,11 @@
 # STATUS — Telegram-HarmonyOS
 
-Snapshot date: 2026-03-15
+Snapshot date: 2026-03-16
 
 ## Current snapshot
 - **Branch:** `dev`
-- **Repo state:** working tree is **not clean**
-- **Observed changes:** `47+` tracked modifications + `68+` untracked entries
+- **Repo state:** working tree is **not clean** (active media transfer + reference-driven audio/file/videoNote bubble rewrite patch pending commit)
+- **Observed changes:** tighter on-demand download policy, store-backed transfer indicators, router fallback for `document + audio/*`, reference-driven art-tile + seek-bar rewrite for audio bubbles, iOS-style radial progress + transparent overlay for video note circles, unified MediaPlaybackController for voice+audio inline playback with auto-advance, voice/GIF/videoNote auto-download, critical shouldReactToStoreChange fix for download progress visibility
 - **Primary app target:** HarmonyOS NEXT / API 22+
 - **Local reference root:** `C:\Users\Kharki\Desktop\Telegram-HarmonyOS\рефенсы`
 
@@ -20,10 +20,10 @@ Snapshot date: 2026-03-15
 - Calls tab now has a **local real TDLib-backed data path** via `searchCallMessages`, but this Phase 4 pass is still **not device-runtime-verified**
 
 ## Current tg_ui inventory
-- **25 atoms** (3 removed: TgSearchBar, TgSettingsSection, TgContactRow → replaced with stock ArkUI)
+- **27 atoms** (3 removed: TgSearchBar, TgSettingsSection, TgContactRow → replaced with stock ArkUI)
 - **2 molecules**
-- **32 demos** (orphaned demos for removed atoms still present)
-- **35 spec files** (orphaned specs for removed atoms still present)
+- **34 demos** (orphaned demos for removed atoms still present)
+- **37 spec files** (orphaned specs for removed atoms still present)
 
 ## Current active UI path
 - Shell/chat runtime currently routes through:
@@ -152,6 +152,53 @@ Snapshot date: 2026-03-15
 - **HarmonyOS grounding:** ArkUI docs note that `lineBreakStrategy` affects line wrapping when `wordBreak` is not `BREAK_ALL`; this pass keeps `BREAK_ALL` only for forced long-token cases and upgrades normal text/caption wrapping quality instead of switching to a harsher break mode.
 - **Local verification:** `./scripts/smoke-build.ps1` ✅ (`BUILD SUCCESSFUL`)
 - **Still needs device verification:** broadcast/channel posts, long mixed-language text bubbles, and media captions to confirm bubbles expand more like iOS and stop wrapping early due to the previously hidden avatar lane.
+
+## Recent changes (2026-03-15, session 18)
+
+### Dedicated instant-video bubble for `videoNote`
+- **`videoNote` no longer reuses the rectangular video bubble path:** `TgMessageRouter` now routes `videoNote` through a dedicated `TgInstantVideoBubble` atom and a separate router branch without the generic rectangular media-shell background.
+- **New atom:** `entry/src/main/ets/ui/tg_ui/atoms/TgInstantVideoBubble.ets` renders a circular media surface with a centered play affordance, thumbnail-first preview fallback, and an in-circle duration badge.
+- **iOS-like sizing contract:** `TgUiTokens` now exposes dedicated instant-video tokens plus `resolveInstantVideoBubbleSize(...)` with compact/regular targets `212 / 240` and a safe minimum clamp.
+- **Spec + demo added:** `entry/src/main/ets/ui/tg_ui/spec/TgInstantVideoBubble.md` and `entry/src/main/ets/ui/tg_ui/demos/TgInstantVideoBubbleDemo.ets`.
+- **HarmonyOS grounding:** the new atom uses rounded/circular clipping with `.clip(true)` in line with ArkUI clipping guidance, avoiding the old bleed/rectangular-corner artifact path.
+- **Why this pass matters:** device feedback said special videos still looked unlike iOS even when previews/layout were otherwise correct; the old router kept wrapping `videoNote` inside the rectangular visual-media shell.
+- **Local verification:** `powershell -ExecutionPolicy Bypass -File scripts/smoke-build.ps1` ✅ (`BUILD SUCCESSFUL`)
+- **Still needs device verification:** round `videoNote` bubble shape, preview visibility before full download, tap-to-open after pending download, and sender/reply/caption compositions for instant-video rows.
+
+## Recent changes (2026-03-15, session 19)
+
+### Album photo viewer now supports gallery paging
+- **Album taps now open a gallery instead of a single detached photo:** `TgChatScreenPage.openPhotoViewer(...)` now accepts the whole album path list, normalizes out empty placeholder cells, stores the selected index, and passes gallery state into the fullscreen photo viewer overlay.
+- **`TgPhotoViewerPage` now has a gallery mode:** it accepts `photoPaths` + `initialIndex` and uses ArkUI `Swiper` with `index(...)`, `onChange(...)`, `indicator(false)`, and `loop(false)` to page horizontally between album photos.
+- **Single-photo path is preserved:** when there is only one photo, the old pinch-to-zoom + pan + vertical-drag-dismiss path still runs unchanged.
+- **Viewer chrome for galleries:** the fullscreen overlay now shows an in-view counter (`current / total`) for albums while keeping the existing close button / caption shell.
+- **Why this pass matters:** grouped album bubbles already existed, but tapping them still opened only one image with no way to move across the rest of the album, which was the main remaining gap after grouped-photo support landed.
+- **HarmonyOS grounding:** this patch uses ArkUI `Swiper`'s `index` + `onChange` contract for deterministic horizontal page switching in fullscreen media UI.
+- **Local verification:** `powershell -ExecutionPolicy Bypass -File scripts/smoke-build.ps1` ✅ (`BUILD SUCCESSFUL`)
+- **Still needs device verification:** horizontal paging across 2/3/4/5+ albums, correct initial page when tapping any album cell, behavior with partially downloaded albums (empty cells filtered out), and single-photo zoom/dismiss path after the gallery refactor.
+
+## Recent changes (2026-03-15, session 20)
+
+### Dedicated audio/music bubble path
+- **`audio` no longer reuses the generic document bubble:** `TgMessageRouter` now routes `audio` through a dedicated `TgAudioBubble` atom instead of `TgDocumentRow`.
+- **New atom/spec/demo:** added `entry/src/main/ets/ui/tg_ui/atoms/TgAudioBubble.ets`, `entry/src/main/ets/ui/tg_ui/spec/TgAudioBubble.md`, and `entry/src/main/ets/ui/tg_ui/demos/TgAudioBubbleDemo.ets`.
+- **VO/runtime plumbing:** `ChatTimelineVO` now carries `audioDuration`, `audioTitle`, and `audioPerformer`; `ChatTimelineDataSource` diffs them; `TgChatScreenPage` forwards them into the router.
+- **Tap contract improved:** if the audio file is not local yet, tap still triggers `downloadFile`; if it is already local, `TgChatScreenPage` now opens it via Ability Kit `startAbility` with `ohos.want.action.viewData` using the existing `file://...` URI plus MIME type.
+- **Visual contract:** audio bubbles now use a round play/download affordance plus title/performer-meta rhythm instead of a document extension tile, which is closer to Telegram music bubbles than the old file fallback.
+- **HarmonyOS grounding:** this pass uses the documented `startAbility({ action: 'ohos.want.action.viewData', uri, type, flags })` pattern for opening local files in another app and keeps media URIs in the `file://bundle/path` form required by that API.
+- **Local verification:** `powershell -ExecutionPolicy Bypass -File scripts/smoke-build.ps1` ✅ (`BUILD SUCCESSFUL`)
+- **Still needs device verification:** downloaded music files should open correctly from the chat bubble, undownloaded ones should trigger download only, and long track/performer strings should ellipsize cleanly without regressing bubble width.
+
+## Recent changes (2026-03-16, session 21)
+
+### Reference-driven audio/file bubble rewrite
+- **Refs rechecked before changing the atoms:** Telegram iOS `ChatMessageInteractiveFileNode.swift` and Android `AudioPlayerCell.java` / `SharedDocumentCell.java` all point to the same visual rule: file/audio bubbles are organized around a **dominant primary control area**, not around a subtle chip attached to a mostly flat tile.
+- **Why the previous pass was not enough:** emulator feedback said audio/file bubbles still looked unchanged, which matched the refs — the earlier square-tile + small-chip pass was too soft to materially change the perceived hierarchy.
+- **`TgAudioBubble` rewritten to a control-first composition:** the leading affordance is now a prominent `44vp` primary control with ring-progress / spinner / play-download states, while the text stack is `title (up to 2 lines) -> performer/fallback -> duration/size/status`.
+- **`TgDocumentRow` rewritten around a stronger leading tile:** the file tile is now `48vp`, uses an in-tile ring progress / spinner / extension face, and keeps the secondary action chip visually separate from the identity tile so document rows scan faster.
+- **Integration safeguard:** `TgMessageRouter` already routes `document` payloads with `mimeType = audio/*` through `TgAudioBubble`, so the rewrite is visible even for real-world audio files that do not arrive as TDLib `messageAudio`.
+- **Local verification:** `powershell -ExecutionPolicy Bypass -File scripts/smoke-build.ps1` ✅ (`BUILD SUCCESSFUL`)
+- **Still needs device verification:** real `audio/*` documents, real file rows under download progress, and the optical strength of the new primary-control hierarchy in incoming/outgoing chat bubbles.
 
 ## Recent changes (2026-03-15, session 17)
 
@@ -565,3 +612,48 @@ Snapshot date: 2026-03-15
 6. `TASKS/TODO.md`
 7. `TASKS/LESSONS.md`
 8. Deep docs under `docs/ai/`
+
+## Recent changes (2026-03-16, session 22)
+
+### Media transfer state foundation + visible download indicators
+- **Unified file transfer state added to AppState:** `AppState.files.transfers` now keeps `fileId -> transfer` metadata (`active/completed/path/size/progress-related fields`) instead of relying only on a page-local pending set.
+- **`updateFile` now feeds UI transfer state:** `FileNormalizer` emits a new `fileTransferUpdated` event on every TDLib `updateFile`, and `filesReducer` stores that transfer state while still applying `fileDownloaded` local paths into users/chats/messages.
+- **Photo bubbles now finally expose transfer UX:** `TgPhotoBubble` gained explicit `hasLocalPhoto + isDownloading + downloadProgress`, so photo thumbs/full-photo auto-download can show a visible overlay instead of silently loading in the background.
+- **Video / instant-video overlays upgraded:** `TgVideoBubble` and `TgInstantVideoBubble` now show progress-aware download overlays (spinner + percent when available) instead of a boolean-only pending state.
+- **Document/audio/voice now consume real progress:** `TgDocumentRow` now uses live reducer-fed `downloadProgress`, `TgAudioBubble` shows download meta/progress bar, and `TgVoiceBubble` reflects transfer progress in its trailing label while downloading.
+- **Timeline/runtime wiring completed:** `ChatTimelineVO`, `ChatTimelineDataSource`, `TgMessageRouter`, and `TgChatScreenPage` now propagate transfer state/progress from store to bubbles, while still preserving the page-owned dedupe latch for instant on-tap pending feedback.
+- **Reducer safety fix:** `filesReducer.cloneMessageWithContent(...)` now preserves `mediaAlbumId` when file paths are patched into message content.
+- **Local verification:** `powershell -ExecutionPolicy Bypass -File scripts/smoke-build.ps1` ✅ (`BUILD SUCCESSFUL`)
+- **Still needs emulator/device verification:** photo auto-download overlay visibility, video/animation/videoNote percent overlays, document/audio/voice progress behavior, and follow-up visual polish pass for audio/file bubble aesthetics.
+
+## Recent changes (2026-03-16, session 23)
+
+### Audio/file bubble visual polish pass
+- **`TgAudioBubble` no longer reads like a document row:** the leading affordance is now a square media tile with a small play/download overlay chip in idle states, while active downloads reuse the tile center for spinner/percent feedback.
+- **Audio hierarchy is clearer:** music bubbles now render `title` → `performer/fallback` → smaller duration/size/status line, which better matches the dedicated Telegram music-message family.
+- **`TgDocumentRow` leading cluster is richer:** idle file bubbles keep the extension label in the main tile but now add a small action chip for open/download affordance, making the file state easier to parse at a glance.
+- **Reference grounding:** this pass was based on the Telegram iOS interactive file/music node pattern where the leading media/file control is a composed cluster, not a flat single icon block.
+- **HarmonyOS grounding:** the pass stays within ArkUI `Stack` + `Row/Column` composition and the existing `Progress`/loading control model already verified in this repo.
+- **Local verification:** `powershell -ExecutionPolicy Bypass -File scripts/smoke-build.ps1` ✅ (`BUILD SUCCESSFUL`)
+- **Still needs emulator/device verification:** whether the new audio tile / file action-chip composition feels sufficiently close to Telegram on real message histories, and whether any remaining drift is now limited to token tuning rather than missing state/structure.
+
+## Recent changes (2026-03-16, session 24)
+
+### Integration fix for audio-like documents + stronger visual contrast
+- **Likely runtime cause of “nothing changed” identified:** real chats can contain audio payloads that still travel through the `document` content path with `mimeType = audio/*`, so they were bypassing the dedicated `audio` router branch entirely.
+- **Router fallback added:** `TgMessageRouter` now routes `contentType = 'document'` + `mimeType.startsWith('audio/')` through `TgAudioBubble` while preserving the existing document open/download tap contract.
+- **Visual contrast strengthened:** audio tile icon tint and action-chip sizes were increased, and document extension labels now use the stronger icon tint so the leading cluster reads more clearly at a glance.
+- **Local verification:** `powershell -ExecutionPolicy Bypass -File scripts/smoke-build.ps1` ✅ (`BUILD SUCCESSFUL`)
+- **Still needs emulator/device verification:** whether the user-visible audio cases were indeed document-backed audio payloads and whether this router fallback now makes the visual delta finally obvious in real chats.
+
+## Recent changes (2026-03-15, session 21)
+
+### Media download policy tightened + pending-state UI parity pass
+- **Broad auto-download was intentionally reduced:** `DownloadMessageMediaUseCase` now limits background fetches to `photoThumb`, full `photo`, `videoThumb`, and `sticker`. Voice notes, GIF/animation files, and video notes now stay on-demand instead of being fetched in the background.
+- **On-demand spam guard added:** `TgChatScreenPage.requestMediaDownload(...)` now deduplicates repeated taps with a page-owned pending-file set, directly addressing the 2026-03-16 `[31799]` HiLog pattern where one file ID could trigger many repeated `downloadFile` requests before the local path appeared.
+- **Pending download UI is now explicit in chat bubbles:** document/audio/voice/video/instant-video atoms now render an indeterminate loading control while a file is pending, and video/instant-video bubbles fall back to a centered download affordance when only the preview/thumbnail is local.
+- **Document rows now behave like real files:** downloaded document bubbles now open through Ability Kit `viewData`, instead of staying as download-only rows after the file becomes local.
+- **Reference grounding:** this pass follows the Telegram iOS interactive media/file pattern where fetch/playback is surfaced through a prominent radial control, not a silent background transfer.
+- **HarmonyOS grounding:** file opening remains on Ability Kit `startAbility` with `action = 'ohos.want.action.viewData'`, `uri`, `type`, and URI permission flags.
+- **Local verification:** `powershell -ExecutionPolicy Bypass -File scripts/smoke-build.ps1` ✅ (`BUILD SUCCESSFUL`)
+- **Still needs device verification:** no-repeat `downloadFile` logging for repeated taps, spinner/download states for voice/audio/document/video/videoNote bubbles, document open after download, and the reduced background-download footprint in voice/GIF/videoNote-heavy chats.

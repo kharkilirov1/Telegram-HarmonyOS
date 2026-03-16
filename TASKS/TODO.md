@@ -1,6 +1,6 @@
 # TODO — observed current work
 
-Last updated: 2026-03-15
+Last updated: 2026-03-16
 
 This is a **working snapshot**, not a product roadmap. It is derived from:
 - current git status on branch `dev`
@@ -11,6 +11,35 @@ Canonical execution order for agents now lives in:
 - `TASKS/AGENT_EXECUTION_PLAN.md`
 
 ## Active now
+
+### 0z. Device-verify full media playback + download pipeline (2026-03-16, session 8)
+- **Evidence (visual):** `TgAudioBubble` — 44vp round circle (radius 22, iOS parity) with gradient `#51b4ff→#2b88d4`, download arrow on idle, play/pause/ring-progress on states, 4vp seek bar below performer. `TgInstantVideoBubble` — radial `Progress(Ring)` around circle, semi-transparent overlays. Voice button 40vp, waveform range 3-20vp.
+- **Evidence (behavioral):** Critical `shouldReactToStoreChange` fix — `files.transfers` now triggers timeline rebuild → all download progress indicators visible. Unified `MediaPlaybackController` (voice+audio inline playback, auto-advance). Voice/GIF/VideoNote auto-download. `pendingFileIds` cleanup fix in downloadMessageMedia. FileNormalizer guard fix.
+- **IMPORTANT:** Use **Clean Build** (Build → Clean Project → Build) to avoid DevEco cache.
+- **Current action:** verify on emulator/device (CLEAN BUILD):
+  1. audio bubbles show gradient circle with download arrow (idle) → play (downloaded) → pause (playing),
+  2. tapping audio plays inline (NOT opens external app),
+  3. audio seek bar fills during playback,
+  4. after one audio finishes, next audio auto-plays,
+  5. download progress ring visible on art tile during audio/document download,
+  6. voice messages auto-download on chat open (no manual tap needed),
+  7. voice tap toggles play/pause with waveform color fill,
+  8. after voice finishes, next voice auto-plays,
+  9. video note circles show radial ring progress during download,
+  10. video note / GIF / animation auto-download,
+  11. document download shows progress bar,
+  12. photo download shows progress overlay on bubble,
+  9. all demo states render correctly in TgAudioBubbleDemo and TgInstantVideoBubbleDemo.
+
+### 0y. Device-verify new media transfer indicators + identify next audio/file visual pass (2026-03-16)
+- **Evidence:** store-level transfer state now exists (`AppState.files.transfers` + `fileTransferUpdated`), and transfer/progress props are wired through `ChatTimelineVO` → `TgMessageRouter` into `TgPhotoBubble`, `TgVideoBubble`, `TgInstantVideoBubble`, `TgDocumentRow`, `TgAudioBubble`, and `TgVoiceBubble`.
+- **Current action:** verify on emulator/device:
+  1. single photo bubbles show a visible transfer overlay while the full photo is still downloading,
+  2. video / GIF / instant-video bubbles show download spinner/percent instead of silently changing state,
+  3. document rows now display real progress bar/percent instead of a static download affordance only,
+  4. audio bubbles show download meta/progress and no longer look inert while waiting,
+  5. voice bubbles expose download progress in the trailing label before playback is possible,
+  6. re-evaluate after the new visual pass whether any remaining media drift is now concentrated in token tuning only.
 
 ### 0r. Device-verify bubble improvements: GIF, reply quotes, meta overlay, avatars (2026-03-14)
 - **Evidence:** TgMessageRouter rewritten with avatar support, media sizing fix, tighter inline meta, media overlay tokens, regular-width bubble helper, and avatar-lane fallback logic. Rounded media/avatar/reply images now use `.clip(true)`. TgPhotoViewerPage + TgVideoPlayerPage added. Bubble colors aligned to iOS. overlayMode wired in TgMessageMeta.
@@ -205,6 +234,33 @@ Canonical execution order for agents now lives in:
   2. preview/body balance looks closer to Telegram iOS,
   3. nothing else in the app regressed because the old global token is no longer driving chat rows.
 
+### 0j. Device-verify `videoNote` / instant-video parity
+- **Evidence:** special videos still looked unlike Telegram iOS because `videoNote` was routed through the generic rectangular `TgVideoBubble` shell even after preview/open-flow fixes.
+- **What changed locally:** added `entry/src/main/ets/ui/tg_ui/atoms/TgInstantVideoBubble.ets`, `entry/src/main/ets/ui/tg_ui/spec/TgInstantVideoBubble.md`, `entry/src/main/ets/ui/tg_ui/demos/TgInstantVideoBubbleDemo.ets`, plus a dedicated `videoNote` branch in `TgMessageRouter` with iOS-like compact/regular size targets (`212 / 240`) and circular `.clip(true)` media rendering.
+- **Current action:** device-check special-video rows and confirm:
+  1. `videoNote` bubbles are circular instead of rectangular,
+  2. preview thumbnails appear before the full file is local,
+  3. one tap still opens the viewer after the pending-download path completes,
+  4. sender name / reply snippet / caption cases do not reintroduce a hidden rectangular shell.
+
+### 0k. Device-verify album gallery viewer paging
+- **Evidence:** grouped-photo bubbles already merged correctly, but fullscreen open still showed only one photo and had no way to move through the rest of the album.
+- **What changed locally:** `TgChatScreenPage` now passes normalized album path arrays + selected index into `TgPhotoViewerPage`, and `TgPhotoViewerPage` now uses ArkUI `Swiper` for multi-photo fullscreen paging while preserving the old zoom/dismiss path for single-photo viewers.
+- **Current action:** device-check album viewer behavior and confirm:
+  1. tapping any album cell opens the correct initial photo,
+  2. horizontal swipe moves through the whole album,
+  3. empty placeholder cells from partial downloads are skipped instead of creating blank viewer pages,
+  4. single-photo viewer still pinch-zooms and drag-dismisses as before.
+
+### 0l. Device-verify dedicated audio/music bubble path
+- **Evidence:** music/audio messages were still routed through `TgDocumentRow`, so even downloaded tracks looked like generic files instead of Telegram music bubbles.
+- **What changed locally:** added `TgAudioBubble` + spec/demo, extended chat VO/router with `audioDuration/audioTitle/audioPerformer`, and wired page-owned tap handling so local audio opens through Ability Kit `viewData` while missing audio still triggers download.
+- **Current action:** device-check music/audio bubbles and confirm:
+  1. `audio` messages no longer look like document rows,
+  2. long title/performer pairs ellipsize cleanly,
+  3. tap on undownloaded audio starts download,
+  4. tap on downloaded audio opens the local file correctly.
+
 ### 0c. Device-verify corrected iOS-style tab bar capsule
 - **Evidence:** same-day re-check of current Telegram iOS refs showed that the active tab shell is still a centered glass capsule (`TabBarComponent` / `GlassBackgroundContainerView`), so the brief full-width shelf rewrite was wrong.
 - **What changed locally:** `entry/src/main/ets/ui/tg_ui/atoms/TgTabBar.ets` was corrected back toward a centered capsule model; dead atom-local bottom-inset bookkeeping was removed so the page remains the only owner of bottom safe-area math; `entry/src/main/ets/ui/pages/MainTabsPage.ets` again positions it above the bottom safe area; `entry/src/main/ets/ui/utils/SafeAreaUtils.ets` again reserves capsule height + safe area + breathing gap.
@@ -372,3 +428,11 @@ Priority order is by **visual/functional impact**, not by architectural purity.
 ## External blockers / prerequisites
 - TDLib prebuilts under `entry/src/main/cpp/third_party/tdlib`
 - local credentials in `entry/src/main/ets/services/ConfigLocal.ets`
+
+### 0m. Device-verify tightened media download policy + pending bubble states
+- Verify the 2026-03-15 session 21 patch on a real device/emulator:
+  - repeated taps on the same video/file no longer spam repeated `downloadFile` HiLog entries
+  - voice/audio/document bubbles show download → spinner → open/play transitions
+  - video / GIF / instant-video previews show a download affordance before the file is local and a spinner while pending
+  - downloaded documents open via Ability Kit `viewData`
+  - background auto-download noise is reduced by keeping voice/GIF/videoNote on-demand while preserving photo/thumb preview behavior

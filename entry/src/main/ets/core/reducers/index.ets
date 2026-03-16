@@ -41,8 +41,8 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
     return usersReducer(state, action);
   }
 
-  // Files (avatar downloads)
-  if (action.type === 'fileDownloaded') {
+  // Files / media transfer state
+  if (action.type === 'fileDownloaded' || action.type === 'fileTransferUpdated') {
     return filesReducer(state, action);
   }
 

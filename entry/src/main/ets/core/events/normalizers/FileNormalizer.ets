@@ -1,7 +1,7 @@
 // FileNormalizer — handles file-related TDLib updates (updateFile)
 // Converts updateFile into FileDownloadedEvent when download completes
 
-import { AnyAppEvent, FileDownloadedEvent } from '../../model/AppEvent';
+import { AnyAppEvent, FileDownloadedEvent, FileTransferUpdatedEvent } from '../../model/AppEvent';
 import { TdObject } from '../../../models/TdTypes';
 import { tdGetString, tdGetBoolean, tdGetObject } from '../../utils/tdAccessors';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -13,14 +13,39 @@ function handleUpdateFile(events: AnyAppEvent[], update: TdObject): void {
   const file = tdGetObject(update, 'file');
   // Use getTopLevelNumber to avoid nested remote.id (string) shadowing numeric file id
   const fileId = file.getTopLevelNumber('id');
-  if (!fileId) return;
+  if (fileId <= 0) return;
 
   const local = tdGetObject(file, 'local');
+  const size = file.getTopLevelNumber('size');
+  const expectedSize = file.getTopLevelNumber('expected_size');
   const isComplete = tdGetBoolean(local, 'is_downloading_completed');
+  const isDownloadingActive = tdGetBoolean(local, 'is_downloading_active');
   const localPath = tdGetString(local, 'path');
+  const downloadOffset = local.getTopLevelNumber('download_offset');
+  const downloadedPrefixSize = local.getTopLevelNumber('downloaded_prefix_size');
+  const downloadedSize = local.getTopLevelNumber('downloaded_size');
 
-  hilog.info(DOMAIN, TAG, 'updateFile fileId=%{public}d complete=%{public}s path=%{public}s',
-    fileId, isComplete ? 'true' : 'false', localPath.length > 0 ? localPath : '(empty)');
+  const transferEvent = new FileTransferUpdatedEvent();
+  transferEvent.fileId = fileId;
+  transferEvent.localPath = localPath;
+  transferEvent.isComplete = isComplete;
+  transferEvent.isDownloadingActive = isDownloadingActive;
+  transferEvent.size = size;
+  transferEvent.expectedSize = expectedSize;
+  transferEvent.downloadOffset = downloadOffset;
+  transferEvent.downloadedPrefixSize = downloadedPrefixSize;
+  transferEvent.downloadedSize = downloadedSize;
+  transferEvent.timestamp = Date.now();
+  events.push(transferEvent);
+
+  hilog.info(DOMAIN, TAG,
+    'updateFile fileId=%{public}d active=%{public}s complete=%{public}s progress=%{public}d/%{public}d path=%{public}s',
+    fileId,
+    isDownloadingActive ? 'true' : 'false',
+    isComplete ? 'true' : 'false',
+    downloadOffset + downloadedPrefixSize,
+    Math.max(size, expectedSize),
+    localPath.length > 0 ? localPath : '(empty)');
 
   if (isComplete && localPath.length > 0) {
     const event = new FileDownloadedEvent();

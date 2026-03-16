@@ -196,6 +196,19 @@ export class FileDownloadedEvent extends AppEvent {
   isComplete: boolean = false;
 }
 
+export class FileTransferUpdatedEvent extends AppEvent {
+  type: string = 'fileTransferUpdated';
+  fileId: number = 0;
+  localPath: string = '';
+  isComplete: boolean = false;
+  isDownloadingActive: boolean = false;
+  size: number = 0;
+  expectedSize: number = 0;
+  downloadOffset: number = 0;
+  downloadedPrefixSize: number = 0;
+  downloadedSize: number = 0;
+}
+
 // --- Unified type for all events ---
 
 export type AnyAppEvent =
@@ -218,6 +231,7 @@ export type AnyAppEvent =
   | ChatActionEvent
   | UserFullInfoEvent
   | ChatFullInfoEvent
+  | FileTransferUpdatedEvent
   | FileDownloadedEvent;
 
 // --- Factory helpers ---

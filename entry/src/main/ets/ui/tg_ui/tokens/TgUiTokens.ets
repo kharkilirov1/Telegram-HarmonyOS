@@ -65,6 +65,11 @@ export class TgUiTokens {
   static readonly DOCUMENT_ROW_META_OUTGOING: Resource = $r('app.color.text_secondary');
   static readonly DOCUMENT_ROW_PROGRESS_BG: Resource = $r('app.color.separator');
   static readonly DOCUMENT_ROW_PROGRESS_FILL: Resource = $r('app.color.telegram_blue');
+  static readonly DOCUMENT_ROW_ACTION_BG: Resource = $r('app.color.telegram_blue');
+  static readonly DOCUMENT_ROW_ACTION_ICON: Resource = $r('app.color.unread_text');
+  static readonly AUDIO_BUBBLE_SEEK_BG: Resource = $r('app.color.separator');
+  static readonly AUDIO_BUBBLE_SEEK_FILL: Resource = $r('app.color.telegram_blue');
+  static readonly AUDIO_BUBBLE_ART_ICON: Resource = $r('app.color.unread_text');
   static readonly VOICE_BUBBLE_BUTTON_BG: Resource = $r('app.color.telegram_blue');
   static readonly VOICE_BUBBLE_BUTTON_ICON: Resource = $r('app.color.unread_text');
   static readonly VOICE_BUBBLE_WAVE_ACTIVE: Resource = $r('app.color.telegram_blue');
@@ -287,19 +292,61 @@ export class TgUiTokens {
   static readonly VIDEO_BUBBLE_CAPTION_LINE_HEIGHT: number = 21;
   static readonly VIDEO_BUBBLE_CAPTION_MAX_LINES: number = 6;
 
+  // ── Instant video / video note bubble ──
+  static readonly INSTANT_VIDEO_BUBBLE_SIZE: number = 212;
+  static readonly INSTANT_VIDEO_BUBBLE_SIZE_REGULAR: number = 240;
+  static readonly INSTANT_VIDEO_BUBBLE_MIN_SIZE: number = 160;
+  static readonly INSTANT_VIDEO_BUBBLE_PLAY_BG_SIZE: number = 38;
+  static readonly INSTANT_VIDEO_BUBBLE_PLAY_ICON_SIZE: number = 18;
+  static readonly INSTANT_VIDEO_BUBBLE_DURATION_FONT_SIZE: number = 12;
+  static readonly INSTANT_VIDEO_BUBBLE_DURATION_LINE_HEIGHT: number = 14;
+  static readonly INSTANT_VIDEO_BUBBLE_DURATION_RADIUS: number = 10;
+  static readonly INSTANT_VIDEO_BUBBLE_DURATION_PADDING_H: number = 8;
+  static readonly INSTANT_VIDEO_BUBBLE_DURATION_PADDING_V: number = 3;
+  static readonly INSTANT_VIDEO_BUBBLE_DURATION_MARGIN: number = 8;
+
+  // ── Audio / music bubble ──
+  static readonly AUDIO_BUBBLE_MIN_WIDTH: number = 180;
+  static readonly AUDIO_BUBBLE_MAX_WIDTH: number = 320;
+  static readonly AUDIO_BUBBLE_MAX_WIDTH_REGULAR: number = 360;
+  static readonly AUDIO_BUBBLE_RADIUS: number = 18;
+  static readonly AUDIO_BUBBLE_PADDING_H: number = 12;
+  static readonly AUDIO_BUBBLE_PADDING_V: number = 10;
+  static readonly AUDIO_BUBBLE_CONTENT_GAP: number = 12;
+  static readonly AUDIO_BUBBLE_BUTTON_SIZE: number = 44;
+  static readonly AUDIO_BUBBLE_BUTTON_ICON_SIZE: number = 20;
+  static readonly AUDIO_BUBBLE_BUTTON_RING_STROKE: number = 3;
+  static readonly AUDIO_BUBBLE_ART_SIZE: number = 44;
+  static readonly AUDIO_BUBBLE_ART_RADIUS: number = 22;
+  static readonly AUDIO_BUBBLE_ART_ICON_SIZE: number = 18;
+  static readonly AUDIO_BUBBLE_ACTION_SIZE: number = 24;
+  static readonly AUDIO_BUBBLE_ACTION_ICON_SIZE: number = 12;
+  static readonly AUDIO_BUBBLE_ACTION_OFFSET: number = 2;
+  static readonly AUDIO_BUBBLE_TITLE_SIZE: number = 15;
+  static readonly AUDIO_BUBBLE_TITLE_LINE_HEIGHT: number = 19;
+  static readonly AUDIO_BUBBLE_META_SIZE: number = 13;
+  static readonly AUDIO_BUBBLE_META_LINE_HEIGHT: number = 16;
+  static readonly AUDIO_BUBBLE_BOTTOM_META_SIZE: number = 12;
+  static readonly AUDIO_BUBBLE_BOTTOM_META_LINE_HEIGHT: number = 14;
+  static readonly AUDIO_BUBBLE_SEEK_HEIGHT: number = 4;
+  static readonly AUDIO_BUBBLE_SEEK_RADIUS: number = 2;
+  static readonly AUDIO_BUBBLE_SEEK_TOP_GAP: number = 6;
+  static readonly AUDIO_BUBBLE_ART_GRADIENT_START: string = '#51b4ff';
+  static readonly AUDIO_BUBBLE_ART_GRADIENT_END: string = '#2b88d4';
+
   // ── Document row (Phase C.1-3) ──
   static readonly DOCUMENT_ROW_RADIUS: number = 18;
   static readonly DOCUMENT_ROW_MIN_WIDTH: number = 170;
   static readonly DOCUMENT_ROW_MAX_WIDTH: number = 300;
   static readonly DOCUMENT_ROW_PADDING_H: number = 12;
   static readonly DOCUMENT_ROW_PADDING_V: number = 15;
-  static readonly DOCUMENT_ROW_ICON_BOX_SIZE: number = 44;
+  static readonly DOCUMENT_ROW_ICON_BOX_SIZE: number = 48;
   static readonly DOCUMENT_ROW_ICON_SIZE: number = 22;
-  static readonly DOCUMENT_ROW_ICON_RADIUS: number = 10;
-  static readonly DOCUMENT_ROW_CONTENT_GAP: number = 8;
+  static readonly DOCUMENT_ROW_ICON_RADIUS: number = 12;
+  static readonly DOCUMENT_ROW_CONTENT_GAP: number = 10;
   static readonly DOCUMENT_ROW_TEXT_GAP: number = 2;
-  static readonly DOCUMENT_ROW_EXTENSION_SIZE: number = 12;
-  static readonly DOCUMENT_ROW_EXTENSION_LINE_HEIGHT: number = 14;
+  static readonly DOCUMENT_ROW_EXTENSION_SIZE: number = 14;
+  static readonly DOCUMENT_ROW_EXTENSION_LINE_HEIGHT: number = 16;
   static readonly DOCUMENT_ROW_EXTENSION_MAX_LEN: number = 4;
   static readonly DOCUMENT_ROW_TITLE_SIZE: number = 16;
   static readonly DOCUMENT_ROW_TITLE_LINE_HEIGHT: number = 20;
@@ -309,6 +356,10 @@ export class TgUiTokens {
   static readonly DOCUMENT_ROW_PROGRESS_RADIUS: number = 2;
   static readonly DOCUMENT_ROW_PROGRESS_TOP_GAP: number = 6;
   static readonly DOCUMENT_ROW_PROGRESS_MIN_VISIBLE_PERCENT: number = 2;
+  static readonly DOCUMENT_ROW_PROGRESS_RING_STROKE: number = 3;
+  static readonly DOCUMENT_ROW_ACTION_SIZE: number = 22;
+  static readonly DOCUMENT_ROW_ACTION_ICON_SIZE: number = 12;
+  static readonly DOCUMENT_ROW_ACTION_OFFSET: number = 3;
 
   // ── Voice bubble (Phase C.1-4) ──
   static readonly VOICE_BUBBLE_RADIUS: number = 18;
@@ -318,7 +369,7 @@ export class TgUiTokens {
   static readonly VOICE_BUBBLE_PADDING_H: number = 10;
   static readonly VOICE_BUBBLE_PADDING_V: number = 8;
   static readonly VOICE_BUBBLE_CONTENT_GAP: number = 8;
-  static readonly VOICE_BUBBLE_BUTTON_SIZE: number = 36;
+  static readonly VOICE_BUBBLE_BUTTON_SIZE: number = 40;
   static readonly VOICE_BUBBLE_BUTTON_ICON_SIZE: number = 18;
   static readonly VOICE_BUBBLE_DURATION_MIN_SEC: number = 2;
   static readonly VOICE_BUBBLE_DURATION_MAX_SEC: number = 30;
@@ -326,9 +377,9 @@ export class TgUiTokens {
   static readonly VOICE_BUBBLE_WAVE_BARS_COUNT: number = 28;
   static readonly VOICE_BUBBLE_WAVE_BAR_WIDTH: number = 2;
   static readonly VOICE_BUBBLE_WAVE_BAR_GAP: number = 2;
-  static readonly VOICE_BUBBLE_WAVE_MIN_HEIGHT: number = 4;
-  static readonly VOICE_BUBBLE_WAVE_MAX_HEIGHT: number = 16;
-  static readonly VOICE_BUBBLE_WAVE_AREA_HEIGHT: number = 20;
+  static readonly VOICE_BUBBLE_WAVE_MIN_HEIGHT: number = 3;
+  static readonly VOICE_BUBBLE_WAVE_MAX_HEIGHT: number = 20;
+  static readonly VOICE_BUBBLE_WAVE_AREA_HEIGHT: number = 24;
   static readonly VOICE_BUBBLE_DURATION_SIZE: number = 12;
   static readonly VOICE_BUBBLE_DURATION_LINE_HEIGHT: number = 14;
   static readonly VOICE_BUBBLE_DURATION_MIN_WIDTH: number = 34;
@@ -417,6 +468,22 @@ export class TgUiTokens {
     return TgUiTokens.isRegularMessageWidth(containerWidth)
       ? TgUiTokens.VIDEO_BUBBLE_MAX_HEIGHT_REGULAR
       : TgUiTokens.VIDEO_BUBBLE_MAX_HEIGHT;
+  }
+
+  static resolveInstantVideoBubbleSize(containerWidth: number): number {
+    const target = TgUiTokens.isRegularMessageWidth(containerWidth)
+      ? TgUiTokens.INSTANT_VIDEO_BUBBLE_SIZE_REGULAR
+      : TgUiTokens.INSTANT_VIDEO_BUBBLE_SIZE;
+    return Math.max(TgUiTokens.INSTANT_VIDEO_BUBBLE_MIN_SIZE, Math.min(Math.floor(containerWidth), target));
+  }
+
+  static resolveAudioBubbleWidth(containerWidth: number, maxWidthRatio: number): number {
+    const byRatio = TgUiTokens.resolveBubbleMaxWidth(containerWidth, maxWidthRatio);
+    const maxAllowed = TgUiTokens.isRegularMessageWidth(containerWidth)
+      ? TgUiTokens.AUDIO_BUBBLE_MAX_WIDTH_REGULAR
+      : TgUiTokens.AUDIO_BUBBLE_MAX_WIDTH;
+    const minAllowed = Math.min(TgUiTokens.AUDIO_BUBBLE_MIN_WIDTH, Math.max(1, Math.floor(containerWidth)));
+    return Math.max(minAllowed, Math.min(byRatio, maxAllowed));
   }
 
   static resolvePhotoAlbumMaxWidth(containerWidth: number): number {
@@ -772,6 +839,7 @@ export class TgUiTokens {
   static readonly ICON_RES_VIDEO: Resource = $r('app.media.ic_video');
   static readonly ICON_RES_PLAY: Resource = $r('app.media.ic_play');
   static readonly ICON_RES_PAUSE: Resource = $r('app.media.ic_pause');
+  static readonly ICON_RES_VOICE: Resource = $r('app.media.ic_voice');
   static readonly ICON_RES_SEARCH: Resource = $r('app.media.ic_search');
   static readonly ICON_RES_EDIT: Resource = $r('app.media.ic_edit');
   static readonly ICON_RES_CONTACT: Resource = $r('app.media.ic_contact');
@@ -781,4 +849,5 @@ export class TgUiTokens {
   static readonly ICON_RES_CALL_OUTGOING: Resource = $r('app.media.ic_call_outgoing');
   static readonly ICON_RES_SETTINGS: Resource = $r('app.media.ic_settings');
   static readonly ICON_RES_ARROW_RIGHT: Resource = $r('app.media.ic_arrow_right');
+  static readonly ICON_RES_MUSIC: Resource = $r('app.media.ic_music');
 }

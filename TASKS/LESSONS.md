@@ -1,6 +1,6 @@
 # LESSONS — repeated mistakes and project-specific pitfalls
 
-Last updated: 2026-03-15
+Last updated: 2026-03-16
 
 ## 1. Do not mix V1 and V2 ArkUI decorators casually
 - `tg_ui` is largely `@ComponentV2`.
@@ -248,7 +248,17 @@ Last updated: 2026-03-15
 ## 47. Channel posts must not inherit the hidden group avatar lane by sender-name heuristics
 - In this repo, using `senderName.length > 0` as the router-side proxy for avatar-lane reservation made broadcast/channel bubbles narrower even when no avatar was shown.
 - iOS broadcast/channel layout does not blindly reserve the group avatar lane for every incoming post; that width is a big part of why Telegram channel bubbles feel more open.
+
+## 48. `fileDownloaded` alone is not enough for media UX
+- In this repo, relying only on `FileDownloadedEvent` meant the UI knew about media only in two states: “not local yet” and “already finished”.
+- Photo/video/document/audio/voice transfer indicators need a store-level `fileId -> transfer state` map fed by every TDLib `updateFile`, not just the completion event.
+- Keep `fileDownloaded` for path application, but drive visible pending/progress UI from a separate transfer-update event.
+
+## 49. Photo preview availability and full-photo availability are different states
+- In this repo, `photoPath` in the chat VO can legally point to a thumb/preview while the full `photoFileId` is still downloading.
+- Therefore the photo bubble cannot infer “full asset is local” from “some preview image exists”; it needs an explicit `hasLocalPhoto` flag separate from the preview URI.
 - Safer pattern: compute an explicit `reserveAvatarLane` flag in timeline/build logic and pass it into the router instead of inferring lane reservation from sender-name presence.
+
 
 ## 48. ArkUI text can look “correct but not Telegram-like” if wrapping stays on the default greedy path
 - Even after font-size/token tuning, HarmonyOS text metrics differ from iOS CoreText/AsyncDisplayKit, so chat bubbles can still wrap too early or feel optically narrower.
@@ -492,3 +502,90 @@ Last updated: 2026-03-15
 - In this repo, the photo/video viewer path was wired correctly but still did not open reliably on the emulator through `bindContentCover(...)`.
 - Replacing that path with explicit conditional fullscreen overlays inside the chat page root `Stack` is simpler and more predictable for this screen architecture.
 - Also make the whole video preview surface clickable, not only the center play button; otherwise GIFs/animations with hidden play affordance lose their open-viewer path completely.
+
+## 82. `videoNote` needs its own router branch, not just a different inner atom
+- In this repo, swapping only the inner media atom for `videoNote` was not enough because the generic visual-media branch in `TgMessageRouter` still wrapped the content in the rectangular bubble background.
+- For Telegram-style instant video, the router itself must branch out of the generic visual-media shell and render sender/reply/caption/meta around a circular media surface with no outer rounded rectangle.
+- Also keep the size contract explicit (`212 / 240` compact/regular targets) and pair circular `borderRadius` with `.clip(true)`; otherwise the instant-video path still reads like a normal video card.
+
+## 83. Album viewers should open from page-owned path arrays, not a single photo path
+- In this repo, grouped-photo bubbles already knew all album cell paths, but the fullscreen viewer state only stored one `viewerPhotoPath`, so tapping an album opened a dead-end single-photo overlay.
+- The stable pattern is: normalize/filter album paths in `TgChatScreenPage`, store the selected index there, and pass `photoPaths + initialIndex` into the viewer. That keeps placeholder cells out of the fullscreen gallery and lets the page stay the single owner of viewer state.
+- Preserve the old zoom/dismiss interaction for true single-photo viewers; only the multi-photo path should switch to `Swiper`-style horizontal paging.
+
+## 84. Audio/music bubbles need a dedicated media atom, not the document tile
+- In this repo, reusing `TgDocumentRow` for `audio` preserved download behavior but kept the whole message visually in the generic file/document family.
+- Telegram music messages are closer to a playback affordance + title/performer stack than to an extension-badge document tile, so the safer pattern is a separate `TgAudioBubble` atom and dedicated router branch.
+- Keep the tap contract page-owned: if the file is missing, request download; if it is local, open/play it from the page layer. Do not bury file-opening logic inside the atom itself.
+
+## 85. On-demand media taps need their own pending-file dedupe, not just watcher-level dedupe
+- `DownloadAvatarsUseCase` and `DownloadMessageMediaUseCase` already guard duplicate background requests with `pendingFileIds`, but `TgChatScreenPage.requestMediaDownload(...)` used to fire a fresh `downloadFile` on every tap.
+- The 2026-03-16 `[31799]` HiLog proved this with repeated `On-demand media download requested: fileId=2274` lines for the same item before the local path appeared.
+- Fix pattern for this repo: keep a page-owned pending-file set for on-demand taps, clear it when the local path lands in timeline state or the request fails, and drive bubble spinners from that same pending set.
+
+## 86. Media bubbles must expose explicit download/pending states once auto-download is tightened
+- After reducing background auto-downloads, relying on a hidden tap contract makes media look broken: GIF/videoNote bubbles can show only a preview thumbnail, and voice/audio/document bubbles can look idle even though the file is missing.
+- The safer Telegram-like fallback in this repo is: show a download affordance before the file is local, switch to an indeterminate spinner while the file is pending, then reveal the normal play/open affordance after the local path appears.
+- This keeps the UI honest when heavier payloads like voice, GIF, and videoNote are intentionally on-demand while previews and full photos can still remain eager for a smoother viewer path.
+
+## 87. Audio and file bubbles need a composed leading cluster, not a single flat tile/control
+- In this repo, even after transfer state was wired correctly, `audio` still looked too much like a slightly modified document row and `document` still read as a flat badge block.
+- The closer Telegram-style fallback is a **composed leading cluster**: a primary square tile that carries identity (album-art-like surface or extension badge) plus a smaller secondary action chip that carries open/download/play affordance.
+- This separation makes idle state easier to parse and lets download/pending state temporarily take over the primary tile center without losing the component's family resemblance.
+
+## 88. Real chats may hide audio-looking messages behind the `document` route
+- In this repo, not every user-visible “audio file” arrives as `messageAudio`; some real payloads still stay on the `document` path with `mimeType = audio/*`.
+- If only the dedicated `audio` branch is restyled, the user can correctly report “nothing changed” because the messages they are looking at never hit that branch.
+- Safe fallback: in `TgMessageRouter`, treat `contentType = 'document'` + `mimeType.startsWith('audio/')` as an audio-like visual path while keeping the existing document open/download behavior.
+
+## 89. Audio/file bubble parity lives or dies on control hierarchy, not on token micro-polish
+- In this repo, a softer “square tile + tiny chip” pass was technically different but visually still read almost the same to the user.
+- Telegram iOS and Android refs both show file/audio cells organized around a **dominant primary control area** (`~44pt/48dp`) with text stacked to the side.
+- If refs show control-first composition, do not expect color/gap tweaks on the old flat structure to create a meaningful visible delta.
+
+## 90. When the visual hierarchy changes, sync the atom passports immediately
+- In this repo, the tg_ui specs are used as the frozen contract for later passes and demos.
+- If an atom moves from a composed-tile layout to a control-first layout but the spec still describes the old hierarchy, later verification becomes misleading and future agents can “fix” the component back toward the wrong shape.
+- After any non-trivial UI rewrite, update the matching `spec/*.md` passport in the same patch.
+
+## 91. Audio bubble must use art tile, not plain circle button — iOS/Android refs both use a square tile
+- iOS `ChatMessageInteractiveFileNode` uses a 44pt rounded-rect tile (album art or gradient + note) as the leading anchor, not a plain circular play button.
+- Android `AudioPlayerCell` uses `RadialProgress2` embedded in a similar tile.
+- The old plain circle button made audio messages look identical to voice messages. The gradient square tile with `borderRadius(12)` creates the correct music-vs-voice visual separation.
+
+## 92. Video note overlays must be semi-transparent, not opaque circles
+- iOS `InstantVideoRadialStatusNode` draws play/download icons as semi-transparent white (#99FFFFFF) directly over the video preview — there is no opaque background circle behind the icon.
+- Download progress is a radial `Progress(Ring)` around the entire circle perimeter, not a centered spinner.
+- The old opaque `VIDEO_BUBBLE_PLAY_BG` circle made video notes look like regular video bubbles instead of the lightweight iOS pattern.
+
+## 93. Declare token constants even before they are wired to runtime — but note unused ones
+- `AUDIO_BUBBLE_ART_SIZE`, `AUDIO_BUBBLE_ART_RADIUS`, `AUDIO_BUBBLE_ACTION_*` existed in `TgUiTokens` but were never used in the component code, leading to a false impression that the feature was implemented.
+- When adding forward-looking tokens, either wire them immediately or add a `// TODO: not yet wired` comment so future agents don't assume implementation exists.
+
+## 94. `shouldReactToStoreChange` must include `files.transfers` — otherwise download progress is invisible
+- `TgChatScreenPage.shouldReactToStoreChange()` checked `messages`, `chats`, `typingActions`, and `users` — but NOT `files.transfers`.
+- When `filesReducer` updated `state.files.transfers` on `fileTransferUpdated`, the store subscription returned `false` → timeline never rebuilt → download progress indicators were never shown in any media bubble.
+- This made all download animations (documents, audio, video, voice) completely invisible despite the full pipeline being correctly wired from TDLib through FileNormalizer → filesReducer → ChatTimelineVO → router → bubble atoms.
+- **Rule:** when adding a new state slice that affects UI rendering, always add it to the store subscription filter in every page that reads from that slice.
+
+## 95. Voice/GIF/VideoNote must be auto-download — Telegram always auto-downloads these
+- `downloadMessageMedia.ets` had voice, animation, and videoNote in the "on-demand" category.
+- Telegram iOS and Android auto-download voice messages, GIFs, and video notes by default.
+- Without auto-download, voice messages required two taps (tap to download → tap to play), which felt broken.
+- Audio and full video stay on-demand (user-initiated download) as they can be large.
+
+## 96. Use a unified playback controller for voice AND audio — not separate paths
+- The old `VoicePlaybackController` only handled voice; audio tapped `viewData` to open an external app.
+- Telegram iOS uses a unified `MediaPlayer` + `SharedMediaPlayer` for all audio types.
+- Telegram Android uses `MediaController` + `ExoPlayer` for everything.
+- Unified `MediaPlaybackController` enables: inline playback for both types, auto-advance to next voice/audio in sequence, shared play/pause state so only one thing plays at a time.
+
+## 97. iOS audio bubble uses a 44pt ROUND circle, not a square tile
+- Initial rewrite changed the art tile from round (RADIUS_ROUND_MAX) to rounded square (radius 12), thinking it would differentiate from voice.
+- iOS `ChatMessageInteractiveFileNode` confirms: audio/music also uses a 44pt diameter circle for the play/progress control.
+- Visual "improvements" that diverge from the reference create drift, not parity. Always check the reference before inventing new geometry.
+
+## 98. DevEco may cache old artifacts — always Clean Build after .ets rewrites
+- After rewriting TgAudioBubble.ets with new layout (art tile, seek bar, gradient), a normal rebuild showed no visual change on device.
+- HarmonyOS hvigor/DevEco can cache compiled artifacts. Use Build → Clean Project → Build to force fresh compilation.
+- If visual changes don't appear after rebuild, suspect build cache before debugging code.

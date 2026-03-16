@@ -1,25 +1,33 @@
 import media from '@ohos.multimedia.media';
 import fs from '@ohos.file.fs';
 
-export class VoicePlaybackSnapshot {
+export type MediaContentType = 'voice' | 'audio';
+
+export class MediaPlaybackSnapshot {
   messageId: string = '0';
   path: string = '';
+  contentType: MediaContentType = 'voice';
   isPlaying: boolean = false;
   progress: number = 0;
   durationMs: number = 0;
   currentTimeMs: number = 0;
 }
 
-export class VoicePlaybackController {
+// Legacy alias for backward compat
+export type VoicePlaybackSnapshot = MediaPlaybackSnapshot;
+
+export class MediaPlaybackController {
   private player?: media.AVPlayer;
   private openedFile?: fs.File;
   private currentMessageId: string = '0';
   private currentPath: string = '';
+  private currentContentType: MediaContentType = 'voice';
   private currentDurationMs: number = 0;
   private currentTimeMs: number = 0;
   private currentProgress: number = 0;
   private isPlaying: boolean = false;
-  private listener?: (snapshot: VoicePlaybackSnapshot) => void;
+  private listener?: (snapshot: MediaPlaybackSnapshot) => void;
+  private onCompletedCallback?: (messageId: string, contentType: MediaContentType) => void;
   private readonly stateChangeHandler = (state: media.AVPlayerState): void => {
     if (state === 'prepared') {
       this.updateDurationFromPlayer();
@@ -31,6 +39,12 @@ export class VoicePlaybackController {
       this.isPlaying = false;
       this.currentProgress = 1;
       this.currentTimeMs = this.currentDurationMs;
+      this.emit();
+      // Notify page for auto-advance
+      if (this.onCompletedCallback) {
+        this.onCompletedCallback(this.currentMessageId, this.currentContentType);
+      }
+      return;
     } else if (state === 'stopped' || state === 'released' || state === 'idle') {
       this.isPlaying = false;
     } else if (state === 'error') {
@@ -51,12 +65,24 @@ export class VoicePlaybackController {
     this.emit();
   };
 
-  setListener(listener?: (snapshot: VoicePlaybackSnapshot) => void): void {
+  setListener(listener?: (snapshot: MediaPlaybackSnapshot) => void): void {
     this.listener = listener;
     this.emit();
   }
 
-  async toggle(messageId: string, filePath: string): Promise<void> {
+  setOnCompleted(callback?: (messageId: string, contentType: MediaContentType) => void): void {
+    this.onCompletedCallback = callback;
+  }
+
+  getActiveMessageId(): string {
+    return this.currentMessageId;
+  }
+
+  getIsPlaying(): boolean {
+    return this.isPlaying;
+  }
+
+  async toggle(messageId: string, filePath: string, contentType: MediaContentType = 'voice'): Promise<void> {
     if (filePath.trim().length === 0) {
       return;
     }
@@ -70,7 +96,7 @@ export class VoicePlaybackController {
         try {
           await this.player.seek(0);
         } catch (_error) {
-          await this.play(messageId, filePath);
+          await this.play(messageId, filePath, contentType);
           return;
         }
         this.currentTimeMs = 0;
@@ -80,16 +106,16 @@ export class VoicePlaybackController {
         try {
           await this.player.play();
         } catch (_error) {
-          await this.play(messageId, filePath);
+          await this.play(messageId, filePath, contentType);
         }
         return;
       }
     }
-    await this.play(messageId, filePath);
+    await this.play(messageId, filePath, contentType);
   }
 
-  async play(messageId: string, filePath: string): Promise<void> {
-    await this.openAndStart(messageId, filePath);
+  async play(messageId: string, filePath: string, contentType: MediaContentType = 'voice'): Promise<void> {
+    await this.openAndStart(messageId, filePath, contentType);
   }
 
   async pause(): Promise<void> {
@@ -124,6 +150,7 @@ export class VoicePlaybackController {
     }
     this.currentMessageId = '0';
     this.currentPath = '';
+    this.currentContentType = 'voice';
     this.currentDurationMs = 0;
     this.currentTimeMs = 0;
     this.currentProgress = 0;
@@ -131,7 +158,7 @@ export class VoicePlaybackController {
     this.emit();
   }
 
-  private async openAndStart(messageId: string, filePath: string): Promise<void> {
+  private async openAndStart(messageId: string, filePath: string, contentType: MediaContentType): Promise<void> {
     await this.release();
 
     try {
@@ -153,6 +180,7 @@ export class VoicePlaybackController {
 
       this.currentMessageId = messageId;
       this.currentPath = filePath;
+      this.currentContentType = contentType;
       this.currentDurationMs = Math.max(0, player.duration);
       this.currentTimeMs = 0;
       this.currentProgress = 0;
@@ -183,9 +211,10 @@ export class VoicePlaybackController {
     if (!this.listener) {
       return;
     }
-    const snapshot = new VoicePlaybackSnapshot();
+    const snapshot = new MediaPlaybackSnapshot();
     snapshot.messageId = this.currentMessageId;
     snapshot.path = this.currentPath;
+    snapshot.contentType = this.currentContentType;
     snapshot.isPlaying = this.isPlaying;
     snapshot.progress = this.currentProgress;
     snapshot.durationMs = this.currentDurationMs;
@@ -193,3 +222,6 @@ export class VoicePlaybackController {
     this.listener(snapshot);
   }
 }
+
+// Legacy alias
+export type VoicePlaybackController = MediaPlaybackController;

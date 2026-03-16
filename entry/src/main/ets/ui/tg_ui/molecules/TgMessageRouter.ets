@@ -8,7 +8,9 @@ import { TgMessageBubbleBase } from '../atoms/TgMessageBubbleBase';
 import { TgPhotoBubble } from '../atoms/TgPhotoBubble';
 import { TgGroupedPhotoBubble } from '../atoms/TgGroupedPhotoBubble';
 import { TgVideoBubble } from '../atoms/TgVideoBubble';
+import { TgInstantVideoBubble } from '../atoms/TgInstantVideoBubble';
 import { TgDocumentRow } from '../atoms/TgDocumentRow';
+import { TgAudioBubble } from '../atoms/TgAudioBubble';
 import { TgVoiceBubble } from '../atoms/TgVoiceBubble';
 import { TgStickerView } from '../atoms/TgStickerView';
 import { TgMessageMeta, TgMessageSendStatus } from '../atoms/TgMessageMeta';
@@ -34,6 +36,9 @@ export struct TgMessageRouter {
 
   // ── Photo ──
   @Param photoPath: string = '';
+  @Param hasLocalPhoto: boolean = false;
+  @Param isPhotoDownloading: boolean = false;
+  @Param photoDownloadProgress: number = -1;
   @Param photoWidth: number = 0;
   @Param photoHeight: number = 0;
   @Param albumPhotoPaths: string[] = [];
@@ -43,6 +48,8 @@ export struct TgMessageRouter {
   // ── Video / Animation ──
   @Param videoThumbPath: string = '';
   @Param videoPath: string = '';
+  @Param isVideoDownloading: boolean = false;
+  @Param videoDownloadProgress: number = -1;
   @Param videoDuration: number = 0;
   @Param videoWidth: number = 0;
   @Param videoHeight: number = 0;
@@ -50,8 +57,17 @@ export struct TgMessageRouter {
   // ── Document / Audio ──
   @Param documentPath: string = '';
   @Param documentFileId: number = 0;
+  @Param isDocumentDownloading: boolean = false;
+  @Param documentDownloadProgress: number = -1;
   @Param audioPath: string = '';
   @Param audioFileId: number = 0;
+  @Param isAudioDownloading: boolean = false;
+  @Param audioDownloadProgress: number = -1;
+  @Param audioDuration: number = 0;
+  @Param audioTitle: string = '';
+  @Param audioPerformer: string = '';
+  @Param isAudioPlaying: boolean = false;
+  @Param audioPlaybackProgress: number = 0;
   @Param fileName: string = '';
   @Param fileSize: number = 0;
   @Param mimeType: string = '';
@@ -63,10 +79,16 @@ export struct TgMessageRouter {
   @Event onPhotoTap: () => void = () => {};
   @Event onAlbumPhotoTap: (photoPath: string, caption: string) => void = (_: string, __: string) => {};
   @Event onVideoTap: () => void = () => {};
+  @Event onDocumentTap: (documentPath: string, documentFileId: number, mimeType: string) => void =
+    (_: string, __: number, ___: string) => {};
+  @Event onAudioTap: (audioPath: string, audioFileId: number, mimeType: string) => void =
+    (_: string, __: number, ___: string) => {};
 
   // ── Voice ──
   @Param voicePath: string = '';
   @Param voiceFileId: number = 0;
+  @Param isVoiceDownloading: boolean = false;
+  @Param voiceDownloadProgress: number = -1;
   @Param voiceDuration: number = 0;
   @Param voiceWaveform: string = '';
   @Param isVoiceListened: boolean = false;
@@ -122,7 +144,7 @@ export struct TgMessageRouter {
 
   private isVisualMedia(): boolean {
     const ct = this.contentType;
-    return ct === 'photo' || ct === 'photoAlbum' || ct === 'video' || ct === 'animation' || ct === 'videoNote';
+    return ct === 'photo' || ct === 'photoAlbum' || ct === 'video' || ct === 'animation';
   }
 
   private bubbleColor(): ResourceColor {
@@ -218,7 +240,10 @@ export struct TgMessageRouter {
       const minAllowed = Math.min(TgUiTokens.PHOTO_BUBBLE_MIN_WIDTH, bubbleWidth);
       return Math.max(minAllowed, Math.min(bubbleWidth, maxAllowed));
     }
-    if (this.contentType === 'video' || this.contentType === 'animation' || this.contentType === 'videoNote') {
+    if (this.contentType === 'videoNote') {
+      return TgUiTokens.resolveInstantVideoBubbleSize(this.maxBubbleWidth());
+    }
+    if (this.contentType === 'video' || this.contentType === 'animation') {
       const maxAllowed = this.usesRegularBubbleLayout()
         ? TgUiTokens.VIDEO_BUBBLE_MAX_WIDTH_REGULAR
         : TgUiTokens.VIDEO_BUBBLE_MAX_WIDTH;
@@ -306,6 +331,9 @@ export struct TgMessageRouter {
     if (this.contentType === 'photo') {
       TgPhotoBubble({
         photoPath: this.photoPath,
+        hasLocalPhoto: this.hasLocalPhoto,
+        isDownloading: this.isPhotoDownloading,
+        downloadProgress: this.photoDownloadProgress,
         caption: this.caption,
         isOutgoing: this.isOutgoing,
         containerWidth: this.maxBubbleWidth(),
@@ -329,7 +357,18 @@ export struct TgMessageRouter {
           this.onAlbumPhotoTap(photoPath, this.caption);
         }
       })
-    } else if (this.contentType === 'video' || this.contentType === 'animation' || this.contentType === 'videoNote') {
+    } else if (this.contentType === 'videoNote') {
+      TgInstantVideoBubble({
+        thumbnailPath: this.videoThumbPath,
+        videoPath: this.videoPath,
+        durationSec: this.videoDuration,
+        containerWidth: this.maxBubbleWidth(),
+        noBubbleWrap: true,
+        isDownloadPending: this.isVideoDownloading,
+        downloadProgress: this.videoDownloadProgress,
+        onTap: () => { this.onVideoTap(); }
+      })
+    } else if (this.contentType === 'video' || this.contentType === 'animation') {
       TgVideoBubble({
         thumbnailPath: this.videoThumbPath,
         videoPath: this.videoPath,
@@ -343,7 +382,30 @@ export struct TgMessageRouter {
         noBubbleWrap: true,
         hidePlayButton: this.contentType === 'animation',
         useRegularMaxDimensions: this.usesRegularBubbleLayout(),
+        isDownloadPending: this.isVideoDownloading,
+        downloadProgress: this.videoDownloadProgress,
         onVideoPlayTap: () => { this.onVideoTap(); }
+      })
+    } else if (this.contentType === 'document' && this.mimeType.startsWith('audio/')) {
+      TgAudioBubble({
+        title: this.fileName,
+        performer: '',
+        durationSec: 0,
+        fileSize: this.fileSize,
+        mimeType: this.mimeType,
+        audioPath: this.documentPath,
+        downloadProgress: this.documentDownloadProgress,
+        isDownloading: this.isDocumentDownloading,
+        isOutgoing: this.isOutgoing,
+        isPlaying: false,
+        playbackProgress: 0,
+        containerWidth: this.maxBubbleWidth(),
+        noBubbleWrap: true,
+        onTap: () => {
+          this.onDocumentTap(this.documentPath, this.documentFileId, this.mimeType);
+        },
+        onPlayToggle: () => {},
+        onSeek: (p: number) => {}
       })
     } else if (this.contentType === 'document') {
       TgDocumentRow({
@@ -351,29 +413,40 @@ export struct TgMessageRouter {
         fileSize: this.fileSize,
         mimeType: this.mimeType,
         documentPath: this.documentPath,
+        downloadProgress: this.documentDownloadProgress,
+        isDownloading: this.isDocumentDownloading,
         isOutgoing: this.isOutgoing,
         containerWidth: this.maxBubbleWidth(),
         noBubbleWrap: true,
         onTap: () => {
-          if (this.documentPath.length === 0 && this.documentFileId > 0) {
+          this.onDocumentTap(this.documentPath, this.documentFileId, this.mimeType);
+        },
+        onDownloadToggle: () => {
+          if (!this.documentPath && !this.isDocumentDownloading && this.documentDownloadProgress < 0) {
             this.onMediaDownloadRequest(this.documentFileId);
           }
         }
       })
     } else if (this.contentType === 'audio') {
-      TgDocumentRow({
-        fileName: this.fileName.length > 0 ? this.fileName : this.caption,
+      TgAudioBubble({
+        title: this.audioTitle.length > 0 ? this.audioTitle : this.fileName,
+        performer: this.audioPerformer,
+        durationSec: this.audioDuration,
         fileSize: this.fileSize,
         mimeType: this.mimeType,
-        documentPath: this.audioPath,
+        audioPath: this.audioPath,
+        downloadProgress: this.audioDownloadProgress,
+        isDownloading: this.isAudioDownloading,
         isOutgoing: this.isOutgoing,
+        isPlaying: this.isAudioPlaying,
+        playbackProgress: this.audioPlaybackProgress,
         containerWidth: this.maxBubbleWidth(),
         noBubbleWrap: true,
         onTap: () => {
-          if (this.audioPath.length === 0 && this.audioFileId > 0) {
-            this.onMediaDownloadRequest(this.audioFileId);
-          }
-        }
+          this.onAudioTap(this.audioPath, this.audioFileId, this.mimeType);
+        },
+        onPlayToggle: () => {},
+        onSeek: (p: number) => {}
       })
     } else if (this.contentType === 'voice') {
       TgVoiceBubble({
@@ -384,12 +457,16 @@ export struct TgMessageRouter {
         playbackProgress: this.voicePlaybackProgress,
         isListened: this.isVoiceListened,
         hasLocalFile: this.voicePath.length > 0,
+        isDownloading: this.isVoiceDownloading,
+        downloadProgress: this.voiceDownloadProgress,
         containerWidth: this.maxBubbleWidth(),
         maxWidthRatio: 1.0,
         noBubbleWrap: true,
         onTap: () => {
           this.onVoiceTap(this.messageId, this.voicePath, this.voiceFileId);
-        }
+        },
+        onPlayToggle: () => {},
+        onSeek: (p: number) => {}
       })
     }
   }
@@ -492,6 +569,92 @@ export struct TgMessageRouter {
         .constraintSize({ maxWidth: this.maxBubbleWidth() })
         .backgroundColor(this.bubbleColor())
         .borderRadius(this.bubbleRadius())
+      }
+      .width('100%')
+      .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
+      .alignItems(VerticalAlign.Bottom)
+
+    } else if (this.contentType === 'videoNote') {
+      // ── Instant video bubble: circular media without rectangular wrapper ──
+      Row() {
+        this.buildAvatarSlot()
+
+        Column() {
+          if (this.showSenderName && this.senderName.length > 0) {
+            Text(this.senderName)
+              .fontSize(TgUiTokens.MSG_SENDER_NAME_SIZE)
+              .fontWeight(TgUiTokens.MSG_SENDER_NAME_WEIGHT)
+              .fontColor(this.senderColorHex)
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .textAlign(TextAlign.Start)
+              .margin({ bottom: TgUiTokens.SPACE_2 })
+          }
+
+          if (this.showReplySnippet) {
+            TgReplySnippet({
+              author: this.replyAuthor,
+              preview: this.replyPreview,
+              isOutgoing: this.replyIsOutgoing,
+              isQuote: this.replyIsQuote,
+              containerWidth: this.maxBubbleWidth()
+            })
+              .margin({ bottom: TgUiTokens.SPACE_4 })
+          }
+
+          if (this.caption.trim().length === 0) {
+            Stack({ alignContent: Alignment.BottomEnd }) {
+              this.buildMediaContent()
+
+              Row() {
+                this.buildInlineMeta(true)
+              }
+              .padding({
+                left: TgUiTokens.MSG_MEDIA_META_OVERLAY_PADDING_H,
+                right: TgUiTokens.MSG_MEDIA_META_OVERLAY_PADDING_H,
+                top: TgUiTokens.MSG_MEDIA_META_OVERLAY_PADDING_V,
+                bottom: TgUiTokens.MSG_MEDIA_META_OVERLAY_PADDING_V
+              })
+              .backgroundColor(TgUiTokens.MSG_MEDIA_META_OVERLAY_BG)
+              .borderRadius(TgUiTokens.MSG_MEDIA_META_OVERLAY_RADIUS)
+              .margin({
+                right: TgUiTokens.MSG_MEDIA_META_OVERLAY_MARGIN,
+                bottom: TgUiTokens.MSG_MEDIA_META_OVERLAY_MARGIN
+              })
+            }
+            .width(this.visualMediaBubbleWidth())
+          } else {
+            this.buildMediaContent()
+
+            Stack({ alignContent: Alignment.BottomEnd }) {
+              Text() {
+                Span(this.caption.trim())
+                  .fontSize(TgUiTokens.MSG_TEXT_SIZE)
+                  .fontWeight(TgUiTokens.MSG_TEXT_WEIGHT)
+                  .fontColor(this.captionColor())
+                Span(this.buildMetaReserve())
+                  .fontSize(TgUiTokens.MSG_META_SIZE)
+                  .fontColor(Color.Transparent)
+              }
+              .lineHeight(TgUiTokens.MSG_TEXT_LINE_HEIGHT)
+              .textAlign(TextAlign.Start)
+              .wordBreak(WordBreak.BREAK_WORD)
+              .lineBreakStrategy(LineBreakStrategy.HIGH_QUALITY)
+              .width('100%')
+              .padding({
+                top: TgUiTokens.SPACE_6,
+                bottom: TgUiTokens.BUBBLE_PADDING_V
+              })
+
+              Row() {
+                this.buildInlineMeta()
+              }
+              .margin({ bottom: TgUiTokens.BUBBLE_PADDING_V })
+            }
+            .width(this.visualMediaBubbleWidth())
+          }
+        }
+        .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
       }
       .width('100%')
       .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)

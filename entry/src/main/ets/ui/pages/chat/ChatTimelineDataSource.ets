@@ -21,6 +21,10 @@ export class ChatTimelineDataSource implements IDataSource {
     return this.lastPrependCount;
   }
 
+  getAllEntries(): ChatTimelineEntryVO[] {
+    return this.items;
+  }
+
   /**
    * Find the current index of an entry by its stable key.
    * Returns -1 if not found. Used for key-based scroll anchoring after prepend.
@@ -114,6 +118,10 @@ export class ChatTimelineDataSource implements IDataSource {
       prev.contentType === next.contentType &&
       prev.caption === next.caption &&
       prev.photoPath === next.photoPath &&
+      prev.photoFileId === next.photoFileId &&
+      prev.hasLocalPhoto === next.hasLocalPhoto &&
+      prev.isPhotoDownloading === next.isPhotoDownloading &&
+      prev.photoDownloadProgress === next.photoDownloadProgress &&
       prev.photoWidth === next.photoWidth &&
       prev.photoHeight === next.photoHeight &&
       this.sameStringArray(prev.albumPhotoPaths, next.albumPhotoPaths) &&
@@ -124,15 +132,26 @@ export class ChatTimelineDataSource implements IDataSource {
       prev.videoDuration === next.videoDuration &&
       prev.videoWidth === next.videoWidth &&
       prev.videoHeight === next.videoHeight &&
+      prev.isVideoDownloading === next.isVideoDownloading &&
+      prev.videoDownloadProgress === next.videoDownloadProgress &&
       prev.documentPath === next.documentPath &&
       prev.documentFileId === next.documentFileId &&
+      prev.isDocumentDownloading === next.isDocumentDownloading &&
+      prev.documentDownloadProgress === next.documentDownloadProgress &&
       prev.audioPath === next.audioPath &&
       prev.audioFileId === next.audioFileId &&
+      prev.isAudioDownloading === next.isAudioDownloading &&
+      prev.audioDownloadProgress === next.audioDownloadProgress &&
+      prev.audioDuration === next.audioDuration &&
+      prev.audioTitle === next.audioTitle &&
+      prev.audioPerformer === next.audioPerformer &&
       prev.fileName === next.fileName &&
       prev.fileSize === next.fileSize &&
       prev.mimeType === next.mimeType &&
       prev.voicePath === next.voicePath &&
       prev.voiceFileId === next.voiceFileId &&
+      prev.isVoiceDownloading === next.isVoiceDownloading &&
+      prev.voiceDownloadProgress === next.voiceDownloadProgress &&
       prev.voiceDuration === next.voiceDuration &&
       prev.voiceWaveform === next.voiceWaveform &&
       prev.isVoiceListened === next.isVoiceListened &&

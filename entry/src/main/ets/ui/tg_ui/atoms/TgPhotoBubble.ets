@@ -4,6 +4,9 @@ import { TgIcon } from './TgIcon';
 @ComponentV2
 export struct TgPhotoBubble {
   @Param photoPath: string | Resource = '';
+  @Param hasLocalPhoto: boolean = false;
+  @Param isDownloading: boolean = false;
+  @Param downloadProgress: number = -1;
   @Param caption: string = '';
   @Param isOutgoing: boolean = false;
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
@@ -27,6 +30,19 @@ export struct TgPhotoBubble {
 
   private hasCaption(): boolean {
     return this.caption.trim().length > 0;
+  }
+
+  private hasDeterminateProgress(): boolean {
+    return this.downloadProgress >= 0 && this.downloadProgress < 1;
+  }
+
+  private normalizedDownloadProgress(): number {
+    return Math.max(0, Math.min(1, this.downloadProgress));
+  }
+
+  private downloadPercentLabel(): string {
+    const percent = Math.floor(this.normalizedDownloadProgress() * 100);
+    return Math.max(1, Math.min(99, percent)).toString() + '%';
   }
 
   private bubbleColor(): ResourceColor {
@@ -124,21 +140,72 @@ export struct TgPhotoBubble {
 
   @Builder
   private buildMedia() {
-    Row() {
-      if (this.hasPhoto()) {
-        Image(this.photoPath)
-          .width(this.computedMediaWidth())
-          .height(this.computedMediaHeight())
-          .objectFit(ImageFit.Contain)
-          .borderRadius(TgUiTokens.PHOTO_BUBBLE_RADIUS - TgUiTokens.PHOTO_BUBBLE_IMAGE_INSET)
-          .clip(true)
-          .onClick(() => { this.onPhotoTap(); })
-      } else {
-        this.buildPlaceholder()
+    Stack({ alignContent: Alignment.Center }) {
+      Row() {
+        if (this.hasPhoto()) {
+          Image(this.photoPath)
+            .width(this.computedMediaWidth())
+            .height(this.computedMediaHeight())
+            .objectFit(ImageFit.Contain)
+            .borderRadius(TgUiTokens.PHOTO_BUBBLE_RADIUS - TgUiTokens.PHOTO_BUBBLE_IMAGE_INSET)
+            .clip(true)
+            .onClick(() => { this.onPhotoTap(); })
+        } else {
+          this.buildPlaceholder()
+        }
+      }
+      .width('100%')
+      .justifyContent(FlexAlign.Center)
+
+      if (this.isDownloading && this.hasDeterminateProgress()) {
+        Column({ space: TgUiTokens.SPACE_2 }) {
+          LoadingProgress()
+            .width(TgUiTokens.VIDEO_BUBBLE_PLAY_ICON_SIZE)
+            .height(TgUiTokens.VIDEO_BUBBLE_PLAY_ICON_SIZE)
+            .color(TgUiTokens.VIDEO_BUBBLE_PLAY_ICON)
+          Text(this.downloadPercentLabel())
+            .fontSize(TgUiTokens.MSG_META_SIZE)
+            .fontColor(TgUiTokens.VIDEO_BUBBLE_PLAY_ICON)
+            .fontWeight(FontWeight.Medium)
+        }
+        .padding({
+          left: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_H,
+          right: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_H,
+          top: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_V + 2,
+          bottom: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_V + 2
+        })
+        .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
+        .borderRadius(TgUiTokens.VIDEO_BUBBLE_DURATION_RADIUS + 6)
+      } else if (this.isDownloading) {
+        Row() {
+          LoadingProgress()
+            .width(TgUiTokens.VIDEO_BUBBLE_PLAY_ICON_SIZE)
+            .height(TgUiTokens.VIDEO_BUBBLE_PLAY_ICON_SIZE)
+            .color(TgUiTokens.VIDEO_BUBBLE_PLAY_ICON)
+        }
+        .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+        .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+        .justifyContent(FlexAlign.Center)
+        .alignItems(VerticalAlign.Center)
+        .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
+        .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
+      } else if (!this.hasLocalPhoto) {
+        Row() {
+          TgIcon({
+            src: TgUiTokens.ICON_RES_DOWNLOAD,
+            iconSize: TgUiTokens.VIDEO_BUBBLE_PLAY_ICON_SIZE,
+            tintColor: TgUiTokens.VIDEO_BUBBLE_PLAY_ICON
+          })
+        }
+        .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+        .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+        .justifyContent(FlexAlign.Center)
+        .alignItems(VerticalAlign.Center)
+        .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
+        .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
       }
     }
     .width('100%')
-    .justifyContent(FlexAlign.Center)
     .padding({
       left: TgUiTokens.PHOTO_BUBBLE_IMAGE_INSET,
       right: TgUiTokens.PHOTO_BUBBLE_IMAGE_INSET,

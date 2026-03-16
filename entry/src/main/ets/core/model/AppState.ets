@@ -180,6 +180,23 @@ export class MessagesState {
   pendingMessages: Map<string, PendingMessage> = new Map<string, PendingMessage>();
 }
 
+// File transfer state
+export class FileTransfer {
+  fileId: number = 0;
+  localPath: string = '';
+  isDownloadingActive: boolean = false;
+  isDownloadingCompleted: boolean = false;
+  size: number = 0;
+  expectedSize: number = 0;
+  downloadOffset: number = 0;
+  downloadedPrefixSize: number = 0;
+  downloadedSize: number = 0;
+}
+
+export class FilesState {
+  transfers: Map<number, FileTransfer> = new Map<number, FileTransfer>();
+}
+
 // User state
 export class User {
   id: UserId = 0;
@@ -207,6 +224,7 @@ export class AppState {
   connection: ConnectionState = new ConnectionState();
   chats: ChatsState = new ChatsState();
   messages: MessagesState = new MessagesState();
+  files: FilesState = new FilesState();
   users: UsersState = new UsersState();
   lastEvent?: AnyAppEvent;
   version: number = 1;
