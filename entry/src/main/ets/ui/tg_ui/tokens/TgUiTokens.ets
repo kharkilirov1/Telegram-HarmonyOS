@@ -159,10 +159,9 @@ export class TgUiTokens {
   static readonly AVATAR_ONLINE_DOT_OFFSET_Y: number = -2;
 
   // ── Badge ──
-  static readonly UNREAD_BADGE_MAX_VISIBLE_COUNT: number = 99;
   static readonly UNREAD_BADGE_HEIGHT: number = 20;
   static readonly UNREAD_BADGE_MIN_WIDTH: number = 20;
-  static readonly UNREAD_BADGE_MAX_WIDTH: number = 34;
+  static readonly UNREAD_BADGE_MAX_WIDTH: number = 52;
   static readonly UNREAD_BADGE_DISABLED_OPACITY: number = 0.45;
 
   // legacy aliases (keep while atoms are landing incrementally)
@@ -310,9 +309,9 @@ export class TgUiTokens {
   static readonly AUDIO_BUBBLE_MAX_WIDTH: number = 320;
   static readonly AUDIO_BUBBLE_MAX_WIDTH_REGULAR: number = 360;
   static readonly AUDIO_BUBBLE_RADIUS: number = 18;
-  static readonly AUDIO_BUBBLE_PADDING_H: number = 12;
-  static readonly AUDIO_BUBBLE_PADDING_V: number = 10;
-  static readonly AUDIO_BUBBLE_CONTENT_GAP: number = 12;
+  static readonly AUDIO_BUBBLE_PADDING_H: number = 8;
+  static readonly AUDIO_BUBBLE_PADDING_V: number = 8;
+  static readonly AUDIO_BUBBLE_CONTENT_GAP: number = 8;
   static readonly AUDIO_BUBBLE_BUTTON_SIZE: number = 44;
   static readonly AUDIO_BUBBLE_BUTTON_ICON_SIZE: number = 20;
   static readonly AUDIO_BUBBLE_BUTTON_RING_STROKE: number = 3;
@@ -322,12 +321,12 @@ export class TgUiTokens {
   static readonly AUDIO_BUBBLE_ACTION_SIZE: number = 24;
   static readonly AUDIO_BUBBLE_ACTION_ICON_SIZE: number = 12;
   static readonly AUDIO_BUBBLE_ACTION_OFFSET: number = 2;
-  static readonly AUDIO_BUBBLE_TITLE_SIZE: number = 15;
-  static readonly AUDIO_BUBBLE_TITLE_LINE_HEIGHT: number = 19;
+  static readonly AUDIO_BUBBLE_TITLE_SIZE: number = 16;
+  static readonly AUDIO_BUBBLE_TITLE_LINE_HEIGHT: number = 20;
   static readonly AUDIO_BUBBLE_META_SIZE: number = 13;
   static readonly AUDIO_BUBBLE_META_LINE_HEIGHT: number = 16;
-  static readonly AUDIO_BUBBLE_BOTTOM_META_SIZE: number = 12;
-  static readonly AUDIO_BUBBLE_BOTTOM_META_LINE_HEIGHT: number = 14;
+  static readonly AUDIO_BUBBLE_BOTTOM_META_SIZE: number = 11;
+  static readonly AUDIO_BUBBLE_BOTTOM_META_LINE_HEIGHT: number = 13;
   static readonly AUDIO_BUBBLE_SEEK_HEIGHT: number = 4;
   static readonly AUDIO_BUBBLE_SEEK_RADIUS: number = 2;
   static readonly AUDIO_BUBBLE_SEEK_TOP_GAP: number = 6;
