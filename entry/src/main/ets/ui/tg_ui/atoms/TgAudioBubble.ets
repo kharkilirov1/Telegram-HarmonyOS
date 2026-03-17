@@ -297,16 +297,10 @@ export struct TgAudioBubble {
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .width('100%')
 
-        // Seek / download progress bar
+        // Download progress bar (only during active download)
         if (this.hasDownloadProgress()) {
           Column() {
             this.buildDownloadProgressBar()
-          }
-          .width('100%')
-          .margin({ top: TgUiTokens.AUDIO_BUBBLE_SEEK_TOP_GAP - TgUiTokens.SPACE_2 })
-        } else if (this.isDownloaded()) {
-          Column() {
-            this.buildSeekBar()
           }
           .width('100%')
           .margin({ top: TgUiTokens.AUDIO_BUBBLE_SEEK_TOP_GAP - TgUiTokens.SPACE_2 })
