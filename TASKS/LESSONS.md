@@ -636,3 +636,23 @@ Last updated: 2026-03-18
 - During initial load with 100+ chats, each chat addition triggers a store update → scan → log line.
 - Result: 269 scan iterations in 5 minutes, mostly redundant.
 - Fix: throttle scan to max once per 500ms, use latest state at execution time instead of captured state.
+
+## 106. V1 @Component using V2 child needs @State declarations for bound state
+- `TgChatScreenPage` (V1 `@Component`) uses `TgMediaGalleryPage` (V2 `@ComponentV2`) as overlay child.
+- Properties like `showMediaGallery`, `galleryItems`, `galleryInitialIndex` passed to V2 child must be declared as `@State` in the V1 parent — otherwise the variables exist at runtime but the compiler cannot track reactivity and build may succeed while UI silently fails to update.
+- Always declare state variables before using them in builder expressions.
+
+## 107. Do not use `$r('sys.media.*')` for icons that may not exist on all API levels
+- `$r('sys.media.ohos_ic_public_download')` caused a build error because the resource is not guaranteed to exist.
+- Use project-local icon resources via `TgUiTokens.ICON_RES_*` tokens instead.
+- Rule: all icons go through TgUiTokens, never reference `sys.media` directly in atoms.
+
+## 108. Token names must exist before referencing — use grep to verify
+- `FONT_BODY_SIZE` was referenced in TgMediaGalleryPage but did not exist in TgUiTokens.
+- Always verify token existence with grep before using in new components.
+- Closest match: `FONT_PREVIEW_SIZE` (15) for body text, `FONT_META_SIZE` (13) for secondary text.
+
+## 109. Clean up crashed agent worktrees and branches immediately
+- API 500 errors during parallel agent execution left orphaned worktree branches (`worktree-agent-*`, `feat/media-gallery-page`) with no useful commits.
+- These consume branch namespace and can cause confusion on next session.
+- After any agent crash: check `git worktree list` + `git branch`, remove orphans.

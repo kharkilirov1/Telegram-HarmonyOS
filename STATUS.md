@@ -4,8 +4,8 @@ Snapshot date: 2026-03-18
 
 ## Current snapshot
 - **Branch:** `dev`
-- **Repo state:** working tree is **not clean** (media bubble interaction hotfix + seek wiring + animation bubble split pending commit)
-- **Observed changes:** photo/video surface tap handlers, correct fileId routing for all media downloads, audio/voice onPlayToggle+onSeek wired to MediaPlaybackController with seekToProgress(), document preview URI fix (double file://), dedicated TgAnimationBubble atom (split from TgVideoBubble), motion transitions (press feedback, overlay fade/scale) across all media bubbles, audio seek bar smooth progress animation
+- **Repo state:** working tree is **clean** (commit `511e6cb`)
+- **Latest commit:** Phase 1 media gallery + inline video + GIF playback (26 files, +1499/-239)
 - **Primary app target:** HarmonyOS NEXT / API 22+
 - **Local reference root:** `C:\Users\Kharki\Desktop\Telegram-HarmonyOS\рефенсы`
 
@@ -20,10 +20,18 @@ Snapshot date: 2026-03-18
 - Calls tab now has a **local real TDLib-backed data path** via `searchCallMessages`, but this Phase 4 pass is still **not device-runtime-verified**
 
 ## Current tg_ui inventory
-- **27 atoms** (3 removed: TgSearchBar, TgSettingsSection, TgContactRow → replaced with stock ArkUI)
+- **30 atoms** (3 new: TgInlineVideoView, TgAnimationBubble, TgMediaGalleryPage; 3 removed: TgSearchBar, TgSettingsSection, TgContactRow)
 - **2 molecules**
-- **34 demos** (orphaned demos for removed atoms still present)
-- **37 spec files** (orphaned specs for removed atoms still present)
+- **35 demos** (orphaned demos for removed atoms still present)
+- **38 spec files** (orphaned specs for removed atoms still present)
+
+## Phase 1: Media Gallery + Inline Video + GIF (2026-03-18) — IMPLEMENTED
+- **TgMediaGalleryPage:** fullscreen viewer with Swiper, PinchGesture zoom (1x-4x), double-tap toggle, swipe-down dismiss, video playback, download overlay
+- **TgInlineVideoView:** reusable inline video with parent control via @Monitor('playbackCommand'), error recovery, progress reporting
+- **TgAnimationBubble:** GIF autoplay (loop, muted) via TgInlineVideoView, download overlay
+- **MediaGalleryItem:** data model for gallery pipeline
+- **Integration:** TgVideoBubble (short <=30s inline autoplay), TgInstantVideoBubble (circular + progress ring), TgMessageRouter (unified onMediaGalleryOpen, isShortVideo), TgChatScreenPage (gallery overlay + buildMediaGalleryItems pipeline)
+- **Status:** BUILD SUCCESSFUL, awaiting device verification
 
 ## Current active UI path
 - Shell/chat runtime currently routes through:

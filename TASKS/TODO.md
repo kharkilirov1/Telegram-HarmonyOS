@@ -12,6 +12,25 @@ Canonical execution order for agents now lives in:
 
 ## Active now
 
+### 0ab. Device-verify Phase 1 media gallery + inline video + GIF (2026-03-18)
+- **Evidence:** commit `511e6cb` — TgMediaGalleryPage, TgInlineVideoView, TgAnimationBubble, MediaGalleryItem, integration into all bubble atoms + router + chat screen. BUILD SUCCESSFUL.
+- **Current action:** verify on device (CLEAN BUILD):
+  1. Photo tap → gallery opens, pinch zoom works (1x-4x), double-tap toggle
+  2. Swipe between photos in gallery
+  3. Gallery swipe-down dismiss
+  4. Short video (<=30s) auto-plays muted inline in bubble
+  5. Short video tap → gallery with sound
+  6. Long video shows thumbnail + play button, tap → gallery
+  7. GIF auto-plays looping muted in bubble
+  8. Video note tap → plays inline in circle with progress ring
+  9. Video note second tap → gallery fullscreen
+  10. Album cell tap → gallery at correct index
+  11. Gallery shows download button for not-yet-downloaded media
+  12. Max 3 inline videos — no crash on media-heavy chats
+  13. No regression in download/progress indicator states
+  14. Swipe between mixed media types in gallery (photo→video→GIF)
+  15. All existing chat functionality unchanged (text, voice, audio, document)
+
 ### 0aa. Device-verify tab bar badge + selected-pill cleanup (2026-03-18)
 - **Evidence:** `TgTabBar` no longer mutates `AppStorage` directly, the Chats tab now actually passes `showBadge = true`, the selected pill blur/border is driven by `selectedIndex` instead of a temporary timer-gated `pillGlassActive` flash, and the island now uses tab-specific glass colors/material tokens plus a subtler selected-vs-unselected content scale/opacity split.
 - **Current action:** verify on emulator/device:
