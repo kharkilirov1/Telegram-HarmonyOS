@@ -75,6 +75,20 @@ export class ChatTimelineDataSource implements IDataSource {
     }
   }
 
+  /**
+   * Notify LazyForEach that a specific item needs visual refresh.
+   * Used for page-local state changes (playback progress, isPlaying)
+   * that don't come from the data store.
+   */
+  notifyItemChangedByMessageId(messageId: string): void {
+    for (let i = 0; i < this.items.length; i++) {
+      if (this.items[i].kind === 'message' && this.items[i].message.messageId === messageId) {
+        this.notifyDataChange(i);
+        return;
+      }
+    }
+  }
+
   private sameStringArray(prev: string[], next: string[]): boolean {
     if (prev.length !== next.length) {
       return false;

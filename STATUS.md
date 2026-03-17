@@ -1,11 +1,11 @@
 # STATUS — Telegram-HarmonyOS
 
-Snapshot date: 2026-03-16
+Snapshot date: 2026-03-18
 
 ## Current snapshot
 - **Branch:** `dev`
-- **Repo state:** working tree is **not clean** (active media transfer + reference-driven audio/file/videoNote bubble rewrite patch pending commit)
-- **Observed changes:** tighter on-demand download policy, store-backed transfer indicators, router fallback for `document + audio/*`, reference-driven art-tile + seek-bar rewrite for audio bubbles, iOS-style radial progress + transparent overlay for video note circles, unified MediaPlaybackController for voice+audio inline playback with auto-advance, voice/GIF/videoNote auto-download, critical shouldReactToStoreChange fix for download progress visibility
+- **Repo state:** working tree is **not clean** (media bubble interaction hotfix + seek wiring + animation bubble split pending commit)
+- **Observed changes:** photo/video surface tap handlers, correct fileId routing for all media downloads, audio/voice onPlayToggle+onSeek wired to MediaPlaybackController with seekToProgress(), document preview URI fix (double file://), dedicated TgAnimationBubble atom (split from TgVideoBubble), motion transitions (press feedback, overlay fade/scale) across all media bubbles, audio seek bar smooth progress animation
 - **Primary app target:** HarmonyOS NEXT / API 22+
 - **Local reference root:** `C:\Users\Kharki\Desktop\Telegram-HarmonyOS\рефенсы`
 
@@ -56,6 +56,24 @@ Snapshot date: 2026-03-16
 - Navigation: `onTitlePress` + `onAvatarPress` in TgChatScreenPage push to TgProfilePage via chatNavStack
 - Registered in MainTabsPage `chatPageMap`
 - Needs device verification
+
+## Recent changes (2026-03-18, session 22)
+
+### Tab bar contract cleanup: live Chats badge + state-driven selected pill
+- **Chats badge path is live again:** `TgTabBar` now actually enables the unread badge on the Chats tab instead of carrying a dead `chatBadgeCount` prop and `buildBadge()` path.
+- **Atom ownership cleaned up:** `TgTabBar` no longer writes `StorageKeys.MAIN_TAB_INDEX` into `AppStorage`; tab selection ownership remains in `MainTabsPage` / shell state only.
+- **Selected pill is state-driven now:** removed the temporary `pillGlassActive` timer hack and made the selected capsule blur/border depend directly on `selectedIndex` + realtime blur mode, which avoids transient visual desync during fast tab switches.
+- **Spec sync:** `entry/src/main/ets/ui/tg_ui/spec/TgTabBar.md` now explicitly states that page-level shell owns AppStorage/controller state and that the atom only emits selection callbacks.
+- **Local verification pending:** run `scripts/smoke-build.ps1` and device-check Chats unread badge, repeated tab switching, and selected-pill consistency.
+
+## Recent changes (2026-03-18, session 23)
+
+### Tab bar material polish: stronger capsule body + tab-specific glass colors
+- **Tab bar glass is now tuned independently from other chrome:** introduced dedicated `tab_bar_glass_bg` and `tab_bar_edge_highlight` resources instead of reusing the generic glass colors that also affect filter/composer/top-bar surfaces.
+- **Material body strengthened:** the tab bar capsule background alpha and selected pill alpha are slightly higher now, so the island reads as a real object over busy content instead of only as border + shadow.
+- **Micro hierarchy polish:** the tab content now uses a small selected/unselected opacity+scale difference and lighter unselected label weight, which gives the selected tab a clearer premium focus without changing the shell contract.
+- **Token sync:** `TgUiTokens` now includes tab-bar-specific inner padding, pill border width, shadow tuning, and selected/unselected content scale-opacity values.
+- **Local verification pending:** device-check light/dark backgrounds, selected/unselected readability, and whether the stronger material still feels glass-like rather than opaque.
 
 ## Recent changes (2026-03-14, session 8)
 

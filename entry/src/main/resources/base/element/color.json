@@ -161,6 +161,10 @@
       "value": "#03F2F2F7"
     },
     {
+      "name": "tab_bar_glass_bg",
+      "value": "#0DF2F2F7"
+    },
+    {
       "name": "glass_input_bg",
       "value": "#E6FFFFFF"
     },
@@ -177,12 +181,16 @@
       "value": "#55FFFFFF"
     },
     {
+      "name": "tab_bar_edge_highlight",
+      "value": "#66FFFFFF"
+    },
+    {
       "name": "overlay_dark",
       "value": "#66000000"
     },
     {
       "name": "tab_pill_bg",
-      "value": "#1A767680"
+      "value": "#24767680"
     },
     {
       "name": "icon_on_primary",

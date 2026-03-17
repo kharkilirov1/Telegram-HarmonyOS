@@ -4,7 +4,6 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 import { getString } from '../../../core/utils/AppResource';
-import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -12,7 +11,6 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 declare function px2vp(value: number): number;
 const DOMAIN = 0x0020;
 const TAG = 'TgTabBar';
-const PILL_SCALE_MIN: number = 0.6;
 const ISLAND_SCREEN_RATIO: number = 0.8;
 
 @ComponentV2
@@ -23,9 +21,7 @@ export struct TgTabBar {
   @Event onTabSelect: (index: number) => void = (_: number): void => {};
 
   @Local private islandWidth: number = TgUiTokens.TAB_BAR_ISLAND_MAX_WIDTH;
-  @Local private pillGlassActive: boolean = false;
   private mainWindow?: window.Window;
-  private pillGlassTimer: number = -1;
 
   aboutToAppear(): void {
     try {
@@ -45,10 +41,6 @@ export struct TgTabBar {
   }
 
   aboutToDisappear(): void {
-    if (this.pillGlassTimer !== -1) {
-      clearTimeout(this.pillGlassTimer);
-      this.pillGlassTimer = -1;
-    }
     if (this.mainWindow !== undefined) {
       try {
         this.mainWindow.off('windowSizeChange');
@@ -88,7 +80,19 @@ export struct TgTabBar {
   }
 
   private tabFontWeight(index: number): FontWeight {
-    return FontWeight.Medium;
+    return this.isSelected(index) ? FontWeight.Medium : FontWeight.Regular;
+  }
+
+  private tabContentScale(index: number): number {
+    return this.isSelected(index)
+      ? TgUiTokens.TAB_BAR_ITEM_SELECTED_CONTENT_SCALE
+      : TgUiTokens.TAB_BAR_ITEM_UNSELECTED_CONTENT_SCALE;
+  }
+
+  private tabContentOpacity(index: number): number {
+    return this.isSelected(index)
+      ? TgUiTokens.TAB_BAR_ITEM_SELECTED_CONTENT_OPACITY
+      : TgUiTokens.TAB_BAR_ITEM_UNSELECTED_CONTENT_OPACITY;
   }
 
   @Builder
@@ -118,18 +122,18 @@ export struct TgTabBar {
         .borderRadius(TgUiTokens.TAB_BAR_ISLAND_HEIGHT / 2)
         .backgroundColor(TgUiTokens.TAB_BAR_PILL_BG)
         .backgroundBlurStyle(
-          this.pillGlassActive && this.isSelected(index) ? BlurStyle.COMPONENT_THIN : BlurStyle.NONE,
+          this.useRealtimeBlur() && this.isSelected(index) ? BlurStyle.COMPONENT_THIN : BlurStyle.NONE,
           TgGlassPolicy.glassOptions()
         )
         .border({
-          width: this.pillGlassActive && this.isSelected(index) ? 0.5 : 0,
-          color: $r('app.color.glass_edge_highlight')
+          width: this.isSelected(index) ? TgUiTokens.TAB_BAR_PILL_BORDER_WIDTH : 0,
+          color: TgUiTokens.TAB_BAR_ISLAND_BORDER_COLOR
         })
         .clip(true)
         .opacity(this.isSelected(index) ? 1 : 0)
         .scale({
-          x: this.isSelected(index) ? 1 : PILL_SCALE_MIN,
-          y: this.isSelected(index) ? 1 : PILL_SCALE_MIN
+          x: this.isSelected(index) ? 1 : TgUiTokens.TAB_BAR_PILL_UNSELECTED_SCALE,
+          y: this.isSelected(index) ? 1 : TgUiTokens.TAB_BAR_PILL_UNSELECTED_SCALE
         })
         .animation({
           duration: TgUiTokens.TAB_BAR_PILL_ANIM_DURATION,
@@ -168,22 +172,22 @@ export struct TgTabBar {
       }
       .justifyContent(FlexAlign.Center)
       .alignItems(HorizontalAlign.Center)
+      .opacity(this.tabContentOpacity(index))
+      .scale({
+        x: this.tabContentScale(index),
+        y: this.tabContentScale(index)
+      })
+      .animation({
+        duration: TgUiTokens.TAB_BAR_PILL_ANIM_DURATION,
+        curve: Curve.EaseOut
+      })
     }
     .layoutWeight(1)
     .height('100%')
     .clip(false)
     .onClick(() => {
       hilog.info(DOMAIN, TAG, 'Tab click index=%{public}d', index);
-      if (this.pillGlassTimer !== -1) {
-        clearTimeout(this.pillGlassTimer);
-      }
-      this.pillGlassActive = true;
-      AppStorage.set<number>(StorageKeys.MAIN_TAB_INDEX, index);
       this.onTabSelect(index);
-      this.pillGlassTimer = setTimeout(() => {
-        this.pillGlassActive = false;
-        this.pillGlassTimer = -1;
-      }, TgUiTokens.TAB_BAR_PILL_ANIM_DURATION);
     })
   }
 
@@ -192,7 +196,7 @@ export struct TgTabBar {
       Row() {
         this.buildTab(0, this.tabLabel($r('app.string.contacts_title').id, 'Contacts'), $r('app.media.ic_contact'), false)
         this.buildTab(1, this.tabLabel($r('app.string.calls_title').id, 'Calls'), $r('app.media.ic_phone_call'), false)
-        this.buildTab(2, this.tabLabel($r('app.string.chats_title').id, 'Chats'), $r('app.media.ic_chat'), false)
+        this.buildTab(2, this.tabLabel($r('app.string.chats_title').id, 'Chats'), $r('app.media.ic_chat'), true)
         this.buildTab(3, this.tabLabel($r('app.string.settings').id, 'Settings'), $r('app.media.ic_settings'), false)
       }
       .height(TgUiTokens.TAB_BAR_ISLAND_HEIGHT)
@@ -200,7 +204,7 @@ export struct TgTabBar {
       .borderRadius(TgUiTokens.TAB_BAR_ISLAND_RADIUS)
       .backgroundColor(this.useRealtimeBlur() ? TgUiTokens.TAB_BAR_ISLAND_BG : TgUiTokens.TAB_BAR_ISLAND_FALLBACK_BG)
       .backgroundBlurStyle(TgGlassPolicy.tabBarBlurStyle(), TgGlassPolicy.glassOptions())
-      .padding(4)
+      .padding(TgUiTokens.TAB_BAR_ISLAND_INNER_PADDING)
       .border({
         width: TgUiTokens.TAB_BAR_ISLAND_BORDER_WIDTH,
         color: TgUiTokens.TAB_BAR_ISLAND_BORDER_COLOR

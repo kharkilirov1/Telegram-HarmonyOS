@@ -13,6 +13,7 @@ export struct TgInstantVideoBubble {
   @Event onTap: () => void = () => {};
   @Event onPlayToggle: () => void = () => {};
   @Event onDownloadToggle: () => void = () => {};
+  @Local private circleScale: number = 1.0;
 
   private hasPath(path: string | Resource): boolean {
     if (typeof path === 'string') {
@@ -207,6 +208,15 @@ export struct TgInstantVideoBubble {
     .onClick(() => {
       this.onTap();
     })
+    .onTouch((event: TouchEvent) => {
+      if (event.type === TouchType.Down) {
+        this.circleScale = 0.95;
+      } else if (event.type === TouchType.Up || event.type === TouchType.Cancel) {
+        this.circleScale = 1.0;
+      }
+    })
+    .scale({ x: this.circleScale, y: this.circleScale })
+    .animation({ duration: 200, curve: Curve.EaseOut })
   }
 
   build() {

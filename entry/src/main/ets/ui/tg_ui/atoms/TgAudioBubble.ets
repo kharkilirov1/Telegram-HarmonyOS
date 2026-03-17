@@ -20,6 +20,7 @@ export struct TgAudioBubble {
   @Event onTap: () => void = () => {};
   @Event onPlayToggle: () => void = () => {};
   @Event onSeek: (progress: number) => void = (_: number) => {};
+  @Local private artTileScale: number = 1.0;
 
   private bubbleColor(): ResourceColor {
     return this.isOutgoing ? TgUiTokens.COLOR_MSG_BUBBLE_OUTGOING_BG : TgUiTokens.COLOR_MSG_BUBBLE_INCOMING_BG;
@@ -208,6 +209,15 @@ export struct TgAudioBubble {
     .onClick((event: ClickEvent) => {
       this.onPlayToggle();
     })
+    .onTouch((event: TouchEvent) => {
+      if (event.type === TouchType.Down) {
+        this.artTileScale = 0.9;
+      } else if (event.type === TouchType.Up || event.type === TouchType.Cancel) {
+        this.artTileScale = 1.0;
+      }
+    })
+    .scale({ x: this.artTileScale, y: this.artTileScale })
+    .animation({ duration: 200, curve: Curve.EaseOut })
   }
 
   // ── Seek bar: playback progress (horizontal bar — always visible) ──
@@ -224,8 +234,9 @@ export struct TgAudioBubble {
         Row()
           .width(Math.max(2, this.normalizedPlaybackProgress() * 100).toString() + '%')
           .height(4)
-          .backgroundColor(TgUiTokens.AUDIO_BUBBLE_SEEK_FILL) // Usually blue or white, should be visible
+          .backgroundColor(TgUiTokens.AUDIO_BUBBLE_SEEK_FILL)
           .borderRadius(2)
+          .animation({ duration: 150, curve: Curve.Linear })
       }
     }
     .width('100%')
@@ -286,16 +297,14 @@ export struct TgAudioBubble {
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .width('100%')
 
-        // Seek bar or download progress bar
-        Column() {
-          if (this.hasDownloadProgress()) {
+        // Download progress bar (only during download)
+        if (this.hasDownloadProgress()) {
+          Column() {
             this.buildDownloadProgressBar()
-          } else {
-            this.buildSeekBar()
           }
+          .width('100%')
+          .margin({ top: TgUiTokens.AUDIO_BUBBLE_SEEK_TOP_GAP - TgUiTokens.SPACE_2 })
         }
-        .width('100%')
-        .margin({ top: TgUiTokens.AUDIO_BUBBLE_SEEK_TOP_GAP - TgUiTokens.SPACE_2 })
 
         // Duration / size / download meta
         Text(this.durationMetaLine())

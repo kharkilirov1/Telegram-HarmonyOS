@@ -1,6 +1,6 @@
 # TODO — observed current work
 
-Last updated: 2026-03-16
+Last updated: 2026-03-18
 
 This is a **working snapshot**, not a product roadmap. It is derived from:
 - current git status on branch `dev`
@@ -11,6 +11,17 @@ Canonical execution order for agents now lives in:
 - `TASKS/AGENT_EXECUTION_PLAN.md`
 
 ## Active now
+
+### 0aa. Device-verify tab bar badge + selected-pill cleanup (2026-03-18)
+- **Evidence:** `TgTabBar` no longer mutates `AppStorage` directly, the Chats tab now actually passes `showBadge = true`, the selected pill blur/border is driven by `selectedIndex` instead of a temporary timer-gated `pillGlassActive` flash, and the island now uses tab-specific glass colors/material tokens plus a subtler selected-vs-unselected content scale/opacity split.
+- **Current action:** verify on emulator/device:
+  1. unread badge appears on the Chats tab when `totalUnread > 0`,
+  2. badge clamps cleanly at `99+`,
+  3. repeated fast tab switching does not produce stale glass flashes or selected-pill desync,
+  4. tapping the already-selected tab still behaves normally and does not break `TabsController` state,
+  5. tab selection continues to persist through the page-owned shell state only,
+  6. light/dark tab bar material reads as a real glass capsule instead of an almost-invisible outline,
+  7. selected tab content feels slightly stronger than unselected without looking over-animated.
 
 ### 0z. Device-verify full media playback + download pipeline (2026-03-16, session 8)
 - **Evidence (visual):** `TgAudioBubble` — 44vp round circle (radius 22, iOS parity) with gradient `#51b4ff→#2b88d4`, download arrow on idle, play/pause/ring-progress on states, 4vp seek bar below performer. `TgInstantVideoBubble` — radial `Progress(Ring)` around circle, semi-transparent overlays. Voice button 40vp, waveform range 3-20vp.

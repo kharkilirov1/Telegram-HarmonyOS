@@ -150,8 +150,12 @@ export struct TgPhotoBubble {
             .objectFit(ImageFit.Contain)
             .borderRadius(TgUiTokens.PHOTO_BUBBLE_RADIUS - TgUiTokens.PHOTO_BUBBLE_IMAGE_INSET)
             .clip(true)
+            .onClick(() => this.handleSurfaceTap())
         } else {
-          this.buildPlaceholder()
+          Column() {
+            this.buildPlaceholder()
+          }
+          .onClick(() => this.handleSurfaceTap())
         }
       }
       .width('100%')
@@ -176,7 +180,6 @@ export struct TgPhotoBubble {
               .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
               .color('#FFFFFF')
           }
-          // Close Icon
           Image($r('sys.media.ohos_ic_public_cancel'))
             .width(16).height(16).fillColor('#FFFFFF')
         }
@@ -185,6 +188,7 @@ export struct TgPhotoBubble {
         .backgroundColor('#40000000')
         .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
         .onClick(() => this.onDownloadToggle())
+        .transition({ type: TransitionType.All, opacity: 0, scale: { x: 0.8, y: 0.8 } })
       } else if (!this.hasLocalPhoto) {
         Row() {
           TgIcon({
@@ -200,6 +204,7 @@ export struct TgPhotoBubble {
         .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
         .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
         .onClick(() => this.onDownloadToggle())
+        .transition({ type: TransitionType.All, opacity: 0, scale: { x: 0.8, y: 0.8 } })
       }
     }
     .width('100%')
@@ -209,6 +214,18 @@ export struct TgPhotoBubble {
       top: TgUiTokens.PHOTO_BUBBLE_IMAGE_INSET,
       bottom: this.hasCaption() ? 0 : TgUiTokens.PHOTO_BUBBLE_IMAGE_INSET
     })
+  }
+
+  private handleSurfaceTap(): void {
+    if (this.isDownloading) {
+      // Already downloading — no-op (cancel handled by overlay button)
+      return;
+    }
+    if (this.hasLocalPhoto) {
+      this.onPhotoTap();
+    } else {
+      this.onDownloadToggle();
+    }
   }
 
   @Builder

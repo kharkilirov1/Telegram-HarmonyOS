@@ -3,23 +3,20 @@ import { TgIcon } from './TgIcon';
 import { TgInlineVideoView } from './TgInlineVideoView';
 
 @ComponentV2
-export struct TgVideoBubble {
+export struct TgAnimationBubble {
   @Param thumbnailPath: string | Resource = '';
-  @Param videoPath: string | Resource = '';
-  @Param durationSec: number = 0;
+  @Param animationPath: string | Resource = '';
   @Param caption: string = '';
   @Param isOutgoing: boolean = false;
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
   @Param maxWidthRatio: number = TgUiTokens.BUBBLE_MAX_WIDTH_RATIO;
-  @Param videoWidth: number = 0;
-  @Param videoHeight: number = 0;
+  @Param animationWidth: number = 0;
+  @Param animationHeight: number = 0;
   @Param noBubbleWrap: boolean = false;
-  @Param hidePlayButton: boolean = false;
   @Param useRegularMaxDimensions: boolean = false;
-  @Param isShortVideo: boolean = false;
   @Param isDownloadPending: boolean = false;
   @Param downloadProgress: number = -1;
-  @Event onVideoPlayTap: () => void = () => {};
+  @Event onAnimationTap: () => void = () => {};
   @Event onDownloadToggle: () => void = () => {};
 
   private usesRegularDimensions(): boolean {
@@ -34,19 +31,15 @@ export struct TgVideoBubble {
   }
 
   private hasPreview(): boolean {
-    return this.hasPath(this.thumbnailPath) || this.hasPath(this.videoPath);
+    return this.hasPath(this.thumbnailPath) || this.hasPath(this.animationPath);
+  }
+
+  private hasLocalAnimation(): boolean {
+    return this.hasPath(this.animationPath);
   }
 
   private hasCaption(): boolean {
     return this.caption.trim().length > 0;
-  }
-
-  private hasLocalVideo(): boolean {
-    return this.hasPath(this.videoPath);
-  }
-
-  private hasDuration(): boolean {
-    return this.durationSec > 0;
   }
 
   private hasDeterminateProgress(): boolean {
@@ -57,16 +50,18 @@ export struct TgVideoBubble {
     return Math.max(0, Math.min(1, this.downloadProgress));
   }
 
-  private downloadPercentLabel(): string {
-    const percent = Math.floor(this.normalizedDownloadProgress() * 100);
-    return Math.max(1, Math.min(99, percent)).toString() + '%';
-  }
-
   private previewSource(): string | Resource {
     if (this.hasPath(this.thumbnailPath)) {
       return this.thumbnailPath;
     }
-    return this.videoPath;
+    return this.animationPath;
+  }
+
+  private displaySource(): string | Resource {
+    if (this.hasLocalAnimation()) {
+      return this.animationPath;
+    }
+    return this.previewSource();
   }
 
   private bubbleColor(): ResourceColor {
@@ -91,8 +86,8 @@ export struct TgVideoBubble {
 
   private computedMediaHeight(): number {
     const mediaWidth = this.computedMediaWidth();
-    if (this.videoWidth > 0 && this.videoHeight > 0) {
-      const scaled = Math.floor(mediaWidth * this.videoHeight / this.videoWidth);
+    if (this.animationWidth > 0 && this.animationHeight > 0) {
+      const scaled = Math.floor(mediaWidth * this.animationHeight / this.animationWidth);
       return Math.max(TgUiTokens.VIDEO_BUBBLE_MIN_HEIGHT,
         Math.min(scaled,
           this.usesRegularDimensions() ? TgUiTokens.VIDEO_BUBBLE_MAX_HEIGHT_REGULAR : TgUiTokens.VIDEO_BUBBLE_MAX_HEIGHT));
@@ -102,18 +97,15 @@ export struct TgVideoBubble {
       this.usesRegularDimensions() ? TgUiTokens.VIDEO_BUBBLE_MAX_HEIGHT_REGULAR : TgUiTokens.VIDEO_BUBBLE_MAX_HEIGHT);
   }
 
-  private formatDuration(): string {
-    const seconds = Math.max(0, Math.floor(this.durationSec));
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainSeconds = seconds % 60;
-    const mm = minutes < 10 ? '0' + minutes.toString() : minutes.toString();
-    const ss = remainSeconds < 10 ? '0' + remainSeconds.toString() : remainSeconds.toString();
-
-    if (hours > 0) {
-      return hours.toString() + ':' + mm + ':' + ss;
+  private handleSurfaceTap(): void {
+    if (this.isDownloadPending) {
+      return;
     }
-    return minutes.toString() + ':' + ss;
+    if (this.hasLocalAnimation()) {
+      this.onAnimationTap();
+    } else {
+      this.onDownloadToggle();
+    }
   }
 
   @Builder
@@ -124,7 +116,7 @@ export struct TgVideoBubble {
         iconSize: TgUiTokens.ICON_SIZE_XL,
         tintColor: TgUiTokens.VIDEO_BUBBLE_PLACEHOLDER_ICON
       })
-      Text($r('app.string.video'))
+      Text('GIF')
         .fontSize(TgUiTokens.FONT_META_SIZE)
         .fontColor(TgUiTokens.VIDEO_BUBBLE_PLACEHOLDER_ICON)
     }
@@ -137,46 +129,44 @@ export struct TgVideoBubble {
   }
 
   @Builder
-  private buildDurationBadge() {
-    if (this.hasDuration()) {
-      Row() {
-        Text(this.formatDuration())
-          .fontSize(TgUiTokens.VIDEO_BUBBLE_DURATION_FONT_SIZE)
-          .lineHeight(TgUiTokens.VIDEO_BUBBLE_DURATION_LINE_HEIGHT)
-          .fontWeight(FontWeight.Medium)
-          .fontColor(TgUiTokens.VIDEO_BUBBLE_DURATION_TEXT)
-      }
-      .padding({
-        left: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_H,
-        right: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_H,
-        top: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_V,
-        bottom: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_V
-      })
-      .backgroundColor(TgUiTokens.VIDEO_BUBBLE_DURATION_BG)
-      .borderRadius(TgUiTokens.VIDEO_BUBBLE_DURATION_RADIUS)
-      .position({
-        right: TgUiTokens.VIDEO_BUBBLE_DURATION_MARGIN,
-        bottom: TgUiTokens.VIDEO_BUBBLE_DURATION_MARGIN
-      })
+  private buildGifBadge() {
+    Row() {
+      Text('GIF')
+        .fontSize(TgUiTokens.VIDEO_BUBBLE_DURATION_FONT_SIZE)
+        .lineHeight(TgUiTokens.VIDEO_BUBBLE_DURATION_LINE_HEIGHT)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(TgUiTokens.VIDEO_BUBBLE_DURATION_TEXT)
     }
+    .padding({
+      left: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_H,
+      right: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_H,
+      top: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_V,
+      bottom: TgUiTokens.VIDEO_BUBBLE_DURATION_PADDING_V
+    })
+    .backgroundColor(TgUiTokens.VIDEO_BUBBLE_DURATION_BG)
+    .borderRadius(TgUiTokens.VIDEO_BUBBLE_DURATION_RADIUS)
+    .position({
+      right: TgUiTokens.VIDEO_BUBBLE_DURATION_MARGIN,
+      bottom: TgUiTokens.VIDEO_BUBBLE_DURATION_MARGIN
+    })
   }
 
   @Builder
   private buildMedia() {
     Stack({ alignContent: Alignment.Center }) {
-      if (this.hasLocalVideo() && this.isShortVideo) {
-        // Short video — inline autoplay muted
+      if (this.hasLocalAnimation()) {
+        // Local file — play as inline video (GIF auto-play loop muted)
         TgInlineVideoView({
-          videoPath: this.videoPath as string,
+          videoPath: this.animationPath as string,
           thumbnailPath: this.thumbnailPath,
           videoWidth: this.computedMediaWidth(),
           videoHeight: this.computedMediaHeight(),
           autoPlay: true,
-          loop: false,
+          loop: true,
           muted: true,
           showControls: false,
           isCircular: false,
-          onTap: () => this.onVideoPlayTap()
+          onTap: () => this.onAnimationTap()
         })
       } else if (this.hasPreview()) {
         Image(this.previewSource())
@@ -185,12 +175,8 @@ export struct TgVideoBubble {
           .objectFit(ImageFit.Cover)
           .borderRadius(TgUiTokens.VIDEO_BUBBLE_RADIUS - TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET)
           .clip(true)
-          .onClick(() => this.handleSurfaceTap())
       } else {
-        Column() {
-          this.buildPlaceholder()
-        }
-        .onClick(() => this.handleSurfaceTap())
+        this.buildPlaceholder()
       }
 
       if (this.isDownloadPending) {
@@ -220,8 +206,7 @@ export struct TgVideoBubble {
         .backgroundColor('#40000000')
         .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
         .onClick(() => this.onDownloadToggle())
-        .transition({ type: TransitionType.All, opacity: 0, scale: { x: 0.8, y: 0.8 } })
-      } else if (!this.hasLocalVideo()) {
+      } else if (!this.hasLocalAnimation()) {
         Row() {
           TgIcon({
             src: TgUiTokens.ICON_RES_DOWNLOAD,
@@ -236,93 +221,19 @@ export struct TgVideoBubble {
         .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
         .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
         .onClick(() => this.onDownloadToggle())
-        .transition({ type: TransitionType.All, opacity: 0, scale: { x: 0.8, y: 0.8 } })
-      } else if (!this.hidePlayButton) {
-        Row() {
-          TgIcon({
-            src: TgUiTokens.ICON_RES_PLAY,
-            iconSize: TgUiTokens.VIDEO_BUBBLE_PLAY_ICON_SIZE,
-            tintColor: TgUiTokens.VIDEO_BUBBLE_PLAY_ICON
-          })
-        }
-        .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-        .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-        .justifyContent(FlexAlign.Center)
-        .alignItems(VerticalAlign.Center)
-        .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
-        .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
-        .onClick(() => this.onVideoPlayTap())
-        .transition({ type: TransitionType.All, opacity: 0, scale: { x: 0.8, y: 0.8 } })
       }
 
-      this.buildDurationBadge()
+      this.buildGifBadge()
     }
     .width(this.computedMediaWidth())
     .height(this.computedMediaHeight())
     .borderRadius(TgUiTokens.VIDEO_BUBBLE_RADIUS - TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET)
     .clip(true)
-  }
-
-  private handleSurfaceTap(): void {
-    if (this.isDownloadPending) {
-      // Already downloading — no-op (cancel handled by overlay button)
-      return;
-    }
-    if (this.hasLocalVideo()) {
-      this.onVideoPlayTap();
-    } else {
-      this.onDownloadToggle();
-    }
-  }
-
-  @Builder
-  private buildCaption() {
-    if (this.hasCaption()) {
-      Text(this.caption.trim())
-        .fontSize(TgUiTokens.VIDEO_BUBBLE_CAPTION_SIZE)
-        .lineHeight(TgUiTokens.VIDEO_BUBBLE_CAPTION_LINE_HEIGHT)
-        .fontWeight(TgUiTokens.MSG_TEXT_WEIGHT)
-        .fontColor(this.captionColor())
-        .wordBreak(WordBreak.BREAK_WORD)
-        .lineBreakStrategy(LineBreakStrategy.HIGH_QUALITY)
-        .maxLines(TgUiTokens.VIDEO_BUBBLE_CAPTION_MAX_LINES)
-        .textOverflow({ overflow: TextOverflow.Ellipsis })
-        .width('100%')
-        .padding({
-          left: TgUiTokens.VIDEO_BUBBLE_CAPTION_PADDING_H,
-          right: TgUiTokens.VIDEO_BUBBLE_CAPTION_PADDING_H,
-          top: TgUiTokens.VIDEO_BUBBLE_CAPTION_TOP_GAP,
-          bottom: TgUiTokens.VIDEO_BUBBLE_CAPTION_PADDING_BOTTOM
-        })
-    }
-  }
-
-  @Builder
-  private buildBubble() {
-    Column() {
-      Row() {
-        this.buildMedia()
-      }
-      .width('100%')
-      .justifyContent(FlexAlign.Center)
-      .padding({
-        left: TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET,
-        right: TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET,
-        top: TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET,
-        bottom: this.hasCaption() ? 0 : TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET
-      })
-
-      this.buildCaption()
-    }
-    .width(this.computedBubbleWidth())
-    .backgroundColor(this.bubbleColor())
-    .borderRadius(TgUiTokens.VIDEO_BUBBLE_RADIUS)
-    .clip(true)
+    .onClick(() => this.handleSurfaceTap())
   }
 
   build() {
     if (this.noBubbleWrap) {
-      // noBubbleWrap: media only — caption rendered by TgMessageRouter for inline meta
       Column() {
         Row() {
           this.buildMedia()
@@ -339,7 +250,23 @@ export struct TgVideoBubble {
       .width(this.computedBubbleWidth())
     } else {
       Row() {
-        this.buildBubble()
+        Column() {
+          Row() {
+            this.buildMedia()
+          }
+          .width('100%')
+          .justifyContent(FlexAlign.Center)
+          .padding({
+            left: TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET,
+            right: TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET,
+            top: TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET,
+            bottom: TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET
+          })
+        }
+        .width(this.computedBubbleWidth())
+        .backgroundColor(this.bubbleColor())
+        .borderRadius(TgUiTokens.VIDEO_BUBBLE_RADIUS)
+        .clip(true)
       }
       .width('100%')
       .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)

@@ -19,6 +19,7 @@ export struct TgVoiceBubble {
   @Event onTap: () => void = () => {};
   @Event onPlayToggle: () => void = () => {};
   @Event onSeek: (progress: number) => void = (_: number) => {};
+  @Local private buttonScale: number = 1.0;
 
   private canvasContext: CanvasRenderingContext2D = new CanvasRenderingContext2D();
 
@@ -280,6 +281,15 @@ export struct TgVoiceBubble {
       .onClick((event: ClickEvent) => {
         this.onPlayToggle();
       })
+      .onTouch((event: TouchEvent) => {
+        if (event.type === TouchType.Down) {
+          this.buttonScale = 0.9;
+        } else if (event.type === TouchType.Up || event.type === TouchType.Cancel) {
+          this.buttonScale = 1.0;
+        }
+      })
+      .scale({ x: this.buttonScale, y: this.buttonScale })
+      .animation({ duration: 200, curve: Curve.EaseOut })
 
       Row() {
         this.buildWaveform()

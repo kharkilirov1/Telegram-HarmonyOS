@@ -67,6 +67,7 @@ export class ChatMessageRowVO {
   videoThumbPath: string = '';
   videoPath: string = '';
   videoDuration: number = 0;
+  isShortVideo: boolean = false;
   videoWidth: number = 0;
   videoHeight: number = 0;
   isVideoDownloading: boolean = false;
@@ -504,6 +505,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   row.videoThumbPath = toFileUri(rawVideoThumb);
   row.videoPath = toFileUri(content.videoPath);
   row.videoDuration = content.videoDuration;
+  row.isShortVideo = content.videoDuration > 0 && content.videoDuration <= 30;
   row.videoWidth = content.videoWidth;
   row.videoHeight = content.videoHeight;
   row.videoFileId = content.videoFileId;
@@ -517,6 +519,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
     row.videoThumbPath = toFileUri(rawAnimThumb);
     row.videoPath = toFileUri(content.animationPath);
     row.videoDuration = content.animationDuration;
+    row.isShortVideo = true; // GIFs always inline
     row.videoWidth = content.animationWidth;
     row.videoHeight = content.animationHeight;
     row.videoFileId = content.animationFileId;

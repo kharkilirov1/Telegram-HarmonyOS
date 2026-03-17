@@ -22,6 +22,8 @@ export class DownloadAvatarsUseCase {
   private gateway: TdGatewayPort;
   private pendingFileIds: Set<number> = new Set<number>();
   private unsubscribe: (() => void) | null = null;
+  private scanScheduled: boolean = false;
+  private static readonly SCAN_THROTTLE_MS = 500;
 
   constructor(store: AppStore, gateway: TdGatewayPort) {
     this.store = store;
@@ -36,10 +38,10 @@ export class DownloadAvatarsUseCase {
     // Scan current state
     this.scanAndDownload(this.store.getState());
 
-    // Subscribe for future changes
+    // Subscribe for future changes — throttled to avoid scan spam
     this.unsubscribe = this.store.subscribe((newState: AppState, prevState: AppState): void => {
       if (newState.users !== prevState.users || newState.chats !== prevState.chats) {
-        this.scanAndDownload(newState);
+        this.scheduleScan(newState);
       }
     });
   }
@@ -50,6 +52,17 @@ export class DownloadAvatarsUseCase {
       this.unsubscribe = null;
     }
     this.pendingFileIds.clear();
+    this.scanScheduled = false;
+  }
+
+  private scheduleScan(state: AppState): void {
+    if (this.scanScheduled) return;
+    this.scanScheduled = true;
+    setTimeout(() => {
+      this.scanScheduled = false;
+      // Use latest state, not the captured one
+      this.scanAndDownload(this.store.getState());
+    }, DownloadAvatarsUseCase.SCAN_THROTTLE_MS);
   }
 
   private scanAndDownload(state: AppState): void {

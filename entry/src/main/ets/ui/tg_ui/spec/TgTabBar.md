@@ -17,6 +17,9 @@
 - `glassMode: string`
 - callback:
   - `onTabSelect`
+- ownership:
+  - page/shell owns `AppStorage` writes and `TabsController`
+  - atom is presentational and emits selection only
 
 ## 4) State matrix
 - selected contacts / calls / chats / settings
@@ -27,12 +30,15 @@
 ## 5) Layout rules
 - Centered glass capsule aligned above the bottom safe area, not a full-width shelf.
 - Four tabs share equal width and identical icon/text vertical alignment.
-- Chats tab overlays unread badge above icon.
+- Chats tab overlays unread badge above icon when `chatBadgeCount > 0`.
 - Capsule surface owns blur, border, and shadow; page owns outer bottom offset above the safe area.
-- Selection uses a compact liquid-lens / capsule highlight inside the larger glass container.
+- Selection uses a compact capsule highlight inside the larger glass container and is driven directly by `selectedIndex` (no timer-only visual state).
+- The tab bar uses tab-specific glass resources (`tab_bar_glass_bg`, `tab_bar_edge_highlight`) so material tuning can evolve without shifting other glass chrome.
 
 ## 6) Token mapping
 - `TAB_BAR_*`
+- `tab_bar_glass_bg`
+- `tab_bar_edge_highlight`
 - `COLOR_ICON_PRIMARY`
 - `COLOR_ICON_SECONDARY`
 - `COLOR_UNREAD_BG`
@@ -45,3 +51,4 @@
 - [x] blur/fallback modes supported
 - [x] tab selection callback exposed
 - [x] no hardcoded geometry/colors in atom
+- [x] atom does not mutate shell `AppStorage` directly

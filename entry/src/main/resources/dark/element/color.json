@@ -161,6 +161,10 @@
       "value": "#032C2C2E"
     },
     {
+      "name": "tab_bar_glass_bg",
+      "value": "#102C2C2E"
+    },
+    {
       "name": "glass_input_bg",
       "value": "#CC1C1C1E"
     },
@@ -177,8 +181,12 @@
       "value": "#33FFFFFF"
     },
     {
+      "name": "tab_bar_edge_highlight",
+      "value": "#40FFFFFF"
+    },
+    {
       "name": "tab_pill_bg",
-      "value": "#1AFFFFFF"
+      "value": "#24FFFFFF"
     },
     {
       "name": "search_chip_bg",

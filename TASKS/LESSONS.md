@@ -1,6 +1,6 @@
 # LESSONS — repeated mistakes and project-specific pitfalls
 
-Last updated: 2026-03-16
+Last updated: 2026-03-18
 
 ## 1. Do not mix V1 and V2 ArkUI decorators casually
 - `tg_ui` is largely `@ComponentV2`.
@@ -258,6 +258,19 @@ Last updated: 2026-03-16
 - In this repo, `photoPath` in the chat VO can legally point to a thumb/preview while the full `photoFileId` is still downloading.
 - Therefore the photo bubble cannot infer “full asset is local” from “some preview image exists”; it needs an explicit `hasLocalPhoto` flag separate from the preview URI.
 - Safer pattern: compute an explicit `reserveAvatarLane` flag in timeline/build logic and pass it into the router instead of inferring lane reservation from sender-name presence.
+
+## 50. Atoms must not mutate shell navigation state directly
+- In this repo, `TgTabBar` briefly wrote `MAIN_TAB_INDEX` into `AppStorage` itself even though `MainTabsPage` already owned `selectedIndex`, `TabsController`, and shell persistence.
+- That duplicates the source of truth and makes tab selection bugs harder to reason about.
+- Keep atoms presentational: emit callbacks upward, and let the page/shell own `AppStorage` and controller writes.
+
+## 51. Demo/state coverage is not proof that a badge path is actually live
+- `TgTabBar` already had `chatBadgeCount` and `buildBadge()`, but the real Chats tab still passed `showBadge = false`, so unread badges never rendered at runtime.
+- For shell chrome, always verify the integrated call site after atom work; do not assume a prop/state path is live just because the atom supports it.
+
+## 52. Tab bar glass tuning should not silently retint the whole chrome system
+- In this repo, `glass_tab_bg` and `glass_edge_highlight` are reused by multiple surfaces (tab bar, filter bar, top/composer chrome).
+- When only the tab bar needs more visual mass, prefer dedicated tab-bar resources/tokens instead of globally changing every glass surface at once.
 
 
 ## 48. ArkUI text can look “correct but not Telegram-like” if wrapping stays on the default greedy path
@@ -589,3 +602,37 @@ Last updated: 2026-03-16
 - After rewriting TgAudioBubble.ets with new layout (art tile, seek bar, gradient), a normal rebuild showed no visual change on device.
 - HarmonyOS hvigor/DevEco can cache compiled artifacts. Use Build → Clean Project → Build to force fresh compilation.
 - If visual changes don't appear after rebuild, suspect build cache before debugging code.
+
+## 99. Router must pass fileId props for each media type — not reuse documentFileId for photos
+- Photo download was wired to `this.documentFileId` in router, which is always 0 for photo messages.
+- Each media type needs its own fileId prop: `photoFileId`, `videoFileId`, `audioFileId`, `documentFileId`, `voiceFileId`.
+- The page already has these IDs from ChatTimelineVO — they just need explicit prop forwarding.
+
+## 100. videoNote download used `voiceFileId` instead of `videoFileId` — wrong file entirely
+- Copy-paste error in router: instant video download callback used `this.voiceFileId`.
+- videoNote shares the `videoFileId`/`videoPath` path in ChatTimelineVO, not voice.
+
+## 101. `onPlayToggle` / `onSeek` passed as no-ops kill audio/voice bubble interactivity
+- Router was passing `() => {}` for `onPlayToggle` and `onSeek` in audio/voice branches.
+- The atoms' art tile and seek gestures visually exist but do nothing without real callbacks.
+- Wire `onPlayToggle` → same handler as `onTap`, wire `onSeek` → `seekToProgress()` on controller.
+
+## 102. Document preview URI may already be a file:// URI from ChatTimelineVO
+- `TgDocumentRow` prepended `'file://' +` to `documentPath`, but the VO already normalizes paths to file:// URIs.
+- Result: `Image('file://file://...')` which silently fails. Just pass `this.documentPath` directly.
+
+## 103. Animation/GIF should have a dedicated bubble, not ride on TgVideoBubble with hidePlayButton
+- `TgVideoBubble + hidePlayButton` hack loses GIF-specific semantics: "GIF" badge, no play button, auto-play surface.
+- Dedicated `TgAnimationBubble` makes the route explicit and allows GIF-specific behavior later.
+
+## 104. AVPlayer `prepare()` requires `initialized` state — fdSrc assignment is async
+- Calling `prepare()` immediately after `player.fdSrc = ...` causes "current state is not stopped or initialized" errors.
+- `fdSrc` triggers an async state transition to `initialized`. Must wait for that state before calling `prepare()`.
+- Also: `release()` on an active player (`playing`/`paused`) should `stop()` first to avoid "unsupport release" errors.
+- Fix: `waitForState('initialized', 2000)` helper + explicit `stop()` in `release()`.
+
+## 105. Store subscription handlers that scan full state need throttle/debounce
+- `DownloadAvatars` subscribed to `users`/`chats` changes and ran a full scan on every update.
+- During initial load with 100+ chats, each chat addition triggers a store update → scan → log line.
+- Result: 269 scan iterations in 5 minutes, mostly redundant.
+- Fix: throttle scan to max once per 500ms, use latest state at execution time instead of captured state.

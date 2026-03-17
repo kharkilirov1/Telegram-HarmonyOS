@@ -9,6 +9,7 @@ import { TgPhotoBubble } from '../atoms/TgPhotoBubble';
 import { TgGroupedPhotoBubble } from '../atoms/TgGroupedPhotoBubble';
 import { TgVideoBubble } from '../atoms/TgVideoBubble';
 import { TgInstantVideoBubble } from '../atoms/TgInstantVideoBubble';
+import { TgAnimationBubble } from '../atoms/TgAnimationBubble';
 import { TgDocumentRow } from '../atoms/TgDocumentRow';
 import { TgAudioBubble } from '../atoms/TgAudioBubble';
 import { TgVoiceBubble } from '../atoms/TgVoiceBubble';
@@ -37,6 +38,7 @@ export struct TgMessageRouter {
 
   // ── Photo ──
   @Param photoPath: string = '';
+  @Param photoFileId: number = 0;
   @Param hasLocalPhoto: boolean = false;
   @Param isPhotoDownloading: boolean = false;
   @Param photoDownloadProgress: number = -1;
@@ -49,6 +51,8 @@ export struct TgMessageRouter {
   // ── Video / Animation ──
   @Param videoThumbPath: string = '';
   @Param videoPath: string = '';
+  @Param videoFileId: number = 0;
+  @Param isShortVideo: boolean = false;
   @Param isVideoDownloading: boolean = false;
   @Param videoDownloadProgress: number = -1;
   @Param videoDuration: number = 0;
@@ -77,6 +81,7 @@ export struct TgMessageRouter {
   @Event onMediaDownloadRequest: (fileId: number) => void = (_: number) => {};
 
   // ── Media viewer callbacks ──
+  @Event onMediaGalleryOpen: (messageId: string) => void = (_: string) => {};
   @Event onPhotoTap: () => void = () => {};
   @Event onAlbumPhotoTap: (photoPath: string, caption: string) => void = (_: string, __: string) => {};
   @Event onVideoTap: () => void = () => {};
@@ -97,6 +102,8 @@ export struct TgMessageRouter {
   @Param voicePlaybackProgress: number = 0;
   @Event onVoiceTap: (messageId: string, voicePath: string, voiceFileId: number) => void =
     (_: string, __: string, ___: number) => {};
+  @Event onAudioSeek: (messageId: string, progress: number) => void = (_: string, __: number) => {};
+  @Event onVoiceSeek: (messageId: string, progress: number) => void = (_: string, __: number) => {};
 
   // ── Sticker ──
   @Param stickerPath: string = '';
@@ -286,6 +293,10 @@ export struct TgMessageRouter {
     return TgUiTokens.resolveVoiceBubbleWidth(this.maxBubbleWidth(), 1.0, this.voiceDuration);
   }
 
+  private audioBubbleWidth(): number {
+    return TgUiTokens.resolveAudioBubbleWidth(this.maxBubbleWidth(), 1.0);
+  }
+
   // Build invisible trailing text that reserves space for inline time overlay.
   // The transparent Span at meta font size matches the actual TgMessageMeta width,
   // so text wraps around it naturally (iOS trailingLineWidth / Android timeWidth pattern).
@@ -371,7 +382,12 @@ export struct TgMessageRouter {
         maxWidthRatio: 1.0,
         noBubbleWrap: true,
         useRegularMaxDimensions: this.usesRegularBubbleLayout(),
-        onPhotoTap: () => { this.onPhotoTap(); }
+        onPhotoTap: () => { this.onPhotoTap(); },
+        onDownloadToggle: () => {
+          if (!this.hasLocalPhoto && !this.isPhotoDownloading && this.photoFileId > 0) {
+            this.onMediaDownloadRequest(this.photoFileId);
+          }
+        }
       })
     } else if (this.contentType === 'photoAlbum') {
       TgGroupedPhotoBubble({
@@ -398,13 +414,33 @@ export struct TgMessageRouter {
         onTap: () => { this.onVideoTap(); },
         onPlayToggle: () => { this.onVideoTap(); },
         onDownloadToggle: () => {
-          if (!this.videoPath && !this.isVideoDownloading && this.videoDownloadProgress < 0) {
-            // Need to use the generic video file logic, assume using photoFileId/video thumb
-            this.onMediaDownloadRequest(this.voiceFileId);
+          if (!this.videoPath && !this.isVideoDownloading && this.videoFileId > 0) {
+            this.onMediaDownloadRequest(this.videoFileId);
           }
         }
       })
-    } else if (this.contentType === 'video' || this.contentType === 'animation') {
+    } else if (this.contentType === 'animation') {
+      TgAnimationBubble({
+        thumbnailPath: this.videoThumbPath,
+        animationPath: this.videoPath,
+        caption: this.caption,
+        isOutgoing: this.isOutgoing,
+        containerWidth: this.maxBubbleWidth(),
+        animationWidth: this.videoWidth,
+        animationHeight: this.videoHeight,
+        maxWidthRatio: 1.0,
+        noBubbleWrap: true,
+        useRegularMaxDimensions: this.usesRegularBubbleLayout(),
+        isDownloadPending: this.isVideoDownloading,
+        downloadProgress: this.videoDownloadProgress,
+        onAnimationTap: () => { this.onMediaGalleryOpen(this.messageId); },
+        onDownloadToggle: () => {
+          if (!this.videoPath && !this.isVideoDownloading && this.videoFileId > 0) {
+            this.onMediaDownloadRequest(this.videoFileId);
+          }
+        }
+      })
+    } else if (this.contentType === 'video') {
       TgVideoBubble({
         thumbnailPath: this.videoThumbPath,
         videoPath: this.videoPath,
@@ -416,11 +452,16 @@ export struct TgMessageRouter {
         videoHeight: this.videoHeight,
         maxWidthRatio: 1.0,
         noBubbleWrap: true,
-        hidePlayButton: this.contentType === 'animation',
+        isShortVideo: this.isShortVideo,
         useRegularMaxDimensions: this.usesRegularBubbleLayout(),
         isDownloadPending: this.isVideoDownloading,
         downloadProgress: this.videoDownloadProgress,
-        onVideoPlayTap: () => { this.onVideoTap(); }
+        onVideoPlayTap: () => { this.onMediaGalleryOpen(this.messageId); },
+        onDownloadToggle: () => {
+          if (!this.videoPath && !this.isVideoDownloading && this.videoFileId > 0) {
+            this.onMediaDownloadRequest(this.videoFileId);
+          }
+        }
       })
     } else if (this.contentType === 'document' && this.mimeType.startsWith('audio/')) {
       TgAudioBubble({
@@ -440,7 +481,9 @@ export struct TgMessageRouter {
         onTap: () => {
           this.onDocumentTap(this.documentPath, this.documentFileId, this.mimeType);
         },
-        onPlayToggle: () => {},
+        onPlayToggle: () => {
+          this.onDocumentTap(this.documentPath, this.documentFileId, this.mimeType);
+        },
         onSeek: (p: number) => {}
       })
     } else if (this.contentType === 'document') {
@@ -481,8 +524,12 @@ export struct TgMessageRouter {
         onTap: () => {
           this.onAudioTap(this.audioPath, this.audioFileId, this.mimeType);
         },
-        onPlayToggle: () => {},
-        onSeek: (p: number) => {}
+        onPlayToggle: () => {
+          this.onAudioTap(this.audioPath, this.audioFileId, this.mimeType);
+        },
+        onSeek: (p: number) => {
+          this.onAudioSeek(this.messageId, p);
+        }
       })
     } else if (this.contentType === 'voice') {
       TgVoiceBubble({
@@ -501,8 +548,12 @@ export struct TgMessageRouter {
         onTap: () => {
           this.onVoiceTap(this.messageId, this.voicePath, this.voiceFileId);
         },
-        onPlayToggle: () => {},
-        onSeek: (p: number) => {}
+        onPlayToggle: () => {
+          this.onVoiceTap(this.messageId, this.voicePath, this.voiceFileId);
+        },
+        onSeek: (p: number) => {
+          this.onVoiceSeek(this.messageId, p);
+        }
       })
     }
   }
@@ -810,8 +861,26 @@ export struct TgMessageRouter {
               })
             }
             .width(this.voiceBubbleWidth())
+          } else if (this.contentType === 'audio' || (this.contentType === 'document' && this.mimeType.startsWith('audio/'))) {
+            // Audio/music: meta aligned to audio bubble width
+            Column() {
+              this.buildMediaContent()
+
+              Row() {
+                this.buildInlineMeta()
+              }
+              .justifyContent(FlexAlign.End)
+              .width(Math.max(1, this.audioBubbleWidth() - TgUiTokens.BUBBLE_PADDING_H * 2))
+              .margin({
+                left: TgUiTokens.BUBBLE_PADDING_H,
+                right: TgUiTokens.BUBBLE_PADDING_H,
+                top: TgUiTokens.SPACE_2,
+                bottom: TgUiTokens.BUBBLE_PADDING_V
+              })
+            }
+            .width(this.audioBubbleWidth())
           } else {
-            // Document/audio: meta in separate row below
+            // Document: meta in separate row below
             this.buildMediaContent()
 
             Row() {

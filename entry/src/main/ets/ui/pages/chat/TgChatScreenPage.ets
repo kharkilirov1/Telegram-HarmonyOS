@@ -25,9 +25,9 @@ import { createCloseChatCommand, createDownloadFileCommand } from '../../../core
 import { FileDownloadedEvent } from '../../../core/model/AppEvent';
 import { TdObject } from '../../../models/td/common/index';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
-import { TgPhotoViewerPage } from './TgPhotoViewerPage';
-import { TgVideoPlayerPage } from './TgVideoPlayerPage';
 import { localized } from '../../../core/utils/AppResource';
+import { MediaGalleryItem } from '../../../models/MediaGalleryItem';
+import { TgMediaGalleryPage } from '../../tg_ui/atoms/TgMediaGalleryPage';
 import { computeTopBarHeight, computeChatBottomInset, getMainWindow, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { promptAction, uiObserver, window } from '@kit.ArkUI';
@@ -77,15 +77,6 @@ export struct TgChatScreenPage {
   @State private replyToAuthor: string = '';
   @State private replyToPreview: string = '';
   // ── Media viewer state ──
-  @State private showPhotoViewer: boolean = false;
-  @State private viewerPhotoPath: string = '';
-  @State private viewerPhotoPaths: string[] = [];
-  @State private viewerPhotoInitialIndex: number = 0;
-  @State private viewerPhotoCaption: string = '';
-  @State private showVideoPlayer: boolean = false;
-  @State private viewerVideoPath: string = '';
-  @State private viewerVideoCaption: string = '';
-  @State private viewerVideoThumbPath: string = '';
   @State private activeVoiceMessageId: string = '0';
   @State private activeVoiceProgress: number = 0;
   @State private activeVoicePlaying: boolean = false;
@@ -93,6 +84,9 @@ export struct TgChatScreenPage {
   @State private activeAudioProgress: number = 0;
   @State private activeAudioPlaying: boolean = false;
   @State private pendingMediaDownloadVersion: number = 0;
+  @State private showMediaGallery: boolean = false;
+  @State private galleryItems: MediaGalleryItem[] = [];
+  @State private galleryInitialIndex: number = 0;
   private dataSource: ChatTimelineDataSource = new ChatTimelineDataSource();
   private listScroller: Scroller = new Scroller();
   private unsubscribe?: () => void;
@@ -123,9 +117,6 @@ export struct TgChatScreenPage {
   private mediaPlaybackController?: MediaPlaybackController;
   private locallyListenedVoiceIds: Set<string> = new Set<string>();
   private pendingMediaDownloadFileIds: Set<number> = new Set<number>();
-  private pendingVideoOpenFileId: number = 0;
-  private pendingVideoOpenCaption: string = '';
-  private pendingVideoOpenThumbPath: string = '';
 
   private onActiveChatChanged(): void {
     try {
@@ -153,7 +144,7 @@ export struct TgChatScreenPage {
       this.isApplyingTimelineDiff = false;
       this.listInitialIndex = 0;
       this.composerDraftText = '';
-      this.clearPendingVideoOpen();
+
       this.clearPendingMediaDownloads();
       if (this.paginationRecheckTimerId >= 0) {
         clearTimeout(this.paginationRecheckTimerId);
@@ -274,7 +265,7 @@ export struct TgChatScreenPage {
     this.lastMarkReadRequestKey = '';
     this.blockAutoPaginationUntilUserScroll = false;
     this.isApplyingTimelineDiff = false;
-    this.clearPendingVideoOpen();
+
     this.clearPendingMediaDownloads();
     if (this.paginationRecheckTimerId >= 0) {
       clearTimeout(this.paginationRecheckTimerId);
@@ -542,7 +533,7 @@ export struct TgChatScreenPage {
       this.chatAvatarImageSrc = '';
       this.chatIsOnline = false;
       this.awaitingInitialTimeline = false;
-      this.clearPendingVideoOpen();
+
       this.clearPendingMediaDownloads();
       return;
     }
@@ -568,7 +559,7 @@ export struct TgChatScreenPage {
     } finally {
       this.isApplyingTimelineDiff = false;
     }
-    this.maybeOpenPendingVideo(result.entries);
+
     this.syncResolvedPendingDownloads(result.entries);
     const newCount = this.dataSource.totalCount();
     this.previousDataCount = newCount;
@@ -930,44 +921,6 @@ export struct TgChatScreenPage {
     }
   }
 
-  private queuePendingVideoOpen(fileId: number, caption: string, thumbPath: string): void {
-    this.pendingVideoOpenFileId = fileId;
-    this.pendingVideoOpenCaption = caption;
-    this.pendingVideoOpenThumbPath = thumbPath;
-  }
-
-  private clearPendingVideoOpen(): void {
-    this.pendingVideoOpenFileId = 0;
-    this.pendingVideoOpenCaption = '';
-    this.pendingVideoOpenThumbPath = '';
-  }
-
-  private maybeOpenPendingVideo(entries: ChatTimelineEntryVO[]): void {
-    if (this.pendingVideoOpenFileId <= 0 || entries.length === 0) {
-      return;
-    }
-    for (const entry of entries) {
-      if (entry.kind !== 'message') {
-        continue;
-      }
-      if (entry.message.videoFileId !== this.pendingVideoOpenFileId) {
-        continue;
-      }
-      if (entry.message.videoPath.length === 0) {
-        continue;
-      }
-      this.viewerVideoPath = entry.message.videoPath;
-      this.viewerVideoCaption = entry.message.caption.length > 0
-        ? entry.message.caption
-        : this.pendingVideoOpenCaption;
-      this.viewerVideoThumbPath = entry.message.videoThumbPath.length > 0
-        ? entry.message.videoThumbPath
-        : this.pendingVideoOpenThumbPath;
-      this.showVideoPlayer = true;
-      this.clearPendingVideoOpen();
-      break;
-    }
-  }
 
   private handleVoiceTap(messageId: string, voicePath: string, voiceFileId: number): void {
     if (voicePath.trim().length === 0) {
@@ -988,61 +941,6 @@ export struct TgChatScreenPage {
       .catch((_error: Object) => {});
   }
 
-  private normalizeViewerPhotoPaths(photoPath: string, galleryPaths?: string[]): string[] {
-    const result: string[] = [];
-    if (galleryPaths) {
-      for (let i = 0; i < galleryPaths.length; i++) {
-        const current = galleryPaths[i];
-        if (current.trim().length > 0) {
-          result.push(current);
-        }
-      }
-    }
-    if (result.length === 0 && photoPath.trim().length > 0) {
-      result.push(photoPath);
-    }
-    return result;
-  }
-
-  private closePhotoViewer(): void {
-    this.showPhotoViewer = false;
-    this.viewerPhotoPath = '';
-    this.viewerPhotoPaths = [];
-    this.viewerPhotoInitialIndex = 0;
-    this.viewerPhotoCaption = '';
-  }
-
-  private openPhotoViewer(photoPath: string, caption: string, galleryPaths?: string[]): void {
-    if (photoPath.length === 0) return;
-    const normalizedPaths = this.normalizeViewerPhotoPaths(photoPath, galleryPaths);
-    let initialIndex = 0;
-    if (normalizedPaths.length > 1) {
-      const foundIndex = normalizedPaths.indexOf(photoPath);
-      if (foundIndex >= 0) {
-        initialIndex = foundIndex;
-      }
-    }
-    this.viewerPhotoPath = normalizedPaths.length > 0 ? normalizedPaths[initialIndex] : photoPath;
-    this.viewerPhotoPaths = normalizedPaths;
-    this.viewerPhotoInitialIndex = initialIndex;
-    this.viewerPhotoCaption = caption;
-    this.showPhotoViewer = true;
-  }
-
-  private openVideoPlayer(videoPath: string, caption: string, thumbPath: string, videoFileId: number): void {
-    if (videoPath.length > 0) {
-      this.viewerVideoPath = videoPath;
-      this.viewerVideoCaption = caption;
-      this.viewerVideoThumbPath = thumbPath;
-      this.showVideoPlayer = true;
-      this.clearPendingVideoOpen();
-      return;
-    }
-    if (videoFileId > 0) {
-      this.queuePendingVideoOpen(videoFileId, caption, thumbPath);
-      this.requestMediaDownload(videoFileId);
-    }
-  }
 
   private openAudioFile(audioPath: string, mimeType: string): void {
     if (audioPath.trim().length === 0) {
@@ -1109,27 +1007,102 @@ export struct TgChatScreenPage {
       .catch((_error: Object) => {});
   }
 
-  @Builder
-  private buildPhotoViewer() {
-    TgPhotoViewerPage({
-      photoPath: this.viewerPhotoPath,
-      photoPaths: this.viewerPhotoPaths,
-      initialIndex: this.viewerPhotoInitialIndex,
-      caption: this.viewerPhotoCaption,
-      onDismiss: (): void => {
-        this.closePhotoViewer();
+  private handleAudioSeek(messageId: string, progress: number): void {
+    const controller = this.mediaPlaybackController;
+    if (!controller || controller.getActiveMessageId() !== messageId) {
+      return;
+    }
+    controller.seekToProgress(progress).catch((_error: Object) => {});
+  }
+
+  private handleVoiceSeek(messageId: string, progress: number): void {
+    const controller = this.mediaPlaybackController;
+    if (!controller || controller.getActiveMessageId() !== messageId) {
+      return;
+    }
+    controller.seekToProgress(progress).catch((_error: Object) => {});
+  }
+
+  private buildMediaGalleryItems(): MediaGalleryItem[] {
+    const items: MediaGalleryItem[] = [];
+    const entries = this.dataSource.getAllEntries();
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      if (entry.kind !== 'message') continue;
+      const ct = entry.message.contentType;
+      if (ct === 'photo' || ct === 'video' || ct === 'animation' || ct === 'videoNote' || ct === 'photoAlbum') {
+        if (ct === 'photoAlbum') {
+          for (let j = 0; j < entry.message.albumPhotoPaths.length; j++) {
+            const albumItem = new MediaGalleryItem();
+            albumItem.type = 'photo';
+            albumItem.path = entry.message.albumPhotoPaths[j];
+            albumItem.thumbnailPath = entry.message.albumPhotoPaths[j];
+            albumItem.caption = j === 0 ? entry.message.caption : '';
+            albumItem.senderName = entry.message.senderName;
+            albumItem.timestamp = entry.message.timeText;
+            albumItem.width = j < entry.message.albumPhotoWidths.length ? entry.message.albumPhotoWidths[j] : 0;
+            albumItem.height = j < entry.message.albumPhotoHeights.length ? entry.message.albumPhotoHeights[j] : 0;
+            albumItem.fileId = entry.message.photoFileId;
+            items.push(albumItem);
+          }
+        } else {
+          const item = new MediaGalleryItem();
+          item.type = ct;
+          item.path = ct === 'photo' ? entry.message.photoPath : entry.message.videoPath;
+          item.thumbnailPath = ct === 'photo' ? entry.message.photoPath : entry.message.videoThumbPath;
+          item.caption = entry.message.caption;
+          item.senderName = entry.message.senderName;
+          item.timestamp = entry.message.timeText;
+          item.width = ct === 'photo' ? entry.message.photoWidth : entry.message.videoWidth;
+          item.height = ct === 'photo' ? entry.message.photoHeight : entry.message.videoHeight;
+          item.durationSec = entry.message.videoDuration;
+          item.fileId = ct === 'photo' ? entry.message.photoFileId : entry.message.videoFileId;
+          items.push(item);
+        }
       }
-    })
+    }
+    return items;
+  }
+
+  private handleMediaGalleryOpen(messageId: string): void {
+    const items = this.buildMediaGalleryItems();
+    if (items.length === 0) return;
+    let targetIndex = 0;
+    const entries = this.dataSource.getAllEntries();
+    let mediaIndex = 0;
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      if (entry.kind !== 'message') continue;
+      const ct = entry.message.contentType;
+      if (ct === 'photo' || ct === 'video' || ct === 'animation' || ct === 'videoNote') {
+        if (entry.message.messageId === messageId) {
+          targetIndex = mediaIndex;
+          break;
+        }
+        mediaIndex++;
+      } else if (ct === 'photoAlbum') {
+        if (entry.message.messageId === messageId) {
+          targetIndex = mediaIndex;
+          break;
+        }
+        mediaIndex += entry.message.albumPhotoPaths.length;
+      }
+    }
+    this.galleryItems = items;
+    this.galleryInitialIndex = Math.min(targetIndex, items.length - 1);
+    this.showMediaGallery = true;
   }
 
   @Builder
-  private buildVideoPlayer() {
-    TgVideoPlayerPage({
-      videoPath: this.viewerVideoPath,
-      caption: this.viewerVideoCaption,
-      thumbnailPath: this.viewerVideoThumbPath,
+  private buildMediaGallery() {
+    TgMediaGalleryPage({
+      mediaItems: this.galleryItems,
+      initialIndex: this.galleryInitialIndex,
       onDismiss: (): void => {
-        this.showVideoPlayer = false;
+        this.showMediaGallery = false;
+      },
+      onDownloadRequest: (fileId: number): void => {
+        this.requestMediaDownload(fileId);
       }
     })
   }
@@ -1574,22 +1547,21 @@ export struct TgChatScreenPage {
         replyIsQuote: entry.message.replyIsQuote,
         timeText: entry.message.timeText,
         sendStatus: entry.message.sendStatus,
+        isShortVideo: entry.message.isShortVideo,
         onMediaDownloadRequest: (fileId: number): void => {
           this.requestMediaDownload(fileId);
         },
+        onMediaGalleryOpen: (messageId: string): void => {
+          this.handleMediaGalleryOpen(messageId);
+        },
         onPhotoTap: (): void => {
-          this.openPhotoViewer(entry.message.photoPath, entry.message.caption);
+          this.handleMediaGalleryOpen(entry.message.messageId);
         },
         onAlbumPhotoTap: (photoPath: string, caption: string): void => {
-          this.openPhotoViewer(photoPath, caption, entry.message.albumPhotoPaths);
+          this.handleMediaGalleryOpen(entry.message.messageId);
         },
         onVideoTap: (): void => {
-          this.openVideoPlayer(
-            entry.message.videoPath,
-            entry.message.caption,
-            entry.message.videoThumbPath,
-            entry.message.videoFileId
-          );
+          this.handleMediaGalleryOpen(entry.message.messageId);
         },
         onDocumentTap: (documentPath: string, documentFileId: number, mimeType: string): void => {
           this.handleDocumentTap(documentPath, documentFileId, mimeType);
@@ -1774,12 +1746,8 @@ export struct TgChatScreenPage {
         .height('100%')
         .hitTestBehavior(HitTestMode.Transparent)
 
-        if (this.showPhotoViewer) {
-          this.buildPhotoViewer()
-        }
-
-        if (this.showVideoPlayer) {
-          this.buildVideoPlayer()
+        if (this.showMediaGallery) {
+          this.buildMediaGallery()
         }
       }
       .width('100%')

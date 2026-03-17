@@ -208,7 +208,7 @@ export struct TgDocumentRow {
       .backgroundColor('#40000000') // Dark overlay
       .borderRadius(TgUiTokens.DOCUMENT_ROW_ICON_RADIUS)
     } else if (this.isDownloaded() && this.isImageOrPdf()) {
-      Image('file://' + this.documentPath)
+      Image(this.documentPath)
         .width('100%')
         .height('100%')
         .objectFit(ImageFit.Cover)
@@ -247,6 +247,7 @@ export struct TgDocumentRow {
       }
       .width('100%')
       .margin({ top: TgUiTokens.DOCUMENT_ROW_PROGRESS_TOP_GAP })
+      .transition({ type: TransitionType.All, opacity: 0 })
     }
   }
 

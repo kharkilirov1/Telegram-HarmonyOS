@@ -118,6 +118,23 @@ export class MediaPlaybackController {
     await this.openAndStart(messageId, filePath, contentType);
   }
 
+  async seekToProgress(progress: number): Promise<void> {
+    if (!this.player) {
+      return;
+    }
+    const clamped = Math.max(0, Math.min(1, progress));
+    if (this.currentDurationMs <= 0) {
+      return;
+    }
+    const targetMs = Math.floor(clamped * this.currentDurationMs);
+    try {
+      await this.player.seek(targetMs);
+      this.currentTimeMs = targetMs;
+      this.currentProgress = clamped;
+      this.emit();
+    } catch (_error) {}
+  }
+
   async pause(): Promise<void> {
     if (!this.player) {
       return;
@@ -137,6 +154,13 @@ export class MediaPlaybackController {
       try {
         this.player.off('timeUpdate', this.timeUpdateHandler);
       } catch (_error) {}
+      // Stop before release if player is active — prevents "unsupport release" errors
+      const state = this.player.state;
+      if (state === 'playing' || state === 'paused' || state === 'completed') {
+        try {
+          await this.player.stop();
+        } catch (_error) {}
+      }
       try {
         await this.player.release();
       } catch (_error) {}
@@ -176,6 +200,11 @@ export class MediaPlaybackController {
         offset: 0,
         length: stat.size
       };
+
+      // Wait for player to reach 'initialized' state before calling prepare().
+      // fdSrc assignment triggers async state transition; calling prepare() too early
+      // causes "current state is not stopped or initialized" errors.
+      await this.waitForState(player, 'initialized', 2000);
       await player.prepare();
 
       this.currentMessageId = messageId;
@@ -192,6 +221,40 @@ export class MediaPlaybackController {
       await this.release();
       throw new Error(String(error));
     }
+  }
+
+  private waitForState(player: media.AVPlayer, targetState: string, timeoutMs: number): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      if (player.state === targetState) {
+        resolve();
+        return;
+      }
+      let resolved = false;
+      const handler = (state: media.AVPlayerState): void => {
+        if (state === targetState && !resolved) {
+          resolved = true;
+          try { player.off('stateChange', handler); } catch (_e) {}
+          resolve();
+        } else if (state === 'error' && !resolved) {
+          resolved = true;
+          try { player.off('stateChange', handler); } catch (_e) {}
+          reject(new Error('AVPlayer entered error state'));
+        }
+      };
+      player.on('stateChange', handler);
+      setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          try { player.off('stateChange', handler); } catch (_e) {}
+          // If already in target state by now, resolve anyway
+          if (player.state === targetState) {
+            resolve();
+          } else {
+            reject(new Error('AVPlayer state timeout waiting for ' + targetState));
+          }
+        }
+      }, timeoutMs);
+    });
   }
 
   private updateDurationFromPlayer(): void {
