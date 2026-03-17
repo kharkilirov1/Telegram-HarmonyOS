@@ -1098,6 +1098,7 @@ export struct TgChatScreenPage {
     TgMediaGalleryPage({
       mediaItems: this.galleryItems,
       initialIndex: this.galleryInitialIndex,
+      statusBarHeight: Math.max(0, this.topBarTotalHeight - TgUiTokens.TOP_BAR_HEIGHT - TgUiTokens.TOP_BAR_BOTTOM_PADDING),
       onDismiss: (): void => {
         this.showMediaGallery = false;
       },

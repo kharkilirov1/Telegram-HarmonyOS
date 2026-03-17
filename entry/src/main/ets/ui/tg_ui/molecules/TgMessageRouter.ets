@@ -474,17 +474,19 @@ export struct TgMessageRouter {
         downloadProgress: this.documentDownloadProgress,
         isDownloading: this.isDocumentDownloading,
         isOutgoing: this.isOutgoing,
-        isPlaying: false,
-        playbackProgress: 0,
+        isPlaying: this.isAudioPlaying,
+        playbackProgress: this.audioPlaybackProgress,
         containerWidth: this.maxBubbleWidth(),
         noBubbleWrap: true,
         onTap: () => {
-          this.onDocumentTap(this.documentPath, this.documentFileId, this.mimeType);
+          this.onAudioTap(this.documentPath, this.documentFileId, this.mimeType);
         },
         onPlayToggle: () => {
-          this.onDocumentTap(this.documentPath, this.documentFileId, this.mimeType);
+          this.onAudioTap(this.documentPath, this.documentFileId, this.mimeType);
         },
-        onSeek: (p: number) => {}
+        onSeek: (p: number) => {
+          this.onAudioSeek(this.messageId, p);
+        }
       })
     } else if (this.contentType === 'document') {
       TgDocumentRow({

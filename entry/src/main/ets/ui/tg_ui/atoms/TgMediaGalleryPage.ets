@@ -6,6 +6,7 @@ import { MediaGalleryItem } from '../../../models/MediaGalleryItem';
 export struct TgMediaGalleryPage {
   @Param mediaItems: MediaGalleryItem[] = [];
   @Param initialIndex: number = 0;
+  @Param statusBarHeight: number = 0;
   @Event onDismiss: () => void = () => {};
   @Event onDownloadRequest: (fileId: number) => void = (_: number) => {};
 
@@ -125,7 +126,7 @@ export struct TgMediaGalleryPage {
           .onClick(() => this.onDismiss())
       }
       .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+      .padding({ left: 16, right: 16, top: this.statusBarHeight + 12, bottom: 12 })
       .backgroundColor('#80000000')
     }
   }
@@ -331,7 +332,7 @@ export struct TgMediaGalleryPage {
           .padding({ left: 10, right: 10, top: 4, bottom: 4 })
           .backgroundColor('#60000000')
           .borderRadius(12)
-          .position({ top: 60 })
+          .position({ top: this.statusBarHeight + 60 })
           .alignSelf(ItemAlign.Center)
           .width('auto')
       }
