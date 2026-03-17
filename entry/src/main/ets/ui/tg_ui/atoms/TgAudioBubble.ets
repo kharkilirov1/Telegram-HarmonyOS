@@ -27,7 +27,7 @@ export struct TgAudioBubble {
   }
 
   private titleColor(): ResourceColor {
-    return this.isOutgoing ? TgUiTokens.DOCUMENT_ROW_TITLE_OUTGOING : TgUiTokens.DOCUMENT_ROW_TITLE_INCOMING;
+    return this.isOutgoing ? TgUiTokens.DOCUMENT_ROW_TITLE_OUTGOING : TgUiTokens.COLOR_ICON_PRIMARY;
   }
 
   private metaColor(): ResourceColor {
@@ -297,10 +297,16 @@ export struct TgAudioBubble {
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .width('100%')
 
-        // Download progress bar (only during download)
+        // Seek / download progress bar
         if (this.hasDownloadProgress()) {
           Column() {
             this.buildDownloadProgressBar()
+          }
+          .width('100%')
+          .margin({ top: TgUiTokens.AUDIO_BUBBLE_SEEK_TOP_GAP - TgUiTokens.SPACE_2 })
+        } else if (this.isDownloaded()) {
+          Column() {
+            this.buildSeekBar()
           }
           .width('100%')
           .margin({ top: TgUiTokens.AUDIO_BUBBLE_SEEK_TOP_GAP - TgUiTokens.SPACE_2 })
