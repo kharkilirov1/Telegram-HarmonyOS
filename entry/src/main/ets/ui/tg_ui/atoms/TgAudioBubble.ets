@@ -97,19 +97,9 @@ export struct TgAudioBubble {
     return bytes.toString() + ' B';
   }
 
-  private secondaryLine(): string {
-    const performer = this.performer.trim();
-    if (performer.length > 0) {
-      return performer;
-    }
-    const mime = this.mimeType.trim();
-    if (mime.length > 0) {
-      return mime;
-    }
-    return 'Audio';
-  }
-
-  private durationMetaLine(): string {
+  // iOS pattern: single description line — performer or duration/size fallback
+  private descriptionLine(): string {
+    // During download: show progress + size
     if (this.hasDownloadProgress()) {
       const sizeLabel = this.formatFileSize(this.fileSize);
       if (sizeLabel.length > 0) {
@@ -121,7 +111,11 @@ export struct TgAudioBubble {
       const sizeLabel = this.formatFileSize(this.fileSize);
       return sizeLabel.length > 0 ? sizeLabel : '...';
     }
-
+    // Normal state: performer first, then size fallback (iOS: performer ?? fileSize)
+    const performer = this.performer.trim();
+    if (performer.length > 0) {
+      return performer;
+    }
     const parts: string[] = [];
     if (this.durationSec > 0) {
       parts.push(this.formatDuration());
@@ -130,10 +124,7 @@ export struct TgAudioBubble {
     if (sizeLabel.length > 0) {
       parts.push(sizeLabel);
     }
-    if (parts.length === 0) {
-      return 'Audio';
-    }
-    return parts.join(' • ');
+    return parts.length > 0 ? parts.join(' • ') : 'Audio';
   }
 
   // ── Art tile: gradient bg + music note (or play/pause overlay) ──
@@ -274,28 +265,31 @@ export struct TgAudioBubble {
 
   @Builder
   private buildInnerContent() {
+    // iOS pattern: Row[ progressCircle(44) + gap(8) + Column[ title, description ] ]
+    // title+description vertically centered against 44pt progress circle
     Row({ space: TgUiTokens.AUDIO_BUBBLE_CONTENT_GAP }) {
       this.buildArtTile()
 
-      Column({ space: TgUiTokens.SPACE_2 }) {
-        // Title (track name)
+      Column() {
+        // Title (track name) — iOS: fileTitleColor (accent)
         Text(this.safeTitle())
           .fontSize(TgUiTokens.AUDIO_BUBBLE_TITLE_SIZE)
           .lineHeight(TgUiTokens.AUDIO_BUBBLE_TITLE_LINE_HEIGHT)
           .fontWeight(FontWeight.Medium)
           .fontColor(this.titleColor())
-          .maxLines(2)
+          .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .width('100%')
 
-        // Performer / secondary info
-        Text(this.secondaryLine())
+        // Description — iOS: performer or fileSize, single line
+        Text(this.descriptionLine())
           .fontSize(TgUiTokens.AUDIO_BUBBLE_META_SIZE)
           .lineHeight(TgUiTokens.AUDIO_BUBBLE_META_LINE_HEIGHT)
           .fontColor(this.metaColor())
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .width('100%')
+          .margin({ top: -1 }) // iOS: descriptionFrame.y = titleFrame.maxY - 1.0
 
         // Download progress bar (only during active download)
         if (this.hasDownloadProgress()) {
@@ -303,19 +297,11 @@ export struct TgAudioBubble {
             this.buildDownloadProgressBar()
           }
           .width('100%')
-          .margin({ top: TgUiTokens.AUDIO_BUBBLE_SEEK_TOP_GAP - TgUiTokens.SPACE_2 })
+          .margin({ top: 4 })
         }
-
-        // Duration / size / download meta
-        Text(this.durationMetaLine())
-          .fontSize(TgUiTokens.AUDIO_BUBBLE_BOTTOM_META_SIZE)
-          .lineHeight(TgUiTokens.AUDIO_BUBBLE_BOTTOM_META_LINE_HEIGHT)
-          .fontColor(this.metaColor())
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-          .width('100%')
       }
       .layoutWeight(1)
+      .justifyContent(FlexAlign.Center) // iOS: vertically centered in normHeight(44)
       .alignItems(HorizontalAlign.Start)
       .onClick(() => {
         this.onTap();
