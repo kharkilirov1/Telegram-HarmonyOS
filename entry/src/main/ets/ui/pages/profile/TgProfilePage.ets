@@ -1,6 +1,6 @@
 // TgProfilePage — user/chat profile screen
 // Opens from TgChatScreenPage via avatar/title tap
-// V1 @Component — same as other shell pages
+// V2 @ComponentV2 — migrated from V1
 // Reference: iOS Telegram PeerInfoScreen
 
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
@@ -93,32 +93,32 @@ function formatMemberCount(count: number): string {
   return count.toString();
 }
 
-@Component
+@ComponentV2
 export struct TgProfilePage {
   pageStack: NavPathStack = new NavPathStack();
 
-  @State private chatId: number = 0;
-  @State private title: string = '';
-  @State private subtitle: string = '';
-  @State private avatarInitials: string = '';
-  @State private avatarImageSrc: string = '';
-  @State private avatarColor: Resource = TgUiTokens.AVATAR_COLOR_5;
-  @State private isOnline: boolean = false;
+  @Local private chatId: number = 0;
+  @Local private title: string = '';
+  @Local private subtitle: string = '';
+  @Local private avatarInitials: string = '';
+  @Local private avatarImageSrc: string = '';
+  @Local private avatarColor: Resource = TgUiTokens.AVATAR_COLOR_5;
+  @Local private isOnline: boolean = false;
 
   // Info fields
-  @State private phoneNumber: string = '';
-  @State private username: string = '';
-  @State private bio: string = '';
-  @State private chatType: string = 'private';
-  @State private memberCount: number = 0;
-  @State private administratorCount: number = 0;
-  @State private description: string = '';
-  @State private inviteLink: string = '';
-  @State private isMuted: boolean = false;
-  @State private isVerified: boolean = false;
-  @State private isPremium: boolean = false;
+  @Local private phoneNumber: string = '';
+  @Local private username: string = '';
+  @Local private bio: string = '';
+  @Local private chatType: string = 'private';
+  @Local private memberCount: number = 0;
+  @Local private administratorCount: number = 0;
+  @Local private description: string = '';
+  @Local private inviteLink: string = '';
+  @Local private isMuted: boolean = false;
+  @Local private isVerified: boolean = false;
+  @Local private isPremium: boolean = false;
 
-  @State private topInset: number = 0;
+  @Local private topInset: number = 0;
   private storeUnsubscribe: (() => void) | undefined = undefined;
 
   private isGroupOrChannel(): boolean {

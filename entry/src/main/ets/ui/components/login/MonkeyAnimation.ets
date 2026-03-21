@@ -24,17 +24,17 @@ class AnimPath {
   static readonly closePeekToIdle: string = 'animations/monkey_close_peek_to_idle.json';
 }
 
-@Component
+@ComponentV2
 export struct MonkeyAnimation {
-  @Prop screen: MonkeyScreen = 'phone';
-  @Prop @Watch('onPasswordVisibilityChanged') isPasswordVisible: boolean = false;
-  @Prop @Watch('onDigitChanged') lastDigit: number = -1;
+  @Param screen: MonkeyScreen = 'phone';
+  @Param isPasswordVisible: boolean = false;
+  @Param lastDigit: number = -1;
 
   private settings: RenderingContextSettings = new RenderingContextSettings(true);
   private canvasController: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.settings);
   private animationItem: AnimationItem | null = null;
   private currentAnimation: string = '';
-  @State private periodicTimer: number = -1;
+  @Local private periodicTimer: number = -1;
 
   aboutToAppear(): void {
     if (this.screen === 'password') {
@@ -102,7 +102,8 @@ export struct MonkeyAnimation {
 
   // ─── Password Visibility Changes ───
 
-  private onPasswordVisibilityChanged(): void {
+  @Monitor('isPasswordVisible')
+  private onPasswordVisibilityChanged(monitor: IMonitor): void {
     if (this.screen !== 'password') return;
 
     if (this.isPasswordVisible) {
@@ -116,7 +117,8 @@ export struct MonkeyAnimation {
 
   // ─── Code Input Tracking ───
 
-  private onDigitChanged(): void {
+  @Monitor('lastDigit')
+  private onDigitChanged(monitor: IMonitor): void {
     if (this.screen !== 'code' || this.lastDigit < 0) return;
 
     // Tracking анимация — перематываем на позицию, соответствующую цифре

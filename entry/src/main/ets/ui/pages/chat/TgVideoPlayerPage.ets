@@ -3,18 +3,18 @@
 
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 
-@Component
+@ComponentV2
 export struct TgVideoPlayerPage {
-  @Prop videoPath: string = '';
-  @Prop caption: string = '';
-  @Prop thumbnailPath: string = '';
+  @Param videoPath: string = '';
+  @Param caption: string = '';
+  @Param thumbnailPath: string = '';
   onDismiss: () => void = () => {};
 
-  @State private isPlaying: boolean = false;
-  @State private isPrepared: boolean = false;
-  @State private currentTime: number = 0;
-  @State private totalDuration: number = 0;
-  @State private showControls: boolean = true;
+  @Local private isPlaying: boolean = false;
+  @Local private isPrepared: boolean = false;
+  @Local private currentTime: number = 0;
+  @Local private totalDuration: number = 0;
+  @Local private showControls: boolean = true;
 
   private controller: VideoController = new VideoController();
   private hideControlsTimerId: number = -1;

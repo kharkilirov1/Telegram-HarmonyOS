@@ -18,14 +18,14 @@ import { common } from '@kit.AbilityKit';
 const DOMAIN = 0x0032;
 const TAG = 'SettingsPage';
 
-@Component
+@ComponentV2
 export struct SettingsPage {
-  @State private userName: string = '';
-  @State private userPhone: string = '';
-  @State private userInitials: string = 'ME';
-  @State private userPhoto: string = '';
-  @State private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
-  @State private contentBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
+  @Local private userName: string = '';
+  @Local private userPhone: string = '';
+  @Local private userInitials: string = 'ME';
+  @Local private userPhoto: string = '';
+  @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
+  @Local private contentBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
 
   private unsubscribe?: () => void;
   private mainWindow?: window.Window;
