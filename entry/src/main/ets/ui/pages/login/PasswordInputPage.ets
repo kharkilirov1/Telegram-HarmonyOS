@@ -12,21 +12,21 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 const DOMAIN = 0x0041;
 const TAG = 'PasswordInputPage';
 
-@Component
+@ComponentV2
 export struct PasswordInputPage {
-  @Prop hint: string = '';
-  @Prop suggestReset: boolean = false;
+  @Param hint: string = '';
+  @Param suggestReset: boolean = false;
   onPasswordAccepted: () => void = (): void => {};
   onBackToPhone: () => void = (): void => {};
 
-  @State private password: string = '';
-  @State private isPasswordVisible: boolean = false;
-  @State private buttonState: ButtonState = 'default';
-  @State private errorMessage: string = '';
-  @State private shakeOffset: number = 0;
+  @Local private password: string = '';
+  @Local private isPasswordVisible: boolean = false;
+  @Local private buttonState: ButtonState = 'default';
+  @Local private errorMessage: string = '';
+  @Local private shakeOffset: number = 0;
 
-  @State private didForgotWithNoRecovery: boolean = false;
-  @State private showResetOption: boolean = false;
+  @Local private didForgotWithNoRecovery: boolean = false;
+  @Local private showResetOption: boolean = false;
 
   build() {
     Column() {

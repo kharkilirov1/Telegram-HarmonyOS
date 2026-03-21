@@ -16,22 +16,22 @@ import { TgCountrySelectionScreen, TgCountryGroup } from '../../tg_ui/molecules/
 const DOMAIN = 0x0042;
 const TAG = 'PhoneInputPage';
 
-@Component
+@ComponentV2
 export struct PhoneInputPage {
   onPhoneSent: () => void = (): void => {};
 
-  @State private countryCode: string = '+7';
-  @State private countryFlag: string = 'RU';
-  @State private countryName: string = 'Russia';
-  @State private phoneNumber: string = '';
-  @State private buttonState: ButtonState = 'default';
-  @State private errorMessage: string = '';
-  @State private hasNumber: boolean = false;
-  @State private isCountriesLoaded: boolean = false;
-  @State private isShowCountrySheet: boolean = false;
-  @State private searchText: string = '';
-  @State private groupedCountries: TgCountryGroup[] = [];
-  @State private alphabet: string[] = [];
+  @Local private countryCode: string = '+7';
+  @Local private countryFlag: string = 'RU';
+  @Local private countryName: string = 'Russia';
+  @Local private phoneNumber: string = '';
+  @Local private buttonState: ButtonState = 'default';
+  @Local private errorMessage: string = '';
+  @Local private hasNumber: boolean = false;
+  @Local private isCountriesLoaded: boolean = false;
+  @Local private isShowCountrySheet: boolean = false;
+  @Local private searchText: string = '';
+  @Local private groupedCountries: TgCountryGroup[] = [];
+  @Local private alphabet: string[] = [];
 
   async aboutToAppear(): Promise<void> {
     try {

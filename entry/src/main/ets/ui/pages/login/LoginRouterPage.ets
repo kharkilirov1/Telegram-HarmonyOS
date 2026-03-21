@@ -16,10 +16,10 @@ const MAX_WAIT_MS = 4000;  // iOS: 4.0s timeout on context ready
 const POLL_INTERVAL_MS = 100;
 
 @Entry
-@Component
+@ComponentV2
 struct LoginRouterPage {
   pageStack: NavPathStack = new NavPathStack();
-  @State showMainUI: boolean = false;
+  @Local showMainUI: boolean = false;
 
   aboutToAppear(): void {
     // If already authenticated (app restart), skip login flow

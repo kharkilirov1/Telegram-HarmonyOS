@@ -1,10 +1,7 @@
 // LoginRouter — роутер авторизации с использованием AppStorage
 //
-// Huawei рекомендует использовать @StorageLink для синхронизации UI с глобальным состоянием.
-// Мост AppStoreBridge синхронизирует AppStore → AppStorage,
-// а UI читает через @StorageLink декоратор.
-//
-// Это заменяет ручную подписку на AppStore.subscribe() в aboutToAppear().
+// AppStoreBridge синхронизирует AppStore → AppStorage.
+// V2: @Local поля + store.subscribe() → syncFromAppStorage() вместо @StorageLink.
 
 import { PhoneInputPage } from './PhoneInputPage';
 import { CodeInputPage } from './CodeInputPage';
@@ -29,24 +26,21 @@ export class AuthContext {
   emailPattern: string = '';
 }
 
-@Component
+@ComponentV2
 export struct LoginRouter {
   onAuthComplete: () => void = (): void => {};
 
-  // ─── AppStorage Bindings (Huawei recommended) ───
-  // @StorageLink создаёт двустороннюю связь с AppStorage
-  // Когда AppStoreBridge обновляет AppStorage, UI автоматически перерисовывается
-  @StorageLink(StorageKeys.AUTH_STATUS) authStatus: string = 'notInitialized';
-  @StorageLink(StorageKeys.AUTH_PHONE) authPhone: string = '';
-  @StorageLink(StorageKeys.CODE_TYPE) codeType: string = 'sms';
-  @StorageLink(StorageKeys.CODE_LENGTH) codeLength: number = 5;
-  @StorageLink(StorageKeys.CODE_TIMEOUT) codeTimeout: number = 60;
-  @StorageLink(StorageKeys.CODE_NEXT_TYPE) codeNextType: string = 'call';
-  @StorageLink(StorageKeys.PASSWORD_HINT) passwordHint: string = '';
+  // ─── Local state (V2: @Local вместо @StorageLink) ───
+  // Синхронизируется с AppStorage через store subscription в aboutToAppear
+  @Local authStatus: string = 'notInitialized';
+  @Local authPhone: string = '';
+  @Local codeType: string = 'sms';
+  @Local codeLength: number = 5;
+  @Local codeTimeout: number = 60;
+  @Local codeNextType: string = 'call';
+  @Local passwordHint: string = '';
 
-  // Local context (не из AppStorage)
-  @State private context: AuthContext = new AuthContext();
-
+  private unsubscribe?: () => void;
   // Отслеживание предыдущего статуса для определения направления перехода
   private prevStatus: string = 'notInitialized';
 
@@ -64,18 +58,40 @@ export struct LoginRouter {
     }
   }
 
+  private syncFromAppStorage(): void {
+    this.authStatus = AppStorage.get<string>(StorageKeys.AUTH_STATUS) ?? 'notInitialized';
+    this.authPhone = AppStorage.get<string>(StorageKeys.AUTH_PHONE) ?? '';
+    this.codeType = AppStorage.get<string>(StorageKeys.CODE_TYPE) ?? 'sms';
+    this.codeLength = AppStorage.get<number>(StorageKeys.CODE_LENGTH) ?? 5;
+    this.codeTimeout = AppStorage.get<number>(StorageKeys.CODE_TIMEOUT) ?? 60;
+    this.codeNextType = AppStorage.get<string>(StorageKeys.CODE_NEXT_TYPE) ?? 'call';
+    this.passwordHint = AppStorage.get<string>(StorageKeys.PASSWORD_HINT) ?? '';
+  }
+
   aboutToAppear(): void {
+    this.syncFromAppStorage();
     hilog.info(0x0003, 'LoginRouter', 'LoginRouter aboutToAppear, initial authStatus: %{public}s', this.authStatus);
+    try {
+      this.unsubscribe = getAppCoreRuntime().getStore().subscribe(() => {
+        this.syncFromAppStorage();
+      });
+    } catch (e) {
+      hilog.error(0x0003, 'LoginRouter', 'Failed to subscribe store: %{public}s', String(e));
+    }
   }
 
   aboutToDisappear(): void {
     hilog.info(0x0003, 'LoginRouter', 'LoginRouter aboutToDisappear');
+    if (this.unsubscribe !== undefined) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
+    }
   }
 
   build() {
     Stack() {
       // Реактивное переключение по статусу из AppStorage
-      // @StorageLink автоматически обновляет authStatus при изменении в AppStorage
+      // authStatus обновляется через store subscription → syncFromAppStorage()
 
       if (this.authStatus === 'notInitialized' || this.authStatus === 'waitTdlibParameters') {
         // TDLib ещё не инициализирован — блокируем UI до готовности

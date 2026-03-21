@@ -124,12 +124,12 @@ function initialsForUser(user: User): string {
   return '?';
 }
 
-@Component
+@ComponentV2
 export struct CallsPage {
-  @State private callRows: CallRowVO[] = [];
-  @State private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
-  @State private listBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
-  @State private isLoading: boolean = false;
+  @Local private callRows: CallRowVO[] = [];
+  @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
+  @Local private listBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
+  @Local private isLoading: boolean = false;
 
   private unsubscribe?: () => void;
   private rebuildScheduled: boolean = false;

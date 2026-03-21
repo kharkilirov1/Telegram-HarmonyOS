@@ -5,6 +5,7 @@
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { MonkeyAnimation } from '../../components/login/MonkeyAnimation';
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
+import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { LoginController, SendCodeFailure } from '../../controllers/LoginController';
 import { LengthMetrics } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -12,19 +13,36 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 const DOMAIN = 0x0042;
 const TAG = 'QrLoginPage';
 
-@Component
+@ComponentV2
 export struct QrLoginPage {
   onBackToPhone: () => void = (): void => {};
 
-  @StorageLink(StorageKeys.QR_CODE_LINK) qrCodeLink: string = '';
-  @State private errorMessage: string = '';
-  @State private isRequesting: boolean = false;
+  @Local qrCodeLink: string = '';
+  @Local private errorMessage: string = '';
+  @Local private isRequesting: boolean = false;
+
+  private unsubscribe?: () => void;
 
   aboutToAppear(): void {
+    this.qrCodeLink = AppStorage.get<string>(StorageKeys.QR_CODE_LINK) ?? '';
     hilog.info(DOMAIN, TAG, 'QrLoginPage appeared, qrCodeLink length: %{public}d', this.qrCodeLink.length);
+    try {
+      this.unsubscribe = getAppCoreRuntime().getStore().subscribe(() => {
+        this.qrCodeLink = AppStorage.get<string>(StorageKeys.QR_CODE_LINK) ?? '';
+      });
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'Failed to subscribe store: %{public}s', String(e));
+    }
     // Если link ещё пуст — запрашиваем QR (может прийти из LoginRouter уже с link)
     if (this.qrCodeLink.length === 0 && !this.isRequesting) {
       this.requestQr();
+    }
+  }
+
+  aboutToDisappear(): void {
+    if (this.unsubscribe !== undefined) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
     }
   }
 
