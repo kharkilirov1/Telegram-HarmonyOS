@@ -14,6 +14,12 @@
 import { AppStore } from '../../core/store/AppStore';
 import { AppState, AuthStatus, ConnectionStatus, Chat } from '../../core/model/AppState';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import {
+  authUIState,
+  chatsUIState,
+  navigationUIState,
+  chatUIState
+} from '../../core/models/UIStateModels';
 
 const TAG = 'AppStoreBridge';
 const DOMAIN = 0x0011;
@@ -159,21 +165,28 @@ export class AppStoreBridge {
    * Вызывается при каждом изменении AppStore.
    */
   private syncToStorage(state: AppState): void {
-    // Auth
+    // Auth — AppStorage (V1 fallback) + V2 синглтон
     AppStorage.set<string>(StorageKeys.AUTH_STATUS, state.auth.status);
     AppStorage.set<string>(StorageKeys.AUTH_PHONE, state.auth.phoneNumber);
     AppStorage.set<number>(StorageKeys.AUTH_USER_ID, state.auth.userId);
     AppStorage.set<string>(StorageKeys.AUTH_ERROR, state.auth.error);
+    authUIState.authStatus = state.auth.status;
+    authUIState.phone = state.auth.phoneNumber;
 
-    // Connection
+    // Connection — AppStorage (V1 fallback) + V2 синглтон
     AppStorage.set<string>(StorageKeys.CONNECTION_STATUS, state.connection.status);
     AppStorage.set<boolean>(StorageKeys.IS_CONNECTED, state.connection.status === 'ready');
+    chatsUIState.connectionStatus = state.connection.status;
 
-    // Chats
+    // Chats — AppStorage (V1 fallback) + V2 синглтон
     AppStorage.set<number>(StorageKeys.CHATS_COUNT, state.chats.orderedChatIds.length);
     AppStorage.set<boolean>(StorageKeys.CHATS_IS_LOADING, state.chats.isLoading);
     AppStorage.set<boolean>(StorageKeys.CHATS_HAS_MORE, state.chats.hasMore);
     AppStorage.set<string>(StorageKeys.CHATS_LOAD_PHASE, state.chats.loadPhase);
+    chatsUIState.chatsCount = state.chats.orderedChatIds.length;
+    chatsUIState.chatsIsLoading = state.chats.isLoading;
+    chatsUIState.chatsHasMore = state.chats.hasMore;
+    chatsUIState.chatsLoadPhase = state.chats.loadPhase;
 
     // Number of chats with unread messages (iOS-style: count of chats, not total messages)
     let totalUnread = 0;
@@ -187,12 +200,17 @@ export class AppStoreBridge {
     // QR code link
     AppStorage.set<string>(StorageKeys.QR_CODE_LINK, state.auth.qrCodeLink);
 
-    // Auth code metadata (waitCode / waitPassword)
+    // Auth code metadata (waitCode / waitPassword) — AppStorage (V1 fallback) + V2 синглтон
     AppStorage.set<string>(StorageKeys.CODE_TYPE, state.auth.codeType);
     AppStorage.set<number>(StorageKeys.CODE_LENGTH, state.auth.codeLength);
     AppStorage.set<number>(StorageKeys.CODE_TIMEOUT, state.auth.codeTimeout);
     AppStorage.set<string>(StorageKeys.CODE_NEXT_TYPE, state.auth.nextCodeType);
     AppStorage.set<string>(StorageKeys.PASSWORD_HINT, state.auth.passwordHint);
+    authUIState.codeType = state.auth.codeType;
+    authUIState.codeLength = state.auth.codeLength;
+    authUIState.codeTimeout = state.auth.codeTimeout;
+    authUIState.codeNextType = state.auth.nextCodeType;
+    authUIState.passwordHint = state.auth.passwordHint;
   }
 
   /**
@@ -203,6 +221,10 @@ export class AppStoreBridge {
     AppStorage.set<number>(StorageKeys.CODE_LENGTH, codeLength);
     AppStorage.set<number>(StorageKeys.CODE_TIMEOUT, timeout);
     AppStorage.set<string>(StorageKeys.CODE_NEXT_TYPE, nextType);
+    authUIState.codeType = codeType;
+    authUIState.codeLength = codeLength;
+    authUIState.codeTimeout = timeout;
+    authUIState.codeNextType = nextType;
   }
 
   /**
@@ -210,6 +232,7 @@ export class AppStoreBridge {
    */
   updatePasswordHint(hint: string): void {
     AppStorage.set<string>(StorageKeys.PASSWORD_HINT, hint);
+    authUIState.passwordHint = hint;
   }
 }
 
