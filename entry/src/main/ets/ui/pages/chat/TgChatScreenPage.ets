@@ -2,6 +2,7 @@
 // Phase D-3: Stack overlay — message list scrolls under translucent top bar for blur
 
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
+import { chatUIState, navigationUIState } from '../../../core/model/UIStateModels';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState } from '../../../core/model/AppState';
 import { fileUri } from '@kit.CoreFileKit';
@@ -52,41 +53,45 @@ const INITIAL_HISTORY_PLACEHOLDER_RELEASE_COUNT = 1;
 
 declare function px2vp(value: number): number;
 
-@Component
+@ComponentV2
 export struct TgChatScreenPage {
   pageStack: NavPathStack = new NavPathStack();
 
-  @StorageLink(StorageKeys.ACTIVE_CHAT_ID) @Watch('onActiveChatChanged') activeChatId: number = 0;
-  @StorageLink(StorageKeys.ACTIVE_CHAT_TITLE) activeChatTitle: string = '';
+  // Reactive state: local copy updated by @Monitor when chatUIState changes
+  @Local activeChatId: number = 0;
 
-  @State private title: string = 'Chat';
-  @State private chatSubtitle: string = '';
-  @State private chatAvatarInitials: string = '';
-  @State private chatAvatarColorIndex: number = 0;
-  @State private chatAvatarImageSrc: string = '';
-  @State private chatIsOnline: boolean = false;
-  @State private timelineContainerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
-  @State private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
-  @State private bottomOverlayInset: number = TgUiTokens.SPACE_8;
-  @State private composerTotalHeight: number = 52; // default: button(40) + vertical insets(12)
-  @State private composerDraftText: string = '';
-  @State private awaitingInitialTimeline: boolean = false;
-  @State private prependScrollMask: boolean = false;
-  @State private listInitialIndex: number = 0;
-  @State private replyToMessageId: string = '0';
-  @State private replyToAuthor: string = '';
-  @State private replyToPreview: string = '';
+  // Reference to @ObservedV2 singletons (read-only access from model)
+  private chatState = chatUIState;
+  private navState = navigationUIState;
+
+  @Local private title: string = 'Chat';
+  @Local private chatSubtitle: string = '';
+  @Local private chatAvatarInitials: string = '';
+  @Local private chatAvatarColorIndex: number = 0;
+  @Local private chatAvatarImageSrc: string = '';
+  @Local private chatIsOnline: boolean = false;
+  @Local private timelineContainerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
+  @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
+  @Local private bottomOverlayInset: number = TgUiTokens.SPACE_8;
+  @Local private composerTotalHeight: number = 52; // default: button(40) + vertical insets(12)
+  @Local private composerDraftText: string = '';
+  @Local private awaitingInitialTimeline: boolean = false;
+  @Local private prependScrollMask: boolean = false;
+  @Local private listInitialIndex: number = 0;
+  @Local private replyToMessageId: string = '0';
+  @Local private replyToAuthor: string = '';
+  @Local private replyToPreview: string = '';
   // ── Media viewer state ──
-  @State private activeVoiceMessageId: string = '0';
-  @State private activeVoiceProgress: number = 0;
-  @State private activeVoicePlaying: boolean = false;
-  @State private activeAudioMessageId: string = '0';
-  @State private activeAudioProgress: number = 0;
-  @State private activeAudioPlaying: boolean = false;
-  @State private pendingMediaDownloadVersion: number = 0;
-  @State private showMediaGallery: boolean = false;
-  @State private galleryItems: MediaGalleryItem[] = [];
-  @State private galleryInitialIndex: number = 0;
+  @Local private activeVoiceMessageId: string = '0';
+  @Local private activeVoiceProgress: number = 0;
+  @Local private activeVoicePlaying: boolean = false;
+  @Local private activeAudioMessageId: string = '0';
+  @Local private activeAudioProgress: number = 0;
+  @Local private activeAudioPlaying: boolean = false;
+  @Local private pendingMediaDownloadVersion: number = 0;
+  @Local private showMediaGallery: boolean = false;
+  @Local private galleryItems: MediaGalleryItem[] = [];
+  @Local private galleryInitialIndex: number = 0;
   private dataSource: ChatTimelineDataSource = new ChatTimelineDataSource();
   private listScroller: Scroller = new Scroller();
   private unsubscribe?: () => void;
@@ -117,6 +122,16 @@ export struct TgChatScreenPage {
   private mediaPlaybackController?: MediaPlaybackController;
   private locallyListenedVoiceIds: Set<string> = new Set<string>();
   private pendingMediaDownloadFileIds: Set<number> = new Set<number>();
+
+  @Monitor('chatState.activeChatId')
+  onActiveChatIdChanged(_mon: IMonitor): void {
+    const newId = this.chatState.activeChatId;
+    if (newId === this.activeChatId) {
+      return;
+    }
+    this.activeChatId = newId;
+    this.onActiveChatChanged();
+  }
 
   private onActiveChatChanged(): void {
     try {
@@ -173,8 +188,12 @@ export struct TgChatScreenPage {
   aboutToAppear(): void {
     try {
       this.bindNavigationStack();
+      navigationUIState.chatScreenVisible = true;
       AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
       this.computeSafeInsets();
+
+      // Sync initial activeChatId from model
+      this.activeChatId = this.chatState.activeChatId;
 
       const runtime = getAppCoreRuntime();
       const store = runtime.getStore();
@@ -249,6 +268,7 @@ export struct TgChatScreenPage {
 
     this.saveScrollPosition();
     // Nav lock is set by handleBackPress — do not re-extend in aboutToDisappear
+    navigationUIState.chatScreenVisible = false;
     AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
     AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, 0);
     AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, '');
@@ -524,8 +544,8 @@ export struct TgChatScreenPage {
   private rebuildTimeline(state: AppState): void {
     if (this.activeChatId === 0) {
       this.dataSource.applyDiff([]);
-      this.title = this.activeChatTitle.length > 0
-        ? this.activeChatTitle
+      this.title = this.chatState.activeChatTitle.length > 0
+        ? this.chatState.activeChatTitle
         : localized($r('app.string.chats_title').id, 'Chat');
       this.chatSubtitle = '';
       this.chatAvatarInitials = '';
@@ -540,7 +560,7 @@ export struct TgChatScreenPage {
 
     const result = buildChatTimeline(this.activeChatId, state, this.stickyLastReadMessageId);
     const chat = state.chats.chats.get(this.activeChatId);
-    this.title = result.chatTitle.length > 0 ? result.chatTitle : this.activeChatTitle;
+    this.title = result.chatTitle.length > 0 ? result.chatTitle : this.chatState.activeChatTitle;
     this.updateChatTopBarData(state);
     this.unreadRestoreIndex = result.unreadEntryIndex;
     const prevCount = this.previousDataCount;
@@ -1233,6 +1253,7 @@ export struct TgChatScreenPage {
     hilog.info(DOMAIN, TAG, 'handleBackPress called');
     this.saveScrollPosition();
     AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, Date.now() + CHAT_NAV_TRANSITION_LOCK_MS);
+    navigationUIState.chatScreenVisible = false;
     AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
     AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, 0);
     AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, '');
@@ -1721,6 +1742,7 @@ export struct TgChatScreenPage {
         // ── Composer overlay (glass, floats over content at bottom) ──
         Column() {
           Blank()
+            .hitTestBehavior(HitTestMode.None)
           Column() {
             this.buildReplyBar()
             TgComposerInput({
@@ -1759,5 +1781,9 @@ export struct TgChatScreenPage {
     .hideTitleBar(true)
     .hideBackButton(true)
     .hideToolBar(true)
+    .onBackPressed(() => {
+      this.handleBackPress();
+      return true;
+    })
   }
 }
