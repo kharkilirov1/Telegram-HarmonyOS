@@ -126,13 +126,9 @@ export struct MainTabsPage {
   @Builder
   chatPageMap(name: string) {
     if (name === 'TgChatScreenPage') {
-      TgChatScreenPage({
-        pageStack: this.chatNavStack
-      })
+      TgChatScreenPage()
     } else if (name === 'TgProfilePage') {
-      TgProfilePage({
-        pageStack: this.chatNavStack
-      })
+      TgProfilePage()
     }
   }
 
@@ -163,9 +159,7 @@ export struct MainTabsPage {
         // Tab 2: Chats
         TabContent() {
           Navigation(this.chatNavStack) {
-            ChatListPage({
-              pageStack: this.chatNavStack
-            })
+            ChatListPage()
           }
           .hideTitleBar(true)
           .hideToolBar(true)
