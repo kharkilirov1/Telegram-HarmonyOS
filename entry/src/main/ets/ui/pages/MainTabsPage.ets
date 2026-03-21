@@ -1,6 +1,7 @@
 // MainTabsPage — root after auth
 // 4 tabs: Contacts, Calls, Chats, Settings — each with independent NavPathStack
 // Phase D-1: Custom floating island tab bar (TgTabBar) replaces built-in bar
+// V2 migration: @ComponentV2, @Local, navigationUIState/chatsUIState singletons
 
 import { ChatListPage } from './chatlist/ChatListPage';
 import { TgChatScreenPage } from './chat/TgChatScreenPage';
@@ -8,45 +9,43 @@ import { TgProfilePage } from './profile/TgProfilePage';
 import { ContactsPage } from './contacts/ContactsPage';
 import { CallsPage } from './calls/CallsPage';
 import { SettingsPage } from './settings/SettingsPage';
-import { StorageKeys } from '../../app/bridge/AppStoreBridge';
 import { TgTabBar } from '../tg_ui/atoms/TgTabBar';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 import { TgUiTokens } from '../tg_ui/tokens/TgUiTokens';
+import { navigationUIState, chatsUIState } from '../models/UIStateModels';
 
 const DOMAIN = 0x0020;
 const TAG = 'MainTabsPage';
 
 declare function px2vp(value: number): number;
 
-@Component
+@ComponentV2
 export struct MainTabsPage {
-  @StorageLink(StorageKeys.MAIN_TAB_INDEX) @Watch('onStoredTabIndexChanged') selectedIndex: number = 2;
-  @StorageLink(StorageKeys.TOTAL_UNREAD_COUNT) totalUnread: number = 0;
-  @StorageLink(StorageKeys.CHAT_SCREEN_VISIBLE) chatScreenVisible: boolean = false;
-  @StorageLink(StorageKeys.GLASS_MODE) glassMode: string = 'auto';
-
   // Independent NavPathStack per tab (iOS-like isolated navigation)
   private contactsNavStack: NavPathStack = new NavPathStack();
   private callsNavStack: NavPathStack = new NavPathStack();
   private chatNavStack: NavPathStack = new NavPathStack();
   private settingsNavStack: NavPathStack = new NavPathStack();
-  @State private bottomInset: number = 0;
-  private mainWindow?: window.Window;
 
+  @Local private bottomInset: number = 0;
+  private mainWindow?: window.Window;
   private controller: TabsController = new TabsController();
 
-  private onStoredTabIndexChanged(): void {
-    if (this.selectedIndex < 0 || this.selectedIndex > 3) {
-      return;
+  // Local copy of tab index for @Monitor (to imperatively drive TabsController)
+  @Local private selectedIndex: number = 2;
+
+  @Monitor('selectedIndex')
+  onSelectedIndexChanged(mon: IMonitor): void {
+    const v = mon.value() as number;
+    if (v >= 0 && v <= 3) {
+      this.controller.changeIndex(v);
     }
-    this.controller.changeIndex(this.selectedIndex);
   }
 
   aboutToAppear(): void {
-    AppStorage.setOrCreate<number>(StorageKeys.MAIN_TAB_INDEX, this.selectedIndex);
-    AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
+    this.selectedIndex = navigationUIState.mainTabIndex;
     this.controller.changeIndex(this.selectedIndex);
     hilog.info(DOMAIN, TAG, 'MainTabsPage appeared with tab index: %{public}d', this.selectedIndex);
 
@@ -104,15 +103,13 @@ export struct MainTabsPage {
     }
 
     hilog.info(DOMAIN, TAG, 'Tab change: %{public}d -> %{public}d', this.selectedIndex, index);
-    hilog.info(DOMAIN, TAG, 'chatNavStack exists: %{public}s', this.chatNavStack ? 'yes' : 'no');
 
-    // Important: update UI state immediately (do not rely only on AppStorage propagation).
+    // Update local + singleton
     this.selectedIndex = index;
-    AppStorage.set<number>(StorageKeys.MAIN_TAB_INDEX, index);
-    this.controller.changeIndex(index);
+    navigationUIState.mainTabIndex = index;
 
     if (index !== 2) {
-      AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
+      navigationUIState.chatScreenVisible = false;
     }
   }
 
@@ -180,7 +177,7 @@ export struct MainTabsPage {
       .barHeight(0, true)
       .barOverlap(true)
       .scrollable(false)
-      .animationDuration(0) // Отключаем стандартную анимацию для чистоты
+      .animationDuration(0)
       .onChange((index: number) => {
         hilog.info(DOMAIN, TAG, 'Tabs onChange triggered: %{public}d', index);
         this.handleTabChange(index);
@@ -189,18 +186,18 @@ export struct MainTabsPage {
         hilog.info(DOMAIN, TAG, 'Tabs onSelected: %{public}d', index);
         if (this.selectedIndex !== index) {
           this.selectedIndex = index;
-          AppStorage.set<number>(StorageKeys.MAIN_TAB_INDEX, index);
+          navigationUIState.mainTabIndex = index;
         }
       })
       .width('100%')
       .height('100%')
 
       // ── Custom bottom tab bar capsule (overlays content) ──
-      if (!(this.selectedIndex === 2 && this.chatScreenVisible)) {
+      if (!(this.selectedIndex === 2 && navigationUIState.chatScreenVisible)) {
         TgTabBar({
           selectedIndex: this.selectedIndex,
-          chatBadgeCount: this.totalUnread,
-          glassMode: this.glassMode,
+          chatBadgeCount: chatsUIState.totalUnread,
+          glassMode: navigationUIState.glassMode,
           onTabSelect: (index: number) => {
             hilog.info(DOMAIN, TAG, 'TabBar onTabSelect: %{public}d', index);
             this.handleTabChange(index);
@@ -213,4 +210,4 @@ export struct MainTabsPage {
     .height('100%')
     .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
   }
-  }
+}
