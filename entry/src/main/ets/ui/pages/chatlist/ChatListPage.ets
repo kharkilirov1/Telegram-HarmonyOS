@@ -1,9 +1,9 @@
 // ChatListPage — main chat list tab
 // Phase D-3: Stack overlay layout — list scrolls under translucent top bar for blur effect
+// V2 migration: @ComponentV2, @Local, chatsUIState/navigationUIState singletons
 //
 // Data flow: AppStore → subscribe → rebuildList → ChatListDataSource → LazyForEach → TgChatRow
 
-import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState } from '../../../core/model/AppState';
 import { ChatItemVO, buildChatItemVO } from './ChatItemVO';
@@ -26,6 +26,7 @@ import { createOpenChatUseCase, OpenChatUseCase, OpenChatParams } from '../../..
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { uiObserver, window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
+import { navigationUIState, chatsUIState } from '../../models/UIStateModels';
 
 const DOMAIN = 0x0012;
 const TAG = 'ChatListPage';
@@ -49,21 +50,15 @@ class OpenChatRequest implements OpenChatParams {
   }
 }
 
-@Component
+@ComponentV2
 export struct ChatListPage {
   pageStack: NavPathStack = new NavPathStack();
 
-  @StorageLink(StorageKeys.CONNECTION_STATUS) connectionStatus: string = 'connecting';
-  @StorageLink(StorageKeys.CHATS_COUNT) chatsCount: number = 0;
-  @StorageLink(StorageKeys.CHATS_IS_LOADING) chatsIsLoading: boolean = false;
-  @StorageLink(StorageKeys.CHATS_HAS_MORE) chatsHasMore: boolean = true;
-  @StorageLink(StorageKeys.CHATS_LOAD_PHASE) chatsLoadPhase: string = 'idle';
-
-  @State private topBarTotalHeight: number = TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT;
-  @State private listBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
-  @State private searchQuery: string = '';
-  @State private filteredChatsCount: number = 0;
-  @State private isRetryingLoad: boolean = false;
+  @Local private topBarTotalHeight: number = TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT;
+  @Local private listBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
+  @Local private searchQuery: string = '';
+  @Local private filteredChatsCount: number = 0;
+  @Local private isRetryingLoad: boolean = false;
 
   private dataSource: ChatListDataSource = new ChatListDataSource();
   private lastVisibleListEndIndex: number = -1;
@@ -122,11 +117,11 @@ export struct ChatListPage {
     this.clearDeferredOpen();
     this.isOpeningChat = false;
     // Always clear nav lock — ChatListPage is visible, transition is complete
-    AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, 0);
+    navigationUIState.chatNavLockUntil = 0;
   }
 
   aboutToAppear(): void {
-    AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
+    navigationUIState.chatScreenVisible = false;
     this.isOpeningChat = false;
     this.autoInitialLoadRequested = false;
     this.bindNavigationStack();
@@ -254,7 +249,7 @@ export struct ChatListPage {
     if (!this.loadChatsUseCase) {
       return;
     }
-    if (this.connectionStatus !== 'ready' || this.hasActiveSearch()) {
+    if (chatsUIState.connectionStatus !== 'ready' || this.hasActiveSearch()) {
       return;
     }
     if (this.filteredChatsCount === 0) {
@@ -359,7 +354,7 @@ export struct ChatListPage {
   private openChat(item: ChatItemVO): void {
     hilog.info(DOMAIN, TAG, 'openChat called for chatId: %{public}d', item.chatId);
     const nowMs = Date.now();
-    const navLockUntil = AppStorage.get<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL) || 0;
+    const navLockUntil = navigationUIState.chatNavLockUntil;
     if (nowMs < navLockUntil) {
       hilog.info(DOMAIN, TAG, 'openChat blocked by nav lock until %{public}d', navLockUntil);
       this.clearDeferredOpen();
@@ -386,25 +381,25 @@ export struct ChatListPage {
       return;
     }
 
-    const prevChatId: number = AppStorage.get<number>(StorageKeys.ACTIVE_CHAT_ID) || 0;
-    const prevTitle: string = AppStorage.get<string>(StorageKeys.ACTIVE_CHAT_TITLE) || '';
+    const prevChatId: number = navigationUIState.activeChatId;
+    const prevTitle: string = navigationUIState.activeChatTitle;
     hilog.info(DOMAIN, TAG, 'Setting active chat and pushing TgChatScreenPage');
-    AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, item.chatId);
-    AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, item.title);
+    navigationUIState.activeChatId = item.chatId;
+    navigationUIState.activeChatTitle = item.title;
 
     try {
       this.isOpeningChat = true;
-      AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, Date.now() + CHAT_NAV_TRANSITION_LOCK_MS);
+      navigationUIState.chatNavLockUntil = Date.now() + CHAT_NAV_TRANSITION_LOCK_MS;
       navStack.pushPathByName('TgChatScreenPage', new ChatRouteParams(item.chatId));
-      AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
+      navigationUIState.chatScreenVisible = true;
       this.requestOpenChatData(item.chatId);
       this.isOpeningChat = false;
     } catch (e) {
       this.isOpeningChat = false;
-      AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, 0);
-      AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, prevChatId);
-      AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, prevTitle);
-      AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
+      navigationUIState.chatNavLockUntil = 0;
+      navigationUIState.activeChatId = prevChatId;
+      navigationUIState.activeChatTitle = prevTitle;
+      navigationUIState.chatScreenVisible = false;
       hilog.error(DOMAIN, TAG, 'Failed to push TgChatScreenPage: %{public}s', String(e));
     }
   }
@@ -434,14 +429,14 @@ export struct ChatListPage {
   @Builder
   private buildListHeader() {
     // Connection status banner
-    if (this.connectionStatus !== 'ready') {
+    if (chatsUIState.connectionStatus !== 'ready') {
       ListItem() {
         Row() {
           LoadingProgress()
             .width(TgUiTokens.CHATLIST_STATUS_ICON_SIZE)
             .height(TgUiTokens.CHATLIST_STATUS_ICON_SIZE)
             .color(TgUiTokens.COLOR_ICON_PRIMARY)
-          Text(this.connectionStatus === 'connecting'
+          Text(chatsUIState.connectionStatus === 'connecting'
             ? localized($r('app.string.call_connecting').id, 'Connecting...')
             : localized($r('app.string.loading').id, 'Loading...'))
             .fontSize(TgUiTokens.CHATLIST_STATUS_TEXT_SIZE)
@@ -459,44 +454,44 @@ export struct ChatListPage {
   }
 
   private shouldShowListLoading(): boolean {
-    if (this.chatsLoadPhase === 'bootstrap' && !this.hasActiveSearch()) {
+    if (chatsUIState.chatsLoadPhase === 'bootstrap' && !this.hasActiveSearch()) {
       return true;
     }
     return !this.hasActiveSearch() &&
-      this.chatsCount === 0 &&
-      (this.connectionStatus !== 'ready' || this.chatsIsLoading);
+      chatsUIState.chatsCount === 0 &&
+      (chatsUIState.connectionStatus !== 'ready' || chatsUIState.chatsIsLoading);
   }
 
   private shouldShowRetryAction(): boolean {
     return !this.shouldShowListLoading() &&
-      this.connectionStatus === 'ready' &&
+      chatsUIState.connectionStatus === 'ready' &&
       !this.hasActiveSearch() &&
       this.filteredChatsCount === 0 &&
-      !this.chatsIsLoading &&
-      this.chatsHasMore;
+      !chatsUIState.chatsIsLoading &&
+      chatsUIState.chatsHasMore;
   }
 
   private shouldShowPaginationFooter(): boolean {
     return !this.hasActiveSearch() &&
       this.filteredChatsCount > 0 &&
-      (this.chatsLoadPhase === 'pagination' || (!this.chatsHasMore && !this.chatsIsLoading));
+      (chatsUIState.chatsLoadPhase === 'pagination' || (!chatsUIState.chatsHasMore && !chatsUIState.chatsIsLoading));
   }
 
   @Builder
   private buildPaginationFooter() {
     Row() {
-      if (this.chatsLoadPhase === 'pagination') {
+      if (chatsUIState.chatsLoadPhase === 'pagination') {
         LoadingProgress()
           .width(TgUiTokens.CHATLIST_STATUS_ICON_SIZE)
           .height(TgUiTokens.CHATLIST_STATUS_ICON_SIZE)
           .color(TgUiTokens.COLOR_ICON_PRIMARY)
       }
-      Text(this.chatsLoadPhase === 'pagination'
+      Text(chatsUIState.chatsLoadPhase === 'pagination'
         ? localized($r('app.string.loading').id, 'Loading...')
         : localized($r('app.string.no_more_chats').id, 'No more chats'))
         .fontSize(TgUiTokens.CHATLIST_STATUS_TEXT_SIZE)
         .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
-        .margin({ left: this.chatsLoadPhase === 'pagination' ? TgUiTokens.CHATLIST_STATUS_GAP : 0 })
+        .margin({ left: chatsUIState.chatsLoadPhase === 'pagination' ? TgUiTokens.CHATLIST_STATUS_GAP : 0 })
     }
     .width('100%')
     .padding({
