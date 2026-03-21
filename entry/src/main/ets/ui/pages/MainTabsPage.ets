@@ -9,6 +9,8 @@ import { TgProfilePage } from './profile/TgProfilePage';
 import { ContactsPage } from './contacts/ContactsPage';
 import { CallsPage } from './calls/CallsPage';
 import { SettingsPage } from './settings/SettingsPage';
+import { StorageKeys } from '../../app/bridge/AppStoreBridge';
+import { navigationUIState, chatsUIState } from '../../core/model/UIStateModels';
 import { TgTabBar } from '../tg_ui/atoms/TgTabBar';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
@@ -23,29 +25,38 @@ declare function px2vp(value: number): number;
 
 @ComponentV2
 export struct MainTabsPage {
+  @Local selectedIndex: number = 2;
+  private navState = navigationUIState;
+  private chatsState = chatsUIState;
+
   // Independent NavPathStack per tab (iOS-like isolated navigation)
   private contactsNavStack: NavPathStack = new NavPathStack();
   private callsNavStack: NavPathStack = new NavPathStack();
   private chatNavStack: NavPathStack = new NavPathStack();
   private settingsNavStack: NavPathStack = new NavPathStack();
+  @Local private bottomInset: number = 0;
+  private mainWindow?: window.Window;
 
   @Local private bottomInset: number = 0;
   private mainWindow?: window.Window;
   private controller: TabsController = new TabsController();
 
-  // Local copy of tab index for @Monitor (to imperatively drive TabsController)
-  @Local private selectedIndex: number = 2;
-
-  @Monitor('selectedIndex')
-  onSelectedIndexChanged(mon: IMonitor): void {
-    const v = mon.value() as number;
-    if (v >= 0 && v <= 3) {
-      this.controller.changeIndex(v);
+  @Monitor('navState.mainTabIndex')
+  onStoredTabIndexChanged(_mon: IMonitor): void {
+    const idx = this.navState.mainTabIndex;
+    if (idx < 0 || idx > 3) {
+      return;
     }
+    this.selectedIndex = idx;
+    this.controller.changeIndex(idx);
   }
 
   aboutToAppear(): void {
-    this.selectedIndex = navigationUIState.mainTabIndex;
+    // Sync initial value from model
+    this.selectedIndex = this.navState.mainTabIndex;
+    AppStorage.setOrCreate<number>(StorageKeys.MAIN_TAB_INDEX, this.selectedIndex);
+    AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
+    this.navState.chatScreenVisible = false;
     this.controller.changeIndex(this.selectedIndex);
     hilog.info(DOMAIN, TAG, 'MainTabsPage appeared with tab index: %{public}d', this.selectedIndex);
 
@@ -107,9 +118,12 @@ export struct MainTabsPage {
     // Update local + singleton
     this.selectedIndex = index;
     navigationUIState.mainTabIndex = index;
+    AppStorage.set<number>(StorageKeys.MAIN_TAB_INDEX, index);
+    this.controller.changeIndex(index);
 
     if (index !== 2) {
       navigationUIState.chatScreenVisible = false;
+      AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
     }
   }
 
@@ -187,17 +201,18 @@ export struct MainTabsPage {
         if (this.selectedIndex !== index) {
           this.selectedIndex = index;
           navigationUIState.mainTabIndex = index;
+          AppStorage.set<number>(StorageKeys.MAIN_TAB_INDEX, index);
         }
       })
       .width('100%')
       .height('100%')
 
       // ── Custom bottom tab bar capsule (overlays content) ──
-      if (!(this.selectedIndex === 2 && navigationUIState.chatScreenVisible)) {
+      if (!(this.selectedIndex === 2 && this.navState.chatScreenVisible)) {
         TgTabBar({
           selectedIndex: this.selectedIndex,
-          chatBadgeCount: chatsUIState.totalUnread,
-          glassMode: navigationUIState.glassMode,
+          chatBadgeCount: this.chatsState.totalUnreadCount,
+          glassMode: this.navState.glassMode,
           onTabSelect: (index: number) => {
             hilog.info(DOMAIN, TAG, 'TabBar onTabSelect: %{public}d', index);
             this.handleTabChange(index);

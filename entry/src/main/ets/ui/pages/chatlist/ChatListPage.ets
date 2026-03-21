@@ -4,6 +4,8 @@
 //
 // Data flow: AppStore → subscribe → rebuildList → ChatListDataSource → LazyForEach → TgChatRow
 
+import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
+import { chatsUIState, navigationUIState } from '../../../core/model/UIStateModels';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState } from '../../../core/model/AppState';
 import { ChatItemVO, buildChatItemVO } from './ChatItemVO';
@@ -53,6 +55,10 @@ class OpenChatRequest implements OpenChatParams {
 @ComponentV2
 export struct ChatListPage {
   pageStack: NavPathStack = new NavPathStack();
+
+  // Reactive state from @ObservedV2 model (replaces @StorageLink)
+  private chatsState = chatsUIState;
+  private navState = navigationUIState;
 
   @Local private topBarTotalHeight: number = TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT;
   @Local private listBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
@@ -122,6 +128,7 @@ export struct ChatListPage {
 
   aboutToAppear(): void {
     navigationUIState.chatScreenVisible = false;
+    AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
     this.isOpeningChat = false;
     this.autoInitialLoadRequested = false;
     this.bindNavigationStack();
@@ -249,7 +256,7 @@ export struct ChatListPage {
     if (!this.loadChatsUseCase) {
       return;
     }
-    if (chatsUIState.connectionStatus !== 'ready' || this.hasActiveSearch()) {
+    if (this.chatsState.connectionStatus !== 'ready' || this.hasActiveSearch()) {
       return;
     }
     if (this.filteredChatsCount === 0) {
@@ -392,14 +399,16 @@ export struct ChatListPage {
       navigationUIState.chatNavLockUntil = Date.now() + CHAT_NAV_TRANSITION_LOCK_MS;
       navStack.pushPathByName('TgChatScreenPage', new ChatRouteParams(item.chatId));
       navigationUIState.chatScreenVisible = true;
+      AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
       this.requestOpenChatData(item.chatId);
       this.isOpeningChat = false;
     } catch (e) {
       this.isOpeningChat = false;
-      navigationUIState.chatNavLockUntil = 0;
-      navigationUIState.activeChatId = prevChatId;
-      navigationUIState.activeChatTitle = prevTitle;
+      AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, 0);
+      AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, prevChatId);
+      AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, prevTitle);
       navigationUIState.chatScreenVisible = false;
+      AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
       hilog.error(DOMAIN, TAG, 'Failed to push TgChatScreenPage: %{public}s', String(e));
     }
   }
@@ -429,14 +438,14 @@ export struct ChatListPage {
   @Builder
   private buildListHeader() {
     // Connection status banner
-    if (chatsUIState.connectionStatus !== 'ready') {
+    if (this.chatsState.connectionStatus !== 'ready') {
       ListItem() {
         Row() {
           LoadingProgress()
             .width(TgUiTokens.CHATLIST_STATUS_ICON_SIZE)
             .height(TgUiTokens.CHATLIST_STATUS_ICON_SIZE)
             .color(TgUiTokens.COLOR_ICON_PRIMARY)
-          Text(chatsUIState.connectionStatus === 'connecting'
+          Text(this.chatsState.connectionStatus === 'connecting'
             ? localized($r('app.string.call_connecting').id, 'Connecting...')
             : localized($r('app.string.loading').id, 'Loading...'))
             .fontSize(TgUiTokens.CHATLIST_STATUS_TEXT_SIZE)
@@ -454,44 +463,45 @@ export struct ChatListPage {
   }
 
   private shouldShowListLoading(): boolean {
-    if (chatsUIState.chatsLoadPhase === 'bootstrap' && !this.hasActiveSearch()) {
+    if (this.chatsState.chatsLoadPhase === 'bootstrap' && !this.hasActiveSearch()) {
       return true;
     }
     return !this.hasActiveSearch() &&
-      chatsUIState.chatsCount === 0 &&
-      (chatsUIState.connectionStatus !== 'ready' || chatsUIState.chatsIsLoading);
+      this.chatsState.chatsCount === 0 &&
+      (this.chatsState.connectionStatus !== 'ready' || this.chatsState.chatsIsLoading);
   }
 
   private shouldShowRetryAction(): boolean {
     return !this.shouldShowListLoading() &&
-      chatsUIState.connectionStatus === 'ready' &&
+      this.chatsState.connectionStatus === 'ready' &&
       !this.hasActiveSearch() &&
       this.filteredChatsCount === 0 &&
-      !chatsUIState.chatsIsLoading &&
-      chatsUIState.chatsHasMore;
+      !this.chatsState.chatsIsLoading &&
+      this.chatsState.chatsHasMore;
   }
 
   private shouldShowPaginationFooter(): boolean {
     return !this.hasActiveSearch() &&
       this.filteredChatsCount > 0 &&
-      (chatsUIState.chatsLoadPhase === 'pagination' || (!chatsUIState.chatsHasMore && !chatsUIState.chatsIsLoading));
+      (this.chatsState.chatsLoadPhase === 'pagination' ||
+        (!this.chatsState.chatsHasMore && !this.chatsState.chatsIsLoading));
   }
 
   @Builder
   private buildPaginationFooter() {
     Row() {
-      if (chatsUIState.chatsLoadPhase === 'pagination') {
+      if (this.chatsState.chatsLoadPhase === 'pagination') {
         LoadingProgress()
           .width(TgUiTokens.CHATLIST_STATUS_ICON_SIZE)
           .height(TgUiTokens.CHATLIST_STATUS_ICON_SIZE)
           .color(TgUiTokens.COLOR_ICON_PRIMARY)
       }
-      Text(chatsUIState.chatsLoadPhase === 'pagination'
+      Text(this.chatsState.chatsLoadPhase === 'pagination'
         ? localized($r('app.string.loading').id, 'Loading...')
         : localized($r('app.string.no_more_chats').id, 'No more chats'))
         .fontSize(TgUiTokens.CHATLIST_STATUS_TEXT_SIZE)
         .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
-        .margin({ left: chatsUIState.chatsLoadPhase === 'pagination' ? TgUiTokens.CHATLIST_STATUS_GAP : 0 })
+        .margin({ left: this.chatsState.chatsLoadPhase === 'pagination' ? TgUiTokens.CHATLIST_STATUS_GAP : 0 })
     }
     .width('100%')
     .padding({

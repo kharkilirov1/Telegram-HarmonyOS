@@ -1,27 +1,37 @@
-// UIStateModels — @ObservedV2 reactive state models for V2 components
+// UIStateModels — @ObservedV2 синглтоны для UI state (Фаза 2 миграции)
 //
-// Используются вместо @StorageLink в @ComponentV2 компонентах.
-// AppStoreBridge синхронизирует AppStore → authUIState (и другие синглтоны).
-// V2 компоненты читают поля напрямую — @Trace обеспечивает реактивность.
-
-import { AuthStatus } from './AppState';
-
-// ─── Auth UI State ───
+// Замена @StorageLink / AppStorage-привязок в V2-компонентах.
+// AppStoreBridge синхронизирует эти модели при каждом изменении AppStore.
+//
+// Паттерн использования в @ComponentV2:
+//   private chatsState = chatsUIState;
+//   build() { ... this.chatsState.connectionStatus ... }
 
 @ObservedV2
-export class AuthUIState {
-  @Trace status: string = 'notInitialized';
-  @Trace phoneNumber: string = '';
-  @Trace codeType: string = 'sms';
-  @Trace codeLength: number = 5;
-  @Trace codeTimeout: number = 60;
-  @Trace nextCodeType: string = 'call';
-  @Trace passwordHint: string = '';
-  @Trace qrCodeLink: string = '';
-  @Trace error: string = '';
+export class ChatsUIState {
+  @Trace connectionStatus: string = 'connecting';
+  @Trace chatsCount: number = 0;
+  @Trace chatsIsLoading: boolean = false;
+  @Trace chatsHasMore: boolean = true;
+  @Trace chatsLoadPhase: string = 'idle';
+  @Trace totalUnreadCount: number = 0;
+}
+
+@ObservedV2
+export class NavigationUIState {
+  @Trace mainTabIndex: number = 2;
+  @Trace chatScreenVisible: boolean = false;
+  @Trace glassMode: string = 'auto';
+}
+
+@ObservedV2
+export class ChatUIState {
+  @Trace activeChatId: number = 0;
+  @Trace activeChatTitle: string = '';
 }
 
 // ─── Singletons ───
-// Импортируй и читай в build() @ComponentV2 — реактивность через @Trace
 
-export const authUIState: AuthUIState = new AuthUIState();
+export const chatsUIState: ChatsUIState = new ChatsUIState();
+export const navigationUIState: NavigationUIState = new NavigationUIState();
+export const chatUIState: ChatUIState = new ChatUIState();

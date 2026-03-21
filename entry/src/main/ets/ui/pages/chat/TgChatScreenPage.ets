@@ -1,6 +1,8 @@
 // TgChatScreenPage — chat message timeline
 // Phase D-3: Stack overlay — message list scrolls under translucent top bar for blur
 
+import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
+import { chatUIState, navigationUIState } from '../../../core/model/UIStateModels';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { navigationUIState } from '../../models/UIStateModels';
 import { AppState } from '../../../core/model/AppState';
@@ -56,9 +58,12 @@ declare function px2vp(value: number): number;
 export struct TgChatScreenPage {
   pageStack: NavPathStack = new NavPathStack();
 
-  // Initialized from navigationUIState in aboutToAppear; @Local for internal reactivity
-  @Local private activeChatId: number = 0;
-  @Local private activeChatTitle: string = '';
+  // Reactive state: local copy updated by @Monitor when chatUIState changes
+  @Local activeChatId: number = 0;
+
+  // Reference to @ObservedV2 singletons (read-only access from model)
+  private chatState = chatUIState;
+  private navState = navigationUIState;
 
   @Local private title: string = 'Chat';
   @Local private chatSubtitle: string = '';
@@ -119,6 +124,16 @@ export struct TgChatScreenPage {
   private locallyListenedVoiceIds: Set<string> = new Set<string>();
   private pendingMediaDownloadFileIds: Set<number> = new Set<number>();
 
+  @Monitor('chatState.activeChatId')
+  onActiveChatIdChanged(_mon: IMonitor): void {
+    const newId = this.chatState.activeChatId;
+    if (newId === this.activeChatId) {
+      return;
+    }
+    this.activeChatId = newId;
+    this.onActiveChatChanged();
+  }
+
   private onActiveChatChanged(): void {
     try {
       // Send closeChat for previous chat before switching
@@ -178,7 +193,11 @@ export struct TgChatScreenPage {
       this.activeChatTitle = navigationUIState.activeChatTitle;
       this.bindNavigationStack();
       navigationUIState.chatScreenVisible = true;
+      AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
       this.computeSafeInsets();
+
+      // Sync initial activeChatId from model
+      this.activeChatId = this.chatState.activeChatId;
 
       const runtime = getAppCoreRuntime();
       const store = runtime.getStore();
@@ -254,8 +273,9 @@ export struct TgChatScreenPage {
     this.saveScrollPosition();
     // Nav lock is set by handleBackPress — do not re-extend in aboutToDisappear
     navigationUIState.chatScreenVisible = false;
-    navigationUIState.activeChatId = 0;
-    navigationUIState.activeChatTitle = '';
+    AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
+    AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, 0);
+    AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, '');
     if (this.historyFallbackTimerId >= 0) {
       clearTimeout(this.historyFallbackTimerId);
       this.historyFallbackTimerId = -1;
@@ -528,8 +548,8 @@ export struct TgChatScreenPage {
   private rebuildTimeline(state: AppState): void {
     if (this.activeChatId === 0) {
       this.dataSource.applyDiff([]);
-      this.title = this.activeChatTitle.length > 0
-        ? this.activeChatTitle
+      this.title = this.chatState.activeChatTitle.length > 0
+        ? this.chatState.activeChatTitle
         : localized($r('app.string.chats_title').id, 'Chat');
       this.chatSubtitle = '';
       this.chatAvatarInitials = '';
@@ -544,7 +564,7 @@ export struct TgChatScreenPage {
 
     const result = buildChatTimeline(this.activeChatId, state, this.stickyLastReadMessageId);
     const chat = state.chats.chats.get(this.activeChatId);
-    this.title = result.chatTitle.length > 0 ? result.chatTitle : this.activeChatTitle;
+    this.title = result.chatTitle.length > 0 ? result.chatTitle : this.chatState.activeChatTitle;
     this.updateChatTopBarData(state);
     this.unreadRestoreIndex = result.unreadEntryIndex;
     const prevCount = this.previousDataCount;
@@ -1236,10 +1256,11 @@ export struct TgChatScreenPage {
   private handleBackPress(): void {
     hilog.info(DOMAIN, TAG, 'handleBackPress called');
     this.saveScrollPosition();
-    navigationUIState.chatNavLockUntil = Date.now() + CHAT_NAV_TRANSITION_LOCK_MS;
+    AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, Date.now() + CHAT_NAV_TRANSITION_LOCK_MS);
     navigationUIState.chatScreenVisible = false;
-    navigationUIState.activeChatId = 0;
-    navigationUIState.activeChatTitle = '';
+    AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
+    AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, 0);
+    AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, '');
     const navStack: NavPathStack | undefined = this.bindNavigationStack();
     if (navStack !== undefined) {
       hilog.info(DOMAIN, TAG, 'Popping from pageStack');
@@ -1725,6 +1746,7 @@ export struct TgChatScreenPage {
         // ── Composer overlay (glass, floats over content at bottom) ──
         Column() {
           Blank()
+            .hitTestBehavior(HitTestMode.None)
           Column() {
             this.buildReplyBar()
             TgComposerInput({
@@ -1763,5 +1785,9 @@ export struct TgChatScreenPage {
     .hideTitleBar(true)
     .hideBackButton(true)
     .hideToolBar(true)
+    .onBackPressed(() => {
+      this.handleBackPress();
+      return true;
+    })
   }
 }

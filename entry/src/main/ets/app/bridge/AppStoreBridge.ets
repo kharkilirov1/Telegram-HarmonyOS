@@ -13,6 +13,7 @@
 
 import { AppStore } from '../../core/store/AppStore';
 import { AppState, AuthStatus, ConnectionStatus, Chat } from '../../core/model/AppState';
+import { chatsUIState, navigationUIState } from '../../core/model/UIStateModels';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { navigationUIState, chatsUIState } from '../../ui/models/UIStateModels';
 
@@ -152,18 +153,9 @@ export class AppStoreBridge {
     // UI effects policy
     AppStorage.setOrCreate<string>(StorageKeys.GLASS_MODE, 'auto');
 
-    // Init V2 singletons to match defaults
-    chatsUIState.connectionStatus = 'connecting';
-    chatsUIState.chatsCount = 0;
-    chatsUIState.chatsIsLoading = false;
-    chatsUIState.chatsHasMore = true;
-    chatsUIState.chatsLoadPhase = 'idle';
-    chatsUIState.totalUnread = 0;
+    // ── Init @ObservedV2 navigation model defaults ──
     navigationUIState.mainTabIndex = 2;
     navigationUIState.chatScreenVisible = false;
-    navigationUIState.chatNavLockUntil = 0;
-    navigationUIState.activeChatId = 0;
-    navigationUIState.activeChatTitle = '';
     navigationUIState.glassMode = 'auto';
 
     hilog.info(DOMAIN, TAG, 'AppStorage keys initialized');
@@ -206,13 +198,13 @@ export class AppStoreBridge {
     });
     AppStorage.set<number>(StorageKeys.TOTAL_UNREAD_COUNT, totalUnread);
 
-    // ── Mirror to V2 singletons ──
+    // ── Sync @ObservedV2 models (для V2-компонентов) ──
     chatsUIState.connectionStatus = state.connection.status;
     chatsUIState.chatsCount = state.chats.orderedChatIds.length;
     chatsUIState.chatsIsLoading = state.chats.isLoading;
     chatsUIState.chatsHasMore = state.chats.hasMore;
     chatsUIState.chatsLoadPhase = state.chats.loadPhase;
-    chatsUIState.totalUnread = totalUnread;
+    chatsUIState.totalUnreadCount = totalUnread;
 
     // QR code link
     AppStorage.set<string>(StorageKeys.QR_CODE_LINK, state.auth.qrCodeLink);
