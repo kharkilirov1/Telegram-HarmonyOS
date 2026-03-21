@@ -12,7 +12,7 @@ import { PasswordInputPage } from './PasswordInputPage';
 import { QrLoginPage } from './QrLoginPage';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
-import { CodeType } from '../../controllers/LoginController';
+import { CodeType, LoginController } from '../../controllers/LoginController';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { createAuthStateChangedEvent } from '../../../core/model/AppEvent';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -50,12 +50,38 @@ export struct LoginRouter {
   // Отслеживание предыдущего статуса для определения направления перехода
   private prevStatus: string = 'notInitialized';
 
+  // Сбрасывает auth state на сервере через TDLib logOut, затем возвращает на экран телефона.
+  //
+  // Аналог auth.cancelCode в Android (TLRPC.TL_auth_cancelCode).
+  // Без этого вызова при повторном setAuthenticationPhoneNumber сервер либо
+  // продолжает ждать код по старому номеру, либо отправляет код через другую сессию
+  // (authenticationCodeTypeTelegramMessage) вместо SMS.
+  //
+  // После logOut TDLib сам присылает updateAuthorizationState: waitPhoneNumber →
+  // AppStoreBridge обновляет AUTH_STATUS → @StorageLink обновляет роутер.
+  // Fallback: если logOut не отвечает — принудительно обновляем AppStorage.
   private forceBackToPhone(reason: string): void {
-    hilog.warn(0x0003, 'LoginRouter', 'Force back to waitPhoneNumber, reason: %{public}s', reason);
+    hilog.warn(0x0003, 'LoginRouter', 'forceBackToPhone: %{public}s — вызываем TDLib logOut', reason);
+
+    LoginController.getInstance().logout()
+      .then((): void => {
+        hilog.info(0x0003, 'LoginRouter', 'logOut выполнен — TDLib обновит AUTH_STATUS на waitPhoneNumber');
+        // TDLib сам эмитирует updateAuthorizationState: waitPhoneNumber.
+        // AppStoreBridge подхватит и обновит AppStorage → роутер переключится сам.
+      })
+      .catch((error: Error): void => {
+        // logout() внутри перехватывает ошибки и не бросает — этот catch страховочный.
+        hilog.error(0x0003, 'LoginRouter', 'logout() unexpected throw: %{public}s', String(error));
+        // Fallback: обновляем UI напрямую если TDLib не ответил
+        AppStorage.set<string>(StorageKeys.AUTH_STATUS, 'waitPhoneNumber');
+      });
+
+    // Оптимистичный fallback через store — срабатывает если TDLib медленно обновляет состояние.
+    // Если TDLib уже выставил waitPhoneNumber — повторная запись не имеет эффекта.
     try {
       getAppCoreRuntime().getStore().dispatch(createAuthStateChangedEvent('waitPhoneNumber'))
         .catch((error: Error) => {
-          hilog.error(0x0003, 'LoginRouter', 'Store dispatch waitPhoneNumber failed: %{public}s', String(error));
+          hilog.warn(0x0003, 'LoginRouter', 'Store dispatch waitPhoneNumber failed: %{public}s', String(error));
           AppStorage.set<string>(StorageKeys.AUTH_STATUS, 'waitPhoneNumber');
         });
     } catch (error) {
