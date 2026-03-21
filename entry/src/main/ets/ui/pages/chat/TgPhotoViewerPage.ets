@@ -10,21 +10,21 @@ const MIN_SCALE = 1.0;
 const MAX_SCALE = 5.0;
 const DISMISS_THRESHOLD = 100; // vp vertical drag to dismiss
 
-@Component
+@ComponentV2
 export struct TgPhotoViewerPage {
-  @Prop photoPath: string = '';
-  @Prop photoPaths: string[] = [];
-  @Prop initialIndex: number = 0;
-  @Prop caption: string = '';
+  @Param photoPath: string = '';
+  @Param photoPaths: string[] = [];
+  @Param initialIndex: number = 0;
+  @Param caption: string = '';
   onDismiss: () => void = () => {};
 
-  @State private matrix: matrix4.Matrix4Transit = matrix4.identity();
-  @State private curScale: number = 1.0;
-  @State private offsetX: number = 0;
-  @State private offsetY: number = 0;
-  @State private bgOpacity: number = 1.0;
-  @State private showControls: boolean = true;
-  @State private currentIndex: number = 0;
+  @Local private matrix: matrix4.Matrix4Transit = matrix4.identity();
+  @Local private curScale: number = 1.0;
+  @Local private offsetX: number = 0;
+  @Local private offsetY: number = 0;
+  @Local private bgOpacity: number = 1.0;
+  @Local private showControls: boolean = true;
+  @Local private currentIndex: number = 0;
 
   private lastScale: number = 1.0;
   private lastOffsetX: number = 0;

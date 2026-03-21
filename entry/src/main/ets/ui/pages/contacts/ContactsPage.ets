@@ -27,11 +27,11 @@ class ContactVO {
   sortKey: string = '';
 }
 
-@Component
+@ComponentV2
 export struct ContactsPage {
-  @State private contacts: ContactVO[] = [];
-  @State private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
-  @State private listBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
+  @Local private contacts: ContactVO[] = [];
+  @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
+  @Local private listBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
 
   private unsubscribe?: () => void;
   private rebuildScheduled: boolean = false;

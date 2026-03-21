@@ -6,14 +6,14 @@ import { curves } from '@kit.ArkUI';
 
 export type ButtonState = 'default' | 'progress' | 'success';
 
-@Component
+@ComponentV2
 export struct SolidRoundedButton {
-  @Prop title: string = 'Continue';
-  @Prop isEnabled: boolean = true;
-  @Prop buttonState: ButtonState = 'default';
+  @Param title: string = 'Continue';
+  @Param isEnabled: boolean = true;
+  @Param buttonState: ButtonState = 'default';
   onPress: () => void = (): void => {};
 
-  @State private btnScale: number = 1.0;
+  @Local private btnScale: number = 1.0;
 
   build() {
     Button() {
