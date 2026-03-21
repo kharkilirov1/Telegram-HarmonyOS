@@ -205,6 +205,13 @@ export function serializeCommand(command: AnyAppCommand): SerializedCommand {
       break;
     }
 
+    // Сброс auth state на сервере — аналог auth.cancelCode в raw MTProto (Android TL_auth_cancelCode).
+    // TDLib после logOut автоматически присылает updateAuthorizationState: waitPhoneNumber.
+    case 'logout': {
+      result.method = 'logOut';
+      break;
+    }
+
     default:
       hilog.warn(DOMAIN, TAG, 'Unknown command type: %{public}s', command.type);
       result.method = '';

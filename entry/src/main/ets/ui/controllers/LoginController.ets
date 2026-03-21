@@ -11,6 +11,7 @@ import {
   createCheckAuthPasswordCommand,
   createRequestPasswordRecoveryCommand,
   createResendAuthCodeCommand,
+  createLogoutCommand,
   RequestQrCodeAuthCommand
 } from '../../core/model/AppCommand';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -312,6 +313,26 @@ export class LoginController {
       const failure = new SendCodeFailure();
       failure.error = parseTdError(0, err.message);
       return failure;
+    }
+  }
+
+  // ─── Logout / Auth Reset ───
+  // Аналог auth.cancelCode (Android: TLRPC.TL_auth_cancelCode).
+  // Вызывать при уходе с экрана ввода кода — сбрасывает ожидающий auth state на сервере.
+  // После успешного logOut TDLib автоматически эмитирует updateAuthorizationState: waitPhoneNumber.
+  // Не бросает исключение: logOut в pre-auth состоянии может вернуть ошибку от TDLib,
+  // но локальный сброс состояния всё равно произойдёт.
+  async logout(): Promise<void> {
+    try {
+      hilog.info(DOMAIN, TAG, 'Выполняем logOut для сброса auth state на сервере');
+      const command = createLogoutCommand();
+      await this.gateway.send(command);
+      hilog.info(DOMAIN, TAG, 'logOut успешно выполнен');
+    } catch (e) {
+      const err = e as Error;
+      // TDLib может вернуть ошибку при logOut в pre-auth состоянии (waitCode, waitPassword).
+      // Это нормально — TDLib всё равно сбрасывает локальный auth state.
+      hilog.warn(DOMAIN, TAG, 'logOut завершился с ошибкой (ожидаемо в pre-auth): %{public}s', err.message);
     }
   }
 
