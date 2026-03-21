@@ -5,7 +5,7 @@ import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { MonkeyAnimation } from '../../components/login/MonkeyAnimation';
 import { CodeInputView, CodeInputType } from '../../components/login/CodeInputView';
 import { SolidRoundedButton, ButtonState } from '../../components/login/SolidRoundedButton';
-import { LoginController, CheckCodeFailure, CodeType } from '../../controllers/LoginController';
+import { LoginController, CheckCodeFailure, SendCodeFailure, CodeType } from '../../controllers/LoginController';
 import { curves } from '@kit.ArkUI';
 import { common, Want } from '@kit.AbilityKit';
 import { getString } from '../../../core/utils/AppResource';
@@ -178,6 +178,15 @@ export struct CodeInputPage {
     if (result.success) {
       this.remainingTime = this.timeout;
       this.startCountdown();
+    } else {
+      const failure = result as SendCodeFailure;
+      this.errorMessage = failure.error.message;
+      hilog.warn(DOMAIN, TAG, 'resendCode failed: code=%{public}s msg=%{public}s',
+        failure.error.code, failure.error.message);
+      if (failure.error.retryAfter > 0) {
+        this.remainingTime = failure.error.retryAfter;
+        this.startCountdown();
+      }
     }
   }
 
