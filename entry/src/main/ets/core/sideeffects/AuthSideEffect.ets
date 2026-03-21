@@ -103,6 +103,13 @@ class AuthSideEffect {
 
     if (authState === 'authorizationStateWaitTdlibParameters') {
       this.sendTdlibParameters();
+    } else if (authState === 'authorizationStateClosed') {
+      // TDLib closed (after logOut or restart). Reset flags so next
+      // authorizationStateWaitTdlibParameters is handled correctly.
+      this.tdlibParamsAccepted = false;
+      this.tdlibParamsInFlight = false;
+      this.didHandleReady = false;
+      hilog.info(DOMAIN, TAG, 'TDLib closed — params/ready flags reset for re-initialization');
     } else if (authState === 'authorizationStateReady') {
       if (!this.didHandleReady) {
         this.didHandleReady = true;
