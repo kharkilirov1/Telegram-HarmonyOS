@@ -53,7 +53,7 @@ class OpenChatRequest implements OpenChatParams {
 
 @ComponentV2
 export struct ChatListPage {
-  @Param pageStack: NavPathStack = new NavPathStack();
+  @Local pageStack: NavPathStack = new NavPathStack();
 
   // Reactive state from @ObservedV2 model (replaces @StorageLink)
   private chatsState = chatsUIState;

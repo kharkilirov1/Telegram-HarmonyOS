@@ -95,7 +95,7 @@ function formatMemberCount(count: number): string {
 
 @ComponentV2
 export struct TgProfilePage {
-  @Param pageStack: NavPathStack = new NavPathStack();
+  @Local pageStack: NavPathStack = new NavPathStack();
 
   @Local private chatId: number = 0;
   @Local private title: string = '';

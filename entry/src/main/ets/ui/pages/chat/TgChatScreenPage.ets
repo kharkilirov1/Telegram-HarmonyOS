@@ -55,10 +55,11 @@ declare function px2vp(value: number): number;
 
 @ComponentV2
 export struct TgChatScreenPage {
-  @Param pageStack: NavPathStack = new NavPathStack();
+  @Local pageStack: NavPathStack = new NavPathStack();
 
   // Reactive state: local copy updated by @Monitor when chatUIState changes
   @Local activeChatId: number = 0;
+  @Local private activeChatTitle: string = '';
 
   // Reference to @ObservedV2 singletons (read-only access from model)
   private chatState = chatUIState;
