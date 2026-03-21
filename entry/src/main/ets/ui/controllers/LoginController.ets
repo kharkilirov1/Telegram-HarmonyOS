@@ -243,7 +243,8 @@ export class LoginController {
   // ─── Check Auth Code ───
   async checkCode(code: string): Promise<CheckCodeResult> {
     try {
-      hilog.info(DOMAIN, TAG, 'Checking auth code');
+      const masked = code.length >= 2 ? code.substring(0, 2) + '***' : '***';
+      hilog.info(DOMAIN, TAG, 'Checking auth code: %{public}s (len=%{public}d)', masked, code.length);
 
       const command = createCheckAuthCodeCommand(code);
       await this.gateway.send(command);
@@ -255,7 +256,10 @@ export class LoginController {
       const err = e as Error;
       hilog.error(DOMAIN, TAG, 'checkCode failed: %{public}s', err.message);
       const failure = new CheckCodeFailure();
-      failure.error = parseTdError(0, err.message);
+      // Extract numeric error code from TDLib error message (e.g. "PHONE_CODE_INVALID code: 400")
+      const codeMatch = err.message.match(/code:\s*(\d+)/i);
+      const tdErrorCode = codeMatch ? parseInt(codeMatch[1]) : 0;
+      failure.error = parseTdError(tdErrorCode, err.message);
       return failure;
     }
   }

@@ -77,8 +77,13 @@ export struct LoginRouter {
       // Реактивное переключение по статусу из AppStorage
       // @StorageLink автоматически обновляет authStatus при изменении в AppStorage
 
-      if (this.authStatus === 'notInitialized' || this.authStatus === 'waitTdlibParameters') {
-        // TDLib ещё не инициализирован — блокируем UI до готовности
+      if (this.authStatus === 'notInitialized' ||
+          this.authStatus === 'waitTdlibParameters' ||
+          this.authStatus === 'loggingOut' ||
+          this.authStatus === 'closing' ||
+          this.authStatus === 'closed') {
+        // TDLib not ready or going through logout/restart cycle.
+        // AuthSideEffect will handle re-init and drive us to waitPhoneNumber.
         Column() {
           LoadingProgress()
             .width(40)
