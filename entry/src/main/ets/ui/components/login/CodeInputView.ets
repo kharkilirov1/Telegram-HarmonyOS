@@ -65,7 +65,7 @@ export struct CodeInputView {
           width: item.isActive ? TgUiTokens.LOGIN_CODE_CELL_BORDER_ACTIVE_WIDTH : TgUiTokens.LOGIN_CODE_CELL_BORDER_INACTIVE_WIDTH,
           color: item.isActive ? TgUiTokens.LOGIN_CODE_CELL_BORDER_ACTIVE : TgUiTokens.LOGIN_CODE_CELL_BORDER_INACTIVE
         })
-      }, (item: DigitItem) => item.index.toString())
+      }, (item: DigitItem) => `${item.index}_${item.digit}_${item.isActive ? '1' : '0'}`)
     }
     .justifyContent(FlexAlign.Center)
 
