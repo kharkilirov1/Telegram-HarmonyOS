@@ -21,8 +21,8 @@ export struct CodeInputPage {
   @Param codeLength: number = 5;
   @Param nextType: CodeType | null = null;
   @Param timeout: number = 60;
-  onCodeAccepted: () => void = (): void => {};
-  onWrongNumber: () => void = (): void => {};
+  @Event onCodeAccepted: () => void = (): void => {};
+  @Event onWrongNumber: () => void = (): void => {};
 
   @Local private code: string = '';
   @Local private buttonState: ButtonState = 'default';

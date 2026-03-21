@@ -16,7 +16,6 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 import { TgUiTokens } from '../tg_ui/tokens/TgUiTokens';
-import { navigationUIState, chatsUIState } from '../models/UIStateModels';
 
 const DOMAIN = 0x0020;
 const TAG = 'MainTabsPage';
@@ -34,9 +33,6 @@ export struct MainTabsPage {
   private callsNavStack: NavPathStack = new NavPathStack();
   private chatNavStack: NavPathStack = new NavPathStack();
   private settingsNavStack: NavPathStack = new NavPathStack();
-  @Local private bottomInset: number = 0;
-  private mainWindow?: window.Window;
-
   @Local private bottomInset: number = 0;
   private mainWindow?: window.Window;
   private controller: TabsController = new TabsController();

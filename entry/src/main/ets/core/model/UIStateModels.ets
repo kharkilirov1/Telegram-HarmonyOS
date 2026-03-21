@@ -8,6 +8,17 @@
 //   build() { ... this.chatsState.connectionStatus ... }
 
 @ObservedV2
+export class AuthUIState {
+  @Trace authStatus: string = 'notInitialized';
+  @Trace phone: string = '';
+  @Trace codeType: string = 'sms';
+  @Trace codeLength: number = 5;
+  @Trace codeTimeout: number = 60;
+  @Trace codeNextType: string = 'call';
+  @Trace passwordHint: string = '';
+}
+
+@ObservedV2
 export class ChatsUIState {
   @Trace connectionStatus: string = 'connecting';
   @Trace chatsCount: number = 0;
@@ -22,6 +33,9 @@ export class NavigationUIState {
   @Trace mainTabIndex: number = 2;
   @Trace chatScreenVisible: boolean = false;
   @Trace glassMode: string = 'auto';
+  @Trace chatNavLockUntil: number = 0;
+  @Trace activeChatId: number = 0;
+  @Trace activeChatTitle: string = '';
 }
 
 @ObservedV2
@@ -32,6 +46,7 @@ export class ChatUIState {
 
 // ─── Singletons ───
 
+export const authUIState: AuthUIState = new AuthUIState();
 export const chatsUIState: ChatsUIState = new ChatsUIState();
 export const navigationUIState: NavigationUIState = new NavigationUIState();
 export const chatUIState: ChatUIState = new ChatUIState();

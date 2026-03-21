@@ -168,6 +168,7 @@ export class TgUiTokens {
   static readonly UNREAD_BADGE_MIN_SIZE: number = 20;
   static readonly UNREAD_BADGE_H_PADDING: number = 5;
   static readonly UNREAD_BADGE_RADIUS: number = 10;
+  static readonly UNREAD_BADGE_MAX_VISIBLE_COUNT: number = 99;
 
   // ── Chat row baseline metrics ──
   static readonly CHAT_ROW_HEIGHT: number = 76;

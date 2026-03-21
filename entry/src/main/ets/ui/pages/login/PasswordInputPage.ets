@@ -16,8 +16,8 @@ const TAG = 'PasswordInputPage';
 export struct PasswordInputPage {
   @Param hint: string = '';
   @Param suggestReset: boolean = false;
-  onPasswordAccepted: () => void = (): void => {};
-  onBackToPhone: () => void = (): void => {};
+  @Event onPasswordAccepted: () => void = (): void => {};
+  @Event onBackToPhone: () => void = (): void => {};
 
   @Local private password: string = '';
   @Local private isPasswordVisible: boolean = false;

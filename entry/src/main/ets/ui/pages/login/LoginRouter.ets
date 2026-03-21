@@ -28,7 +28,7 @@ export class AuthContext {
 
 @ComponentV2
 export struct LoginRouter {
-  onAuthComplete: () => void = (): void => {};
+  @Event onAuthComplete: () => void = (): void => {};
 
   // ─── Local state (V2: @Local вместо @StorageLink) ───
   // Синхронизируется с AppStorage через store subscription в aboutToAppear

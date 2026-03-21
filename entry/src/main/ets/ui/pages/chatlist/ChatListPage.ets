@@ -28,7 +28,6 @@ import { createOpenChatUseCase, OpenChatUseCase, OpenChatParams } from '../../..
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { uiObserver, window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
-import { navigationUIState, chatsUIState } from '../../models/UIStateModels';
 
 const DOMAIN = 0x0012;
 const TAG = 'ChatListPage';
@@ -54,7 +53,7 @@ class OpenChatRequest implements OpenChatParams {
 
 @ComponentV2
 export struct ChatListPage {
-  pageStack: NavPathStack = new NavPathStack();
+  @Param pageStack: NavPathStack = new NavPathStack();
 
   // Reactive state from @ObservedV2 model (replaces @StorageLink)
   private chatsState = chatsUIState;

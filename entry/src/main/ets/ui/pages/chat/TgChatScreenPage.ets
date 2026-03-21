@@ -4,7 +4,6 @@
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { chatUIState, navigationUIState } from '../../../core/model/UIStateModels';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
-import { navigationUIState } from '../../models/UIStateModels';
 import { AppState } from '../../../core/model/AppState';
 import { fileUri } from '@kit.CoreFileKit';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
@@ -56,7 +55,7 @@ declare function px2vp(value: number): number;
 
 @ComponentV2
 export struct TgChatScreenPage {
-  pageStack: NavPathStack = new NavPathStack();
+  @Param pageStack: NavPathStack = new NavPathStack();
 
   // Reactive state: local copy updated by @Monitor when chatUIState changes
   @Local activeChatId: number = 0;

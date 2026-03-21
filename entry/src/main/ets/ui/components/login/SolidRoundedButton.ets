@@ -11,7 +11,7 @@ export struct SolidRoundedButton {
   @Param title: string = 'Continue';
   @Param isEnabled: boolean = true;
   @Param buttonState: ButtonState = 'default';
-  onPress: () => void = (): void => {};
+  @Event onPress: () => void = (): void => {};
 
   @Local private btnScale: number = 1.0;
 

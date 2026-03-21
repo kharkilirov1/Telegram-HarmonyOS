@@ -28,8 +28,8 @@ export struct CodeInputView {
   @Param inputType: CodeInputType = 'numeric';
   @Param code: string = '';
   @Event onCodeChange: (code: string) => void = (_code: string): void => {};
-  onComplete: (code: string) => void = (_code: string): void => {};
-  onTextChanged: (text: string) => void = (_text: string): void => {};
+  @Event onComplete: (code: string) => void = (_code: string): void => {};
+  @Event onTextChanged: (text: string) => void = (_text: string): void => {};
 
   @Local private isFocused: boolean = false;
   @Local private shakeOffset: number = 0;

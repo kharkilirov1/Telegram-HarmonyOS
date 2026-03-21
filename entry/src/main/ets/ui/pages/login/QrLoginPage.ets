@@ -15,7 +15,7 @@ const TAG = 'QrLoginPage';
 
 @ComponentV2
 export struct QrLoginPage {
-  onBackToPhone: () => void = (): void => {};
+  @Event onBackToPhone: () => void = (): void => {};
 
   @Local qrCodeLink: string = '';
   @Local private errorMessage: string = '';

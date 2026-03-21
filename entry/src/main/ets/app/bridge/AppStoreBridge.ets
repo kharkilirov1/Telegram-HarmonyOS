@@ -13,9 +13,8 @@
 
 import { AppStore } from '../../core/store/AppStore';
 import { AppState, AuthStatus, ConnectionStatus, Chat } from '../../core/model/AppState';
-import { chatsUIState, navigationUIState } from '../../core/model/UIStateModels';
+import { authUIState, chatsUIState, navigationUIState } from '../../core/model/UIStateModels';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { navigationUIState, chatsUIState } from '../../ui/models/UIStateModels';
 
 const TAG = 'AppStoreBridge';
 const DOMAIN = 0x0011;

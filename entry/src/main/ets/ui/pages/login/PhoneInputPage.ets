@@ -18,7 +18,7 @@ const TAG = 'PhoneInputPage';
 
 @ComponentV2
 export struct PhoneInputPage {
-  onPhoneSent: () => void = (): void => {};
+  @Event onPhoneSent: () => void = (): void => {};
 
   @Local private countryCode: string = '+7';
   @Local private countryFlag: string = 'RU';
