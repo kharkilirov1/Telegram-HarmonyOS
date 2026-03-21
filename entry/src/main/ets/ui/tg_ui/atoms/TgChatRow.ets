@@ -27,50 +27,27 @@ export class TgChatRowData {
   isDraft: boolean = false;
 }
 
-@Reusable
-@Component
+@ComponentV2
 export struct TgChatRow {
-  @State chatId: number = 0;
-  @State title: string = '';
-  @State preview: string = '';
-  @State previewPrefix: string = '';
-  @State previewPrefixStyle: 'none' | 'draft' | 'author' = 'none';
-  @State timeText: string = '';
-  @State unreadCount: number = 0;
-  @State isMuted: boolean = false;
-  @State isPinned: boolean = false;
-  @State sendStatus: TgChatSendStatus = TgChatSendStatus.None;
-  @State avatarInitials: string = 'TG';
-  @State avatarUseImage: boolean = false;
-  @State avatarImageSrc: ResourceStr = $r('app.media.app_icon_transparent');
-  @State avatarIsOnline: boolean = false;
-  @State avatarBackgroundColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG;
-  @State avatarTextColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT;
-  @State showSeparator: boolean = true;
-  @State isTyping: boolean = false;
-  @State isDraft: boolean = false;
-
-  aboutToReuse(params: Record<string, Object>): void {
-    this.chatId = params['chatId'] as number ?? 0;
-    this.title = params['title'] as string ?? '';
-    this.preview = params['preview'] as string ?? '';
-    this.previewPrefix = params['previewPrefix'] as string ?? '';
-    this.previewPrefixStyle = params['previewPrefixStyle'] as 'none' | 'draft' | 'author' ?? 'none';
-    this.timeText = params['timeText'] as string ?? '';
-    this.unreadCount = params['unreadCount'] as number ?? 0;
-    this.isMuted = params['isMuted'] as boolean ?? false;
-    this.isPinned = params['isPinned'] as boolean ?? false;
-    this.sendStatus = params['sendStatus'] as TgChatSendStatus ?? TgChatSendStatus.None;
-    this.avatarInitials = params['avatarInitials'] as string ?? 'TG';
-    this.avatarUseImage = params['avatarUseImage'] as boolean ?? false;
-    this.avatarImageSrc = params['avatarImageSrc'] as ResourceStr ?? $r('app.media.app_icon_transparent');
-    this.avatarIsOnline = params['avatarIsOnline'] as boolean ?? false;
-    this.avatarBackgroundColor = params['avatarBackgroundColor'] as ResourceColor ?? TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG;
-    this.avatarTextColor = params['avatarTextColor'] as ResourceColor ?? TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT;
-    this.showSeparator = params['showSeparator'] as boolean ?? true;
-    this.isTyping = params['isTyping'] as boolean ?? false;
-    this.isDraft = params['isDraft'] as boolean ?? false;
-  }
+  @Param chatId: number = 0;
+  @Param title: string = '';
+  @Param preview: string = '';
+  @Param previewPrefix: string = '';
+  @Param previewPrefixStyle: 'none' | 'draft' | 'author' = 'none';
+  @Param timeText: string = '';
+  @Param unreadCount: number = 0;
+  @Param isMuted: boolean = false;
+  @Param isPinned: boolean = false;
+  @Param sendStatus: TgChatSendStatus = TgChatSendStatus.None;
+  @Param avatarInitials: string = 'TG';
+  @Param avatarUseImage: boolean = false;
+  @Param avatarImageSrc: ResourceStr = $r('app.media.app_icon_transparent');
+  @Param avatarIsOnline: boolean = false;
+  @Param avatarBackgroundColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG;
+  @Param avatarTextColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT;
+  @Param showSeparator: boolean = true;
+  @Param isTyping: boolean = false;
+  @Param isDraft: boolean = false;
 
   private previewText(): string {
     return this.preview.length > 0 ? this.preview : ' ';

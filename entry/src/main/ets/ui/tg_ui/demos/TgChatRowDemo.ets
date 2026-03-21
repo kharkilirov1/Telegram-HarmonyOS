@@ -2,7 +2,7 @@ import { TgChatRow, TgChatRowData } from '../atoms/TgChatRow';
 import { TgChatSendStatus } from '../atoms/TgChatMeta';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
-@Component
+@ComponentV2
 export struct TgChatRowDemo {
   private makeBaseRowData(): TgChatRowData {
     const data = new TgChatRowData();

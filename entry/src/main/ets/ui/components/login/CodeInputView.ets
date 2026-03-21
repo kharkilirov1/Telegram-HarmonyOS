@@ -27,7 +27,7 @@ export struct CodeInputView {
   @Param codeLength: number = 5;
   @Param inputType: CodeInputType = 'numeric';
   @Param code: string = '';
-  @Event $code: (val: string) => void = () => {};
+  @Event onCodeChange: (code: string) => void = (_code: string): void => {};
   onComplete: (code: string) => void = (_code: string): void => {};
   onTextChanged: (text: string) => void = (_text: string): void => {};
 
@@ -81,7 +81,7 @@ export struct CodeInputView {
         // Фильтруем только цифры
         const filtered = value.replace(/[^0-9]/g, '');
         if (filtered.length <= this.codeLength) {
-          this.$code(filtered);
+          this.onCodeChange(filtered);
           this.onTextChanged(filtered);
           // iOS: auto-submit при полном заполнении
           if (filtered.length === this.codeLength) {
@@ -106,7 +106,7 @@ export struct CodeInputView {
         .backgroundColor(Color.Transparent)
         .padding({ left: 0, right: 0 })
         .onChange((value: string) => {
-          this.$code(value);
+          this.onCodeChange(value);
           this.onTextChanged(value);
         })
 
@@ -132,7 +132,7 @@ export struct CodeInputView {
 
   // Сброс кода
   resetCode(): void {
-    this.$code('');
+    this.onCodeChange('');
   }
 
   private wordPlaceholder(): string {

@@ -14,22 +14,22 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 const DOMAIN = 0x0040;
 const TAG = 'CodeInputPage';
 
-@Component
+@ComponentV2
 export struct CodeInputPage {
-  @Prop phoneNumber: string = '';
-  @Prop codeType: CodeType = 'sms';
-  @Prop codeLength: number = 5;
-  @Prop nextType: CodeType | null = null;
-  @Prop timeout: number = 60;
+  @Param phoneNumber: string = '';
+  @Param codeType: CodeType = 'sms';
+  @Param codeLength: number = 5;
+  @Param nextType: CodeType | null = null;
+  @Param timeout: number = 60;
   onCodeAccepted: () => void = (): void => {};
   onWrongNumber: () => void = (): void => {};
 
-  @State private code: string = '';
-  @State private buttonState: ButtonState = 'default';
-  @State private errorMessage: string = '';
-  @State private remainingTime: number = 60;
-  @State private resendTimer: number = -1;
-  @State private shakeOffset: number = 0;
+  @Local private code: string = '';
+  @Local private buttonState: ButtonState = 'default';
+  @Local private errorMessage: string = '';
+  @Local private remainingTime: number = 60;
+  @Local private resendTimer: number = -1;
+  @Local private shakeOffset: number = 0;
 
   aboutToAppear(): void {
     this.remainingTime = this.timeout;
@@ -69,7 +69,8 @@ export struct CodeInputPage {
             CodeInputView({
               codeLength: this.codeLength,
               inputType: this.getInputType(),
-              code: $code,
+              code: this.code,
+              onCodeChange: (val: string): void => { this.code = val; },
               onComplete: (code: string): void => { this.submitCode(code); },
               onTextChanged: (_text: string): void => {
                 this.errorMessage = '';

@@ -103,7 +103,7 @@ export struct MonkeyAnimation {
   // ─── Password Visibility Changes ───
 
   @Monitor('isPasswordVisible')
-  private onPasswordVisibilityChanged(monitor: IMonitor): void {
+  private onPasswordVisibilityChanged(_monitor: IMonitor): void {
     if (this.screen !== 'password') return;
 
     if (this.isPasswordVisible) {
@@ -118,7 +118,7 @@ export struct MonkeyAnimation {
   // ─── Code Input Tracking ───
 
   @Monitor('lastDigit')
-  private onDigitChanged(monitor: IMonitor): void {
+  private onDigitChanged(_monitor: IMonitor): void {
     if (this.screen !== 'code' || this.lastDigit < 0) return;
 
     // Tracking анимация — перематываем на позицию, соответствующую цифре
