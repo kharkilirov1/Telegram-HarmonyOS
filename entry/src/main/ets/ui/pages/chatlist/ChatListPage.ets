@@ -5,7 +5,7 @@
 // Data flow: AppStore → subscribe → rebuildList → ChatListDataSource → LazyForEach → TgChatRow
 
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
-import { chatsUIState, navigationUIState } from '../../../core/model/UIStateModels';
+import { chatsUIState, navigationUIState, chatUIState } from '../../../core/model/UIStateModels';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState } from '../../../core/model/AppState';
 import { ChatItemVO, buildChatItemVO } from './ChatItemVO';
@@ -123,6 +123,9 @@ export struct ChatListPage {
     this.isOpeningChat = false;
     // Always clear nav lock — ChatListPage is visible, transition is complete
     navigationUIState.chatNavLockUntil = 0;
+    // Clear active chat — TgChatScreenPage is no longer visible
+    chatUIState.activeChatId = 0;
+    chatUIState.activeChatTitle = '';
   }
 
   aboutToAppear(): void {
@@ -158,7 +161,7 @@ export struct ChatListPage {
             } catch (e) {
               hilog.error(DOMAIN, TAG, 'Rebuild failed: %{public}s', String(e));
             }
-          }, 0);
+          }, 300);
         }
       });
 
@@ -396,6 +399,9 @@ export struct ChatListPage {
     try {
       this.isOpeningChat = true;
       navigationUIState.chatNavLockUntil = Date.now() + CHAT_NAV_TRANSITION_LOCK_MS;
+      // Set chatUIState so TgChatScreenPage @Monitor and lastOpenedChatId work correctly
+      chatUIState.activeChatId = item.chatId;
+      chatUIState.activeChatTitle = item.title;
       navStack.pushPathByName('TgChatScreenPage', new ChatRouteParams(item.chatId));
       navigationUIState.chatScreenVisible = true;
       AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
