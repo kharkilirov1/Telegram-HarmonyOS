@@ -145,6 +145,10 @@
       "value": "#FF3B30"
     },
     {
+      "name": "swipe_action_green",
+      "value": "#34C759"
+    },
+    {
       "name": "action_sheet_bg",
       "value": "#F2F2F7"
     },

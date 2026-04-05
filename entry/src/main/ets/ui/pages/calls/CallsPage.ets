@@ -162,7 +162,7 @@ export struct CallsPage {
             } catch (error) {
               hilog.error(DOMAIN, TAG, 'Calls rebuild failed: %{public}s', String(error));
             }
-          }, 0);
+          }, 300);
         }
       });
 

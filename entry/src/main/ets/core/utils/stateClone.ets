@@ -9,6 +9,8 @@ import {
   ChatsState,
   MessagesState,
   FilesState,
+  AccentColorsState,
+  AccentColorDefinition,
   UsersState,
   Chat,
   ChatLastMessage,
@@ -70,11 +72,9 @@ export function cloneChatsState(chats: ChatsState): ChatsState {
  */
 export function cloneMessagesState(messages: MessagesState): MessagesState {
   const newMessages = new MessagesState();
-  // Clone nested maps - use string keys for MessageId
-  newMessages.messages = new Map<number, Map<string, Message>>();
-  messages.messages.forEach((messageMap: Map<string, Message>, chatId: number) => {
-    newMessages.messages.set(chatId, new Map<string, Message>(messageMap));
-  });
+  // Share inner maps by reference — reducer creates new Map only for the modified chat.
+  // This preserves reference identity for unchanged chats, enabling selector memoization.
+  newMessages.messages = new Map<number, Map<string, Message>>(messages.messages);
   newMessages.pendingMessages = new Map<string, PendingMessage>(messages.pendingMessages);
   return newMessages;
 }
@@ -86,6 +86,22 @@ export function cloneFilesState(files: FilesState): FilesState {
   const newFiles = new FilesState();
   newFiles.transfers = new Map<number, FileTransfer>(files.transfers);
   return newFiles;
+}
+
+export function cloneAccentColorsState(accentColors: AccentColorsState): AccentColorsState {
+  const newAccentColors = new AccentColorsState();
+  newAccentColors.colors = new Map<number, AccentColorDefinition>();
+  accentColors.colors.forEach((value: AccentColorDefinition, key: number) => {
+    const color = new AccentColorDefinition();
+    color.id = value.id;
+    color.builtInAccentColorId = value.builtInAccentColorId;
+    color.lightThemeColors = value.lightThemeColors.slice();
+    color.darkThemeColors = value.darkThemeColors.slice();
+    color.minChannelChatBoostLevel = value.minChannelChatBoostLevel;
+    newAccentColors.colors.set(key, color);
+  });
+  newAccentColors.availableAccentColorIds = accentColors.availableAccentColorIds.slice();
+  return newAccentColors;
 }
 
 /**
@@ -105,6 +121,7 @@ export function cloneChat(chat: Chat): Chat {
   newChat.id = chat.id;
   newChat.type = chat.type;
   newChat.peerUserId = chat.peerUserId;
+  newChat.accentColorId = chat.accentColorId;
   newChat.title = chat.title;
   newChat.unreadCount = chat.unreadCount;
   newChat.muteForSeconds = chat.muteForSeconds;
@@ -140,6 +157,7 @@ export function cloneUser(user: User): User {
   newUser.firstName = user.firstName;
   newUser.lastName = user.lastName;
   newUser.username = user.username;
+  newUser.accentColorId = user.accentColorId;
   newUser.phoneNumber = user.phoneNumber;
   newUser.photoSmall = user.photoSmall;
   newUser.photoBig = user.photoBig;
@@ -163,6 +181,7 @@ export function cloneAppState(state: AppState): AppState {
   newState.chats = cloneChatsState(state.chats);
   newState.messages = cloneMessagesState(state.messages);
   newState.files = cloneFilesState(state.files);
+  newState.accentColors = cloneAccentColorsState(state.accentColors);
   newState.users = cloneUsersState(state.users);
   newState.lastEvent = state.lastEvent;
   newState.version = state.version;
@@ -173,81 +192,57 @@ export function cloneAppState(state: AppState): AppState {
 // Other slices are shared by reference (safe because reducers are pure)
 
 /**
- * Clone state for authReducer - only auth slice is modified
+ * Shallow-clone AppState: all slices shared by reference.
+ * Each cloneStateFor* then replaces only the slice it modifies.
+ * Adding a new state slice only requires updating this function.
  */
+function shallowCloneAppState(state: AppState): AppState {
+  const s = new AppState();
+  s.auth = state.auth;
+  s.connection = state.connection;
+  s.chats = state.chats;
+  s.messages = state.messages;
+  s.files = state.files;
+  s.accentColors = state.accentColors;
+  s.users = state.users;
+  s.lastEvent = state.lastEvent;
+  s.version = state.version;
+  return s;
+}
+
 export function cloneStateForAuth(state: AppState): AppState {
-  const newState = new AppState();
-  newState.auth = cloneAuthState(state.auth);
-  newState.connection = cloneConnectionState(state.connection);
-  newState.chats = state.chats;            // shared — not modified by authReducer
-  newState.messages = state.messages;      // shared
-  newState.files = state.files;            // shared
-  newState.users = state.users;            // shared
-  newState.lastEvent = state.lastEvent;
-  newState.version = state.version;
-  return newState;
+  const s = shallowCloneAppState(state);
+  s.auth = cloneAuthState(state.auth);
+  s.connection = cloneConnectionState(state.connection);
+  return s;
 }
 
-/**
- * Clone state for chatsReducer - only chats slice is modified
- */
 export function cloneStateForChats(state: AppState): AppState {
-  const newState = new AppState();
-  newState.auth = state.auth;              // shared
-  newState.connection = state.connection;  // shared
-  newState.chats = cloneChatsState(state.chats);
-  newState.messages = state.messages;      // shared
-  newState.files = state.files;            // shared
-  newState.users = state.users;            // shared
-  newState.lastEvent = state.lastEvent;
-  newState.version = state.version;
-  return newState;
+  const s = shallowCloneAppState(state);
+  s.chats = cloneChatsState(state.chats);
+  return s;
 }
 
-/**
- * Clone state for messagesReducer - only messages slice is modified
- */
 export function cloneStateForMessages(state: AppState): AppState {
-  const newState = new AppState();
-  newState.auth = state.auth;              // shared
-  newState.connection = state.connection;  // shared
-  newState.chats = state.chats;             // shared
-  newState.messages = cloneMessagesState(state.messages);
-  newState.files = state.files;            // shared
-  newState.users = state.users;            // shared
-  newState.lastEvent = state.lastEvent;
-  newState.version = state.version;
-  return newState;
+  const s = shallowCloneAppState(state);
+  s.messages = cloneMessagesState(state.messages);
+  return s;
 }
 
-/**
- * Clone state for filesReducer - only files slice is modified
- */
 export function cloneStateForFiles(state: AppState): AppState {
-  const newState = new AppState();
-  newState.auth = state.auth;              // shared
-  newState.connection = state.connection;  // shared
-  newState.chats = state.chats;            // shared
-  newState.messages = state.messages;      // shared
-  newState.files = cloneFilesState(state.files);
-  newState.users = state.users;            // shared
-  newState.lastEvent = state.lastEvent;
-  newState.version = state.version;
-  return newState;
+  const s = shallowCloneAppState(state);
+  s.files = cloneFilesState(state.files);
+  return s;
 }
 
-/**
- * Clone state for usersReducer - only users slice is modified
- */
 export function cloneStateForUsers(state: AppState): AppState {
-  const newState = new AppState();
-  newState.auth = state.auth;              // shared
-  newState.connection = state.connection;  // shared
-  newState.chats = state.chats;             // shared
-  newState.messages = state.messages;      // shared
-  newState.files = state.files;            // shared
-  newState.users = cloneUsersState(state.users);
-  newState.lastEvent = state.lastEvent;
-  newState.version = state.version;
-  return newState;
+  const s = shallowCloneAppState(state);
+  s.users = cloneUsersState(state.users);
+  return s;
+}
+
+export function cloneStateForAccentColors(state: AppState): AppState {
+  const s = shallowCloneAppState(state);
+  s.accentColors = cloneAccentColorsState(state.accentColors);
+  return s;
 }

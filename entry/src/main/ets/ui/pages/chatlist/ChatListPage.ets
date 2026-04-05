@@ -25,6 +25,9 @@ import {
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { createLoadChatsUseCase, LoadChatsUseCase } from '../../../domain/usecases/loadChats';
 import { createOpenChatUseCase, OpenChatUseCase, OpenChatParams } from '../../../domain/usecases/openChat';
+import { createSetChatMuteUseCase, SetChatMuteUseCase, MUTE_FOREVER } from '../../../domain/usecases/setChatMute';
+import { createDeleteChatHistoryUseCase, DeleteChatHistoryUseCase } from '../../../domain/usecases/deleteChatHistory';
+import { createToggleChatUnreadUseCase, ToggleChatUnreadUseCase } from '../../../domain/usecases/toggleChatUnread';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { uiObserver, window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
@@ -64,6 +67,7 @@ export struct ChatListPage {
   @Local private searchQuery: string = '';
   @Local private filteredChatsCount: number = 0;
   @Local private isRetryingLoad: boolean = false;
+  @Local private isRefreshing: boolean = false;
 
   private dataSource: ChatListDataSource = new ChatListDataSource();
   private lastVisibleListEndIndex: number = -1;
@@ -73,6 +77,9 @@ export struct ChatListPage {
   private mainWindow?: window.Window;
   private loadChatsUseCase?: LoadChatsUseCase;
   private openChatUseCase?: OpenChatUseCase;
+  private muteUseCase?: SetChatMuteUseCase;
+  private deleteChatUseCase?: DeleteChatHistoryUseCase;
+  private toggleUnreadUseCase?: ToggleChatUnreadUseCase;
   private isOpeningChat: boolean = false;
   private deferredOpenTimerId: number = -1;
   private deferredOpenChatId: number = 0;
@@ -142,6 +149,9 @@ export struct ChatListPage {
       const store = runtime.getStore();
       this.loadChatsUseCase = createLoadChatsUseCase(store, getTdGatewayAdapter());
       this.openChatUseCase = createOpenChatUseCase(store, getTdGatewayAdapter());
+      this.muteUseCase = createSetChatMuteUseCase(getTdGatewayAdapter());
+      this.deleteChatUseCase = createDeleteChatHistoryUseCase(getTdGatewayAdapter());
+      this.toggleUnreadUseCase = createToggleChatUnreadUseCase(getTdGatewayAdapter());
       this.rebuildList(store.getState());
       this.maybeLoadInitialChats(store.getState());
 
@@ -357,6 +367,128 @@ export struct ChatListPage {
         return TgChatSendStatus.Failed;
       default:
         return TgChatSendStatus.None;
+    }
+  }
+
+  // iOS ref: swipe right reveals Read/Unread (grey/blue)
+  @Builder
+  private buildSwipeStartActions(item: ChatItemVO) {
+    Row() {
+      Column() {
+        Text(item.unreadCount > 0 ? 'Read' : 'Unread')
+          .fontSize(12)
+          .fontColor(Color.White)
+      }
+      .width(72)
+      .height('100%')
+      .backgroundColor(item.unreadCount > 0 ? TgUiTokens.COLOR_TEXT_PREVIEW : TgUiTokens.COLOR_ICON_PRIMARY)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
+      .onClick(() => {
+        this.handleToggleUnread(item);
+      })
+    }
+    .height('100%')
+  }
+
+  // iOS ref: swipe left reveals Pin (green), Mute (orange), Delete (red)
+  @Builder
+  private buildSwipeEndActions(item: ChatItemVO) {
+    Row() {
+      // Pin/Unpin — green
+      Column() {
+        Text(item.isPinned ? 'Unpin' : 'Pin')
+          .fontSize(12)
+          .fontColor(Color.White)
+      }
+      .width(72)
+      .height('100%')
+      .backgroundColor(TgUiTokens.SWIPE_ACTION_PIN)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
+      .onClick(() => {
+        hilog.info(DOMAIN, TAG, 'Pin toggle chatId=%{public}d', item.chatId);
+      })
+
+      // Mute/Unmute — orange
+      Column() {
+        Text(item.isMuted ? 'Unmute' : 'Mute')
+          .fontSize(12)
+          .fontColor(Color.White)
+      }
+      .width(72)
+      .height('100%')
+      .backgroundColor(TgUiTokens.SWIPE_ACTION_MUTE)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
+      .onClick(() => {
+        this.handleMuteToggle(item);
+      })
+
+      // Delete — red
+      Column() {
+        Text('Delete')
+          .fontSize(12)
+          .fontColor(Color.White)
+      }
+      .width(72)
+      .height('100%')
+      .backgroundColor(TgUiTokens.SWIPE_ACTION_DELETE)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
+      .onClick(() => {
+        this.handleDeleteChat(item);
+      })
+    }
+    .height('100%')
+  }
+
+  private handleMuteToggle(item: ChatItemVO): void {
+    if (!this.muteUseCase) return;
+    if (item.isMuted) {
+      this.muteUseCase.unmute(item.chatId)
+        .then(() => { hilog.info(DOMAIN, TAG, 'Chat %{public}d unmuted', item.chatId); })
+        .catch((err: Error) => { hilog.error(DOMAIN, TAG, 'Unmute failed: %{public}s', err.message); });
+    } else {
+      this.muteUseCase.mute(item.chatId, MUTE_FOREVER)
+        .then(() => { hilog.info(DOMAIN, TAG, 'Chat %{public}d muted', item.chatId); })
+        .catch((err: Error) => { hilog.error(DOMAIN, TAG, 'Mute failed: %{public}s', err.message); });
+    }
+  }
+
+  private handlePullToRefresh(): void {
+    hilog.info(DOMAIN, TAG, 'Pull-to-refresh triggered');
+    if (this.loadChatsUseCase) {
+      this.loadChatsUseCase.execute()
+        .then(() => {
+          this.isRefreshing = false;
+        })
+        .catch((err: Error) => {
+          hilog.error(DOMAIN, TAG, 'Refresh failed: %{public}s', err.message);
+          this.isRefreshing = false;
+        });
+    } else {
+      this.isRefreshing = false;
+    }
+  }
+
+  private handleDeleteChat(item: ChatItemVO): void {
+    if (!this.deleteChatUseCase) return;
+    this.deleteChatUseCase.execute(item.chatId, true, false)
+      .then(() => { hilog.info(DOMAIN, TAG, 'Chat %{public}d deleted', item.chatId); })
+      .catch((err: Error) => { hilog.error(DOMAIN, TAG, 'Delete chat failed: %{public}s', err.message); });
+  }
+
+  private handleToggleUnread(item: ChatItemVO): void {
+    if (!this.toggleUnreadUseCase) return;
+    if (item.unreadCount > 0) {
+      this.toggleUnreadUseCase.markAsRead(item.chatId)
+        .then(() => { hilog.info(DOMAIN, TAG, 'Chat %{public}d marked read', item.chatId); })
+        .catch((err: Error) => { hilog.error(DOMAIN, TAG, 'Mark read failed: %{public}s', err.message); });
+    } else {
+      this.toggleUnreadUseCase.markAsUnread(item.chatId)
+        .then(() => { hilog.info(DOMAIN, TAG, 'Chat %{public}d marked unread', item.chatId); })
+        .catch((err: Error) => { hilog.error(DOMAIN, TAG, 'Mark unread failed: %{public}s', err.message); });
     }
   }
 
@@ -588,6 +720,7 @@ export struct ChatListPage {
   build() {
     Stack({ alignContent: Alignment.Top }) {
       // ── Content layer (list scrolls under top bar for blur) ──
+      Refresh({ refreshing: $$this.isRefreshing }) {
       List() {
         this.buildListHeader()
         if (this.filteredChatsCount > 0) {
@@ -608,12 +741,13 @@ export struct ChatListPage {
                   isPinned: item.isPinned,
                   sendStatus: this.mapSendStatus(item.sendStatus),
                   avatarInitials: item.initials,
-                  avatarBackgroundColor: item.avatarColor,
-                  avatarUseImage: item.avatarImagePath.length > 0,
-                  avatarImageSrc: item.avatarImagePath.length > 0 ? item.avatarImagePath : $r('app.media.app_icon_transparent'),
-                  avatarIsOnline: item.avatarOnline,
-                  showSeparator: TgUiFeatureFlags.USE_INTERNAL_CHAT_ROW_SEPARATOR
-                })
+                    avatarBackgroundColor: item.avatarColor,
+                    avatarUseImage: item.avatarImagePath.length > 0,
+                    avatarImageSrc: item.avatarImagePath.length > 0 ? item.avatarImagePath : $r('app.media.app_icon_transparent'),
+                    avatarIsOnline: item.avatarOnline,
+                    isVerified: item.isVerified,
+                    showSeparator: TgUiFeatureFlags.USE_INTERNAL_CHAT_ROW_SEPARATOR
+                  })
                   .reuseId(this.getTgReuseId(item))
 
                 if (item.isLastPinned) {
@@ -624,6 +758,22 @@ export struct ChatListPage {
                 }
               }
             }
+            .swipeAction({
+              start: {
+                builder: () => { this.buildSwipeStartActions(item); }
+              },
+              end: {
+                builder: () => { this.buildSwipeEndActions(item); }
+              }
+            })
+            .stateStyles({
+              pressed: {
+                .backgroundColor(TgUiTokens.COLOR_BG_SECONDARY)
+              },
+              normal: {
+                .backgroundColor(Color.Transparent)
+              }
+            })
             .onClick(() => {
               this.openChat(item);
             })
@@ -648,6 +798,12 @@ export struct ChatListPage {
       .onScrollIndex((_start: number, end: number) => {
         this.maybeLoadMoreChats(end);
       })
+      } // end Refresh content
+      .onRefreshing(() => {
+        this.handlePullToRefresh();
+      })
+      .pullToRefresh(true)
+      .refreshOffset(64)
 
       // ── Top bar layer (overlays content, translucent + blur) ──
       TgChatListNavigationBar({

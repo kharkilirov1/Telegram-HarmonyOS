@@ -58,7 +58,7 @@ export struct ContactsPage {
             } catch (e) {
               hilog.error(DOMAIN, TAG, 'Rebuild failed: %{public}s', String(e));
             }
-          }, 0);
+          }, 300);
         }
       });
     } catch (e) {

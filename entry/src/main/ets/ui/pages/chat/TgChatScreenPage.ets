@@ -10,12 +10,16 @@ import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { TgDateSeparator, TgUnreadMarker } from '../../tg_ui/atoms/TgDateSeparator';
 import { TgMessageRouter } from '../../tg_ui/molecules/TgMessageRouter';
 import { TgComposerInput } from '../../tg_ui/atoms/TgComposerInput';
-import { TgChatTopBar } from '../../tg_ui/atoms/TgChatTopBar';
+import { TgChatTopBar, TgChatTopBarSubtitleMode } from '../../tg_ui/atoms/TgChatTopBar';
 import { ProfileRouteParams } from '../profile/TgProfilePage';
 import { ChatTimelineDataSource } from './ChatTimelineDataSource';
 import { ChatTimelineEntryVO, buildChatTimeline } from './ChatTimelineVO';
 import { MediaPlaybackController, MediaPlaybackSnapshot, MediaContentType } from './VoicePlaybackController';
 import { SendMessageParams, createSendMessageUseCase, SendMessageUseCase } from '../../../domain/usecases/sendMessage';
+import { EditMessageParams, createEditMessageUseCase, EditMessageUseCase } from '../../../domain/usecases/editMessage';
+import { DeleteMessagesParams, createDeleteMessagesUseCase, DeleteMessagesUseCase } from '../../../domain/usecases/deleteMessages';
+import { SearchChatMessagesUseCase, SearchChatMessagesResult, createSearchChatMessagesUseCase } from '../../../domain/usecases/searchChatMessages';
+import { PinChatMessageUseCase, createPinChatMessageUseCase } from '../../../domain/usecases/pinChatMessage';
 import {
   LoadChatHistoryUseCase,
   LoadChatHistoryParams,
@@ -67,6 +71,7 @@ export struct TgChatScreenPage {
 
   @Local private title: string = 'Chat';
   @Local private chatSubtitle: string = '';
+  @Local private chatSubtitleMode: TgChatTopBarSubtitleMode = TgChatTopBarSubtitleMode.Secondary;
   @Local private chatAvatarInitials: string = '';
   @Local private chatAvatarColorIndex: number = 0;
   @Local private chatAvatarImageSrc: string = '';
@@ -82,6 +87,7 @@ export struct TgChatScreenPage {
   @Local private replyToMessageId: string = '0';
   @Local private replyToAuthor: string = '';
   @Local private replyToPreview: string = '';
+  @Local private replyToIsQuote: boolean = false;
   // ── Media viewer state ──
   @Local private activeVoiceMessageId: string = '0';
   @Local private activeVoiceProgress: number = 0;
@@ -99,9 +105,21 @@ export struct TgChatScreenPage {
   private rebuildScheduled: boolean = false;
   private mainWindow?: window.Window;
   private sendUseCase?: SendMessageUseCase;
+  private editUseCase?: EditMessageUseCase;
+  private deleteUseCase?: DeleteMessagesUseCase;
+  private searchUseCase?: SearchChatMessagesUseCase;
+  private pinUseCase?: PinChatMessageUseCase;
   private loadChatHistoryUseCase?: LoadChatHistoryUseCase;
   private markChatReadUseCase?: MarkChatReadUseCase;
   private isSending: boolean = false;
+  // Edit mode state
+  @Local private isEditingMessage: boolean = false;
+  @Local private editingMessageId: string = '0';
+  @Local private editingOriginalText: string = '';
+  // Search mode state
+  @Local private isSearchMode: boolean = false;
+  @Local private searchQuery: string = '';
+  private searchDebounceTimerId: number = -1;
   private isLoadingOlder: boolean = false;
   private isLoadingNewer: boolean = false;
   private isMarkingChatRead: boolean = false;
@@ -202,6 +220,10 @@ export struct TgChatScreenPage {
       const runtime = getAppCoreRuntime();
       const store = runtime.getStore();
       this.sendUseCase = createSendMessageUseCase(getTdGatewayAdapter());
+      this.editUseCase = createEditMessageUseCase(getTdGatewayAdapter());
+      this.deleteUseCase = createDeleteMessagesUseCase(getTdGatewayAdapter());
+      this.searchUseCase = createSearchChatMessagesUseCase(getTdGatewayAdapter());
+      this.pinUseCase = createPinChatMessageUseCase(getTdGatewayAdapter());
       this.loadChatHistoryUseCase = createLoadChatHistoryUseCase(store, getTdGatewayAdapter());
       this.markChatReadUseCase = createMarkChatReadUseCase(store, getTdGatewayAdapter());
       this.currentScrollChatId = this.activeChatId;
@@ -495,10 +517,60 @@ export struct TgChatScreenPage {
     return '';
   }
 
+  private formatTypingSubtitle(actionType: string, subjectName: string = ''): string {
+    let actionLabel: string = '';
+    switch (actionType) {
+      case 'typing':
+        actionLabel = localized($r('app.string.typing').id, 'typing...');
+        break;
+      case 'recordingVideo':
+        actionLabel = 'recording video...';
+        break;
+      case 'uploadingVideo':
+        actionLabel = 'sending video...';
+        break;
+      case 'recordingVoice':
+        actionLabel = 'recording voice...';
+        break;
+      case 'uploadingVoice':
+        actionLabel = 'sending voice message...';
+        break;
+      case 'uploadingPhoto':
+        actionLabel = 'sending photo...';
+        break;
+      case 'uploadingDocument':
+        actionLabel = 'sending file...';
+        break;
+      case 'choosingSticker':
+        actionLabel = 'choosing sticker...';
+        break;
+      case 'choosingLocation':
+        actionLabel = 'choosing location...';
+        break;
+      case 'choosingContact':
+        actionLabel = 'choosing contact...';
+        break;
+      case 'playingGame':
+        actionLabel = 'playing game...';
+        break;
+      case 'recordingVideoNote':
+        actionLabel = 'recording video message...';
+        break;
+      case 'uploadingVideoNote':
+        actionLabel = 'sending video message...';
+        break;
+      default:
+        actionLabel = localized($r('app.string.typing').id, 'typing...');
+        break;
+    }
+    return subjectName.length > 0 ? `${subjectName} ${actionLabel}` : actionLabel;
+  }
+
   private updateChatTopBarData(state: AppState): void {
     const chat = state.chats.chats.get(this.activeChatId);
     if (chat === undefined) {
       this.chatSubtitle = '';
+      this.chatSubtitleMode = TgChatTopBarSubtitleMode.Secondary;
       this.chatAvatarInitials = '';
       this.chatAvatarColorIndex = 0;
       this.chatAvatarImageSrc = '';
@@ -515,9 +587,13 @@ export struct TgChatScreenPage {
       const user = state.users.users.get(chat.peerUserId);
       if (user !== undefined) {
         this.chatSubtitle = this.formatUserStatus(user.status);
+        this.chatSubtitleMode = user.status === 'online'
+          ? TgChatTopBarSubtitleMode.Online
+          : TgChatTopBarSubtitleMode.Secondary;
         this.chatIsOnline = user.status === 'online';
       } else {
         this.chatSubtitle = '';
+        this.chatSubtitleMode = TgChatTopBarSubtitleMode.Secondary;
         this.chatIsOnline = false;
       }
     } else {
@@ -535,13 +611,22 @@ export struct TgChatScreenPage {
           ? localized($r('app.string.channel_label').id, 'channel')
           : localized($r('app.string.group_label').id, 'group');
       }
+      this.chatSubtitleMode = TgChatTopBarSubtitleMode.Secondary;
       this.chatIsOnline = false;
     }
 
-    // Typing indicator overrides subtitle
+    // Telegram-like activity states override the secondary subtitle semantics.
     const typingInfo = state.chats.typingActions.get(this.activeChatId);
     if (typingInfo && (Date.now() - typingInfo.timestamp) < 6000) {
-      this.chatSubtitle = 'typing...';
+      let actorName: string = '';
+      if (chat.peerUserId <= 0 && typingInfo.senderUserId > 0) {
+        const sender = state.users.users.get(typingInfo.senderUserId);
+        actorName = sender
+          ? (sender.firstName.length > 0 ? sender.firstName : sender.username)
+          : '';
+      }
+      this.chatSubtitle = this.formatTypingSubtitle(typingInfo.actionType, actorName);
+      this.chatSubtitleMode = TgChatTopBarSubtitleMode.Activity;
     }
   }
 
@@ -552,6 +637,7 @@ export struct TgChatScreenPage {
         ? this.chatState.activeChatTitle
         : localized($r('app.string.chats_title').id, 'Chat');
       this.chatSubtitle = '';
+      this.chatSubtitleMode = TgChatTopBarSubtitleMode.Secondary;
       this.chatAvatarInitials = '';
       this.chatAvatarColorIndex = 0;
       this.chatAvatarImageSrc = '';
@@ -1132,17 +1218,19 @@ export struct TgChatScreenPage {
     })
   }
 
-  private startReply(messageId: string, author: string, preview: string): void {
+  private startReply(messageId: string, author: string, preview: string, isQuote: boolean = false): void {
     this.replyToMessageId = messageId;
     this.replyToAuthor = author.length > 0 ? author : 'Message';
     const trimmed = preview.trim();
     this.replyToPreview = trimmed.length > 0 ? trimmed : 'Message';
+    this.replyToIsQuote = isQuote;
   }
 
   private cancelReply(): void {
     this.replyToMessageId = '0';
     this.replyToAuthor = '';
     this.replyToPreview = '';
+    this.replyToIsQuote = false;
   }
 
   private copyMessageText(text: string): void {
@@ -1152,7 +1240,7 @@ export struct TgChatScreenPage {
     try {
       const data = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, text);
       pasteboard.getSystemPasteboard().setDataSync(data);
-      promptAction.showToast({ message: localized($r('app.string.copied').id, 'Copied'), duration: 1500 });
+      this.getUIContext().getPromptAction().showToast({ message: localized($r('app.string.copied').id, 'Copied'), duration: 1500 });
     } catch (e) {
       hilog.warn(DOMAIN, TAG, 'Copy failed: %{public}s', String(e));
     }
@@ -1177,7 +1265,28 @@ export struct TgChatScreenPage {
     if (entry.message.caption.length > 0) {
       return entry.message.caption;
     }
-    return entry.message.contentType;
+    switch (entry.message.contentType) {
+      case 'photo':
+        return localized($r('app.string.photo').id, 'Photo');
+      case 'video':
+        return localized($r('app.string.video').id, 'Video');
+      case 'animation':
+        return localized($r('app.string.gif').id, 'GIF');
+      case 'voice':
+        return localized($r('app.string.voice_message').id, 'Voice message');
+      case 'videoNote':
+        return localized($r('app.string.video_note').id, 'Video message');
+      case 'sticker':
+        return localized($r('app.string.sticker').id, 'Sticker');
+      case 'audio':
+        return entry.message.audioTitle.length > 0 ? entry.message.audioTitle : 'Audio';
+      case 'document':
+        return entry.message.fileName.length > 0
+          ? entry.message.fileName
+          : localized($r('app.string.file_label').id, 'File');
+      default:
+        return localized($r('app.string.message_action').id, 'Message');
+    }
   }
 
   private showMessageActions(entry: ChatTimelineEntryVO): void {
@@ -1189,17 +1298,86 @@ export struct TgChatScreenPage {
     const preview = this.resolveReplyPreviewForEntry(entry);
     const messageId = entry.message.messageId;
 
-    const replyBtn: promptAction.Button = { text: localized($r('app.string.action_reply').id, 'Reply'), color: '#0088CC' };
-    const copyBtn: promptAction.Button = { text: localized($r('app.string.action_copy').id, 'Copy'), color: '#000000' };
+    const replyBtn: promptAction.Button = {
+      text: localized($r('app.string.action_reply').id, 'Reply'),
+      color: TgUiTokens.COLOR_ICON_PRIMARY
+    };
+    const copyBtn: promptAction.Button = {
+      text: localized($r('app.string.action_copy').id, 'Copy'),
+      color: TgUiTokens.COLOR_TEXT_TITLE
+    };
+    const deleteBtn: promptAction.Button = {
+      text: localized($r('app.string.action_delete').id, 'Delete'),
+      color: TgUiTokens.COLOR_TEXT_ERROR
+    };
+    const forwardBtn: promptAction.Button = {
+      text: localized($r('app.string.action_forward').id, 'Forward'),
+      color: TgUiTokens.COLOR_TEXT_TITLE
+    };
 
-    promptAction.showActionMenu({
-      title: '',
-      buttons: hasText ? [replyBtn, copyBtn] : [replyBtn]
-    }).then((result: promptAction.ActionMenuSuccessResponse) => {
-      if (result.index === 0) {
-        this.startReply(messageId, author, preview);
-      } else if (result.index === 1 && hasText) {
+    // iOS ref: Reply → Edit → Copy → [media] → Forward → separator → Select → Pin → separator → Delete
+    // HarmonyOS promptAction.showActionMenu: max 6 buttons, no icons, no separators.
+    // Editable content types (iOS: not sticker, videoNote, contact, poll, game, invoice)
+    const nonEditableTypes: string[] = ['sticker', 'videoNote', 'contact', 'poll', 'location', 'game'];
+    const canEdit = entry.message.isOutgoing && hasText &&
+      !nonEditableTypes.includes(entry.message.contentType);
+
+    // Build ordered button list + parallel action registry
+    const buttons: promptAction.Button[] = [];
+    const actions: (() => void)[] = [];
+
+    // 1. Reply (always)
+    buttons.push(replyBtn);
+    actions.push(() => {
+      this.startReply(messageId, author, preview, entry.message.replyIsQuote);
+    });
+
+    // 2. Edit (own editable messages — iOS order: before Copy)
+    if (canEdit) {
+      buttons.push({
+        text: localized($r('app.string.action_edit').id, 'Edit'),
+        color: TgUiTokens.COLOR_ICON_PRIMARY
+      });
+      actions.push(() => {
+        this.startEditMessage(messageId, messageText);
+      });
+    }
+
+    // 3. Copy (if has text)
+    if (hasText) {
+      buttons.push(copyBtn);
+      actions.push(() => {
         this.copyMessageText(messageText);
+      });
+    }
+
+    // 4. Forward
+    buttons.push(forwardBtn);
+    actions.push(() => {
+      hilog.info(DOMAIN, TAG, 'Forward requested for message %{public}s', messageId);
+    });
+
+    // 5. Pin (iOS: after Select, before Delete)
+    buttons.push({
+      text: localized($r('app.string.action_pin').id, 'Pin'),
+      color: TgUiTokens.COLOR_TEXT_TITLE
+    });
+    actions.push(() => {
+      this.handlePinMessage(messageId);
+    });
+
+    // 6. Delete (always last, destructive — iOS pattern)
+    buttons.push(deleteBtn);
+    actions.push(() => {
+      this.handleDeleteMessage(messageId);
+    });
+
+    this.getUIContext().getPromptAction().showActionMenu({
+      title: '',
+      buttons: buttons as [promptAction.Button, promptAction.Button?, promptAction.Button?, promptAction.Button?, promptAction.Button?, promptAction.Button?]
+    }).then((result: promptAction.ActionMenuSuccessResponse) => {
+      if (result.index >= 0 && result.index < actions.length) {
+        actions[result.index]();
       }
     }).catch((_: Error) => {
       // User dismissed — no action needed
@@ -1207,6 +1385,11 @@ export struct TgChatScreenPage {
   }
 
   private handleSendMessage(text: string): void {
+    // Edit mode — redirect to edit handler
+    if (this.isEditingMessage) {
+      this.handleEditMessage(text);
+      return;
+    }
     if (this.isSending || this.activeChatId === 0 || !this.sendUseCase) {
       return;
     }
@@ -1241,6 +1424,134 @@ export struct TgChatScreenPage {
       .finally(() => {
         this.isSending = false;
       });
+  }
+
+  private startEditMessage(messageId: string, originalText: string): void {
+    this.isEditingMessage = true;
+    this.editingMessageId = messageId;
+    this.editingOriginalText = originalText;
+    this.composerDraftText = originalText;
+    hilog.info(DOMAIN, TAG, 'Edit mode started for message %{public}s', messageId);
+  }
+
+  private cancelEditMessage(): void {
+    this.isEditingMessage = false;
+    this.editingMessageId = '0';
+    this.editingOriginalText = '';
+    this.composerDraftText = '';
+  }
+
+  private handleEditMessage(newText: string): void {
+    if (!this.editUseCase || this.activeChatId === 0 || this.editingMessageId === '0') {
+      return;
+    }
+    if (newText.trim().length === 0) {
+      // Empty edit = cancel
+      this.cancelEditMessage();
+      return;
+    }
+    if (newText === this.editingOriginalText) {
+      // No changes = cancel
+      this.cancelEditMessage();
+      return;
+    }
+
+    const params = new EditMessageParams();
+    params.chatId = this.activeChatId;
+    params.messageId = this.editingMessageId;
+    params.text = newText;
+    const editId = this.editingMessageId;
+
+    this.cancelEditMessage();
+
+    this.editUseCase.execute(params)
+      .then(() => {
+        hilog.info(DOMAIN, TAG, 'Message %{public}s edited', editId);
+      })
+      .catch((err: Error) => {
+        hilog.error(DOMAIN, TAG, 'Edit failed: %{public}s', err.message);
+      });
+  }
+
+  private handlePinMessage(messageId: string): void {
+    if (!this.pinUseCase || this.activeChatId === 0) return;
+
+    this.pinUseCase.pin(this.activeChatId, messageId, false, false)
+      .then(() => {
+        hilog.info(DOMAIN, TAG, 'Message %{public}s pinned', messageId);
+      })
+      .catch((err: Error) => {
+        hilog.error(DOMAIN, TAG, 'Pin failed: %{public}s', err.message);
+      });
+  }
+
+  private handleDeleteMessage(messageId: string): void {
+    if (!this.deleteUseCase || this.activeChatId === 0) {
+      return;
+    }
+
+    const params = new DeleteMessagesParams();
+    params.chatId = this.activeChatId;
+    params.messageIds = [messageId];
+    params.revoke = true;
+
+    this.deleteUseCase.execute(params)
+      .then(() => {
+        hilog.info(DOMAIN, TAG, 'Message %{public}s deleted', messageId);
+      })
+      .catch((err: Error) => {
+        hilog.error(DOMAIN, TAG, 'Delete failed: %{public}s', err.message);
+      });
+  }
+
+  private handleSearchQueryChange(query: string): void {
+    this.searchQuery = query;
+    // iOS ref: 0.2s debounce before sending search request
+    if (this.searchDebounceTimerId !== -1) {
+      clearTimeout(this.searchDebounceTimerId);
+    }
+    if (query.trim().length === 0) {
+      return;
+    }
+    this.searchDebounceTimerId = setTimeout(() => {
+      this.searchDebounceTimerId = -1;
+      this.executeSearch(query);
+    }, 200);
+  }
+
+  private executeSearch(query: string): void {
+    if (!this.searchUseCase || this.activeChatId === 0) return;
+
+    this.searchUseCase.execute(this.activeChatId, query)
+      .then((result: SearchChatMessagesResult) => {
+        if (result.messageIds.length > 0) {
+          // Auto-navigate to first result (iOS pattern)
+          const firstId = result.messageIds[0];
+          const count = this.dataSource.totalCount();
+          for (let i = 0; i < count; i++) {
+            const entry: ChatTimelineEntryVO = this.dataSource.getData(i);
+            if (entry.kind === 'message' && entry.message.messageId === firstId) {
+              this.listScroller.scrollToIndex(i);
+              break;
+            }
+          }
+          hilog.info(DOMAIN, TAG, 'Search: navigated to first of %{public}d results', result.totalCount);
+        } else {
+          hilog.info(DOMAIN, TAG, 'Search: no results for "%{public}s"', query);
+        }
+      })
+      .catch((err: Error) => {
+        hilog.error(DOMAIN, TAG, 'Search failed: %{public}s', err.message);
+      });
+  }
+
+  private closeSearch(): void {
+    this.isSearchMode = false;
+    this.searchQuery = '';
+    if (this.searchDebounceTimerId !== -1) {
+      clearTimeout(this.searchDebounceTimerId);
+      this.searchDebounceTimerId = -1;
+    }
   }
 
   private openProfile(): void {
@@ -1448,58 +1759,6 @@ export struct TgChatScreenPage {
   }
 
   @Builder
-  private buildReplyBar() {
-    if (this.replyToMessageId !== '0') {
-      Row() {
-        // Blue reply indicator bar (iOS: 2pt bar)
-        Column()
-          .width(TgUiTokens.REPLY_SNIPPET_BAR_WIDTH)
-          .height('100%')
-          .backgroundColor(TgUiTokens.REPLY_SNIPPET_BAR_INCOMING)
-          .borderRadius(TgUiTokens.REPLY_SNIPPET_BAR_RADIUS)
-
-        // Reply content
-        Column({ space: 2 }) {
-          Text(this.replyToAuthor)
-            .fontSize(TgUiTokens.REPLY_SNIPPET_TITLE_SIZE)
-            .fontWeight(TgUiTokens.REPLY_SNIPPET_TITLE_WEIGHT)
-            .fontColor(TgUiTokens.COLOR_ICON_PRIMARY)
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-
-          Text(this.replyToPreview)
-            .fontSize(TgUiTokens.REPLY_SNIPPET_PREVIEW_SIZE)
-            .fontWeight(FontWeight.Regular)
-            .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-        }
-        .layoutWeight(1)
-        .margin({ left: TgUiTokens.REPLY_SNIPPET_BAR_GAP })
-
-        // Close button
-        Image($r('app.media.ic_close'))
-          .width(20)
-          .height(20)
-          .fillColor(TgUiTokens.COLOR_ICON_SECONDARY)
-          .onClick(() => {
-            this.cancelReply();
-          })
-          .margin({ left: TgUiTokens.REPLY_SNIPPET_BAR_GAP })
-      }
-      .width('100%')
-      .padding({
-        left: TgUiTokens.COMPOSER_SIDE_INSET + 4,
-        right: TgUiTokens.COMPOSER_SIDE_INSET + 4,
-        top: 8,
-        bottom: 4
-      })
-      .height(45) // iOS: ReplyAccessoryPanelNode = 45pt
-      .alignItems(VerticalAlign.Center)
-    }
-  }
-
-  @Builder
   private buildMessageItem(entry: ChatTimelineEntryVO) {
     Column() {
       TgMessageRouter({
@@ -1510,7 +1769,13 @@ export struct TgChatScreenPage {
         text: entry.message.text,
         isEmojiOnly: entry.message.isEmojiOnly,
         forceBreakAll: entry.message.forceBreakAll,
+        quoteOffsets: entry.message.quoteOffsets,
+        quoteLengths: entry.message.quoteLengths,
+        quoteCollapsedFlags: entry.message.quoteCollapsedFlags,
         caption: entry.message.caption,
+        captionQuoteOffsets: entry.message.captionQuoteOffsets,
+        captionQuoteLengths: entry.message.captionQuoteLengths,
+        captionQuoteCollapsedFlags: entry.message.captionQuoteCollapsedFlags,
         photoPath: entry.message.photoPath,
         hasLocalPhoto: entry.message.hasLocalPhoto,
         isPhotoDownloading: entry.message.isPhotoDownloading || this.isMediaDownloadPending(entry.message.photoFileId),
@@ -1558,6 +1823,20 @@ export struct TgChatScreenPage {
         stickerHeight: entry.message.stickerHeight,
         isAnimatedSticker: entry.message.isAnimatedSticker,
         isVideoSticker: entry.message.isVideoSticker,
+        contactFirstName: entry.message.contactFirstName,
+        contactLastName: entry.message.contactLastName,
+        contactPhoneNumber: entry.message.contactPhoneNumber,
+        contactUserId: entry.message.contactUserId,
+        locationLatitude: entry.message.locationLatitude,
+        locationLongitude: entry.message.locationLongitude,
+        locationVenueTitle: entry.message.locationVenueTitle,
+        locationVenueAddress: entry.message.locationVenueAddress,
+        pollQuestion: entry.message.pollQuestion,
+        pollOptions: entry.message.pollOptions,
+        pollTotalVoterCount: entry.message.pollTotalVoterCount,
+        pollIsClosed: entry.message.pollIsClosed,
+        pollIsAnonymous: entry.message.pollIsAnonymous,
+        pollType: entry.message.pollType,
         showSenderName: entry.message.showSenderName,
         senderName: entry.message.senderName,
         senderColorHex: entry.message.senderColorHex,
@@ -1568,9 +1847,12 @@ export struct TgChatScreenPage {
         avatarColorIndex: entry.message.avatarColorIndex,
         showReplySnippet: entry.message.showReplySnippet,
         replyAuthor: entry.message.replyAuthor,
+        replyAuthorColorHex: entry.message.replyAuthorColorHex,
         replyPreview: entry.message.replyPreview,
         replyIsOutgoing: entry.message.replyIsOutgoing,
         replyIsQuote: entry.message.replyIsQuote,
+        replyHasThumbnail: entry.message.replyHasThumbnail,
+        replyThumbnailSrc: entry.message.replyThumbnailSrc,
         timeText: entry.message.timeText,
         sendStatus: entry.message.sendStatus,
         isShortVideo: entry.message.isShortVideo,
@@ -1727,6 +2009,7 @@ export struct TgChatScreenPage {
         TgChatTopBar({
           title: this.title,
           subtitle: this.chatSubtitle,
+          subtitleMode: this.chatSubtitleMode,
           avatarInitials: this.chatAvatarInitials,
           avatarColorIndex: this.chatAvatarColorIndex,
           avatarImageSrc: this.chatAvatarImageSrc,
@@ -1739,28 +2022,44 @@ export struct TgChatScreenPage {
           },
           onAvatarPress: (): void => {
             this.openProfile();
+          },
+          isSearchMode: this.isSearchMode,
+          searchQuery: this.searchQuery,
+          onSearchQueryChange: (query: string): void => {
+            this.handleSearchQueryChange(query);
+          },
+          onSearchClose: (): void => {
+            this.closeSearch();
           }
         })
         .hitTestBehavior(HitTestMode.Transparent)
 
         // ── Composer overlay (glass, floats over content at bottom) ──
         Column() {
-          Blank()
-            .hitTestBehavior(HitTestMode.None)
-          Column() {
-            this.buildReplyBar()
-            TgComposerInput({
-              text: this.composerDraftText,
-              placeholder: localized($r('app.string.message_placeholder').id, 'Message'),
-              isDisabled: this.activeChatId === 0,
-              bottomInset: this.bottomOverlayInset,
-              onTextChange: (value: string): void => {
-                this.composerDraftText = value;
-              },
-              onSendPress: (text: string): void => {
-                this.handleSendMessage(text);
-              }
-            })
+            Blank()
+              .hitTestBehavior(HitTestMode.None)
+            Column() {
+              TgComposerInput({
+                text: this.composerDraftText,
+                placeholder: localized($r('app.string.message_placeholder').id, 'Message'),
+                isDisabled: this.activeChatId === 0,
+                bottomInset: this.bottomOverlayInset,
+                showReplySnippet: this.replyToMessageId !== '0',
+                replyAuthor: this.replyToAuthor,
+                replyPreview: this.replyToPreview,
+                replyIsOutgoing: false,
+                replyIsQuote: this.replyToIsQuote,
+                replyHasThumbnail: false,
+                onTextChange: (value: string): void => {
+                  this.composerDraftText = value;
+                },
+                onSendPress: (text: string): void => {
+                  this.handleSendMessage(text);
+                },
+                onReplyCancelPress: (): void => {
+                  this.cancelReply();
+                }
+              })
           }
           .onAreaChange((_oldArea: Area, newArea: Area) => {
             const h = newArea.height as number;

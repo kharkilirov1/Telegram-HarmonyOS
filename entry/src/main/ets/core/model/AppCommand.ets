@@ -74,6 +74,62 @@ export class GetSupergroupFullInfoPayload {
   supergroupId: number = 0;
 }
 
+export class EditMessageTextPayload {
+  chatId: ChatId = 0;
+  messageId: MessageId = '0';
+  text: string = '';
+}
+
+export class DeleteMessagesPayload {
+  chatId: ChatId = 0;
+  messageIds: MessageId[] = [];
+  revoke: boolean = true;
+}
+
+export class ForwardMessagesPayload {
+  chatId: ChatId = 0;
+  fromChatId: ChatId = 0;
+  messageIds: MessageId[] = [];
+  sendCopy: boolean = false;
+  removeCaption: boolean = false;
+}
+
+export class SetChatMutePayload {
+  chatId: ChatId = 0;
+  muteForSeconds: number = 0; // 0 = unmute, >0 = mute duration
+}
+
+export class PinChatMessagePayload {
+  chatId: ChatId = 0;
+  messageId: MessageId = '0';
+  disableNotification: boolean = false;
+  onlyForSelf: boolean = false;
+}
+
+export class UnpinChatMessagePayload {
+  chatId: ChatId = 0;
+  messageId: MessageId = '0';
+}
+
+export class DeleteChatHistoryPayload {
+  chatId: ChatId = 0;
+  removeFromChatList: boolean = true;
+  revoke: boolean = false; // true = delete for everyone (if allowed)
+}
+
+export class ToggleChatIsMarkedAsUnreadPayload {
+  chatId: ChatId = 0;
+  isMarkedAsUnread: boolean = false;
+}
+
+export class SearchChatMessagesPayload {
+  chatId: ChatId = 0;
+  query: string = '';
+  fromMessageId: MessageId = '0';
+  offset: number = 0;
+  limit: number = 100;
+}
+
 export class DownloadFilePayload {
   fileId: number = 0;
   priority: number = 1;
@@ -159,6 +215,51 @@ export class GetSupergroupFullInfoCommand extends AppCommand {
   payload: GetSupergroupFullInfoPayload = new GetSupergroupFullInfoPayload();
 }
 
+export class EditMessageTextCommand extends AppCommand {
+  type: string = 'editMessageText';
+  payload: EditMessageTextPayload = new EditMessageTextPayload();
+}
+
+export class DeleteMessagesCommand extends AppCommand {
+  type: string = 'deleteMessages';
+  payload: DeleteMessagesPayload = new DeleteMessagesPayload();
+}
+
+export class ForwardMessagesCommand extends AppCommand {
+  type: string = 'forwardMessages';
+  payload: ForwardMessagesPayload = new ForwardMessagesPayload();
+}
+
+export class SetChatMuteCommand extends AppCommand {
+  type: string = 'setChatMute';
+  payload: SetChatMutePayload = new SetChatMutePayload();
+}
+
+export class PinChatMessageCommand extends AppCommand {
+  type: string = 'pinChatMessage';
+  payload: PinChatMessagePayload = new PinChatMessagePayload();
+}
+
+export class UnpinChatMessageCommand extends AppCommand {
+  type: string = 'unpinChatMessage';
+  payload: UnpinChatMessagePayload = new UnpinChatMessagePayload();
+}
+
+export class DeleteChatHistoryCommand extends AppCommand {
+  type: string = 'deleteChatHistory';
+  payload: DeleteChatHistoryPayload = new DeleteChatHistoryPayload();
+}
+
+export class ToggleChatIsMarkedAsUnreadCommand extends AppCommand {
+  type: string = 'toggleChatIsMarkedAsUnread';
+  payload: ToggleChatIsMarkedAsUnreadPayload = new ToggleChatIsMarkedAsUnreadPayload();
+}
+
+export class SearchChatMessagesCommand extends AppCommand {
+  type: string = 'searchChatMessages';
+  payload: SearchChatMessagesPayload = new SearchChatMessagesPayload();
+}
+
 export class DownloadFileCommand extends AppCommand {
   type: string = 'downloadFile';
   payload: DownloadFilePayload = new DownloadFilePayload();
@@ -190,6 +291,15 @@ export type AnyAppCommand =
   | CloseChatCommand
   | GetUserFullInfoCommand
   | GetSupergroupFullInfoCommand
+  | EditMessageTextCommand
+  | DeleteMessagesCommand
+  | ForwardMessagesCommand
+  | SetChatMuteCommand
+  | PinChatMessageCommand
+  | UnpinChatMessageCommand
+  | DeleteChatHistoryCommand
+  | ToggleChatIsMarkedAsUnreadCommand
+  | SearchChatMessagesCommand
   | DownloadFileCommand
   | RequestQrCodeAuthCommand
   | LogoutCommand;
@@ -307,6 +417,107 @@ export function createGetUserFullInfoCommand(userId: UserId): GetUserFullInfoCom
 export function createGetSupergroupFullInfoCommand(supergroupId: number): GetSupergroupFullInfoCommand {
   const cmd = new GetSupergroupFullInfoCommand();
   cmd.payload.supergroupId = supergroupId;
+  return cmd;
+}
+
+export function createEditMessageTextCommand(
+  chatId: ChatId,
+  messageId: MessageId,
+  text: string
+): EditMessageTextCommand {
+  const cmd = new EditMessageTextCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.messageId = messageId;
+  cmd.payload.text = text;
+  return cmd;
+}
+
+export function createDeleteMessagesCommand(
+  chatId: ChatId,
+  messageIds: MessageId[],
+  revoke: boolean = true
+): DeleteMessagesCommand {
+  const cmd = new DeleteMessagesCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.messageIds = messageIds;
+  cmd.payload.revoke = revoke;
+  return cmd;
+}
+
+export function createForwardMessagesCommand(
+  chatId: ChatId,
+  fromChatId: ChatId,
+  messageIds: MessageId[],
+  sendCopy: boolean = false,
+  removeCaption: boolean = false
+): ForwardMessagesCommand {
+  const cmd = new ForwardMessagesCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.fromChatId = fromChatId;
+  cmd.payload.messageIds = messageIds;
+  cmd.payload.sendCopy = sendCopy;
+  cmd.payload.removeCaption = removeCaption;
+  return cmd;
+}
+
+export function createSetChatMuteCommand(chatId: ChatId, muteForSeconds: number): SetChatMuteCommand {
+  const cmd = new SetChatMuteCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.muteForSeconds = muteForSeconds;
+  return cmd;
+}
+
+export function createPinChatMessageCommand(
+  chatId: ChatId, messageId: MessageId,
+  disableNotification: boolean = false, onlyForSelf: boolean = false
+): PinChatMessageCommand {
+  const cmd = new PinChatMessageCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.messageId = messageId;
+  cmd.payload.disableNotification = disableNotification;
+  cmd.payload.onlyForSelf = onlyForSelf;
+  return cmd;
+}
+
+export function createUnpinChatMessageCommand(chatId: ChatId, messageId: MessageId): UnpinChatMessageCommand {
+  const cmd = new UnpinChatMessageCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.messageId = messageId;
+  return cmd;
+}
+
+export function createDeleteChatHistoryCommand(
+  chatId: ChatId, removeFromChatList: boolean = true, revoke: boolean = false
+): DeleteChatHistoryCommand {
+  const cmd = new DeleteChatHistoryCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.removeFromChatList = removeFromChatList;
+  cmd.payload.revoke = revoke;
+  return cmd;
+}
+
+export function createToggleChatIsMarkedAsUnreadCommand(
+  chatId: ChatId, isMarkedAsUnread: boolean
+): ToggleChatIsMarkedAsUnreadCommand {
+  const cmd = new ToggleChatIsMarkedAsUnreadCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.isMarkedAsUnread = isMarkedAsUnread;
+  return cmd;
+}
+
+export function createSearchChatMessagesCommand(
+  chatId: ChatId,
+  query: string,
+  fromMessageId: MessageId = '0',
+  offset: number = 0,
+  limit: number = 100
+): SearchChatMessagesCommand {
+  const cmd = new SearchChatMessagesCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.query = query;
+  cmd.payload.fromMessageId = fromMessageId;
+  cmd.payload.offset = offset;
+  cmd.payload.limit = limit;
   return cmd;
 }
 

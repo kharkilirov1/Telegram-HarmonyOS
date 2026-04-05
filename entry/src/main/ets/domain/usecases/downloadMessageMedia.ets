@@ -71,48 +71,42 @@ export class DownloadMessageMediaUseCase {
 
     // Photo — keep thumbnail + full photo auto-download so fullscreen photo viewing
     // can still open the real asset without an extra photo-specific transfer state machine.
-    if (content.photoThumbFileId > 0 && content.photoThumbPath.length === 0) {
-      this.enqueueDownload(content.photoThumbFileId, THUMB_PRIORITY);
-      count++;
-    }
-    if (content.photoFileId > 0 && content.photoPath.length === 0) {
-      this.enqueueDownload(content.photoFileId, MEDIA_PRIORITY);
-      count++;
-    }
+    count += this.scanFileSlot(content.photoThumbFileId, content.photoThumbPath, THUMB_PRIORITY);
+    count += this.scanFileSlot(content.photoFileId, content.photoPath, MEDIA_PRIORITY);
 
     // Video — download thumbnail only (full video on demand)
-    if (content.videoThumbFileId > 0 && content.videoThumbPath.length === 0) {
-      this.enqueueDownload(content.videoThumbFileId, THUMB_PRIORITY);
-      count++;
-    }
+    count += this.scanFileSlot(content.videoThumbFileId, content.videoThumbPath, THUMB_PRIORITY);
 
     // Sticker — auto-download (small files)
-    if (content.stickerFileId > 0 && content.stickerPath.length === 0) {
-      this.enqueueDownload(content.stickerFileId, MEDIA_PRIORITY);
-      count++;
-    }
+    count += this.scanFileSlot(content.stickerFileId, content.stickerPath, MEDIA_PRIORITY);
 
     // Voice — auto-download (small files, Telegram iOS/Android always auto-download voice)
-    if (content.voiceFileId > 0 && content.voicePath.length === 0) {
-      this.enqueueDownload(content.voiceFileId, MEDIA_PRIORITY);
-      count++;
-    }
+    count += this.scanFileSlot(content.voiceFileId, content.voicePath, MEDIA_PRIORITY);
 
     // Animation (GIF) — auto-download (Telegram auto-downloads GIFs)
-    if (content.animationFileId > 0 && content.animationPath.length === 0) {
-      this.enqueueDownload(content.animationFileId, MEDIA_PRIORITY);
-      count++;
-    }
+    count += this.scanFileSlot(content.animationFileId, content.animationPath, MEDIA_PRIORITY);
 
     // Video note (circles) — auto-download (small, Telegram always auto-downloads)
-    if (content.videoNoteFileId > 0 && content.videoNotePath.length === 0) {
-      this.enqueueDownload(content.videoNoteFileId, MEDIA_PRIORITY);
-      count++;
-    }
+    count += this.scanFileSlot(content.videoNoteFileId, content.videoNotePath, MEDIA_PRIORITY);
 
     // Document / Audio / full Video stay on-demand — user taps to download.
 
     return count;
+  }
+
+  /**
+   * Check a single fileId/path slot. If path resolved — clean up pendingFileIds.
+   * If path still empty — enqueue download. Returns 1 if enqueued, 0 otherwise.
+   */
+  private scanFileSlot(fileId: number, path: string, priority: number): number {
+    if (fileId <= 0) return 0;
+    if (path.length > 0) {
+      // File already downloaded — remove from pending if it was tracked
+      this.pendingFileIds.delete(fileId);
+      return 0;
+    }
+    this.enqueueDownload(fileId, priority);
+    return 1;
   }
 
   private enqueueDownload(fileId: number, priority: number): void {

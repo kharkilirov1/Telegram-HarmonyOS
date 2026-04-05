@@ -45,6 +45,12 @@ export class TgUiTokens {
   static readonly MSG_META_STATUS_SENT: Resource = $r('app.color.text_secondary');
   static readonly MSG_META_STATUS_READ: Resource = $r('app.color.telegram_blue');
   static readonly MSG_META_STATUS_FAILED: Resource = $r('app.color.error_red');
+  static readonly MSG_QUOTE_BAR_INCOMING: Resource = $r('app.color.telegram_blue');
+  static readonly MSG_QUOTE_BAR_OUTGOING: Resource = $r('app.color.telegram_blue');
+  static readonly MSG_QUOTE_TEXT_INCOMING: Resource = $r('app.color.text_primary');
+  static readonly MSG_QUOTE_TEXT_OUTGOING: Resource = $r('app.color.text_primary');
+  static readonly MSG_QUOTE_BG_INCOMING: string = 'rgba(51, 144, 236, 0.12)';
+  static readonly MSG_QUOTE_BG_OUTGOING: string = 'rgba(51, 144, 236, 0.10)';
   static readonly PHOTO_BUBBLE_PLACEHOLDER_BG: Resource = $r('app.color.placeholder_bg');
   static readonly PHOTO_BUBBLE_PLACEHOLDER_ICON: Resource = $r('app.color.text_secondary');
   static readonly PHOTO_BUBBLE_CAPTION_TEXT_INCOMING: Resource = $r('app.color.text_primary');
@@ -90,13 +96,15 @@ export class TgUiTokens {
   static readonly FONT_AVATAR_INITIALS_SIZE_MD: number = 20;
   static readonly FONT_AVATAR_INITIALS_SIZE_LG: number = 24;
   static readonly TOP_BAR_TITLE_SIZE: number = 17;
-  static readonly MSG_TEXT_SIZE: number = 16;
+  static readonly MSG_TEXT_SIZE: number = 15;
   static readonly MSG_TEXT_WEIGHT = FontWeight.Regular;
-  static readonly MSG_TEXT_LINE_HEIGHT: number = 21;
+  static readonly MSG_TEXT_LINE_HEIGHT: number = 16;
   static readonly MSG_TEXT_LETTER_SPACING: number = 0;
   static readonly MSG_EMOJI_ONLY_SIZE: number = 40;
   static readonly MSG_EMOJI_ONLY_LINE_HEIGHT: number = 44;
   static readonly MSG_META_SIZE: number = 11;
+  static readonly MSG_QUOTE_TEXT_SIZE: number = 14;
+  static readonly MSG_QUOTE_TEXT_LINE_HEIGHT: number = 16;
   static readonly TEXT_MAX_LINES: number = 0;
 
   // ── Spacing ──
@@ -132,17 +140,22 @@ export class TgUiTokens {
   static readonly TOP_BAR_SEPARATOR_STROKE: number = 1;
   static readonly CHAT_TOP_BAR_CAPSULE_SIZE: number = 44;
   static readonly CHAT_TOP_BAR_CAPSULE_RADIUS: number = 22;
-  static readonly CHAT_TOP_BAR_AVATAR_INNER: number = 37;
-  static readonly CHAT_TOP_BAR_CAPSULE_GAP: number = 8;
-  static readonly CHAT_TOP_BAR_TITLE_PADDING_H: number = 14;
-  static readonly CHAT_TOP_BAR_TITLE_MIN_WIDTH: number = 150;
+  static readonly CHAT_TOP_BAR_AVATAR_INNER: number = 38;
+  static readonly CHAT_TOP_BAR_CAPSULE_GAP: number = 6;
+  static readonly CHAT_TOP_BAR_TITLE_PADDING_H: number = 12;
+  static readonly CHAT_TOP_BAR_TITLE_MIN_WIDTH: number = 136;
   static readonly CHAT_TOP_BAR_TITLE_SIZE: number = 17;
-  static readonly CHAT_TOP_BAR_TITLE_WEIGHT = FontWeight.Bold;
+  static readonly CHAT_TOP_BAR_TITLE_WEIGHT = FontWeight.Medium;
   static readonly CHAT_TOP_BAR_SUBTITLE_SIZE: number = 13;
-  static readonly CHAT_TOP_BAR_BORDER_WIDTH: number = 0.75;
+  static readonly CHAT_TOP_BAR_SUBTITLE_ACCENT: Resource = $r('app.color.telegram_blue');
+  static readonly CHAT_TOP_BAR_BORDER_WIDTH: number = 0.5;
+  static readonly CHAT_LIST_NAV_TITLE_WEIGHT = FontWeight.Medium;
   static readonly CHAT_LIST_NAV_SEARCH_AREA_HEIGHT: number = 54;
   static readonly CHAT_LIST_NAV_TOTAL_HEIGHT: number =
     TgUiTokens.TOP_BAR_HEIGHT + TgUiTokens.CHAT_LIST_NAV_SEARCH_AREA_HEIGHT;
+  static readonly TOP_CHROME_EDGE_HEIGHT: number = 54;
+  static readonly TOP_CHROME_EDGE_TOP: string = '#18FFFFFF';
+  static readonly TOP_CHROME_EDGE_BOTTOM: string = '#00FFFFFF';
 
   // NOTE:
   // ArkUI Image.fillColor applies to SVG drawables when SVG elements define fill (fill != none).
@@ -173,14 +186,19 @@ export class TgUiTokens {
   // ── Chat row baseline metrics ──
   static readonly CHAT_ROW_HEIGHT: number = 76;
   static readonly CHAT_ROW_SIDE_INSET: number = 10;
-  static readonly CHAT_ROW_AVATAR_TEXT_GAP: number = 12;
+  static readonly CHAT_ROW_AVATAR_TEXT_GAP: number = 8;
   static readonly CHAT_ROW_TEXT_META_GAP: number = 8;
   static readonly CHAT_ROW_TITLE_PREVIEW_GAP: number = 0;
   static readonly CHAT_ROW_TITLE_FONT_SIZE: number = 16;
   static readonly CHAT_ROW_PREVIEW_FONT_SIZE: number = 15;
+  static readonly CHAT_ROW_TITLE_VERIFIED_GAP: number = 4;
   static readonly CHAT_ROW_TITLE_MUTE_GAP: number = 4;
   static readonly CHAT_ROW_PREVIEW_PREFIX_GAP: number = 4;
   static readonly CHAT_ROW_MUTE_ICON_SIZE: number = TgUiTokens.ICON_SIZE_XS;
+  static readonly CHAT_ROW_VERIFIED_BADGE_SIZE: number = 16;
+  static readonly CHAT_ROW_VERIFIED_ICON_SIZE: number = 10;
+  static readonly CHAT_ROW_VERIFIED_BADGE_BG: Resource = $r('app.color.telegram_blue');
+  static readonly CHAT_ROW_VERIFIED_ICON_TINT: Resource = $r('app.color.unread_text');
   static readonly CHAT_ROW_SEPARATOR_STROKE: number = 0.5;
   static readonly CHAT_ROW_META_FIXED_WIDTH: number = 76;
   static readonly CHAT_META_MIN_WIDTH: number = 76;
@@ -194,13 +212,13 @@ export class TgUiTokens {
   static readonly CHAT_META_PIN_ICON_SIZE: number = 12;
   static readonly CHAT_META_BOTTOM_PLACEHOLDER_WIDTH: number = TgUiTokens.UNREAD_BADGE_MAX_WIDTH;
   static readonly CHAT_META_BOTTOM_PLACEHOLDER_HEIGHT: number = TgUiTokens.UNREAD_BADGE_HEIGHT;
-  static readonly CHAT_ROW_SEPARATOR_INSET: number = 82;
+  static readonly CHAT_ROW_SEPARATOR_INSET: number = 80;
   static readonly CHAT_ROW_PREVIEW_MAX_LINES: number = 2;
 
   // ── Message text / bubble groundwork (Phase C Step 0) ──
   // iOS: 0.85 compact, 0.65 regular; Android: ~screenWidth - 80dp
   static readonly BUBBLE_COMPACT_WIDTH_BOUNDARY: number = 500;
-  static readonly BUBBLE_MAX_WIDTH_RATIO: number = 0.85;
+  static readonly BUBBLE_MAX_WIDTH_RATIO: number = 0.75;
   static readonly BUBBLE_MAX_WIDTH_RATIO_REGULAR: number = 0.65;
   // iOS: 10-11pt; Android: 9-12dp
   static readonly BUBBLE_PADDING_H: number = 11;
@@ -218,6 +236,8 @@ export class TgUiTokens {
   static readonly MSG_DEMO_WRAP_INJECT_EVERY: number = 10;
   // ── Sender name in bubbles (iOS: 14pt Semibold) ──
   static readonly MSG_SENDER_NAME_SIZE: number = 14;
+  static readonly MSG_SENDER_LINE_HEIGHT: number = 18;
+  static readonly MSG_META_INLINE_PAD: number = 8;
   static readonly MSG_SENDER_NAME_WEIGHT = FontWeight.Bold;
 
   // ── Message avatar (iOS: 34pt, group chats incoming) ──
@@ -394,39 +414,48 @@ export class TgUiTokens {
   static readonly STICKER_VIEW_EMOJI_TOP_GAP: number = 4;
 
   // ── Reply snippet (Phase C Step 3) ──
-  static readonly REPLY_SNIPPET_MIN_HEIGHT: number = 38;
-  static readonly REPLY_SNIPPET_PADDING_H: number = 8;
-  static readonly REPLY_SNIPPET_PADDING_V: number = 6;
-  static readonly REPLY_SNIPPET_BAR_WIDTH: number = 2;
-  static readonly REPLY_SNIPPET_BAR_RADIUS: number = 2;
-  static readonly REPLY_SNIPPET_BAR_GAP: number = 8;
-  static readonly REPLY_SNIPPET_TEXT_GAP: number = 2;
+  static readonly MSG_QUOTE_RADIUS: number = 4;
+  static readonly MSG_QUOTE_PADDING_H: number = 8;
+  static readonly MSG_QUOTE_PADDING_V: number = 4;
+  static readonly MSG_QUOTE_BAR_WIDTH: number = 3;
+  static readonly MSG_QUOTE_BAR_RADIUS: number = 2;
+  static readonly MSG_QUOTE_BAR_GAP: number = 6;
+  static readonly MSG_QUOTE_SEGMENT_GAP: number = 2;
+  static readonly MSG_QUOTE_COLLAPSED_OPACITY: number = 0.9;
+
+  static readonly REPLY_SNIPPET_MIN_HEIGHT: number = 32;
+  static readonly REPLY_SNIPPET_PADDING_H: number = TgUiTokens.MSG_QUOTE_PADDING_H;
+  static readonly REPLY_SNIPPET_PADDING_V: number = 3;
+  static readonly REPLY_SNIPPET_BAR_WIDTH: number = TgUiTokens.MSG_QUOTE_BAR_WIDTH;
+  static readonly REPLY_SNIPPET_BAR_RADIUS: number = TgUiTokens.MSG_QUOTE_BAR_RADIUS;
+  static readonly REPLY_SNIPPET_BAR_GAP: number = TgUiTokens.MSG_QUOTE_BAR_GAP;
+  static readonly REPLY_SNIPPET_TEXT_GAP: number = 0;
   static readonly REPLY_SNIPPET_TITLE_SIZE: number = 14;
   static readonly REPLY_SNIPPET_TITLE_WEIGHT = FontWeight.Bold;
-  static readonly REPLY_SNIPPET_TITLE_LINE_HEIGHT: number = 16;
+  static readonly REPLY_SNIPPET_TITLE_LINE_HEIGHT: number = 15;
   static readonly REPLY_SNIPPET_PREVIEW_SIZE: number = 14;
   static readonly REPLY_SNIPPET_PREVIEW_WEIGHT = FontWeight.Regular;
-  static readonly REPLY_SNIPPET_PREVIEW_LINE_HEIGHT: number = 16;
+  static readonly REPLY_SNIPPET_PREVIEW_LINE_HEIGHT: number = 15;
   static readonly REPLY_SNIPPET_TITLE_INCOMING: Resource = $r('app.color.telegram_blue');
   static readonly REPLY_SNIPPET_TITLE_OUTGOING: Resource = $r('app.color.telegram_blue');
   static readonly REPLY_SNIPPET_PREVIEW_INCOMING: Resource = $r('app.color.text_primary');
   static readonly REPLY_SNIPPET_PREVIEW_OUTGOING: Resource = $r('app.color.text_primary');
   static readonly REPLY_SNIPPET_BAR_INCOMING: Resource = $r('app.color.telegram_blue');
   static readonly REPLY_SNIPPET_BAR_OUTGOING: Resource = $r('app.color.telegram_blue');
-  static readonly REPLY_SNIPPET_BG_INCOMING: string = '#0A0088CC'; // 4% alpha blue tint
-  static readonly REPLY_SNIPPET_BG_OUTGOING: string = '#0A000000'; // 4% alpha dark tint
-  static readonly REPLY_SNIPPET_BG_RADIUS: number = 6;
-  static readonly REPLY_SNIPPET_THUMB_SIZE: number = 28;
+  static readonly REPLY_SNIPPET_BG_INCOMING: string = TgUiTokens.MSG_QUOTE_BG_INCOMING;
+  static readonly REPLY_SNIPPET_BG_OUTGOING: string = TgUiTokens.MSG_QUOTE_BG_OUTGOING;
+  static readonly REPLY_SNIPPET_BG_RADIUS: number = TgUiTokens.MSG_QUOTE_RADIUS;
+  static readonly REPLY_SNIPPET_THUMB_SIZE: number = 24;
   static readonly REPLY_SNIPPET_THUMB_RADIUS: number = 6;
-  static readonly REPLY_SNIPPET_THUMB_GAP: number = 8;
-  static readonly REPLY_SNIPPET_QUOTE_MARK_SIZE: number = 12;
-  static readonly REPLY_SNIPPET_QUOTE_MARK_LINE_HEIGHT: number = 12;
-  static readonly REPLY_SNIPPET_QUOTE_MARK_TOP: number = 4;
-  static readonly REPLY_SNIPPET_QUOTE_MARK_RIGHT: number = 4;
+  static readonly REPLY_SNIPPET_THUMB_GAP: number = 6;
+  static readonly REPLY_SNIPPET_QUOTE_MARK_SIZE: number = 10;
+  static readonly REPLY_SNIPPET_QUOTE_MARK_LINE_HEIGHT: number = 10;
+  static readonly REPLY_SNIPPET_QUOTE_MARK_TOP: number = 3;
+  static readonly REPLY_SNIPPET_QUOTE_MARK_RIGHT: number = 3;
   static readonly REPLY_SNIPPET_MAX_TITLE_LINES: number = 1;
   static readonly REPLY_SNIPPET_MAX_PREVIEW_LINES: number = 1;
   static readonly REPLY_SNIPPET_QUOTE_MAX_TITLE_LINES: number = 2;
-  static readonly REPLY_SNIPPET_QUOTE_MAX_PREVIEW_LINES: number = 5;
+  static readonly REPLY_SNIPPET_QUOTE_MAX_PREVIEW_LINES: number = 3;
 
   static isRegularMessageWidth(containerWidth: number): boolean {
     return containerWidth >= TgUiTokens.BUBBLE_COMPACT_WIDTH_BOUNDARY;
@@ -560,6 +589,8 @@ export class TgUiTokens {
   static readonly COMPOSER_SIDE_INSET: number = 8;
   static readonly COMPOSER_VERTICAL_INSET: number = 5;
   static readonly COMPOSER_REPLY_GAP: number = 4;
+  static readonly COMPOSER_REPLY_CLOSE_SIZE: number = 20;
+  static readonly COMPOSER_REPLY_CLOSE_GAP: number = 4;
   static readonly COMPOSER_BORDER_WIDTH: number = 0.75;
   static readonly COMPOSER_ATTACH_LEFT_INSET: number = 4;
   static readonly COMPOSER_ELEMENT_GAP: number = 6;
@@ -586,7 +617,7 @@ export class TgUiTokens {
   static readonly TAB_BAR_ISLAND_SHADOW_OFFSET_Y: number = 10;
   static readonly TAB_BAR_ISLAND_INNER_PADDING: number = 5;
   static readonly TAB_BAR_ICON_SIZE: number = 24;
-  static readonly TAB_BAR_TEXT_SIZE: number = 10;
+  static readonly TAB_BAR_TEXT_SIZE: number = 12;
   static readonly TAB_BAR_PILL_BG: Resource = $r('app.color.tab_pill_bg');
   static readonly TAB_BAR_PILL_BORDER_WIDTH: number = 0.5;
   static readonly TAB_BAR_PILL_ANIM_DURATION: number = 320;
@@ -777,6 +808,11 @@ export class TgUiTokens {
   static readonly SETTINGS_ROW_ICON_TINT: Resource = $r('app.color.icon_on_primary');
   static readonly SETTINGS_PROFILE_NAME_SIZE: number = 20;
 
+  // ── Swipe action colors (iOS: constructive/neutral2/destructive) ──
+  static readonly SWIPE_ACTION_PIN: Resource = $r('app.color.swipe_action_green');
+  static readonly SWIPE_ACTION_MUTE: Resource = $r('app.color.settings_icon_orange');
+  static readonly SWIPE_ACTION_DELETE: Resource = $r('app.color.settings_icon_red');
+
   // ── Tab bar badge offset (Phase F-extra) ──
   static readonly TAB_BAR_BADGE_OFFSET_X: number = 12;
   static readonly TAB_BAR_BADGE_OFFSET_Y: number = -6;
@@ -839,6 +875,7 @@ export class TgUiTokens {
   static readonly ICON_RES_SEND: Resource = $r('app.media.ic_send');
   static readonly ICON_RES_MIC: Resource = $r('app.media.ic_mic');
   static readonly ICON_RES_EMOJI: Resource = $r('app.media.ic_emoji');
+  static readonly ICON_RES_CLOSE: Resource = $r('app.media.ic_close');
   static readonly ICON_RES_DOCUMENT: Resource = $r('app.media.ic_document');
   static readonly ICON_RES_DOWNLOAD: Resource = $r('app.media.ic_download');
   static readonly ICON_RES_STICKER: Resource = $r('app.media.ic_sticker');

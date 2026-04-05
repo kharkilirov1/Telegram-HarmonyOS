@@ -2417,6 +2417,22 @@
       "value": "Copy"
     },
     {
+      "name": "action_edit",
+      "value": "Edit"
+    },
+    {
+      "name": "action_delete",
+      "value": "Delete"
+    },
+    {
+      "name": "action_forward",
+      "value": "Forward"
+    },
+    {
+      "name": "action_pin",
+      "value": "Pin"
+    },
+    {
       "name": "subscribers_count",
       "value": "%s subscribers"
     },

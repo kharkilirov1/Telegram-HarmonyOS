@@ -12,6 +12,15 @@ import {
   LoadChatsCommand,
   OpenChatCommand,
   SendMessageCommand,
+  EditMessageTextCommand,
+  DeleteMessagesCommand,
+  ForwardMessagesCommand,
+  SetChatMuteCommand,
+  PinChatMessageCommand,
+  UnpinChatMessageCommand,
+  DeleteChatHistoryCommand,
+  ToggleChatIsMarkedAsUnreadCommand,
+  SearchChatMessagesCommand,
   ViewMessagesCommand,
   GetChatHistoryCommand,
   GetUserCommand,
@@ -121,6 +130,94 @@ export function serializeCommand(command: AnyAppCommand): SerializedCommand {
         const replyJson = `{"@type":"inputMessageReplyToMessage","message_id":${replyToId}}`;
         result.params.setString('_reply_to_json', replyJson);
       }
+      break;
+    }
+
+    case 'editMessageText': {
+      const cmd = command as EditMessageTextCommand;
+      result.method = 'editMessageText';
+      result.params.setNumber('chat_id', cmd.payload.chatId);
+      result.params.setString('_message_id_json', cmd.payload.messageId);
+      const text = escapeForJson(cmd.payload.text);
+      const inputContentJson = `{"@type":"inputMessageText","text":{"@type":"formattedText","text":"${text}","entities":[]},"clear_draft":true}`;
+      result.params.setString('_input_message_content_json', inputContentJson);
+      break;
+    }
+
+    case 'deleteMessages': {
+      const cmd = command as DeleteMessagesCommand;
+      result.method = 'deleteMessages';
+      result.params.setNumber('chat_id', cmd.payload.chatId);
+      const idsJson = '[' + cmd.payload.messageIds.join(',') + ']';
+      result.params.setString('_message_ids_json', idsJson);
+      result.params.setBool('revoke', cmd.payload.revoke);
+      break;
+    }
+
+    case 'forwardMessages': {
+      const cmd = command as ForwardMessagesCommand;
+      result.method = 'forwardMessages';
+      result.params.setNumber('chat_id', cmd.payload.chatId);
+      result.params.setNumber('from_chat_id', cmd.payload.fromChatId);
+      const idsJson = '[' + cmd.payload.messageIds.join(',') + ']';
+      result.params.setString('_message_ids_json', idsJson);
+      result.params.setBool('send_copy', cmd.payload.sendCopy);
+      result.params.setBool('remove_caption', cmd.payload.removeCaption);
+      break;
+    }
+
+    case 'setChatMute': {
+      const cmd = command as SetChatMuteCommand;
+      result.method = 'setChatNotificationSettings';
+      result.params.setNumber('chat_id', cmd.payload.chatId);
+      const settingsJson = `{"@type":"chatNotificationSettings","use_default_mute_for":false,"mute_for":${cmd.payload.muteForSeconds}}`;
+      result.params.setString('_notification_settings_json', settingsJson);
+      break;
+    }
+
+    case 'pinChatMessage': {
+      const cmd = command as PinChatMessageCommand;
+      result.method = 'pinChatMessage';
+      result.params.setNumber('chat_id', cmd.payload.chatId);
+      result.params.setString('_message_id_json', cmd.payload.messageId);
+      result.params.setBool('disable_notification', cmd.payload.disableNotification);
+      result.params.setBool('only_for_self', cmd.payload.onlyForSelf);
+      break;
+    }
+
+    case 'unpinChatMessage': {
+      const cmd = command as UnpinChatMessageCommand;
+      result.method = 'unpinChatMessage';
+      result.params.setNumber('chat_id', cmd.payload.chatId);
+      result.params.setString('_message_id_json', cmd.payload.messageId);
+      break;
+    }
+
+    case 'deleteChatHistory': {
+      const cmd = command as DeleteChatHistoryCommand;
+      result.method = 'deleteChatHistory';
+      result.params.setNumber('chat_id', cmd.payload.chatId);
+      result.params.setBool('remove_from_chat_list', cmd.payload.removeFromChatList);
+      result.params.setBool('revoke', cmd.payload.revoke);
+      break;
+    }
+
+    case 'toggleChatIsMarkedAsUnread': {
+      const cmd = command as ToggleChatIsMarkedAsUnreadCommand;
+      result.method = 'toggleChatIsMarkedAsUnread';
+      result.params.setNumber('chat_id', cmd.payload.chatId);
+      result.params.setBool('is_marked_as_unread', cmd.payload.isMarkedAsUnread);
+      break;
+    }
+
+    case 'searchChatMessages': {
+      const cmd = command as SearchChatMessagesCommand;
+      result.method = 'searchChatMessages';
+      result.params.setNumber('chat_id', cmd.payload.chatId);
+      result.params.setString('query', cmd.payload.query);
+      result.params.setString('_from_message_id_json', cmd.payload.fromMessageId);
+      result.params.setNumber('offset', cmd.payload.offset);
+      result.params.setNumber('limit', cmd.payload.limit);
       break;
     }
 
