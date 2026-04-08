@@ -873,6 +873,10 @@
       "value": "Search"
     },
     {
+      "name": "accessibility_clear_search",
+      "value": "Clear search"
+    },
+    {
       "name": "accessibility_compose",
       "value": "Compose new message"
     },
@@ -2311,6 +2315,10 @@
     {
       "name": "offline",
       "value": "offline"
+    },
+    {
+      "name": "accessibility_open_profile",
+      "value": "Open profile"
     },
     {
       "name": "no_contacts",

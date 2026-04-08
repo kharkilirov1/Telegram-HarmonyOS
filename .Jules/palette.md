@@ -1,0 +1,3 @@
+## 2024-04-08 - Accessibility of Interactive Icon Wrappers
+**Learning:** In HarmonyOS ArkUI, you should place `.accessibilityGroup(true)` and `.accessibilityDescription($r(…))` on the interactive container (e.g., the `Row` with the `onClick` handler) rather than directly on the `Image` or custom `TgIcon` inside. Also, always add new strings to `entry/src/main/resources/base/element/string.json` rather than hardcoding them so they can be localized.
+**Action:** Next time I add ARIA labels or accessibility descriptions, I will check the nearest clickable ancestor and I will ensure I am referencing or creating proper localized string resources.

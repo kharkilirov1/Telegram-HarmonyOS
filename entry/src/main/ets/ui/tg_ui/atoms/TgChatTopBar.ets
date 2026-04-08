@@ -106,6 +106,8 @@ export struct TgChatTopBar {
     .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .clip(true)
     .renderGroup(true)
+    .accessibilityGroup(true)
+    .accessibilityDescription($r('app.string.accessibility_back'))
     .onClick(() => {
       this.onBackPress();
     })
@@ -178,6 +180,8 @@ export struct TgChatTopBar {
           this.onSearchClose();
         })
         .margin({ right: 4 })
+        .accessibilityGroup(true)
+        .accessibilityDescription($r('app.string.accessibility_clear_search'))
     }
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .layoutWeight(1)
@@ -216,6 +220,8 @@ export struct TgChatTopBar {
     .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .clip(true)
     .renderGroup(true)
+    .accessibilityGroup(true)
+    .accessibilityDescription($r('app.string.accessibility_open_profile'))
     .onClick(() => {
       this.onAvatarPress();
     })
