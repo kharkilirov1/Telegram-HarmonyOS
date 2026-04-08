@@ -1,6 +1,6 @@
 # ARCHITECTURE — Telegram-HarmonyOS
 
-Last updated: 2026-03-07
+Last updated: 2026-03-22
 
 ## 1. Scope
 - Telegram client for **HarmonyOS NEXT / API 22+**
@@ -114,16 +114,21 @@ The UI does not mutate domain state directly. It reads through:
 ## 6. UI architecture
 
 ### Current split
-- **Shell pages** under `ui/pages/*` are still mostly **V1** ArkUI components.
-- **tg_ui** is the newer Telegram design system and component library.
+- **Shell pages** under `ui/pages/*` are now largely **`@ComponentV2`** ArkUI pages.
+- **tg_ui** is the Telegram design system/component library layered on top of that V2 runtime.
 
 ### Current active tg_ui runtime path
-- `TgTabBar`
-- `TgTopBar`
-- `TgSearchBar`
-- `TgChatRow`
-- `TgChatTopBar`
-- `TgMessageRouter`
+- **Chats shell:** `TgTabBar`, `TgChatListNavigationBar`, `TgChatRow`, `TgChatTopBar`, `TgMessageRouter`
+- **Secondary tabs:** `TgTopBar` remains active on `ContactsPage`, `CallsPage`, and `SettingsPage`
+- `TgSearchBar` still exists in `tg_ui`, but the live Chats shell uses stock ArkUI `Search` inside `TgChatListNavigationBar`.
+
+### Target upper-chrome architecture
+- The target upper Telegram chrome is now explicitly treated as a **layered V2 composition**, not a single bar widget.
+- Desired ownership split:
+  - **screen/page** owns safe-area values, derived title/search/accessory state, and placement
+  - **composition atoms** (`TgChatListNavigationBar`, `TgChatTopBar`) own content layout
+  - **shared visual primitive** owns blur/tint/top-edge emphasis
+- Canonical detailed note: `docs/ai/UPPER_CHROME_V2_ARCHITECTURE.md`
 
 ### Component strategy
 - `tg_ui/atoms` and `tg_ui/molecules` are the reusable visual system.
@@ -132,11 +137,11 @@ The UI does not mutate domain state directly. It reads through:
 - `TgUiTokens.ets` is the design-token source of truth.
 
 ## 7. ArkUI boundaries that matter in this repo
-- `@ComponentV2` is used for most tg_ui atoms/molecules.
-- V1 and V2 decorators must not be mixed inside one component tree carelessly.
-- `TgChatRow` is intentionally kept as **V1 `@Reusable`** because `ChatListPage` is still V1.
-- `LazyForEach` is the list virtualization primitive currently used for chat lists.
-- If a future migration moves list rows to `@ComponentV2`, reuse rules change to `@ReusableV2` semantics.
+- `@ComponentV2` is used across the active page/component runtime.
+- V1 and V2 decorators must still not be mixed carelessly inside one component tree.
+- `TgChatRow` is already a **`@ComponentV2`** row in the live chat-list path.
+- `LazyForEach` is the list virtualization primitive currently used for chat lists, and `ChatListPage` still applies `.reuseId(...)` on row instances.
+- A future performance modernization pass can still evaluate `Repeat` + `.reuse(...)` + `@ReusableV2`, but that is now an optimization topic rather than a migration blocker.
 
 ## 8. Threading and safety invariants
 - TDLib callbacks are normalized onto the **main thread** before reducers/UI access.
@@ -157,9 +162,10 @@ The UI does not mutate domain state directly. It reads through:
 - Current work: `TASKS/TODO.md`
 - Deep migration history:
   - `docs/ai/AI_MEMORY.md`
-  - `docs/ai/UI_MIGRATION_PLAN.md`
-  - `docs/ai/ATOM_ROADMAP.md`
-  - `docs/ai/MASTER_PLAN_TELEGRAM_UI.md`
+- `docs/ai/UI_MIGRATION_PLAN.md`
+- `docs/ai/ATOM_ROADMAP.md`
+- `docs/ai/MASTER_PLAN_TELEGRAM_UI.md`
+- `docs/ai/UPPER_CHROME_V2_ARCHITECTURE.md`
 
 ## 11. Sources used for this file
 - `README.md`
@@ -169,4 +175,9 @@ The UI does not mutate domain state directly. It reads through:
 - `entry/src/main/ets/entryability/EntryAbility.ets`
 - `entry/src/main/ets/app/bootstrap/AppCoreRuntime.ets`
 - `entry/src/main/ets/core/store/AppStore.ets`
-- HarmonyOS docs: `UIAbility`, `NavPathStack`, `LazyForEach`, `@ComponentV2`, `@ReusableV2`
+- `entry/src/main/ets/ui/pages/MainTabsPage.ets`
+- `entry/src/main/ets/ui/pages/chatlist/ChatListPage.ets`
+- `entry/src/main/ets/ui/tg_ui/atoms/TgChatListNavigationBar.ets`
+- `scripts/smoke-ui-phase0.ps1`
+- `scripts/smoke-build.ps1`
+- HarmonyOS docs: `UIAbility`, `NavPathStack`, ArkUI `Search` `onChange/onSubmit`, `@ComponentV2`, `Repeat`/`reuseId` patterns

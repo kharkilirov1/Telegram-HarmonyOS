@@ -134,4 +134,4 @@ No “cleanup” commit should mix:
 Those are already separable enough to deserve independent commit boundaries.
 
 See also:
-- `TASKS/COMMIT_GROUPS_2026_03_21.md`
+- `TASKS/ARCHIVE/COMMIT_GROUPS_2026_03_21.md`

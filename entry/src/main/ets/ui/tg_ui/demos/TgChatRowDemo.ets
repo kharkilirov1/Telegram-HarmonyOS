@@ -66,6 +66,16 @@ export struct TgChatRowDemo {
     return data;
   }
 
+  private makeVerifiedVariant(): TgChatRowData {
+    const data = this.makeBaseRowData();
+    data.chatId = 6;
+    data.timeText = '12:53';
+    data.title = 'Telegram News';
+    data.preview = 'Verified title badge should stay stable before the mute icon';
+    data.isVerified = true;
+    return data;
+  }
+
   private makeLongVariant(unreadCount: number = 0, isPinned: boolean = false, sendStatus: TgChatSendStatus = TgChatSendStatus.None): TgChatRowData {
     const data = this.makeLongTextRowData();
     data.unreadCount = unreadCount;
@@ -153,6 +163,9 @@ export struct TgChatRowDemo {
 
         this.label('17 group sender prefix accent')
         TgChatRow({ ...this.makeAuthorPrefixVariant(), showSeparator: true })
+
+        this.label('18 verified title badge')
+        TgChatRow({ ...this.makeVerifiedVariant(), showSeparator: true })
 
         Divider()
           .color(TgUiTokens.COLOR_SEPARATOR)

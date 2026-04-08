@@ -1,6 +1,6 @@
 # DECISIONS — Telegram-HarmonyOS
 
-Last updated: 2026-03-07
+Last updated: 2026-03-22
 
 This file records decisions that are already effectively accepted in the repo.
 
@@ -34,10 +34,10 @@ This file records decisions that are already effectively accepted in the repo.
 - **Why:** Token drift already caused inconsistencies in earlier shell/chatlist passes.
 - **Consequence:** When a value repeats or represents design intent, promote it to tokens/resources.
 
-## D7. Current UI split is intentional: V1 shell pages + V2 tg_ui components
-- **Decision:** Keep shell pages mostly V1 for now, while tg_ui atoms/molecules use V2 where practical.
-- **Why:** The existing app shell and list integrations are already wired this way.
-- **Consequence:** `TgChatRow` stays a V1 `@Reusable` exception until its parent tree is migrated.
+## D7. Current UI split is V2-first with selective stock ArkUI simplification
+- **Decision:** Treat the active shell/chat runtime as largely `@ComponentV2`, while still using stock ArkUI components directly when a thin wrapper adds no product value.
+- **Why:** The migration is effectively complete in the live UI code, and the current priority is post-V2 stability/parity rather than preserving older V1 assumptions.
+- **Consequence:** Do not reintroduce V1-only mental models (for example “`TgChatRow` is still a V1 `@Reusable` exception”). Post-migration work should focus on parity cleanup and only later evaluate `Repeat` / `@ReusableV2` as a separate optimization phase.
 
 ## D8. Use AppStore as domain truth and AppStorage as UI bridge
 - **Decision:** Domain state lives in `AppStore`; UI-facing mirrored state lives in `AppStorage` via `AppStoreBridge`.
@@ -53,3 +53,18 @@ This file records decisions that are already effectively accepted in the repo.
 - **Decision:** `LoadChatHistoryUseCase` and `LoadChatsUseCase` static caches are reset during runtime shutdown.
 - **Why:** Without reset, reopened runtimes can keep stale “already fetched / in-flight” state.
 - **Consequence:** Any future static cache added to runtime flows must define reset semantics too.
+
+## D11. Decompose iOS reference first, map to Harmony second, assemble third
+- **Decision:** Non-trivial UI porting work must follow `Reference Decomposition -> Platform Mapping -> Assembly`, not “pick an ArkUI widget first”.
+- **Why:** Telegram iOS upper chrome and similar areas are composed from layered background/effect surfaces, independent title/action geometry, and stateful content contracts. Jumping straight to a HarmonyOS control choice loses the product decisions that actually need to be preserved.
+- **Consequence:** For each major UI zone, extract: structural layers, content/state model, layout invariants, visual decisions, and behavior from the iOS reference first. Only after that choose HarmonyOS equivalents/analogs and decide how the repo should assemble them.
+
+## D12. Upper chrome architecture is layered and V2-composed
+- **Decision:** The target architecture for the Telegram upper chrome is `shared top background primitive -> V2 composition component -> screen-owned derived state`, not one monolithic top-bar widget.
+- **Why:** Local iOS refs show that the top area is built from a shared blur/effect surface, top-edge emphasis, independent left/center/right geometry, and optional secondary lanes such as search/accessory panels.
+- **Consequence:** `TgChatListNavigationBar` and `TgChatTopBar` should be treated as content compositions. Shared blur/tint/edge-emphasis belongs in a reusable upper-background primitive, and title/subtitle modes should be derived outside the visual atom and passed in via V2 params.
+
+## D13. Preserve Telegram semantics, but prefer Harmony-native shell/chrome when platform quality is sufficient
+- **Decision:** The project should concentrate custom work on Telegram-specific semantics and hierarchy, while shell/chrome surfaces that are not strong Telegram invariants should increasingly move toward Harmony-native or hybrid implementations when platform quality is good enough.
+- **Why:** Recent API 23 beta visual direction and repeated video evidence suggest that HarmonyOS shell chrome is becoming much closer to the desired glass/island/navigation language. Continuing to hand-build every shell surface is likely a poor use of time compared with preserving Telegram-specific UX semantics.
+- **Consequence:** Keep custom effort focused on `TgChatRow`, message atoms, composer semantics, badges/meta/status, and other Telegram-defining surfaces. Treat tab bars, top chrome hosts, search hosts, and similar shell containers as candidates for platform-native or hybrid paths, while retaining API 22-compatible fallbacks until API 23 is stable and adopted by the repo.

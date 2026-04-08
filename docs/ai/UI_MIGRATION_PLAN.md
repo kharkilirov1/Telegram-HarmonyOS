@@ -1,15 +1,19 @@
 # UI Migration Plan (iOS Reference → HarmonyOS)
 
-Last updated: 2026-02-25
+Last updated: 2026-03-22
 
 ## Canonical contract
 - Source of truth: `docs/ai/MASTER_PLAN_TELEGRAM_UI.md`
 - If this file conflicts with the master plan, follow the master plan.
 
-## Status sync (2026-03-06)
-- Current shell/chatlist/chat-screen runtime path is tg_ui-first: `TgTabBar`, `TgTopBar`, `TgSearchBar`, `TgChatRow`, `TgChatTopBar`, `TgMessageRouter`.
+## Status sync (2026-03-22)
+- Current live Chats runtime path is `TgTabBar`, `TgChatListNavigationBar`, `TgChatRow`, `TgChatTopBar`, `TgMessageRouter`.
+- `TgTopBar` remains active on secondary tabs (`ContactsPage`, `CallsPage`, `SettingsPage`).
+- `TgSearchBar` still exists in `tg_ui` inventory/demo/spec, but the live Chats shell uses stock ArkUI `Search` inside `TgChatListNavigationBar`.
 - Current runtime gate is `TgUiFeatureFlags.USE_TG_CHAT_V2`; older mentions of `USE_TG_CHATLIST_V2`, `ChatListItem`, `AppTopBar`, or `AppTabBarItem` below should be treated as historical notes.
-- `scripts/smoke-ui-phase0.*` now validate the active tg_ui shell path rather than removed legacy shell files.
+- `scripts/smoke-ui-phase0.*` validate the active shell path (`ChatListPage` + `TgChatListNavigationBar` + `Search`) rather than removed legacy shell files.
+- For post-Phase-E/media-gallery reality, prefer `STATUS.md` + `PROJECT_ANALYSIS.md`; this file remains a migration-plan/history document.
+- Per user confirmation on 2026-03-22, the historical device/runtime verification checklists from earlier migration phases should be treated as passed for the current branch state.
 
 ## Goal
 Bring the app UI to a mature Telegram-like quality level using iOS as reference, while preserving current architecture and staged delivery.
@@ -88,7 +92,7 @@ Done when:
 
 Status update (2026-02-25):
 - `MainTabsPage` + chat list shell now rely on shared tokens/resources (hex color hardcode removed from Phase 0 files).
-- `TgChatRow` is `@Reusable`, and `ChatListPage` uses `reuseId(...)` for list reuse groups.
+- `TgChatRow` is now `@ComponentV2`, and `ChatListPage` still uses `reuseId(...)` for the live chat-list row path.
 - Added smoke checks:
   - `scripts/smoke-ui-phase0.ps1`
   - `scripts/smoke-build.ps1`

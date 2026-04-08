@@ -83,6 +83,21 @@ export class TgUiTokens {
   static readonly VOICE_BUBBLE_WAVE_INACTIVE: Resource = $r('app.color.text_secondary');
   static readonly VOICE_BUBBLE_DURATION_INCOMING: Resource = $r('app.color.text_secondary');
   static readonly VOICE_BUBBLE_DURATION_OUTGOING: Resource = $r('app.color.text_secondary');
+
+  // ── Media overlay shared tokens ──
+  static readonly MEDIA_OVERLAY_DARK: string = '#40000000';
+  static readonly MEDIA_PROGRESS_COLOR: string = '#FFFFFF';
+  static readonly MEDIA_CANCEL_ICON_SIZE: number = 16;
+  static readonly MEDIA_PROGRESS_STROKE: number = 3;
+  static readonly MEDIA_SEEK_BG: string = '#40888888';
+  static readonly MEDIA_RING_PROGRESS_COLOR: string = '#99FFFFFF';
+
+  // ── Voice waveform color tokens ──
+  static readonly VOICE_WAVE_ACTIVE_INCOMING: string = '#3390EC';
+  static readonly VOICE_WAVE_ACTIVE_OUTGOING: string = '#FFFFFF';
+  static readonly VOICE_WAVE_INACTIVE_INCOMING: string = '#333390EC';
+  static readonly VOICE_WAVE_INACTIVE_OUTGOING: string = '#4DFFFFFF';
+
   static readonly STICKER_VIEW_PLACEHOLDER_BG: Resource = $r('app.color.placeholder_bg');
   static readonly STICKER_VIEW_PLACEHOLDER_ICON: Resource = $r('app.color.text_secondary');
   static readonly STICKER_VIEW_EMOJI_TEXT: Resource = $r('app.color.text_secondary');
@@ -98,6 +113,9 @@ export class TgUiTokens {
   static readonly TOP_BAR_TITLE_SIZE: number = 17;
   static readonly MSG_TEXT_SIZE: number = 15;
   static readonly MSG_TEXT_WEIGHT = FontWeight.Regular;
+  static readonly MSG_CODE_SIZE: number = 14;
+  static readonly MSG_CODE_BG_INCOMING: string = 'rgba(0,0,0,0.06)';
+  static readonly MSG_CODE_BG_OUTGOING: string = 'rgba(0,0,0,0.06)';
   static readonly MSG_TEXT_LINE_HEIGHT: number = 16;
   static readonly MSG_TEXT_LETTER_SPACING: number = 0;
   static readonly MSG_EMOJI_ONLY_SIZE: number = 40;
@@ -198,6 +216,12 @@ export class TgUiTokens {
   static readonly CHAT_ROW_VERIFIED_BADGE_SIZE: number = 16;
   static readonly CHAT_ROW_VERIFIED_ICON_SIZE: number = 10;
   static readonly CHAT_ROW_VERIFIED_BADGE_BG: Resource = $r('app.color.telegram_blue');
+  static readonly CHAT_ROW_SCAM_FONT_SIZE: number = 10;
+  static readonly CHAT_ROW_SCAM_RADIUS: number = 3;
+  static readonly CHAT_ROW_SCAM_PADDING_H: number = 3;
+  static readonly CHAT_ROW_SECRET_ICON_SIZE: number = 14;
+  static readonly ICON_RES_LOCK: Resource = $r('app.media.ic_lock');
+  static readonly COLOR_SECRET_CHAT: Resource = $r('app.color.secret_green');
   static readonly CHAT_ROW_VERIFIED_ICON_TINT: Resource = $r('app.color.unread_text');
   static readonly CHAT_ROW_SEPARATOR_STROKE: number = 0.5;
   static readonly CHAT_ROW_META_FIXED_WIDTH: number = 76;
@@ -210,6 +234,9 @@ export class TgUiTokens {
   static readonly CHAT_META_STATUS_ICON_SIZE: number = 14;
   static readonly CHAT_META_STATUS_GAP: number = 4;
   static readonly CHAT_META_PIN_ICON_SIZE: number = 12;
+  static readonly CHAT_META_MENTION_BADGE_SIZE: number = 20;
+  static readonly CHAT_META_MENTION_FONT_SIZE: number = 13;
+  static readonly CHAT_META_BADGE_GAP: number = 4;
   static readonly CHAT_META_BOTTOM_PLACEHOLDER_WIDTH: number = TgUiTokens.UNREAD_BADGE_MAX_WIDTH;
   static readonly CHAT_META_BOTTOM_PLACEHOLDER_HEIGHT: number = TgUiTokens.UNREAD_BADGE_HEIGHT;
   static readonly CHAT_ROW_SEPARATOR_INSET: number = 80;
@@ -297,8 +324,8 @@ export class TgUiTokens {
   static readonly VIDEO_BUBBLE_MAX_HEIGHT: number = 380;
   static readonly VIDEO_BUBBLE_MAX_WIDTH_REGULAR: number = 440;
   static readonly VIDEO_BUBBLE_MAX_HEIGHT_REGULAR: number = 440;
-  static readonly VIDEO_BUBBLE_PLAY_BG_SIZE: number = 38;
-  static readonly VIDEO_BUBBLE_PLAY_ICON_SIZE: number = 20;
+  static readonly VIDEO_BUBBLE_PLAY_BG_SIZE: number = 48;
+  static readonly VIDEO_BUBBLE_PLAY_ICON_SIZE: number = 22;
   static readonly VIDEO_BUBBLE_DURATION_FONT_SIZE: number = 12;
   static readonly VIDEO_BUBBLE_DURATION_LINE_HEIGHT: number = 14;
   static readonly VIDEO_BUBBLE_DURATION_RADIUS: number = 10;
@@ -389,7 +416,7 @@ export class TgUiTokens {
   static readonly VOICE_BUBBLE_PADDING_H: number = 10;
   static readonly VOICE_BUBBLE_PADDING_V: number = 8;
   static readonly VOICE_BUBBLE_CONTENT_GAP: number = 8;
-  static readonly VOICE_BUBBLE_BUTTON_SIZE: number = 40;
+  static readonly VOICE_BUBBLE_BUTTON_SIZE: number = 44;
   static readonly VOICE_BUBBLE_BUTTON_ICON_SIZE: number = 18;
   static readonly VOICE_BUBBLE_DURATION_MIN_SEC: number = 2;
   static readonly VOICE_BUBBLE_DURATION_MAX_SEC: number = 30;

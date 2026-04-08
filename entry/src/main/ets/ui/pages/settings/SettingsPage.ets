@@ -1,6 +1,6 @@
 // SettingsPage — Settings tab (Phase E-5)
 // Stack overlay: scroll content under translucent TgTopBar
-// iOS insetGrouped style with TgSettingsSection + TgSettingsRow
+// iOS insetGrouped style with inline tokenized section containers + TgSettingsRow
 
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, User } from '../../../core/model/AppState';

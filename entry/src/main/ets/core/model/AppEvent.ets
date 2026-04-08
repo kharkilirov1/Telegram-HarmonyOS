@@ -3,6 +3,7 @@
 
 import { ChatId, UserId, MessageId } from './EntityId';
 import { ChatDto, ChatUpdateDto } from './dto/ChatDto';
+import { AccentColorDto } from './dto/AccentColorDto';
 import { MessageDto, MessageUpdateDto, MessageContentDto } from './dto/MessageDto';
 import { UserDto, UserUpdateDto } from './dto/UserDto';
 
@@ -133,11 +134,14 @@ export interface UserUpdateFields {
   firstName?: string;
   lastName?: string;
   username?: string;
+  accentColorId?: number;
   phoneNumber?: string;
   photo?: UserPhotoFields;
   status?: string;
   isContact?: boolean;
   isVerified?: boolean;
+  isScam?: boolean;
+  isFake?: boolean;
   isPremium?: boolean;
 }
 
@@ -209,6 +213,14 @@ export class FileTransferUpdatedEvent extends AppEvent {
   downloadedSize: number = 0;
 }
 
+// --- Accent color events ---
+
+export class AccentColorsUpdatedEvent extends AppEvent {
+  type: string = 'accentColorsUpdated';
+  colors: AccentColorDto[] = [];
+  availableAccentColorIds: number[] = [];
+}
+
 // --- Unified type for all events ---
 
 export type AnyAppEvent =
@@ -231,6 +243,7 @@ export type AnyAppEvent =
   | ChatActionEvent
   | UserFullInfoEvent
   | ChatFullInfoEvent
+  | AccentColorsUpdatedEvent
   | FileTransferUpdatedEvent
   | FileDownloadedEvent;
 

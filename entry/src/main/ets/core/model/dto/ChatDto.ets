@@ -10,6 +10,7 @@ const DTO_TAG = 'ChatDto';
 
 export enum ChatType {
   PRIVATE = 'private',
+  SECRET = 'secret',
   GROUP = 'group',
   SUPERGROUP = 'supergroup',
   CHANNEL = 'channel'
@@ -32,6 +33,7 @@ export class ChatDto {
   id: ChatId = 0;
   type: ChatType = ChatType.PRIVATE;
   peerUserId: number = 0;
+  accentColorId: number = -1;
   title: string = '';
   unreadCount: number = 0;
   unreadMentionCount: number = 0;
@@ -47,6 +49,18 @@ export class ChatDto {
   supergroupId: number = 0;
 }
 
+function extractOptionalAccentColorId(tdObject: TdObject): number {
+  const rawValue = tdObject.get('accent_color_id');
+  if (typeof rawValue === 'number') {
+    return rawValue;
+  }
+  if (typeof rawValue === 'string' && rawValue.length > 0) {
+    const parsed = parseInt(rawValue, 10);
+    return Number.isNaN(parsed) ? -1 : parsed;
+  }
+  return -1;
+}
+
 // Helper to create DTO from raw TDLib chat object
 export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   // Map TDLib chat type to our enum
@@ -54,8 +68,10 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   const tdTypeObj = tdGetObject(tdChat, 'type');
   const tdTypeStr = tdGetString(tdTypeObj, '@type');
 
-  if (tdTypeStr === 'chatTypePrivate' || tdTypeStr === 'chatTypeSecret') {
+  if (tdTypeStr === 'chatTypePrivate') {
     type = ChatType.PRIVATE;
+  } else if (tdTypeStr === 'chatTypeSecret') {
+    type = ChatType.SECRET;
   } else if (tdTypeStr === 'chatTypeBasicGroup') {
     type = ChatType.GROUP;
   } else if (tdTypeStr === 'chatTypeSupergroup') {
@@ -71,6 +87,7 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   chatDto.id = tdChat.getTopLevelNumber('id');
   chatDto.type = type;
   chatDto.title = tdGetString(tdChat, 'title');
+  chatDto.accentColorId = extractOptionalAccentColorId(tdChat);
   chatDto.unreadCount = tdGetNumber(tdChat, 'unread_count');
   chatDto.lastReadOutboxMessageId = tdGetInt64(tdChat, 'last_read_outbox_message_id');
   chatDto.lastReadInboxMessageId = tdGetInt64(tdChat, 'last_read_inbox_message_id');
@@ -178,6 +195,7 @@ export function extractMainListPosition(tdPosition: TdObject): ChatPositionInfo 
 // Helper for partial updates (chatUpdated event)
 export class ChatUpdateDto {
   peerUserId?: number;
+  accentColorId?: number;
   title?: string;
   unreadCount?: number;
   unreadMentionCount?: number;
@@ -199,6 +217,7 @@ export function applyChatUpdate(chat: ChatDto, update: ChatUpdateDto): ChatDto {
   updatedChat.id = chat.id;
   updatedChat.type = chat.type;
   updatedChat.peerUserId = chat.peerUserId;
+  updatedChat.accentColorId = chat.accentColorId;
   updatedChat.title = chat.title;
   updatedChat.unreadCount = chat.unreadCount;
   updatedChat.unreadMentionCount = chat.unreadMentionCount;
@@ -215,6 +234,9 @@ export function applyChatUpdate(chat: ChatDto, update: ChatUpdateDto): ChatDto {
   // Apply updates
   if (update.peerUserId !== undefined) {
     updatedChat.peerUserId = update.peerUserId;
+  }
+  if (update.accentColorId !== undefined) {
+    updatedChat.accentColorId = update.accentColorId;
   }
   if (update.title !== undefined) {
     updatedChat.title = update.title;

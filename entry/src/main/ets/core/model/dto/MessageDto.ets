@@ -20,10 +20,28 @@ export enum MessageContentType {
   UNKNOWN = 'unknown'
 }
 
+export class MessageQuoteEntityDto {
+  offset: number = 0;
+  length: number = 0;
+  isCollapsed: boolean = false;
+}
+
+export class TextEntityDto {
+  offset: number = 0;
+  length: number = 0;
+  type: string = '';
+  url: string = '';
+  userId: number = 0;
+  language: string = '';
+}
+
 export class MessageContentDto {
   type: MessageContentType = MessageContentType.TEXT;
   text: string = '';
   caption: string = '';
+  quoteEntities: MessageQuoteEntityDto[] = [];
+  textEntities: TextEntityDto[] = [];
+  captionEntities: TextEntityDto[] = [];
 
   photoPath: string = '';
   photoThumbPath: string = '';
@@ -77,6 +95,33 @@ export class MessageContentDto {
   videoNoteFileId: number = 0;
   videoNoteDuration: number = 0;
   videoNoteLength: number = 0;
+
+  // Contact
+  contactFirstName: string = '';
+  contactLastName: string = '';
+  contactPhoneNumber: string = '';
+  contactUserId: number = 0;
+
+  // Location
+  locationLatitude: number = 0;
+  locationLongitude: number = 0;
+  locationVenueTitle: string = '';
+  locationVenueAddress: string = '';
+
+  // Poll
+  pollQuestion: string = '';
+  pollTotalVoterCount: number = 0;
+  pollIsClosed: boolean = false;
+  pollIsAnonymous: boolean = true;
+  pollType: string = 'regular';
+  pollOptions: PollOptionDto[] = [];
+}
+
+export class PollOptionDto {
+  text: string = '';
+  voterCount: number = 0;
+  votePercentage: number = 0;
+  isChosen: boolean = false;
 }
 
 export class MessageDto {
@@ -92,11 +137,19 @@ export class MessageDto {
   isPending: boolean = false;
   editDate: number = 0;
   replyToMessageId: MessageId = '0';
+  replyIsQuote: boolean = false;
+  replyQuoteText: string = '';
+  replyQuoteOffset: number = -1;
 }
 
 function extractCaption(contentObj: TdObject): string {
   const captionObj = tdGetObject(contentObj, 'caption');
   return tdGetString(captionObj, 'text');
+}
+
+function extractCaptionQuoteEntities(contentObj: TdObject): MessageQuoteEntityDto[] {
+  const captionObj = tdGetObject(contentObj, 'caption');
+  return extractQuoteEntities(captionObj);
 }
 
 function extractLocalFilePath(fileObj: TdObject): string {
@@ -110,6 +163,106 @@ function extractLocalFilePath(fileObj: TdObject): string {
 function extractFileId(fileObj: TdObject): number {
   // Use getTopLevelNumber to avoid nested remote.id (string) shadowing numeric file id
   return fileObj.getTopLevelNumber('id');
+}
+
+function extractQuoteEntities(formattedTextObj: TdObject): MessageQuoteEntityDto[] {
+  const result: MessageQuoteEntityDto[] = [];
+  if (!tdHasKeys(formattedTextObj)) {
+    return result;
+  }
+
+  const entities = tdGetArray(formattedTextObj, 'entities');
+  for (const entity of entities) {
+    const offset = tdGetNumber(entity, 'offset');
+    const length = tdGetNumber(entity, 'length');
+    if (length <= 0) {
+      continue;
+    }
+
+    const typeObj = tdGetObject(entity, 'type');
+    const typeName = tdGetString(typeObj, '@type');
+    if (typeName !== 'textEntityTypeBlockQuote' && typeName !== 'textEntityTypeExpandableBlockQuote') {
+      continue;
+    }
+
+    const quote = new MessageQuoteEntityDto();
+    quote.offset = Math.max(0, offset);
+    quote.length = Math.max(0, length);
+    quote.isCollapsed = typeName === 'textEntityTypeExpandableBlockQuote' ||
+      tdGetBoolean(typeObj, 'is_collapsed') ||
+      tdGetBoolean(typeObj, 'collapsed');
+    result.push(quote);
+  }
+
+  return result;
+}
+
+// Map TDLib entity type name → short type string
+function mapEntityType(typeName: string): string {
+  switch (typeName) {
+    case 'textEntityTypeBold': return 'bold';
+    case 'textEntityTypeItalic': return 'italic';
+    case 'textEntityTypeUnderline': return 'underline';
+    case 'textEntityTypeStrikethrough': return 'strikethrough';
+    case 'textEntityTypeCode': return 'code';
+    case 'textEntityTypePre': return 'pre';
+    case 'textEntityTypePreCode': return 'preCode';
+    case 'textEntityTypeUrl': return 'url';
+    case 'textEntityTypeTextUrl': return 'textUrl';
+    case 'textEntityTypeEmailAddress': return 'emailAddress';
+    case 'textEntityTypePhoneNumber': return 'phoneNumber';
+    case 'textEntityTypeMention': return 'mention';
+    case 'textEntityTypeMentionName': return 'mentionName';
+    case 'textEntityTypeHashtag': return 'hashtag';
+    case 'textEntityTypeCashtag': return 'cashtag';
+    case 'textEntityTypeBotCommand': return 'botCommand';
+    case 'textEntityTypeSpoiler': return 'spoiler';
+    case 'textEntityTypeCustomEmoji': return 'customEmoji';
+    default: return '';
+  }
+}
+
+function extractTextEntities(formattedTextObj: TdObject): TextEntityDto[] {
+  const result: TextEntityDto[] = [];
+  if (!tdHasKeys(formattedTextObj)) {
+    return result;
+  }
+
+  const entities = tdGetArray(formattedTextObj, 'entities');
+  for (const entity of entities) {
+    const offset = tdGetNumber(entity, 'offset');
+    const length = tdGetNumber(entity, 'length');
+    if (length <= 0) {
+      continue;
+    }
+
+    const typeObj = tdGetObject(entity, 'type');
+    const typeName = tdGetString(typeObj, '@type');
+    const mapped = mapEntityType(typeName);
+    if (mapped.length === 0) {
+      continue; // skip blockQuote types (handled by extractQuoteEntities) and unknown
+    }
+
+    const dto = new TextEntityDto();
+    dto.offset = Math.max(0, offset);
+    dto.length = Math.max(0, length);
+    dto.type = mapped;
+    if (mapped === 'textUrl') {
+      dto.url = tdGetString(typeObj, 'url');
+    } else if (mapped === 'mentionName') {
+      dto.userId = tdGetNumber(typeObj, 'user_id');
+    } else if (mapped === 'preCode') {
+      dto.language = tdGetString(typeObj, 'language');
+    }
+    result.push(dto);
+  }
+
+  return result;
+}
+
+function extractCaptionTextEntities(contentObj: TdObject): TextEntityDto[] {
+  const captionObj = tdGetObject(contentObj, 'caption');
+  return extractTextEntities(captionObj);
 }
 
 function extractThumbnailPath(parentObj: TdObject): string {
@@ -216,7 +369,20 @@ export function createMessageDtoFromTd(tdMessage: TdObject): MessageDto {
   messageDto.timestamp = tdDate > 0 ? tdDate : Math.floor(Date.now() / 1000);
   messageDto.isOutgoing = tdGetBoolean(tdMessage, 'is_outgoing');
   messageDto.isRead = tdGetBoolean(tdMessage, 'is_read');
-  messageDto.replyToMessageId = tdGetInt64(tdMessage, 'reply_to_message_id');
+
+  const replyTo = tdGetObject(tdMessage, 'reply_to');
+  const nestedReplyMessageId = tdGetInt64(replyTo, 'message_id');
+  const directReplyMessageId = tdGetInt64(tdMessage, 'reply_to_message_id');
+  messageDto.replyToMessageId = nestedReplyMessageId !== '0' ? nestedReplyMessageId : directReplyMessageId;
+
+  const quoteObj = tdGetObject(replyTo, 'quote');
+  const quoteObjText = tdGetString(quoteObj, 'text');
+  const quoteText = tdGetString(replyTo, 'quote_text');
+  const resolvedQuoteText = quoteText.length > 0 ? quoteText : quoteObjText;
+  const quoteOffset = tdGetNumber(replyTo, 'quote_offset');
+  messageDto.replyQuoteText = resolvedQuoteText;
+  messageDto.replyQuoteOffset = quoteOffset > 0 ? quoteOffset : -1;
+  messageDto.replyIsQuote = tdGetBoolean(replyTo, 'quote') || tdHasKeys(quoteObj) || resolvedQuoteText.length > 0;
 
   return messageDto;
 }
@@ -237,6 +403,8 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.type = MessageContentType.TEXT;
       contentDto.text = tdGetString(textObj, 'text');
       contentDto.caption = '';
+      contentDto.quoteEntities = extractQuoteEntities(textObj);
+      contentDto.textEntities = extractTextEntities(textObj);
       break;
     }
     case 'messagePhoto': {
@@ -247,6 +415,8 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       const photoThumb = extractPhotoThumb(photoObj);
       contentDto.type = MessageContentType.PHOTO;
       contentDto.caption = caption;
+      contentDto.quoteEntities = extractCaptionQuoteEntities(contentObj);
+      contentDto.captionEntities = extractCaptionTextEntities(contentObj);
       contentDto.text = caption.length > 0 ? caption : '[Photo]';
       contentDto.photoPath = photoMain.path;
       contentDto.photoFileId = photoMain.fileId;
@@ -262,6 +432,8 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       const videoFile = tdGetObject(videoObj, 'video');
       contentDto.type = MessageContentType.VIDEO;
       contentDto.caption = caption;
+      contentDto.quoteEntities = extractCaptionQuoteEntities(contentObj);
+      contentDto.captionEntities = extractCaptionTextEntities(contentObj);
       contentDto.text = caption.length > 0 ? caption : '[Video]';
       contentDto.videoPath = extractLocalFilePath(videoFile);
       contentDto.videoFileId = extractFileId(videoFile);
@@ -281,6 +453,8 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       const documentFile = tdGetObject(documentObj, 'document');
       contentDto.type = MessageContentType.DOCUMENT;
       contentDto.caption = caption;
+      contentDto.quoteEntities = extractCaptionQuoteEntities(contentObj);
+      contentDto.captionEntities = extractCaptionTextEntities(contentObj);
       contentDto.text = caption.length > 0 ? caption : '[File]';
       contentDto.documentPath = extractLocalFilePath(documentFile);
       contentDto.documentFileId = extractFileId(documentFile);
@@ -295,6 +469,8 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       const audioFile = tdGetObject(audioObj, 'audio');
       contentDto.type = MessageContentType.AUDIO;
       contentDto.caption = caption;
+      contentDto.quoteEntities = extractCaptionQuoteEntities(contentObj);
+      contentDto.captionEntities = extractCaptionTextEntities(contentObj);
       contentDto.text = caption.length > 0 ? caption : '[Audio]';
       contentDto.audioPath = extractLocalFilePath(audioFile);
       contentDto.audioFileId = extractFileId(audioFile);
@@ -312,6 +488,8 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       const voiceFile = tdGetObject(voiceObj, 'voice');
       contentDto.type = MessageContentType.VOICE;
       contentDto.caption = caption;
+      contentDto.quoteEntities = extractCaptionQuoteEntities(contentObj);
+      contentDto.captionEntities = extractCaptionTextEntities(contentObj);
       contentDto.text = caption.length > 0 ? caption : '[Voice message]';
       contentDto.voicePath = extractLocalFilePath(voiceFile);
       contentDto.voiceFileId = extractFileId(voiceFile);
@@ -337,24 +515,70 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.text = contentDto.stickerEmoji.length > 0 ? contentDto.stickerEmoji : '[Sticker]';
       break;
     }
-    case 'messageLocation':
+    case 'messageLocation': {
       contentDto.type = MessageContentType.LOCATION;
+      const loc = tdGetObject(contentObj, 'location');
+      contentDto.locationLatitude = tdGetNumber(loc, 'latitude');
+      contentDto.locationLongitude = tdGetNumber(loc, 'longitude');
       contentDto.text = '[Location]';
       break;
-    case 'messageContact':
+    }
+    case 'messageVenue': {
+      contentDto.type = MessageContentType.LOCATION;
+      const venue = tdGetObject(contentObj, 'venue');
+      const venueLoc = tdGetObject(venue, 'location');
+      contentDto.locationLatitude = tdGetNumber(venueLoc, 'latitude');
+      contentDto.locationLongitude = tdGetNumber(venueLoc, 'longitude');
+      contentDto.locationVenueTitle = tdGetString(venue, 'title');
+      contentDto.locationVenueAddress = tdGetString(venue, 'address');
+      contentDto.text = contentDto.locationVenueTitle.length > 0 ? contentDto.locationVenueTitle : '[Venue]';
+      break;
+    }
+    case 'messageContact': {
       contentDto.type = MessageContentType.CONTACT;
-      contentDto.text = '[Contact]';
+      const contact = tdGetObject(contentObj, 'contact');
+      contentDto.contactFirstName = tdGetString(contact, 'first_name');
+      contentDto.contactLastName = tdGetString(contact, 'last_name');
+      contentDto.contactPhoneNumber = tdGetString(contact, 'phone_number');
+      contentDto.contactUserId = tdGetNumber(contact, 'user_id');
+      const contactName = (contentDto.contactFirstName + ' ' + contentDto.contactLastName).trim();
+      contentDto.text = contactName.length > 0 ? contactName : contentDto.contactPhoneNumber;
       break;
-    case 'messagePoll':
+    }
+    case 'messagePoll': {
       contentDto.type = MessageContentType.POLL;
-      contentDto.text = '[Poll]';
+      const poll = tdGetObject(contentObj, 'poll');
+      const questionObj = tdGetObject(poll, 'question');
+      contentDto.pollQuestion = tdGetString(questionObj, 'text');
+      contentDto.pollTotalVoterCount = tdGetNumber(poll, 'total_voter_count');
+      contentDto.pollIsClosed = tdGetBoolean(poll, 'is_closed');
+      contentDto.pollIsAnonymous = tdGetBoolean(poll, 'is_anonymous');
+      const pollTypeObj = tdGetObject(poll, 'type');
+      const pollTypeStr = tdGetString(pollTypeObj, '@type');
+      contentDto.pollType = pollTypeStr === 'pollTypeQuiz' ? 'quiz' : 'regular';
+      contentDto.text = contentDto.pollQuestion.length > 0 ? contentDto.pollQuestion : '[Poll]';
+      // Parse options
+      const options = tdGetArray(poll, 'options');
+      for (let i = 0; i < options.length; i++) {
+        const opt = options[i];
+        const optDto = new PollOptionDto();
+        const optTextObj = tdGetObject(opt, 'text');
+        optDto.text = tdGetString(optTextObj, 'text');
+        optDto.voterCount = tdGetNumber(opt, 'voter_count');
+        optDto.votePercentage = tdGetNumber(opt, 'vote_percentage');
+        optDto.isChosen = tdGetBoolean(opt, 'is_chosen');
+        contentDto.pollOptions.push(optDto);
+      }
       break;
+    }
     case 'messageAnimation': {
       const caption = extractCaption(contentObj);
       const animationObj = tdGetObject(contentObj, 'animation');
       const animationFile = tdGetObject(animationObj, 'animation');
       contentDto.type = MessageContentType.ANIMATION;
       contentDto.caption = caption;
+      contentDto.quoteEntities = extractCaptionQuoteEntities(contentObj);
+      contentDto.captionEntities = extractCaptionTextEntities(contentObj);
       contentDto.text = caption.length > 0 ? caption : '[GIF]';
       contentDto.animationPath = extractLocalFilePath(animationFile);
       contentDto.animationFileId = extractFileId(animationFile);
@@ -410,6 +634,9 @@ export function applyMessageUpdate(message: MessageDto, update: MessageUpdateDto
   updatedMessage.isPending = message.isPending;
   updatedMessage.editDate = message.editDate;
   updatedMessage.replyToMessageId = message.replyToMessageId;
+  updatedMessage.replyIsQuote = message.replyIsQuote;
+  updatedMessage.replyQuoteText = message.replyQuoteText;
+  updatedMessage.replyQuoteOffset = message.replyQuoteOffset;
 
   if (update.content !== undefined) {
     updatedMessage.content = update.content;

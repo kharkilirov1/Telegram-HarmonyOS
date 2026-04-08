@@ -128,9 +128,9 @@ export struct TgInstantVideoBubble {
     })
       .width(this.bubbleSize() - 4)
       .height(this.bubbleSize() - 4)
-      .color('#99FFFFFF')
+      .color(TgUiTokens.MEDIA_RING_PROGRESS_COLOR)
       .backgroundColor(Color.Transparent)
-      .style({ strokeWidth: 3 })
+      .style({ strokeWidth: TgUiTokens.MEDIA_PROGRESS_STROKE })
   }
 
   @Builder
@@ -143,14 +143,14 @@ export struct TgInstantVideoBubble {
           LoadingProgress()
             .width(this.bubbleSize() - 4)
             .height(this.bubbleSize() - 4)
-            .color('#FFFFFF')
+            .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
         }
         Image($r('sys.media.ohos_ic_public_cancel'))
-          .width(20).height(20).fillColor('#FFFFFF')
+          .width(TgUiTokens.MEDIA_CANCEL_ICON_SIZE + 4).height(TgUiTokens.MEDIA_CANCEL_ICON_SIZE + 4).fillColor(TgUiTokens.MEDIA_PROGRESS_COLOR)
       }
       .width(this.bubbleSize())
       .height(this.bubbleSize())
-      .backgroundColor('#40000000') // Dark overlay
+      .backgroundColor(TgUiTokens.MEDIA_OVERLAY_DARK) // Dark overlay
       .borderRadius(this.bubbleSize() / 2)
       .onClick(() => this.onDownloadToggle())
     } else if (!this.hasLocalVideo()) {
@@ -158,12 +158,12 @@ export struct TgInstantVideoBubble {
         TgIcon({
           src: TgUiTokens.ICON_RES_DOWNLOAD,
           iconSize: TgUiTokens.INSTANT_VIDEO_BUBBLE_PLAY_ICON_SIZE + 4,
-          tintColor: '#FFFFFF'
+          tintColor: TgUiTokens.MEDIA_PROGRESS_COLOR
         })
       }
       .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
       .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-      .backgroundColor('#40000000')
+      .backgroundColor(TgUiTokens.MEDIA_OVERLAY_DARK)
       .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
       .onClick(() => this.onDownloadToggle())
     } else {
@@ -172,12 +172,12 @@ export struct TgInstantVideoBubble {
         TgIcon({
           src: TgUiTokens.ICON_RES_PLAY,
           iconSize: TgUiTokens.INSTANT_VIDEO_BUBBLE_PLAY_ICON_SIZE + 4,
-          tintColor: '#FFFFFF'
+          tintColor: TgUiTokens.MEDIA_PROGRESS_COLOR
         })
       }
       .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
       .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-      .backgroundColor('#40000000')
+      .backgroundColor(TgUiTokens.MEDIA_OVERLAY_DARK)
       .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
       .onClick(() => this.onPlayToggle())
     }

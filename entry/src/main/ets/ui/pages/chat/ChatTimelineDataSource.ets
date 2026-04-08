@@ -113,6 +113,18 @@ export class ChatTimelineDataSource implements IDataSource {
     return true;
   }
 
+  private sameBoolArray(prev: boolean[], next: boolean[]): boolean {
+    if (prev.length !== next.length) {
+      return false;
+    }
+    for (let i = 0; i < prev.length; i++) {
+      if (prev[i] !== next[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   private sameMessage(prev: ChatMessageRowVO, next: ChatMessageRowVO): boolean {
     return prev.messageId === next.messageId &&
       prev.text === next.text &&
@@ -121,16 +133,25 @@ export class ChatTimelineDataSource implements IDataSource {
       prev.timeText === next.timeText &&
       prev.sendStatus === next.sendStatus &&
       prev.forceBreakAll === next.forceBreakAll &&
+      this.sameNumberArray(prev.quoteOffsets, next.quoteOffsets) &&
+      this.sameNumberArray(prev.quoteLengths, next.quoteLengths) &&
+      this.sameBoolArray(prev.quoteCollapsedFlags, next.quoteCollapsedFlags) &&
       prev.senderName === next.senderName &&
       prev.senderColorHex === next.senderColorHex &&
       prev.showSenderName === next.showSenderName &&
       prev.showReplySnippet === next.showReplySnippet &&
       prev.replyAuthor === next.replyAuthor &&
+      prev.replyAuthorColorHex === next.replyAuthorColorHex &&
       prev.replyPreview === next.replyPreview &&
       prev.replyIsOutgoing === next.replyIsOutgoing &&
       prev.replyIsQuote === next.replyIsQuote &&
+      prev.replyHasThumbnail === next.replyHasThumbnail &&
+      prev.replyThumbnailSrc === next.replyThumbnailSrc &&
       prev.contentType === next.contentType &&
       prev.caption === next.caption &&
+      this.sameNumberArray(prev.captionQuoteOffsets, next.captionQuoteOffsets) &&
+      this.sameNumberArray(prev.captionQuoteLengths, next.captionQuoteLengths) &&
+      this.sameBoolArray(prev.captionQuoteCollapsedFlags, next.captionQuoteCollapsedFlags) &&
       prev.photoPath === next.photoPath &&
       prev.photoFileId === next.photoFileId &&
       prev.hasLocalPhoto === next.hasLocalPhoto &&

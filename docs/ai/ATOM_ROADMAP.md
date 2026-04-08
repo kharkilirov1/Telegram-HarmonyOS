@@ -3,6 +3,7 @@
 > Date: 2026-02-26
 > Status: active
 > Canonical contract: follows `MASTER_PLAN_TELEGRAM_UI.md`
+> Maintenance note (2026-03-22): this roadmap captures the original A–E atom migration. For the current post-media-gallery reality (32 atoms / 2 molecules / 34 demos / 37 specs, plus live shell path), prefer `STATUS.md` and `PROJECT_ANALYSIS.md`. `TgSearchBar` is still part of the library, but the live Chats shell now uses stock ArkUI `Search` inside `TgChatListNavigationBar`. `TgTopChromeBackground` is now the shared upper-background primitive extracted from the layered upper-chrome architecture. E-1/E-2 remain important as historical migration steps, but their standalone demo/spec artifacts were later removed after Contacts/Settings switched to inline runtime layout.
 
 ---
 
@@ -81,7 +82,7 @@ Current state:
 | E-5 | **Integration** | Real ContactsPage, SettingsPage, CallsPage with store data | DONE |
 
 ### Notes
-- TgSettingsSection is V1 `@Component` (requires `@BuilderParam` for slot content)
+- Historical note: `TgSettingsSection` originally existed as a standalone migration atom; the current runtime no longer uses it and its legacy demo/spec artifacts were removed on 2026-03-22.
 - ContactsPage reads real contacts from AppStore (filtered by `isContact`)
 - SettingsPage shows real user profile + iOS insetGrouped sections
 - CallsPage shows empty state (no call history model in store yet)

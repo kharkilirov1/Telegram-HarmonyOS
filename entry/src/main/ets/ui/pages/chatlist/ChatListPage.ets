@@ -746,6 +746,10 @@ export struct ChatListPage {
                     avatarImageSrc: item.avatarImagePath.length > 0 ? item.avatarImagePath : $r('app.media.app_icon_transparent'),
                     avatarIsOnline: item.avatarOnline,
                     isVerified: item.isVerified,
+                    isScam: item.isScam,
+                    isFake: item.isFake,
+                    isSecret: item.isSecret,
+                    hasMention: item.hasMention,
                     showSeparator: TgUiFeatureFlags.USE_INTERNAL_CHAT_ROW_SEPARATOR
                   })
                   .reuseId(this.getTgReuseId(item))

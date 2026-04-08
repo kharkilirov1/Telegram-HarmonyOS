@@ -1,9 +1,11 @@
 # AI Memory — Telegram-HarmonyOS
 
-## 0) Maintenance sync (2026-03-06)
-- Current `tg_ui` inventory: **26 atoms / 2 molecules / 30 demos / 33 spec files**.
-- Active shell path is now `TgTabBar` / `TgTopBar` / `TgSearchBar` / `TgChatRow` / `TgChatTopBar` / `TgMessageRouter`; older mentions of `AppTopBar`, `AppTabBarItem`, `AppListRow`, `ChatListItem`, and `USE_TG_CHATLIST_V2` below are historical.
-- `scripts/smoke-ui-phase0.ps1` and `.sh` were resynced to the current tg_ui shell path.
+## 0) Maintenance sync (2026-03-22)
+- Current `tg_ui` inventory: **32 atoms / 2 molecules / 34 demos / 37 spec files**.
+- Live Chats shell path is `TgTabBar` / `TgChatListNavigationBar` / `TgChatRow` / `TgChatTopBar` / `TgMessageRouter`; `TgTopBar` remains active on secondary tabs. Older mentions of `AppTopBar`, `AppTabBarItem`, `AppListRow`, `ChatListItem`, and `USE_TG_CHATLIST_V2` below are historical.
+- `TgSearchBar` still exists in `tg_ui`, but the live Chats shell uses stock ArkUI `Search` inside `TgChatListNavigationBar`.
+- `scripts/smoke-ui-phase0.ps1` / `.sh` were resynced to the current shell path, and `scripts/smoke-build.ps1` now resolves `hvigorw` from PATH or the default DevEco install path.
+- Per user confirmation on 2026-03-22, the previously pending emulator/device/runtime verification items for the current branch are considered passed and should no longer be treated as active blockers.
 - Dark-theme parity was repaired for `sender_color_8` plus attach/call/reaction/story colors.
 - Current `entry/src/main/ets` TODO/FIXME scan returns 0 hits.
 
@@ -21,7 +23,7 @@ Master UI contract (frozen):
 
 ## 2) Fixed decisions (agreed)
 1. iOS source of truth path:
-   - `C:\Users\Kharki\Downloads\референсы\Telegram-iOS-master\Telegram-iOS-master`
+   - `C:\Users\Kharki\Desktop\Telegram-HarmonyOS\рефенсы\Telegram-iOS-master`
 2. Work strategy:
    - Atom-first pipeline (`SPEC -> TOKENS -> DEMO -> ATOM -> integration`).
    - Order is governed by `docs/ai/ATOM_ROADMAP.md` and frozen contract `MASTER_PLAN_TELEGRAM_UI.md`.
@@ -48,7 +50,7 @@ Master UI contract (frozen):
 - Phase 0 hardening pass completed for shell/chatlist:
   - removed hex color hardcode from Phase 0 shell/chatlist files
   - expanded `AppShellTokens` and switched placeholders (`ContactsPage`, `SettingsPage`) to shared `AppTopBar`
-  - `ChatListItem` is now `@Reusable`, and `ChatListPage` applies `reuseId(...)` in `LazyForEach`
+  - the live `TgChatRow` path is now `@ComponentV2`, and `ChatListPage` still applies `reuseId(...)` in `LazyForEach`
 - Tab bar visual pass (iOS-like island refinement):
   - `MainTabsPage` now uses fixed bottom tab layout + floating glass island backdrop.
   - Chats tab icon switched from generic `ic_email` to dedicated `ic_chat`.

@@ -25,9 +25,10 @@ function isChatEvent(type: string): boolean {
 }
 
 // Map DTO ChatType enum to AppState ChatType string
-function mapChatType(dtoType: DtoChatType): 'private' | 'group' | 'supergroup' | 'channel' {
+function mapChatType(dtoType: DtoChatType): 'private' | 'secret' | 'group' | 'supergroup' | 'channel' {
   switch (dtoType) {
     case DtoChatType.PRIVATE: return 'private';
+    case DtoChatType.SECRET: return 'secret';
     case DtoChatType.GROUP: return 'group';
     case DtoChatType.SUPERGROUP: return 'supergroup';
     case DtoChatType.CHANNEL: return 'channel';
@@ -41,8 +42,10 @@ function chatFromDto(dto: ChatDto): Chat {
   chat.id = dto.id;
   chat.type = mapChatType(dto.type);
   chat.peerUserId = dto.peerUserId;
+  chat.accentColorId = dto.accentColorId;
   chat.title = dto.title;
   chat.unreadCount = dto.unreadCount;
+  chat.unreadMentionCount = dto.unreadMentionCount;
   chat.muteForSeconds = dto.muteFor;
   chat.lastReadOutboxMessageId = dto.lastReadOutboxMessageId;
   chat.lastReadInboxMessageId = dto.lastReadInboxMessageId;
@@ -134,6 +137,9 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         if (!chat.peerUserId && existing.peerUserId) {
           chat.peerUserId = existing.peerUserId;
         }
+        if (chat.accentColorId < 0 && existing.accentColorId >= 0) {
+          chat.accentColorId = existing.accentColorId;
+        }
         if (!chat.muteForSeconds && existing.muteForSeconds) {
           chat.muteForSeconds = existing.muteForSeconds;
         }
@@ -206,8 +212,14 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
       if (event.updates.peerUserId !== undefined) {
         updatedChat.peerUserId = event.updates.peerUserId;
       }
+      if (event.updates.accentColorId !== undefined) {
+        updatedChat.accentColorId = event.updates.accentColorId;
+      }
       if (event.updates.unreadCount !== undefined) {
         updatedChat.unreadCount = event.updates.unreadCount;
+      }
+      if (event.updates.unreadMentionCount !== undefined) {
+        updatedChat.unreadMentionCount = event.updates.unreadMentionCount;
       }
       if (event.updates.muteFor !== undefined) {
         updatedChat.muteForSeconds = event.updates.muteFor;

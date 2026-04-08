@@ -183,7 +183,7 @@ The next cleanup pass should:
 3. leave album-art/media/shell/cache hunks behind for later groups.
 
 Exact extraction notes now live in:
-- `TASKS/COMMIT_GROUP_1_HUNK_MAP_2026_03_21.md`
+- `TASKS/ARCHIVE/COMMIT_GROUP_1_HUNK_MAP_2026_03_21.md`
 
 ## Success condition
 Commit group 1 becomes:

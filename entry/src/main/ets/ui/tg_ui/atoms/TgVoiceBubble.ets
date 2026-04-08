@@ -20,8 +20,16 @@ export struct TgVoiceBubble {
   @Event onPlayToggle: () => void = () => {};
   @Event onSeek: (progress: number) => void = (_: number) => {};
   @Local private buttonScale: number = 1.0;
+  @Local private canvasReady: boolean = false;
 
   private canvasContext: CanvasRenderingContext2D = new CanvasRenderingContext2D();
+
+  @Monitor('playbackProgress', 'isPlaying', 'hasLocalFile', 'isDownloading')
+  onPlaybackStateChange(): void {
+    if (this.canvasReady) {
+      this.drawWaveform();
+    }
+  }
 
   private normalizedProgress(): number {
     return Math.max(0, Math.min(1, this.playbackProgress));
@@ -190,11 +198,71 @@ export struct TgVoiceBubble {
   }
 
   private inactiveColorHex(): string {
-    return this.isOutgoing ? '#4DFFFFFF' : '#333390EC'; // Faded white / faded blue
+    return this.isOutgoing ? TgUiTokens.VOICE_WAVE_INACTIVE_OUTGOING : TgUiTokens.VOICE_WAVE_INACTIVE_INCOMING;
   }
-  
+
   private activeColorHex(): string {
-    return this.isOutgoing ? '#FFFFFF' : '#3390EC';
+    return this.isOutgoing ? TgUiTokens.VOICE_WAVE_ACTIVE_OUTGOING : TgUiTokens.VOICE_WAVE_ACTIVE_INCOMING;
+  }
+
+  private drawWaveform(): void {
+    const context = this.canvasContext;
+    const bars = this.waveformBars();
+    if (bars.length === 0) return;
+
+    const totalCanvasWidth = context.width;
+    const areaHeight = TgUiTokens.VOICE_BUBBLE_WAVE_AREA_HEIGHT;
+    // iOS pattern: 2pt bar width, 1pt gap → ratio 1.5 parts per bar
+    const partsPerBar = 1.5;
+    const totalParts = (bars.length * partsPerBar) - 0.5;
+    const barWidth = Math.max(1.5, totalCanvasWidth / totalParts);
+    const barGap = barWidth * 0.5;
+    const barRadius = barWidth / 2;
+
+    const totalDrawWidth = bars.length * (barWidth + barGap);
+    const activeWidth = totalDrawWidth * this.normalizedProgress();
+
+    context.clearRect(0, 0, totalCanvasWidth, areaHeight);
+
+    const isReady = this.hasLocalFile && !this.isDownloading;
+
+    // Draw rounded bars — iOS uses lineCap round strokes
+    context.lineCap = 'round';
+    context.lineWidth = barWidth;
+
+    // Inactive bars
+    context.strokeStyle = this.inactiveColorHex();
+    context.beginPath();
+    for (let i = 0; i < bars.length; i++) {
+      const h = Math.max(barWidth, bars[i]);
+      const x = i * (barWidth + barGap) + barRadius;
+      const yTop = (areaHeight - h) / 2 + barRadius;
+      const yBot = (areaHeight + h) / 2 - barRadius;
+      context.moveTo(x, yTop);
+      context.lineTo(x, yBot);
+    }
+    context.stroke();
+
+    // Active bars (clipped to playback progress)
+    if (isReady && activeWidth > 0) {
+      context.save();
+      context.beginPath();
+      context.rect(0, 0, activeWidth, areaHeight);
+      context.clip();
+
+      context.strokeStyle = this.activeColorHex();
+      context.beginPath();
+      for (let i = 0; i < bars.length; i++) {
+        const h = Math.max(barWidth, bars[i]);
+        const x = i * (barWidth + barGap) + barRadius;
+        const yTop = (areaHeight - h) / 2 + barRadius;
+        const yBot = (areaHeight + h) / 2 - barRadius;
+        context.moveTo(x, yTop);
+        context.lineTo(x, yBot);
+      }
+      context.stroke();
+      context.restore();
+    }
   }
 
   @Builder
@@ -203,56 +271,8 @@ export struct TgVoiceBubble {
       .width('100%')
       .height(TgUiTokens.VOICE_BUBBLE_WAVE_AREA_HEIGHT)
       .onReady(() => {
-        const context = this.canvasContext;
-        const bars = this.waveformBars();
-        if (bars.length === 0) return;
-
-        // Dynamically calculate width instead of hardcoding
-        const totalCanvasWidth = context.width;
-        // Total parts = (bars.length * barWidth) + ((bars.length - 1) * gapWidth)
-        // Let gapWidth = barWidth * 0.6 to keep aspect ratio
-        const partsPerBar = 1.6; 
-        const totalParts = (bars.length * partsPerBar) - 0.6;
-        const barWidth = Math.max(1, totalCanvasWidth / totalParts);
-        const barGap = barWidth * 0.6;
-
-        const totalDrawWidth = bars.length * (barWidth + barGap);
-        const activeWidth = totalDrawWidth * this.normalizedProgress();
-        const areaHeight = TgUiTokens.VOICE_BUBBLE_WAVE_AREA_HEIGHT;
-
-        context.clearRect(0, 0, totalCanvasWidth, areaHeight);
-
-        const isReady = this.hasLocalFile && !this.isDownloading;
-
-        // Draw Inactive
-        context.fillStyle = this.inactiveColorHex();
-        context.beginPath();
-        for (let i = 0; i < bars.length; i++) {
-          const h = bars[i];
-          const x = i * (barWidth + barGap);
-          const y = (areaHeight - h) / 2;
-          context.rect(x, y, barWidth, h);
-        }
-        context.fill();
-
-        // Draw Active (clipped)
-        if (isReady && activeWidth > 0) {
-          context.save();
-          context.beginPath();
-          context.rect(0, 0, activeWidth, areaHeight);
-          context.clip();
-
-          context.fillStyle = this.activeColorHex();
-          context.beginPath();
-          for (let i = 0; i < bars.length; i++) {
-            const h = bars[i];
-            const x = i * (barWidth + barGap);
-            const y = (areaHeight - h) / 2;
-            context.rect(x, y, barWidth, h);
-          }
-          context.fill();
-          context.restore();
-        }
+        this.canvasReady = true;
+        this.drawWaveform();
       })
   }
   @Builder

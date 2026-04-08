@@ -34,19 +34,15 @@ These files belong to the same review batch because the current shell/chat path 
 - `entry/src/main/ets/ui/tg_ui/atoms/TgChatTopBar.ets`
 - `entry/src/main/ets/ui/tg_ui/spec/TgCallRow.md`
 - `entry/src/main/ets/ui/tg_ui/spec/TgChatTopBar.md`
-- `entry/src/main/ets/ui/tg_ui/spec/TgContactRow.md`
 - `entry/src/main/ets/ui/tg_ui/spec/TgSearchBar.md`
 - `entry/src/main/ets/ui/tg_ui/spec/TgSettingsRow.md`
-- `entry/src/main/ets/ui/tg_ui/spec/TgSettingsSection.md`
 - `entry/src/main/ets/ui/tg_ui/spec/TgTabBar.md`
 - `entry/src/main/ets/ui/tg_ui/demos/TgCallRowDemo.ets`
 - `entry/src/main/ets/ui/tg_ui/demos/TgChatTopBarDemo.ets`
-- `entry/src/main/ets/ui/tg_ui/demos/TgContactRowDemo.ets`
 - `entry/src/main/ets/ui/tg_ui/demos/TgMessageBubbleBaseDemo.ets`
 - `entry/src/main/ets/ui/tg_ui/demos/TgMessageRouterDemo.ets`
 - `entry/src/main/ets/ui/tg_ui/demos/TgSearchBarDemo.ets`
 - `entry/src/main/ets/ui/tg_ui/demos/TgSettingsRowDemo.ets`
-- `entry/src/main/ets/ui/tg_ui/demos/TgSettingsSectionDemo.ets`
 - `entry/src/main/ets/ui/tg_ui/demos/TgTabBarDemo.ets`
 
 ### C. Documentation / smoke sync
@@ -65,6 +61,9 @@ These stay for later phases even if the working tree already contains related gr
 - **Phase 5:** media behavior completion beyond current rendering/runtime fixes
 - **Phase 6:** V1 -> V2 modernization / `LazyForEach -> Repeat` / `@ReusableV2`
 - any destructive cleanup of legacy fallback paths
+
+### Historical cleanup note (2026-03-22)
+- The runtime no longer depends on `TgContactRow` / `TgSettingsSection`, and their orphaned demo/spec artifacts were deleted after verification/doc sync.
 
 ## Verification snapshot for this boundary
 - `./scripts/smoke-ui-phase0.ps1` — pass

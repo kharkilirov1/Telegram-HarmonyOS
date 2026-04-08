@@ -1,15 +1,15 @@
 # LESSONS — repeated mistakes and project-specific pitfalls
 
-Last updated: 2026-03-18
+Last updated: 2026-04-08
 
 ## 1. Do not mix V1 and V2 ArkUI decorators casually
 - `tg_ui` is largely `@ComponentV2`.
-- Shell pages are still mostly V1 `@Component`.
-- `TgChatRow` is intentionally V1 `@Reusable` because its parent list page is V1.
+- Active shell pages are now largely `@ComponentV2`.
+- The live chat-list row path already uses `TgChatRow` as `@ComponentV2`, not as a V1 `@Reusable` exception.
 - Mixing these layers incorrectly is a reliable way to break hvigor builds.
 
 ## 2. `LazyForEach` reuse rules are not interchangeable between V1 and V2
-- Current chat list path relies on `LazyForEach` + V1 `@Reusable` row reuse.
+- Current chat list path relies on `LazyForEach` + `.reuseId(...)` with a V2 row component.
 - Official docs treat `@ReusableV2` as a different model for V2 components.
 - Do not mechanically replace V1 reuse patterns with V2 ones.
 
@@ -58,6 +58,10 @@ Last updated: 2026-03-18
 
 ## 13. Edge pagination must auto-recheck after fetch, not require scroll-away
 - The original latch pattern required the user to scroll away from the edge and back to trigger the next page load. iOS Telegram uses **continuous checking** (threshold = 5 items, no latch).
+
+## 14. Navigation-title weight should approximate iOS semibold, not generic bold
+- Telegram iOS chat-list and chat top bars often sit closer to `17pt semibold` than to a heavier full bold title.
+- In ArkUI, `FontWeight.Medium` is the safer approximation for these centered navigation titles unless the local reference clearly shows a heavier treatment.
 - After each completed `loadOlder`/`loadNewer`, call `recheckPaginationEdge()` to see if the viewport is still near the edge; if so, re-arm and fire the next batch automatically.
 - This gives iOS-like continuous loading without removing the anti-spam latch for normal scroll events.
 
@@ -115,7 +119,7 @@ Last updated: 2026-03-18
 - Custom atoms that only wrap a stock component with token styling (e.g. `Search`, `ListItemGroup`) add a file and abstraction layer without real value.
 - Only create an atom when it adds genuine logic beyond styling: enums, computed state, composite layout, custom drawing.
 - For new screens, use stock ArkUI components directly with token styling inline. Save atoms for truly custom Telegram-specific UI.
-- Removed: `TgSearchBar` (was just `Search`), `TgSettingsSection` (was just rounded `Column`), `TgContactRow` (was `TgAvatar` + two `Text`).
+- Runtime simplification result: `TgSettingsSection` and `TgContactRow` were removed from the live page path and later their orphaned demo/spec artifacts were deleted. `TgSearchBar` was not removed from the library; only the live Chats shell switched to stock ArkUI `Search` inside `TgChatListNavigationBar`.
 
 ## 26. Avatar photos are the single biggest "demo vs real app" visual signal
 - Without real avatar photos (only colored initials circles), the entire app looks like a prototype regardless of UI polish.
@@ -254,17 +258,32 @@ Last updated: 2026-03-18
 - Photo/video/document/audio/voice transfer indicators need a store-level `fileId -> transfer state` map fed by every TDLib `updateFile`, not just the completion event.
 - Keep `fileDownloaded` for path application, but drive visible pending/progress UI from a separate transfer-update event.
 
-## 49. Photo preview availability and full-photo availability are different states
+## 49. Text-engine whitespace normalization must preserve hard breaks
+- In this repo, the first V3 engine pass reused a generic whitespace normalizer that collapsed `\n` into spaces before tokenization.
+- That silently violated the Telegram text contract and made the custom engine less correct than the old plain `Text(...)` rendering for multiline messages.
+- Normalize horizontal whitespace per line, but preserve newline boundaries all the way into segmentation/layout.
+
+## 50. Engine-driven meta width must follow rendered status semantics, not optimistic transport semantics
+- The live V3 text path renders a failed outgoing icon in `TgMessageMeta`, so the layout pass must reserve width for `Failed` too.
+- A narrower `hasStatus` check in the calculator created a subtle but real mismatch: the bubble math assumed “no icon”, while the UI still rendered one.
+- For shrink-wrap bubbles, layout predicates must match the final rendered states exactly, or the engine loses its point.
+
+## 51. Quote-aware bubbles need explicit segment geometry in layout, not only raw-text measurement
+- Measuring the whole raw text once is not enough when the renderer inserts distinct quote surfaces with their own paddings, accent bars, and segment gaps.
+- In this repo, `computeTextBubbleLayout()` looked engine-driven but still undercounted quote-heavy bubbles because it ignored the quote shell geometry.
+- If the renderer splits text into semantic blocks (quote/plain/reply/etc.), the layout pass must model those same blocks explicitly.
+
+## 52. Photo preview availability and full-photo availability are different states
 - In this repo, `photoPath` in the chat VO can legally point to a thumb/preview while the full `photoFileId` is still downloading.
 - Therefore the photo bubble cannot infer “full asset is local” from “some preview image exists”; it needs an explicit `hasLocalPhoto` flag separate from the preview URI.
 - Safer pattern: compute an explicit `reserveAvatarLane` flag in timeline/build logic and pass it into the router instead of inferring lane reservation from sender-name presence.
 
-## 50. Atoms must not mutate shell navigation state directly
+## 53. Atoms must not mutate shell navigation state directly
 - In this repo, `TgTabBar` briefly wrote `MAIN_TAB_INDEX` into `AppStorage` itself even though `MainTabsPage` already owned `selectedIndex`, `TabsController`, and shell persistence.
 - That duplicates the source of truth and makes tab selection bugs harder to reason about.
 - Keep atoms presentational: emit callbacks upward, and let the page/shell own `AppStorage` and controller writes.
 
-## 51. Demo/state coverage is not proof that a badge path is actually live
+## 54. Demo/state coverage is not proof that a badge path is actually live
 - `TgTabBar` already had `chatBadgeCount` and `buildBadge()`, but the real Chats tab still passed `showBadge = false`, so unread badges never rendered at runtime.
 - For shell chrome, always verify the integrated call site after atom work; do not assume a prop/state path is live just because the atom supports it.
 
@@ -656,3 +675,275 @@ Last updated: 2026-03-18
 - API 500 errors during parallel agent execution left orphaned worktree branches (`worktree-agent-*`, `feat/media-gallery-page`) with no useful commits.
 - These consume branch namespace and can cause confusion on next session.
 - After any agent crash: check `git worktree list` + `git branch`, remove orphans.
+
+
+## 48. Documentation inventory and active shell path must be derived from the tree
+- In this repo, copying an older snapshot into docs is enough to create false claims such as “`TgSearchBar` was removed” or “the latest commit is still `511e6cb`”.
+- Before updating human-facing docs, derive facts from the real tree: current HEAD, actual file counts, live imports, and smoke scripts.
+- Current example: `TgSearchBar` still exists in `tg_ui`, while the live Chats shell uses `TgChatListNavigationBar` with stock ArkUI `Search`; both facts matter and must be documented separately.
+
+
+## 49. Unrecorded verification turns into fake blockers in docs
+- In this repo, large parts of the product were already runtime-verified, but the result was not written back into `STATUS.md` / `TASKS/TODO.md`.
+- That creates false blockers for future sessions, who then waste time re-opening already finished verification work.
+- When a verification pass is accepted (including explicit user confirmation), sync the docs immediately and clearly label any retained checklists as historical regression references.
+
+
+## 50. Smoke checks must evolve with the runtime, not with old migration assumptions
+- In this repo, `scripts/smoke-ui-phase0.ps1` was still asserting `@Reusable` on `TgChatRow` even after the live row path had already moved to `@ComponentV2`.
+- A stale smoke script is worse than no script: it turns real cleanup work into false failures and hides the actual regressions.
+- When the runtime contract changes (for example V1 -> V2 component migration), update the smoke checks in the same pass.
+
+## 110. Chat-list diff equality must include prefix and pinned-boundary flags
+- In this repo, `ChatListDataSource.isSameChatRow(...)` did not compare `previewPrefix`, `previewPrefixStyle`, `isDraft`, or `isLastPinned`.
+- Result: same-order chat rows could silently skip UI refreshes when only draft/author prefix styling changed, or when the pinned-boundary spacer should appear/disappear.
+- If a list uses incremental `onDataChange(...)` updates, every user-visible row state that affects layout/text/separators must be included in the equality check.
+
+## 111. Custom composer shells should use ArkUI inline text style, not default text-box chrome
+- In this repo, `TgComposerInput` is a custom glass-shell composer, not a stock boxed form field.
+- `TextArea.style(TextContentStyle.DEFAULT)` reintroduces stock input-box behavior that can visually fight the custom capsule.
+- For this kind of Telegram-like composer shell, prefer `TextContentStyle.INLINE` so the custom glass container stays visually in control.
+
+## 112. When a comparison doc already identifies high-confidence visual deltas, prefer the narrow fixes first
+- In this repo, local comparison docs already called out concrete top-bar and chat-row mismatches such as `Bold` vs iOS `semibold`, `37vp` vs `38pt` avatar inner size, and an overly wide avatar-to-text lane in the chat list.
+- The safe next step is to fix those explicit deltas first and verify, not to jump straight into broader redesigns or speculative feature additions.
+- This keeps parity work reviewable and prevents “fixing” unrelated parts of the shell while chasing one visual complaint.
+
+## 113. When porting a complex Telegram surface, decompose the iOS composition before hunting HarmonyOS controls
+- In this repo, the correct unit of analysis is often a **UI zone** (for example the whole upper header area), not a single atom and not the whole screen.
+- The reliable method is: `Reference Decomposition -> Platform Mapping -> Assembly`.
+- First extract iOS layers, content/state model, layout invariants, visual decisions, and behavior. Then look for HarmonyOS analogs. Only after that decide how to assemble the result in our architecture.
+
+## 114. Upper chrome must be split into shared background, content composition, and derived state
+- In this repo, top bars started drifting when they tried to own too much at once: blur/tint surface, geometry, state derivation, and accessory behavior.
+- Telegram iOS upper chrome is layered. Preserve that by splitting responsibilities:
+  - screen/page derives state and owns placement,
+  - V2 composition components render content,
+  - shared background primitive owns blur/tint/top-edge emphasis.
+- If a top bar feels like one “magic widget”, the ownership is probably wrong.
+
+## 115. Extract the shared upper-background primitive before rewriting every top bar
+- In this repo, `TgChatListNavigationBar` originally owned both content layout and the full blur/specular background internally.
+- The safer first step was to extract `TgTopChromeBackground` and make the chat-list header render above it.
+- This keeps the migration incremental: first centralize the shared background responsibilities, then move other top bars onto the same model.
+
+## 116. After extracting the shared top background, move each top bar onto it before optical tuning
+- In this repo, the next safe step after introducing `TgTopChromeBackground` was to rehost `TgChatTopBar` on top of it without redesigning every capsule.
+- This prevents doing visual tuning on the wrong ownership model.
+- Rule: first align ownership, then tune optics.
+
+## 117. After ownership is correct, reduce capsule mass with the smallest token pass before adding features
+- In this repo, once `TgChatTopBar` was moved onto the shared background, the next justified fix was **not** to add search/call/typing features immediately.
+- The user-visible problem was optical: the center capsule felt too wide and too heavy. The correct response was a narrow token pass (gap, padding, min width, border stroke), verified by build/smoke.
+- Rule: if the structure is correct and the complaint is visual weight, first try the smallest token/composition correction before opening a larger feature branch.
+
+## 118. Do not over-customize shell chrome when the platform is already converging toward the target language
+- In this repo, a lot of effort went into manually reproducing glass/island shell surfaces that were not actually the strongest Telegram-specific invariants.
+- Repeated API 23 beta visuals indicate that HarmonyOS shell chrome is moving much closer to the desired direction. When that happens, the better strategy is to preserve Telegram semantics and move shell containers toward native/hybrid paths instead of continuing endless custom chrome polishing.
+- Rule: spend custom effort where Telegram identity truly lives; treat shell chrome as a platform-quality problem first, not a default custom-atom problem.
+
+## 119. For chat top bars, enrich subtitle semantics before adding more chrome features
+- In this repo, once the upper-chrome ownership and optical mass were acceptable, the next high-value gap was not another glass tweak but the missing Telegram chat-title state model.
+- The safer first expansion is an explicit subtitle contract (`secondary` / `online` / `activity`) derived at the screen level, with typing/action states mapped from the normalized store and passed into the atom as plain V2 params.
+- Rule: for `TgChatTopBar`, prefer screen-derived subtitle/title semantics before reopening search buttons, badge chrome, or more capsule styling.
+
+## 120. In `TgChatRow`, prefer title-side Telegram badges before more shell-like row cosmetics
+- During the row completeness audit, the better next improvement was not another spacing/material tweak but a missing Telegram-specific title state that already had data in the store (`user.isVerified`).
+- The safe pattern is: extend `ChatItemVO`, pass a flat V2 prop into `TgChatRow`, and update `ChatListDataSource` equality so same-order rows repaint when the new semantic flag changes.
+- Rule: when a Telegram-specific row state already exists in the local model, surface it through the row contract first before inventing more general-purpose visual polish.
+
+## 121. Do not split composer reply semantics between the screen and the atom
+- In this repo, `TgComposerInput` already had a reply-strip contract in its passport, but the live chat screen had drifted to a separate hand-built `buildReplyBar()` above the composer.
+- That duplication weakens the V2 ownership model and guarantees spec/runtime drift. The screen should own reply state; the composer atom should own rendering of the reply strip and its cancel affordance.
+- Rule: for composer semantics, keep state derivation in `TgChatScreenPage` and keep reply-strip UI composition inside `TgComposerInput`.
+
+## 122. Reply previews should resolve Telegram media semantics in the timeline, not leak raw content types into UI
+- In this repo, the generic reply pipeline was still returning `[Unsupported message]` or raw internal `contentType` strings like `videoNote` in real user-facing reply snippets and action-menu reply previews.
+- The better contract is to normalize reply preview semantics where the replied message is already known: `ChatTimelineVO` should produce user-facing labels (`Photo`, `Video`, `GIF`, `Voice message`, `Video message`, `Sticker`, file name / `File`) and attach reply thumbnails when a local preview path exists.
+- Rule: keep `TgReplySnippet` presentation-only; derive media-aware reply labels and thumbnail sources upstream in timeline/screen logic, and include those fields in datasource equality so late thumbnail hydration still repaints the row.
+
+## 123. Start a message-surface reset with a parallel text-family atom, not a router rewrite
+- In this repo, the safest first step of the bubble rebuild is not to tear open `TgMessageRouter` immediately.
+- A better pattern is to land a parallel presentation-only atom (`TgTextBubbleV2`) with its own passport and demo, composed from existing primitives (`TgMessageBubbleBase`, `TgReplySnippet`, `TgMessageMeta`), and only then do a narrow live swap for the text branch.
+- Rule: for partial UI resets, replace the most common visual family first in parallel, prove it in demo/build, then integrate narrowly instead of attempting a monolithic router-first rewrite.
+
+## 124. After a parallel bubble atom lands cleanly, the next safe step is a single-branch live swap
+- In this repo, once `TgTextBubbleV2` had atom/spec/demo coverage and build verification, the correct integration move was not a broad `TgMessageRouter` rewrite.
+- The safe path is to swap only the live `text` branch onto the new atom, keep avatar-lane ownership where it already works, and leave media/document/voice/sticker paths untouched until their own shells are ready.
+- Rule: promote a parallel message-surface atom into runtime one branch at a time; do not force all content families through the new architecture in one patch.
+
+## 125. After the text-family swap, extract one visual-media shell before touching non-visual branches
+- In this repo, the next high-value router cleanup step after `TgTextBubbleV2` was not voice/document/audio refactoring and not a full molecule rewrite.
+- The safer move is to extract a shared **visual-media shell** (`photo`, `photoAlbum`, `video`, `animation`) because those branches already share the same sender/reply/media/caption/meta structure in Telegram, while `videoNote` and non-visual media have different geometry contracts.
+- Rule: after a text-family reset, pull one coherent media family into its own presentation atom and do a narrow live swap for that family only; keep instant video and non-visual rows on their dedicated paths until their own contracts are ready.
+
+## 126. Quote mode must come from explicit reply data, not from preview length heuristics
+- In this repo, `ChatTimelineVO` had started using `replyPreview.length > 80` as a fake proxy for quote mode.
+- That makes quote UI nondeterministic and ties product semantics to incidental string length. The correct contract is explicit: `replyIsQuote`, `replyQuoteText`, and optionally `replyQuoteOffset` should come from the message/reply data path, while the UI stays presentation-only.
+- Rule: if quote support is not truly available yet, keep the contract explicit and future-ready rather than inventing heuristics from text length.
+
+
+127. For visible quotes in chat bubbles, do not fake it from reply previews or string heuristics. Carry explicit quote ranges from TDLib text entities, then render them in a dedicated text-body atom so the live text branch can gain quote parity without reopening non-text branches.
+
+
+128. After adding visible blockquotes to text messages, reuse the same explicit quote-range contract for media captions instead of inventing a second caption-only renderer. Keep the quote-body atom shared and extend shell family by family.
+
+
+129. Telegram iOS blockquote tint is not a universal blue. In the text-bubble path it is derived from `baseQuoteTintColor = mainColor`, and in incoming group-message cases that `mainColor` can follow the sender-name color. When quote rendering looks too tall, first remove layout inflation from the accent-bar container and tighten quote paddings before reopening the whole bubble/meta layout.
+
+
+130. For quoted bubbles, a dedicated meta row is an easy but visually expensive shortcut. A closer Telegram-style path is to keep the invisible trailing reserve on the final visible segment (plain or quote) and let the bubble reuse the standard bottom-right overlay meta behavior; only special trailing-width heuristics should remain after that.
+
+
+131. When a user says quote color/height “did not change,” check whether they are actually looking at the reply snippet path. In this repo, `TgReplySnippet` is a separate visual contract from body blockquotes and must be tightened/tinted independently.
+
+
+132. In quote/reply snippets, a full-height accent bar (`height('100%')`) can become the reason the whole snippet feels too tall. If the stripe should follow content, give it an explicit content-sized height and let the outer snippet collapse to text instead of enforcing a container-wide min-height.
+
+
+133. When a Telegram quote/reply stripe looks “detached,” the issue may be its horizontal inset, not only its height. The stripe should usually be anchored to the left edge of the quote surface, while only the text content gets inner padding. For sender-name fallback colors, prefer the iOS `PeerNameColors.defaultSingleColors` palette over ad-hoc local hues.
+
+
+134. If sender/reply/quote colors “still feel wrong,” changing fallback hexes is often the wrong layer. Telegram peers carry accent identity in data (`nameColor` / `accent_color_id` style fields), and UI should prefer that protocol-backed source first. Only use a local palette as a fallback resolver when the peer accent id or the full accent-color table is unavailable.
+
+
+135. A peer `accent_color_id` alone is not the whole resolver for Telegram colors. Non-built-in ids need the global TDLib `updateAccentColors` table; for one-color UI surfaces (sender names, reply stripes, quote accents), prefer `built_in_accent_color_id` from the accent definition first, and only then fall back to exact theme color arrays or local defaults.
+
+
+136. In reply snippets, do not reuse the current message sender color for the stripe/title/tint. Telegram reply info colors are tied to the **quoted author**; carry a separate `replyAuthorColorHex` from the replied message and keep it distinct from the current bubble's `senderColorHex`.
+
+
+137. If a body blockquote stripe looks too short inside a rounded quote area, the problem is usually outer-container padding, not only stripe height. Keep the stripe as a full-height left-edge layer inside the clipped rounded surface, and move padding to the text-content row so the line visually reaches the quote block edges.
+
+
+138. If a quoted caption inside a media bubble looks more centered than the normal caption and seems to have larger edge insets, first compare the width contracts. In this repo the real bug was the quote-caption branch using `width('100%')` while the normal caption branch used `visualMediaBubbleWidth()`. Match structural width first; do not start with padding tweaks.
+
+139. If users want all quote/reply variants to feel the same, do not keep body blockquotes on a full clipped surface stripe while reply snippets use a shorter content-sized bar. In this repo, `TgReplySnippet` should follow the same left-edge full-surface stripe contract as `TgMessageTextBodyV2`; otherwise the two quote paths will keep reading as different UI systems.
+
+140. If quote/reply variants are supposed to feel like one system, do not leave `TgReplySnippet` on a separate shell-token family after body blockquotes already use `MSG_QUOTE_*`. In this repo the right split is: one shared quote-surface geometry/tint contract, different content models on top of it.
+
+141. In ArkUI `Stack`, a full-height decorative child can still distort perceived sizing if it participates like a normal layout child. For reply snippets in this repo, keep the stripe full-height but make it a positioned overlay layer so the content, not the stripe, determines snippet height.
+
+142. When a user reports that group-chat reply height is still wrong, first confirm the exact runtime path. In this repo, normal participant-to-participant text replies are `TgMessageRouter -> TgTextBubbleV2 -> TgReplySnippet`; once stripe geometry is already isolated, the next likely cause is reply-snippet text density (`padding_v`, line gap) or the parent gap around the snippet, not the quote stripe itself.
+
+143. When repeated stripe/layout tweaks still do not fix reply-snippet height, stop patching the same overlay model. In this repo, the correct next move was to replace the `TgReplySnippet` `Stack` composition with a content-driven `Row`, keeping the stripe as a left child and the text block as the weighted content region.
+
+144. Once `TgReplySnippet` internals are already tightened, the remaining excess height in ordinary group-text replies may live in the caller path, not in the snippet. In this repo, `TgTextBubbleV2` can add extra frame through its own margin/padding around the snippet, so inspect caller spacing before reopening the snippet internals again.
+
+145. The user was right that the height regression started when the stripe was pushed edge-to-edge. In this repo the fix is to separate measurement from decoration again: keep a content-measuring base row for the quote surface, and render the stripe as a positioned overlay so it can reach the edges without becoming the thing that defines height.
+
+146. If the quote surface is already content-sized but the stripe still looks wrong, stop changing the whole container. In this repo the remaining issue was the stripe contract alone: it needed explicit content-following height and a top offset equal to the snippet's vertical padding, not another full-surface height model.
+
+## 147. Reply stripe contract should follow the reply surface, not float beside it
+- **Context:** The reply-snippet line kept oscillating between “outside overlay” and “full-height lane” fixes, which made it hard to tell whether the geometry problem was height or ownership.
+- **Discovery:** Android makes the ownership explicit: `ChatMessageCell` draws the reply background and then `ReplyMessageLine.drawLine(...)` against the same reply rect. The line is structurally part of the quote/reply surface.
+- **Lesson:** For reply/quote blocks, first decide **which surface owns the stripe**, then tune padding/density. If the stripe is conceptually outside the clipped surface, later height/padding fixes will drift again.
+- **Tradeoff:** In ArkUI, putting the whole reply surface on the root `Stack` plus a `height('100%')` stripe looked structurally closer to Android, but reintroduced the height regression. For this repo, visual ownership and measurement ownership may need to stay split: stripe behaves like part of the quote area, but content row should still own height.
+
+## 148. cloneMessagesState must share inner Maps by reference
+- **Context:** Selector memoization (`selectChatMessages`, `selectChatMessagesForChatView`) compared inner `Map<string, Message>` by reference (`===`) to skip expensive O(n log n) re-sorts.
+- **Discovery:** `cloneMessagesState()` was creating `new Map(messageMap)` for EVERY chat on EVERY message dispatch. This broke reference identity for ALL chats, causing cache miss and full re-sort on every single event — even events for unrelated chats.
+- **Lesson:** When cloning a nested map structure for immutable state, only the outer container needs a new instance. Inner maps should be shared by reference; the reducer already creates a new inner Map for the specific chat it modifies.
+- **Fix:** `new Map<number, Map<string, Message>>(messages.messages)` — single constructor call, shares all inner maps.
+
+## 149. pendingFileIds must be cleaned up by resolved state, not only by gateway response
+- **Context:** `DownloadMessageMediaUseCase.pendingFileIds` tracked in-flight downloads to prevent duplicate enqueue.
+- **Discovery:** When TDLib completes a download via `updateFile` → FileNormalizer (the normal path for larger files), the file path gets updated in the store, but `pendingFileIds` was never cleaned up — it only cleared on direct gateway response or error. The Set grew monotonically for the lifetime of the session.
+- **Lesson:** Any dedup tracking Set that guards async operations must have a secondary cleanup path that syncs with the actual resolved state, not only with the initiating promise.
+- **Fix:** Added `scanFileSlot()` that deletes fileId from pendingFileIds when the path is already resolved (non-empty).
+
+## 151. Action menu: parallel arrays (buttons + actions) eliminate index tracking bugs
+- **Context:** Expanding the long-press action menu with conditional buttons (Edit only for own non-sticker messages, Copy only if text present).
+- **Discovery:** Using incremental index counter (`idx++`) to match dynamic buttons is fragile and error-prone. Parallel arrays (`buttons[]` + `actions[]`) with `actions[result.index]()` dispatch are cleaner and immune to ordering bugs.
+- **Lesson:** For dynamic action menus, build buttons and their handlers in parallel arrays. Dispatch by index into the actions array. Never hardcode button positions.
+
+## 154. showActionMenu buttons must be tuple, not array
+- **Context:** ArkTS `showActionMenu` expects `buttons: [Button, Button?, Button?, Button?, Button?, Button?]` — a fixed-length tuple.
+- **Discovery:** Building buttons dynamically with `Button[]` fails compilation: "Type 'Button[]' is not assignable to type '[Button, ...]'".
+- **Fix:** Cast via `as [promptAction.Button, promptAction.Button?, ...]`. The tuple still accepts 1-6 elements.
+
+## 156. Chat row needs press feedback for iOS parity
+- **Context:** iOS highlights chat rows on tap. Our rows had no visual feedback.
+- **Fix:** `.stateStyles({ pressed: { .backgroundColor(BG_SECONDARY) }, normal: { .backgroundColor(Transparent) } })` on ListItem.
+- **Lesson:** Always add press state feedback on tappable list items. Silent taps feel broken.
+
+## 157. Refresh component needs $$ two-way binding for refreshing state
+- **Context:** `Refresh({ refreshing: this.isRefreshing })` doesn't auto-reset the spinner.
+- **Discovery:** HarmonyOS docs explicitly state: "This parameter supports two-way binding through $$". Without `$$`, the component can't set `isRefreshing = false` after the refresh animation completes.
+- **Fix:** `Refresh({ refreshing: $$this.isRefreshing })`. Works with `@Local` in `@ComponentV2`.
+
+## 158. In shrink-wrapped ArkUI bubble shells, footer meta should follow content width, not `width('100%')`
+- **Context:** Several non-text bubble branches in `TgMessageRouter` still rendered time/status through a generic footer row with `width('100%')`.
+- **Discovery:** In shrink-wrapped ArkUI columns this is ambiguous: the footer can stretch against a looser container contract than the actual measured content width, so the time/status cluster visually drifts away from the bubble edge.
+- **Lesson:** For sticker/contact/location/poll/document-style bubbles, anchor the footer meta with `alignSelf(ItemAlign.End)` (or another explicit trailing contract) so it follows the real content width instead of a guessed full-width footer.
+- **Reference grounding:** Local Telegram iOS refs (`ChatMessageAttachedContentNode`, `ChatMessageMapBubbleContentNode`, `ChatMessagePollBubbleContentNode`, `ChatMessageAnimatedStickerItemNode`) place the date/status node against the trailing rendered content, not a generic stretch footer row.
+
+## 159. Sticker and plain-map messages are image-like surfaces; their time/status belongs on the surface, not under it
+- **Context:** Even after the generic footer-row fix, sticker messages and map-only location messages were still special cases.
+- **Discovery:** Local Telegram iOS refs show animated-sticker and plain-map paths anchoring `dateAndStatusNode` against the rendered media/image frame itself. Treating them like ordinary text-card footers keeps the time visually detached from the real surface.
+- **Lesson:** When a message body is effectively a standalone media surface (sticker, map snapshot without venue text, instant-video, photo/video without caption), use bottom-right overlay meta tied to that surface. Reserve footer rows for card-like content with real text/body below the media.
+
+## 155. Migrate deprecated promptAction to UIContext.getPromptAction()
+- **Context:** `promptAction.showToast()` and `promptAction.showActionMenu()` from `@kit.ArkUI` are deprecated since API 18.
+- **Discovery:** Build warnings flagged these. Official docs say: use `this.getUIContext().getPromptAction().showActionMenu()` instead.
+- **Lesson:** In `@ComponentV2` structs, always use UIContext-based API for prompt/dialog/toast. The global `promptAction.*` functions may have ambiguous UI context and will be removed.
+
+## 153. Search mode in top bar should replace content, not add a layer
+- **Context:** Adding in-chat message search to TgChatTopBar.
+- **Discovery:** iOS ref (`ChatSearchNavigationContentNode.swift`) replaces the title area with an inline search field in the same glass capsule, rather than adding a separate overlay or sheet.
+- **Lesson:** For mode-switching UI (normal → search), prefer content replacement within the existing container shape over adding new layers. This preserves the capsule glass design and avoids z-order/layout complexity.
+
+## 152. iOS reference determines action menu order and edit eligibility
+- **Context:** First implementation guessed the action order (Reply → Copy → Edit → Forward → Delete).
+- **Discovery:** iOS reference (`ChatInterfaceStateContextMenus.swift`) shows: Reply → Edit → Copy → [media] → Forward → separator → Delete. Edit excludes stickers, videoNotes, contacts, polls, games, invoices — not just "has text".
+- **Lesson:** Always inspect iOS reference before implementing Telegram UI semantics. The order and conditions are product decisions, not engineering guesses.
+
+## 150. Debounce 0ms in store subscription is a no-op
+- **Context:** ContactsPage and CallsPage used `setTimeout(..., 0)` for rebuild debounce.
+- **Discovery:** `setTimeout(fn, 0)` on HarmonyOS schedules on next microtask but provides zero actual debounce — rapid state changes still trigger rapid rebuilds.
+- **Lesson:** Match the debounce value across all pages. ChatListPage uses 300ms — other tabs should use the same unless there's a specific reason for a different value.
+
+## 153. Params wired through VO but not rendered are invisible bugs
+- **Context:** TgChatRow had `isTyping` as `@Param` since initial implementation. ChatItemVO built `typingText` correctly. ChatListPage swapped preview text when typing. But TgChatRow never used `isTyping` to change visual appearance.
+- **Discovery:** The typing preview text was already showing, but in the same gray color as normal preview — no visual distinction for the user.
+- **Lesson:** When adding a state param to a component, always check that the `build()` method actually uses it for visual differentiation. An unused `@Param` is a silent gap.
+
+## 154. Edit mode needs the same visual pattern as reply mode
+- **Context:** TgComposerInput had a full reply snippet bar (author + preview + cancel). Edit mode existed at screen level (startEditMessage/cancelEditMessage) but had zero visual signal in the composer.
+- **Discovery:** Users could enter edit mode via action menu, and the composer text would change, but nothing indicated they were editing vs. writing a new message. Cancel was only possible via sending empty text.
+- **Lesson:** Any modal composer state (reply, edit, forward) needs its own snippet bar following the same pattern: label + preview + cancel button.
+
+## 155. Data extracted by normalizer but not applied by reducer is invisible
+- **Context:** ChatNormalizer had `handleChatUnreadMentionCount` handler for over a month. ChatDto had `unreadMentionCount` field. But Chat model in AppState never received it, chatsReducer never applied it, cloneChat never copied it.
+- **Discovery:** The full TDLib → normalizer → DTO pipeline was present but the reducer → model link was missing. No amount of UI work could surface mention badges.
+- **Lesson:** When adding a TDLib update handler, trace the full pipeline: normalizer → DTO → reducer → model → cloneChat → VO → UI. If any link is broken, the data is extracted but never reaches the screen.
+
+## 156. Splitting a merged TDLib type requires fixing all downstream guards
+- **Context:** `chatTypeSecret` was previously merged with `chatTypePrivate` into one `'private'` type. Adding a separate `'secret'` type broke guards that only checked `type === 'private'`.
+- **Discovery:** Three places (TgProfilePage, ChatTimelineVO, ChatItemVO) relied on `type === 'private'` for peer-user logic. ChatItemVO was safe (uses `peerUserId > 0` instead of type check), but the other two needed `|| chat.type === 'secret'`.
+- **Lesson:** When splitting a merged enum value, grep for ALL downstream consumers of the original value. `peerUserId > 0` is more resilient than `type === 'private'` for "is this a 1:1 chat" checks.
+
+## 157. toFileUri() breaks MediaPlaybackController — paths for playback must stay raw
+- **Context:** `ChatTimelineVO.ets` converted `audioPath` via `toFileUri()` to `file://` URI for consistency with photo/video Image components. But `MediaPlaybackController` uses `fs.openSync(filePath)` which needs raw sandbox paths.
+- **Discovery:** `voicePath` was NOT converted (worked fine), but `audioPath` was converted (broke playback). `documentPath` also converted — breaks document-as-audio playback since the same path flows to `handleAudioTap` → `controller.toggle()`.
+- **Lesson:** `toFileUri()` is ONLY for ArkUI Image/Video components. Paths used by `fs.openSync()`, `AVPlayer.fdSrc`, or other file-system APIs must remain raw sandbox paths. When a path serves dual purposes (UI display + playback), either store both forms or convert file:// back to raw at the playback boundary.
+
+## 158. Event handlers declared in component but not wired at instantiation are silent failures
+- **Context:** `TgMessageRouter` declared `@Event onAudioSeek` and `@Event onVoiceSeek`. `TgChatScreenPage` had `handleAudioSeek` and `handleVoiceSeek` methods. But neither was passed in the TgMessageRouter constructor call.
+- **Discovery:** Seek gestures in TgAudioBubble and TgVoiceBubble fired the events, which called the default no-op `() => {}`. No error, no warning, just silent non-functionality.
+- **Lesson:** After adding `@Event` to a component, immediately grep for all instantiation sites and wire the handler. ArkTS does not warn about unwired events — they silently use defaults.
+
+## 159. Canvas waveform must use @Monitor for reactive playback progress
+- **Context:** TgVoiceBubble drew waveform bars in Canvas `onReady()` which fires once. Playback progress changed `playbackProgress` but Canvas never redrew — waveform coloring stayed static.
+- **Discovery:** iOS uses AudioWaveformComponent with progress-driven coloring. Our Canvas had no reactive update mechanism.
+- **Lesson:** Canvas `onReady()` fires once. For reactive updates, extract drawing to a method, flag `canvasReady`, and use `@Monitor('playbackProgress', ...)` to call the redraw method. Also use `lineCap='round'` + `stroke()` for iOS-matching rounded bar caps instead of `rect()`+`fill()`.
+
+## 160. Hardcoded colors in bubble components must use shared tokens
+- **Context:** All 4 media bubbles had `#40000000` (overlay), `#FFFFFF` (progress), `#40888888` (seek bg), `#99FFFFFF` (ring) hardcoded inline.
+- **Discovery:** Changing one overlay color would require editing 4+ files. iOS uses theme-centralized colors.
+- **Lesson:** Add shared tokens (`MEDIA_OVERLAY_DARK`, `MEDIA_PROGRESS_COLOR`, `MEDIA_SEEK_BG`, etc.) in TgUiTokens for cross-component media styles. Replace all inline hex values with tokens.
+
+## 161. Rich text entities require changes at 9 layers
+- **Context:** Adding bold/italic/code/link rendering required changes to: MessageDto (parsing), AppState (model), messagesReducer (DTO→State + clone), ChatTimelineVO (VO model + mapping), TgChatScreenPage (wiring), TgMessageRouter (params), TgTextBubbleV3 (proxy), TgTextBodyV3 (rendering), TgMessageTextBodyV2 (rendering).
+- **Discovery:** The quote pipeline was the perfect template — same parallel-array pattern extended to generic entities. The `buildStyledSpans()` boundary-splitting algorithm handles overlapping entities (bold+italic) correctly.
+- **Lesson:** When adding a new data field through the Telegram pipeline, follow the existing pattern end-to-end: TDLib → DTO → Reducer → State → VO → Router → Bubble → Body. Use ArkUI `Text() { Span() }` for styled segments — Span supports fontWeight, fontStyle, decoration, fontFamily, textBackgroundStyle.

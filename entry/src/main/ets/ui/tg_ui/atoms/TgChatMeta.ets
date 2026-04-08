@@ -17,6 +17,7 @@ export struct TgChatMeta {
   @Param unreadCount: number = 0;
   @Param isMuted: boolean = false;
   @Param isPinned: boolean = false;
+  @Param hasMention: boolean = false;
 
   @Param minWidth: number = TgUiTokens.CHAT_META_MIN_WIDTH;
   @Param topRowHeight: number = TgUiTokens.CHAT_META_TOP_ROW_HEIGHT;
@@ -65,12 +66,35 @@ export struct TgChatMeta {
   }
 
   @Builder
+  private buildMentionBadge() {
+    Row() {
+      Text('@')
+        .fontSize(TgUiTokens.CHAT_META_MENTION_FONT_SIZE)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(Color.White)
+    }
+    .width(TgUiTokens.CHAT_META_MENTION_BADGE_SIZE)
+    .height(TgUiTokens.CHAT_META_MENTION_BADGE_SIZE)
+    .borderRadius(TgUiTokens.CHAT_META_MENTION_BADGE_SIZE / 2)
+    .backgroundColor(this.isMuted ? TgUiTokens.COLOR_UNREAD_BG_MUTED : TgUiTokens.COLOR_UNREAD_BG)
+    .justifyContent(FlexAlign.Center)
+    .alignItems(VerticalAlign.Center)
+  }
+
+  @Builder
   private buildBottomContent() {
     if (this.unreadCount > 0) {
-      TgUnreadBadge({
-        count: this.unreadCount,
-        isMuted: this.isMuted
-      })
+      Row({ space: TgUiTokens.CHAT_META_BADGE_GAP }) {
+        if (this.hasMention) {
+          this.buildMentionBadge()
+        }
+        TgUnreadBadge({
+          count: this.unreadCount,
+          isMuted: this.isMuted
+        })
+      }
+    } else if (this.hasMention) {
+      this.buildMentionBadge()
     } else if (this.isPinned) {
       TgIcon({
         src: TgUiTokens.ICON_RES_PIN,

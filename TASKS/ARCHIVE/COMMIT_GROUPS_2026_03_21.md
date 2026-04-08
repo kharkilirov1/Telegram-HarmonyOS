@@ -39,7 +39,7 @@ Why this should go first:
 - already partially documented and discussed with real screenshots/logs.
 
 Refinement:
-- see `TASKS/COMMIT_GROUP_1_REPLY_AUTH_BOUNDARY.md`
+- see `TASKS/ARCHIVE/COMMIT_GROUP_1_REPLY_AUTH_BOUNDARY.md`
 - current status: **coherent but not file-ready yet**
 - several files still need hunk-splitting because reply/auth work is mixed with album-art, shell-token, media-layout, or cache changes
 
@@ -90,9 +90,9 @@ Why last:
 ### Commit group 5 — repo/docs/operator hygiene
 Files:
 - `.gitignore`
-- `TASKS/REPO_OPERATOR_HARDENING_PLAN.md`
-- `TASKS/WORKING_TREE_TRIAGE_2026_03_21.md`
-- `TASKS/COMMIT_GROUPS_2026_03_21.md`
+- `TASKS/ARCHIVE/REPO_OPERATOR_HARDENING_PLAN.md`
+- `TASKS/ARCHIVE/WORKING_TREE_TRIAGE_2026_03_21.md`
+- `TASKS/ARCHIVE/COMMIT_GROUPS_2026_03_21.md`
 - `scripts/hilog-filter.ps1`
 - root memory-pack updates (`STATUS.md`, `TASKS/TODO.md`, `TASKS/LESSONS.md`, optionally `TASKS/CURRENT_PATCHSET_BOUNDARY.md`)
 - `QWEN.md` if intentionally kept

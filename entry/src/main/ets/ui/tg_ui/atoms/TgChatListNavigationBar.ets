@@ -1,6 +1,7 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 import { TgIcon } from './TgIcon';
+import { TgTopChromeBackground } from './TgTopChromeBackground';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 
@@ -39,24 +40,6 @@ export struct TgChatListNavigationBar {
 
   private useRealtimeBlur(): boolean {
     return TgGlassPolicy.shouldUseRealtimeBlurForMode(this.glassMode);
-  }
-
-  @Builder
-  private buildGlassSpecular() {
-    if (this.useRealtimeBlur()) {
-      Column()
-        .width('100%')
-        .height('100%')
-        .linearGradient({
-          angle: 110,
-          colors: [
-            [TgUiTokens.GLASS_SPECULAR_TOP, 0.0],
-            [TgUiTokens.GLASS_SPECULAR_MID, 0.38],
-            [TgUiTokens.GLASS_SPECULAR_BOTTOM, 1.0]
-          ]
-        })
-        .hitTestBehavior(HitTestMode.Transparent)
-    }
   }
 
   @Builder
@@ -112,7 +95,7 @@ export struct TgChatListNavigationBar {
     Stack({ alignContent: Alignment.Center }) {
       Text(this.title)
         .fontSize(TgUiTokens.TOP_BAR_TITLE_SIZE)
-        .fontWeight(FontWeight.Bold)
+        .fontWeight(TgUiTokens.CHAT_LIST_NAV_TITLE_WEIGHT)
         .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -180,22 +163,27 @@ export struct TgChatListNavigationBar {
   }
 
   build() {
-    Column() {
-      Row()
-        .width('100%')
-        .height(this.topInset)
+    Stack({ alignContent: Alignment.TopStart }) {
+      TgTopChromeBackground({
+        topInset: this.topInset,
+        contentHeight: TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT,
+        glassMode: this.glassMode,
+        showBottomSeparator: true,
+        showTopEdgeEmphasis: this.useRealtimeBlur()
+      })
 
-      this.buildTitleRow()
-      this.buildSearchRow()
+      Column() {
+        Row()
+          .width('100%')
+          .height(this.topInset)
+
+        this.buildTitleRow()
+        this.buildSearchRow()
+      }
+      .height(this.topInset + TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT)
+      .width('100%')
     }
     .height(this.topInset + TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT)
     .width('100%')
-    .backgroundColor(this.useRealtimeBlur() ? TgUiTokens.TOP_BAR_GLASS_BG : TgUiTokens.TOP_BAR_GLASS_FALLBACK_BG)
-    .backgroundBlurStyle(TgGlassPolicy.topBarBlurStyle(), TgGlassPolicy.glassOptions())
-    .overlay(this.buildGlassSpecular())
-    .border({
-      width: { bottom: TgUiTokens.TOP_BAR_SEPARATOR_STROKE },
-      color: TgUiTokens.TOP_BAR_SEPARATOR
-    })
   }
 }

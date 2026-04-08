@@ -7,6 +7,7 @@ import { chatsReducer } from './chatsReducer';
 import { messagesReducer } from './messagesReducer';
 import { usersReducer } from './usersReducer';
 import { filesReducer } from './filesReducer';
+import { accentColorsReducer } from './accentColorsReducer';
 
 export type AppReducerFn = (state: AppState, action: ReducerAction) => AppState;
 
@@ -44,6 +45,11 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
   // Files / media transfer state
   if (action.type === 'fileDownloaded' || action.type === 'fileTransferUpdated') {
     return filesReducer(state, action);
+  }
+
+  // Global accent color registry
+  if (action.type === 'accentColorsUpdated') {
+    return accentColorsReducer(state, action);
   }
 
   // Unknown event type — no state change

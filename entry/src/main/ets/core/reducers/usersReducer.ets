@@ -30,6 +30,7 @@ export function usersReducer(state: AppState, action: ReducerAction): AppState {
         user.firstName = event.userData.firstName;
         user.lastName = event.userData.lastName;
         user.username = event.userData.username;
+        user.accentColorId = event.userData.accentColorId;
         user.phoneNumber = event.userData.phoneNumber;
         user.photoSmall = event.userData.photo?.small || '';
         user.photoBig = event.userData.photo?.big || '';
@@ -37,6 +38,8 @@ export function usersReducer(state: AppState, action: ReducerAction): AppState {
         user.status = event.userData.status;
         user.isContact = event.userData.isContact;
         user.isVerified = event.userData.isVerified;
+        user.isScam = event.userData.isScam;
+        user.isFake = event.userData.isFake;
         user.isPremium = event.userData.isPremium;
         
         newState.users.users.set(event.userId, user);
@@ -50,6 +53,7 @@ export function usersReducer(state: AppState, action: ReducerAction): AppState {
         if (event.updates.firstName !== undefined) { updatedUser.firstName = event.updates.firstName; }
         if (event.updates.lastName !== undefined) { updatedUser.lastName = event.updates.lastName; }
         if (event.updates.username !== undefined) { updatedUser.username = event.updates.username; }
+        if (event.updates.accentColorId !== undefined) { updatedUser.accentColorId = event.updates.accentColorId; }
         if (event.updates.phoneNumber !== undefined) { updatedUser.phoneNumber = event.updates.phoneNumber; }
         if (event.updates.photo !== undefined) {
           updatedUser.photoSmall = event.updates.photo.small;
@@ -61,6 +65,8 @@ export function usersReducer(state: AppState, action: ReducerAction): AppState {
         }
         if (event.updates.isContact !== undefined) { updatedUser.isContact = event.updates.isContact; }
         if (event.updates.isVerified !== undefined) { updatedUser.isVerified = event.updates.isVerified; }
+        if (event.updates.isScam !== undefined) { updatedUser.isScam = event.updates.isScam; }
+        if (event.updates.isFake !== undefined) { updatedUser.isFake = event.updates.isFake; }
         if (event.updates.isPremium !== undefined) { updatedUser.isPremium = event.updates.isPremium; }
         
         newState.users.users.set(event.userId, updatedUser);

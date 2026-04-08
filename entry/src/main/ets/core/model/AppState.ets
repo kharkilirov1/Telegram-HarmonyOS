@@ -7,7 +7,7 @@ import { AnyAppEvent } from './AppEvent';
 // Type definitions
 export type AuthStatus = 'notInitialized' | 'waitTdlibParameters' | 'waitPhoneNumber' | 'waitCode' | 'waitPassword' | 'waitRegistration' | 'waitQrCode' | 'ready' | 'loggingOut' | 'closing' | 'closed';
 export type ConnectionStatus = 'updating' | 'ready' | 'connecting' | 'waitingForNetwork';
-export type ChatType = 'private' | 'group' | 'supergroup' | 'channel';
+export type ChatType = 'private' | 'secret' | 'group' | 'supergroup' | 'channel';
 export type ChatsLoadPhase = 'idle' | 'bootstrap' | 'pagination';
 export type MessageContentType = 'text' | 'photo' | 'video' | 'document' | 'audio' | 'voice' | 'sticker' | 'location' | 'contact' | 'poll' | 'animation' | 'videoNote' | 'unknown';
 export type MessageSendStatus = 'none' | 'pending' | 'sent' | 'failed';
@@ -45,8 +45,10 @@ export class Chat {
   id: ChatId = 0;
   type: ChatType = 'private';
   peerUserId: UserId = 0; // for private/secret chats
+  accentColorId: number = -1;
   title: string = '';
   unreadCount: number = 0;
+  unreadMentionCount: number = 0;
   muteForSeconds: number = 0;
   lastReadOutboxMessageId: MessageId = '0';
   lastReadInboxMessageId: MessageId = '0';
@@ -80,11 +82,30 @@ export class ChatsState {
   loadPhase: ChatsLoadPhase = 'idle';
 }
 
+export class MessageQuoteEntity {
+  offset: number = 0;
+  length: number = 0;
+  isCollapsed: boolean = false;
+}
+
+// Rich text entity from TDLib formattedText.entities
+export class TextEntity {
+  offset: number = 0;
+  length: number = 0;
+  type: string = ''; // bold, italic, underline, strikethrough, code, pre, url, textUrl, mention, mentionName, hashtag, cashtag, botCommand, emailAddress, phoneNumber, spoiler, customEmoji, blockQuote, expandableBlockQuote
+  url: string = ''; // for textUrl type
+  userId: number = 0; // for mentionName type
+  language: string = ''; // for preCode type
+}
+
 // Message content
 export class MessageContent {
   type: MessageContentType = 'text';
   text: string = '';
   caption: string = '';
+  quoteEntities: MessageQuoteEntity[] = [];
+  textEntities: TextEntity[] = [];
+  captionEntities: TextEntity[] = [];
 
   // Photo
   photoPath: string = '';
@@ -146,6 +167,33 @@ export class MessageContent {
   videoNoteFileId: number = 0;
   videoNoteDuration: number = 0;
   videoNoteLength: number = 0;
+
+  // Contact
+  contactFirstName: string = '';
+  contactLastName: string = '';
+  contactPhoneNumber: string = '';
+  contactUserId: number = 0;
+
+  // Location
+  locationLatitude: number = 0;
+  locationLongitude: number = 0;
+  locationVenueTitle: string = '';
+  locationVenueAddress: string = '';
+
+  // Poll
+  pollQuestion: string = '';
+  pollTotalVoterCount: number = 0;
+  pollIsClosed: boolean = false;
+  pollIsAnonymous: boolean = true;
+  pollType: string = 'regular'; // 'regular' | 'quiz'
+  pollOptions: PollOption[] = [];
+}
+
+export class PollOption {
+  text: string = '';
+  voterCount: number = 0;
+  votePercentage: number = 0;
+  isChosen: boolean = false;
 }
 
 // Message state - uses string for MessageId (int64)
@@ -162,6 +210,9 @@ export class Message {
   isPending: boolean = false;
   editDate: number = 0;
   replyToMessageId: MessageId = '0';
+  replyIsQuote: boolean = false;
+  replyQuoteText: string = '';
+  replyQuoteOffset: number = -1;
   sendStatus: MessageSendStatus = 'none';
   sendErrorCode: number = 0;
   sendErrorMessage: string = '';
@@ -197,12 +248,26 @@ export class FilesState {
   transfers: Map<number, FileTransfer> = new Map<number, FileTransfer>();
 }
 
+export class AccentColorDefinition {
+  id: number = -1;
+  builtInAccentColorId: number = -1;
+  lightThemeColors: number[] = [];
+  darkThemeColors: number[] = [];
+  minChannelChatBoostLevel: number = 0;
+}
+
+export class AccentColorsState {
+  colors: Map<number, AccentColorDefinition> = new Map<number, AccentColorDefinition>();
+  availableAccentColorIds: number[] = [];
+}
+
 // User state
 export class User {
   id: UserId = 0;
   firstName: string = '';
   lastName: string = '';
   username: string = '';
+  accentColorId: number = -1;
   phoneNumber: string = '';
   photoSmall: string = '';
   photoBig: string = '';
@@ -210,6 +275,8 @@ export class User {
   status: UserStatusType = 'offline';
   isContact: boolean = false;
   isVerified: boolean = false;
+  isScam: boolean = false;
+  isFake: boolean = false;
   isPremium: boolean = false;
   bio: string = '';
 }
@@ -225,6 +292,7 @@ export class AppState {
   chats: ChatsState = new ChatsState();
   messages: MessagesState = new MessagesState();
   files: FilesState = new FilesState();
+  accentColors: AccentColorsState = new AccentColorsState();
   users: UsersState = new UsersState();
   lastEvent?: AnyAppEvent;
   version: number = 1;

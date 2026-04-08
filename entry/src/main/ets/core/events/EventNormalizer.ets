@@ -10,6 +10,7 @@ import { registerChatHandlers } from './normalizers/ChatNormalizer';
 import { registerMessageHandlers } from './normalizers/MessageNormalizer';
 import { registerUserHandlers } from './normalizers/UserNormalizer';
 import { registerFileHandlers } from './normalizers/FileNormalizer';
+import { registerAccentColorHandlers } from './normalizers/AccentColorNormalizer';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN = 0x0003;
@@ -38,6 +39,7 @@ export class EventNormalizerImpl implements EventNormalizer {
     registerMessageHandlers(this.handlers);
     registerUserHandlers(this.handlers);
     registerFileHandlers(this.handlers);
+    registerAccentColorHandlers(this.handlers);
 
     hilog.info(DOMAIN, TAG, 'Registered %{public}d update handlers', this.handlers.size);
   }

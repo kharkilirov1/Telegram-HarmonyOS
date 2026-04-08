@@ -90,7 +90,7 @@ The script runs:
 1. `hvigorw clean --no-daemon`
 2. `hvigorw assembleHap --mode module -p product=default -p buildMode=debug --no-daemon`
 
-> Note: it requires DevEco/HarmonyOS command-line tooling (`hvigorw` or `hvigor`) available in `PATH`.
+> Note: the script first checks `hvigorw` / `hvigor` in `PATH`, then falls back to the default DevEco Studio install path (`C:\Program Files\Huawei\DevEco Studio\tools\hvigor\bin\hvigorw.bat`).
 
 ### tg_ui shell smoke script (PowerShell)
 
@@ -100,10 +100,11 @@ The script runs:
 
 Checks:
 - no hardcoded hex colors in current shell/chatlist/chat-screen tg_ui files
-- `TgChatRow` uses `@Reusable`
-- `ChatListPage` applies `.reuseId(...)` in `LazyForEach`
+- `TgChatRow` uses `@ComponentV2`
+- `ChatListPage` still applies `.reuseId(...)` on the live chat-list row path
 - `MainTabsPage` composes `TgTabBar`
-- `ChatListPage` composes `TgTopBar` + `TgSearchBar`
+- `ChatListPage` composes `TgChatListNavigationBar`
+- `TgChatListNavigationBar` composes ArkUI `Search` for the live chat-list search lane
 - `TgChatScreenPage` composes `TgChatTopBar` + `TgMessageRouter`
 
 ## CI

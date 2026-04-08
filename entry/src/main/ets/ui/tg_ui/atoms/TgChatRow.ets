@@ -21,10 +21,15 @@ export class TgChatRowData {
   avatarUseImage: boolean = false;
   avatarImageSrc: Resource | string = $r('app.media.app_icon_transparent');
   avatarIsOnline: boolean = false;
+  isVerified: boolean = false;
+  isScam: boolean = false;
+  isFake: boolean = false;
+  isSecret: boolean = false;
   avatarBackgroundColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG;
   avatarTextColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT;
   isTyping: boolean = false;
   isDraft: boolean = false;
+  hasMention: boolean = false;
 }
 
 @ComponentV2
@@ -43,11 +48,16 @@ export struct TgChatRow {
   @Param avatarUseImage: boolean = false;
   @Param avatarImageSrc: ResourceStr = $r('app.media.app_icon_transparent');
   @Param avatarIsOnline: boolean = false;
+  @Param isVerified: boolean = false;
+  @Param isScam: boolean = false;
+  @Param isFake: boolean = false;
+  @Param isSecret: boolean = false;
   @Param avatarBackgroundColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG;
   @Param avatarTextColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT;
   @Param showSeparator: boolean = true;
   @Param isTyping: boolean = false;
   @Param isDraft: boolean = false;
+  @Param hasMention: boolean = false;
 
   private previewText(): string {
     return this.preview.length > 0 ? this.preview : ' ';
@@ -73,6 +83,9 @@ export struct TgChatRow {
   }
 
   private previewBodyColor(): ResourceColor {
+    if (this.isTyping) {
+      return TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT;
+    }
     return TgUiTokens.COLOR_TEXT_PREVIEW;
   }
 
@@ -81,6 +94,42 @@ export struct TgChatRow {
       return TgUiTokens.COLOR_AUTHOR_NAME;
     }
     return TgUiTokens.COLOR_TEXT_ERROR;
+  }
+
+  @Builder
+  private buildVerifiedBadge() {
+    Row() {
+      TgIcon({
+        src: TgUiTokens.ICON_RES_CHECK,
+        iconSize: TgUiTokens.CHAT_ROW_VERIFIED_ICON_SIZE,
+        tintColor: TgUiTokens.CHAT_ROW_VERIFIED_ICON_TINT
+      })
+    }
+    .width(TgUiTokens.CHAT_ROW_VERIFIED_BADGE_SIZE)
+    .height(TgUiTokens.CHAT_ROW_VERIFIED_BADGE_SIZE)
+    .justifyContent(FlexAlign.Center)
+    .alignItems(VerticalAlign.Center)
+    .backgroundColor(TgUiTokens.CHAT_ROW_VERIFIED_BADGE_BG)
+    .borderRadius(TgUiTokens.CHAT_ROW_VERIFIED_BADGE_SIZE / 2)
+    .margin({ left: TgUiTokens.CHAT_ROW_TITLE_VERIFIED_GAP })
+  }
+
+  @Builder
+  private buildScamFakeBadge() {
+    Text(this.isScam ? 'SCAM' : 'FAKE')
+      .fontSize(TgUiTokens.CHAT_ROW_SCAM_FONT_SIZE)
+      .fontWeight(FontWeight.Bold)
+      .fontColor(TgUiTokens.COLOR_TEXT_ERROR)
+      .borderWidth(1)
+      .borderColor(TgUiTokens.COLOR_TEXT_ERROR)
+      .borderRadius(TgUiTokens.CHAT_ROW_SCAM_RADIUS)
+      .padding({
+        left: TgUiTokens.CHAT_ROW_SCAM_PADDING_H,
+        right: TgUiTokens.CHAT_ROW_SCAM_PADDING_H,
+        top: 1,
+        bottom: 1
+      })
+      .margin({ left: TgUiTokens.CHAT_ROW_TITLE_VERIFIED_GAP })
   }
 
   @Builder
@@ -122,13 +171,28 @@ export struct TgChatRow {
         Row() {
           Column({ space: TgUiTokens.CHAT_ROW_TITLE_PREVIEW_GAP }) {
             Row() {
+              if (this.isSecret) {
+                TgIcon({
+                  src: TgUiTokens.ICON_RES_LOCK,
+                  iconSize: TgUiTokens.CHAT_ROW_SECRET_ICON_SIZE,
+                  tintColor: TgUiTokens.COLOR_SECRET_CHAT
+                })
+                  .margin({ right: 4 })
+              }
+
               Text(this.titleText())
                 .fontSize(TgUiTokens.CHAT_ROW_TITLE_FONT_SIZE)
                 .fontWeight(FontWeight.Medium)
-                .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+                .fontColor(this.isSecret ? TgUiTokens.COLOR_SECRET_CHAT : TgUiTokens.COLOR_TEXT_TITLE)
                 .maxLines(1)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
                 .layoutWeight(1)
+
+              if (this.isScam || this.isFake) {
+                this.buildScamFakeBadge()
+              } else if (this.isVerified) {
+                this.buildVerifiedBadge()
+              }
 
               if (this.isMuted) {
                 TgIcon({
@@ -154,6 +218,7 @@ export struct TgChatRow {
             unreadCount: this.unreadCount,
             isMuted: this.isMuted,
             isPinned: this.isPinned,
+            hasMention: this.hasMention,
             minWidth: TgUiTokens.CHAT_ROW_META_FIXED_WIDTH
           })
             .width(TgUiTokens.CHAT_ROW_META_FIXED_WIDTH)

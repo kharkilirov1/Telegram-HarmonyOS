@@ -157,7 +157,7 @@ export struct TgProfilePage {
     // Fetch full info from TDLib
     const chat = state.chats.chats.get(chatId);
     if (chat) {
-      if (chat.type === 'private' && chat.peerUserId > 0) {
+      if ((chat.type === 'private' || chat.type === 'secret') && chat.peerUserId > 0) {
         loadUserFullInfo(chat.peerUserId);
       } else if ((chat.type === 'supergroup' || chat.type === 'channel') && chat.supergroupId > 0) {
         loadSupergroupFullInfo(chatId, chat.supergroupId);
@@ -176,7 +176,7 @@ export struct TgProfilePage {
     this.inviteLink = chat.inviteLink;
     this.administratorCount = chat.administratorCount;
 
-    if (chat.type === 'private' && chat.peerUserId > 0) {
+    if ((chat.type === 'private' || chat.type === 'secret') && chat.peerUserId > 0) {
       const user = state.users.users.get(chat.peerUserId);
       if (user) {
         const fullName = (user.firstName + ' ' + user.lastName).trim();

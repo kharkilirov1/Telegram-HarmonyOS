@@ -60,6 +60,9 @@ export interface TdInputMessageText {
 
 export interface TdReplyTo {
   message_id?: number;
+  quote?: boolean | TdObject;
+  quote_text?: string;
+  quote_offset?: number;
 }
 
 export interface TdForwardInfo {

@@ -24,10 +24,13 @@ export class UserDto {
   firstName: string = '';
   lastName: string = '';
   username: string = '';
+  accentColorId: number = -1;
   phoneNumber: string = '';
   photo?: UserPhoto;
   isContact: boolean = false;
   isVerified: boolean = false;
+  isScam: boolean = false;
+  isFake: boolean = false;
   isPremium: boolean = false;
   status: UserStatus = 'offline';
 }
@@ -73,6 +76,18 @@ function extractUserPhoto(profilePhoto: TdObject): UserPhoto | undefined {
   return photo;
 }
 
+function extractOptionalAccentColorId(tdObject: TdObject): number {
+  const rawValue = tdObject.get('accent_color_id');
+  if (typeof rawValue === 'number') {
+    return rawValue;
+  }
+  if (typeof rawValue === 'string' && rawValue.length > 0) {
+    const parsed = parseInt(rawValue, 10);
+    return Number.isNaN(parsed) ? -1 : parsed;
+  }
+  return -1;
+}
+
 // Helper to create DTO from raw TDLib user object
 export function createUserDtoFromTd(tdUser: TdObject): UserDto {
   const tdStatus = tdGetObject(tdUser, 'status');
@@ -82,9 +97,12 @@ export function createUserDtoFromTd(tdUser: TdObject): UserDto {
   userDto.id = tdUser.getTopLevelNumber('id');
   userDto.firstName = tdGetString(tdUser, 'first_name');
   userDto.lastName = tdGetString(tdUser, 'last_name');
+  userDto.accentColorId = extractOptionalAccentColorId(tdUser);
   userDto.phoneNumber = tdGetString(tdUser, 'phone_number');
   userDto.isContact = tdGetBoolean(tdUser, 'is_contact');
   userDto.isVerified = tdGetBoolean(tdUser, 'is_verified');
+  userDto.isScam = tdGetBoolean(tdUser, 'is_scam');
+  userDto.isFake = tdGetBoolean(tdUser, 'is_fake');
   userDto.isPremium = tdGetBoolean(tdUser, 'is_premium');
   userDto.status = status;
 
@@ -111,11 +129,14 @@ export class UserUpdateDto {
   firstName?: string;
   lastName?: string;
   username?: string;
+  accentColorId?: number;
   phoneNumber?: string;
   photo?: UserPhoto;
   status?: UserStatus;
   isContact?: boolean;
   isVerified?: boolean;
+  isScam?: boolean;
+  isFake?: boolean;
   isPremium?: boolean;
 }
 
@@ -126,21 +147,27 @@ export function applyUserUpdate(user: UserDto, update: UserUpdateDto): UserDto {
   updatedUser.firstName = user.firstName;
   updatedUser.lastName = user.lastName;
   updatedUser.username = user.username;
+  updatedUser.accentColorId = user.accentColorId;
   updatedUser.phoneNumber = user.phoneNumber;
   updatedUser.photo = user.photo;
   updatedUser.isContact = user.isContact;
   updatedUser.isVerified = user.isVerified;
+  updatedUser.isScam = user.isScam;
+  updatedUser.isFake = user.isFake;
   updatedUser.isPremium = user.isPremium;
   updatedUser.status = user.status;
 
   if (update.firstName !== undefined) { updatedUser.firstName = update.firstName; }
   if (update.lastName !== undefined) { updatedUser.lastName = update.lastName; }
   if (update.username !== undefined) { updatedUser.username = update.username; }
+  if (update.accentColorId !== undefined) { updatedUser.accentColorId = update.accentColorId; }
   if (update.phoneNumber !== undefined) { updatedUser.phoneNumber = update.phoneNumber; }
   if (update.photo !== undefined) { updatedUser.photo = update.photo; }
   if (update.status !== undefined) { updatedUser.status = update.status; }
   if (update.isContact !== undefined) { updatedUser.isContact = update.isContact; }
   if (update.isVerified !== undefined) { updatedUser.isVerified = update.isVerified; }
+  if (update.isScam !== undefined) { updatedUser.isScam = update.isScam; }
+  if (update.isFake !== undefined) { updatedUser.isFake = update.isFake; }
   if (update.isPremium !== undefined) { updatedUser.isPremium = update.isPremium; }
 
   return updatedUser;

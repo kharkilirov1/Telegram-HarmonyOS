@@ -58,5 +58,6 @@ devnull
 hvigor-debug.txt
 .project-memory-backups/
 рефенсы/
-UI_PLAN*.md
-PROJECT_ANALYSIS.md
+
+# Temporary / scratch
+tmp/

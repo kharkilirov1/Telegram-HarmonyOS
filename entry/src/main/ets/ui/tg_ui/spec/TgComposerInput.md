@@ -3,7 +3,7 @@
 ## Goal
 Build Telegram-like bottom composer panel:
 - attach button
-- unified rounded glass capsule with placeholder/text
+- rounded glass text capsule with placeholder/text
 - emoji button
 - mic/send action button
 - optional reply snippet block on top
@@ -33,11 +33,15 @@ UI-only scope for this step. No message send logic, no keyboard controller integ
 - `replyIsOutgoing: boolean`
 - `replyIsQuote: boolean`
 - `replyHasThumbnail: boolean`
+- `showEditSnippet: boolean`
+- `editPreview: string`
 - `containerWidth: number`
 - `bottomInset: number`
 - callbacks:
   - `onTextChange(text)`
   - `onSendPress(text)`
+  - `onReplyCancelPress()`
+  - `onEditCancelPress()`
 
 ## State Matrix (demo)
 - empty idle (interactive)
@@ -45,6 +49,7 @@ UI-only scope for this step. No message send logic, no keyboard controller integ
 - long text (send)
 - multiline text
 - with reply snippet
+- with edit snippet
 - no attach button
 - no emoji button
 - disabled
@@ -52,14 +57,13 @@ UI-only scope for this step. No message send logic, no keyboard controller integ
 - wide container
 
 ## Layout Rules
-1) Main row is a **single unified glass capsule**:
-   - optional attach button
-   - inline `TextArea`
-   - optional emoji button
-   - action button (mic or send)
+1) Main row is a **three-piece glass composition**, not one monolithic capsule:
+   - optional attach circle
+   - central text capsule with inline emoji lane
+   - trailing action circle (mic or send)
 2) The input field uses ArkUI `TextContentStyle.INLINE` so stock text-box chrome does not fight the custom capsule shell.
 3) The send-style Enter key uses `onSubmit(..., SubmitEvent)` + `keepEditableState()` so the keyboard can stay visible after submit.
-4) Reply snippet is optional and rendered above the main input row with a tokenized gap.
+4) Reply snippet is optional and rendered above the main input row as its own glass strip with a tokenized gap and trailing cancel control.
 5) All colors/sizes/weights/radii are tokenized in `TgUiTokens`.
 
 ## Token Mapping
@@ -79,6 +83,8 @@ UI-only scope for this step. No message send logic, no keyboard controller integ
   - `COMPOSER_SIDE_INSET`
   - `COMPOSER_VERTICAL_INSET`
   - `COMPOSER_REPLY_GAP`
+  - `COMPOSER_REPLY_CLOSE_SIZE`
+  - `COMPOSER_REPLY_CLOSE_GAP`
   - `COMPOSER_TEXT_PADDING_TOP/BOTTOM/LEFT/RIGHT`
   - `COMPOSER_ATTACH_LEFT_INSET`
   - `COMPOSER_BORDER_WIDTH`
@@ -97,6 +103,7 @@ UI-only scope for this step. No message send logic, no keyboard controller integ
 - [ ] Emoji lane is optional and does not collapse the send button hit target
 - [ ] Placeholder/text typography stays telegram-like and tokenized
 - [ ] Reply snippet integration does not break panel alignment
+- [ ] Reply snippet cancel action stays inside the atom contract
 - [ ] Narrow/wide container behavior is stable
 - [ ] Tokens-only implementation (no magic visual numbers)
 

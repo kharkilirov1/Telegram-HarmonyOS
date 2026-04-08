@@ -39,8 +39,8 @@ $chatListNavFile = Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgChatList
 $mainTabsFile = Join-Path $root 'entry/src/main/ets/ui/pages/MainTabsPage.ets'
 $chatScreenFile = Join-Path $root 'entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets'
 
-if (-not (Select-String -Path $chatRowFile -Pattern '@Reusable')) {
-  Write-Error 'TgChatRow must be marked with @Reusable.'
+if (-not (Select-String -Path $chatRowFile -Pattern '@ComponentV2')) {
+  Write-Error 'TgChatRow must be marked with @ComponentV2.'
   exit 1
 }
 

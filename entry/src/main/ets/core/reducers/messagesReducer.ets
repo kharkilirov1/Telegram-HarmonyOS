@@ -2,7 +2,7 @@
 // Pure function, no side effects
 // Uses real data from DTOs instead of hardcoded values
 
-import { AppState, Message, MessageContent, MessageSendStatus, ReducerAction } from '../model/AppState';
+import { AppState, Message, MessageContent, MessageQuoteEntity, TextEntity, MessageSendStatus, PollOption, ReducerAction } from '../model/AppState';
 import {
   NewMessageEvent,
   MessageUpdatedEvent,
@@ -29,6 +29,33 @@ function contentFromDto(dto: MessageContentDto): MessageContent {
     'voice' | 'sticker' | 'location' | 'contact' | 'poll' | 'animation' | 'videoNote' | 'unknown';
   content.text = dto.text;
   content.caption = dto.caption;
+  content.quoteEntities = dto.quoteEntities.map((entity) => {
+    const clone = new MessageQuoteEntity();
+    clone.offset = entity.offset;
+    clone.length = entity.length;
+    clone.isCollapsed = entity.isCollapsed;
+    return clone;
+  });
+  content.textEntities = dto.textEntities.map((e) => {
+    const clone = new TextEntity();
+    clone.offset = e.offset;
+    clone.length = e.length;
+    clone.type = e.type;
+    clone.url = e.url;
+    clone.userId = e.userId;
+    clone.language = e.language;
+    return clone;
+  });
+  content.captionEntities = dto.captionEntities.map((e) => {
+    const clone = new TextEntity();
+    clone.offset = e.offset;
+    clone.length = e.length;
+    clone.type = e.type;
+    clone.url = e.url;
+    clone.userId = e.userId;
+    clone.language = e.language;
+    return clone;
+  });
 
   content.photoPath = dto.photoPath;
   content.photoThumbPath = dto.photoThumbPath;
@@ -82,6 +109,30 @@ function contentFromDto(dto: MessageContentDto): MessageContent {
   content.videoNoteFileId = dto.videoNoteFileId;
   content.videoNoteDuration = dto.videoNoteDuration;
   content.videoNoteLength = dto.videoNoteLength;
+
+  content.contactFirstName = dto.contactFirstName;
+  content.contactLastName = dto.contactLastName;
+  content.contactPhoneNumber = dto.contactPhoneNumber;
+  content.contactUserId = dto.contactUserId;
+
+  content.locationLatitude = dto.locationLatitude;
+  content.locationLongitude = dto.locationLongitude;
+  content.locationVenueTitle = dto.locationVenueTitle;
+  content.locationVenueAddress = dto.locationVenueAddress;
+
+  content.pollQuestion = dto.pollQuestion;
+  content.pollTotalVoterCount = dto.pollTotalVoterCount;
+  content.pollIsClosed = dto.pollIsClosed;
+  content.pollIsAnonymous = dto.pollIsAnonymous;
+  content.pollType = dto.pollType;
+  content.pollOptions = dto.pollOptions.map((opt) => {
+    const o = new PollOption();
+    o.text = opt.text;
+    o.voterCount = opt.voterCount;
+    o.votePercentage = opt.votePercentage;
+    o.isChosen = opt.isChosen;
+    return o;
+  });
   return content;
 }
 
@@ -100,6 +151,9 @@ function messageFromDto(dto: MessageDto): Message {
   message.isPending = dto.isPending;
   message.editDate = dto.editDate;
   message.replyToMessageId = dto.replyToMessageId;
+  message.replyIsQuote = dto.replyIsQuote;
+  message.replyQuoteText = dto.replyQuoteText;
+  message.replyQuoteOffset = dto.replyQuoteOffset;
   message.sendStatus = dto.isPending ? 'pending' : 'none';
   return message;
 }
@@ -116,6 +170,25 @@ function cloneMessage(msg: Message): Message {
   clonedContent.type = msg.content.type;
   clonedContent.text = msg.content.text;
   clonedContent.caption = msg.content.caption;
+  clonedContent.quoteEntities = msg.content.quoteEntities.map((entity) => {
+    const cloneEntity = new MessageQuoteEntity();
+    cloneEntity.offset = entity.offset;
+    cloneEntity.length = entity.length;
+    cloneEntity.isCollapsed = entity.isCollapsed;
+    return cloneEntity;
+  });
+  clonedContent.textEntities = msg.content.textEntities.map((e) => {
+    const ce = new TextEntity();
+    ce.offset = e.offset; ce.length = e.length; ce.type = e.type;
+    ce.url = e.url; ce.userId = e.userId; ce.language = e.language;
+    return ce;
+  });
+  clonedContent.captionEntities = msg.content.captionEntities.map((e) => {
+    const ce = new TextEntity();
+    ce.offset = e.offset; ce.length = e.length; ce.type = e.type;
+    ce.url = e.url; ce.userId = e.userId; ce.language = e.language;
+    return ce;
+  });
   clonedContent.photoPath = msg.content.photoPath;
   clonedContent.photoThumbPath = msg.content.photoThumbPath;
   clonedContent.photoFileId = msg.content.photoFileId;
@@ -161,6 +234,20 @@ function cloneMessage(msg: Message): Message {
   clonedContent.videoNoteFileId = msg.content.videoNoteFileId;
   clonedContent.videoNoteDuration = msg.content.videoNoteDuration;
   clonedContent.videoNoteLength = msg.content.videoNoteLength;
+  clonedContent.contactFirstName = msg.content.contactFirstName;
+  clonedContent.contactLastName = msg.content.contactLastName;
+  clonedContent.contactPhoneNumber = msg.content.contactPhoneNumber;
+  clonedContent.contactUserId = msg.content.contactUserId;
+  clonedContent.locationLatitude = msg.content.locationLatitude;
+  clonedContent.locationLongitude = msg.content.locationLongitude;
+  clonedContent.locationVenueTitle = msg.content.locationVenueTitle;
+  clonedContent.locationVenueAddress = msg.content.locationVenueAddress;
+  clonedContent.pollQuestion = msg.content.pollQuestion;
+  clonedContent.pollTotalVoterCount = msg.content.pollTotalVoterCount;
+  clonedContent.pollIsClosed = msg.content.pollIsClosed;
+  clonedContent.pollIsAnonymous = msg.content.pollIsAnonymous;
+  clonedContent.pollType = msg.content.pollType;
+  clonedContent.pollOptions = msg.content.pollOptions;
   clone.content = clonedContent;
   clone.timestamp = msg.timestamp;
   clone.isOutgoing = msg.isOutgoing;
@@ -168,6 +255,9 @@ function cloneMessage(msg: Message): Message {
   clone.isPending = msg.isPending;
   clone.editDate = msg.editDate;
   clone.replyToMessageId = msg.replyToMessageId;
+  clone.replyIsQuote = msg.replyIsQuote;
+  clone.replyQuoteText = msg.replyQuoteText;
+  clone.replyQuoteOffset = msg.replyQuoteOffset;
   clone.sendStatus = msg.sendStatus;
   clone.sendErrorCode = msg.sendErrorCode;
   clone.sendErrorMessage = msg.sendErrorMessage;

@@ -1,4 +1,4 @@
-import { AppState, Chat, FileTransfer, Message, User } from '../../../core/model/AppState';
+import { AppState, Chat, FileTransfer, Message, MessageQuoteEntity, TextEntity, User } from '../../../core/model/AppState';
 import { selectChatMessagesForChatView } from '../../../domain/selectors/messageSelectors';
 import { compareInt64 } from '../../../core/utils/tdAccessors';
 import { getString } from '../../../core/utils/AppResource';
@@ -17,14 +17,82 @@ function toFileUri(path: string): string {
 
 export type ChatTimelineEntryKind = 'date' | 'unread' | 'message';
 
-// Sender name colors (Telegram iOS style — 8 colors by userId)
+// Telegram peer-name fallback palette (iOS default single-color set).
 const SENDER_NAME_COLORS: string[] = [
-  '#c03d33', '#4fad2d', '#d09306', '#168acd',
-  '#8544d6', '#cd4073', '#2996ad', '#ce671b'
+  '#cc5049', '#d67722', '#955cdb', '#40a920',
+  '#309eba', '#368ad1', '#c7508b'
 ];
 
-export function senderNameColor(senderId: number): string {
-  return SENDER_NAME_COLORS[Math.abs(senderId) % SENDER_NAME_COLORS.length];
+function resolveAccentColorHex(accentColorId: number): string {
+  if (accentColorId < 0) {
+    return '';
+  }
+  return SENDER_NAME_COLORS[Math.abs(accentColorId) % SENDER_NAME_COLORS.length];
+}
+
+function hexFromRgbInt(rgb: number): string {
+  const normalized = Math.max(0, Math.min(0xffffff, rgb >>> 0));
+  return '#' + normalized.toString(16).padStart(6, '0');
+}
+
+function resolveAccentColorHexFromState(accentColorId: number, state: AppState): string {
+  if (accentColorId < 0) {
+    return '';
+  }
+
+  if (accentColorId >= 0 && accentColorId < SENDER_NAME_COLORS.length) {
+    return resolveAccentColorHex(accentColorId);
+  }
+
+  const accentColor = state.accentColors.colors.get(accentColorId);
+  if (!accentColor) {
+    return '';
+  }
+
+  if (accentColor.builtInAccentColorId >= 0 && accentColor.builtInAccentColorId < SENDER_NAME_COLORS.length) {
+    return resolveAccentColorHex(accentColor.builtInAccentColorId);
+  }
+
+  if (accentColor.darkThemeColors.length > 0) {
+    return hexFromRgbInt(accentColor.darkThemeColors[0]);
+  }
+
+  if (accentColor.lightThemeColors.length > 0) {
+    return hexFromRgbInt(accentColor.lightThemeColors[0]);
+  }
+
+  return '';
+}
+
+export function senderNameColor(senderId: number, state: AppState, senderChatId: number = 0): string {
+  if (senderId > 0) {
+    const senderUser = state.users.users.get(senderId);
+    if (senderUser && senderUser.accentColorId >= 0) {
+      const exactUserAccent = resolveAccentColorHexFromState(senderUser.accentColorId, state);
+      if (exactUserAccent.length > 0) {
+        return exactUserAccent;
+      }
+    }
+  }
+
+  if (senderChatId !== 0) {
+    const senderChat = state.chats.chats.get(senderChatId);
+    if (senderChat && senderChat.accentColorId >= 0) {
+      const exactChatAccent = resolveAccentColorHexFromState(senderChat.accentColorId, state);
+      if (exactChatAccent.length > 0) {
+        return exactChatAccent;
+      }
+    }
+  }
+
+  return SENDER_NAME_COLORS[Math.abs(senderId > 0 ? senderId : senderChatId) % SENDER_NAME_COLORS.length];
+}
+
+export class PollOptionVO {
+  text: string = '';
+  voterCount: number = 0;
+  votePercentage: number = 0;
+  isChosen: boolean = false;
 }
 
 export class ChatMessageRowVO {
@@ -35,6 +103,9 @@ export class ChatMessageRowVO {
   timeText: string = '';
   sendStatus: TgMessageSendStatus = TgMessageSendStatus.None;
   forceBreakAll: boolean = false;
+  quoteOffsets: number[] = [];
+  quoteLengths: number[] = [];
+  quoteCollapsedFlags: boolean[] = [];
 
   // Sender name (group chats — incoming messages only)
   senderName: string = '';
@@ -43,13 +114,23 @@ export class ChatMessageRowVO {
 
   showReplySnippet: boolean = false;
   replyAuthor: string = '';
+  replyAuthorColorHex: string = '';
   replyPreview: string = '';
   replyIsOutgoing: boolean = false;
   replyIsQuote: boolean = false;
+  replyHasThumbnail: boolean = false;
+  replyThumbnailSrc: string = '';
 
   // Content routing (C.1-7)
   contentType: string = 'text';
   caption: string = '';
+  captionQuoteOffsets: number[] = [];
+  captionQuoteLengths: number[] = [];
+  captionQuoteCollapsedFlags: boolean[] = [];
+
+  // Rich text entities (bold, italic, code, links, mentions, etc.)
+  textEntities: TextEntity[] = [];
+  captionEntities: TextEntity[] = [];
 
   // Photo
   photoPath: string = '';
@@ -107,6 +188,26 @@ export class ChatMessageRowVO {
   stickerHeight: number = 0;
   isAnimatedSticker: boolean = false;
   isVideoSticker: boolean = false;
+
+  // Contact
+  contactFirstName: string = '';
+  contactLastName: string = '';
+  contactPhoneNumber: string = '';
+  contactUserId: number = 0;
+
+  // Location
+  locationLatitude: number = 0;
+  locationLongitude: number = 0;
+  locationVenueTitle: string = '';
+  locationVenueAddress: string = '';
+
+  // Poll
+  pollQuestion: string = '';
+  pollTotalVoterCount: number = 0;
+  pollIsClosed: boolean = false;
+  pollIsAnonymous: boolean = true;
+  pollType: string = 'regular';
+  pollOptions: PollOptionVO[] = [];
 
   // Avatar (group chats, incoming messages)
   reserveAvatarLane: boolean = false;
@@ -280,16 +381,76 @@ function resolveSenderName(message: Message, state: AppState): string {
   return message.isOutgoing ? 'You' : 'Unknown';
 }
 
-function resolveReplyPreview(messageById: Map<string, Message>, replyToMessageId: string): string {
+function resolveReplyPreview(messageById: Map<string, Message>, replyToMessageId: string, replyQuoteText: string = ''): string {
+  const trimmedQuote = replyQuoteText.trim();
+  if (trimmedQuote.length > 0) {
+    return trimmedQuote;
+  }
   if (replyToMessageId === '0') {
     return '';
   }
   const replyMessage = messageById.get(replyToMessageId);
   if (!replyMessage) {
-    return 'Message';
+    return localizedString($r('app.string.message_action').id, 'Message');
   }
-  const text = replyMessage.content.text.trim();
-  return text.length > 0 ? text : '[Unsupported message]';
+  const content = replyMessage.content;
+  const text = content.text.trim();
+  const caption = content.caption.trim();
+  switch (content.type) {
+    case 'text':
+      return text.length > 0 ? text : localizedString($r('app.string.message_action').id, 'Message');
+    case 'photo':
+      return caption.length > 0 ? caption : localizedString($r('app.string.photo').id, 'Photo');
+    case 'video':
+      return caption.length > 0 ? caption : localizedString($r('app.string.video').id, 'Video');
+    case 'animation':
+      return caption.length > 0 ? caption : localizedString($r('app.string.gif').id, 'GIF');
+    case 'voice':
+      return localizedString($r('app.string.voice_message').id, 'Voice message');
+    case 'videoNote':
+      return localizedString($r('app.string.video_note').id, 'Video message');
+    case 'sticker':
+      return localizedString($r('app.string.sticker').id, 'Sticker');
+    case 'audio':
+      return content.audioTitle.trim().length > 0
+        ? content.audioTitle.trim()
+        : 'Audio';
+    case 'document':
+      return content.fileName.trim().length > 0
+        ? content.fileName.trim()
+        : localizedString($r('app.string.file_label').id, 'File');
+    default:
+      if (text.length > 0) {
+        return text;
+      }
+      if (caption.length > 0) {
+        return caption;
+      }
+      return localizedString($r('app.string.message_action').id, 'Message');
+  }
+}
+
+function resolveReplyThumbnailSrc(messageById: Map<string, Message>, replyToMessageId: string): string {
+  if (replyToMessageId === '0') {
+    return '';
+  }
+  const replyMessage = messageById.get(replyToMessageId);
+  if (!replyMessage) {
+    return '';
+  }
+  const content = replyMessage.content;
+  switch (content.type) {
+    case 'photo':
+      return toFileUri(content.photoPath.length > 0 ? content.photoPath : content.photoThumbPath);
+    case 'video':
+      return toFileUri(content.videoThumbPath.length > 0 ? content.videoThumbPath : content.videoPath);
+    case 'animation':
+      return toFileUri(content.videoThumbPath.length > 0 ? content.videoThumbPath : content.animationPath);
+    case 'videoNote':
+      return toFileUri(content.videoThumbPath.length > 0 ? content.videoThumbPath : content.videoNotePath);
+    default:
+      return '';
+  }
 }
 
 function resolveMessageSendStatus(message: Message, chat: Chat): TgMessageSendStatus {
@@ -317,6 +478,52 @@ function isEmojiOnlyText(text: string): boolean {
     return false;
   }
   return !(/[A-Za-z0-9\u0400-\u04FF]/.test(trimmed));
+}
+
+class QuoteRangeVO {
+  offset: number = 0;
+  length: number = 0;
+  isCollapsed: boolean = false;
+}
+
+function buildQuoteRanges(text: string, entities: MessageQuoteEntity[]): QuoteRangeVO[] {
+  if (text.length === 0 || entities.length === 0) {
+    return [];
+  }
+
+  const normalized: QuoteRangeVO[] = [];
+  for (const entity of entities) {
+    const start = Math.max(0, Math.min(text.length, entity.offset));
+    const end = Math.max(start, Math.min(text.length, entity.offset + entity.length));
+    if (end <= start) {
+      continue;
+    }
+    const range = new QuoteRangeVO();
+    range.offset = start;
+    range.length = end - start;
+    range.isCollapsed = entity.isCollapsed;
+    normalized.push(range);
+  }
+
+  normalized.sort((a, b) => a.offset - b.offset);
+  const merged: QuoteRangeVO[] = [];
+  for (const range of normalized) {
+    if (merged.length === 0) {
+      merged.push(range);
+      continue;
+    }
+    const last = merged[merged.length - 1];
+    const lastEnd = last.offset + last.length;
+    const rangeEnd = range.offset + range.length;
+    if (range.offset <= lastEnd) {
+      last.length = Math.max(lastEnd, rangeEnd) - last.offset;
+      last.isCollapsed = last.isCollapsed || range.isCollapsed;
+    } else {
+      merged.push(range);
+    }
+  }
+
+  return merged;
 }
 
 function shouldForceBreakAll(text: string): boolean {
@@ -453,14 +660,28 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   row.contentType = content.type;
   row.text = content.text;
   row.caption = content.caption;
+  if (content.type !== 'text' && content.caption.trim().length > 0 && content.quoteEntities.length > 0) {
+    const captionQuoteRanges = buildQuoteRanges(row.caption, content.quoteEntities);
+    row.captionQuoteOffsets = captionQuoteRanges.map((range) => range.offset);
+    row.captionQuoteLengths = captionQuoteRanges.map((range) => range.length);
+    row.captionQuoteCollapsedFlags = captionQuoteRanges.map((range) => range.isCollapsed);
+  }
+  row.textEntities = content.textEntities;
+  row.captionEntities = content.captionEntities;
   row.isEmojiOnly = content.type === 'text' && isEmojiOnlyText(row.text);
   row.forceBreakAll = content.type === 'text' && shouldForceBreakAll(row.text);
+  if (content.type === 'text' && content.quoteEntities.length > 0) {
+    const quoteRanges = buildQuoteRanges(row.text, content.quoteEntities);
+    row.quoteOffsets = quoteRanges.map((range) => range.offset);
+    row.quoteLengths = quoteRanges.map((range) => range.length);
+    row.quoteCollapsedFlags = quoteRanges.map((range) => range.isCollapsed);
+  }
 
   // Sender name for group chats (incoming only, hide if same sender as previous)
   if (isGroupChat(chat) && !message.isOutgoing) {
     const currentSenderId = message.senderId > 0 ? message.senderId : message.senderChatId;
     row.senderName = resolveSenderName(message, state);
-    row.senderColorHex = senderNameColor(currentSenderId);
+    row.senderColorHex = senderNameColor(message.senderId, state, message.senderChatId);
     row.reserveAvatarLane = shouldReserveAvatarLane(chat);
     // Show sender name only if different from previous message's sender
     row.showSenderName = prevSenderId !== currentSenderId;
@@ -554,7 +775,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   // Audio / music
   if (content.type === 'audio') {
     const audioTransfer = resolveTransfer(content.audioFileId, state);
-    row.audioPath = toFileUri(content.audioPath);
+    row.audioPath = content.audioPath;
     row.audioFileId = content.audioFileId;
     row.isAudioDownloading = isTransferActive(audioTransfer);
     row.audioDownloadProgress = resolveTransferProgress(audioTransfer);
@@ -581,18 +802,51 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   row.isAnimatedSticker = content.isAnimatedSticker;
   row.isVideoSticker = content.isVideoSticker;
 
+  // Contact
+  row.contactFirstName = content.contactFirstName;
+  row.contactLastName = content.contactLastName;
+  row.contactPhoneNumber = content.contactPhoneNumber;
+  row.contactUserId = content.contactUserId;
+
+  // Location
+  row.locationLatitude = content.locationLatitude;
+  row.locationLongitude = content.locationLongitude;
+  row.locationVenueTitle = content.locationVenueTitle;
+  row.locationVenueAddress = content.locationVenueAddress;
+
+  // Poll
+  row.pollQuestion = content.pollQuestion;
+  row.pollTotalVoterCount = content.pollTotalVoterCount;
+  row.pollIsClosed = content.pollIsClosed;
+  row.pollIsAnonymous = content.pollIsAnonymous;
+  row.pollType = content.pollType;
+  row.pollOptions = content.pollOptions.map((o) => {
+    const vo = new PollOptionVO();
+    vo.text = o.text;
+    vo.voterCount = o.voterCount;
+    vo.votePercentage = o.votePercentage;
+    vo.isChosen = o.isChosen;
+    return vo;
+  });
+
   if (message.replyToMessageId !== '0') {
     row.showReplySnippet = true;
-    row.replyPreview = resolveReplyPreview(messageById, message.replyToMessageId);
+    row.replyPreview = resolveReplyPreview(messageById, message.replyToMessageId, message.replyQuoteText);
+    row.replyThumbnailSrc = resolveReplyThumbnailSrc(messageById, message.replyToMessageId);
+    row.replyHasThumbnail = row.replyThumbnailSrc.length > 0;
     const replyMessage = messageById.get(message.replyToMessageId);
     if (replyMessage) {
       row.replyAuthor = resolveSenderName(replyMessage, state);
+      row.replyAuthorColorHex = senderNameColor(replyMessage.senderId, state, replyMessage.senderChatId);
       row.replyIsOutgoing = replyMessage.isOutgoing;
-      row.replyIsQuote = row.replyPreview.length > 80;
+      row.replyIsQuote = message.replyIsQuote;
     } else {
       row.replyAuthor = 'Reply';
+      row.replyAuthorColorHex = '';
       row.replyIsOutgoing = false;
       row.replyIsQuote = false;
+      row.replyHasThumbnail = false;
+      row.replyThumbnailSrc = '';
     }
   }
 
@@ -644,7 +898,7 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
   if (!chat) {
     return result;
   }
-  result.chatTitle = chat.type === 'private' ? resolvePrivateChatTitle(chat, state) : chat.title;
+  result.chatTitle = (chat.type === 'private' || chat.type === 'secret') ? resolvePrivateChatTitle(chat, state) : chat.title;
 
   const messages = selectChatMessagesForChatView(chatId)(state);
   const messageMap = state.messages.messages.get(chatId) || new Map<string, Message>();

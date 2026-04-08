@@ -1113,7 +1113,18 @@ export struct TgChatScreenPage {
     if (!controller) {
       return;
     }
-    controller.toggle(messageId, audioPath, 'audio')
+    // MediaPlaybackController uses fs.openSync which needs raw sandbox path, not file:// URI.
+    // documentPath arrives as file:// URI (needed for Want-based file opening),
+    // so convert back to raw path for playback.
+    let rawPath = audioPath;
+    if (rawPath.startsWith('file://')) {
+      try {
+        rawPath = new fileUri.FileUri(rawPath).path;
+      } catch (_e) {
+        rawPath = audioPath;
+      }
+    }
+    controller.toggle(messageId, rawPath, 'audio')
       .catch((_error: Object) => {});
   }
 
@@ -1772,10 +1783,12 @@ export struct TgChatScreenPage {
         quoteOffsets: entry.message.quoteOffsets,
         quoteLengths: entry.message.quoteLengths,
         quoteCollapsedFlags: entry.message.quoteCollapsedFlags,
+        textEntities: entry.message.textEntities,
         caption: entry.message.caption,
         captionQuoteOffsets: entry.message.captionQuoteOffsets,
         captionQuoteLengths: entry.message.captionQuoteLengths,
         captionQuoteCollapsedFlags: entry.message.captionQuoteCollapsedFlags,
+        captionEntities: entry.message.captionEntities,
         photoPath: entry.message.photoPath,
         hasLocalPhoto: entry.message.hasLocalPhoto,
         isPhotoDownloading: entry.message.isPhotoDownloading || this.isMediaDownloadPending(entry.message.photoFileId),
@@ -1879,6 +1892,12 @@ export struct TgChatScreenPage {
         },
         onVoiceTap: (messageId: string, voicePath: string, voiceFileId: number): void => {
           this.handleVoiceTap(messageId, voicePath, voiceFileId);
+        },
+        onAudioSeek: (messageId: string, progress: number): void => {
+          this.handleAudioSeek(messageId, progress);
+        },
+        onVoiceSeek: (messageId: string, progress: number): void => {
+          this.handleVoiceSeek(messageId, progress);
         }
       })
     }
@@ -2050,6 +2069,8 @@ export struct TgChatScreenPage {
                 replyIsOutgoing: false,
                 replyIsQuote: this.replyToIsQuote,
                 replyHasThumbnail: false,
+                showEditSnippet: this.isEditingMessage,
+                editPreview: this.editingOriginalText,
                 onTextChange: (value: string): void => {
                   this.composerDraftText = value;
                 },
@@ -2058,6 +2079,9 @@ export struct TgChatScreenPage {
                 },
                 onReplyCancelPress: (): void => {
                   this.cancelReply();
+                },
+                onEditCancelPress: (): void => {
+                  this.cancelEditMessage();
                 }
               })
           }

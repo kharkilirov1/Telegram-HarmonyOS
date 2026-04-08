@@ -41,16 +41,19 @@
 ## 5) Layout rules
 - top safe-area inset is included inside the atom.
 - title row height stays `44vp`.
+- title typography stays close to iOS `17pt semibold`; ArkUI uses tokenized `Medium` here instead of a heavier bold title.
 - search lane is integrated below title row and reserves `54vp` like iOS `searchScrollHeight`.
 - title remains centered independently from left/right action widths.
 - search field is part of the header surface, not a scrolling list item.
-- header owns blur/tint/bottom separator; page only offsets scroll content under it.
+- shared blur/tint/top-edge emphasis is now delegated to `TgTopChromeBackground`; this atom owns the content composition above that surface.
+- page only offsets scroll content under the combined header height.
 
 ## 6) Token mapping
 - `TOP_BAR_*`
 - `SEARCH_BAR_*`
 - `CHAT_LIST_NAV_SEARCH_AREA_HEIGHT`
 - `CHAT_LIST_NAV_TOTAL_HEIGHT`
+- `TgTopChromeBackground`
 - `ICON_RES_SEARCH`
 - `ICON_RES_EDIT`
 - `GLASS_SPECULAR_*`

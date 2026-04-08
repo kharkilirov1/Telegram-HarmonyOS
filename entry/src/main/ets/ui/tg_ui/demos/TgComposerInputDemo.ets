@@ -42,9 +42,46 @@ export struct TgComposerInputDemo {
             if (interactive) {
               this.interactiveDraft = '';
             }
+          },
+          onReplyCancelPress: (): void => {
           }
         })
         .width(containerWidth)
+      }
+      .width('100%')
+      .justifyContent(FlexAlign.Center)
+      .backgroundColor(TgUiTokens.COLOR_BG_SECONDARY)
+      .borderRadius(TgUiTokens.RADIUS_8)
+    }
+    .width('100%')
+    .padding({
+      left: TgUiTokens.SPACE_16,
+      right: TgUiTokens.SPACE_16,
+      top: TgUiTokens.SPACE_6,
+      bottom: TgUiTokens.SPACE_6
+    })
+  }
+
+  @Builder
+  private editCaseBlock() {
+    Column({ space: TgUiTokens.SPACE_6 }) {
+      Text('05 edit mode snippet')
+        .fontSize(TgUiTokens.FONT_META_SIZE)
+        .fontColor(TgUiTokens.COLOR_TEXT_META)
+        .width('100%')
+
+      Row() {
+        TgComposerInput({
+          text: 'Edited text here',
+          placeholder: 'Message',
+          showEditSnippet: true,
+          editPreview: 'Original message that is being edited',
+          containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH,
+          onTextChange: (_value: string): void => {},
+          onSendPress: (_text: string): void => {},
+          onEditCancelPress: (): void => {}
+        })
+        .width(TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH)
       }
       .width('100%')
       .justifyContent(FlexAlign.Center)
@@ -75,7 +112,7 @@ export struct TgComposerInputDemo {
             bottom: TgUiTokens.SPACE_8
           })
 
-        Text('iOS-style: single capsule [📎 Message... 🙂 ➤]')
+        Text('iOS-style: attach circle + text capsule + action circle')
           .fontSize(TgUiTokens.FONT_META_SIZE)
           .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
           .width('100%')
@@ -92,16 +129,17 @@ export struct TgComposerInputDemo {
         this.caseBlock('03 multiline text', false, true, false,
           TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, 'First line\nSecond line\nThird line')
         this.caseBlock('04 reply snippet shown', false, true, true)
-        this.caseBlock('05 no attach button', false, false)
-        this.caseBlock('06 no emoji button', false, true, false,
+        this.editCaseBlock()
+        this.caseBlock('06 no attach button', false, false)
+        this.caseBlock('07 no emoji button', false, true, false,
           TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, 'No emoji lane', false)
-        this.caseBlock('07 disabled state', true, true, false,
+        this.caseBlock('08 disabled state', true, true, false,
           TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, 'Disabled draft')
-        this.caseBlock('08 narrow container', false, true, false,
+        this.caseBlock('09 narrow container', false, true, false,
           TgUiTokens.MSG_DEMO_NARROW_CONTAINER_WIDTH, 'Narrow width sample')
-        this.caseBlock('09 wide container', false, true, false,
+        this.caseBlock('10 wide container', false, true, false,
           TgUiTokens.MSG_DEMO_WIDE_CONTAINER_WIDTH, 'Wide width sample')
-        this.caseBlock('10 long text send', false, true, false,
+        this.caseBlock('11 long text send', false, true, false,
           TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH,
           'This longer composer sample checks that the unified capsule remains stable under a more telegram-like draft width.')
       }

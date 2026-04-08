@@ -2,7 +2,7 @@
 // Keeps a fileId -> transfer-state map for UI download indicators and,
 // when a file completes, scans users/chats/messages to apply the local path.
 
-import { AppState, FileTransfer, Message, MessageContent, ReducerAction } from '../model/AppState';
+import { AppState, FileTransfer, Message, MessageContent, MessageQuoteEntity, ReducerAction } from '../model/AppState';
 import { FileDownloadedEvent, FileTransferUpdatedEvent } from '../model/AppEvent';
 import { cloneAppState, cloneChat, cloneStateForFiles, cloneUser } from '../utils/stateClone';
 
@@ -25,6 +25,13 @@ function applyFilePathToContent(content: MessageContent, fileId: number, localPa
   c.type = content.type;
   c.text = content.text;
   c.caption = content.caption;
+  c.quoteEntities = content.quoteEntities.map((entity) => {
+    const cloneEntity = new MessageQuoteEntity();
+    cloneEntity.offset = entity.offset;
+    cloneEntity.length = entity.length;
+    cloneEntity.isCollapsed = entity.isCollapsed;
+    return cloneEntity;
+  });
 
   c.photoPath = content.photoFileId === fileId ? localPath : content.photoPath;
   c.photoThumbPath = content.photoThumbFileId === fileId ? localPath : content.photoThumbPath;
@@ -96,6 +103,9 @@ function cloneMessageWithContent(msg: Message, newContent: MessageContent): Mess
   clone.isPending = msg.isPending;
   clone.editDate = msg.editDate;
   clone.replyToMessageId = msg.replyToMessageId;
+  clone.replyIsQuote = msg.replyIsQuote;
+  clone.replyQuoteText = msg.replyQuoteText;
+  clone.replyQuoteOffset = msg.replyQuoteOffset;
   clone.sendStatus = msg.sendStatus;
   clone.sendErrorCode = msg.sendErrorCode;
   clone.sendErrorMessage = msg.sendErrorMessage;

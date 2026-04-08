@@ -13,15 +13,16 @@ Drop-in replacement for direct `TgMessageBubbleBase` usage in chat timeline.
 
 | contentType | Atom | Notes |
 |-------------|------|-------|
-| `text` | TgMessageBubbleBase | Default fallback |
-| `photo` | TgPhotoBubble | With optional caption |
-| `video` | TgVideoBubble | Thumbnail + play overlay + duration |
+| `text` | TgTextBubbleV3 | Engine-driven text-family live path |
+| `photo` | TgMediaBubbleShellV2 | Visual media shell (sender/reply/media/caption/meta) |
+| `photoAlbum` | TgMediaBubbleShellV2 | Visual media shell for grouped photos |
+| `video` | TgMediaBubbleShellV2 | Visual media shell + existing video atom |
 | `document` | TgDocumentRow | File icon + name + size |
 | `voice` | TgVoiceBubble | Waveform + play/pause + duration |
 | `sticker` | TgStickerView | No bubble background |
-| `animation` | TgVideoBubble | Treated as video (GIF preview) |
-| `videoNote` | TgVideoBubble | Routed as square video placeholder until dedicated round atom |
-| `audio` | TgDocumentRow | Treated as document (audio atom not yet available) |
+| `animation` | TgMediaBubbleShellV2 | Visual media shell + GIF atom |
+| `videoNote` | TgInstantVideoBubble | Dedicated round instant-video path |
+| `audio` | TgAudioBubble | Music/file-audio path with seek/progress |
 | all others | TgMessageBubbleBase | Text fallback with `[Type]` label |
 
 ## Props
@@ -37,12 +38,17 @@ Drop-in replacement for direct `TgMessageBubbleBase` usage in chat timeline.
 - `text: string` — message text or fallback label
 - `isEmojiOnly: boolean`
 - `forceBreakAll: boolean`
+- text-family composition now routes through `TgTextBubbleV3` in the live text branch
+- visual media family composition now routes through `TgMediaBubbleShellV2` for `photo` / `photoAlbum` / `video` / `animation`
 
-### Photo
+### Photo / album
 - `photoPath: string`
 - `photoWidth: number`
 - `photoHeight: number`
 - `caption: string`
+- `albumPhotoPaths: string[]`
+- `albumPhotoWidths: number[]`
+- `albumPhotoHeights: number[]`
 
 ### Video / Animation
 - `videoThumbPath: string`
@@ -68,12 +74,31 @@ Drop-in replacement for direct `TgMessageBubbleBase` usage in chat timeline.
 - `isAnimatedSticker: boolean`
 - `isVideoSticker: boolean`
 
+### Reply snippet
+- `showReplySnippet: boolean`
+- `replyAuthor: string`
+- `replyPreview: string`
+- `replyIsOutgoing: boolean`
+- `replyIsQuote: boolean`
+- `replyHasThumbnail: boolean`
+- `replyThumbnailSrc: Resource | string`
+
 ## Acceptance checklist
 
-- [ ] All 5 media atoms render when given correct contentType
+- [ ] Visual media family shares one shell contract for sender/reply/caption/meta
 - [ ] Unknown/unsupported types fall back to text bubble
-- [ ] `animation` routes to TgVideoBubble
-- [ ] `audio` routes to TgDocumentRow
-- [ ] `caption` is passed to photo and video bubbles
+- [ ] `videoNote` stays on the dedicated round atom path
+- [ ] `audio` routes to TgAudioBubble
+- [ ] caption/no-caption rules are owned by the media shell instead of the router
+- [ ] Reply snippets preserve media-aware preview labels and thumbnails when available
 - [ ] Sticker renders without bubble background
-- [ ] No new tokens required (delegates to existing atoms)
+- [ ] Router remains orchestration-only for text + visual-media families
+- [ ] Shrink-wrapped bubble variants keep time/status anchored via explicit trailing alignment, not generic `width('100%')` footer rows
+
+
+## 2026-04-05 updates
+- Live `text` path now routes through `TgTextBubbleV3` with precomputed engine layout and explicit quote ranges (`quoteOffsets` / `quoteLengths` / `quoteCollapsedFlags`).
+- Non-text shrink-wrapped bubble variants (`sticker`, `contact`, `location`, `poll`, `document`) should right-anchor their footer meta via `alignSelf(ItemAlign.End)` instead of ambiguous `width('100%')` footer rows.
+- Image-like special cases keep overlay meta tied to the surface itself:
+  - `sticker` uses bottom-right overlay meta on the sticker surface
+  - `location` without venue text uses bottom-right overlay meta on the map surface

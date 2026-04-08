@@ -124,6 +124,7 @@ export function cloneChat(chat: Chat): Chat {
   newChat.accentColorId = chat.accentColorId;
   newChat.title = chat.title;
   newChat.unreadCount = chat.unreadCount;
+  newChat.unreadMentionCount = chat.unreadMentionCount;
   newChat.muteForSeconds = chat.muteForSeconds;
   newChat.lastReadOutboxMessageId = chat.lastReadOutboxMessageId;
   newChat.lastReadInboxMessageId = chat.lastReadInboxMessageId;
@@ -165,6 +166,8 @@ export function cloneUser(user: User): User {
   newUser.status = user.status;
   newUser.isContact = user.isContact;
   newUser.isVerified = user.isVerified;
+  newUser.isScam = user.isScam;
+  newUser.isFake = user.isFake;
   newUser.isPremium = user.isPremium;
   newUser.bio = user.bio;
   return newUser;

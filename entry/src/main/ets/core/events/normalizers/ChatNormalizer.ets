@@ -231,6 +231,27 @@ function handleChatNotificationSettings(events: AnyAppEvent[], update: TdObject)
   events.push(createChatUpdatedEvent(chatId, updates));
 }
 
+function handleChatAccentColors(events: AnyAppEvent[], update: TdObject): void {
+  const chatId = tdGetNumber(update, 'chat_id');
+  if (!chatId) return;
+
+  const rawAccentColor = update.get('accent_color_id');
+  let accentColorId = -1;
+  if (typeof rawAccentColor === 'number') {
+    accentColorId = rawAccentColor;
+  } else if (typeof rawAccentColor === 'string' && rawAccentColor.length > 0) {
+    const parsed = parseInt(rawAccentColor, 10);
+    accentColorId = Number.isNaN(parsed) ? -1 : parsed;
+  }
+  if (accentColorId < 0) {
+    return;
+  }
+
+  const updates = new ChatUpdateDto();
+  updates.accentColorId = accentColorId;
+  events.push(createChatUpdatedEvent(chatId, updates));
+}
+
 // Map TDLib chatAction @type to short action name
 function parseChatActionType(actionTypeStr: string): string {
   switch (actionTypeStr) {
@@ -291,5 +312,6 @@ export function registerChatHandlers(
   handlers.set('updateChatDraftMessage', handleChatDraftMessage);
   handlers.set('updateChatUnreadMentionCount', handleChatUnreadMentionCount);
   handlers.set('updateChatNotificationSettings', handleChatNotificationSettings);
+  handlers.set('updateChatAccentColors', handleChatAccentColors);
   handlers.set('updateChatAction', handleChatAction);
 }

@@ -3,7 +3,7 @@
 ## 1) Scope
 - Atom: `TgChatRow`
 - Target layer: `atoms`
-- Status: `in-progress`
+- Status: `done`
 
 ## 2) iOS source mapping
 - `submodules/ChatListUI/Sources/Node/ChatListItem.swift`
@@ -21,7 +21,7 @@
   - mute/pin/check/clock/warning resource style and unread badge visual language.
 
 ## 3) Props / inputs
-- `data: TgChatRowData`
+- Runtime props are passed as **flattened `@Param` values**, not as a single `data` object:
   - `chatId`
   - `title`
   - `preview`
@@ -32,11 +32,17 @@
   - `isMuted`
   - `isPinned`
   - `sendStatus`
-  - `avatarInitials/avatarUseImage/avatarImageSrc/avatarIsOnline`
-  - `avatarBackgroundColor/avatarTextColor`
+  - `avatarInitials`
+  - `avatarUseImage`
+  - `avatarImageSrc`
+  - `avatarIsOnline`
+  - `isVerified`
+  - `avatarBackgroundColor`
+  - `avatarTextColor`
   - `isDraft`
   - `isTyping`
-- `showSeparator: boolean`
+  - `showSeparator`
+- `TgChatRowData` remains a **demo/helper model** for `TgChatRowDemo.ets`, not the live runtime prop contract.
 
 ## 4) State matrix (demo coverage)
 - normal (no unread)
@@ -47,6 +53,7 @@
 - draft prefix (`Draft:` accent + normal body text)
 - group sender prefix accent (`You:` / sender name)
 - typing preview (normal preview tone, dedicated activity state)
+- verified title badge (private peer)
 - sending / sent / read
 - online avatar dot
 - long title + long preview (ellipsis torture)
@@ -63,9 +70,10 @@
 - Vertical rhythm is intentionally compact; title and preview sit closer together than a generic `Column(space: 4)` list row.
 - Text rules:
   - title and preview are `maxLines(1)` + ellipsis.
+  - verified peers may render a compact title badge between the title text and mute icon; the title must still ellipsize before pushing the fixed right meta cluster.
   - draft preview keeps the prefix visually separate from the body, matching Telegram's red `Draft:` treatment without letting the prefix collapse into the preview text color.
   - group sender prefix keeps the author part visually separate from the body, matching the iOS author-name accent pattern for group rows.
-  - typing preview should not borrow the group sender accent color; current iOS `ChatListInputActivitiesNode` renders the full activity string in the chat-list message text color.
+  - typing preview uses activity accent color (`CHAT_TOP_BAR_SUBTITLE_ACCENT` / telegram_blue) — follows Android Telegram pattern for stronger visual distinction. iOS uses chat-list message text color (gray), but we chose accent for better UX signal. Typing should not borrow the group sender prefix color.
 - Right cluster anti-jump:
   - width reserve comes from `TgChatMeta.constraintSize(minWidth)`.
   - bottom geometry reserve handled inside `TgChatMeta` with placeholder.
@@ -77,17 +85,19 @@
 ## 6) Token mapping
 - Source: `entry/src/main/ets/ui/tg_ui/tokens/TgUiTokens.ets`
   - `CHAT_ROW_*` metrics (height/sideInset/gaps/separator)
+  - `CHAT_ROW_VERIFIED_*`
   - `CHAT_ROW_TITLE_FONT_SIZE`, `CHAT_ROW_PREVIEW_FONT_SIZE`
   - colors (`COLOR_TEXT_TITLE`, `COLOR_TEXT_PREVIEW`, `COLOR_CHAT_ROW_PINNED_BG`, separator)
   - mute icon sizing and resources
   - meta/badge tokens consumed transitively via `TgChatMeta` and `TgUnreadBadge`
 
 ## 7) Acceptance checklist
-- [x] `@Reusable` added and list integration uses `reuseId`
+- [x] `@ComponentV2` row is used in the live chat-list path and `ChatListPage` still applies `reuseId(...)`
 - [x] Avatar + text + meta composition implemented
 - [x] Title/preview ellipsis cases covered
 - [x] Right meta no-jump preserved via `TgChatMeta`
 - [x] Internal separator implemented (single separator strategy)
 - [x] Demo has 10+ states + jump probe
+- [x] `ChatListDataSource` diff watches preview-prefix / draft / pinned-boundary flags so same-order rows still refresh correctly
 - [ ] Final side-by-side polish against iOS screenshots
 

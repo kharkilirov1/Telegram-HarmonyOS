@@ -88,4 +88,4 @@ At least 10 cases:
 
 ## Known Risks
 - Final color calibration for outgoing reply title/line may need tuning after bubble integration.
-- Real media thumbnail loading/caching will be addressed at integration step.
+- Live chat integration now wires media-aware reply labels and thumbnails from `ChatTimelineVO` / `TgMessageRouter`, but edge cases still need device verification for partial downloads and media types without local previews.

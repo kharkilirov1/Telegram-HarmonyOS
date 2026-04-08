@@ -1,6 +1,6 @@
 # AGENT EXECUTION PLAN — Telegram-HarmonyOS
 
-Last updated: 2026-03-07
+Last updated: 2026-03-22
 
 ## Purpose
 This is the **canonical execution roadmap** for AI agents working on this repository.
@@ -42,11 +42,32 @@ Global execution rules:
 - Update `STATUS.md`, `TASKS/TODO.md`, and `TASKS/LESSONS.md` after meaningful progress.
 - Prepare commit-ready work, but **do not commit/push unless the user explicitly asks**.
 
+UI analysis method for non-trivial porting:
+1. **Reference decomposition** — break the iOS source into structural layers, primitives, states, layout rules, and visual decisions.
+2. **Platform mapping** — only then choose HarmonyOS/ArkUI equivalents or acceptable analogs.
+3. **Assembly** — decide what becomes shared background, atom, molecule, or screen-owned coordination in this repo.
+
+Do **not** start from “which ArkUI component looks similar”. Start from “what problem/decision does the iOS composition solve”.
+
 ---
+
+## Status note (2026-03-22)
+- Per user confirmation on 2026-03-22, the previously outstanding emulator/device/runtime verification checklists for the current branch should be treated as **passed** unless a new regression is observed.
+- Do not reopen old verification work by default just because historical docs still contain old checklists; use `STATUS.md` + `TASKS/TODO.md` current housekeeping items first.
+
+## Strategic UI note (2026-03-22)
+- The repo has now accepted a strategic split:
+  - keep custom effort on **Telegram semantics**,
+  - prefer **Harmony-native or hybrid shell/chrome** where platform quality is already strong enough.
+- Do not spend large effort manually polishing shell chrome just to mimic iOS if the platform already offers a strong native direction.
+- For future execution:
+  1. protect Telegram-defining surfaces (`TgChatRow`, message atoms, composer semantics, meta/badge/status logic),
+  2. evaluate shell containers (`TgTabBar`, upper chrome hosts, search hosts) as native/hybrid candidates first,
+  3. keep API 22 fallbacks while the repo target remains API 22 and API 23 remains a beta/staging direction.
 
 ## Current default starting phase
 
-**Start with Phase 1 unless the repo state clearly shows it is already completed and verified.**
+**Start with Phase 1 only if current repo evidence shows a reopened runtime regression; otherwise continue with docs/repo hygiene or the next product phase requested by the user.**
 
 ---
 
@@ -156,21 +177,20 @@ Media messages are not just rendered; they behave like product features.
 ## Phase 6 — V1 to V2 modernization
 
 ### Goal
-Modernize shell/list architecture only after the app is stable enough.
+Do a post-migration performance/architecture pass only after the app is stable enough.
 
 ### Why this is late
 Official HarmonyOS docs indicate:
 - `Repeat` is the modern path for V2 state-management flows
-- `@ReusableV2` works only with `@ComponentV2`
-- V1 components cannot safely host `@ReusableV2` children
+- `@ReusableV2` works with `@ComponentV2` reuse patterns
 
 ### What to do
-- evaluate migration from V1 shell pages to V2
+- evaluate whether the current `LazyForEach` + `.reuseId(...)` chat-list path is sufficient
 - only then evaluate `LazyForEach -> Repeat`
-- only then evaluate `@Reusable -> @ReusableV2`
+- only then evaluate whether explicit `@ReusableV2` adoption is worth the churn
 
 ### Exit condition
-Modernization is done as a controlled architectural step, not as a speculative refactor during unstable feature work.
+The post-migration modernization is done as a controlled architectural/performance step, not as a speculative refactor during stable product work.
 
 ---
 

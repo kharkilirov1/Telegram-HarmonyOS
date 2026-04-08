@@ -58,17 +58,26 @@ export class ChatListDataSource implements IDataSource {
     return prev.chatId === next.chatId &&
       prev.title === next.title &&
       prev.initials === next.initials &&
-      prev.avatarImagePath === next.avatarImagePath &&
-      prev.avatarOnline === next.avatarOnline &&
-      prev.lastMessage === next.lastMessage &&
+        prev.avatarImagePath === next.avatarImagePath &&
+        prev.avatarOnline === next.avatarOnline &&
+        prev.isVerified === next.isVerified &&
+        prev.lastMessage === next.lastMessage &&
+        prev.previewPrefix === next.previewPrefix &&
+      prev.previewPrefixStyle === next.previewPrefixStyle &&
       prev.formattedTime === next.formattedTime &&
       prev.unreadCount === next.unreadCount &&
       prev.isPinned === next.isPinned &&
+      prev.isLastPinned === next.isLastPinned &&
       prev.isMuted === next.isMuted &&
       prev.sendStatus === next.sendStatus &&
       prev.isGroup === next.isGroup &&
       prev.isTyping === next.isTyping &&
-      prev.typingText === next.typingText;
+      prev.typingText === next.typingText &&
+      prev.isDraft === next.isDraft &&
+      prev.hasMention === next.hasMention &&
+      prev.isScam === next.isScam &&
+      prev.isFake === next.isFake &&
+      prev.isSecret === next.isSecret;
   }
 
   private hasSameOrder(oldItems: ChatItemVO[], newItems: ChatItemVO[]): boolean {

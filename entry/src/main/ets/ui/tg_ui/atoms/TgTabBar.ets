@@ -80,7 +80,7 @@ export struct TgTabBar {
   }
 
   private tabFontWeight(index: number): FontWeight {
-    return this.isSelected(index) ? FontWeight.Medium : FontWeight.Regular;
+    return this.isSelected(index) ? FontWeight.Bold : FontWeight.Regular;
   }
 
   private tabContentScale(index: number): number {

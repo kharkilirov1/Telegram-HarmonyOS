@@ -51,6 +51,7 @@ export class ChatItemVO {
   avatarColor: Resource = TgUiTokens.AVATAR_COLOR_5;
   avatarImagePath: string = '';
   avatarOnline: boolean = false;
+  isVerified: boolean = false;
   lastMessage: string = '';
   formattedTime: string = '';
   unreadCount: number = 0;
@@ -62,6 +63,10 @@ export class ChatItemVO {
   isTyping: boolean = false;
   typingText: string = '';
   isDraft: boolean = false;
+  hasMention: boolean = false;
+  isScam: boolean = false;
+  isFake: boolean = false;
+  isSecret: boolean = false;
   previewPrefix: string = '';
   previewPrefixStyle: 'none' | 'draft' | 'author' = 'none';
 }
@@ -335,7 +340,9 @@ export function buildChatItemVO(chat: Chat, state: AppState): ChatItemVO {
   vo.isPinned = chat.isPinned;
   vo.isMuted = chat.muteForSeconds > 0;
   vo.isGroup = chat.type === 'group' || chat.type === 'supergroup' || chat.type === 'channel';
+  vo.isSecret = chat.type === 'secret';
   vo.sendStatus = resolveSendStatusForChat(chat, state);
+  vo.hasMention = chat.unreadMentionCount > 0;
 
   if (chat.peerUserId > 0) {
     const user = state.users.users.get(chat.peerUserId);
@@ -345,6 +352,9 @@ export function buildChatItemVO(chat: Chat, state: AppState): ChatItemVO {
         vo.title = privateTitle;
       }
       vo.avatarOnline = user.status === 'online';
+      vo.isVerified = user.isVerified;
+      vo.isScam = user.isScam;
+      vo.isFake = user.isFake;
       if (vo.avatarImagePath.length === 0 && user.photoSmall.length > 0) {
         vo.avatarImagePath = toFileUri(user.photoSmall);
       }

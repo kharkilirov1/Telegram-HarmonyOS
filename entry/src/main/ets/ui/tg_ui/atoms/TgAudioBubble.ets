@@ -154,21 +154,23 @@ export struct TgAudioBubble {
             })
               .width(TgUiTokens.AUDIO_BUBBLE_ART_SIZE)
               .height(TgUiTokens.AUDIO_BUBBLE_ART_SIZE)
-              .color('#FFFFFF')
+              .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
               .backgroundColor(Color.Transparent)
-              .style({ strokeWidth: 2 })
+              .style({ strokeWidth: TgUiTokens.MEDIA_PROGRESS_STROKE })
           } else {
             LoadingProgress()
               .width(TgUiTokens.AUDIO_BUBBLE_ART_SIZE)
               .height(TgUiTokens.AUDIO_BUBBLE_ART_SIZE)
-              .color('#FFFFFF')
+              .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
           }
           Image($r('sys.media.ohos_ic_public_cancel'))
-            .width(16).height(16).fillColor('#FFFFFF')
+            .width(TgUiTokens.MEDIA_CANCEL_ICON_SIZE)
+            .height(TgUiTokens.MEDIA_CANCEL_ICON_SIZE)
+            .fillColor(TgUiTokens.MEDIA_PROGRESS_COLOR)
         }
         .width(TgUiTokens.AUDIO_BUBBLE_ART_SIZE)
         .height(TgUiTokens.AUDIO_BUBBLE_ART_SIZE)
-        .backgroundColor('#40000000') // Dark overlay
+        .backgroundColor(TgUiTokens.MEDIA_OVERLAY_DARK)
         .borderRadius(TgUiTokens.AUDIO_BUBBLE_ART_RADIUS)
       } else if (this.isDownloaded() && this.isPlaying) {
         // Pause icon when playing
@@ -217,14 +219,14 @@ export struct TgAudioBubble {
     Stack({ alignContent: Alignment.Start }) {
       Row()
         .width('100%')
-        .height(4) // Hardcode 4vp thickness for visibility
-        .backgroundColor('#40888888') // Darker semi-transparent gray for clear visibility
+        .height(TgUiTokens.AUDIO_BUBBLE_SEEK_HEIGHT)
+        .backgroundColor(TgUiTokens.MEDIA_SEEK_BG)
         .borderRadius(2)
 
       if (this.normalizedPlaybackProgress() > 0) {
         Row()
           .width(Math.max(2, this.normalizedPlaybackProgress() * 100).toString() + '%')
-          .height(4)
+          .height(TgUiTokens.AUDIO_BUBBLE_SEEK_HEIGHT)
           .backgroundColor(TgUiTokens.AUDIO_BUBBLE_SEEK_FILL)
           .borderRadius(2)
           .animation({ duration: 150, curve: Curve.Linear })
@@ -249,8 +251,8 @@ export struct TgAudioBubble {
     Stack({ alignContent: Alignment.Start }) {
       Row()
         .width('100%')
-        .height(4) // 4vp thickness
-        .backgroundColor('#40888888') // Darker semi-transparent gray
+        .height(TgUiTokens.AUDIO_BUBBLE_SEEK_HEIGHT)
+        .backgroundColor(TgUiTokens.MEDIA_SEEK_BG)
         .borderRadius(2)
 
       Row()

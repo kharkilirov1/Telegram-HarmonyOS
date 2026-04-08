@@ -24,6 +24,9 @@ export struct TgComposerInput {
   @Param replyIsQuote: boolean = false;
   @Param replyHasThumbnail: boolean = false;
 
+  @Param showEditSnippet: boolean = false;
+  @Param editPreview: string = '';
+
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
   @Param glassMode: string = TgGlassPolicy.MODE_AUTO;
   @Param bottomInset: number = 0;
@@ -31,6 +34,7 @@ export struct TgComposerInput {
   @Event onSendPress: (text: string) => void = (_: string) => {};
   @Event onTextChange: (text: string) => void = (_: string) => {};
   @Event onReplyCancelPress: () => void = () => {};
+  @Event onEditCancelPress: () => void = () => {};
 
   private hasText(): boolean {
     return this.text.trim().length > 0;
@@ -61,6 +65,73 @@ export struct TgComposerInput {
   }
 
   @Builder
+  private buildEditSnippet() {
+    if (this.showEditSnippet) {
+      Row() {
+        // Edit icon + accent bar
+        Row() {
+          TgIcon({
+            src: TgUiTokens.ICON_RES_EDIT,
+            iconSize: TgUiTokens.COMPOSER_REPLY_CLOSE_SIZE,
+            tintColor: TgUiTokens.COMPOSER_ACTION_ACTIVE
+          })
+        }
+        .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
+        .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
+        .flexShrink(0)
+        .justifyContent(FlexAlign.Center)
+        .alignItems(VerticalAlign.Center)
+
+        // Label + preview
+        Column({ space: 2 }) {
+          Text('Edit Message')
+            .fontSize(TgUiTokens.COMPOSER_TEXT_SIZE - 2)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(TgUiTokens.COMPOSER_ACTION_ACTIVE)
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+          if (this.editPreview.length > 0) {
+            Text(this.editPreview)
+              .fontSize(TgUiTokens.COMPOSER_TEXT_SIZE - 2)
+              .fontColor(TgUiTokens.COMPOSER_PLACEHOLDER)
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+          }
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start)
+
+        // Close button
+        Row() {
+          TgIcon({
+            src: TgUiTokens.ICON_RES_CLOSE,
+            iconSize: TgUiTokens.COMPOSER_REPLY_CLOSE_SIZE,
+            tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
+          })
+        }
+        .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
+        .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
+        .flexShrink(0)
+        .justifyContent(FlexAlign.Center)
+        .alignItems(VerticalAlign.Center)
+        .margin({ left: TgUiTokens.COMPOSER_REPLY_CLOSE_GAP })
+        .onClick(() => {
+          this.onEditCancelPress();
+        })
+      }
+      .width('100%')
+      .alignItems(VerticalAlign.Center)
+      .padding({ left: TgUiTokens.COMPOSER_SIDE_INSET, right: TgUiTokens.COMPOSER_SIDE_INSET })
+      .backgroundColor(this.capsuleBg())
+      .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+      .borderRadius(TgUiTokens.COMPOSER_CAPSULE_RADIUS)
+      .border({ width: TgUiTokens.COMPOSER_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
+      .clip(true)
+    }
+  }
+
+  @Builder
   private buildReplySnippet() {
     if (this.showReplySnippet) {
       Row() {
@@ -73,8 +144,26 @@ export struct TgComposerInput {
           containerWidth: this.containerWidth
         })
           .layoutWeight(1)
+
+        Row() {
+          TgIcon({
+            src: TgUiTokens.ICON_RES_CLOSE,
+            iconSize: TgUiTokens.COMPOSER_REPLY_CLOSE_SIZE,
+            tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
+          })
+        }
+        .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
+        .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
+        .flexShrink(0)
+        .justifyContent(FlexAlign.Center)
+        .alignItems(VerticalAlign.Center)
+        .margin({ left: TgUiTokens.COMPOSER_REPLY_CLOSE_GAP })
+        .onClick(() => {
+          this.onReplyCancelPress();
+        })
       }
       .width('100%')
+      .alignItems(VerticalAlign.Center)
       .padding({ left: TgUiTokens.COMPOSER_SIDE_INSET, right: TgUiTokens.COMPOSER_SIDE_INSET })
       .backgroundColor(this.capsuleBg())
       .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
@@ -86,6 +175,7 @@ export struct TgComposerInput {
 
   build() {
     Column({ space: TgUiTokens.COMPOSER_REPLY_GAP }) {
+      this.buildEditSnippet()
       this.buildReplySnippet()
 
       // Main row: [attach] [text capsule] [send/mic]
@@ -115,7 +205,7 @@ export struct TgComposerInput {
         // ── Text field (separate glass capsule) ──
         Row() {
           TextArea({ text: this.text, placeholder: this.placeholder })
-            .style(TextContentStyle.DEFAULT)
+            .style(TextContentStyle.INLINE)
             .fontSize(TgUiTokens.COMPOSER_TEXT_SIZE)
             .fontWeight(TgUiTokens.COMPOSER_TEXT_WEIGHT)
             .fontColor(TgUiTokens.COMPOSER_TEXT)
