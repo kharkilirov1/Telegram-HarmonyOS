@@ -81,6 +81,8 @@ export struct TgTopBar {
     .height(TgUiTokens.TOP_BAR_ACTION_TOUCH)
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.showBackAction ? $r('app.string.accessibility_back') : '')
     .onClick(() => {
       if (this.showBackAction) {
         this.onBackPress();
@@ -99,6 +101,8 @@ export struct TgTopBar {
           iconSize: TgUiTokens.TOP_BAR_ACTION_ICON_SIZE,
           tintColor: TgUiTokens.COLOR_ICON_PRIMARY
         })
+          .accessibilityGroup(true)
+          .accessibilityDescription($r('app.string.accessibility_search'))
           .margin({ right: TgUiTokens.SPACE_16 })
           .onClick(() => {
             this.onSecondRightPress();
@@ -111,6 +115,8 @@ export struct TgTopBar {
           iconSize: TgUiTokens.TOP_BAR_ACTION_ICON_SIZE,
           tintColor: TgUiTokens.COLOR_ICON_PRIMARY
         })
+          .accessibilityGroup(true)
+          .accessibilityDescription($r('app.string.accessibility_more'))
       }
     }
     .height(TgUiTokens.TOP_BAR_ACTION_TOUCH)

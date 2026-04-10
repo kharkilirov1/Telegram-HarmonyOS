@@ -107,6 +107,8 @@ export struct TgSearchBar {
         .height(TgUiTokens.SEARCH_BAR_CLEAR_TOUCH_SIZE)
         .justifyContent(FlexAlign.Center)
         .alignItems(VerticalAlign.Center)
+        .accessibilityGroup(true)
+        .accessibilityDescription($r('app.string.cancel'))
         .onClick(() => {
           this.handleClear();
         })
