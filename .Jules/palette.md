@@ -1,0 +1,1 @@
+## 2024-05-24 - Accessibility Modifiers in ArkUI\n**Learning:** In HarmonyOS ArkUI, you should use .accessibilityGroup(true) to group related elements together for screen readers and .accessibilityDescription() to describe them.\n**Action:** Add accessibility modifiers to icon-only buttons like the eye icon in PasswordInputPage and others.
