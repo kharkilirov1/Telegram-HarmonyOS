@@ -2441,6 +2441,14 @@
       "value": "channel"
     },
     {
+      "name": "accessibility_show_password",
+      "value": "Show password"
+    },
+    {
+      "name": "accessibility_hide_password",
+      "value": "Hide password"
+    },
+    {
       "name": "group_label",
       "value": "group"
     }

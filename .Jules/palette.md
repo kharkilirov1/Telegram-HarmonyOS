@@ -1,0 +1,3 @@
+## 2024-04-12 - ArkUI Interactive Images Accessibility
+**Learning:** In HarmonyOS/ArkUI, clickable `Image` components used as icon-only buttons (like the password visibility toggle) require explicit accessibility modifiers (`.accessibilityGroup(true)` and `.accessibilityDescription(...)`) to be properly identified and described by screen readers. By default, they lack semantic meaning and can be confusing for visually impaired users.
+**Action:** Always ensure that icon-only `Image` components with `.onClick()` handlers have `.accessibilityGroup(true)` and descriptive `.accessibilityDescription()` using localized string resources.

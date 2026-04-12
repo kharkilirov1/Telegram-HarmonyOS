@@ -81,6 +81,8 @@ export struct PasswordInputPage {
                 .height(TgUiTokens.ICON_SIZE_LG)
                 .fillColor(TgUiTokens.COLOR_ICON_SECONDARY)
                 .margin({ left: TgUiTokens.LOGIN_EYE_ICON_MARGIN_H, right: TgUiTokens.LOGIN_EYE_ICON_MARGIN_H })
+                .accessibilityGroup(true)
+                .accessibilityDescription(this.isPasswordVisible ? $r('app.string.accessibility_hide_password') : $r('app.string.accessibility_show_password'))
                 .onClick(() => {
                   this.isPasswordVisible = !this.isPasswordVisible;
                 })
