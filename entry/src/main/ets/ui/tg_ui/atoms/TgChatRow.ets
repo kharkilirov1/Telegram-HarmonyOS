@@ -33,6 +33,7 @@ export class TgChatRowData {
 }
 
 @ComponentV2
+@Reusable
 export struct TgChatRow {
   @Param chatId: number = 0;
   @Param title: string = '';
