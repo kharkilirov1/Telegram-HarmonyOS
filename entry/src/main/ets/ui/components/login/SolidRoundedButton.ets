@@ -42,6 +42,12 @@ export struct SolidRoundedButton {
     .backgroundColor(this.isEnabled ? TgUiTokens.LOGIN_BUTTON_BG : TgUiTokens.LOGIN_BUTTON_DISABLED_BG)
     .enabled(this.isEnabled && this.buttonState === 'default')
     .scale({ x: this.btnScale, y: this.btnScale })
+    .accessibilityGroup(true)
+    .accessibilityDescription(
+      this.buttonState === 'progress' ? 'Loading' :
+      this.buttonState === 'success' ? 'Success' :
+      this.isEnabled ? this.title : this.title + ', Disabled'
+    )
     .onClick(() => {
       this.animatePress();
       this.onPress();

@@ -1,0 +1,3 @@
+## 2026-04-13 - Dynamic Accessibility in ArkUI Components
+**Learning:** In HarmonyOS ArkUI, elements that change state dynamically (like a button switching between text, spinner, and success icon) may lose their screen reader context. Using `.accessibilityGroup(true)` ensures the whole component is treated as one interactive element, and dynamically updating `.accessibilityDescription()` based on component state guarantees screen readers always announce the current status (e.g., 'Loading', 'Success', or 'Disabled').
+**Action:** Always apply `.accessibilityGroup(true)` and dynamically compute `.accessibilityDescription()` for custom ArkUI components that have visual state changes to ensure full accessibility support.
