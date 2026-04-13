@@ -32,6 +32,7 @@ export class TgChatRowData {
   hasMention: boolean = false;
 }
 
+@Reusable
 @ComponentV2
 export struct TgChatRow {
   @Param chatId: number = 0;
@@ -87,6 +88,23 @@ export struct TgChatRow {
       return TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT;
     }
     return TgUiTokens.COLOR_TEXT_PREVIEW;
+  }
+
+  private buildAccessibilityText(): string {
+    const title = this.titleText();
+    const time = this.timeText;
+    let desc = `${title}, ${time}. `;
+    if (this.unreadCount > 0) {
+      desc += `${this.unreadCount} unread messages. `;
+    }
+    if (this.isPinned) {
+      desc += `Pinned. `;
+    }
+    if (this.isMuted) {
+      desc += `Muted. `;
+    }
+    desc += `${this.previewPrefixText()} ${this.previewText()}`;
+    return desc;
   }
 
   private previewPrefixColor(): ResourceColor {
@@ -249,5 +267,7 @@ export struct TgChatRow {
     }
     .width('100%')
     .height(TgUiTokens.CHAT_ROW_HEIGHT)
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.buildAccessibilityText())
   }
 }
