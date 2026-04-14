@@ -32,6 +32,7 @@ export class TgChatRowData {
   hasMention: boolean = false;
 }
 
+@Reusable
 @ComponentV2
 export struct TgChatRow {
   @Param chatId: number = 0;
@@ -94,6 +95,43 @@ export struct TgChatRow {
       return TgUiTokens.COLOR_AUTHOR_NAME;
     }
     return TgUiTokens.COLOR_TEXT_ERROR;
+  }
+
+  private getAccessibilityDescription(): string {
+    const parts: string[] = [];
+
+    let titlePart = this.titleText();
+    if (this.isSecret) titlePart = `Secret chat, ${titlePart}`;
+    parts.push(titlePart);
+
+    if (this.isPinned) parts.push('Pinned');
+    if (this.isMuted) parts.push('Muted');
+    if (this.isScam) parts.push('Scam');
+    if (this.isFake) parts.push('Fake');
+    if (this.isVerified) parts.push('Verified');
+
+    if (this.unreadCount > 0) {
+      parts.push(`${this.unreadCount} unread message${this.unreadCount > 1 ? 's' : ''}`);
+    }
+    if (this.hasMention) {
+      parts.push('has mention');
+    }
+
+    const previewText = this.previewText().trim();
+    if (previewText) {
+      const prefix = this.previewPrefixText();
+      if (prefix) {
+        parts.push(`Latest message: ${prefix} ${previewText}`);
+      } else {
+        parts.push(`Latest message: ${previewText}`);
+      }
+    }
+
+    if (this.timeText.trim()) {
+      parts.push(`at ${this.timeText}`);
+    }
+
+    return parts.join(', ');
   }
 
   @Builder
@@ -249,5 +287,8 @@ export struct TgChatRow {
     }
     .width('100%')
     .height(TgUiTokens.CHAT_ROW_HEIGHT)
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.getAccessibilityDescription())
+    .accessibilityLevel('yes')
   }
 }
