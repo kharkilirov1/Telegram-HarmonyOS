@@ -32,6 +32,7 @@ export class TgChatRowData {
   hasMention: boolean = false;
 }
 
+@Reusable
 @ComponentV2
 export struct TgChatRow {
   @Param chatId: number = 0;
@@ -130,6 +131,41 @@ export struct TgChatRow {
         bottom: 1
       })
       .margin({ left: TgUiTokens.CHAT_ROW_TITLE_VERIFIED_GAP })
+  }
+
+  private getAccessibilityText(): string {
+    const parts: string[] = [];
+    if (this.isPinned) parts.push('Pinned');
+    if (this.isMuted) parts.push('Muted');
+    if (this.isSecret) parts.push('Secret chat');
+
+    parts.push(this.titleText());
+
+    if (this.isScam) parts.push('Scam');
+    if (this.isFake) parts.push('Fake');
+    if (this.isVerified) parts.push('Verified');
+
+    if (this.unreadCount > 0) {
+      parts.push(`${this.unreadCount} unread message${this.unreadCount > 1 ? 's' : ''}`);
+    }
+
+    if (this.hasMention) {
+      parts.push('You were mentioned');
+    }
+
+    if (this.previewPrefixText().length > 0) {
+      parts.push(this.previewPrefixText());
+    }
+
+    if (this.previewText().length > 0) {
+      parts.push(this.previewText());
+    }
+
+    if (this.timeText.length > 0) {
+      parts.push(`at ${this.timeText}`);
+    }
+
+    return parts.join(', ');
   }
 
   @Builder
@@ -249,5 +285,7 @@ export struct TgChatRow {
     }
     .width('100%')
     .height(TgUiTokens.CHAT_ROW_HEIGHT)
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.getAccessibilityText())
   }
 }

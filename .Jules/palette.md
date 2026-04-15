@@ -1,0 +1,3 @@
+## 2026-04-15 - ArkUI Screen Reader Fragmentation
+**Learning:** Complex list items with multiple text components in ArkUI are read out individually (fragmented) by screen readers, making them difficult to understand.
+**Action:** Apply `.accessibilityGroup(true)` to the root container of complex list items to group the content, and use `.accessibilityDescription()` to provide a cohesive description string dynamically derived from the component's state.
