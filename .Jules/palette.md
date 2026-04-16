@@ -1,0 +1,3 @@
+## 2024-03-24 - Accessibility Grouping for Complex ArkUI Lists
+**Learning:** In ArkUI, complex list items (like chat rows with avatars, titles, badges, and previews) will be read out disjointedly by screen readers (fragmentation).
+**Action:** Always apply `.accessibilityGroup(true)` to the root container of complex list items, and dynamically compute an `.accessibilityDescription()` that combines all the relevant information into a coherent sentence for the screen reader.

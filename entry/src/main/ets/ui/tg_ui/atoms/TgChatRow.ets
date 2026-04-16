@@ -32,6 +32,7 @@ export class TgChatRowData {
   hasMention: boolean = false;
 }
 
+@Reusable
 @ComponentV2
 export struct TgChatRow {
   @Param chatId: number = 0;
@@ -94,6 +95,44 @@ export struct TgChatRow {
       return TgUiTokens.COLOR_AUTHOR_NAME;
     }
     return TgUiTokens.COLOR_TEXT_ERROR;
+  }
+
+  private getAccessibilityDescription(): string {
+    const parts: string[] = [];
+
+    parts.push(`Chat with ${this.titleText()}.`);
+
+    if (this.unreadCount > 0) {
+      parts.push(`${this.unreadCount} unread messages.`);
+    }
+
+    if (this.isTyping) {
+      parts.push('Typing...');
+    } else {
+      if (this.previewPrefixText()) {
+         parts.push(`${this.previewPrefixText()} ${this.previewText()}`);
+      } else {
+         parts.push(this.previewText());
+      }
+    }
+
+    if (this.isMuted) {
+      parts.push('Muted.');
+    }
+
+    if (this.isPinned) {
+      parts.push('Pinned.');
+    }
+
+    if (this.isSecret) {
+      parts.push('Secret chat.');
+    }
+
+    if (this.isVerified) {
+       parts.push('Verified.');
+    }
+
+    return parts.join(' ');
   }
 
   @Builder
@@ -249,5 +288,7 @@ export struct TgChatRow {
     }
     .width('100%')
     .height(TgUiTokens.CHAT_ROW_HEIGHT)
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.getAccessibilityDescription())
   }
 }
