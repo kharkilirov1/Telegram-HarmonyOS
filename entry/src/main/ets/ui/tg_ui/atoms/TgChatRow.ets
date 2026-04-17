@@ -32,6 +32,7 @@ export class TgChatRowData {
   hasMention: boolean = false;
 }
 
+@Reusable
 @ComponentV2
 export struct TgChatRow {
   @Param chatId: number = 0;
@@ -249,5 +250,7 @@ export struct TgChatRow {
     }
     .width('100%')
     .height(TgUiTokens.CHAT_ROW_HEIGHT)
+    .accessibilityGroup(true)
+    .accessibilityDescription(`${this.titleText()}, ${this.unreadCount > 0 ? this.unreadCount + " unread messages," : ""} ${this.previewText()}`)
   }
 }
