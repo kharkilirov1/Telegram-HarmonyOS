@@ -1,0 +1,3 @@
+## 2024-05-24 - ArkUI Complex List Item Accessibility
+**Learning:** In ArkUI components, complex list items (like `TgChatRow` which contains multiple `Text`, `TgIcon`, and `TgAvatar` elements) can be fragmented by screen readers, announcing each part separately.
+**Action:** Use `.accessibilityGroup(true)` on the root container of complex list items, and provide a comprehensive `.accessibilityDescription()` that summarizes the entire state of the item (e.g., chat title, unread count, mute/pin status, and latest message preview).
