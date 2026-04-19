@@ -32,6 +32,7 @@ export class TgChatRowData {
   hasMention: boolean = false;
 }
 
+@Reusable
 @ComponentV2
 export struct TgChatRow {
   @Param chatId: number = 0;
@@ -249,5 +250,21 @@ export struct TgChatRow {
     }
     .width('100%')
     .height(TgUiTokens.CHAT_ROW_HEIGHT)
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.getAccessibilityDescription())
+  }
+
+  private getAccessibilityDescription(): string {
+    let parts: string[] = [this.titleText()];
+    if (this.unreadCount > 0) {
+      parts.push(`${this.unreadCount} unread`);
+    }
+    if (this.isMuted) {
+      parts.push('muted');
+    }
+    if (this.previewText().trim().length > 0) {
+      parts.push(this.previewText().trim());
+    }
+    return parts.join(', ');
   }
 }
