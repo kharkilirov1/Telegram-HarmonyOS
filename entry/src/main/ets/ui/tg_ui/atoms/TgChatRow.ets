@@ -32,6 +32,7 @@ export class TgChatRowData {
   hasMention: boolean = false;
 }
 
+@Reusable
 @ComponentV2
 export struct TgChatRow {
   @Param chatId: number = 0;
@@ -155,6 +156,30 @@ export struct TgChatRow {
     .alignItems(VerticalAlign.Center)
   }
 
+  private getAccessibilityDescription(): string {
+    const parts: string[] = [];
+    parts.push(this.titleText());
+    if (this.isMuted) {
+      parts.push('Muted');
+    }
+    if (this.isPinned) {
+      parts.push('Pinned');
+    }
+    if (this.unreadCount > 0) {
+      parts.push(`${this.unreadCount} unread messages`);
+    }
+    if (this.hasMention) {
+      parts.push('Has mention');
+    }
+
+    if (this.previewPrefixText().length > 0) {
+      parts.push(this.previewPrefixText());
+    }
+    parts.push(this.previewText());
+
+    return parts.join(', ');
+  }
+
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
       Row() {
@@ -249,5 +274,7 @@ export struct TgChatRow {
     }
     .width('100%')
     .height(TgUiTokens.CHAT_ROW_HEIGHT)
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.getAccessibilityDescription())
   }
 }
