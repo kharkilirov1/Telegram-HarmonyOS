@@ -95,6 +95,8 @@ export struct TgChatTopBar {
         iconSize: TgUiTokens.TOP_BAR_ACTION_ICON_SIZE,
         tintColor: TgUiTokens.COLOR_ICON_PRIMARY
       })
+        .accessibilityGroup(true)
+        .accessibilityDescription($r('app.string.accessibility_back'))
     }
     .width(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
@@ -174,6 +176,8 @@ export struct TgChatTopBar {
         iconSize: 18,
         tintColor: TgUiTokens.COLOR_ICON_PRIMARY
       })
+        .accessibilityGroup(true)
+        .accessibilityDescription($r('app.string.accessibility_clear'))
         .onClick(() => {
           this.onSearchClose();
         })

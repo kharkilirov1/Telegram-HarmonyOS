@@ -1,0 +1,3 @@
+## 2024-05-18 - Added Screen Reader Accessibilities for chat capsule top bar
+**Learning:** For interactive multi-layered top bar capsules with icon-only buttons (like back/close or clear search), screen readers need explicitly declared accessibility traits directly on those child icons rather than assuming the encompassing Row/Button container alone is sufficient. When not added, the icons will not be properly announced.
+**Action:** Always add `.accessibilityGroup(true)` and `.accessibilityDescription()` to icon-only interactive UI elements, particularly in custom container components, using localized string references for proper announcement.

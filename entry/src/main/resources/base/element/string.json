@@ -2443,6 +2443,10 @@
     {
       "name": "group_label",
       "value": "group"
+    },
+    {
+      "name": "accessibility_clear",
+      "value": "Clear"
     }
   ]
 }
