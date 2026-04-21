@@ -1,0 +1,3 @@
+## 2024-05-24 - Grouping Complex ArkUI Components for Screen Readers
+**Learning:** In ArkUI, components with multiple visual items (like a list row with an avatar, text, unread badge, and time) get fragmented when read by screen readers. Each element is read separately, creating a disjointed and poor accessibility experience for the user.
+**Action:** When creating complex interactive components (like TgChatRow), apply `.accessibilityGroup(true)` to the root container. Then compute and provide a single, comprehensive description using `.accessibilityDescription(...)` so the user gets context clearly and concisely.
