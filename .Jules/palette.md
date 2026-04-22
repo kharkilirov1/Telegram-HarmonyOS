@@ -1,0 +1,3 @@
+## 2024-04-22 - Dynamic Accessibility for Icon-only Buttons
+**Learning:** In ArkUI, when buttons rely solely on icons (like `TgIcon`) and transition between states (e.g., Send vs Mic in a chat composer), screen readers can miss the context because the enclosing container handles the action but has no text. Furthermore, the accessibility text must dynamically recompute when the icon swaps.
+**Action:** Always add an `accessibilityText` property to reusable icon components, apply `.accessibilityGroup(true)` and `.accessibilityDescription()`, and pass dynamic string descriptions (like `this.canSend() ? 'Send message' : 'Record voice message'`) to guarantee accurate state announcements.

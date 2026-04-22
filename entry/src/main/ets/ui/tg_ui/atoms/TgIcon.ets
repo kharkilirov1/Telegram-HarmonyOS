@@ -8,6 +8,7 @@ export struct TgIcon {
   @Param isEnabled: boolean = true;
   @Param iconOpacity: number = 1;
   @Param supportSvg2: boolean = true;
+  @Param accessibilityText: string | Resource = '';
 
   build() {
     if (this.supportSvg2) {
@@ -17,12 +18,16 @@ export struct TgIcon {
         .objectFit(ImageFit.Contain)
         .fillColor(this.tintColor)
         .opacity(this.isEnabled ? this.iconOpacity : TgUiTokens.ICON_DISABLED_OPACITY)
+        .accessibilityGroup(true)
+        .accessibilityDescription(this.accessibilityText)
     } else {
       Image(this.src)
         .width(this.iconSize)
         .height(this.iconSize)
         .objectFit(ImageFit.Contain)
         .opacity(this.isEnabled ? this.iconOpacity : TgUiTokens.ICON_DISABLED_OPACITY)
+        .accessibilityGroup(true)
+        .accessibilityDescription(this.accessibilityText)
     }
   }
 }

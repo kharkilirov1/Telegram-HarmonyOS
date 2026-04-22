@@ -93,7 +93,8 @@ export struct TgChatTopBar {
       TgIcon({
         src: TgUiTokens.ICON_RES_BACK,
         iconSize: TgUiTokens.TOP_BAR_ACTION_ICON_SIZE,
-        tintColor: TgUiTokens.COLOR_ICON_PRIMARY
+        tintColor: TgUiTokens.COLOR_ICON_PRIMARY,
+        accessibilityText: 'Go back'
       })
     }
     .width(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
@@ -172,7 +173,8 @@ export struct TgChatTopBar {
       TgIcon({
         src: $r('app.media.ic_close'),
         iconSize: 18,
-        tintColor: TgUiTokens.COLOR_ICON_PRIMARY
+        tintColor: TgUiTokens.COLOR_ICON_PRIMARY,
+        accessibilityText: 'Clear search'
       })
         .onClick(() => {
           this.onSearchClose();

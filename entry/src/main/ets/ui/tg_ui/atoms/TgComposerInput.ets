@@ -73,7 +73,8 @@ export struct TgComposerInput {
           TgIcon({
             src: TgUiTokens.ICON_RES_EDIT,
             iconSize: TgUiTokens.COMPOSER_REPLY_CLOSE_SIZE,
-            tintColor: TgUiTokens.COMPOSER_ACTION_ACTIVE
+            tintColor: TgUiTokens.COMPOSER_ACTION_ACTIVE,
+            accessibilityText: 'Edit'
           })
         }
         .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
@@ -107,7 +108,8 @@ export struct TgComposerInput {
           TgIcon({
             src: TgUiTokens.ICON_RES_CLOSE,
             iconSize: TgUiTokens.COMPOSER_REPLY_CLOSE_SIZE,
-            tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
+            tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE,
+            accessibilityText: 'Cancel edit'
           })
         }
         .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
@@ -149,7 +151,8 @@ export struct TgComposerInput {
           TgIcon({
             src: TgUiTokens.ICON_RES_CLOSE,
             iconSize: TgUiTokens.COMPOSER_REPLY_CLOSE_SIZE,
-            tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
+            tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE,
+            accessibilityText: 'Cancel reply'
           })
         }
         .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
@@ -187,7 +190,8 @@ export struct TgComposerInput {
             TgIcon({
               src: TgUiTokens.ICON_RES_ATTACH,
               iconSize: TgUiTokens.COMPOSER_ICON_SIZE,
-              tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
+              tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE,
+              accessibilityText: 'Attach media'
             })
           }
           .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
@@ -244,7 +248,8 @@ export struct TgComposerInput {
               TgIcon({
                 src: TgUiTokens.ICON_RES_EMOJI,
                 iconSize: TgUiTokens.COMPOSER_ICON_SIZE,
-                tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
+                tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE,
+                accessibilityText: 'Choose emoji'
               })
             }
             .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
@@ -271,7 +276,8 @@ export struct TgComposerInput {
             iconSize: TgUiTokens.COMPOSER_ICON_SIZE,
             tintColor: this.canSend()
               ? TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT
-              : TgUiTokens.COMPOSER_ACTION_INACTIVE
+              : TgUiTokens.COMPOSER_ACTION_INACTIVE,
+            accessibilityText: this.canSend() ? 'Send message' : 'Record voice message'
           })
         }
         .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
