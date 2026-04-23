@@ -93,7 +93,8 @@ export struct TgChatTopBar {
       TgIcon({
         src: TgUiTokens.ICON_RES_BACK,
         iconSize: TgUiTokens.TOP_BAR_ACTION_ICON_SIZE,
-        tintColor: TgUiTokens.COLOR_ICON_PRIMARY
+        tintColor: TgUiTokens.COLOR_ICON_PRIMARY,
+        a11yDescription: $r('app.string.accessibility_back')
       })
     }
     .width(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
