@@ -1,0 +1,3 @@
+## 2026-04-24 - ArkUI Touch Target Accessibility
+**Learning:** In ArkUI, when applying accessibility labels to interactive components like icon buttons wrapped in structural elements (e.g., `Row`/`Column` wrapping an `Image`/`TgIcon`), applying `.accessibilityDescription()` only to the child element can lead to screen reader fragmentation or missed touch targets.
+**Action:** Always apply both `.accessibilityGroup(true)` and `.accessibilityDescription()` to BOTH the interactive wrapper (the touch target) and the child icon-only components to ensure correct screen reader announcement and avoid fragmentation.
