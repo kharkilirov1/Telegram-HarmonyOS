@@ -75,7 +75,11 @@ export struct TgChatListNavigationBar {
           iconSize: TgUiTokens.TOP_BAR_ACTION_ICON_SIZE,
           tintColor: TgUiTokens.COLOR_ICON_PRIMARY
         })
+        .accessibilityGroup(true)
+        .accessibilityDescription('Compose')
       }
+      .accessibilityGroup(true)
+      .accessibilityDescription('Compose')
       .width(TgUiTokens.TOP_BAR_ACTION_TOUCH)
       .height(TgUiTokens.TOP_BAR_ACTION_TOUCH)
       .justifyContent(FlexAlign.End)
