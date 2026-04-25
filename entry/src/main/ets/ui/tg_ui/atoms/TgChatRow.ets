@@ -32,6 +32,7 @@ export class TgChatRowData {
   hasMention: boolean = false;
 }
 
+// @Reusable
 @ComponentV2
 export struct TgChatRow {
   @Param chatId: number = 0;

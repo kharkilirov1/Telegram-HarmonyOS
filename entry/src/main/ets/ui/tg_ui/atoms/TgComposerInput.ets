@@ -109,6 +109,8 @@ export struct TgComposerInput {
             iconSize: TgUiTokens.COMPOSER_REPLY_CLOSE_SIZE,
             tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
           })
+          .accessibilityGroup(true)
+          .accessibilityDescription('Cancel editing')
         }
         .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
         .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
@@ -116,6 +118,8 @@ export struct TgComposerInput {
         .justifyContent(FlexAlign.Center)
         .alignItems(VerticalAlign.Center)
         .margin({ left: TgUiTokens.COMPOSER_REPLY_CLOSE_GAP })
+        .accessibilityGroup(true)
+        .accessibilityDescription('Cancel editing')
         .onClick(() => {
           this.onEditCancelPress();
         })
@@ -151,6 +155,8 @@ export struct TgComposerInput {
             iconSize: TgUiTokens.COMPOSER_REPLY_CLOSE_SIZE,
             tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
           })
+          .accessibilityGroup(true)
+          .accessibilityDescription('Cancel reply')
         }
         .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
         .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
@@ -158,6 +164,8 @@ export struct TgComposerInput {
         .justifyContent(FlexAlign.Center)
         .alignItems(VerticalAlign.Center)
         .margin({ left: TgUiTokens.COMPOSER_REPLY_CLOSE_GAP })
+        .accessibilityGroup(true)
+        .accessibilityDescription('Cancel reply')
         .onClick(() => {
           this.onReplyCancelPress();
         })
@@ -189,6 +197,8 @@ export struct TgComposerInput {
               iconSize: TgUiTokens.COMPOSER_ICON_SIZE,
               tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
             })
+            .accessibilityGroup(true)
+            .accessibilityDescription('Attach media')
           }
           .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
           .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
@@ -200,6 +210,8 @@ export struct TgComposerInput {
           .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
           .border({ width: TgUiTokens.COMPOSER_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
           .clip(true)
+          .accessibilityGroup(true)
+          .accessibilityDescription('Attach media')
         }
 
         // ── Text field (separate glass capsule) ──
@@ -246,12 +258,16 @@ export struct TgComposerInput {
                 iconSize: TgUiTokens.COMPOSER_ICON_SIZE,
                 tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
               })
+              .accessibilityGroup(true)
+              .accessibilityDescription('Open emoji keyboard')
             }
             .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
             .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
             .flexShrink(0)
             .justifyContent(FlexAlign.Center)
             .alignItems(VerticalAlign.Center)
+            .accessibilityGroup(true)
+            .accessibilityDescription('Open emoji keyboard')
           }
         }
         .layoutWeight(1)
@@ -273,6 +289,8 @@ export struct TgComposerInput {
               ? TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT
               : TgUiTokens.COMPOSER_ACTION_INACTIVE
           })
+          .accessibilityGroup(true)
+          .accessibilityDescription(this.canSend() ? 'Send message' : 'Record voice message')
         }
         .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
         .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
@@ -287,6 +305,8 @@ export struct TgComposerInput {
           color: TgUiTokens.COMPOSER_CAPSULE_BORDER
         })
         .clip(true)
+        .accessibilityGroup(true)
+        .accessibilityDescription(this.canSend() ? 'Send message' : 'Record voice message')
         .onClick(() => {
           this.handleSend();
         })

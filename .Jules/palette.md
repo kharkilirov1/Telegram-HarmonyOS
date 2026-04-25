@@ -1,0 +1,3 @@
+## 2026-04-25 - Added proper ARIA labels to TgComposerInput
+**Learning:** Interactive icon-only buttons inside complex wrappers in ArkUI require both `.accessibilityGroup(true)` and `.accessibilityDescription()` on both the icon and the interactive wrapper (e.g. `Row`) to be correctly announced and not skipped by screen readers. Furthermore, dynamic descriptions (e.g. switching between 'Send message' and 'Record voice message' based on text presence) work fine.
+**Action:** Always ensure that any interactive touch targets, specifically custom containers wrapping icons, have explicit accessibility descriptions and groups applied.
