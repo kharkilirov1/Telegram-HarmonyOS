@@ -59,6 +59,8 @@ export struct TgChatListNavigationBar {
       .onClick(() => {
         this.onEditPress();
       })
+      .accessibilityGroup(true)
+      .accessibilityDescription(this.editText)
     } else {
       Row()
         .width(TgUiTokens.TOP_BAR_ACTION_TOUCH)
@@ -83,6 +85,8 @@ export struct TgChatListNavigationBar {
       .onClick(() => {
         this.onComposePress();
       })
+      .accessibilityGroup(true)
+      .accessibilityDescription('Compose')
     } else {
       Row()
         .width(TgUiTokens.TOP_BAR_ACTION_TOUCH)

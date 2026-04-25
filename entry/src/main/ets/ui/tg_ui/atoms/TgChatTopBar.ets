@@ -109,6 +109,8 @@ export struct TgChatTopBar {
     .onClick(() => {
       this.onBackPress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Back')
   }
 
   @Builder
@@ -149,6 +151,8 @@ export struct TgChatTopBar {
     .onClick(() => {
       this.onTitlePress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Chat info')
   }
 
   @Builder
@@ -178,6 +182,8 @@ export struct TgChatTopBar {
           this.onSearchClose();
         })
         .margin({ right: 4 })
+        .accessibilityGroup(true)
+        .accessibilityDescription('Clear search')
     }
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .layoutWeight(1)
@@ -219,6 +225,8 @@ export struct TgChatTopBar {
     .onClick(() => {
       this.onAvatarPress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Profile')
   }
 
   build() {
