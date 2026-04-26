@@ -1,0 +1,3 @@
+## 2024-05-18 - Dynamic Accessibility Descriptions in Multi-State Buttons
+**Learning:** In ArkUI components where a single interactive element changes purpose based on visual state (e.g. a Send button that turns into a Mic button when input is empty), the screen reader will read incorrect labels if static strings are used.
+**Action:** When working with dual-purpose interactive components in ArkUI, use a dynamically computed string for `.accessibilityDescription()` (e.g. `this.canSend() ? 'Send message' : 'Record voice message'`) to guarantee accurate announcements reflecting the component's true capability.
