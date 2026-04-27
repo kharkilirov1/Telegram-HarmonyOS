@@ -1,0 +1,3 @@
+## 2026-04-27 - Custom Container Accessibility
+**Learning:** When creating custom interactive containers (like top bar capsules or action buttons) that wrap visual elements (like icons), applying '.accessibilityGroup(true)' and '.accessibilityDescription()' to the outermost interactive wrapper is essential. This prevents screen readers from redundantly reading internal components and ensures a single, clear announcement for the action.
+**Action:** Always wrap interactive icons or text within a Row or Column when applying onClick and attach the accessibility attributes directly to that interactive wrapper.
