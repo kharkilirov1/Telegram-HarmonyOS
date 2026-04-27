@@ -96,6 +96,8 @@ export struct TgChatTopBar {
         tintColor: TgUiTokens.COLOR_ICON_PRIMARY
       })
     }
+    .accessibilityGroup(true)
+    .accessibilityDescription('Go back')
     .width(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .justifyContent(FlexAlign.Center)
@@ -132,6 +134,8 @@ export struct TgChatTopBar {
           .textOverflow({ overflow: TextOverflow.Ellipsis })
       }
     }
+    .accessibilityGroup(true)
+    .accessibilityDescription('Chat details')
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
@@ -174,6 +178,8 @@ export struct TgChatTopBar {
         iconSize: 18,
         tintColor: TgUiTokens.COLOR_ICON_PRIMARY
       })
+        .accessibilityGroup(true)
+        .accessibilityDescription('Close search')
         .onClick(() => {
           this.onSearchClose();
         })
@@ -206,6 +212,8 @@ export struct TgChatTopBar {
         avatarBackgroundColor: this.avatarColor()
       })
     }
+    .accessibilityGroup(true)
+    .accessibilityDescription('User profile')
     .width(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .justifyContent(FlexAlign.Center)

@@ -1,0 +1,3 @@
+## 2026-04-27 - Adding accessibility labels to ArkUI interactive components
+**Learning:** In HarmonyOS ArkUI, applying `.accessibilityGroup(true)` and `.accessibilityDescription()` to the parent interactive container (e.g., `Row` or `Column`) prevents fragmentation in screen readers, and dynamic properties can correctly update the label based on component state.
+**Action:** When creating custom button components or wrappers in ArkUI, consistently apply accessibility grouping on the main clickable wrapper rather than on inner elements (like icons or text), ensuring dynamic descriptions update reflecting capability (e.g., Send vs. Mic).
