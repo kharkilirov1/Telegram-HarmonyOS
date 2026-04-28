@@ -1,0 +1,3 @@
+## 2024-05-18 - ArkUI Component Accessibility
+**Learning:** In ArkUI, native ARIA labels from HTML do not apply. Screen readers rely on the `.accessibilityGroup(true)` and `.accessibilityDescription()` modifiers. For custom icon components like `TgIcon`, applying these modifiers to the interactive wrapper (like a `Row`) is the correct way to ensure proper accessibility focus and announcement without redundant reads.
+**Action:** Always wrap interactive icon-only elements in ArkUI with a structural component like `Row`, apply the `onClick` there, and set the accessibility descriptions dynamically on the wrapper.
