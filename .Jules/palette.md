@@ -1,0 +1,3 @@
+## 2024-05-03 - [ArkUI Accessibility Grouping & Touch Targets]
+**Learning:** When applying accessibility features in ArkUI, wrapping existing icon components in new inner containers (e.g. `Row`) and moving `onClick` handlers can inadvertently shrink touch targets designed into the parent wrapper. Generic components also suffer from hardcoded descriptions (e.g. 'Action'), confusing screen readers.
+**Action:** Avoid altering layout wrappers just to apply accessibility group properties on individual icons inside a multi-action slot if it breaks the touch target size. Always ensure descriptions correctly contextualize the component's state or action instead of relying on generic fallbacks.
