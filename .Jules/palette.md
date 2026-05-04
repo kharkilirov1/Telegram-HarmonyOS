@@ -1,0 +1,3 @@
+## 2026-05-04 - Interactive Icon-Only Components in ArkUI
+**Learning:** When making custom icon-only components (like TgIcon) interactive and accessible in ArkUI, attaching accessibility attributes directly to the image or child components can lead to fragmented or incorrect screen reader announcements, and can also interfere with click target management.
+**Action:** Always wrap the icon-only component in a structural container (like `Row` or `Column`), move the `.onClick` handler and layout properties (like margins) to this wrapper, and apply `.accessibilityGroup(true)` and `.accessibilityDescription()` directly to the wrapper to ensure a unified and clear screen reader experience.

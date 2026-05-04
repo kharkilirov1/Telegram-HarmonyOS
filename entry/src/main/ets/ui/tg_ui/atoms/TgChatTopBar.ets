@@ -106,6 +106,8 @@ export struct TgChatTopBar {
     .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .clip(true)
     .renderGroup(true)
+    .accessibilityGroup(true)
+    .accessibilityDescription('Back')
     .onClick(() => {
       this.onBackPress();
     })
@@ -169,15 +171,19 @@ export struct TgChatTopBar {
           this.onSearchQueryChange(value);
         })
 
-      TgIcon({
-        src: $r('app.media.ic_close'),
-        iconSize: 18,
-        tintColor: TgUiTokens.COLOR_ICON_PRIMARY
-      })
-        .onClick(() => {
-          this.onSearchClose();
+      Row() {
+        TgIcon({
+          src: $r('app.media.ic_close'),
+          iconSize: 18,
+          tintColor: TgUiTokens.COLOR_ICON_PRIMARY
         })
-        .margin({ right: 4 })
+      }
+      .accessibilityGroup(true)
+      .accessibilityDescription('Clear search')
+      .onClick(() => {
+        this.onSearchClose();
+      })
+      .margin({ right: 4 })
     }
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .layoutWeight(1)
@@ -216,6 +222,8 @@ export struct TgChatTopBar {
     .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .clip(true)
     .renderGroup(true)
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.isOnline ? `${this.title}, online` : this.title)
     .onClick(() => {
       this.onAvatarPress();
     })
