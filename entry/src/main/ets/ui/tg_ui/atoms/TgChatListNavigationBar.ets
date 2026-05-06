@@ -52,6 +52,7 @@ export struct TgChatListNavigationBar {
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
       }
+      .accessibilityGroup(true)
       .constraintSize({ minWidth: TgUiTokens.TOP_BAR_ACTION_TOUCH })
       .height(TgUiTokens.TOP_BAR_ACTION_TOUCH)
       .justifyContent(FlexAlign.Start)
@@ -76,6 +77,8 @@ export struct TgChatListNavigationBar {
           tintColor: TgUiTokens.COLOR_ICON_PRIMARY
         })
       }
+      .accessibilityGroup(true)
+      .accessibilityDescription('Compose')
       .width(TgUiTokens.TOP_BAR_ACTION_TOUCH)
       .height(TgUiTokens.TOP_BAR_ACTION_TOUCH)
       .justifyContent(FlexAlign.End)

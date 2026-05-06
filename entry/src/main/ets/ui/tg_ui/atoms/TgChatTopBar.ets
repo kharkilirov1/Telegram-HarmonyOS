@@ -96,6 +96,8 @@ export struct TgChatTopBar {
         tintColor: TgUiTokens.COLOR_ICON_PRIMARY
       })
     }
+    .accessibilityGroup(true)
+    .accessibilityDescription('Back')
     .width(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .justifyContent(FlexAlign.Center)
@@ -132,6 +134,7 @@ export struct TgChatTopBar {
           .textOverflow({ overflow: TextOverflow.Ellipsis })
       }
     }
+    .accessibilityGroup(true)
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
@@ -169,15 +172,19 @@ export struct TgChatTopBar {
           this.onSearchQueryChange(value);
         })
 
-      TgIcon({
-        src: $r('app.media.ic_close'),
-        iconSize: 18,
-        tintColor: TgUiTokens.COLOR_ICON_PRIMARY
-      })
-        .onClick(() => {
-          this.onSearchClose();
+      Row() {
+        TgIcon({
+          src: $r('app.media.ic_close'),
+          iconSize: 18,
+          tintColor: TgUiTokens.COLOR_ICON_PRIMARY
         })
-        .margin({ right: 4 })
+      }
+      .accessibilityGroup(true)
+      .accessibilityDescription('Clear search')
+      .onClick(() => {
+        this.onSearchClose();
+      })
+      .margin({ right: 4 })
     }
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .layoutWeight(1)
@@ -206,6 +213,8 @@ export struct TgChatTopBar {
         avatarBackgroundColor: this.avatarColor()
       })
     }
+    .accessibilityGroup(true)
+    .accessibilityDescription('Profile')
     .width(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .justifyContent(FlexAlign.Center)
