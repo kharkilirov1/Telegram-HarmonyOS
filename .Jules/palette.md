@@ -1,0 +1,3 @@
+## 2024-05-16 - Accessibility in Interactive Wrappers
+**Learning:** For UI components like top bar buttons (where an icon/text is wrapped in a container that handles touch target size and the `onClick` event), the `.accessibilityGroup(true)` and `.accessibilityDescription()` modifiers should be applied directly to the *wrapper* container rather than the internal element. This prevents screen readers from confusing or skipping the hit area.
+**Action:** When adding accessibility to icon-only buttons or custom touch targets in ArkUI, apply the accessibility modifiers to the element carrying the `onClick` handler and sizing constraints.
