@@ -1,0 +1,3 @@
+## 2024-05-13 - Icon-only Interactive Element Accessibility in ArkUI
+**Learning:** In ArkUI, applying `.onClick` and accessibility descriptions directly to icon-only components like `TgIcon` can cause redundant announcements or miss interactive states. Interactive multi-layered capsules fragment text announcements if the root is not grouped.
+**Action:** Always wrap interactive icon-only elements in a `Row` or `Column`, move the `.onClick` and layout modifiers to the wrapper, and apply `.accessibilityGroup(true)` with `.accessibilityDescription()` to the wrapper. Apply `.accessibilityGroup(true)` to root containers of complex items (like capsules) to prevent text fragmentation.
