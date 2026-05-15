@@ -1,0 +1,3 @@
+## 2024-05-15 - Top Bar Capsule Accessibility
+**Learning:** Complex top bar navigation capsules (like in TgChatTopBar) need explicit `.accessibilityGroup(true)` to prevent screen readers from reading nested texts (like title + subtitle) separately. Icon-only buttons (like the search clear button) should be wrapped in layout containers with accessibility descriptions so their actions are clear to screen readers.
+**Action:** Always wrap interactive top bar capsules and icon-only buttons with `.accessibilityGroup(true)` and `.accessibilityDescription()` to provide clear, single-swipe announcements for navigation elements.
