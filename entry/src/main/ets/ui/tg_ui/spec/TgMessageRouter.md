@@ -33,6 +33,7 @@ Drop-in replacement for direct `TgMessageBubbleBase` usage in chat timeline.
 ### Common (passed to all atoms)
 - `isOutgoing: boolean`
 - `containerWidth: number`
+- `groupingFlags: string` — `none | top | middle | bottom`; `both` remains a legacy alias for `middle`
 
 ### Text
 - `text: string` — message text or fallback label
@@ -94,6 +95,7 @@ Drop-in replacement for direct `TgMessageBubbleBase` usage in chat timeline.
 - [ ] Sticker renders without bubble background
 - [ ] Router remains orchestration-only for text + visual-media families
 - [ ] Shrink-wrapped bubble variants keep time/status anchored via explicit trailing alignment, not generic `width('100%')` footer rows
+- [ ] Text, visual-media, and non-visual media branches use the same grouped-corner semantics from timeline VO
 
 
 ## 2026-04-05 updates
@@ -102,3 +104,8 @@ Drop-in replacement for direct `TgMessageBubbleBase` usage in chat timeline.
 - Image-like special cases keep overlay meta tied to the surface itself:
   - `sticker` uses bottom-right overlay meta on the sticker surface
   - `location` without venue text uses bottom-right overlay meta on the map surface
+
+## 2026-05-03 updates
+- Live chat rows now pass `groupingFlags` from `ChatTimelineVO` into `TgMessageRouter`.
+- Timeline grouping is derived from tight consecutive-message spacing: first connected message = `top`, middle connected message = `middle`, last connected message = `bottom`.
+- Router fallback/non-visual shells and `TgMediaBubbleShellV2` now match `TgTextBubbleV3` grouped-corner semantics instead of inverting `top`/`bottom`.

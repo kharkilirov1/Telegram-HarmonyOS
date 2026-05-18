@@ -31,12 +31,40 @@ export struct CodeInputPage {
   @Local private resendTimer: number = -1;
   @Local private shakeOffset: number = 0;
 
+  private pageLifecycleToken: number = 0;
+  private shakeAnimationSerial: number = 0;
+  private codeSubmitRequestSerial: number = 0;
+  private resendRequestSerial: number = 0;
+
+  private isCurrentCodeContinuation(scheduledToken: number): boolean {
+    return scheduledToken === this.pageLifecycleToken;
+  }
+
+  private isCurrentShakeAnimation(scheduledToken: number, scheduledSerial: number): boolean {
+    return this.isCurrentCodeContinuation(scheduledToken) && scheduledSerial === this.shakeAnimationSerial;
+  }
+
+  private isCurrentCodeSubmitRequest(scheduledToken: number, scheduledSerial: number): boolean {
+    return this.isCurrentCodeContinuation(scheduledToken) && scheduledSerial === this.codeSubmitRequestSerial;
+  }
+
+  private isCurrentResendRequest(scheduledToken: number, scheduledSerial: number): boolean {
+    return this.isCurrentCodeContinuation(scheduledToken) && scheduledSerial === this.resendRequestSerial;
+  }
+
   aboutToAppear(): void {
+    this.pageLifecycleToken += 1;
     this.remainingTime = this.timeout;
     this.startCountdown();
   }
 
   aboutToDisappear(): void {
+    this.pageLifecycleToken += 1;
+    this.shakeAnimationSerial += 1;
+    this.codeSubmitRequestSerial += 1;
+    this.resendRequestSerial += 1;
+    this.shakeOffset = 0;
+    this.buttonState = 'default';
     this.stopCountdown();
   }
 
@@ -152,12 +180,18 @@ export struct CodeInputPage {
   // ─── Submit ───
   private async submitCode(code: string): Promise<void> {
     if (code.length === 0) return;
+    const requestToken: number = this.pageLifecycleToken;
+    this.codeSubmitRequestSerial += 1;
+    const requestSerial: number = this.codeSubmitRequestSerial;
     this.buttonState = 'progress';
     this.errorMessage = '';
 
     const controller = LoginController.getInstance();
     const result = await controller.checkCode(code);
 
+    if (!this.isCurrentCodeSubmitRequest(requestToken, requestSerial)) {
+      return;
+    }
     if (result.success) {
       this.buttonState = 'default';
       this.onCodeAccepted();
@@ -174,8 +208,14 @@ export struct CodeInputPage {
 
   // ─── Resend ───
   private async requestResend(): Promise<void> {
+    const requestToken: number = this.pageLifecycleToken;
+    this.resendRequestSerial += 1;
+    const requestSerial: number = this.resendRequestSerial;
     const controller = LoginController.getInstance();
     const result = await controller.resendCode();
+    if (!this.isCurrentResendRequest(requestToken, requestSerial)) {
+      return;
+    }
     if (result.success) {
       this.remainingTime = this.timeout;
       this.startCountdown();
@@ -196,13 +236,19 @@ export struct CodeInputPage {
   // При уходе в background таймер замораживается, что ОК для UX.
   private startCountdown(): void {
     this.stopCountdown();
-    this.resendTimer = setInterval(() => {
+    const timerToken: number = this.pageLifecycleToken;
+    const timerId: number = setInterval(() => {
+      if (!this.isCurrentCodeContinuation(timerToken) || this.resendTimer !== timerId) {
+        clearInterval(timerId);
+        return;
+      }
       this.remainingTime--;
       if (this.remainingTime <= 0) {
         this.remainingTime = 0;
         this.stopCountdown();
       }
     }, 1000);
+    this.resendTimer = timerId;
   }
 
   private stopCountdown(): void {
@@ -216,26 +262,49 @@ export struct CodeInputPage {
   private animateShake(): void {
     const uiContext = this.getUIContext();
     if (!uiContext) return;
+    const animationToken: number = this.pageLifecycleToken;
+    this.shakeAnimationSerial += 1;
+    const animationSerial: number = this.shakeAnimationSerial;
     uiContext.keyframeAnimateTo({ iterations: 1 }, [
       {
         duration: 100,
         curve: Curve.Linear,
-        event: () => { this.shakeOffset = 12; }
+        event: () => {
+          if (!this.isCurrentShakeAnimation(animationToken, animationSerial)) {
+            return;
+          }
+          this.shakeOffset = 12;
+        }
       },
       {
         duration: 100,
         curve: Curve.Linear,
-        event: () => { this.shakeOffset = -12; }
+        event: () => {
+          if (!this.isCurrentShakeAnimation(animationToken, animationSerial)) {
+            return;
+          }
+          this.shakeOffset = -12;
+        }
       },
       {
         duration: 100,
         curve: Curve.Linear,
-        event: () => { this.shakeOffset = 12; }
+        event: () => {
+          if (!this.isCurrentShakeAnimation(animationToken, animationSerial)) {
+            return;
+          }
+          this.shakeOffset = 12;
+        }
       },
       {
         duration: 100,
         curve: Curve.Linear,
-        event: () => { this.shakeOffset = 0; }
+        event: () => {
+          if (!this.isCurrentShakeAnimation(animationToken, animationSerial)) {
+            return;
+          }
+          this.shakeOffset = 0;
+        }
       }
     ]);
   }
@@ -247,8 +316,12 @@ export struct CodeInputPage {
         action: 'ohos.want.action.viewData',
         uri: 'https://fragment.com'
       };
+      const abilityToken: number = this.pageLifecycleToken;
       context.startAbility(want)
         .catch((error: Object) => {
+          if (!this.isCurrentCodeContinuation(abilityToken)) {
+            return;
+          }
           hilog.error(DOMAIN, TAG, 'Failed to open fragment.com: %{public}s', String(error));
         });
     } catch (error) {

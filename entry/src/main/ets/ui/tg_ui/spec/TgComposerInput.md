@@ -8,7 +8,7 @@ Build Telegram-like bottom composer panel:
 - mic/send action button
 - optional reply snippet block on top
 
-UI-only scope for this step. No message send logic, no keyboard controller integration, no media picker actions.
+UI-only scope for this atom. Message send, keyboard controller integration, media picker, emoji panel, and voice recording remain parent-owned; the atom only exposes dedicated action callbacks for those controls. A selected attachment can be previewed as a pending accessory snippet, but the actual send-media serialization remains parent/runtime-owned.
 
 ## iOS References
 - `submodules/TelegramUI/Components/Chat/ChatTextInputPanelNode/Sources/ChatTextInputPanelNode.swift`
@@ -35,13 +35,25 @@ UI-only scope for this step. No message send logic, no keyboard controller integ
 - `replyHasThumbnail: boolean`
 - `showEditSnippet: boolean`
 - `editPreview: string`
+- `showForwardSnippet: boolean`
+- `forwardTitle: string`
+- `forwardPreview: string`
+- `showAttachmentSnippet: boolean`
+- `attachmentKind: string` (`photo` / `video` / `document`)
+- `attachmentTitle: string`
+- `attachmentPreview: string`
 - `containerWidth: number`
 - `bottomInset: number`
-- callbacks:
+  - callbacks:
   - `onTextChange(text)`
   - `onSendPress(text)`
+  - `onAttachPress()`
+  - `onEmojiPress()`
+  - `onVoicePress()`
   - `onReplyCancelPress()`
   - `onEditCancelPress()`
+  - `onForwardCancelPress()`
+  - `onAttachmentCancelPress()`
 
 ## State Matrix (demo)
 - empty idle (interactive)
@@ -50,6 +62,8 @@ UI-only scope for this step. No message send logic, no keyboard controller integ
 - multiline text
 - with reply snippet
 - with edit snippet
+- with forward snippet
+- with selected attachment snippet
 - no attach button
 - no emoji button
 - disabled
@@ -57,14 +71,18 @@ UI-only scope for this step. No message send logic, no keyboard controller integ
 - wide container
 
 ## Layout Rules
-1) Main row is a **three-piece glass composition**, not one monolithic capsule:
+1) Main row follows the iOS composer split:
    - optional attach circle
-   - central text capsule with inline emoji lane
-   - trailing action circle (mic or send)
+   - central text capsule with inline accessory panel, text field, emoji lane, and send action
+   - trailing mic circle only while idle/empty
+   - when text or pending forward content is sendable, the send button docks inside the text capsule at the right edge
 2) The input field uses ArkUI `TextContentStyle.INLINE` so stock text-box chrome does not fight the custom capsule shell.
 3) The send-style Enter key uses `onSubmit(..., SubmitEvent)` + `keepEditableState()` so the keyboard can stay visible after submit.
-4) Reply snippet is optional and rendered above the main input row as its own glass strip with a tokenized gap and trailing cancel control.
-5) All colors/sizes/weights/radii are tokenized in `TgUiTokens`.
+4) Reply/edit/forward snippets are optional accessory panels rendered inside the central text capsule above the input row, not as separate external glass strips.
+5) Forward and selected-attachment snippets use the same embedded accessory-panel pattern as reply/edit, and the send action must stay enabled even when the text field is empty.
+6) Attach, emoji, and idle mic are explicit parent-owned actions. The atom must not silently route an idle mic tap through `onSendPress`.
+7) A selected attachment preview is only a UI/accessory state. Sending a picked URI requires a separate parent/runtime media-send path and must not be faked by this atom.
+8) All colors/sizes/weights/radii are tokenized in `TgUiTokens`.
 
 ## Token Mapping
 - Colors:
@@ -85,6 +103,8 @@ UI-only scope for this step. No message send logic, no keyboard controller integ
   - `COMPOSER_REPLY_GAP`
   - `COMPOSER_REPLY_CLOSE_SIZE`
   - `COMPOSER_REPLY_CLOSE_GAP`
+  - `COMPOSER_ACCESSORY_MIN_HEIGHT`
+  - `COMPOSER_ACCESSORY_TEXT_GAP`
   - `COMPOSER_TEXT_PADDING_TOP/BOTTOM/LEFT/RIGHT`
   - `COMPOSER_ATTACH_LEFT_INSET`
   - `COMPOSER_BORDER_WIDTH`
@@ -93,16 +113,26 @@ UI-only scope for this step. No message send logic, no keyboard controller integ
   - `COMPOSER_MAX_LINES`
 - Icons:
   - `ICON_RES_ATTACH`
-  - `ICON_RES_SEND`
-  - `ICON_RES_MIC`
-  - `ICON_RES_EMOJI`
+- `ICON_RES_SEND`
+- `ICON_RES_MIC`
+- `ICON_RES_EMOJI`
+- `ICON_RES_FORWARD`
+- `ICON_RES_PHOTO`
+- `ICON_RES_VIDEO`
+- `ICON_RES_DOCUMENT`
 
 ## Acceptance Checklist
 - [ ] Mic/send state switch is stable and centered
+- [ ] Send action is inside the text capsule while mic stays outside in the idle state
 - [ ] Input capsule keeps stable geometry on empty/long/multiline text
 - [ ] Emoji lane is optional and does not collapse the send button hit target
 - [ ] Placeholder/text typography stays telegram-like and tokenized
 - [ ] Reply snippet integration does not break panel alignment
+- [ ] Reply/edit/forward accessory panels share the text capsule background instead of creating a second external capsule
+- [ ] Forward snippet keeps send action available without typed text
+- [ ] Selected attachment preview keeps send action available without typed text
+- [ ] Selected attachment close action exits through `onAttachmentCancelPress`
+- [ ] Attach, emoji, and idle mic taps leave the atom through dedicated callbacks
 - [ ] Reply snippet cancel action stays inside the atom contract
 - [ ] Narrow/wide container behavior is stable
 - [ ] Tokens-only implementation (no magic visual numbers)
@@ -114,11 +144,14 @@ At least 10 states:
 3) long text send
 4) multiline text
 5) with reply snippet
-6) no attach
-7) no emoji
-8) disabled
-9) narrow container
-10) wide container
+6) with edit snippet
+7) with forward snippet
+8) with selected attachment snippet
+9) no attach
+10) no emoji
+11) disabled
+12) narrow container
+13) wide container
 
 ## HarmonyOS grounding
 - `TextArea.style(TextContentStyle.INLINE)` — inline input style for custom shells

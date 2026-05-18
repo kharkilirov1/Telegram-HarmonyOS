@@ -905,6 +905,30 @@
       "value": "Open emoji picker"
     },
     {
+      "name": "composer_attachment_unavailable",
+      "value": "Attachment picker is not available yet"
+    },
+    {
+      "name": "composer_media_send_unavailable",
+      "value": "Media sending is not available yet"
+    },
+    {
+      "name": "composer_media_send_failed",
+      "value": "Could not send media"
+    },
+    {
+      "name": "composer_emoji_unavailable",
+      "value": "Emoji picker is not available yet"
+    },
+    {
+      "name": "composer_stickers_unavailable",
+      "value": "Stickers are not available yet"
+    },
+    {
+      "name": "composer_voice_unavailable",
+      "value": "Voice recording is not available yet"
+    },
+    {
       "name": "accessibility_scroll_bottom",
       "value": "Scroll to bottom"
     },

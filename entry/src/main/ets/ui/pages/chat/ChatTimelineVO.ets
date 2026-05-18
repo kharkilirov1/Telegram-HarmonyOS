@@ -141,6 +141,10 @@ export class ChatMessageRowVO {
   photoWidth: number = 0;
   photoHeight: number = 0;
   albumPhotoPaths: string[] = [];
+  albumPhotoFileIds: number[] = [];
+  albumPhotoHasLocal: boolean[] = [];
+  albumPhotoDownloading: boolean[] = [];
+  albumPhotoDownloadProgress: number[] = [];
   albumPhotoWidths: number[] = [];
   albumPhotoHeights: number[] = [];
 
@@ -218,6 +222,7 @@ export class ChatMessageRowVO {
 
   // Spacing: same sender = tight (iOS 2pt), different sender = loose (iOS 8pt)
   topSpacing: number = 8;
+  groupingFlags: string = 'none';
 }
 
 export class ChatTimelineEntryVO {
@@ -648,6 +653,33 @@ function shouldReserveAvatarLane(chat: Chat): boolean {
   return chat.type === 'group' || chat.type === 'supergroup';
 }
 
+function isTightlyGroupedWithPrevious(entry: ChatTimelineEntryVO): boolean {
+  return entry.kind === 'message' && entry.message.topSpacing <= 2;
+}
+
+function updateBubbleGroupingFlags(entries: ChatTimelineEntryVO[]): void {
+  for (let index = 0; index < entries.length; index++) {
+    const entry = entries[index];
+    if (entry.kind !== 'message') {
+      continue;
+    }
+
+    const nextEntry = index + 1 < entries.length ? entries[index + 1] : undefined;
+    const hasPrevious = isTightlyGroupedWithPrevious(entry);
+    const hasNext = nextEntry !== undefined && isTightlyGroupedWithPrevious(nextEntry);
+
+    if (hasPrevious && hasNext) {
+      entry.message.groupingFlags = 'middle';
+    } else if (hasNext) {
+      entry.message.groupingFlags = 'top';
+    } else if (hasPrevious) {
+      entry.message.groupingFlags = 'bottom';
+    } else {
+      entry.message.groupingFlags = 'none';
+    }
+  }
+}
+
 function buildMessageEntry(message: Message, chat: Chat, state: AppState, messageById: Map<string, Message>,
   prevSenderId: number = -1): ChatTimelineEntryVO {
   const row = new ChatMessageRowVO();
@@ -868,14 +900,23 @@ function buildPhotoAlbumEntry(albumMessages: Message[], chat: Chat, state: AppSt
   entry.message.photoWidth = 0;
   entry.message.photoHeight = 0;
   entry.message.albumPhotoPaths = [];
+  entry.message.albumPhotoFileIds = [];
+  entry.message.albumPhotoHasLocal = [];
+  entry.message.albumPhotoDownloading = [];
+  entry.message.albumPhotoDownloadProgress = [];
   entry.message.albumPhotoWidths = [];
   entry.message.albumPhotoHeights = [];
 
   for (const message of albumMessages) {
     const content = message.content;
+    const photoTransfer = resolveTransfer(content.photoFileId, state);
     const rawPhotoPath = content.photoPath.length > 0 ? content.photoPath : content.photoThumbPath;
     const photoUri = toFileUri(rawPhotoPath);
     entry.message.albumPhotoPaths.push(photoUri);
+    entry.message.albumPhotoFileIds.push(content.photoFileId);
+    entry.message.albumPhotoHasLocal.push(content.photoPath.length > 0);
+    entry.message.albumPhotoDownloading.push(isTransferActive(photoTransfer));
+    entry.message.albumPhotoDownloadProgress.push(resolveTransferProgress(photoTransfer));
     entry.message.albumPhotoWidths.push(content.photoWidth);
     entry.message.albumPhotoHeights.push(content.photoHeight);
   }
@@ -883,6 +924,10 @@ function buildPhotoAlbumEntry(albumMessages: Message[], chat: Chat, state: AppSt
   if (entry.message.albumPhotoPaths.length <= 1) {
     entry.message.contentType = 'photo';
     entry.message.photoPath = entry.message.albumPhotoPaths.length > 0 ? entry.message.albumPhotoPaths[0] : '';
+    entry.message.photoFileId = entry.message.albumPhotoFileIds.length > 0 ? entry.message.albumPhotoFileIds[0] : 0;
+    entry.message.hasLocalPhoto = entry.message.albumPhotoHasLocal.length > 0 ? entry.message.albumPhotoHasLocal[0] : false;
+    entry.message.isPhotoDownloading = entry.message.albumPhotoDownloading.length > 0 ? entry.message.albumPhotoDownloading[0] : false;
+    entry.message.photoDownloadProgress = entry.message.albumPhotoDownloadProgress.length > 0 ? entry.message.albumPhotoDownloadProgress[0] : -1;
     entry.message.photoWidth = entry.message.albumPhotoWidths.length > 0 ? entry.message.albumPhotoWidths[0] : 0;
     entry.message.photoHeight = entry.message.albumPhotoHeights.length > 0 ? entry.message.albumPhotoHeights[0] : 0;
   }
@@ -971,6 +1016,8 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
       entry.message.showAvatar = isLastInGroup;
     }
   }
+
+  updateBubbleGroupingFlags(result.entries);
 
   return result;
 }

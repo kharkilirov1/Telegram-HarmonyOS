@@ -1,6 +1,7 @@
 import { TgChatListNavigationBar } from '../atoms/TgChatListNavigationBar';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgChatListNavigationBar' })
 @ComponentV2
 export struct TgChatListNavigationBarDemo {
   build() {

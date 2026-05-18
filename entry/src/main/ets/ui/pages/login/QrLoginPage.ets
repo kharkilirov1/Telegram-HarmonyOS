@@ -22,14 +22,30 @@ export struct QrLoginPage {
   @Local private isRequesting: boolean = false;
 
   private unsubscribe?: () => void;
+  private pageLifecycleToken: number = 0;
+
+  private isCurrentQrContinuation(scheduledToken: number): boolean {
+    return scheduledToken === this.pageLifecycleToken;
+  }
 
   aboutToAppear(): void {
+    this.pageLifecycleToken += 1;
     this.qrCodeLink = AppStorage.get<string>(StorageKeys.QR_CODE_LINK) ?? '';
     hilog.info(DOMAIN, TAG, 'QrLoginPage appeared, qrCodeLink length: %{public}d', this.qrCodeLink.length);
+    if (this.unsubscribe !== undefined) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
+    }
     try {
-      this.unsubscribe = getAppCoreRuntime().getStore().subscribe(() => {
+      const subscriptionToken: number = this.pageLifecycleToken;
+      let activeUnsubscribe: (() => void) | undefined = undefined;
+      activeUnsubscribe = getAppCoreRuntime().getStore().subscribe(() => {
+        if (!this.isCurrentQrContinuation(subscriptionToken) || this.unsubscribe !== activeUnsubscribe) {
+          return;
+        }
         this.qrCodeLink = AppStorage.get<string>(StorageKeys.QR_CODE_LINK) ?? '';
       });
+      this.unsubscribe = activeUnsubscribe;
     } catch (e) {
       hilog.error(DOMAIN, TAG, 'Failed to subscribe store: %{public}s', String(e));
     }
@@ -40,6 +56,8 @@ export struct QrLoginPage {
   }
 
   aboutToDisappear(): void {
+    this.pageLifecycleToken += 1;
+    this.isRequesting = false;
     if (this.unsubscribe !== undefined) {
       this.unsubscribe();
       this.unsubscribe = undefined;
@@ -147,12 +165,16 @@ export struct QrLoginPage {
   }
 
   private async requestQr(): Promise<void> {
+    const requestToken: number = this.pageLifecycleToken;
     this.isRequesting = true;
     this.errorMessage = '';
 
     const controller = LoginController.getInstance();
     const result = await controller.requestQrLogin();
 
+    if (!this.isCurrentQrContinuation(requestToken)) {
+      return;
+    }
     this.isRequesting = false;
 
     if (!result.success) {

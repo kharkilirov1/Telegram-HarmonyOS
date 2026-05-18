@@ -1,6 +1,7 @@
 import { TgIcon } from '../atoms/TgIcon';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgIcon' })
 @ComponentV2
 export struct TgIconDemo {
   @Builder

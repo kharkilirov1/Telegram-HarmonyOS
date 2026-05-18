@@ -94,12 +94,14 @@ This atom intentionally excludes:
 4. Outer shell, not the router, owns visual media bubble background and grouped corners.
 5. Avatar lane remains router/integration-owned and stays outside this atom.
 6. `videoNote` remains a separate message form and must not be forced into this shell.
+7. `groupingFlags` follows the live text-bubble contract: `top` = connected below, `middle`/legacy `both` = connected above and below, `bottom` = connected above. Only the tail-side corners shrink to `BUBBLE_RADIUS_GROUPED`.
 
 ## Acceptance Checklist
 - [ ] photo / album / video / animation share one caption/meta rule set
 - [ ] no-caption visual media uses overlay meta
 - [ ] caption visual media uses inline meta reserve
 - [ ] sender/reply/media stack stays stable without router-specific padding hacks
+- [ ] grouped visual-media corners match text-bubble grouping semantics
 - [ ] atom stays presentation-only and V2-param driven
 
 ## Demo

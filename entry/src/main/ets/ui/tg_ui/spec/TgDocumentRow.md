@@ -4,9 +4,9 @@
 Implement Telegram-style document attachment row atom:
 - stronger leading file/extension tile with separate secondary action chip
 - file name + metadata (type/size)
-- optional transfer progress states (ring in tile + linear bar below)
+- explicit transfer status states (download/open chip, ring/spinner + close icon, linear bar below)
 
-UI-only scope for this step. No real transfer state machine or tap actions.
+UI atom scope for this step. Runtime download/cancel/open ownership stays in `TgMessageRouter` / chat parent callbacks.
 
 ## iOS References
 - `submodules/TelegramUI/Components/Chat/ChatMessageFileBubbleContentNode/Sources/ChatMessageFileBubbleContentNode.swift`
@@ -37,14 +37,22 @@ UI-only scope for this step. No real transfer state machine or tap actions.
 - different file types and sizes
 - long filename truncation
 - downloaded/open-ready vs missing/local-download state
-- indeterminate downloading spinner
-- progress hidden / active (mid + near complete)
+- remote idle download chip
+- indeterminate downloading spinner + close icon
+- determinate downloading ring + close icon (mid + near complete)
 - narrow container stress
+
+## Transfer State Machine
+- `documentPath.length === 0`, `isDownloading=false`, `downloadProgress < 0` -> extension/file tile plus secondary download chip.
+- `isDownloading=true`, `downloadProgress < 0` -> dimmed tile with `LoadingProgress` and project-owned `ICON_RES_CLOSE`.
+- `isDownloading=true` or `downloadProgress in [0, 1)` -> dimmed tile with `Progress({ type: ProgressType.Ring })`, project-owned `ICON_RES_CLOSE`, percent meta, and linear progress bar.
+- `documentPath.length > 0`, transfer inactive -> open-ready/document identity state; parent decides whether tap opens local content.
+- Atom delegates taps through `onDownloadToggle`; router maps active transfers to cancel and remote idle to download.
 
 ## Layout Rules
 1) Root alignment left/right by message direction.
 2) Bubble width constrained by `containerWidth * maxWidthRatio` and tokenized min/max.
-3) Leading tile has fixed box size and rounded background; idle states keep extension readability, determinate transfer uses an in-tile ring with percent, and indeterminate transfer uses a spinner face.
+3) Leading tile has fixed box size and rounded background; idle states keep extension readability, determinate transfer uses an in-tile ring with percent/linear progress, and indeterminate transfer uses a spinner face.
 4) Secondary action chip stays visually separate from the identity tile so open/download remains easy to scan.
 5) Text block contains title (up to 2 lines ellipsis) + meta line (1 line ellipsis).
 6) Linear progress bar appears only when `downloadProgress` in `[0, 1)`.
@@ -57,6 +65,7 @@ UI-only scope for this step. No real transfer state machine or tap actions.
 - `DOCUMENT_ROW_TITLE_INCOMING/OUTGOING`
 - `DOCUMENT_ROW_META_INCOMING/OUTGOING`
 - `DOCUMENT_ROW_PROGRESS_BG/FILL`
+- `MEDIA_OVERLAY_DARK`, `MEDIA_PROGRESS_COLOR`
 - Geometry/Typography:
   - `DOCUMENT_ROW_RADIUS`
   - `DOCUMENT_ROW_MIN_WIDTH/MAX_WIDTH`
@@ -69,10 +78,15 @@ UI-only scope for this step. No real transfer state machine or tap actions.
   - `DOCUMENT_ROW_META_SIZE/LINE_HEIGHT`
   - `DOCUMENT_ROW_EXTENSION_SIZE/LINE_HEIGHT`
   - `DOCUMENT_ROW_PROGRESS_HEIGHT/RADIUS/TOP_GAP`
+  - `MEDIA_CANCEL_ICON_SIZE`
+  - `MEDIA_STATUS_TRANSITION_SCALE`, `MEDIA_STATUS_ANIM_DURATION`
+- Icons:
+  - `ICON_RES_DOCUMENT`, `ICON_RES_DOWNLOAD`, `ICON_RES_CLOSE`
 
 ## Acceptance Checklist
 - [ ] File name truncation stays stable with long names
 - [ ] Progress bar appears/disappears cleanly by state
+- [ ] Fetching tile uses project-owned `ICON_RES_CLOSE`, not `sys.media.ohos_ic_public_cancel`
 - [ ] Idle state no longer reads as a flat generic icon row
 - [ ] Leading tile/action hierarchy is visually stronger than the old flat extension row
 - [ ] In-tile ring/spinner states read clearly during transfer
@@ -81,11 +95,17 @@ UI-only scope for this step. No real transfer state machine or tap actions.
 - [ ] No hardcoded visual constants in atom
 
 ## Demo Requirements (`TgDocumentRowDemo.ets`)
-At least 7 cases:
+At least 8 cases:
 1) incoming regular file
-2) outgoing regular file
+2) outgoing downloaded/open-ready file
 3) long filename truncation
 4) outgoing active progress
-5) incoming near-complete progress
-6) missing extension/mime fallback
-7) narrow container stress
+5) incoming indeterminate transfer
+6) incoming near-complete progress
+7) missing extension/mime fallback
+8) narrow container stress while downloading
+
+## Current Behavior Boundary
+- The atom renders remote/fetching/local document status only.
+- `TgMessageRouter` currently owns actual download/cancel/open decisions through `onDownloadToggle` and `onTap`.
+- Static demo coverage is review coverage, not manual device/emulator visual acceptance.

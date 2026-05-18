@@ -85,7 +85,7 @@ Master UI contract (frozen):
     - spec: `entry/src/main/ets/ui/tg_ui/spec/TgUnreadBadge.md`
     - atom: `entry/src/main/ets/ui/tg_ui/atoms/TgUnreadBadge.ets`
     - demo: `entry/src/main/ets/ui/tg_ui/demos/TgUnreadBadgeDemo.ets`
-    - contract: `count<=0 hidden`, `1..99 exact`, `>=100 => 99+`, capsule geometry (`height + minWidth + padding`)
+    - historical atom contract was `count<=0 hidden`, `1..99 exact`, `>=100 => 99+`; active `TgChatMeta` later superseded this with Telegram iOS compact `K/M` formatting.
   - Step 4 `TgChatMeta` completed:
     - spec: `entry/src/main/ets/ui/tg_ui/spec/TgChatMeta.md`
     - atom: `entry/src/main/ets/ui/tg_ui/atoms/TgChatMeta.ets`

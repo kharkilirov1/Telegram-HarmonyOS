@@ -1,6 +1,7 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgGroupedPhotoBubble } from '../atoms/TgGroupedPhotoBubble';
 
+@Preview({ title: 'TgGroupedPhotoBubble' })
 @ComponentV2
 export struct TgGroupedPhotoBubbleDemo {
   @Builder

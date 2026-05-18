@@ -65,11 +65,9 @@ export struct TgTopBar {
   private buildLeftSlot() {
     Row() {
       if (this.showBackAction) {
-        TgIcon({
-          src: TgUiTokens.ICON_RES_BACK,
-          iconSize: TgUiTokens.TOP_BAR_ACTION_ICON_SIZE,
-          tintColor: TgUiTokens.COLOR_ICON_PRIMARY
-        })
+        SymbolGlyph($r('sys.symbol.chevron_left'))
+          .fontSize(TgUiTokens.TOP_BAR_ACTION_ICON_SIZE)
+          .fontColor([TgUiTokens.COLOR_ICON_PRIMARY])
       } else if (this.showLeftText && this.leftText.length > 0) {
         Text(this.leftText)
           .fontSize(TgUiTokens.TOP_BAR_TITLE_SIZE)

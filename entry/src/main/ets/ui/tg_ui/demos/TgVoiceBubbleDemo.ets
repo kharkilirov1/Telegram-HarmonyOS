@@ -1,6 +1,7 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgVoiceBubble } from '../atoms/TgVoiceBubble';
 
+@Preview({ title: 'TgVoiceBubble' })
 @ComponentV2
 export struct TgVoiceBubbleDemo {
   private sampleWaveformA: string = 'A1B2C3D4E5F6G7H8I9J0';
@@ -9,7 +10,8 @@ export struct TgVoiceBubbleDemo {
   @Builder
   private caseBlock(label: string, isOutgoing: boolean, durationSec: number, waveform: string,
     isPlaying: boolean, progress: number, isListened: boolean,
-    containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, useConstrainedContainer: boolean = false) {
+    containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, useConstrainedContainer: boolean = false,
+    hasLocalFile: boolean = true, isDownloading: boolean = false, downloadProgress: number = -1) {
     Column({ space: TgUiTokens.SPACE_6 }) {
       Text(label)
         .fontSize(TgUiTokens.FONT_META_SIZE)
@@ -25,6 +27,9 @@ export struct TgVoiceBubbleDemo {
             isPlaying: isPlaying,
             playbackProgress: progress,
             isListened: isListened,
+            hasLocalFile: hasLocalFile,
+            isDownloading: isDownloading,
+            downloadProgress: downloadProgress,
             containerWidth: containerWidth
           })
           .width(containerWidth)
@@ -38,6 +43,9 @@ export struct TgVoiceBubbleDemo {
           isPlaying: isPlaying,
           playbackProgress: progress,
           isListened: isListened,
+          hasLocalFile: hasLocalFile,
+          isDownloading: isDownloading,
+          downloadProgress: downloadProgress,
           containerWidth: containerWidth
         })
       }
@@ -84,6 +92,12 @@ export struct TgVoiceBubbleDemo {
         this.caseBlock('06 outgoing fallback waveform', true, 9, '', false, 0.2, true)
         this.caseBlock('07 narrow container stress', false, 84, this.sampleWaveformB, true, 0.55, false,
           TgUiTokens.MSG_DEMO_NARROW_CONTAINER_WIDTH, true)
+        this.caseBlock('08 remote voice — download icon', false, 21, this.sampleWaveformA, false, 0, false,
+          TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, false, false)
+        this.caseBlock('09 determinate transfer from progress only', false, 33, this.sampleWaveformA, false, 0, false,
+          TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, false, false, false, 0.46)
+        this.caseBlock('10 indeterminate transfer — cancel affordance', true, 27, this.sampleWaveformB, false, 0, true,
+          TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, false, false, true, -1)
       }
       .width('100%')
       .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
@@ -92,4 +106,3 @@ export struct TgVoiceBubbleDemo {
     .height('100%')
   }
 }
-

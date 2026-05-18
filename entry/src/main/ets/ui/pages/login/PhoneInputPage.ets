@@ -33,11 +33,35 @@ export struct PhoneInputPage {
   @Local private groupedCountries: TgCountryGroup[] = [];
   @Local private alphabet: string[] = [];
 
+  private pageLifecycleToken: number = 0;
+  private sendPhoneRequestSerial: number = 0;
+  private qrLoginRequestSerial: number = 0;
+
+  private isCurrentPhoneContinuation(scheduledToken: number): boolean {
+    return scheduledToken === this.pageLifecycleToken;
+  }
+
+  private isCurrentSendPhoneRequest(scheduledToken: number, scheduledSerial: number): boolean {
+    return this.isCurrentPhoneContinuation(scheduledToken) && scheduledSerial === this.sendPhoneRequestSerial;
+  }
+
+  private isCurrentQrLoginRequest(scheduledToken: number, scheduledSerial: number): boolean {
+    return this.isCurrentPhoneContinuation(scheduledToken) && scheduledSerial === this.qrLoginRequestSerial;
+  }
+
   async aboutToAppear(): Promise<void> {
+    this.pageLifecycleToken += 1;
+    const appearanceToken: number = this.pageLifecycleToken;
     try {
       await CountryService.loadCountries();
     } catch (e) {
+      if (!this.isCurrentPhoneContinuation(appearanceToken)) {
+        return;
+      }
       hilog.warn(DOMAIN, TAG, 'Failed to load countries: %{public}s', String(e));
+    }
+    if (!this.isCurrentPhoneContinuation(appearanceToken)) {
+      return;
     }
     this.isCountriesLoaded = true;
     this.updateCountryList('');
@@ -46,6 +70,13 @@ export struct PhoneInputPage {
     if (defaultCountry) {
       this.setCountry(defaultCountry);
     }
+  }
+
+  aboutToDisappear(): void {
+    this.pageLifecycleToken += 1;
+    this.sendPhoneRequestSerial += 1;
+    this.qrLoginRequestSerial += 1;
+    this.buttonState = 'default';
   }
 
   @Builder
@@ -235,6 +266,9 @@ export struct PhoneInputPage {
   }
 
   private async sendPhone(): Promise<void> {
+    const requestToken: number = this.pageLifecycleToken;
+    this.sendPhoneRequestSerial += 1;
+    const requestSerial: number = this.sendPhoneRequestSerial;
     this.buttonState = 'progress';
     this.errorMessage = '';
 
@@ -265,6 +299,9 @@ export struct PhoneInputPage {
     const controller = LoginController.getInstance();
     const result = await controller.sendPhoneNumber('+' + digits);
 
+    if (!this.isCurrentSendPhoneRequest(requestToken, requestSerial)) {
+      return;
+    }
     if (result.success) {
       this.buttonState = 'default';
       this.onPhoneSent();
@@ -276,9 +313,15 @@ export struct PhoneInputPage {
   }
 
   private async requestQrLogin(): Promise<void> {
+    const requestToken: number = this.pageLifecycleToken;
+    this.qrLoginRequestSerial += 1;
+    const requestSerial: number = this.qrLoginRequestSerial;
     this.errorMessage = '';
     const controller = LoginController.getInstance();
     const result = await controller.requestQrLogin();
+    if (!this.isCurrentQrLoginRequest(requestToken, requestSerial)) {
+      return;
+    }
     if (!result.success) {
       const failure = result as SendCodeFailure;
       this.errorMessage = failure.error.message;

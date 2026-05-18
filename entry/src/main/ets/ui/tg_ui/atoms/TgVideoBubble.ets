@@ -53,6 +53,10 @@ export struct TgVideoBubble {
     return this.downloadProgress >= 0 && this.downloadProgress < 1;
   }
 
+  private shouldShowPlayOverlay(): boolean {
+    return this.hasLocalVideo() && !this.hidePlayButton && !this.isShortVideo;
+  }
+
   private normalizedDownloadProgress(): number {
     return Math.max(0, Math.min(1, this.downloadProgress));
   }
@@ -162,6 +166,76 @@ export struct TgVideoBubble {
   }
 
   @Builder
+  private buildDownloadingStatusButton() {
+    Stack({ alignContent: Alignment.Center }) {
+      if (this.hasDeterminateProgress()) {
+        Progress({
+          value: this.normalizedDownloadProgress() * 100,
+          total: 100,
+          type: ProgressType.Ring
+        })
+          .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+          .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+          .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
+          .backgroundColor(Color.Transparent)
+          .style({ strokeWidth: TgUiTokens.MEDIA_PROGRESS_STROKE })
+      } else {
+        LoadingProgress()
+          .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+          .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+          .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
+      }
+
+      TgIcon({
+        src: TgUiTokens.ICON_RES_CLOSE,
+        iconSize: TgUiTokens.MEDIA_CANCEL_ICON_SIZE,
+        tintColor: TgUiTokens.MEDIA_PROGRESS_COLOR
+      })
+    }
+    .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+    .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+    .backgroundColor(TgUiTokens.MEDIA_OVERLAY_DARK)
+    .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
+    .onClick(() => this.onDownloadToggle())
+    .transition({
+      type: TransitionType.All,
+      opacity: 0,
+      scale: {
+        x: TgUiTokens.MEDIA_STATUS_TRANSITION_SCALE,
+        y: TgUiTokens.MEDIA_STATUS_TRANSITION_SCALE
+      }
+    })
+    .animation({ duration: TgUiTokens.MEDIA_STATUS_ANIM_DURATION, curve: Curve.EaseInOut })
+  }
+
+  @Builder
+  private buildIdleStatusButton(src: Resource, onTap: () => void) {
+    Row() {
+      TgIcon({
+        src: src,
+        iconSize: TgUiTokens.VIDEO_BUBBLE_PLAY_ICON_SIZE,
+        tintColor: TgUiTokens.VIDEO_BUBBLE_PLAY_ICON
+      })
+    }
+    .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+    .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+    .justifyContent(FlexAlign.Center)
+    .alignItems(VerticalAlign.Center)
+    .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
+    .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
+    .onClick(() => onTap())
+    .transition({
+      type: TransitionType.All,
+      opacity: 0,
+      scale: {
+        x: TgUiTokens.MEDIA_STATUS_TRANSITION_SCALE,
+        y: TgUiTokens.MEDIA_STATUS_TRANSITION_SCALE
+      }
+    })
+    .animation({ duration: TgUiTokens.MEDIA_STATUS_ANIM_DURATION, curve: Curve.EaseInOut })
+  }
+
+  @Builder
   private buildMedia() {
     Stack({ alignContent: Alignment.Center }) {
       if (this.hasLocalVideo() && this.isShortVideo) {
@@ -194,65 +268,11 @@ export struct TgVideoBubble {
       }
 
       if (this.isDownloadPending) {
-        Stack({ alignContent: Alignment.Center }) {
-          if (this.hasDeterminateProgress()) {
-            Progress({
-              value: this.normalizedDownloadProgress() * 100,
-              total: 100,
-              type: ProgressType.Ring
-            })
-              .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-              .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-              .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
-              .backgroundColor(Color.Transparent)
-              .style({ strokeWidth: TgUiTokens.MEDIA_PROGRESS_STROKE })
-          } else {
-            LoadingProgress()
-              .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-              .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-              .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
-          }
-          Image($r('sys.media.ohos_ic_public_cancel'))
-            .width(TgUiTokens.MEDIA_CANCEL_ICON_SIZE).height(TgUiTokens.MEDIA_CANCEL_ICON_SIZE).fillColor(TgUiTokens.MEDIA_PROGRESS_COLOR)
-        }
-        .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-        .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-        .backgroundColor(TgUiTokens.MEDIA_OVERLAY_DARK)
-        .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
-        .onClick(() => this.onDownloadToggle())
-        .transition({ type: TransitionType.All, opacity: 0, scale: { x: 0.8, y: 0.8 } })
+        this.buildDownloadingStatusButton()
       } else if (!this.hasLocalVideo()) {
-        Row() {
-          TgIcon({
-            src: TgUiTokens.ICON_RES_DOWNLOAD,
-            iconSize: TgUiTokens.VIDEO_BUBBLE_PLAY_ICON_SIZE,
-            tintColor: TgUiTokens.VIDEO_BUBBLE_PLAY_ICON
-          })
-        }
-        .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-        .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-        .justifyContent(FlexAlign.Center)
-        .alignItems(VerticalAlign.Center)
-        .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
-        .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
-        .onClick(() => this.onDownloadToggle())
-        .transition({ type: TransitionType.All, opacity: 0, scale: { x: 0.8, y: 0.8 } })
-      } else if (!this.hidePlayButton) {
-        Row() {
-          TgIcon({
-            src: TgUiTokens.ICON_RES_PLAY,
-            iconSize: TgUiTokens.VIDEO_BUBBLE_PLAY_ICON_SIZE,
-            tintColor: TgUiTokens.VIDEO_BUBBLE_PLAY_ICON
-          })
-        }
-        .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-        .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-        .justifyContent(FlexAlign.Center)
-        .alignItems(VerticalAlign.Center)
-        .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
-        .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
-        .onClick(() => this.onVideoPlayTap())
-        .transition({ type: TransitionType.All, opacity: 0, scale: { x: 0.8, y: 0.8 } })
+        this.buildIdleStatusButton(TgUiTokens.ICON_RES_DOWNLOAD, () => this.onDownloadToggle())
+      } else if (this.shouldShowPlayOverlay()) {
+        this.buildIdleStatusButton(TgUiTokens.ICON_RES_PLAY, () => this.onVideoPlayTap())
       }
 
       this.buildDurationBadge()

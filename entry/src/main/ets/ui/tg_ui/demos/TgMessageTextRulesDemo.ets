@@ -7,6 +7,7 @@ enum TgMessageTextKind {
   Hashtag = 3
 }
 
+@Preview({ title: 'TgMessageTextRules' })
 @ComponentV2
 export struct TgMessageTextRulesDemo {
   private incomingShortText: string = 'Привет! Контракт текста для пузыря зафиксирован.';

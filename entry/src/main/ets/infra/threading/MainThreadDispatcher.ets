@@ -23,6 +23,7 @@ export class MainThreadDispatcher {
   private isSubscribed: boolean = false;
   private dispatchedCount: number = 0;
   private droppedCount: number = 0;
+  private handlerErrorCount: number = 0;
 
   /**
    * Подписаться на обновления TDLib, доставляемые на main thread.
@@ -49,22 +50,41 @@ export class MainThreadDispatcher {
    * В ArkTS N-API колбэки уже приходят на Main Thread.
    */
   dispatchUpdate(rawJson: string): void {
-    if (this.updateHandler) {
-      this.updateHandler(rawJson);
+    this.dispatchedCount++;
+    const handler = this.updateHandler;
+    if (handler) {
+      try {
+        handler(rawJson);
+      } catch (error) {
+        this.handlerErrorCount++;
+        hilog.error(DOMAIN, TAG, 'Update handler failed, total handler errors: %{public}d, error: %{public}s',
+          this.handlerErrorCount, String(error));
+      }
     } else {
       this.droppedCount++;
       hilog.warn(DOMAIN, TAG, 'Update dropped (handler not attached yet), total dropped: %{public}d',
         this.droppedCount);
     }
-    this.dispatchedCount++;
   }
 
   /**
    * Отправить raw JSON ответ (на request) из любого потока → main thread.
    */
   dispatchResponse(rawJson: string): void {
-    if (this.responseHandler) {
-      this.responseHandler(rawJson);
+    this.dispatchedCount++;
+    const handler = this.responseHandler;
+    if (handler) {
+      try {
+        handler(rawJson);
+      } catch (error) {
+        this.handlerErrorCount++;
+        hilog.error(DOMAIN, TAG, 'Response handler failed, total handler errors: %{public}d, error: %{public}s',
+          this.handlerErrorCount, String(error));
+      }
+    } else {
+      this.droppedCount++;
+      hilog.warn(DOMAIN, TAG, 'Response dropped (handler not attached yet), total dropped: %{public}d',
+        this.droppedCount);
     }
   }
 
@@ -75,14 +95,16 @@ export class MainThreadDispatcher {
     this.updateHandler = null;
     this.responseHandler = null;
     this.isSubscribed = false;
-    hilog.info(DOMAIN, TAG, 'Unsubscribed from all events. Stats: dispatched=%{public}d, dropped=%{public}d',
-      this.dispatchedCount, this.droppedCount);
+    hilog.info(DOMAIN, TAG,
+      'Unsubscribed from all events. Stats: dispatched=%{public}d, dropped=%{public}d, handlerErrors=%{public}d',
+      this.dispatchedCount, this.droppedCount, this.handlerErrorCount);
   }
 
   getStats(): DispatcherStats {
     const stats = new DispatcherStats();
     stats.dispatched = this.dispatchedCount;
     stats.dropped = this.droppedCount;
+    stats.handlerErrors = this.handlerErrorCount;
     stats.isSubscribed = this.isSubscribed;
     return stats;
   }
@@ -101,6 +123,7 @@ export class MainThreadDispatcher {
 export class DispatcherStats {
   dispatched: number = 0;
   dropped: number = 0;
+  handlerErrors: number = 0;
   isSubscribed: boolean = false;
 }
 

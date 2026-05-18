@@ -16,7 +16,6 @@ import { TgVoiceBubble } from '../atoms/TgVoiceBubble';
 import { TgStickerView } from '../atoms/TgStickerView';
 import { TgMessageMeta, TgMessageSendStatus } from '../atoms/TgMessageMeta';
 import { TgReplySnippet } from '../atoms/TgReplySnippet';
-import { TgTextBubbleV2 } from '../atoms/TgTextBubbleV2';
 import { TgTextBubbleV3 } from '../atoms/TgTextBubbleV3';
 import { TgMediaBubbleShellV2 } from '../atoms/TgMediaBubbleShellV2';
 import { TgTextLayout } from '../../text_engine/TgTextLayout';
@@ -36,7 +35,7 @@ export struct TgMessageRouter {
   @Param messageId: string = '0';
   @Param isOutgoing: boolean = false;
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
-  @Param groupingFlags: string = 'none'; // none, top, bottom, both
+  @Param groupingFlags: string = 'none'; // none, top, middle/both, bottom
 
   // ── Text / fallback ──
   @Param text: string = '';
@@ -97,6 +96,7 @@ export struct TgMessageRouter {
 
   // ── On-demand download ──
   @Event onMediaDownloadRequest: (fileId: number) => void = (_: number) => {};
+  @Event onMediaDownloadCancel: (fileId: number) => void = (_: number) => {};
 
   // ── Media viewer callbacks ──
   @Event onMediaGalleryOpen: (messageId: string) => void = (_: string) => {};
@@ -199,31 +199,31 @@ export struct TgMessageRouter {
 
   private bubbleRadius(): number | BorderRadiuses {
     const defaultRadius = this.isOutgoing ? TgUiTokens.BUBBLE_RADIUS_OUTGOING : TgUiTokens.BUBBLE_RADIUS_INCOMING;
-    const smallRadius = 6;
+    const smallRadius = TgUiTokens.BUBBLE_RADIUS_GROUPED;
     
     if (this.groupingFlags === 'none') {
       return defaultRadius;
     }
     
     if (this.isOutgoing) {
-      if (this.groupingFlags === 'both') {
+      if (this.groupingFlags === 'middle' || this.groupingFlags === 'both') {
         return { topLeft: defaultRadius, bottomLeft: defaultRadius, topRight: smallRadius, bottomRight: smallRadius };
       }
       if (this.groupingFlags === 'top') {
-        return { topLeft: defaultRadius, bottomLeft: defaultRadius, topRight: smallRadius, bottomRight: defaultRadius };
-      }
-      if (this.groupingFlags === 'bottom') {
         return { topLeft: defaultRadius, bottomLeft: defaultRadius, topRight: defaultRadius, bottomRight: smallRadius };
       }
+      if (this.groupingFlags === 'bottom') {
+        return { topLeft: defaultRadius, bottomLeft: defaultRadius, topRight: smallRadius, bottomRight: defaultRadius };
+      }
     } else {
-      if (this.groupingFlags === 'both') {
+      if (this.groupingFlags === 'middle' || this.groupingFlags === 'both') {
         return { topRight: defaultRadius, bottomRight: defaultRadius, topLeft: smallRadius, bottomLeft: smallRadius };
       }
       if (this.groupingFlags === 'top') {
-        return { topRight: defaultRadius, bottomRight: defaultRadius, topLeft: smallRadius, bottomLeft: defaultRadius };
+        return { topRight: defaultRadius, bottomRight: defaultRadius, topLeft: defaultRadius, bottomLeft: smallRadius };
       }
       if (this.groupingFlags === 'bottom') {
-        return { topRight: defaultRadius, bottomRight: defaultRadius, topLeft: defaultRadius, bottomLeft: smallRadius };
+        return { topRight: defaultRadius, bottomRight: defaultRadius, topLeft: smallRadius, bottomLeft: defaultRadius };
       }
     }
     return defaultRadius;
@@ -265,6 +265,30 @@ export struct TgMessageRouter {
   private maxBubbleWidth(): number {
     const effectiveContainer = this.containerWidth - this.avatarInset();
     return TgUiTokens.resolveBubbleMaxWidth(effectiveContainer, TgUiTokens.BUBBLE_MAX_WIDTH_RATIO);
+  }
+
+  private hasDocumentTransferProgress(): boolean {
+    return this.documentDownloadProgress >= 0 && this.documentDownloadProgress < 1;
+  }
+
+  private isDocumentTransferActive(): boolean {
+    return this.isDocumentDownloading || this.hasDocumentTransferProgress();
+  }
+
+  private hasAudioTransferProgress(): boolean {
+    return this.audioDownloadProgress >= 0 && this.audioDownloadProgress < 1;
+  }
+
+  private isAudioTransferActive(): boolean {
+    return this.isAudioDownloading || this.hasAudioTransferProgress();
+  }
+
+  private hasVoiceTransferProgress(): boolean {
+    return this.voiceDownloadProgress >= 0 && this.voiceDownloadProgress < 1;
+  }
+
+  private isVoiceTransferActive(): boolean {
+    return this.isVoiceDownloading || this.hasVoiceTransferProgress();
   }
 
   private computeTextLayout(): TextBubbleLayout | null {
@@ -504,7 +528,9 @@ export struct TgMessageRouter {
         useRegularMaxDimensions: this.usesRegularBubbleLayout(),
         onPhotoTap: () => { this.onPhotoTap(); },
         onDownloadToggle: () => {
-          if (!this.hasLocalPhoto && !this.isPhotoDownloading && this.photoFileId > 0) {
+          if (this.isPhotoDownloading && this.photoFileId > 0) {
+            this.onMediaDownloadCancel(this.photoFileId);
+          } else if (!this.hasLocalPhoto && this.photoFileId > 0) {
             this.onMediaDownloadRequest(this.photoFileId);
           }
         }
@@ -534,7 +560,9 @@ export struct TgMessageRouter {
         onTap: () => { this.onVideoTap(); },
         onPlayToggle: () => { this.onVideoTap(); },
         onDownloadToggle: () => {
-          if (!this.videoPath && !this.isVideoDownloading && this.videoFileId > 0) {
+          if (this.isVideoDownloading && this.videoFileId > 0) {
+            this.onMediaDownloadCancel(this.videoFileId);
+          } else if (!this.videoPath && this.videoFileId > 0) {
             this.onMediaDownloadRequest(this.videoFileId);
           }
         }
@@ -555,7 +583,9 @@ export struct TgMessageRouter {
         downloadProgress: this.videoDownloadProgress,
         onAnimationTap: () => { this.onMediaGalleryOpen(this.messageId); },
         onDownloadToggle: () => {
-          if (!this.videoPath && !this.isVideoDownloading && this.videoFileId > 0) {
+          if (this.isVideoDownloading && this.videoFileId > 0) {
+            this.onMediaDownloadCancel(this.videoFileId);
+          } else if (!this.videoPath && this.videoFileId > 0) {
             this.onMediaDownloadRequest(this.videoFileId);
           }
         }
@@ -578,7 +608,9 @@ export struct TgMessageRouter {
         downloadProgress: this.videoDownloadProgress,
         onVideoPlayTap: () => { this.onMediaGalleryOpen(this.messageId); },
         onDownloadToggle: () => {
-          if (!this.videoPath && !this.isVideoDownloading && this.videoFileId > 0) {
+          if (this.isVideoDownloading && this.videoFileId > 0) {
+            this.onMediaDownloadCancel(this.videoFileId);
+          } else if (!this.videoPath && this.videoFileId > 0) {
             this.onMediaDownloadRequest(this.videoFileId);
           }
         }
@@ -602,7 +634,11 @@ export struct TgMessageRouter {
           this.onAudioTap(this.documentPath, this.documentFileId, this.mimeType);
         },
         onPlayToggle: () => {
-          this.onAudioTap(this.documentPath, this.documentFileId, this.mimeType);
+          if (this.isDocumentTransferActive() && this.documentFileId > 0) {
+            this.onMediaDownloadCancel(this.documentFileId);
+          } else {
+            this.onAudioTap(this.documentPath, this.documentFileId, this.mimeType);
+          }
         },
         onSeek: (p: number) => {
           this.onAudioSeek(this.messageId, p);
@@ -623,7 +659,9 @@ export struct TgMessageRouter {
           this.onDocumentTap(this.documentPath, this.documentFileId, this.mimeType);
         },
         onDownloadToggle: () => {
-          if (!this.documentPath && !this.isDocumentDownloading && this.documentDownloadProgress < 0) {
+          if (this.isDocumentTransferActive() && this.documentFileId > 0) {
+            this.onMediaDownloadCancel(this.documentFileId);
+          } else if (!this.documentPath && this.documentFileId > 0) {
             this.onMediaDownloadRequest(this.documentFileId);
           }
         }
@@ -647,7 +685,11 @@ export struct TgMessageRouter {
           this.onAudioTap(this.audioPath, this.audioFileId, this.mimeType);
         },
         onPlayToggle: () => {
-          this.onAudioTap(this.audioPath, this.audioFileId, this.mimeType);
+          if (this.isAudioTransferActive() && this.audioFileId > 0) {
+            this.onMediaDownloadCancel(this.audioFileId);
+          } else {
+            this.onAudioTap(this.audioPath, this.audioFileId, this.mimeType);
+          }
         },
         onSeek: (p: number) => {
           this.onAudioSeek(this.messageId, p);
@@ -671,7 +713,11 @@ export struct TgMessageRouter {
           this.onVoiceTap(this.messageId, this.voicePath, this.voiceFileId);
         },
         onPlayToggle: () => {
-          this.onVoiceTap(this.messageId, this.voicePath, this.voiceFileId);
+          if (this.isVoiceTransferActive() && this.voiceFileId > 0) {
+            this.onMediaDownloadCancel(this.voiceFileId);
+          } else {
+            this.onVoiceTap(this.messageId, this.voicePath, this.voiceFileId);
+          }
         },
         onSeek: (p: number) => {
           this.onVoiceSeek(this.messageId, p);

@@ -2,7 +2,7 @@
 // Single source of truth, single writer
 // All state mutations go through this store
 
-import { AppState, initialAppState, ReducerAction } from '../model/AppState';
+import { AppState, ReducerAction, createInitialAppState } from '../model/AppState';
 import { AnyAppEvent } from '../model/AppEvent';
 import { assertInvariants } from '../invariants/assertInvariants';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -25,7 +25,7 @@ export class AppStore {
 
   constructor(reducer: Reducer, initialState?: AppState, devMode: boolean = true) {
     this.reducer = reducer;
-    this.state = initialState || initialAppState;
+    this.state = initialState || createInitialAppState();
     this.devMode = devMode;
 
     if (this.devMode) {
@@ -125,9 +125,14 @@ export class AppStore {
   }
 
   private notifyListeners(newState: AppState, prevState: AppState): void {
-    // Snapshot — Set может измениться если listener вызовет subscribe/unsubscribe
+    // Snapshot — Set может измениться если listener вызовет subscribe/unsubscribe.
+    // Re-check active membership so a listener removed by an earlier callback in
+    // the same notification cycle does not receive a stale delivery.
     const listenersSnapshot: StateListener[] = Array.from(this.listeners);
     for (const listener of listenersSnapshot) {
+      if (!this.listeners.has(listener)) {
+        continue;
+      }
       try {
         listener(newState, prevState);
       } catch (error) {
@@ -145,8 +150,12 @@ export class AppStore {
   }
 
   resetState(): void {
-    this.state = initialAppState;
-    this.notifyListeners(this.state, this.state);
+    const prevState = this.state;
+    this.state = createInitialAppState();
+    if (this.devMode) {
+      assertInvariants(this.state, this.devMode);
+    }
+    this.notifyListeners(this.state, prevState);
   }
 }
 

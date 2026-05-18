@@ -41,8 +41,18 @@ export struct LoginRouter {
   @Local passwordHint: string = '';
 
   private unsubscribe?: () => void;
+  private pageLifecycleToken: number = 0;
+  private forceBackRequestSerial: number = 0;
   // Отслеживание предыдущего статуса для определения направления перехода
   private prevStatus: string = 'notInitialized';
+
+  private isCurrentRouterContinuation(scheduledToken: number): boolean {
+    return scheduledToken === this.pageLifecycleToken;
+  }
+
+  private isCurrentForceBackRequest(scheduledToken: number, scheduledSerial: number): boolean {
+    return this.isCurrentRouterContinuation(scheduledToken) && scheduledSerial === this.forceBackRequestSerial;
+  }
 
   // Сбрасывает auth state на сервере через TDLib logOut, затем возвращает на экран телефона.
   //
@@ -55,15 +65,24 @@ export struct LoginRouter {
   // AppStoreBridge обновляет AUTH_STATUS → @StorageLink обновляет роутер.
   // Fallback: если logOut не отвечает — принудительно обновляем AppStorage.
   private forceBackToPhone(reason: string): void {
+    const requestToken: number = this.pageLifecycleToken;
+    this.forceBackRequestSerial += 1;
+    const requestSerial: number = this.forceBackRequestSerial;
     hilog.warn(0x0003, 'LoginRouter', 'forceBackToPhone: %{public}s — вызываем TDLib logOut', reason);
 
     LoginController.getInstance().logout()
       .then((): void => {
+        if (!this.isCurrentForceBackRequest(requestToken, requestSerial)) {
+          return;
+        }
         hilog.info(0x0003, 'LoginRouter', 'logOut выполнен — TDLib обновит AUTH_STATUS на waitPhoneNumber');
         // TDLib сам эмитирует updateAuthorizationState: waitPhoneNumber.
         // AppStoreBridge подхватит и обновит AppStorage → роутер переключится сам.
       })
       .catch((error: Error): void => {
+        if (!this.isCurrentForceBackRequest(requestToken, requestSerial)) {
+          return;
+        }
         // logout() внутри перехватывает ошибки и не бросает — этот catch страховочный.
         hilog.error(0x0003, 'LoginRouter', 'logout() unexpected throw: %{public}s', String(error));
         // Fallback: обновляем UI напрямую если TDLib не ответил
@@ -75,6 +94,9 @@ export struct LoginRouter {
     try {
       getAppCoreRuntime().getStore().dispatch(createAuthStateChangedEvent('waitPhoneNumber'))
         .catch((error: Error) => {
+          if (!this.isCurrentForceBackRequest(requestToken, requestSerial)) {
+            return;
+          }
           hilog.warn(0x0003, 'LoginRouter', 'Store dispatch waitPhoneNumber failed: %{public}s', String(error));
           AppStorage.set<string>(StorageKeys.AUTH_STATUS, 'waitPhoneNumber');
         });
@@ -95,18 +117,31 @@ export struct LoginRouter {
   }
 
   aboutToAppear(): void {
+    this.pageLifecycleToken += 1;
     this.syncFromAppStorage();
     hilog.info(0x0003, 'LoginRouter', 'LoginRouter aboutToAppear, initial authStatus: %{public}s', this.authStatus);
+    if (this.unsubscribe !== undefined) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
+    }
     try {
-      this.unsubscribe = getAppCoreRuntime().getStore().subscribe(() => {
+      const subscriptionToken: number = this.pageLifecycleToken;
+      let activeUnsubscribe: (() => void) | undefined = undefined;
+      activeUnsubscribe = getAppCoreRuntime().getStore().subscribe(() => {
+        if (!this.isCurrentRouterContinuation(subscriptionToken) || this.unsubscribe !== activeUnsubscribe) {
+          return;
+        }
         this.syncFromAppStorage();
       });
+      this.unsubscribe = activeUnsubscribe;
     } catch (e) {
       hilog.error(0x0003, 'LoginRouter', 'Failed to subscribe store: %{public}s', String(e));
     }
   }
 
   aboutToDisappear(): void {
+    this.pageLifecycleToken += 1;
+    this.forceBackRequestSerial += 1;
     hilog.info(0x0003, 'LoginRouter', 'LoginRouter aboutToDisappear');
     if (this.unsubscribe !== undefined) {
       this.unsubscribe();

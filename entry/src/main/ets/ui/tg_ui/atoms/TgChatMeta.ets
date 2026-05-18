@@ -1,5 +1,4 @@
 import { TgIcon } from './TgIcon';
-import { TgUnreadBadge } from './TgUnreadBadge';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
 export enum TgChatSendStatus {
@@ -65,18 +64,86 @@ export struct TgChatMeta {
     return this.hasTimeText() ? TgUiTokens.CHAT_META_STATUS_GAP : 0;
   }
 
+  private unreadBadgeText(): string {
+    const count = Math.max(0, Math.floor(this.unreadCount));
+    if (count >= TgUiTokens.UNREAD_BADGE_COMPACT_MILLION) {
+      return this.compactBadgeTextForUnit(
+        count,
+        TgUiTokens.UNREAD_BADGE_COMPACT_MILLION,
+        TgUiTokens.UNREAD_BADGE_COMPACT_MILLION_SUFFIX
+      );
+    }
+    if (count >= TgUiTokens.UNREAD_BADGE_COMPACT_THOUSAND) {
+      return this.compactBadgeTextForUnit(
+        count,
+        TgUiTokens.UNREAD_BADGE_COMPACT_THOUSAND,
+        TgUiTokens.UNREAD_BADGE_COMPACT_THOUSAND_SUFFIX
+      );
+    }
+    return `${count}`;
+  }
+
+  private compactBadgeTextForUnit(count: number, unit: number, suffix: string): string {
+    const whole = Math.floor(count / unit);
+    const decimal = Math.floor((count % unit) / (unit / TgUiTokens.UNREAD_BADGE_COMPACT_DECIMAL_DIVISOR));
+    if (decimal > 0) {
+      return `${whole}.${decimal}${suffix}`;
+    }
+    return `${whole}${suffix}`;
+  }
+
+  private unreadBadgeWidth(): number {
+    const text = this.unreadBadgeText();
+    if (text.length <= 1) {
+      return TgUiTokens.UNREAD_BADGE_MIN_WIDTH;
+    }
+
+    const measuredWidth = text.length * TgUiTokens.UNREAD_BADGE_TEXT_ESTIMATED_CHAR_WIDTH +
+      TgUiTokens.UNREAD_BADGE_H_PADDING * 2;
+    return Math.min(
+      TgUiTokens.UNREAD_BADGE_MAX_WIDTH,
+      Math.max(TgUiTokens.UNREAD_BADGE_MIN_WIDTH, Math.ceil(measuredWidth))
+    );
+  }
+
+  private badgeBackgroundColor(): ResourceColor {
+    return this.isMuted ? TgUiTokens.COLOR_UNREAD_BG_MUTED : TgUiTokens.COLOR_UNREAD_BG;
+  }
+
   @Builder
   private buildMentionBadge() {
     Row() {
       Text('@')
         .fontSize(TgUiTokens.CHAT_META_MENTION_FONT_SIZE)
         .fontWeight(FontWeight.Bold)
-        .fontColor(Color.White)
+        .fontColor(TgUiTokens.COLOR_UNREAD_TEXT)
+        .lineHeight(TgUiTokens.UNREAD_BADGE_HEIGHT)
+        .textAlign(TextAlign.Center)
     }
     .width(TgUiTokens.CHAT_META_MENTION_BADGE_SIZE)
     .height(TgUiTokens.CHAT_META_MENTION_BADGE_SIZE)
     .borderRadius(TgUiTokens.CHAT_META_MENTION_BADGE_SIZE / 2)
-    .backgroundColor(this.isMuted ? TgUiTokens.COLOR_UNREAD_BG_MUTED : TgUiTokens.COLOR_UNREAD_BG)
+    .backgroundColor(this.badgeBackgroundColor())
+    .justifyContent(FlexAlign.Center)
+    .alignItems(VerticalAlign.Center)
+  }
+
+  @Builder
+  private buildUnreadBadge() {
+    Row() {
+      Text(this.unreadBadgeText())
+        .fontSize(TgUiTokens.CHAT_META_BADGE_FONT_SIZE)
+        .fontWeight(FontWeight.Regular)
+        .fontColor(TgUiTokens.COLOR_UNREAD_TEXT)
+        .lineHeight(TgUiTokens.UNREAD_BADGE_HEIGHT)
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Clip })
+        .textAlign(TextAlign.Center)
+    }
+    .width(this.unreadBadgeWidth())
+    .height(TgUiTokens.UNREAD_BADGE_HEIGHT)
+    .borderRadius(TgUiTokens.UNREAD_BADGE_HEIGHT / 2)
+    .backgroundColor(this.badgeBackgroundColor())
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
   }
@@ -88,10 +155,7 @@ export struct TgChatMeta {
         if (this.hasMention) {
           this.buildMentionBadge()
         }
-        TgUnreadBadge({
-          count: this.unreadCount,
-          isMuted: this.isMuted
-        })
+        this.buildUnreadBadge()
       }
     } else if (this.hasMention) {
       this.buildMentionBadge()

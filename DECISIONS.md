@@ -1,6 +1,6 @@
 # DECISIONS — Telegram-HarmonyOS
 
-Last updated: 2026-03-22
+Last updated: 2026-05-03
 
 This file records decisions that are already effectively accepted in the repo.
 
@@ -68,3 +68,9 @@ This file records decisions that are already effectively accepted in the repo.
 - **Decision:** The project should concentrate custom work on Telegram-specific semantics and hierarchy, while shell/chrome surfaces that are not strong Telegram invariants should increasingly move toward Harmony-native or hybrid implementations when platform quality is good enough.
 - **Why:** Recent API 23 beta visual direction and repeated video evidence suggest that HarmonyOS shell chrome is becoming much closer to the desired glass/island/navigation language. Continuing to hand-build every shell surface is likely a poor use of time compared with preserving Telegram-specific UX semantics.
 - **Consequence:** Keep custom effort focused on `TgChatRow`, message atoms, composer semantics, badges/meta/status, and other Telegram-defining surfaces. Treat tab bars, top chrome hosts, search hosts, and similar shell containers as candidates for platform-native or hybrid paths, while retaining API 22-compatible fallbacks until API 23 is stable and adopted by the repo.
+
+
+## D14. API23 HDS root shell is the current forward branch target
+- **Decision:** After explicit user direction on 2026-05-03, continue the root shell through API23 `HdsTabs` / `HdsNavigation` instead of restoring the deleted custom `TgTabBar` as the active shell.
+- **Why:** The refreshed docs/SDK show the HDS tab/navigation path and `barFloatingStyle` are real API23 surfaces, and the project strategy already prefers Harmony-native shell/chrome when platform quality is sufficient.
+- **Consequence:** `build-profile.json5` now intentionally targets and declares compatibility with `6.1.0(23)`, and `scripts/smoke-ui-phase0.ps1` validates the HDS root-shell contract. Any future API22 fallback would be a separate deliberate compatibility track, not the current active smoke boundary.

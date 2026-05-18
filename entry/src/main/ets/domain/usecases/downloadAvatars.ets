@@ -23,6 +23,9 @@ export class DownloadAvatarsUseCase {
   private pendingFileIds: Set<number> = new Set<number>();
   private unsubscribe: (() => void) | null = null;
   private scanScheduled: boolean = false;
+  private scanTimerId: number = -1;
+  private isRunning: boolean = false;
+  private lifecycleToken: number = 0;
   private static readonly SCAN_THROTTLE_MS = 500;
 
   constructor(store: AppStore, gateway: TdGatewayPort) {
@@ -31,7 +34,9 @@ export class DownloadAvatarsUseCase {
   }
 
   start(): void {
-    if (this.unsubscribe) return;
+    if (this.isRunning) return;
+    this.isRunning = true;
+    this.lifecycleToken++;
 
     hilog.info(DOMAIN, TAG, 'Starting avatar download watcher');
 
@@ -39,30 +44,60 @@ export class DownloadAvatarsUseCase {
     this.scanAndDownload(this.store.getState());
 
     // Subscribe for future changes — throttled to avoid scan spam
-    this.unsubscribe = this.store.subscribe((newState: AppState, prevState: AppState): void => {
+    if (this.unsubscribe !== null) {
+      this.unsubscribe();
+      this.unsubscribe = null;
+    }
+    const subscriptionToken = this.lifecycleToken;
+    let activeUnsubscribe: (() => void) | null = null;
+    activeUnsubscribe = this.store.subscribe((newState: AppState, prevState: AppState): void => {
+      if (!this.isCurrentSubscription(subscriptionToken, activeUnsubscribe)) {
+        return;
+      }
       if (newState.users !== prevState.users || newState.chats !== prevState.chats) {
-        this.scheduleScan(newState);
+        this.scheduleScan();
       }
     });
+    this.unsubscribe = activeUnsubscribe;
   }
 
   stop(): void {
-    if (this.unsubscribe) {
-      this.unsubscribe();
-      this.unsubscribe = null;
+    this.isRunning = false;
+    this.lifecycleToken++;
+    const activeUnsubscribe = this.unsubscribe;
+    this.unsubscribe = null;
+    if (activeUnsubscribe) {
+      activeUnsubscribe();
+    }
+    if (this.scanTimerId !== -1) {
+      clearTimeout(this.scanTimerId);
+      this.scanTimerId = -1;
     }
     this.pendingFileIds.clear();
     this.scanScheduled = false;
   }
 
-  private scheduleScan(state: AppState): void {
+  private isCurrentRun(token: number): boolean {
+    return this.isRunning && token === this.lifecycleToken;
+  }
+
+  private isCurrentSubscription(token: number, unsubscribe: (() => void) | null): boolean {
+    return this.isCurrentRun(token) && this.unsubscribe === unsubscribe;
+  }
+
+  private scheduleScan(): void {
     if (this.scanScheduled) return;
     this.scanScheduled = true;
-    setTimeout(() => {
+    const token = this.lifecycleToken;
+    this.scanTimerId = setTimeout(() => {
+      this.scanTimerId = -1;
       this.scanScheduled = false;
+      if (!this.isCurrentRun(token)) {
+        return;
+      }
       // Use latest state, not the captured one
       this.scanAndDownload(this.store.getState());
-    }, DownloadAvatarsUseCase.SCAN_THROTTLE_MS);
+    }, DownloadAvatarsUseCase.SCAN_THROTTLE_MS) as number;
   }
 
   private scanAndDownload(state: AppState): void {
@@ -75,7 +110,9 @@ export class DownloadAvatarsUseCase {
     state.users.users.forEach((user: User) => {
       if (user.photoSmallFileId > 0) {
         usersWithFileId++;
-        if (user.photoSmall.length === 0) {
+        if (user.photoSmall.length > 0) {
+          this.pendingFileIds.delete(user.photoSmallFileId);
+        } else {
           usersNeedDownload++;
           this.enqueueDownload(user.photoSmallFileId);
         }
@@ -86,7 +123,9 @@ export class DownloadAvatarsUseCase {
     state.chats.chats.forEach((chat: Chat) => {
       if (chat.photoSmallFileId > 0) {
         chatsWithFileId++;
-        if (chat.photoSmall.length === 0) {
+        if (chat.photoSmall.length > 0) {
+          this.pendingFileIds.delete(chat.photoSmallFileId);
+        } else {
           chatsNeedDownload++;
           this.enqueueDownload(chat.photoSmallFileId);
         }
@@ -101,6 +140,7 @@ export class DownloadAvatarsUseCase {
   }
 
   private enqueueDownload(fileId: number): void {
+    if (!this.isRunning) return;
     if (this.pendingFileIds.has(fileId)) return;
     this.pendingFileIds.add(fileId);
 
@@ -108,9 +148,13 @@ export class DownloadAvatarsUseCase {
 
     const command = createDownloadFileCommand(fileId, AVATAR_DOWNLOAD_PRIORITY, false);
     const store = this.store;
+    const token = this.lifecycleToken;
 
     this.gateway.send(command)
       .then((response: Object): void => {
+        if (!this.isCurrentRun(token)) {
+          return;
+        }
         hilog.info(DOMAIN, TAG, 'downloadFile response received for fileId=%{public}d', fileId);
 
         // Response is a TdObject (TDLib "file" object) — use native accessors
@@ -125,6 +169,7 @@ export class DownloadAvatarsUseCase {
 
           if (isComplete && path.length > 0) {
             hilog.info(DOMAIN, TAG, 'File %{public}d already downloaded: %{public}s', fileId, path);
+            this.pendingFileIds.delete(fileId);
             // Dispatch FileDownloadedEvent directly
             const event = new FileDownloadedEvent();
             event.fileId = fileId;
@@ -135,9 +180,13 @@ export class DownloadAvatarsUseCase {
           }
         } catch (e) {
           hilog.warn(DOMAIN, TAG, 'Could not parse downloadFile response: %{public}s', String(e));
+          this.pendingFileIds.delete(fileId);
         }
       })
       .catch((error: Error): void => {
+        if (!this.isCurrentRun(token)) {
+          return;
+        }
         hilog.warn(DOMAIN, TAG, 'Failed to download fileId=%{public}d: %{public}s', fileId, error.message);
         this.pendingFileIds.delete(fileId);
       });

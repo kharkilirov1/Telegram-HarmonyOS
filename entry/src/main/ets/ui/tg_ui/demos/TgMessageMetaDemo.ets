@@ -1,6 +1,7 @@
 import { TgMessageMeta, TgMessageSendStatus } from '../atoms/TgMessageMeta';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgMessageMeta' })
 @ComponentV2
 export struct TgMessageMetaDemo {
   @Builder

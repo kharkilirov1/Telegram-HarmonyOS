@@ -2,6 +2,7 @@ import { TgMediaBubbleShellV2 } from '../atoms/TgMediaBubbleShellV2';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgMessageSendStatus } from '../atoms/TgMessageMeta';
 
+@Preview({ title: 'TgMediaBubbleShellV2' })
 @ComponentV2
 export struct TgMediaBubbleShellV2Demo {
   private captionText: string = 'Caption should reserve space for inline meta instead of forcing a second meta row below the media.';

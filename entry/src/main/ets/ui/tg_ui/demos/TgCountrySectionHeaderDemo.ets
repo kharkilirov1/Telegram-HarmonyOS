@@ -1,6 +1,7 @@
 import { TgCountrySectionHeader } from '../atoms/TgCountrySectionHeader';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgCountrySectionHeader' })
 @ComponentV2
 export struct TgCountrySectionHeaderDemo {
   build() {

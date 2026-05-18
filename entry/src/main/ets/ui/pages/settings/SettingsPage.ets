@@ -5,7 +5,6 @@
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, User } from '../../../core/model/AppState';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
-import { TgTopBar } from '../../tg_ui/atoms/TgTopBar';
 import { TgAvatar } from '../../tg_ui/atoms/TgAvatar';
 import { TgSettingsRow, TgSettingsTrailing } from '../../tg_ui/atoms/TgSettingsRow';
 import { fileUri } from '@kit.CoreFileKit';
@@ -28,32 +27,52 @@ export struct SettingsPage {
   @Local private contentBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
 
   private unsubscribe?: () => void;
+  private pageLifecycleToken: number = 0;
   private mainWindow?: window.Window;
 
   aboutToAppear(): void {
+    this.pageLifecycleToken += 1;
     hilog.info(DOMAIN, TAG, 'SettingsPage aboutToAppear');
     this.computeSafeInsets();
     this.bindWindowSizeListener();
+
+    if (this.unsubscribe !== undefined) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
+    }
 
     try {
       const runtime = getAppCoreRuntime();
       const store = runtime.getStore();
       this.loadCurrentUser(store.getState());
 
-      this.unsubscribe = store.subscribe((_newState: AppState, _prevState: AppState) => {
+      const subscriptionToken: number = this.pageLifecycleToken;
+      let activeUnsubscribe: (() => void) | undefined = undefined;
+      activeUnsubscribe = store.subscribe((_newState: AppState, _prevState: AppState) => {
+        if (subscriptionToken !== this.pageLifecycleToken || this.unsubscribe !== activeUnsubscribe) {
+          return;
+        }
         try {
           const currentState = getAppCoreRuntime().getStore().getState();
+          if (subscriptionToken !== this.pageLifecycleToken || this.unsubscribe !== activeUnsubscribe) {
+            return;
+          }
           this.loadCurrentUser(currentState);
         } catch (e) {
+          if (subscriptionToken !== this.pageLifecycleToken || this.unsubscribe !== activeUnsubscribe) {
+            return;
+          }
           hilog.error(DOMAIN, TAG, 'Load user failed: %{public}s', String(e));
         }
       });
+      this.unsubscribe = activeUnsubscribe;
     } catch (e) {
       hilog.error(DOMAIN, TAG, 'Init failed: %{public}s', String(e));
     }
   }
 
   aboutToDisappear(): void {
+    this.pageLifecycleToken += 1;
     if (this.unsubscribe !== undefined) {
       this.unsubscribe();
       this.unsubscribe = undefined;
@@ -68,7 +87,12 @@ export struct SettingsPage {
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
       this.mainWindow = getMainWindow(context);
       if (this.mainWindow !== undefined) {
+        const lifecycleToken: number = this.pageLifecycleToken;
+        const boundWindow: window.Window = this.mainWindow;
         this.mainWindow.on('windowSizeChange', (_size: window.Size) => {
+          if (lifecycleToken !== this.pageLifecycleToken || this.mainWindow !== boundWindow) {
+            return;
+          }
           this.computeSafeInsets();
         });
       }
@@ -270,7 +294,6 @@ export struct SettingsPage {
       .edgeEffect(EdgeEffect.Spring)
       .scrollBar(BarState.Off)
 
-      TgTopBar({ title: localized($r('app.string.settings').id, 'Settings') })
     }
     .width('100%')
     .height('100%')

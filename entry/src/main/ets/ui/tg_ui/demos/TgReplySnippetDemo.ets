@@ -1,6 +1,7 @@
 import { TgReplySnippet } from '../atoms/TgReplySnippet';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgReplySnippet' })
 @ComponentV2
 export struct TgReplySnippetDemo {
   private longAuthor: string = 'Very Long Author Name With Channel Context And Extra Prefix';

@@ -22,6 +22,22 @@ export struct RegistrationPage {
   @Local private errorMessage: string = '';
   @Local private isLoading: boolean = false;
 
+  private pageLifecycleToken: number = 0;
+
+  private isCurrentRegistrationContinuation(scheduledToken: number): boolean {
+    return scheduledToken === this.pageLifecycleToken;
+  }
+
+  aboutToAppear(): void {
+    this.pageLifecycleToken += 1;
+  }
+
+  aboutToDisappear(): void {
+    this.pageLifecycleToken += 1;
+    this.isLoading = false;
+    this.buttonState = 'default';
+  }
+
   build() {
     Column() {
       Scroll() {
@@ -147,6 +163,7 @@ export struct RegistrationPage {
 
   private async registerUser(): Promise<void> {
     if (this.isLoading) return;
+    const requestToken: number = this.pageLifecycleToken;
     this.isLoading = true;
     this.buttonState = 'progress';
     this.errorMessage = '';
@@ -154,6 +171,9 @@ export struct RegistrationPage {
     const controller = LoginController.getInstance();
     const result = await controller.registerUser(this.firstName.trim(), this.lastName.trim());
 
+    if (!this.isCurrentRegistrationContinuation(requestToken)) {
+      return;
+    }
     this.isLoading = false;
 
     if (result.success) {

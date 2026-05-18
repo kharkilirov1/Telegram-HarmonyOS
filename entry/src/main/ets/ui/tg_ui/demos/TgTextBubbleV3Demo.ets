@@ -4,16 +4,46 @@ import { TgMessageSendStatus } from '../atoms/TgMessageMeta'
 import { TgTextLayout } from '../../text_engine/TgTextLayout'
 import { computeTextBubbleLayout } from '../layout/TgBubbleLayout'
 import { BubbleLayoutInput } from '../layout/TgBubbleLayoutTypes'
+import { TextEntity } from '../../../core/model/AppState'
 
+@Preview({ title: 'TgTextBubbleV3' })
 @ComponentV2
 export struct TgTextBubbleV3Demo {
   private longText: string = 'Engine-driven Telegram-like text bubble used to verify shrink-wrap width, inline meta, and resilient width calculation under realistic content.'
   private multilineText: string = 'First line stays visible.\nSecond line must remain a hard break.\n\nParagraph break must also survive.'
   private quotedText: string = 'Intro line.\nQuoted fragment that should expand the bubble height as a real quote block.\nOutro line.'
   private narrowUrl: string = 'https://example.com/super/long/path/that/should/still/wrap/without/exploding/the/bubble/width/in/narrow/layout'
+  private richText: string = 'Rich text: bold, italic, underlined, code, and https://t.me/harmony link.'
+  private collapsedQuoteText: string = 'Before collapsed quote.\nThis quoted block is marked collapsed and should render as a dimmed quote segment while keeping the bubble height accounted for.\nFollow-up text after the quote.'
 
   private buildLayout(input: BubbleLayoutInput) {
     return computeTextBubbleLayout(TgTextLayout.getInstance(this.getUIContext()), input)
+  }
+
+  private entity(offset: number, length: number, type: string): TextEntity {
+    const entity = new TextEntity()
+    entity.offset = offset
+    entity.length = length
+    entity.type = type
+    return entity
+  }
+
+  private richEntities(): TextEntity[] {
+    return [
+      this.entity(this.richText.indexOf('bold'), 'bold'.length, 'bold'),
+      this.entity(this.richText.indexOf('italic'), 'italic'.length, 'italic'),
+      this.entity(this.richText.indexOf('underlined'), 'underlined'.length, 'underline'),
+      this.entity(this.richText.indexOf('code'), 'code'.length, 'code'),
+      this.entity(this.richText.indexOf('https://t.me/harmony'), 'https://t.me/harmony'.length, 'url')
+    ]
+  }
+
+  private collapsedQuoteOffset(): number {
+    return this.collapsedQuoteText.indexOf('This quoted block')
+  }
+
+  private collapsedQuoteLength(): number {
+    return this.collapsedQuoteText.indexOf('Follow-up') - this.collapsedQuoteOffset()
   }
 
   @Builder
@@ -227,6 +257,65 @@ export struct TgTextBubbleV3Demo {
             forceBreakAll: true,
             timeText: '10:30',
             containerWidth: TgUiTokens.MSG_DEMO_NARROW_CONTAINER_WIDTH
+          })
+        })
+
+        this.caseBlock('07 rich entities', () => {
+          TgTextBubbleV3({
+            layout: this.buildLayout({
+              text: this.richText,
+              isOutgoing: false,
+              containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH,
+              maxWidthRatio: TgUiTokens.BUBBLE_MAX_WIDTH_RATIO,
+              avatarInset: 0,
+              senderName: '',
+              replyAuthor: '',
+              replyPreview: '',
+              replyHasThumbnail: false,
+              timeText: '10:37',
+              hasStatus: false,
+              isEmojiOnly: false,
+              forceBreakAll: false,
+              quoteOffsets: [],
+              quoteLengths: [],
+              quoteCollapsedFlags: []
+            }),
+            text: this.richText,
+            textEntities: this.richEntities(),
+            timeText: '10:37',
+            containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH
+          })
+        })
+
+        this.caseBlock('08 collapsed quote segment', () => {
+          TgTextBubbleV3({
+            layout: this.buildLayout({
+              text: this.collapsedQuoteText,
+              isOutgoing: true,
+              containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH,
+              maxWidthRatio: TgUiTokens.BUBBLE_MAX_WIDTH_RATIO,
+              avatarInset: 0,
+              senderName: '',
+              replyAuthor: '',
+              replyPreview: '',
+              replyHasThumbnail: false,
+              timeText: '10:44',
+              hasStatus: true,
+              isEmojiOnly: false,
+              forceBreakAll: false,
+              quoteOffsets: [this.collapsedQuoteOffset()],
+              quoteLengths: [this.collapsedQuoteLength()],
+              quoteCollapsedFlags: [true]
+            }),
+            text: this.collapsedQuoteText,
+            isOutgoing: true,
+            quoteOffsets: [this.collapsedQuoteOffset()],
+            quoteLengths: [this.collapsedQuoteLength()],
+            quoteCollapsedFlags: [true],
+            quoteAccentHex: '#2a9d8f',
+            timeText: '10:44',
+            sendStatus: TgMessageSendStatus.Read,
+            containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH
           })
         })
       }

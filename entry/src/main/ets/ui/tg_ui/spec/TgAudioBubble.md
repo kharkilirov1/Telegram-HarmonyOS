@@ -52,14 +52,14 @@ UI-only scope:
 - idle (not downloaded) — music note icon on gradient art tile
 - downloaded, not playing — play icon on art tile
 - downloaded, playing — pause icon on art tile + seek bar filled
-- determinate download — ring progress on art tile + download progress bar
+- determinate download — `downloadProgress` in `0..1` is treated as active even if `isDownloading` is false; ring progress + close/cancel icon on art tile + download progress bar
 - indeterminate download — spinner on art tile
 - incoming / outgoing color variants
 - long title / missing performer fallback
 
 ## Layout Rules
 1. Leading element is a **44vp square art tile** (radius 12) with gradient bg.
-2. Art tile shows: music note (idle) / play (downloaded) / pause (playing) / ring progress (downloading) / spinner (indeterminate).
+2. Art tile shows: music note or download affordance (remote idle) / play (downloaded) / pause (playing) / ring + project close icon (determinate transfer) / spinner + project close icon (indeterminate transfer).
 3. Text stack: title (2 lines max) → performer (1 line) → seek bar → duration/size meta.
 4. **Seek bar**: thin 3vp horizontal bar below performer, filled by `playbackProgress`.
 5. During download, seek bar is replaced by download progress bar.
@@ -73,12 +73,15 @@ UI-only scope:
 - `AUDIO_BUBBLE_SEEK_HEIGHT`, `AUDIO_BUBBLE_SEEK_RADIUS`, `AUDIO_BUBBLE_SEEK_TOP_GAP`
 - `AUDIO_BUBBLE_SEEK_BG`, `AUDIO_BUBBLE_SEEK_FILL`
 - `AUDIO_BUBBLE_TITLE_SIZE`, `AUDIO_BUBBLE_META_SIZE`, `AUDIO_BUBBLE_BOTTOM_META_SIZE`
-- `ICON_RES_MUSIC`, `ICON_RES_PLAY`, `ICON_RES_PAUSE`, `ICON_RES_DOWNLOAD`
+- `ICON_RES_MUSIC`, `ICON_RES_PLAY`, `ICON_RES_PAUSE`, `ICON_RES_DOWNLOAD`, `ICON_RES_CLOSE`
+- `MEDIA_PROGRESS_COLOR`, `MEDIA_CANCEL_ICON_SIZE`, `MEDIA_PROGRESS_STROKE`
 
 ## Acceptance Checklist
 - [ ] Art tile is visually distinct from document tile — gradient + music note
 - [ ] Play/pause states shown on art tile overlay
 - [ ] Ring progress renders on art tile during determinate download
+- [ ] Determinate `downloadProgress` alone renders as active transfer and cancels through the router
+- [ ] Transfer cancel icon uses project `TgIcon(ICON_RES_CLOSE)`, not a system media asset
 - [ ] Seek bar shows playback progress when playing
 - [ ] Seek bar replaced by download bar during active download
 - [ ] Duration + file size meta reads correctly

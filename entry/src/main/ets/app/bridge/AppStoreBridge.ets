@@ -65,9 +65,16 @@ export class AppStoreBridge {
   private store: AppStore;
   private unsubscribe: (() => void) | null = null;
   private isInitialized: boolean = false;
+  private subscriptionSerial: number = 0;
 
   constructor(store: AppStore) {
     this.store = store;
+  }
+
+  private isCurrentBridgeSubscription(subscriptionSerial: number, unsubscribe: (() => void) | null): boolean {
+    return this.isInitialized &&
+      this.subscriptionSerial === subscriptionSerial &&
+      this.unsubscribe === unsubscribe;
   }
 
   /**
@@ -92,9 +99,20 @@ export class AppStoreBridge {
     this.syncToStorage(currentState);
 
     // 3. Подписаться на изменения AppStore
-    this.unsubscribe = this.store.subscribe((newState: AppState, _prevState: AppState) => {
+    if (this.unsubscribe !== null) {
+      this.unsubscribe();
+      this.unsubscribe = null;
+    }
+    this.subscriptionSerial += 1;
+    const subscriptionSerial: number = this.subscriptionSerial;
+    let activeUnsubscribe: (() => void) | null = null;
+    activeUnsubscribe = this.store.subscribe((newState: AppState, _prevState: AppState) => {
+      if (!this.isCurrentBridgeSubscription(subscriptionSerial, activeUnsubscribe)) {
+        return;
+      }
       this.syncToStorage(newState);
     });
+    this.unsubscribe = activeUnsubscribe;
 
     this.isInitialized = true;
     hilog.info(DOMAIN, TAG, 'AppStorage bridge initialized');
@@ -105,11 +123,13 @@ export class AppStoreBridge {
    * Вызывать при shutdown приложения.
    */
   destroy(): void {
-    if (this.unsubscribe) {
-      this.unsubscribe();
-      this.unsubscribe = null;
-    }
+    this.subscriptionSerial += 1;
+    const activeUnsubscribe = this.unsubscribe;
+    this.unsubscribe = null;
     this.isInitialized = false;
+    if (activeUnsubscribe) {
+      activeUnsubscribe();
+    }
     hilog.info(DOMAIN, TAG, 'AppStorage bridge destroyed');
   }
 

@@ -1,6 +1,7 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgPhotoBubble } from '../atoms/TgPhotoBubble';
 
+@Preview({ title: 'TgPhotoBubble' })
 @ComponentV2
 export struct TgPhotoBubbleDemo {
   private captionShort: string = 'Evening skyline';
@@ -9,7 +10,8 @@ export struct TgPhotoBubbleDemo {
   @Builder
   private caseBlock(label: string, isOutgoing: boolean, photoPath: string | Resource, caption: string,
     photoWidth: number, photoHeight: number, containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH,
-    useConstrainedContainer: boolean = false) {
+    useConstrainedContainer: boolean = false, hasLocalPhoto: boolean = true, isDownloading: boolean = false,
+    downloadProgress: number = -1) {
     Column({ space: TgUiTokens.SPACE_6 }) {
       Text(label)
         .fontSize(TgUiTokens.FONT_META_SIZE)
@@ -20,6 +22,9 @@ export struct TgPhotoBubbleDemo {
         Row() {
           TgPhotoBubble({
             photoPath: photoPath,
+            hasLocalPhoto: hasLocalPhoto,
+            isDownloading: isDownloading,
+            downloadProgress: downloadProgress,
             caption: caption,
             isOutgoing: isOutgoing,
             containerWidth: containerWidth,
@@ -32,6 +37,9 @@ export struct TgPhotoBubbleDemo {
       } else {
         TgPhotoBubble({
           photoPath: photoPath,
+          hasLocalPhoto: hasLocalPhoto,
+          isDownloading: isDownloading,
+          downloadProgress: downloadProgress,
           caption: caption,
           isOutgoing: isOutgoing,
           containerWidth: containerWidth,
@@ -78,9 +86,16 @@ export struct TgPhotoBubbleDemo {
         this.caseBlock('02 outgoing 16:9 short caption', true, $r('app.media.app_icon'), this.captionShort, 1280, 720)
         this.caseBlock('03 incoming vertical 3:4', false, $r('app.media.app_icon'), '', 900, 1200)
         this.caseBlock('04 outgoing long caption', true, $r('app.media.app_icon'), this.captionLong, 1280, 720)
-        this.caseBlock('05 placeholder without file path', false, '', '', 0, 0)
+        this.caseBlock('05 placeholder without file path', false, '', '', 0, 0,
+          TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, false, false)
         this.caseBlock('06 narrow container stress', false, $r('app.media.app_icon'), this.captionShort,
           1280, 720, TgUiTokens.MSG_DEMO_NARROW_CONTAINER_WIDTH, true)
+        this.caseBlock('07 remote thumbnail / download icon', false, $r('app.media.app_icon'), '',
+          1280, 720, TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, false, false)
+        this.caseBlock('08 fetching determinate / cancel icon', true, $r('app.media.app_icon'), this.captionShort,
+          1280, 720, TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, false, false, true, 0.43)
+        this.caseBlock('09 fetching indeterminate / cancel icon', false, '', '',
+          0, 0, TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, false, false, true, -1)
       }
       .width('100%')
       .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
@@ -89,4 +104,3 @@ export struct TgPhotoBubbleDemo {
     .height('100%')
   }
 }
-

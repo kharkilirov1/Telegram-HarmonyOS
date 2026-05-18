@@ -10,4 +10,6 @@ export class MediaGalleryItem {
   durationSec: number = 0;
   fileId: number = 0;
   messageId: string = '';
+  isDownloading: boolean = false;
+  downloadProgress: number = -1;
 }

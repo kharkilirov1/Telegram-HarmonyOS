@@ -18,12 +18,26 @@ export struct TgVideoPlayerPage {
 
   private controller: VideoController = new VideoController();
   private hideControlsTimerId: number = -1;
+  private pageLifecycleToken: number = 0;
 
-  aboutToDisappear(): void {
+  aboutToAppear(): void {
+    this.pageLifecycleToken += 1;
+  }
+
+  private clearHideControlsTimer(): void {
     if (this.hideControlsTimerId >= 0) {
       clearTimeout(this.hideControlsTimerId);
       this.hideControlsTimerId = -1;
     }
+  }
+
+  private isCurrentHideControlsTimer(scheduledToken: number, scheduledTimerId: number): boolean {
+    return scheduledToken === this.pageLifecycleToken && this.hideControlsTimerId === scheduledTimerId;
+  }
+
+  aboutToDisappear(): void {
+    this.pageLifecycleToken += 1;
+    this.clearHideControlsTimer();
     try {
       this.controller.stop();
     } catch (_e) {
@@ -56,15 +70,19 @@ export struct TgVideoPlayerPage {
   }
 
   private scheduleHideControls(): void {
-    if (this.hideControlsTimerId >= 0) {
-      clearTimeout(this.hideControlsTimerId);
-    }
-    this.hideControlsTimerId = setTimeout(() => {
+    this.clearHideControlsTimer();
+    const scheduledToken: number = this.pageLifecycleToken;
+    let scheduledTimerId: number = -1;
+    scheduledTimerId = setTimeout(() => {
+      if (!this.isCurrentHideControlsTimer(scheduledToken, scheduledTimerId)) {
+        return;
+      }
       this.hideControlsTimerId = -1;
       if (this.isPlaying) {
         this.showControls = false;
       }
-    }, 3000);
+    }, 3000) as number;
+    this.hideControlsTimerId = scheduledTimerId;
   }
 
   private toggleControls(): void {

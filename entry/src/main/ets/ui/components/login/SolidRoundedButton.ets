@@ -1,8 +1,7 @@
 // SolidRoundedButton — широкая кнопка Continue
-// HarmonyOS Guidelines: animateTo для анимаций, Image для иконок, $r() для ресурсов
+// API 23: использует встроенный stateEffect Button вместо кастомной spring-анимации
 
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
-import { curves } from '@kit.ArkUI';
 
 export type ButtonState = 'default' | 'progress' | 'success';
 
@@ -13,18 +12,14 @@ export struct SolidRoundedButton {
   @Param buttonState: ButtonState = 'default';
   @Event onPress: () => void = (): void => {};
 
-  @Local private btnScale: number = 1.0;
-
   build() {
     Button() {
       if (this.buttonState === 'progress') {
-        // Spinner внутри кнопки
         LoadingProgress()
           .width(TgUiTokens.ICON_SIZE_LG)
           .height(TgUiTokens.ICON_SIZE_LG)
           .color(TgUiTokens.LOGIN_BUTTON_SPINNER_COLOR)
       } else if (this.buttonState === 'success') {
-        // Галочка — Image вместо эмодзи
         Image(TgUiTokens.ICON_RES_CHECK)
           .width(TgUiTokens.ICON_SIZE_LG)
           .height(TgUiTokens.ICON_SIZE_LG)
@@ -41,29 +36,9 @@ export struct SolidRoundedButton {
     .borderRadius(TgUiTokens.LOGIN_BUTTON_RADIUS)
     .backgroundColor(this.isEnabled ? TgUiTokens.LOGIN_BUTTON_BG : TgUiTokens.LOGIN_BUTTON_DISABLED_BG)
     .enabled(this.isEnabled && this.buttonState === 'default')
-    .scale({ x: this.btnScale, y: this.btnScale })
+    .stateEffect(true) // Встроенный press-эффект Button (замена кастомной spring-анимации)
     .onClick(() => {
-      this.animatePress();
       this.onPress();
     })
-  }
-
-  // Пружинная анимация согласно гайдлайнам HarmonyOS API 22
-  private animatePress(): void {
-    // Анимация сжатия
-    this.getUIContext()?.animateTo({
-      curve: curves.springMotion(0.5, 0.8)
-    }, () => {
-      this.btnScale = 0.95;
-    });
-
-    // Анимация возврата
-    setTimeout(() => {
-      this.getUIContext()?.animateTo({
-        curve: curves.springMotion(0.4, 0.6)
-      }, () => {
-        this.btnScale = 1.0;
-      });
-    }, 100);
   }
 }

@@ -17,30 +17,19 @@ const DOMAIN = 0x0002;
 const TAG = 'TdGateway';
 const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
 
-// Явный интерфейс вместо Record (согласно рекомендациям Huawei)
-interface MethodTimeout {
-  getChats: number;
-  sendMessage: number;
-  downloadFile: number;
-  close: number;
-}
-
-const METHOD_TIMEOUTS: MethodTimeout = {
-  getChats: 15000,
-  sendMessage: 30000,
-  downloadFile: 120000,
-  close: 10000
+const METHOD_TIMEOUT_MAP: Record<string, number> = {
+  'getChats': 15000,
+  'loadChats': 15000,
+  'getChatHistory': 15000,
+  'searchCallMessages': 15000,
+  'getChat': 15000,
+  'sendMessage': 30000,
+  'downloadFile': 120000,
+  'close': 10000,
 };
 
-// Хелпер для получения таймаута — явная проверка свойства
-function getMethodTimeout(method: string): number {
-  if (method === 'getChats' || method === 'loadChats') return METHOD_TIMEOUTS.getChats;
-  if (method === 'getChatHistory') return METHOD_TIMEOUTS.getChats;
-  if (method === 'searchCallMessages' || method === 'getChat') return METHOD_TIMEOUTS.getChats;
-  if (method === 'sendMessage') return METHOD_TIMEOUTS.sendMessage;
-  if (method === 'downloadFile') return METHOD_TIMEOUTS.downloadFile;
-  if (method === 'close') return METHOD_TIMEOUTS.close;
-  return DEFAULT_REQUEST_TIMEOUT_MS;
+export function getMethodTimeout(method: string): number {
+  return METHOD_TIMEOUT_MAP[method] ?? DEFAULT_REQUEST_TIMEOUT_MS;
 }
 
 class Logger {
@@ -162,10 +151,31 @@ export class TdGatewayImpl implements TdGateway {
       this.state = 'ready';
       Logger.info('Gateway initialized with MainThreadDispatcher bridge');
     } catch (error) {
-      this.state = 'idle';
+      this.cleanupAfterInitializeFailure();
       const err = error as Error;
       throw new AppError(AppErrorKind.NETWORK, `TDLib init failed: ${err.message}`, '', 0, true);
     }
+  }
+
+  private cleanupAfterInitializeFailure(): void {
+    getMainThreadDispatcher().unsubscribe();
+    try {
+      if (this.clientId > 0) {
+        tdlib.stopReceiveLoop();
+      }
+    } catch (cleanupError) {
+      Logger.warn(`TDLib stopReceiveLoop failed after initialize failure: ${String(cleanupError)}`);
+    }
+    const initError = new AppError(AppErrorKind.NETWORK, 'Gateway initialize failed', '', 0, true);
+    for (const entry of this.pendingRequests.entries()) {
+      const req = entry[1];
+      clearTimeout(req.timeoutId);
+      req.reject(initError);
+    }
+    this.pendingRequests.clear();
+    this.updateHandlers.clear();
+    this.clientId = 0;
+    this.state = 'idle';
   }
 
   async send(method: string, params: TdObject = new TdObject()): Promise<TdObject> {
@@ -299,50 +309,76 @@ export class TdGatewayImpl implements TdGateway {
     this.state = 'destroying';
     Logger.info('Initiating graceful shutdown...');
 
-    // Отписываемся от dispatcher
     const dispatcher = getMainThreadDispatcher();
-    dispatcher.unsubscribe();
 
     if (wasReady && this.clientId > 0) {
+      let closeWaitSettled = false;
+      let closeWaitTimeoutId: number = -1;
+      let resolveCloseWait: (value: boolean) => void = (_value: boolean): void => {};
+      const closeStatePromise = new Promise<boolean>((resolve: (value: boolean) => void) => {
+        resolveCloseWait = resolve;
+      });
+      let closeStateHandler: (update: TdObject) => void = (_update: TdObject): void => {};
+
+      const finishCloseWait = (observedClosedState: boolean): void => {
+        if (closeWaitSettled) {
+          return;
+        }
+        closeWaitSettled = true;
+        if (closeWaitTimeoutId !== -1) {
+          clearTimeout(closeWaitTimeoutId);
+          closeWaitTimeoutId = -1;
+        }
+        this.updateHandlers.delete(closeStateHandler);
+        resolveCloseWait(observedClosedState);
+      };
+
+      closeStateHandler = (update: TdObject): void => {
+        if (update.getType() !== 'updateAuthorizationState') {
+          return;
+        }
+        const authState = update.getObject('authorization_state');
+        if (authState && authState.getType() === 'authorizationStateClosed') {
+          finishCloseWait(true);
+        }
+      };
+
+      // Register the temporary closed-state observer before sending close().
+      // TDLib can deliver authorizationStateClosed before the close response is
+      // resolved, and registering afterwards turns a successful close into a
+      // misleading timeout.
+      this.updateHandlers.add(closeStateHandler);
+
       let closeOk = false;
       await this.send('close')
         .then((): void => { closeOk = true; })
         .catch((err: Error): void => Logger.warn(`TDLib close command rejected: ${err.message}`));
       if (closeOk) {
         Logger.info('Waiting for TDLib to flush database and close...');
-        await new Promise<void>((resolve) => {
-          let settled = false;
-
-          const handler = (update: TdObject): void => {
-            if (update.getType() === 'updateAuthorizationState') {
-              const authState = update.getObject('authorization_state');
-              if (authState && authState.getType() === 'authorizationStateClosed') {
-                if (!settled) {
-                  settled = true;
-                  clearTimeout(timeoutId);
-                  this.updateHandlers.delete(handler);
-                  resolve();
-                }
-              }
-            }
-          };
-
-          this.updateHandlers.add(handler);
-
-          const timeoutId = setTimeout(() => {
-            if (!settled) {
-              settled = true;
-              this.updateHandlers.delete(handler);
-              Logger.warn('TDLib close wait timed out');
-              resolve();
-            }
-          }, 5000);
-        });
-        Logger.info('TDLib closed gracefully');
+        if (!closeWaitSettled) {
+          closeWaitTimeoutId = setTimeout(() => {
+            Logger.warn('TDLib close wait timed out');
+            finishCloseWait(false);
+          }, 5000) as number;
+        }
+        const closedStateObserved = await closeStatePromise;
+        if (closedStateObserved) {
+          Logger.info('TDLib closed gracefully');
+        }
+      } else {
+        finishCloseWait(false);
       }
     }
 
-    tdlib.stopReceiveLoop();
+    // Detach dispatcher only after the close command/closed-state wait has had a
+    // chance to receive response/update callbacks during the destroying state.
+    dispatcher.unsubscribe();
+
+    try {
+      tdlib.stopReceiveLoop();
+    } catch (error) {
+      Logger.warn(`TDLib stopReceiveLoop failed during destroy: ${String(error)}`);
+    }
 
     const shutdownError = new AppError(AppErrorKind.NETWORK, 'Gateway destroyed', '', 0, true);
     for (const entry of this.pendingRequests.entries()) {
@@ -376,12 +412,17 @@ export class TdGatewayImpl implements TdGateway {
 
     const requestId: string = rawObject.getString('@extra');
 
-    if (requestId && this.pendingRequests.has(requestId)) {
-      this.resolvePendingRequest(requestId, rawObject);
-    } else {
-      // Ответ без @extra — трактуем как обновление
-      this.broadcastUpdate(rawObject);
+    if (requestId) {
+      if (this.pendingRequests.has(requestId)) {
+        this.resolvePendingRequest(requestId, rawObject);
+      } else {
+        Logger.warn(`Stale response ignored for missing request: ${requestId}`);
+      }
+      return;
     }
+
+    // Ответ без @extra — трактуем как обновление
+    this.broadcastUpdate(rawObject);
   }
 
   /**
@@ -427,7 +468,11 @@ export class TdGatewayImpl implements TdGateway {
 
   private broadcastUpdate(update: TdObject): void {
     // Безопасно — мы на main thread
-    for (const handler of this.updateHandlers) {
+    const handlersSnapshot: ((update: TdObject) => void)[] = Array.from(this.updateHandlers);
+    for (const handler of handlersSnapshot) {
+      if (!this.updateHandlers.has(handler)) {
+        continue;
+      }
       try {
         handler(update);
       } catch (e) {

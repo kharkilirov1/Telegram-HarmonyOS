@@ -12,6 +12,7 @@ import {
   LoadChatsCommand,
   OpenChatCommand,
   SendMessageCommand,
+  SendMediaMessageCommand,
   EditMessageTextCommand,
   DeleteMessagesCommand,
   ForwardMessagesCommand,
@@ -30,6 +31,7 @@ import {
   GetUserFullInfoCommand,
   GetSupergroupFullInfoCommand,
   DownloadFileCommand,
+  CancelDownloadFileCommand,
   RequestQrCodeAuthCommand
 } from '../../../core/model/AppCommand';
 import { TdObject } from '../../../models/TdTypes';
@@ -125,6 +127,21 @@ export function serializeCommand(command: AnyAppCommand): SerializedCommand {
       result.params.setString('_input_message_content_json', inputContentJson);
 
       // reply_to если указан
+      const replyToId = cmd.payload.replyToMessageId;
+      if (replyToId && replyToId !== '0') {
+        const replyJson = `{"@type":"inputMessageReplyToMessage","message_id":${replyToId}}`;
+        result.params.setString('_reply_to_json', replyJson);
+      }
+      break;
+    }
+
+    case 'sendMediaMessage': {
+      const cmd = command as SendMediaMessageCommand;
+      result.method = 'sendMessage';
+      result.params.setNumber('chat_id', cmd.payload.chatId);
+      result.params.setString('_input_message_content_json',
+        buildMediaInputContentJson(cmd.payload.mediaKind, cmd.payload.localPath, cmd.payload.caption));
+
       const replyToId = cmd.payload.replyToMessageId;
       if (replyToId && replyToId !== '0') {
         const replyJson = `{"@type":"inputMessageReplyToMessage","message_id":${replyToId}}`;
@@ -297,6 +314,14 @@ export function serializeCommand(command: AnyAppCommand): SerializedCommand {
       break;
     }
 
+    case 'cancelDownloadFile': {
+      const cmd = command as CancelDownloadFileCommand;
+      result.method = 'cancelDownloadFile';
+      result.params.setNumber('file_id', cmd.payload.fileId);
+      result.params.setBool('only_if_pending', cmd.payload.onlyIfPending);
+      break;
+    }
+
     case 'requestQrCodeAuth': {
       result.method = 'requestQrCodeAuthentication';
       break;
@@ -364,4 +389,34 @@ function escapeForJson(str: string): string {
     .replace(/\n/g, '\\n')
     .replace(/\r/g, '\\r')
     .replace(/\t/g, '\\t');
+}
+
+function buildFormattedTextJson(text: string): string {
+  const escapedText = escapeForJson(text);
+  return `{"@type":"formattedText","text":"${escapedText}","entities":[]}`;
+}
+
+function buildInputFileLocalJson(localPath: string): string {
+  const escapedPath = escapeForJson(localPath);
+  return `{"@type":"inputFileLocal","path":"${escapedPath}"}`;
+}
+
+function buildMediaInputContentJson(mediaKind: string, localPath: string, caption: string): string {
+  const fileJson = buildInputFileLocalJson(localPath);
+  const captionJson = buildFormattedTextJson(caption);
+
+  switch (mediaKind) {
+    case 'photo':
+      return `{"@type":"inputMessagePhoto","photo":${fileJson},"thumbnail":null,` +
+        `"added_sticker_file_ids":[],"width":0,"height":0,"caption":${captionJson},` +
+        `"show_caption_above_media":false,"self_destruct_type":null,"has_spoiler":false}`;
+    case 'video':
+      return `{"@type":"inputMessageVideo","video":${fileJson},"thumbnail":null,"cover":null,` +
+        `"start_timestamp":0,"added_sticker_file_ids":[],"duration":0,"width":0,"height":0,` +
+        `"supports_streaming":true,"caption":${captionJson},"show_caption_above_media":false,` +
+        `"self_destruct_type":null,"has_spoiler":false}`;
+    default:
+      return `{"@type":"inputMessageDocument","document":${fileJson},"thumbnail":null,` +
+        `"disable_content_type_detection":false,"caption":${captionJson}}`;
+  }
 }

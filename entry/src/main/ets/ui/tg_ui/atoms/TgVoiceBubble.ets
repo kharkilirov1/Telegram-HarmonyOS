@@ -24,7 +24,7 @@ export struct TgVoiceBubble {
 
   private canvasContext: CanvasRenderingContext2D = new CanvasRenderingContext2D();
 
-  @Monitor('playbackProgress', 'isPlaying', 'hasLocalFile', 'isDownloading')
+  @Monitor('playbackProgress', 'isPlaying', 'hasLocalFile', 'isDownloading', 'downloadProgress')
   onPlaybackStateChange(): void {
     if (this.canvasReady) {
       this.drawWaveform();
@@ -37,6 +37,10 @@ export struct TgVoiceBubble {
 
   private hasDownloadProgress(): boolean {
     return this.downloadProgress >= 0 && this.downloadProgress < 1;
+  }
+
+  private isTransferActive(): boolean {
+    return this.isDownloading || this.hasDownloadProgress();
   }
 
   private normalizedDownloadProgress(): number {
@@ -52,7 +56,7 @@ export struct TgVoiceBubble {
   }
 
   private durationColor(): ResourceColor {
-    if (!this.hasLocalFile || this.isDownloading) {
+    if (!this.hasLocalFile || this.isTransferActive()) {
       return this.isOutgoing ? TgUiTokens.VOICE_BUBBLE_DURATION_OUTGOING : TgUiTokens.VOICE_BUBBLE_DURATION_INCOMING;
     }
     if (!this.isListened && !this.isOutgoing) {
@@ -224,7 +228,7 @@ export struct TgVoiceBubble {
 
     context.clearRect(0, 0, totalCanvasWidth, areaHeight);
 
-    const isReady = this.hasLocalFile && !this.isDownloading;
+    const isReady = this.hasLocalFile && !this.isTransferActive();
 
     // Draw rounded bars — iOS uses lineCap round strokes
     context.lineCap = 'round';
@@ -279,11 +283,33 @@ export struct TgVoiceBubble {
   private buildInnerContent() {
     Row({ space: TgUiTokens.VOICE_BUBBLE_CONTENT_GAP }) {
       Row() {
-        if (this.isDownloading) {
-          LoadingProgress()
-            .width(TgUiTokens.VOICE_BUBBLE_BUTTON_ICON_SIZE)
-            .height(TgUiTokens.VOICE_BUBBLE_BUTTON_ICON_SIZE)
-            .color(TgUiTokens.VOICE_BUBBLE_BUTTON_ICON)
+        if (this.isTransferActive()) {
+          Stack({ alignContent: Alignment.Center }) {
+            if (this.hasDownloadProgress()) {
+              Progress({
+                value: this.normalizedDownloadProgress() * 100,
+                total: 100,
+                type: ProgressType.Ring
+              })
+                .width(TgUiTokens.VOICE_BUBBLE_BUTTON_SIZE)
+                .height(TgUiTokens.VOICE_BUBBLE_BUTTON_SIZE)
+                .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
+                .backgroundColor(Color.Transparent)
+                .style({ strokeWidth: TgUiTokens.MEDIA_PROGRESS_STROKE })
+            } else {
+              LoadingProgress()
+                .width(TgUiTokens.VOICE_BUBBLE_BUTTON_ICON_SIZE)
+                .height(TgUiTokens.VOICE_BUBBLE_BUTTON_ICON_SIZE)
+                .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
+            }
+            TgIcon({
+              src: TgUiTokens.ICON_RES_CLOSE,
+              iconSize: TgUiTokens.MEDIA_CANCEL_ICON_SIZE,
+              tintColor: TgUiTokens.MEDIA_PROGRESS_COLOR
+            })
+          }
+          .width(TgUiTokens.VOICE_BUBBLE_BUTTON_SIZE)
+          .height(TgUiTokens.VOICE_BUBBLE_BUTTON_SIZE)
         } else {
           TgIcon({
             src: this.buttonIconResource(),

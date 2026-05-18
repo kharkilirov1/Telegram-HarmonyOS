@@ -3,6 +3,7 @@ import { TgUiTokens } from '../tokens/TgUiTokens'
 import { TgMessageSendStatus } from '../atoms/TgMessageMeta'
 import { TgPollOptionVO } from '../atoms/TgPollBubble'
 
+@Preview({ title: 'TgMessageTimeContract' })
 @ComponentV2
 export struct TgMessageTimeContractDemo {
   private buildPollOptions(): TgPollOptionVO[] {

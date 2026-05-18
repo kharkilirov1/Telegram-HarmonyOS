@@ -30,6 +30,24 @@ function Resolve-HvigorCommand {
   return $null
 }
 
+function Invoke-HvigorStep {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Command,
+    [Parameter(Mandatory = $true)]
+    [string]$StepName,
+    [Parameter(Mandatory = $true)]
+    [string[]]$Arguments
+  )
+
+  Write-Host "Running hvigor step: $StepName"
+  & $Command @Arguments
+  $exitCode = $LASTEXITCODE
+  if ($exitCode -ne 0) {
+    throw "hvigor step '$StepName' failed with exit code $exitCode."
+  }
+}
+
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $projectRoot
 
@@ -43,7 +61,16 @@ Install/configure DevEco command-line environment so that `hvigorw` (or `hvigor`
 
 Write-Host "Using hvigor command: $hvigorCmd"
 
-& $hvigorCmd clean --no-daemon
-& $hvigorCmd assembleHap --mode module -p product=default -p buildMode=debug --no-daemon
+Invoke-HvigorStep -Command $hvigorCmd -StepName 'clean' -Arguments @('clean', '--no-daemon')
+Invoke-HvigorStep -Command $hvigorCmd -StepName 'assembleHap' -Arguments @(
+  'assembleHap',
+  '--mode',
+  'module',
+  '-p',
+  'product=default',
+  '-p',
+  'buildMode=debug',
+  '--no-daemon'
+)
 
 Write-Host 'Smoke build completed successfully.'

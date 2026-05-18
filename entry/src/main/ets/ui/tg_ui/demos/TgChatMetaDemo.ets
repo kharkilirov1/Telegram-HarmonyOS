@@ -1,6 +1,7 @@
 import { TgChatMeta, TgChatSendStatus } from '../atoms/TgChatMeta';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgChatMeta' })
 @ComponentV2
 export struct TgChatMetaDemo {
   @Builder
@@ -93,9 +94,11 @@ export struct TgChatMetaDemo {
       this.stateRow('04 read', '12:40', TgChatSendStatus.Read, 0)
       this.stateRow('05 pinned', '12:41', TgChatSendStatus.None, 0, false, true)
       this.stateRow('06 unread=5', '12:42', TgChatSendStatus.None, 5)
-      this.stateRow('07 unread=207 muted', '12:43', TgChatSendStatus.None, 207, true)
-      this.stateRow('08 failed', '12:44', TgChatSendStatus.Failed, 0)
-      this.stateRow('09 failed + unread', '12:45', TgChatSendStatus.Failed, 5)
+      this.stateRow('07 unread=207 exact muted', '12:43', TgChatSendStatus.None, 207, true)
+      this.stateRow('08 unread=2.5K compact', '12:44', TgChatSendStatus.None, 2500)
+      this.stateRow('09 unread=1.2M compact muted', '12:45', TgChatSendStatus.None, 1250000, true)
+      this.stateRow('10 failed', '12:46', TgChatSendStatus.Failed, 0)
+      this.stateRow('11 failed + unread', '12:47', TgChatSendStatus.Failed, 5)
 
       Divider()
         .color(TgUiTokens.COLOR_SEPARATOR)
@@ -115,6 +118,7 @@ export struct TgChatMetaDemo {
       this.jumpProbeRow('13:01', TgChatSendStatus.None, 0)
       this.jumpProbeRow('13:01', TgChatSendStatus.Read, 0)
       this.jumpProbeRow('13:01', TgChatSendStatus.None, 12)
+      this.jumpProbeRow('13:01', TgChatSendStatus.None, 2500)
       this.jumpProbeRow('13:01', TgChatSendStatus.None, 0, false, true)
       this.jumpProbeRow('13:01', TgChatSendStatus.Failed, 7)
 

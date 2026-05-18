@@ -38,9 +38,11 @@ const CHAT_NAV_TRANSITION_LOCK_MS = 760;
 
 class ChatRouteParams {
   chatId: number = 0;
+  chatTitle: string = '';
 
-  constructor(chatId: number) {
+  constructor(chatId: number, chatTitle: string = '') {
     this.chatId = chatId;
+    this.chatTitle = chatTitle;
   }
 }
 
@@ -73,6 +75,8 @@ export struct ChatListPage {
   private lastVisibleListEndIndex: number = -1;
   private unsubscribe?: () => void;
   private rebuildScheduled: boolean = false;
+  private rebuildTimerId: number = -1;
+  private pageLifecycleToken: number = 0;
   private autoInitialLoadRequested: boolean = false;
   private mainWindow?: window.Window;
   private loadChatsUseCase?: LoadChatsUseCase;
@@ -94,6 +98,51 @@ export struct ChatListPage {
     this.deferredOpenChatTitle = '';
   }
 
+  private clearActiveChatContext(): void {
+    navigationUIState.activeChatId = 0;
+    navigationUIState.activeChatTitle = '';
+    chatUIState.activeChatId = 0;
+    chatUIState.activeChatTitle = '';
+    AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, 0);
+    AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, '');
+  }
+
+  private clearRebuildTimer(): void {
+    if (this.rebuildTimerId !== -1) {
+      clearTimeout(this.rebuildTimerId);
+      this.rebuildTimerId = -1;
+    }
+    this.rebuildScheduled = false;
+  }
+
+  private isCurrentLoadChatsContinuation(scheduledToken: number, loadChatsUseCase: LoadChatsUseCase): boolean {
+    return scheduledToken === this.pageLifecycleToken && this.loadChatsUseCase === loadChatsUseCase;
+  }
+
+  private isCurrentDeferredOpenCallback(scheduledToken: number, scheduledTimerId: number, chatId: number): boolean {
+    return scheduledToken === this.pageLifecycleToken &&
+      this.deferredOpenTimerId === scheduledTimerId &&
+      this.deferredOpenChatId === chatId;
+  }
+
+  private isCurrentMuteContinuation(scheduledToken: number, muteUseCase: SetChatMuteUseCase): boolean {
+    return scheduledToken === this.pageLifecycleToken && this.muteUseCase === muteUseCase;
+  }
+
+  private isCurrentDeleteChatContinuation(
+    scheduledToken: number,
+    deleteChatUseCase: DeleteChatHistoryUseCase
+  ): boolean {
+    return scheduledToken === this.pageLifecycleToken && this.deleteChatUseCase === deleteChatUseCase;
+  }
+
+  private isCurrentToggleUnreadContinuation(
+    scheduledToken: number,
+    toggleUnreadUseCase: ToggleChatUnreadUseCase
+  ): boolean {
+    return scheduledToken === this.pageLifecycleToken && this.toggleUnreadUseCase === toggleUnreadUseCase;
+  }
+
   private scheduleDeferredOpen(chatId: number, title: string, delayMs: number): void {
     if (chatId === 0) {
       return;
@@ -106,7 +155,12 @@ export struct ChatListPage {
     this.deferredOpenChatId = chatId;
     this.deferredOpenChatTitle = title;
     const effectiveDelayMs = Math.max(16, delayMs);
-    this.deferredOpenTimerId = setTimeout(() => {
+    const scheduledToken: number = this.pageLifecycleToken;
+    let scheduledTimerId: number = -1;
+    scheduledTimerId = setTimeout(() => {
+      if (!this.isCurrentDeferredOpenCallback(scheduledToken, scheduledTimerId, chatId)) {
+        return;
+      }
       this.deferredOpenTimerId = -1;
       const pendingChatId = this.deferredOpenChatId;
       const pendingTitle = this.deferredOpenChatTitle;
@@ -120,6 +174,7 @@ export struct ChatListPage {
       pendingItem.title = pendingTitle;
       this.openChat(pendingItem);
     }, effectiveDelayMs) as number;
+    this.deferredOpenTimerId = scheduledTimerId;
 
     hilog.info(DOMAIN, TAG, 'Scheduled deferred openChat for %{public}d in %{public}d ms',
       chatId, effectiveDelayMs);
@@ -130,19 +185,27 @@ export struct ChatListPage {
     this.isOpeningChat = false;
     // Always clear nav lock — ChatListPage is visible, transition is complete
     navigationUIState.chatNavLockUntil = 0;
+    AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, 0);
     // Clear active chat — TgChatScreenPage is no longer visible
-    chatUIState.activeChatId = 0;
-    chatUIState.activeChatTitle = '';
+    this.clearActiveChatContext();
   }
 
   aboutToAppear(): void {
+    this.pageLifecycleToken += 1;
+    this.clearRebuildTimer();
     navigationUIState.chatScreenVisible = false;
     AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
+    this.clearActiveChatContext();
     this.isOpeningChat = false;
     this.autoInitialLoadRequested = false;
     this.bindNavigationStack();
     this.computeSafeInsets();
     this.bindWindowSizeListener();
+
+    if (this.unsubscribe !== undefined) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
+    }
 
     try {
       const runtime = getAppCoreRuntime();
@@ -155,14 +218,27 @@ export struct ChatListPage {
       this.rebuildList(store.getState());
       this.maybeLoadInitialChats(store.getState());
 
-      this.unsubscribe = store.subscribe((newState: AppState, prevState: AppState) => {
+      const subscriptionToken: number = this.pageLifecycleToken;
+      let activeUnsubscribe: (() => void) | undefined = undefined;
+      activeUnsubscribe = store.subscribe((newState: AppState, prevState: AppState) => {
+        if (subscriptionToken !== this.pageLifecycleToken || this.unsubscribe !== activeUnsubscribe) {
+          return;
+        }
         this.maybeLoadInitialChats(newState);
         if (!this.shouldScheduleListRebuild(newState, prevState)) {
           return;
         }
         if (!this.rebuildScheduled) {
           this.rebuildScheduled = true;
-          setTimeout(() => {
+          const scheduledToken: number = this.pageLifecycleToken;
+          let scheduledTimerId: number = -1;
+          scheduledTimerId = setTimeout(() => {
+            if (scheduledToken !== this.pageLifecycleToken ||
+              this.rebuildTimerId !== scheduledTimerId ||
+              this.unsubscribe !== activeUnsubscribe) {
+              return;
+            }
+            this.rebuildTimerId = -1;
             this.rebuildScheduled = false;
             try {
               const currentState = getAppCoreRuntime().getStore().getState();
@@ -171,9 +247,11 @@ export struct ChatListPage {
             } catch (e) {
               hilog.error(DOMAIN, TAG, 'Rebuild failed: %{public}s', String(e));
             }
-          }, 300);
+          }, 300) as number;
+          this.rebuildTimerId = scheduledTimerId;
         }
       });
+      this.unsubscribe = activeUnsubscribe;
 
       hilog.info(DOMAIN, TAG, 'Subscribed to store');
     } catch (e) {
@@ -182,15 +260,22 @@ export struct ChatListPage {
   }
 
   aboutToDisappear(): void {
+    this.pageLifecycleToken += 1;
+    this.clearRebuildTimer();
     this.clearDeferredOpen();
     this.isOpeningChat = false;
     this.autoInitialLoadRequested = false;
+    this.isRefreshing = false;
+    this.isRetryingLoad = false;
     if (this.unsubscribe !== undefined) {
       this.unsubscribe();
       this.unsubscribe = undefined;
     }
     this.loadChatsUseCase = undefined;
     this.openChatUseCase = undefined;
+    this.muteUseCase = undefined;
+    this.deleteChatUseCase = undefined;
+    this.toggleUnreadUseCase = undefined;
     removeWindowSizeListener(this.mainWindow);
     this.mainWindow = undefined;
     hilog.info(DOMAIN, TAG, 'Unsubscribed from store');
@@ -202,7 +287,12 @@ export struct ChatListPage {
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
       this.mainWindow = getMainWindow(context);
       if (this.mainWindow !== undefined) {
+        const lifecycleToken: number = this.pageLifecycleToken;
+        const boundWindow: window.Window = this.mainWindow;
         this.mainWindow.on('windowSizeChange', (_size: window.Size) => {
+          if (lifecycleToken !== this.pageLifecycleToken || this.mainWindow !== boundWindow) {
+            return;
+          }
           this.computeSafeInsets();
         });
       }
@@ -229,7 +319,8 @@ export struct ChatListPage {
   }
 
   private maybeLoadInitialChats(state: AppState): void {
-    if (!this.loadChatsUseCase || this.autoInitialLoadRequested) {
+    const loadChatsUseCase = this.loadChatsUseCase;
+    if (!loadChatsUseCase || this.autoInitialLoadRequested) {
       return;
     }
     if (state.connection.status !== 'ready') {
@@ -238,18 +329,21 @@ export struct ChatListPage {
     if (state.chats.orderedChatIds.length > 0 || !state.chats.hasMore) {
       return;
     }
-    if (this.loadChatsUseCase.isLoadingInProgress()) {
+    if (loadChatsUseCase.isLoadingInProgress()) {
       return;
     }
 
+    const scheduledToken: number = this.pageLifecycleToken;
     this.autoInitialLoadRequested = true;
-    this.loadChatsUseCase.loadInitial()
+    loadChatsUseCase.loadInitial()
       .then(() => {
+        if (!this.isCurrentLoadChatsContinuation(scheduledToken, loadChatsUseCase)) {
+          return;
+        }
         try {
           const currentState = getAppCoreRuntime().getStore().getState();
           if (currentState.chats.orderedChatIds.length === 0 &&
-            this.loadChatsUseCase !== undefined &&
-            this.loadChatsUseCase.hasMoreChats()) {
+            loadChatsUseCase.hasMoreChats()) {
             this.autoInitialLoadRequested = false;
             hilog.info(DOMAIN, TAG, 'Initial load finished without visible dialogs growth, auto-load unlocked');
           }
@@ -258,6 +352,9 @@ export struct ChatListPage {
         }
       })
       .catch((error: Object) => {
+        if (!this.isCurrentLoadChatsContinuation(scheduledToken, loadChatsUseCase)) {
+          return;
+        }
         this.autoInitialLoadRequested = false;
         hilog.warn(DOMAIN, TAG, 'Auto initial chat load failed: %{public}s', String(error));
       });
@@ -265,7 +362,8 @@ export struct ChatListPage {
 
   private maybeLoadMoreChats(endIndex: number): void {
     this.lastVisibleListEndIndex = endIndex;
-    if (!this.loadChatsUseCase) {
+    const loadChatsUseCase = this.loadChatsUseCase;
+    if (!loadChatsUseCase) {
       return;
     }
     if (this.chatsState.connectionStatus !== 'ready' || this.hasActiveSearch()) {
@@ -274,7 +372,7 @@ export struct ChatListPage {
     if (this.filteredChatsCount === 0) {
       return;
     }
-    if (this.loadChatsUseCase.isLoadingInProgress() || !this.loadChatsUseCase.hasMoreChats()) {
+    if (loadChatsUseCase.isLoadingInProgress() || !loadChatsUseCase.hasMoreChats()) {
       return;
     }
 
@@ -283,8 +381,12 @@ export struct ChatListPage {
       return;
     }
 
-    this.loadChatsUseCase.loadMore()
+    const scheduledToken: number = this.pageLifecycleToken;
+    loadChatsUseCase.loadMore()
       .catch((error: Object) => {
+        if (!this.isCurrentLoadChatsContinuation(scheduledToken, loadChatsUseCase)) {
+          return;
+        }
         hilog.warn(DOMAIN, TAG, 'loadMore chats failed: %{public}s', String(error));
       });
   }
@@ -444,26 +546,57 @@ export struct ChatListPage {
   }
 
   private handleMuteToggle(item: ChatItemVO): void {
-    if (!this.muteUseCase) return;
+    const muteUseCase = this.muteUseCase;
+    if (!muteUseCase) return;
+    const scheduledToken: number = this.pageLifecycleToken;
+    const chatId: number = item.chatId;
     if (item.isMuted) {
-      this.muteUseCase.unmute(item.chatId)
-        .then(() => { hilog.info(DOMAIN, TAG, 'Chat %{public}d unmuted', item.chatId); })
-        .catch((err: Error) => { hilog.error(DOMAIN, TAG, 'Unmute failed: %{public}s', err.message); });
+      muteUseCase.unmute(chatId)
+        .then(() => {
+          if (!this.isCurrentMuteContinuation(scheduledToken, muteUseCase)) {
+            return;
+          }
+          hilog.info(DOMAIN, TAG, 'Chat %{public}d unmuted', chatId);
+        })
+        .catch((err: Error) => {
+          if (!this.isCurrentMuteContinuation(scheduledToken, muteUseCase)) {
+            return;
+          }
+          hilog.error(DOMAIN, TAG, 'Unmute failed: %{public}s', err.message);
+        });
     } else {
-      this.muteUseCase.mute(item.chatId, MUTE_FOREVER)
-        .then(() => { hilog.info(DOMAIN, TAG, 'Chat %{public}d muted', item.chatId); })
-        .catch((err: Error) => { hilog.error(DOMAIN, TAG, 'Mute failed: %{public}s', err.message); });
+      muteUseCase.mute(chatId, MUTE_FOREVER)
+        .then(() => {
+          if (!this.isCurrentMuteContinuation(scheduledToken, muteUseCase)) {
+            return;
+          }
+          hilog.info(DOMAIN, TAG, 'Chat %{public}d muted', chatId);
+        })
+        .catch((err: Error) => {
+          if (!this.isCurrentMuteContinuation(scheduledToken, muteUseCase)) {
+            return;
+          }
+          hilog.error(DOMAIN, TAG, 'Mute failed: %{public}s', err.message);
+        });
     }
   }
 
   private handlePullToRefresh(): void {
     hilog.info(DOMAIN, TAG, 'Pull-to-refresh triggered');
-    if (this.loadChatsUseCase) {
-      this.loadChatsUseCase.execute()
+    const loadChatsUseCase = this.loadChatsUseCase;
+    if (loadChatsUseCase) {
+      const scheduledToken: number = this.pageLifecycleToken;
+      loadChatsUseCase.execute()
         .then(() => {
+          if (!this.isCurrentLoadChatsContinuation(scheduledToken, loadChatsUseCase)) {
+            return;
+          }
           this.isRefreshing = false;
         })
         .catch((err: Error) => {
+          if (!this.isCurrentLoadChatsContinuation(scheduledToken, loadChatsUseCase)) {
+            return;
+          }
           hilog.error(DOMAIN, TAG, 'Refresh failed: %{public}s', err.message);
           this.isRefreshing = false;
         });
@@ -473,22 +606,58 @@ export struct ChatListPage {
   }
 
   private handleDeleteChat(item: ChatItemVO): void {
-    if (!this.deleteChatUseCase) return;
-    this.deleteChatUseCase.execute(item.chatId, true, false)
-      .then(() => { hilog.info(DOMAIN, TAG, 'Chat %{public}d deleted', item.chatId); })
-      .catch((err: Error) => { hilog.error(DOMAIN, TAG, 'Delete chat failed: %{public}s', err.message); });
+    const deleteChatUseCase = this.deleteChatUseCase;
+    if (!deleteChatUseCase) return;
+    const scheduledToken: number = this.pageLifecycleToken;
+    const chatId: number = item.chatId;
+    deleteChatUseCase.execute(chatId, true, false)
+      .then(() => {
+        if (!this.isCurrentDeleteChatContinuation(scheduledToken, deleteChatUseCase)) {
+          return;
+        }
+        hilog.info(DOMAIN, TAG, 'Chat %{public}d deleted', chatId);
+      })
+      .catch((err: Error) => {
+        if (!this.isCurrentDeleteChatContinuation(scheduledToken, deleteChatUseCase)) {
+          return;
+        }
+        hilog.error(DOMAIN, TAG, 'Delete chat failed: %{public}s', err.message);
+      });
   }
 
   private handleToggleUnread(item: ChatItemVO): void {
-    if (!this.toggleUnreadUseCase) return;
+    const toggleUnreadUseCase = this.toggleUnreadUseCase;
+    if (!toggleUnreadUseCase) return;
+    const scheduledToken: number = this.pageLifecycleToken;
+    const chatId: number = item.chatId;
     if (item.unreadCount > 0) {
-      this.toggleUnreadUseCase.markAsRead(item.chatId)
-        .then(() => { hilog.info(DOMAIN, TAG, 'Chat %{public}d marked read', item.chatId); })
-        .catch((err: Error) => { hilog.error(DOMAIN, TAG, 'Mark read failed: %{public}s', err.message); });
+      toggleUnreadUseCase.markAsRead(chatId)
+        .then(() => {
+          if (!this.isCurrentToggleUnreadContinuation(scheduledToken, toggleUnreadUseCase)) {
+            return;
+          }
+          hilog.info(DOMAIN, TAG, 'Chat %{public}d marked read', chatId);
+        })
+        .catch((err: Error) => {
+          if (!this.isCurrentToggleUnreadContinuation(scheduledToken, toggleUnreadUseCase)) {
+            return;
+          }
+          hilog.error(DOMAIN, TAG, 'Mark read failed: %{public}s', err.message);
+        });
     } else {
-      this.toggleUnreadUseCase.markAsUnread(item.chatId)
-        .then(() => { hilog.info(DOMAIN, TAG, 'Chat %{public}d marked unread', item.chatId); })
-        .catch((err: Error) => { hilog.error(DOMAIN, TAG, 'Mark unread failed: %{public}s', err.message); });
+      toggleUnreadUseCase.markAsUnread(chatId)
+        .then(() => {
+          if (!this.isCurrentToggleUnreadContinuation(scheduledToken, toggleUnreadUseCase)) {
+            return;
+          }
+          hilog.info(DOMAIN, TAG, 'Chat %{public}d marked unread', chatId);
+        })
+        .catch((err: Error) => {
+          if (!this.isCurrentToggleUnreadContinuation(scheduledToken, toggleUnreadUseCase)) {
+            return;
+          }
+          hilog.error(DOMAIN, TAG, 'Mark unread failed: %{public}s', err.message);
+        });
     }
   }
 
@@ -524,26 +693,37 @@ export struct ChatListPage {
 
     const prevChatId: number = navigationUIState.activeChatId;
     const prevTitle: string = navigationUIState.activeChatTitle;
+    const prevStoredChatId: number = AppStorage.get<number>(StorageKeys.ACTIVE_CHAT_ID) ?? prevChatId;
+    const prevStoredTitle: string = AppStorage.get<string>(StorageKeys.ACTIVE_CHAT_TITLE) ?? prevTitle;
     hilog.info(DOMAIN, TAG, 'Setting active chat and pushing TgChatScreenPage');
     navigationUIState.activeChatId = item.chatId;
     navigationUIState.activeChatTitle = item.title;
 
     try {
       this.isOpeningChat = true;
-      navigationUIState.chatNavLockUntil = Date.now() + CHAT_NAV_TRANSITION_LOCK_MS;
-      // Set chatUIState so TgChatScreenPage @Monitor and lastOpenedChatId work correctly
+      const nextNavLockUntil = Date.now() + CHAT_NAV_TRANSITION_LOCK_MS;
+      navigationUIState.chatNavLockUntil = nextNavLockUntil;
+      AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, nextNavLockUntil);
+      // Set chatUIState so TgChatScreenPage route initialization and lastOpenedChatId work correctly.
       chatUIState.activeChatId = item.chatId;
       chatUIState.activeChatTitle = item.title;
-      navStack.pushPathByName('TgChatScreenPage', new ChatRouteParams(item.chatId));
+      AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, item.chatId);
+      AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, item.title);
+      navStack.pushPathByName('TgChatScreenPage', new ChatRouteParams(item.chatId, item.title));
       navigationUIState.chatScreenVisible = true;
       AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
       this.requestOpenChatData(item.chatId);
       this.isOpeningChat = false;
     } catch (e) {
       this.isOpeningChat = false;
+      navigationUIState.activeChatId = prevChatId;
+      navigationUIState.activeChatTitle = prevTitle;
+      navigationUIState.chatNavLockUntil = 0;
+      chatUIState.activeChatId = prevChatId;
+      chatUIState.activeChatTitle = prevTitle;
       AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, 0);
-      AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, prevChatId);
-      AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, prevTitle);
+      AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, prevStoredChatId);
+      AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, prevStoredTitle);
       navigationUIState.chatScreenVisible = false;
       AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
       hilog.error(DOMAIN, TAG, 'Failed to push TgChatScreenPage: %{public}s', String(e));
@@ -551,12 +731,17 @@ export struct ChatListPage {
   }
 
   private requestOpenChatData(chatId: number): void {
-    if (!this.openChatUseCase) {
+    const openChatUseCase = this.openChatUseCase;
+    if (!openChatUseCase) {
       hilog.warn(DOMAIN, TAG, 'openChatUseCase is unavailable');
       return;
     }
-    this.openChatUseCase.execute(new OpenChatRequest(chatId))
+    const lifecycleToken: number = this.pageLifecycleToken;
+    openChatUseCase.execute(new OpenChatRequest(chatId))
       .catch((error: Object) => {
+        if (lifecycleToken !== this.pageLifecycleToken || this.openChatUseCase !== openChatUseCase) {
+          return;
+        }
         hilog.warn(DOMAIN, TAG, 'openChat flow failed: %{public}s', String(error));
       });
   }
@@ -654,16 +839,24 @@ export struct ChatListPage {
     if (this.isRetryingLoad) {
       return;
     }
-    if (!this.loadChatsUseCase) {
+    const loadChatsUseCase = this.loadChatsUseCase;
+    if (!loadChatsUseCase) {
       hilog.warn(DOMAIN, TAG, 'loadChatsUseCase is unavailable for retry');
       return;
     }
+    const scheduledToken: number = this.pageLifecycleToken;
     this.isRetryingLoad = true;
-    this.loadChatsUseCase.refresh()
+    loadChatsUseCase.refresh()
       .then(() => {
+        if (!this.isCurrentLoadChatsContinuation(scheduledToken, loadChatsUseCase)) {
+          return;
+        }
         this.isRetryingLoad = false;
       })
       .catch((error: Object) => {
+        if (!this.isCurrentLoadChatsContinuation(scheduledToken, loadChatsUseCase)) {
+          return;
+        }
         this.isRetryingLoad = false;
         hilog.warn(DOMAIN, TAG, 'loadChats retry failed: %{public}s', String(error));
       });

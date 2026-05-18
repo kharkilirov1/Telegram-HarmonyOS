@@ -120,6 +120,8 @@ export struct TgProfilePage {
 
   @Local private topInset: number = 0;
   private storeUnsubscribe: (() => void) | undefined = undefined;
+  private pageLifecycleToken: number = 0;
+  private isClosing: boolean = false;
 
   private isGroupOrChannel(): boolean {
     return this.chatType === 'supergroup' || this.chatType === 'channel' || this.chatType === 'group';
@@ -127,6 +129,8 @@ export struct TgProfilePage {
 
   aboutToAppear(): void {
     try {
+      this.isClosing = false;
+      this.pageLifecycleToken++;
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
       const windowStage = context.windowStage;
       if (windowStage) {
@@ -147,12 +151,22 @@ export struct TgProfilePage {
     const state = runtime.getStore().getState();
     this.applyState(state);
 
-    if (this.storeUnsubscribe) {
+    if (this.storeUnsubscribe !== undefined) {
       this.storeUnsubscribe();
+      this.storeUnsubscribe = undefined;
     }
-    this.storeUnsubscribe = runtime.getStore().subscribe((newState: AppState) => {
+    const lifecycleToken: number = this.pageLifecycleToken;
+    const profileChatId: number = chatId;
+    let activeUnsubscribe: (() => void) | undefined = undefined;
+    activeUnsubscribe = runtime.getStore().subscribe((newState: AppState) => {
+      if (lifecycleToken !== this.pageLifecycleToken ||
+        this.chatId !== profileChatId ||
+        this.storeUnsubscribe !== activeUnsubscribe) {
+        return;
+      }
       this.applyState(newState);
     });
+    this.storeUnsubscribe = activeUnsubscribe;
 
     // Fetch full info from TDLib
     const chat = state.chats.chats.get(chatId);
@@ -210,6 +224,8 @@ export struct TgProfilePage {
   }
 
   aboutToDisappear(): void {
+    this.isClosing = false;
+    this.pageLifecycleToken++;
     if (this.storeUnsubscribe) {
       this.storeUnsubscribe();
       this.storeUnsubscribe = undefined;
@@ -217,9 +233,23 @@ export struct TgProfilePage {
   }
 
   private handleBackPress(): void {
+    if (this.isClosing) {
+      hilog.warn(DOMAIN, TAG, 'Ignoring duplicate profile back pop while closing');
+      return;
+    }
     const navStack: NavPathStack | undefined = this.pageStack;
     if (navStack !== undefined) {
-      navStack.pop();
+      try {
+        if (navStack.size() <= 0) {
+          hilog.error(DOMAIN, TAG, 'Cannot pop profile page: pageStack is empty');
+          return;
+        }
+        this.isClosing = true;
+        navStack.pop();
+      } catch (error) {
+        this.isClosing = false;
+        hilog.error(DOMAIN, TAG, 'Failed to pop profile page: %{public}s', String(error));
+      }
     }
   }
 
@@ -548,4 +578,10 @@ export struct TgProfilePage {
       return true;
     })
   }
+}
+
+// System route table builder — referenced by route_map.json
+@Builder
+export function TgProfilePageBuilder() {
+  TgProfilePage()
 }

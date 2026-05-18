@@ -11,7 +11,7 @@
 // Гарантия: шаги 3-5 ВСЕГДА выполняются на main thread.
 
 import { TdGateway, getTdGateway, TdGatewayImpl } from '../../infra/td/gateway/TdGateway';
-import { getTdGatewayAdapter } from '../../infra/td/adapter/TdGatewayAdapter';
+import { getTdGatewayAdapter, resetTdGatewayAdapter } from '../../infra/td/adapter/TdGatewayAdapter';
 import { getMainThreadDispatcher } from '../../infra/threading/MainThreadDispatcher';
 import { EventNormalizer, getEventNormalizer, NormalizerStats } from '../../core/events/EventNormalizer';
 import { AppStore } from '../../core/store/AppStore';
@@ -27,6 +27,7 @@ import { createDownloadAvatarsUseCase, resetDownloadAvatarsUseCase } from '../..
 import { createDownloadMessageMediaUseCase, resetDownloadMessageMediaUseCase } from '../../domain/usecases/downloadMessageMedia';
 import { ChatUpdateDto, extractLastMessage } from '../../core/model/dto/ChatDto';
 import { tdGetNumber, tdGetObject, tdGetString } from '../../core/utils/tdAccessors';
+import { resetMessageCacheManager } from '../../core/utils/MessageLruCache';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN = 0x0003;
@@ -37,6 +38,8 @@ export class PipelineStats {
   gatewayReady: boolean = false;
   normalizerStats: NormalizerStats = new NormalizerStats();
   dispatcherDispatched: number = 0;
+  dispatcherDropped: number = 0;
+  dispatcherHandlerErrors: number = 0;
 }
 
 export class AppCoreRuntime {
@@ -46,6 +49,7 @@ export class AppCoreRuntime {
   private liveHistoryHydrator: LoadChatHistoryUseCase;
 
   private isRunning: boolean = false;
+  private lifecycleToken: number = 0;
   private unsubscribeGateway?: () => void;
 
   constructor() {
@@ -55,10 +59,18 @@ export class AppCoreRuntime {
     this.liveHistoryHydrator = createLoadChatHistoryUseCase(this.store, getTdGatewayAdapter());
   }
 
+  private refreshGatewayReferences(): void {
+    this.gateway = getTdGateway();
+    this.liveHistoryHydrator = createLoadChatHistoryUseCase(this.store, getTdGatewayAdapter());
+  }
+
   async initialize(): Promise<void> {
     if (this.isRunning) {
       return;
     }
+
+    this.lifecycleToken++;
+    const runtimeToken: number = this.lifecycleToken;
 
     try {
       hilog.info(DOMAIN, TAG, 'Initializing pipeline...');
@@ -74,7 +86,7 @@ export class AppCoreRuntime {
       });
 
       // 2. Подписываемся на parsed обновления из Gateway (уже на main thread)
-      this.setupPipeline();
+      this.setupPipeline(runtimeToken);
 
       // 3. Устанавливаем isRunning ДО gateway.initialize() —
       //    иначе ранние updates от receive loop дропаются в handleUpdate()
@@ -82,6 +94,10 @@ export class AppCoreRuntime {
 
       // 4. Инициализируем Gateway (запустит receive loop)
       await this.gateway.initialize();
+      if (!this.isCurrentRun(runtimeToken)) {
+        hilog.info(DOMAIN, TAG, 'Gateway initialize continuation ignored after runtime reset');
+        return;
+      }
       hilog.info(DOMAIN, TAG, 'Gateway initialized');
 
       // 5. AppStoreBridge: Store → AppStorage (UI reads via @StorageLink)
@@ -105,6 +121,33 @@ export class AppCoreRuntime {
 
       hilog.info(DOMAIN, TAG, 'Pipeline ready. Threading: TDLib→Dispatcher→Normalizer→Store');
     } catch (error) {
+      if (!this.isCurrentInitializeRun(runtimeToken)) {
+        hilog.info(DOMAIN, TAG, 'Initialize failure ignored after runtime reset: %{public}s', String(error));
+        return;
+      }
+      this.isRunning = false;
+      this.lifecycleToken++;
+      stopAuthSideEffect();
+      resetAppStoreBridge();
+      resetDownloadAvatarsUseCase();
+      resetDownloadMessageMediaUseCase();
+      resetMessageCacheManager();
+      LoadChatHistoryUseCase.resetState();
+      resetLoadChatsUseCase();
+      if (this.unsubscribeGateway) {
+        this.unsubscribeGateway();
+        this.unsubscribeGateway = undefined;
+      }
+      try {
+        await this.gateway.destroy();
+      } catch (cleanupError) {
+        hilog.warn(DOMAIN, TAG, 'Gateway cleanup after initialize failure failed: %{public}s',
+          String(cleanupError));
+      } finally {
+        resetTdGatewayAdapter();
+        getMainThreadDispatcher().unsubscribe();
+        this.refreshGatewayReferences();
+      }
       const err = error as Error;
       hilog.error(DOMAIN, TAG, 'Failed to initialize: %{public}s', err.message);
       throw new AppError(
@@ -117,26 +160,40 @@ export class AppCoreRuntime {
     }
   }
 
-  private setupPipeline(): void {
+  private isCurrentRun(token: number): boolean {
+    return this.isRunning && token === this.lifecycleToken;
+  }
+
+  private isCurrentInitializeRun(token: number): boolean {
+    return token === this.lifecycleToken;
+  }
+
+  private setupPipeline(runtimeToken: number): void {
     // Gateway.subscribeUpdates — хэндлер вызывается на main thread
     // (потому что Gateway.broadcastUpdate вызывается из handleUpdateOnMainThread)
     this.unsubscribeGateway = this.gateway.subscribeUpdates((rawUpdate: TdObject) => {
-      this.handleUpdate(rawUpdate);
+      if (!this.isCurrentRun(runtimeToken)) {
+        return;
+      }
+      this.handleUpdate(rawUpdate, runtimeToken);
     });
     hilog.info(DOMAIN, TAG, 'Pipeline wiring established');
   }
 
-  private async handleUpdate(rawUpdate: TdObject): Promise<void> {
-    if (!this.isRunning) return;
+  private async handleUpdate(rawUpdate: TdObject, runtimeToken: number): Promise<void> {
+    if (!this.isCurrentRun(runtimeToken)) return;
 
     try {
       await this.hydrateMissingUsersForLiveMessage(rawUpdate);
+      if (!this.isCurrentRun(runtimeToken)) return;
       const events = this.normalizer.normalize(rawUpdate);
       if (events.length === 0) return;
 
       this.appendSyntheticChatUpdateForLiveMessage(rawUpdate, events);
-      await this.dispatchEvents(events);
+      if (!this.isCurrentRun(runtimeToken)) return;
+      await this.dispatchEvents(events, runtimeToken);
     } catch (error) {
+      if (!this.isCurrentRun(runtimeToken)) return;
       const err = error as Error;
       hilog.error(DOMAIN, TAG, 'Error processing update: %{public}s', err.message);
     }
@@ -179,10 +236,12 @@ export class AppCoreRuntime {
     events.push(createChatUpdatedEvent(chatId, updates));
   }
 
-  private async dispatchEvents(events: AnyAppEvent[]): Promise<void> {
+  private async dispatchEvents(events: AnyAppEvent[], runtimeToken: number): Promise<void> {
+    if (!this.isCurrentRun(runtimeToken)) return;
     try {
       await this.store.dispatchBatch(events);
     } catch (error) {
+      if (!this.isCurrentRun(runtimeToken)) return;
       const err = error as Error;
       hilog.error(DOMAIN, TAG, 'Error dispatching batch: %{public}s', err.message);
     }
@@ -207,6 +266,8 @@ export class AppCoreRuntime {
     stats.normalizerStats = this.normalizer.getStats();
     const dispatcherStats = getMainThreadDispatcher().getStats();
     stats.dispatcherDispatched = dispatcherStats.dispatched;
+    stats.dispatcherDropped = dispatcherStats.dropped;
+    stats.dispatcherHandlerErrors = dispatcherStats.handlerErrors;
     return stats;
   }
 
@@ -214,11 +275,14 @@ export class AppCoreRuntime {
     if (!this.isRunning) return;
 
     hilog.info(DOMAIN, TAG, 'Shutting down pipeline...');
+    this.isRunning = false;
+    this.lifecycleToken++;
 
     stopAuthSideEffect();
     resetAppStoreBridge();
     resetDownloadAvatarsUseCase();
     resetDownloadMessageMediaUseCase();
+    resetMessageCacheManager();
 
     // Clear static use-case caches — prevents stale "already fetched" flags
     // when a new runtime + store is created after reset
@@ -230,12 +294,16 @@ export class AppCoreRuntime {
       this.unsubscribeGateway = undefined;
     }
 
-    // Detach dispatcher handlers so old callbacks don't fire into destroyed gateway
-    getMainThreadDispatcher().unsubscribe();
-
-    await this.gateway.destroy();
-    this.isRunning = false;
-
+    // Detach dispatcher handlers after gateway shutdown so close-response/closed-state
+    // updates can still reach TdGateway while destroy() is waiting for them.
+    // Keep this in finally so a failed destroy cannot leave raw handlers attached.
+    try {
+      await this.gateway.destroy();
+    } finally {
+      resetTdGatewayAdapter();
+      getMainThreadDispatcher().unsubscribe();
+      this.refreshGatewayReferences();
+    }
     hilog.info(DOMAIN, TAG, 'Pipeline shut down');
   }
 }

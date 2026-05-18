@@ -2,6 +2,7 @@ import { TgChatRow, TgChatRowData } from '../atoms/TgChatRow';
 import { TgChatSendStatus } from '../atoms/TgChatMeta';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgChatRow' })
 @ComponentV2
 export struct TgChatRowDemo {
   private makeBaseRowData(): TgChatRowData {
@@ -122,49 +123,52 @@ export struct TgChatRowDemo {
         this.label('03 unread = 99')
         TgChatRow({ ...this.makeVariant('12:39', 99), showSeparator: true })
 
-        this.label('04 unread = 207 (99+)')
+        this.label('04 unread = 207 exact')
         TgChatRow({ ...this.makeVariant('12:40', 207), showSeparator: true })
 
-        this.label('05 pinned (no unread)')
+        this.label('05 unread = 2.5K compact')
+        TgChatRow({ ...this.makeVariant('12:40', 2500), showSeparator: true })
+
+        this.label('06 pinned (no unread)')
         TgChatRow({ ...this.makeVariant('12:41', 0, false, true), showSeparator: true })
 
-        this.label('06 muted (no unread)')
+        this.label('07 muted (no unread)')
         TgChatRow({ ...this.makeVariant('12:42', 0, true), showSeparator: true })
 
-        this.label('07 muted + unread')
+        this.label('08 muted + unread')
         TgChatRow({ ...this.makeVariant('12:43', 11, true), showSeparator: true })
 
-        this.label('08 sending')
+        this.label('09 sending')
         TgChatRow({ ...this.makeVariant('12:44', 0, false, false, TgChatSendStatus.Sending), showSeparator: true })
 
-        this.label('09 sent')
+        this.label('10 sent')
         TgChatRow({ ...this.makeVariant('12:45', 0, false, false, TgChatSendStatus.Sent), showSeparator: true })
 
-        this.label('10 read')
+        this.label('11 read')
         TgChatRow({ ...this.makeVariant('12:46', 0, false, false, TgChatSendStatus.Read), showSeparator: true })
 
-        this.label('11 online avatar')
+        this.label('12 online avatar')
         TgChatRow({ ...this.makeVariant('12:47', 0, false, false, TgChatSendStatus.None, true), showSeparator: true })
 
-        this.label('12 ellipsis torture')
+        this.label('13 ellipsis torture')
         TgChatRow({ ...this.makeLongTextRowData(), showSeparator: true })
 
-        this.label('13 failed only')
+        this.label('14 failed only')
         TgChatRow({ ...this.makeVariant('12:48', 0, false, false, TgChatSendStatus.Failed), showSeparator: true })
 
-        this.label('14 failed + unread')
+        this.label('15 failed + unread')
         TgChatRow({ ...this.makeVariant('12:49', 3, false, false, TgChatSendStatus.Failed), showSeparator: true })
 
-        this.label('15 draft prefix styling')
+        this.label('16 draft prefix styling')
         TgChatRow({ ...this.makeDraftVariant(), showSeparator: true })
 
-        this.label('16 typing preview (no author accent)')
+        this.label('17 typing preview (no author accent)')
         TgChatRow({ ...this.makeTypingVariant(), showSeparator: true })
 
-        this.label('17 group sender prefix accent')
+        this.label('18 group sender prefix accent')
         TgChatRow({ ...this.makeAuthorPrefixVariant(), showSeparator: true })
 
-        this.label('18 verified title badge')
+        this.label('19 verified title badge')
         TgChatRow({ ...this.makeVerifiedVariant(), showSeparator: true })
 
         Divider()

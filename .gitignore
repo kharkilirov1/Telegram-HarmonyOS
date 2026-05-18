@@ -32,6 +32,7 @@ node_modules/
 oh_modules/
 .preview/
 .hvigor/
+entry/.test/
 entry/.cxx/
 hvigor/
 
@@ -61,3 +62,6 @@ hvigor-debug.txt
 
 # Temporary / scratch
 tmp/
+
+# Manual runtime verification artifacts
+TASKS/runtime-sweeps/forward-runtime-sweep-*.md

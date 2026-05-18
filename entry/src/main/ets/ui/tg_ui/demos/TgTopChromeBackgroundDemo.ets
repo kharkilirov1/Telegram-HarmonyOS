@@ -2,6 +2,7 @@ import { TgTopChromeBackground } from '../atoms/TgTopChromeBackground';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 
+@Preview({ title: 'TgTopChromeBackground' })
 @ComponentV2
 export struct TgTopChromeBackgroundDemo {
   build() {

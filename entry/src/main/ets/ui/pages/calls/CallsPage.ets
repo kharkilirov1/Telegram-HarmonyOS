@@ -7,7 +7,6 @@
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, User } from '../../../core/model/AppState';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
-import { TgTopBar } from '../../tg_ui/atoms/TgTopBar';
 import { fileUri } from '@kit.CoreFileKit';
 import { TgCallRow, TgCallType } from '../../tg_ui/atoms/TgCallRow';
 import { localized } from '../../../core/utils/AppResource';
@@ -133,6 +132,9 @@ export struct CallsPage {
 
   private unsubscribe?: () => void;
   private rebuildScheduled: boolean = false;
+  private rebuildTimerId: number = -1;
+  private loadMoreTimerId: number = -1;
+  private pageLifecycleToken: number = 0;
   private mainWindow?: window.Window;
   private loadCallsUseCase?: LoadCallsUseCase;
   private loadedRecords: CallHistoryRecord[] = [];
@@ -141,10 +143,38 @@ export struct CallsPage {
   private initialLoadRequested: boolean = false;
   private loadMoreScheduled: boolean = false;
 
+  private clearRebuildTimer(): void {
+    if (this.rebuildTimerId !== -1) {
+      clearTimeout(this.rebuildTimerId);
+      this.rebuildTimerId = -1;
+    }
+    this.rebuildScheduled = false;
+  }
+
+  private clearLoadMoreTimer(): void {
+    if (this.loadMoreTimerId !== -1) {
+      clearTimeout(this.loadMoreTimerId);
+      this.loadMoreTimerId = -1;
+    }
+    this.loadMoreScheduled = false;
+  }
+
+  private isCurrentLoadCallsContinuation(scheduledToken: number, loadCallsUseCase: LoadCallsUseCase): boolean {
+    return scheduledToken === this.pageLifecycleToken && this.loadCallsUseCase === loadCallsUseCase;
+  }
+
   aboutToAppear(): void {
+    this.pageLifecycleToken += 1;
+    this.clearRebuildTimer();
+    this.clearLoadMoreTimer();
     hilog.info(DOMAIN, TAG, 'CallsPage aboutToAppear');
     this.computeSafeInsets();
     this.bindWindowSizeListener();
+
+    if (this.unsubscribe !== undefined) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
+    }
 
     try {
       const runtime = getAppCoreRuntime();
@@ -152,19 +182,34 @@ export struct CallsPage {
       this.loadCallsUseCase = createLoadCallsUseCase(store, getTdGatewayAdapter());
       this.rebuildRows(store.getState());
 
-      this.unsubscribe = store.subscribe((_newState: AppState, _prevState: AppState) => {
+      const subscriptionToken: number = this.pageLifecycleToken;
+      let activeUnsubscribe: (() => void) | undefined = undefined;
+      activeUnsubscribe = store.subscribe((_newState: AppState, _prevState: AppState) => {
+        if (subscriptionToken !== this.pageLifecycleToken || this.unsubscribe !== activeUnsubscribe) {
+          return;
+        }
         if (!this.rebuildScheduled) {
           this.rebuildScheduled = true;
-          setTimeout(() => {
+          const scheduledToken: number = this.pageLifecycleToken;
+          let scheduledTimerId: number = -1;
+          scheduledTimerId = setTimeout(() => {
+            if (scheduledToken !== this.pageLifecycleToken ||
+              this.rebuildTimerId !== scheduledTimerId ||
+              this.unsubscribe !== activeUnsubscribe) {
+              return;
+            }
+            this.rebuildTimerId = -1;
             this.rebuildScheduled = false;
             try {
               this.rebuildRows(getAppCoreRuntime().getStore().getState());
             } catch (error) {
               hilog.error(DOMAIN, TAG, 'Calls rebuild failed: %{public}s', String(error));
             }
-          }, 300);
+          }, 300) as number;
+          this.rebuildTimerId = scheduledTimerId;
         }
       });
+      this.unsubscribe = activeUnsubscribe;
 
       this.loadInitialIfNeeded();
     } catch (error) {
@@ -173,10 +218,18 @@ export struct CallsPage {
   }
 
   aboutToDisappear(): void {
+    this.pageLifecycleToken += 1;
+    this.clearRebuildTimer();
+    this.clearLoadMoreTimer();
+    if (this.isLoading && this.loadedRecords.length === 0) {
+      this.initialLoadRequested = false;
+    }
+    this.isLoading = false;
     if (this.unsubscribe !== undefined) {
       this.unsubscribe();
       this.unsubscribe = undefined;
     }
+    this.loadCallsUseCase = undefined;
     removeWindowSizeListener(this.mainWindow);
     this.mainWindow = undefined;
   }
@@ -187,7 +240,12 @@ export struct CallsPage {
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
       this.mainWindow = getMainWindow(context);
       if (this.mainWindow !== undefined) {
+        const lifecycleToken: number = this.pageLifecycleToken;
+        const boundWindow: window.Window = this.mainWindow;
         this.mainWindow.on('windowSizeChange', (_size: window.Size) => {
+          if (lifecycleToken !== this.pageLifecycleToken || this.mainWindow !== boundWindow) {
+            return;
+          }
           this.computeSafeInsets();
         });
       }
@@ -229,14 +287,24 @@ export struct CallsPage {
       return;
     }
     this.loadMoreScheduled = true;
-    setTimeout(() => {
+    const scheduledToken: number = this.pageLifecycleToken;
+    let scheduledTimerId: number = -1;
+    scheduledTimerId = setTimeout(() => {
+      if (scheduledToken !== this.pageLifecycleToken ||
+        this.loadMoreTimerId !== scheduledTimerId ||
+        this.unsubscribe === undefined) {
+        return;
+      }
+      this.loadMoreTimerId = -1;
       this.loadMoreScheduled = false;
       this.fetchCalls(false);
-    }, 0);
+    }, 0) as number;
+    this.loadMoreTimerId = scheduledTimerId;
   }
 
   private fetchCalls(reset: boolean): void {
-    if (this.isLoading || !this.loadCallsUseCase) {
+    const loadCallsUseCase: LoadCallsUseCase | undefined = this.loadCallsUseCase;
+    if (this.isLoading || loadCallsUseCase === undefined) {
       return;
     }
     if (!reset && !this.hasMore) {
@@ -249,8 +317,12 @@ export struct CallsPage {
     params.limit = 40;
     params.onlyMissed = false;
 
-    this.loadCallsUseCase.execute(params)
+    const scheduledToken: number = this.pageLifecycleToken;
+    loadCallsUseCase.execute(params)
       .then((result) => {
+        if (!this.isCurrentLoadCallsContinuation(scheduledToken, loadCallsUseCase)) {
+          return;
+        }
         if (reset) {
           this.loadedRecords = [];
         }
@@ -260,9 +332,15 @@ export struct CallsPage {
         this.rebuildRows(getAppCoreRuntime().getStore().getState());
       })
       .catch((error: Error) => {
+        if (!this.isCurrentLoadCallsContinuation(scheduledToken, loadCallsUseCase)) {
+          return;
+        }
         hilog.error(DOMAIN, TAG, 'Failed to load calls: %{public}s', error.message);
       })
       .finally(() => {
+        if (!this.isCurrentLoadCallsContinuation(scheduledToken, loadCallsUseCase)) {
+          return;
+        }
         this.isLoading = false;
       });
   }
@@ -385,7 +463,6 @@ export struct CallsPage {
         .alignItems(HorizontalAlign.Center)
       }
 
-      TgTopBar({ title: localized($r('app.string.calls_title').id, 'Calls') })
     }
     .width('100%')
     .height('100%')

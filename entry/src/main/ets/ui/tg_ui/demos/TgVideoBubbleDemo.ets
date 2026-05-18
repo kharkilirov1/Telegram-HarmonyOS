@@ -1,6 +1,7 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgVideoBubble } from '../atoms/TgVideoBubble';
 
+@Preview({ title: 'TgVideoBubble' })
 @ComponentV2
 export struct TgVideoBubbleDemo {
   private shortCaption: string = 'Sunset timelapse';
@@ -9,7 +10,9 @@ export struct TgVideoBubbleDemo {
   @Builder
   private caseBlock(label: string, isOutgoing: boolean, thumbnailPath: string | Resource, caption: string,
     durationSec: number, videoWidth: number, videoHeight: number,
-    containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, useConstrainedContainer: boolean = false) {
+    containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, useConstrainedContainer: boolean = false,
+    videoPath: string | Resource = '', isDownloadPending: boolean = false, downloadProgress: number = -1,
+    isShortVideo: boolean = false) {
     Column({ space: TgUiTokens.SPACE_6 }) {
       Text(label)
         .fontSize(TgUiTokens.FONT_META_SIZE)
@@ -20,13 +23,16 @@ export struct TgVideoBubbleDemo {
         Row() {
           TgVideoBubble({
             thumbnailPath: thumbnailPath,
-            videoPath: '',
+            videoPath: videoPath,
             durationSec: durationSec,
             caption: caption,
             isOutgoing: isOutgoing,
             containerWidth: containerWidth,
             videoWidth: videoWidth,
-            videoHeight: videoHeight
+            videoHeight: videoHeight,
+            isDownloadPending: isDownloadPending,
+            downloadProgress: downloadProgress,
+            isShortVideo: isShortVideo
           })
           .width(containerWidth)
         }
@@ -34,13 +40,16 @@ export struct TgVideoBubbleDemo {
       } else {
         TgVideoBubble({
           thumbnailPath: thumbnailPath,
-          videoPath: '',
+          videoPath: videoPath,
           durationSec: durationSec,
           caption: caption,
           isOutgoing: isOutgoing,
           containerWidth: containerWidth,
           videoWidth: videoWidth,
-          videoHeight: videoHeight
+          videoHeight: videoHeight,
+          isDownloadPending: isDownloadPending,
+          downloadProgress: downloadProgress,
+          isShortVideo: isShortVideo
         })
       }
     }
@@ -68,7 +77,7 @@ export struct TgVideoBubbleDemo {
             bottom: TgUiTokens.SPACE_8
           })
 
-        Text('Phase C.1 / Step 2: video preview bubble + play overlay + duration badge + optional caption')
+        Text('Phase C.1 / Step 2: video preview bubble + download/fetch/play status + duration badge + optional caption')
           .fontSize(TgUiTokens.FONT_META_SIZE)
           .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
           .width('100%')
@@ -85,6 +94,13 @@ export struct TgVideoBubbleDemo {
         this.caseBlock('05 placeholder without thumbnail', false, '', '', 18, 0, 0)
         this.caseBlock('06 narrow container stress', false, $r('app.media.app_icon'), this.shortCaption, 301, 1280, 720,
           TgUiTokens.MSG_DEMO_NARROW_CONTAINER_WIDTH, true)
+        this.caseBlock('07 remote video shows download status', false, $r('app.media.app_icon'), '', 42, 1280, 720)
+        this.caseBlock('08 fetching video shows determinate ring + close icon', false, $r('app.media.app_icon'), '', 42, 1280, 720,
+          TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, false, '', true, 0.42)
+        this.caseBlock('09 local video switches to play status', false, $r('app.media.app_icon'), '', 42, 1280, 720,
+          TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, false, 'file://demo-video.mp4')
+        this.caseBlock('10 local short-video preview suppresses center play overlay', false, $r('app.media.app_icon'), '', 12, 720, 720,
+          TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, false, 'file://demo-round.mp4', false, -1, true)
       }
       .width('100%')
       .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
@@ -93,4 +109,3 @@ export struct TgVideoBubbleDemo {
     .height('100%')
   }
 }
-

@@ -1,9 +1,9 @@
 # ARCHITECTURE — Telegram-HarmonyOS
 
-Last updated: 2026-03-22
+Last updated: 2026-05-03
 
 ## 1. Scope
-- Telegram client for **HarmonyOS NEXT / API 22+**
+- Telegram client for **HarmonyOS NEXT / API 23+** in the current forward HDS shell branch
 - UI built in **ArkTS/ArkUI**
 - Telegram backend integration via **TDLib** through a native **NAPI** bridge
 - Primary target devices from `entry/src/main/module.json5`: `phone`, `tablet`, `2in1`
@@ -118,9 +118,10 @@ The UI does not mutate domain state directly. It reads through:
 - **tg_ui** is the Telegram design system/component library layered on top of that V2 runtime.
 
 ### Current active tg_ui runtime path
-- **Chats shell:** `TgTabBar`, `TgChatListNavigationBar`, `TgChatRow`, `TgChatTopBar`, `TgMessageRouter`
-- **Secondary tabs:** `TgTopBar` remains active on `ContactsPage`, `CallsPage`, and `SettingsPage`
-- `TgSearchBar` still exists in `tg_ui`, but the live Chats shell uses stock ArkUI `Search` inside `TgChatListNavigationBar`.
+- **Root shell:** API23 `HdsTabs` + `HdsNavigation` in `MainTabsPage`; the old custom `TgTabBar` is no longer the active smoke contract in this forward branch. The HDS root tab bar must collapse while `navigationUIState.chatScreenVisible` is true so pushed chat detail screens keep their own bottom composer unobstructed.
+- **Chats tab:** `TgChatListNavigationBar`, `TgChatRow`, `TgChatTopBar`, `TgMessageRouter`.
+- **Secondary tabs:** `ContactsPage`, `CallsPage`, and `SettingsPage` are hosted under the HDS root navigation/tab shell while their Telegram-specific page content remains project-owned.
+- The live Chats shell uses stock ArkUI `Search` inside `TgChatListNavigationBar`; standalone search/tab-bar wrapper atoms are not the current root-shell boundary.
 
 ### Target upper-chrome architecture
 - The target upper Telegram chrome is now explicitly treated as a **layered V2 composition**, not a single bar widget.

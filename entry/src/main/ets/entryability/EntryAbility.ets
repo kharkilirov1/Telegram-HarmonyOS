@@ -4,7 +4,7 @@
 import { UIAbility, AbilityConstant, Configuration, ConfigurationConstant, common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window, KeyboardAvoidMode } from '@kit.ArkUI';
-import { getAppCoreRuntime } from '../app/bootstrap/AppCoreRuntime';
+import { getAppCoreRuntime, resetAppCoreRuntime } from '../app/bootstrap/AppCoreRuntime';
 import { StorageKeys } from '../app/bridge/AppStoreBridge';
 import { getMessageCacheManager } from '../core/utils/MessageLruCache';
 import { setAppContext } from '../core/utils/AppResource';
@@ -34,16 +34,21 @@ export default class EntryAbility extends UIAbility {
     } catch (error) {
       const err: BusinessError = error as BusinessError;
       hilog.error(DOMAIN, TAG, 'Failed to initialize AppCoreRuntime: %{public}s', err.message);
+      try {
+        await resetAppCoreRuntime();
+      } catch (resetError) {
+        hilog.warn(DOMAIN, TAG, 'Runtime reset after initialization failure failed: %{public}s',
+          String(resetError));
+      }
     }
   }
 
   async onDestroy(): Promise<void> {
     hilog.info(DOMAIN, TAG, 'onDestroy');
 
-    // Shutdown runtime
+    // Reset runtime singleton without creating a new runtime during teardown.
     try {
-      const runtime = getAppCoreRuntime();
-      await runtime.shutdown();
+      await resetAppCoreRuntime();
     } catch (error) {
       hilog.warn(DOMAIN, TAG, 'Error during shutdown: %{public}s', String(error));
     }
@@ -62,6 +67,7 @@ export default class EntryAbility extends UIAbility {
     } catch (error) {
       const err: BusinessError = error as BusinessError;
       hilog.error(DOMAIN, TAG, 'Failed to set window properties: %{public}s', err.message);
+      this.mainWindow = null;
       return;
     }
     const mainWindow = this.mainWindow;
@@ -73,6 +79,10 @@ export default class EntryAbility extends UIAbility {
         return;
       }
       hilog.info(DOMAIN, TAG, 'LoginRouterPage loaded');
+      if (this.mainWindow !== mainWindow) {
+        hilog.warn(DOMAIN, TAG, 'Window stage changed before loadContent callback; skipping UIContext setup');
+        return;
+      }
 
       // UIContext доступен ТОЛЬКО после loadContent
       try {
@@ -90,6 +100,7 @@ export default class EntryAbility extends UIAbility {
 
   onWindowStageDestroy(): void {
     hilog.info(DOMAIN, TAG, 'onWindowStageDestroy');
+    this.mainWindow = null;
   }
 
   onForeground(): void {

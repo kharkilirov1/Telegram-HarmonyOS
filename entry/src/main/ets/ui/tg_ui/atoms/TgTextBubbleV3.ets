@@ -64,7 +64,7 @@ export struct TgTextBubbleV3 {
 
   private bubbleRadius(): BorderRadiuses {
     const big = this.isOutgoing ? TgUiTokens.BUBBLE_RADIUS_OUTGOING : TgUiTokens.BUBBLE_RADIUS_INCOMING
-    const small = 6
+    const small = TgUiTokens.BUBBLE_RADIUS_GROUPED
 
     switch (this.groupingFlags) {
       case 'top':
@@ -72,6 +72,7 @@ export struct TgTextBubbleV3 {
           ? { topLeft: big, topRight: big, bottomLeft: big, bottomRight: small }
           : { topLeft: big, topRight: big, bottomLeft: small, bottomRight: big }
       case 'middle':
+      case 'both':
         return this.isOutgoing
           ? { topLeft: big, topRight: small, bottomLeft: big, bottomRight: small }
           : { topLeft: small, topRight: big, bottomLeft: small, bottomRight: big }

@@ -22,6 +22,8 @@ export class DownloadMessageMediaUseCase {
   private gateway: TdGatewayPort;
   private pendingFileIds: Set<number> = new Set<number>();
   private unsubscribe: (() => void) | null = null;
+  private isRunning: boolean = false;
+  private lifecycleToken: number = 0;
 
   constructor(store: AppStore, gateway: TdGatewayPort) {
     this.store = store;
@@ -29,7 +31,9 @@ export class DownloadMessageMediaUseCase {
   }
 
   start(): void {
-    if (this.unsubscribe) return;
+    if (this.isRunning) return;
+    this.isRunning = true;
+    this.lifecycleToken++;
 
     hilog.info(DOMAIN, TAG, 'Starting message media download watcher');
 
@@ -37,22 +41,46 @@ export class DownloadMessageMediaUseCase {
     this.scanAndDownload(this.store.getState());
 
     // Subscribe for future changes
-    this.unsubscribe = this.store.subscribe((newState: AppState, prevState: AppState): void => {
+    if (this.unsubscribe !== null) {
+      this.unsubscribe();
+      this.unsubscribe = null;
+    }
+    const subscriptionToken = this.lifecycleToken;
+    let activeUnsubscribe: (() => void) | null = null;
+    activeUnsubscribe = this.store.subscribe((newState: AppState, prevState: AppState): void => {
+      if (!this.isCurrentSubscription(subscriptionToken, activeUnsubscribe)) {
+        return;
+      }
       if (newState.messages !== prevState.messages) {
         this.scanAndDownload(newState);
       }
     });
+    this.unsubscribe = activeUnsubscribe;
   }
 
   stop(): void {
-    if (this.unsubscribe) {
-      this.unsubscribe();
-      this.unsubscribe = null;
+    this.isRunning = false;
+    this.lifecycleToken++;
+    const activeUnsubscribe = this.unsubscribe;
+    this.unsubscribe = null;
+    if (activeUnsubscribe) {
+      activeUnsubscribe();
     }
     this.pendingFileIds.clear();
   }
 
+  private isCurrentRun(token: number): boolean {
+    return this.isRunning && token === this.lifecycleToken;
+  }
+
+  private isCurrentSubscription(token: number, unsubscribe: (() => void) | null): boolean {
+    return this.isCurrentRun(token) && this.unsubscribe === unsubscribe;
+  }
+
   private scanAndDownload(state: AppState): void {
+    if (!this.isRunning) {
+      return;
+    }
     let enqueued = 0;
 
     state.messages.messages.forEach((chatMessages: Map<string, Message>) => {
@@ -110,14 +138,19 @@ export class DownloadMessageMediaUseCase {
   }
 
   private enqueueDownload(fileId: number, priority: number): void {
+    if (!this.isRunning) return;
     if (this.pendingFileIds.has(fileId)) return;
     this.pendingFileIds.add(fileId);
 
     const command = createDownloadFileCommand(fileId, priority, false);
     const store = this.store;
+    const token = this.lifecycleToken;
 
     this.gateway.send(command)
       .then((response: Object): void => {
+        if (!this.isCurrentRun(token)) {
+          return;
+        }
         try {
           const tdResponse = response as TdObject;
           const local = tdResponse.getObject('local');
@@ -142,6 +175,9 @@ export class DownloadMessageMediaUseCase {
         }
       })
       .catch((error: Error): void => {
+        if (!this.isCurrentRun(token)) {
+          return;
+        }
         hilog.warn(DOMAIN, TAG, 'Download failed fileId=%{public}d: %{public}s', fileId, error.message);
         this.pendingFileIds.delete(fileId);
       });

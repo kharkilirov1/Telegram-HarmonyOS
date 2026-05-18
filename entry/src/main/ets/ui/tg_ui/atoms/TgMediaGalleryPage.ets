@@ -1,5 +1,6 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgInlineVideoView } from './TgInlineVideoView';
+import { TgIcon } from './TgIcon';
 import { MediaGalleryItem } from '../../../models/MediaGalleryItem';
 
 @ComponentV2
@@ -9,6 +10,7 @@ export struct TgMediaGalleryPage {
   @Param statusBarHeight: number = 0;
   @Event onDismiss: () => void = () => {};
   @Event onDownloadRequest: (fileId: number) => void = (_: number) => {};
+  @Event onDownloadCancel: (fileId: number) => void = (_: number) => {};
 
   @Local private currentIndex: number = 0;
   @Local private showOverlay: boolean = true;
@@ -22,12 +24,14 @@ export struct TgMediaGalleryPage {
   @Local private dismissOpacity: number = 1.0;
   @Local private activeVideoCommand: string = 'none';
   @Local private prevVideoCommand: string = 'none';
+  @Local private localDownloadVersion: number = 0;
 
   private swiperController: SwiperController = new SwiperController();
   private videoControllers: Map<number, string> = new Map();
+  private localDownloadFileIds: Set<number> = new Set<number>();
 
   aboutToAppear(): void {
-    this.currentIndex = this.initialIndex;
+    this.currentIndex = this.clampedIndex(this.initialIndex);
   }
 
   aboutToDisappear(): void {
@@ -41,12 +45,51 @@ export struct TgMediaGalleryPage {
     return undefined;
   }
 
+  private clampedIndex(index: number): number {
+    if (this.mediaItems.length <= 0) {
+      return 0;
+    }
+    return Math.max(0, Math.min(this.mediaItems.length - 1, index));
+  }
+
   private isVideoType(type: string): boolean {
     return type === 'video' || type === 'animation' || type === 'videoNote';
   }
 
   private hasFile(path: string): boolean {
     return typeof path === 'string' && path.trim().length > 0;
+  }
+
+  private hasDownloadProgress(item: MediaGalleryItem): boolean {
+    return item.downloadProgress >= 0 && item.downloadProgress < 1;
+  }
+
+  private normalizedDownloadProgress(item: MediaGalleryItem): number {
+    return Math.max(0, Math.min(1, item.downloadProgress));
+  }
+
+  private isLocalDownloadPending(fileId: number): boolean {
+    const version = this.localDownloadVersion;
+    return version >= 0 && fileId > 0 && this.localDownloadFileIds.has(fileId);
+  }
+
+  private isTransferActive(item: MediaGalleryItem): boolean {
+    return item.isDownloading || this.hasDownloadProgress(item) || this.isLocalDownloadPending(item.fileId);
+  }
+
+  private handleDownloadToggle(item: MediaGalleryItem): void {
+    if (item.fileId <= 0) {
+      return;
+    }
+    if (this.isTransferActive(item)) {
+      this.localDownloadFileIds.delete(item.fileId);
+      this.localDownloadVersion++;
+      this.onDownloadCancel(item.fileId);
+      return;
+    }
+    this.localDownloadFileIds.add(item.fileId);
+    this.localDownloadVersion++;
+    this.onDownloadRequest(item.fileId);
   }
 
   private toggleOverlay(): void {
@@ -84,7 +127,7 @@ export struct TgMediaGalleryPage {
   }
 
   private handleDismissGesture(): void {
-    if (Math.abs(this.dismissOffsetY) > 100) {
+    if (Math.abs(this.dismissOffsetY) > TgUiTokens.MEDIA_GALLERY_DISMISS_THRESHOLD) {
       this.onDismiss();
     } else {
       this.dismissOffsetY = 0;
@@ -104,30 +147,31 @@ export struct TgMediaGalleryPage {
       Row() {
         Column({ space: 2 }) {
           if (this.currentItem()) {
-            Text(this.currentItem()!.senderName)
+            Text(this.currentItem()!.senderName.trim().length > 0 ? this.currentItem()!.senderName : 'Media')
               .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
               .fontWeight(FontWeight.Medium)
-              .fontColor('#FFFFFF')
+              .fontColor(TgUiTokens.MEDIA_GALLERY_TEXT_PRIMARY)
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
             Text(this.currentItem()!.timestamp)
               .fontSize(TgUiTokens.FONT_META_SIZE)
-              .fontColor('#B0FFFFFF')
+              .fontColor(TgUiTokens.MEDIA_GALLERY_TEXT_SECONDARY)
               .maxLines(1)
           }
         }
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Start)
 
-        Image($r('sys.media.ohos_ic_public_cancel'))
-          .width(24)
-          .height(24)
-          .fillColor('#FFFFFF')
+        TgIcon({
+          src: TgUiTokens.ICON_RES_CLOSE,
+          iconSize: TgUiTokens.MEDIA_GALLERY_CLOSE_ICON_SIZE,
+          tintColor: TgUiTokens.MEDIA_GALLERY_TEXT_PRIMARY
+        })
           .onClick(() => this.onDismiss())
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: this.statusBarHeight + 12, bottom: 12 })
-      .backgroundColor('#80000000')
+      .backgroundColor(TgUiTokens.MEDIA_GALLERY_OVERLAY_BG)
     }
   }
 
@@ -137,13 +181,13 @@ export struct TgMediaGalleryPage {
       Row() {
         Text(this.currentItem()!.caption)
           .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
-          .fontColor('#FFFFFF')
+          .fontColor(TgUiTokens.MEDIA_GALLERY_TEXT_PRIMARY)
           .maxLines(4)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-      .backgroundColor('#80000000')
+      .backgroundColor(TgUiTokens.MEDIA_GALLERY_OVERLAY_BG)
     }
   }
 
@@ -234,9 +278,9 @@ export struct TgMediaGalleryPage {
       if (item.type === 'video' && item.durationSec > 0) {
         Text(this.formatDuration(item.durationSec))
           .fontSize(12)
-          .fontColor('#FFFFFF')
+          .fontColor(TgUiTokens.MEDIA_GALLERY_TEXT_PRIMARY)
           .padding({ left: 6, right: 6, top: 2, bottom: 2 })
-          .backgroundColor('#60000000')
+          .backgroundColor(TgUiTokens.MEDIA_GALLERY_PILL_BG)
           .borderRadius(4)
           .position({ right: 12, bottom: 12 })
       }
@@ -253,20 +297,51 @@ export struct TgMediaGalleryPage {
           .objectFit(ImageFit.Contain)
           .width('100%')
           .height('100%')
+          .opacity(0.72)
       }
       Column({ space: 8 }) {
-        Image(TgUiTokens.ICON_RES_DOWNLOAD)
-          .width(32)
-          .height(32)
-          .fillColor('#FFFFFF')
+        if (this.isTransferActive(item)) {
+          Stack({ alignContent: Alignment.Center }) {
+            if (this.hasDownloadProgress(item)) {
+              Progress({
+                value: this.normalizedDownloadProgress(item) * 100,
+                total: 100,
+                type: ProgressType.Ring
+              })
+                .width(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
+                .height(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
+                .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
+                .backgroundColor(Color.Transparent)
+                .style({ strokeWidth: TgUiTokens.MEDIA_PROGRESS_STROKE })
+            } else {
+              LoadingProgress()
+                .width(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_ICON_SIZE)
+                .height(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_ICON_SIZE)
+                .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
+            }
+            TgIcon({
+              src: TgUiTokens.ICON_RES_CLOSE,
+              iconSize: TgUiTokens.MEDIA_CANCEL_ICON_SIZE,
+              tintColor: TgUiTokens.MEDIA_PROGRESS_COLOR
+            })
+          }
+          .width(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
+          .height(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
+        } else {
+          TgIcon({
+            src: TgUiTokens.ICON_RES_DOWNLOAD,
+            iconSize: TgUiTokens.MEDIA_GALLERY_DOWNLOAD_ICON_SIZE,
+            tintColor: TgUiTokens.MEDIA_GALLERY_TEXT_PRIMARY
+          })
+        }
       }
       .justifyContent(FlexAlign.Center)
       .alignItems(HorizontalAlign.Center)
-      .width(80)
-      .height(80)
-      .backgroundColor('#60000000')
-      .borderRadius(40)
-      .onClick(() => this.onDownloadRequest(item.fileId))
+      .width(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
+      .height(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
+      .backgroundColor(TgUiTokens.MEDIA_GALLERY_PILL_BG)
+      .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
+      .onClick(() => this.handleDownloadToggle(item))
     }
     .width('100%')
     .height('100%')
@@ -281,6 +356,30 @@ export struct TgMediaGalleryPage {
     }
   }
 
+  @Builder
+  private buildEmptyState() {
+    Column({ space: 12 }) {
+      TgIcon({
+        src: TgUiTokens.ICON_RES_PHOTO,
+        iconSize: 44,
+        tintColor: TgUiTokens.MEDIA_GALLERY_TEXT_SECONDARY
+      })
+      Text('No media')
+        .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+        .fontColor(TgUiTokens.MEDIA_GALLERY_TEXT_PRIMARY)
+      Text('There is nothing to preview in this chat state.')
+        .fontSize(TgUiTokens.FONT_META_SIZE)
+        .fontColor(TgUiTokens.MEDIA_GALLERY_TEXT_SECONDARY)
+        .textAlign(TextAlign.Center)
+        .maxLines(2)
+    }
+    .justifyContent(FlexAlign.Center)
+    .alignItems(HorizontalAlign.Center)
+    .width('100%')
+    .height('100%')
+    .padding({ left: 32, right: 32 })
+  }
+
   build() {
     Stack({ alignContent: Alignment.TopStart }) {
       // Black background
@@ -292,18 +391,22 @@ export struct TgMediaGalleryPage {
 
       // Swiper content
       Column() {
-        Swiper(this.swiperController) {
-          ForEach(this.mediaItems, (item: MediaGalleryItem, index: number) => {
-            this.buildGalleryItem(item, index)
-          }, (item: MediaGalleryItem, index: number) => `gallery_${index}_${item.messageId}`)
+        if (this.mediaItems.length > 0) {
+          Swiper(this.swiperController) {
+            ForEach(this.mediaItems, (item: MediaGalleryItem, index: number) => {
+              this.buildGalleryItem(item, index)
+            }, (item: MediaGalleryItem, index: number) => `gallery_${index}_${item.messageId}`)
+          }
+          .index(this.clampedIndex(this.initialIndex))
+          .loop(false)
+          .indicator(false)
+          .cachedCount(1)
+          .onChange((index: number) => {
+            this.handleSwiperChange(index);
+          })
+        } else {
+          this.buildEmptyState()
         }
-        .index(this.initialIndex)
-        .loop(false)
-        .indicator(false)
-        .cachedCount(1)
-        .onChange((index: number) => {
-          this.handleSwiperChange(index);
-        })
       }
       .width('100%')
       .height('100%')
@@ -328,9 +431,9 @@ export struct TgMediaGalleryPage {
       if (this.mediaItems.length > 1 && this.showOverlay) {
         Text(`${this.currentIndex + 1} / ${this.mediaItems.length}`)
           .fontSize(14)
-          .fontColor('#FFFFFF')
+          .fontColor(TgUiTokens.MEDIA_GALLERY_TEXT_PRIMARY)
           .padding({ left: 10, right: 10, top: 4, bottom: 4 })
-          .backgroundColor('#60000000')
+          .backgroundColor(TgUiTokens.MEDIA_GALLERY_PILL_BG)
           .borderRadius(12)
           .position({ top: this.statusBarHeight + 60 })
           .alignSelf(ItemAlign.Center)

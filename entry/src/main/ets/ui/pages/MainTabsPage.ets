@@ -1,7 +1,6 @@
 // MainTabsPage — root after auth
 // 4 tabs: Contacts, Calls, Chats, Settings — each with independent NavPathStack
-// Phase D-1: Custom floating island tab bar (TgTabBar) replaces built-in bar
-// V2 migration: @ComponentV2, @Local, navigationUIState/chatsUIState singletons
+// API 23: HdsTabs floating TabBar replaces custom TgTabBar shell
 
 import { ChatListPage } from './chatlist/ChatListPage';
 import { TgChatScreenPage } from './chat/TgChatScreenPage';
@@ -10,92 +9,62 @@ import { ContactsPage } from './contacts/ContactsPage';
 import { CallsPage } from './calls/CallsPage';
 import { SettingsPage } from './settings/SettingsPage';
 import { StorageKeys } from '../../app/bridge/AppStoreBridge';
-import { navigationUIState, chatsUIState } from '../../core/model/UIStateModels';
-import { TgTabBar } from '../tg_ui/atoms/TgTabBar';
+import { navigationUIState } from '../../core/model/UIStateModels';
+import {
+  hdsMaterial,
+  HdsNavigation,
+  HdsNavigationAttribute,
+  HdsTabs,
+  HdsTabsAttribute,
+  HdsTabsController
+} from '@kit.UIDesignKit';
+import { SymbolGlyphModifier } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { window } from '@kit.ArkUI';
-import { common } from '@kit.AbilityKit';
-import { TgUiTokens } from '../tg_ui/tokens/TgUiTokens';
 
 const DOMAIN = 0x0020;
 const TAG = 'MainTabsPage';
-
-declare function px2vp(value: number): number;
+const ROOT_TAB_BAR_VISIBLE_HEIGHT = 48;
+const ROOT_TAB_BAR_VISIBLE_BOTTOM_MARGIN = 28;
+const ROOT_TAB_BAR_VISIBLE_MASK_HEIGHT = 73;
 
 @ComponentV2
 export struct MainTabsPage {
   @Local selectedIndex: number = 2;
   private navState = navigationUIState;
-  private chatsState = chatsUIState;
 
-  // Independent NavPathStack per tab (iOS-like isolated navigation)
   private contactsNavStack: NavPathStack = new NavPathStack();
   private callsNavStack: NavPathStack = new NavPathStack();
   private chatNavStack: NavPathStack = new NavPathStack();
   private settingsNavStack: NavPathStack = new NavPathStack();
-  @Local private bottomInset: number = 0;
-  private mainWindow?: window.Window;
-  private controller: TabsController = new TabsController();
+  private controller: HdsTabsController = new HdsTabsController();
 
-  @Monitor('navState.mainTabIndex')
-  onStoredTabIndexChanged(_mon: IMonitor): void {
-    const idx = this.navState.mainTabIndex;
-    if (idx < 0 || idx > 3) {
-      return;
-    }
-    this.selectedIndex = idx;
-    this.controller.changeIndex(idx);
+  private isChatDetailVisible(): boolean {
+    return this.selectedIndex === 2 && this.navState.chatScreenVisible;
+  }
+
+  private rootTabBarHeight(): number {
+    return this.isChatDetailVisible() ? 0 : ROOT_TAB_BAR_VISIBLE_HEIGHT;
+  }
+
+  private rootTabBarOpacity(): number {
+    return this.isChatDetailVisible() ? 0 : 1;
+  }
+
+  private rootTabBarBottomMargin(): number {
+    return this.isChatDetailVisible() ? 0 : ROOT_TAB_BAR_VISIBLE_BOTTOM_MARGIN;
+  }
+
+  private rootTabBarMaskHeight(): number {
+    return this.isChatDetailVisible() ? 0 : ROOT_TAB_BAR_VISIBLE_MASK_HEIGHT;
   }
 
   aboutToAppear(): void {
-    // Sync initial value from model
     this.selectedIndex = this.navState.mainTabIndex;
     AppStorage.setOrCreate<number>(StorageKeys.MAIN_TAB_INDEX, this.selectedIndex);
     AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
     this.navState.chatScreenVisible = false;
     this.controller.changeIndex(this.selectedIndex);
     hilog.info(DOMAIN, TAG, 'MainTabsPage appeared with tab index: %{public}d', this.selectedIndex);
-
-    try {
-      const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      const windowStage: window.WindowStage | undefined = context.windowStage;
-      if (windowStage) {
-        this.mainWindow = windowStage.getMainWindowSync();
-        this.updateBottomInset(this.mainWindow);
-        this.mainWindow.on('windowSizeChange', (_size: window.Size) => {
-          if (this.mainWindow !== undefined) {
-            this.updateBottomInset(this.mainWindow);
-          }
-        });
-      }
-    } catch (_error) {
-      this.bottomInset = 0;
-    }
-  }
-
-  aboutToDisappear(): void {
-    if (this.mainWindow !== undefined) {
-      try {
-        this.mainWindow.off('windowSizeChange');
-      } catch (_error) {
-      }
-      this.mainWindow = undefined;
-    }
-  }
-
-  private updateBottomInset(mainWindow: window.Window): void {
-    let computedInset: number = 0;
-    try {
-      const systemAvoid: window.AvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
-      computedInset = Math.max(computedInset, px2vp(systemAvoid.bottomRect.height));
-      try {
-        const navAvoid: window.AvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
-        computedInset = Math.max(computedInset, px2vp(navAvoid.bottomRect.height));
-      } catch (_error) {
-      }
-    } catch (_error) {
-    }
-    this.bottomInset = computedInset;
   }
 
   private handleTabChange(index: number): void {
@@ -105,17 +74,14 @@ export struct MainTabsPage {
     }
 
     if (index === this.selectedIndex) {
-      this.controller.changeIndex(index);
       return;
     }
 
     hilog.info(DOMAIN, TAG, 'Tab change: %{public}d -> %{public}d', this.selectedIndex, index);
 
-    // Update local + singleton
     this.selectedIndex = index;
     navigationUIState.mainTabIndex = index;
     AppStorage.set<number>(StorageKeys.MAIN_TAB_INDEX, index);
-    this.controller.changeIndex(index);
 
     if (index !== 2) {
       navigationUIState.chatScreenVisible = false;
@@ -133,86 +99,112 @@ export struct MainTabsPage {
   }
 
   build() {
-    Stack({ alignContent: Alignment.Bottom }) {
-      // ── Tab content (fills entire area, no built-in bar) ──
-      Tabs({ barPosition: BarPosition.End, controller: this.controller, index: this.selectedIndex }) {
-        // Tab 0: Contacts
-        TabContent() {
-          Navigation(this.contactsNavStack) {
-            ContactsPage()
-          }
-          .hideTitleBar(true)
-          .hideToolBar(true)
-          .mode(NavigationMode.Stack)
+    HdsTabs({ controller: this.controller }) {
+      // Tab 0: Contacts
+      TabContent() {
+        HdsNavigation(this.contactsNavStack) {
+          ContactsPage()
         }
-
-        // Tab 1: Calls
-        TabContent() {
-          Navigation(this.callsNavStack) {
-            CallsPage()
-          }
-          .hideTitleBar(true)
-          .hideToolBar(true)
-          .mode(NavigationMode.Stack)
-        }
-
-        // Tab 2: Chats
-        TabContent() {
-          Navigation(this.chatNavStack) {
-            ChatListPage()
-          }
-          .hideTitleBar(true)
-          .hideToolBar(true)
-          .navDestination(this.chatPageMap)
-          .mode(NavigationMode.Stack)
-        }
-
-        // Tab 3: Settings
-        TabContent() {
-          Navigation(this.settingsNavStack) {
-            SettingsPage()
-          }
-          .hideTitleBar(true)
-          .hideToolBar(true)
-          .mode(NavigationMode.Stack)
-        }
-      }
-      .vertical(false)
-      .barHeight(0, true)
-      .barOverlap(true)
-      .scrollable(false)
-      .animationDuration(0)
-      .onChange((index: number) => {
-        hilog.info(DOMAIN, TAG, 'Tabs onChange triggered: %{public}d', index);
-        this.handleTabChange(index);
-      })
-      .onSelected((index: number) => {
-        hilog.info(DOMAIN, TAG, 'Tabs onSelected: %{public}d', index);
-        if (this.selectedIndex !== index) {
-          this.selectedIndex = index;
-          navigationUIState.mainTabIndex = index;
-          AppStorage.set<number>(StorageKeys.MAIN_TAB_INDEX, index);
-        }
-      })
-      .width('100%')
-      .height('100%')
-
-      // ── Custom bottom tab bar capsule (overlays content) ──
-      if (!(this.selectedIndex === 2 && this.navState.chatScreenVisible)) {
-        TgTabBar({
-          selectedIndex: this.selectedIndex,
-          chatBadgeCount: this.chatsState.totalUnreadCount,
-          glassMode: this.navState.glassMode,
-          onTabSelect: (index: number) => {
-            hilog.info(DOMAIN, TAG, 'TabBar onTabSelect: %{public}d', index);
-            this.handleTabChange(index);
-          }
+        .titleBar({
+          content: { title: { mainTitle: 'Contacts' } }
         })
-        .margin({ bottom: this.bottomInset > 0 ? this.bottomInset : TgUiTokens.TAB_BAR_ISLAND_BOTTOM_MARGIN })
+        .mode(NavigationMode.Stack)
+        .hideBackButton(true)
       }
+      .tabBar(new BottomTabBarStyle(
+        {
+          normal: new SymbolGlyphModifier($r('sys.symbol.person'))
+            .fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
+          selected: new SymbolGlyphModifier($r('sys.symbol.person_fill'))
+            .fontColor([$r('sys.color.ohos_id_color_activated')])
+        },
+        'Contacts'
+      ))
+
+      // Tab 1: Calls
+      TabContent() {
+        HdsNavigation(this.callsNavStack) {
+          CallsPage()
+        }
+        .titleBar({
+          content: { title: { mainTitle: 'Calls' } }
+        })
+        .mode(NavigationMode.Stack)
+        .hideBackButton(true)
+      }
+      .tabBar(new BottomTabBarStyle(
+        {
+          normal: new SymbolGlyphModifier($r('sys.symbol.phone'))
+            .fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
+          selected: new SymbolGlyphModifier($r('sys.symbol.phone'))
+            .fontColor([$r('sys.color.ohos_id_color_activated')])
+        },
+        'Calls'
+      ))
+
+      // Tab 2: Chats
+      TabContent() {
+        Navigation(this.chatNavStack) {
+          ChatListPage()
+        }
+        .hideTitleBar(true)
+        .hideToolBar(true)
+        .navDestination(this.chatPageMap)
+        .mode(NavigationMode.Stack)
+      }
+      .tabBar(new BottomTabBarStyle(
+        {
+          normal: new SymbolGlyphModifier($r('sys.symbol.house_fill'))
+            .fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
+          selected: new SymbolGlyphModifier($r('sys.symbol.house_fill'))
+            .fontColor([$r('sys.color.ohos_id_color_activated')])
+        },
+        'Chats'
+      ))
+
+      // Tab 3: Settings
+      TabContent() {
+        HdsNavigation(this.settingsNavStack) {
+          SettingsPage()
+        }
+        .titleBar({
+          content: { title: { mainTitle: 'Settings' } }
+        })
+        .mode(NavigationMode.Stack)
+        .hideBackButton(true)
+      }
+      .tabBar(new BottomTabBarStyle(
+        {
+          normal: new SymbolGlyphModifier($r('sys.symbol.gearshape'))
+            .fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
+          selected: new SymbolGlyphModifier($r('sys.symbol.gearshape'))
+            .fontColor([$r('sys.color.ohos_id_color_activated')])
+        },
+        'Settings'
+      ))
     }
+    .barOverlap(!this.isChatDetailVisible())
+    .barPosition(BarPosition.End)
+    .barHeight(this.rootTabBarHeight())
+    .vertical(false)
+    .barFloatingStyle({
+      barBottomMargin: this.rootTabBarBottomMargin(),
+      gradientMask: {
+        maskHeight: this.rootTabBarMaskHeight()
+      },
+      barOpacity: this.rootTabBarOpacity(),
+      systemMaterialEffect: {
+        materialType: hdsMaterial.MaterialType.ADAPTIVE,
+        materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+      }
+    })
+    .animationDuration(0)
+    .scrollable(false)
+    .onChange((index: number) => {
+      hilog.info(DOMAIN, TAG, 'HdsTabs onChange: %{public}d', index);
+      this.handleTabChange(index);
+    })
     .width('100%')
     .height('100%')
-    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
   }
 }

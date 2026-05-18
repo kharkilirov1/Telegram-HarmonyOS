@@ -160,6 +160,10 @@ export class ChatTimelineDataSource implements IDataSource {
       prev.photoWidth === next.photoWidth &&
       prev.photoHeight === next.photoHeight &&
       this.sameStringArray(prev.albumPhotoPaths, next.albumPhotoPaths) &&
+      this.sameNumberArray(prev.albumPhotoFileIds, next.albumPhotoFileIds) &&
+      this.sameBoolArray(prev.albumPhotoHasLocal, next.albumPhotoHasLocal) &&
+      this.sameBoolArray(prev.albumPhotoDownloading, next.albumPhotoDownloading) &&
+      this.sameNumberArray(prev.albumPhotoDownloadProgress, next.albumPhotoDownloadProgress) &&
       this.sameNumberArray(prev.albumPhotoWidths, next.albumPhotoWidths) &&
       this.sameNumberArray(prev.albumPhotoHeights, next.albumPhotoHeights) &&
       prev.videoThumbPath === next.videoThumbPath &&
@@ -200,7 +204,8 @@ export class ChatTimelineDataSource implements IDataSource {
       prev.avatarImageSrc === next.avatarImageSrc &&
       prev.avatarInitials === next.avatarInitials &&
       prev.avatarColorIndex === next.avatarColorIndex &&
-      prev.topSpacing === next.topSpacing;
+      prev.topSpacing === next.topSpacing &&
+      prev.groupingFlags === next.groupingFlags;
   }
 
   private sameEntry(prev: ChatTimelineEntryVO, next: ChatTimelineEntryVO): boolean {

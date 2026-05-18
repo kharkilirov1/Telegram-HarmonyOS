@@ -1,6 +1,6 @@
 # AGENT EXECUTION PLAN — Telegram-HarmonyOS
 
-Last updated: 2026-03-22
+Last updated: 2026-04-24
 
 ## Purpose
 This is the **canonical execution roadmap** for AI agents working on this repository.
@@ -67,7 +67,49 @@ Do **not** start from “which ArkUI component looks similar”. Start from “w
 
 ## Current default starting phase
 
-**Start with Phase 1 only if current repo evidence shows a reopened runtime regression; otherwise continue with docs/repo hygiene or the next product phase requested by the user.**
+**Current active phase: Phase 2 — Consolidate current working batch.**
+
+Phase 1 is locally exited for heartbeat purposes as of 2026-04-30: repeated runtime/navigation audit passes have landed, `scripts/smoke-ui-phase0.ps1` is green, and the remaining `scripts/smoke-build.ps1` failure is the known external user-level Hvigor cache `ENOENT` blocker. That build blocker must be reported, but it is **not** by itself a reason to keep mining Phase 1.
+
+Only return to Phase 1 when a concrete, unaddressed runtime/navigation regression is named or reproduced. Otherwise the next heartbeat run should execute Phase 2 consolidation work.
+
+Phases 1, 2, and 5 do NOT require manual device/emulator verification — they are code audits, refactors, new atoms, and behavior implementation.
+
+**Do NOT loop in observation-only mode. If one task is truly blocked, move to the next unblocked task in the current phase.**
+
+## Forward runtime-sweep note (2026-04-19)
+- The forward/cross-chat runtime-sweep packet is now locally well-covered:
+  - checklist
+  - results template
+  - generator
+  - reader
+  - validator
+  - wrapper
+  - PASS/FAIL synthetic fixtures
+  - baseline smoke
+- Do **not** keep expanding this packet by default.
+- After the current baseline is green, the next valid move is one of:
+  1. a real emulator/device runtime-sweep artifact,
+  2. a concrete smoke regression,
+  3. a narrow tooling/documentation gap discovered from a real artifact.
+- If none of those are true, prefer stopping over adding another helper script.
+
+## Heartbeat tooling note (2026-04-20)
+- The heartbeat inspection path is now locally well-covered:
+  - latest/latest-completed distinction
+  - freshness
+  - output-artifact freshness
+  - top-level issue markers
+  - `-SummaryOnly`
+  - `-HealthExitCode`
+- Do **not** keep expanding heartbeat helper flags by default.
+- 2026-04-24 real-log update: a completed heartbeat with `exit code 1` caused by Codex websocket/DNS errors is now classified as `network/connectivity failure` by `scripts/read-codex-heartbeat.ps1`, with `scripts/smoke-read-codex-heartbeat-network-failure.ps1` covering the fixture.
+- Do not open runner-code or scheduler surgery for an isolated classified network/connectivity failure; wait for the next completed run and only act if completed-path failures repeat without that external-failure marker.
+- After the current baseline is green enough for routine checks, the next valid move is one of:
+  1. a real scheduled-task regression,
+  2. a reproducible heartbeat-runner bug,
+  3. a narrow observability gap discovered from real heartbeat logs.
+- If none of those are true, prefer re-checking or stopping over adding another heartbeat helper mode.
 
 ---
 
@@ -85,22 +127,23 @@ Make the current chat/runtime path predictable, reload-safe, and verification-re
 - `entry/src/main/ets/ui/pages/chatlist/ChatListPage.ets`
 - `entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets`
 
-### What to do
-- audit in-flight request handling
-- audit static cache reset behavior
-- audit reopen/back/navigation race conditions
-- audit unread-boundary/history restore behavior
-- audit pagination older/newer logic
-- fix duplicate loads, stale state, and obvious navigation regressions
+### What to do (NO DEVICE NEEDED — pure code work)
+1. Audit in-flight request handling: check `AppStore`, usecases for duplicate/missed TDLib requests
+2. Audit static cache reset behavior: verify `LoadChatHistoryUseCase`, `LoadChatsUseCase`, and any other static caches are reset on runtime shutdown
+3. Audit reopen/back/navigation race conditions: check `TgChatScreenPage`, `ChatListPage` for stale state on re-entry
+4. Audit unread-boundary/history restore behavior
+5. Audit pagination older/newer logic
+6. Audit `MainThreadDispatcher` for dropped/duplicate events
+7. Fix found issues — crash guards, null checks, race condition fixes, cache resets
+8. Add dev-mode invariant checks for detected issues
 
 ### Verification target
 - `scripts/smoke-ui-phase0.ps1` passes
-- no obvious reopen/load regressions in inspected flows
-- if `hvigorw`/DevEco build is available, build passes
-- if build tooling is unavailable, report exact blocker
+- `scripts/smoke-build.ps1` passes (or report exact blocker)
+- No obvious reopen/load regressions in code inspection
 
 ### Exit condition
-Current runtime path is stabilized enough to be treated as a coherent patch instead of a moving pile of local edits.
+Runtime path is audited, fixed, and stabilized. All found issues have fixes or documented follow-ups.
 
 ---
 
@@ -109,11 +152,13 @@ Current runtime path is stabilized enough to be treated as a coherent patch inst
 ### Goal
 Turn the current mixed working tree into a coherent, reviewable, commit-ready batch.
 
-### What to do
-- review the current untracked tg_ui atoms/specs/demos
-- align docs with actual runtime path
-- decide what belongs to the stabilization batch vs. later feature work
-- keep git status understandable
+### What to do (NO DEVICE NEEDED)
+1. Audit current untracked tg_ui atoms/specs/demos — list them, check for missing spec/demo coverage
+2. Align docs (`STATUS.md`, `ARCHITECTURE.md`, `README.md`) with actual runtime path
+3. Review tg_ui tokens for consistency — remove unused, add missing
+4. Clean up dead code and commented-out experiments
+5. Ensure every atom has: spec, demo, and is referenced in inventory
+6. Decide patchset boundary: what belongs to current stabilization batch vs later feature work
 
 ### Important constraint
 - local commit/push only if the user explicitly asks
@@ -162,12 +207,14 @@ Calls page is backed by real data flow or has a clearly documented backend limit
 ### Goal
 Complete runtime behavior for media messages beyond visual atoms.
 
-### What to do
-- attachment open/download flows
-- progress/error/retry state handling
-- image/video interactions
-- voice playback behavior
-- router/chat-screen integration polish
+### What to do (MOSTLY NO DEVICE NEEDED)
+1. Implement attachment open/download flow: TDLib `downloadFile` → progress → open
+2. Add progress/error/retry state handling for media downloads
+3. Implement image viewer open from message bubble
+4. Implement voice message playback behavior (play/pause/progress)
+5. Connect media atoms to real TDLib data flow (not just visual rendering)
+6. Add media-specific usecases if missing
+7. Wire media events into AppStore reducers
 
 ### Exit condition
 Media messages are not just rendered; they behave like product features.

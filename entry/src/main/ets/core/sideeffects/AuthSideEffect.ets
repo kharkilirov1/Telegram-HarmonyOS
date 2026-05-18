@@ -45,6 +45,7 @@ class AuthSideEffect {
   private tdlibParamsInFlight: boolean = false;
   private tdlibParamsAccepted: boolean = false;
   private didHandleReady: boolean = false;
+  private lifecycleToken: number = 0;
 
   constructor() {
     this.gateway = getTdGateway();
@@ -56,19 +57,31 @@ class AuthSideEffect {
       return;
     }
 
+    if (this.unsubscribe !== undefined) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
+    }
+
     this.isRunning = true;
+    this.lifecycleToken++;
     this.tdlibParamsInFlight = false;
     this.tdlibParamsAccepted = false;
     this.didHandleReady = false;
-    this.unsubscribe = this.gateway.subscribeUpdates((update: TdObject): void => {
-      this.handleUpdate(update);
+    const token: number = this.lifecycleToken;
+    let activeUnsubscribe: (() => void) | undefined = undefined;
+    activeUnsubscribe = this.gateway.subscribeUpdates((update: TdObject): void => {
+      if (!this.isCurrentSubscription(token, activeUnsubscribe)) {
+        return;
+      }
+      this.handleUpdate(update, token);
     });
+    this.unsubscribe = activeUnsubscribe;
 
     hilog.info(DOMAIN, TAG, 'AuthSideEffect started');
 
     // Сразу отправляем setTdlibParameters как первый запрос.
     // TDLib не шлёт никаких обновлений до первого запроса — это его пробуждает.
-    this.sendTdlibParameters();
+    this.sendTdlibParameters(token);
   }
 
   stop(): void {
@@ -76,16 +89,33 @@ class AuthSideEffect {
       return;
     }
 
-    if (this.unsubscribe) {
-      this.unsubscribe();
-      this.unsubscribe = undefined;
-    }
-
     this.isRunning = false;
+    this.lifecycleToken++;
+    const activeUnsubscribe = this.unsubscribe;
+    this.unsubscribe = undefined;
+    if (activeUnsubscribe) {
+      activeUnsubscribe();
+    }
+    this.tdlibParamsInFlight = false;
+    this.tdlibParamsAccepted = false;
+    this.didHandleReady = false;
+
     hilog.info(DOMAIN, TAG, 'AuthSideEffect stopped');
   }
 
-  private handleUpdate(update: TdObject): void {
+  private isCurrentRun(token: number): boolean {
+    return this.isRunning && token === this.lifecycleToken;
+  }
+
+  private isCurrentSubscription(token: number, unsubscribe: (() => void) | undefined): boolean {
+    return this.isCurrentRun(token) && this.unsubscribe === unsubscribe;
+  }
+
+  private handleUpdate(update: TdObject, token: number): void {
+    if (!this.isCurrentRun(token)) {
+      return;
+    }
+
     const type: string = update.getType();
 
     if (type !== 'updateAuthorizationState') {
@@ -102,7 +132,7 @@ class AuthSideEffect {
     hilog.info(DOMAIN, TAG, 'Auth state: ' + authState);
 
     if (authState === 'authorizationStateWaitTdlibParameters') {
-      this.sendTdlibParameters();
+      this.sendTdlibParameters(token);
     } else if (authState === 'authorizationStateClosed') {
       // TDLib closed (after logOut or restart). Reset flags so next
       // authorizationStateWaitTdlibParameters is handled correctly.
@@ -113,29 +143,45 @@ class AuthSideEffect {
     } else if (authState === 'authorizationStateReady') {
       if (!this.didHandleReady) {
         this.didHandleReady = true;
-        this.onAuthReady();
+        this.onAuthReady(token);
       }
     }
   }
 
-  private async onAuthReady(): Promise<void> {
-    await this.resolveCurrentUser();
-    this.warmChatsCache();
+  private async onAuthReady(token: number): Promise<void> {
+    if (!this.isCurrentRun(token)) {
+      return;
+    }
+    await this.resolveCurrentUser(token);
+    if (!this.isCurrentRun(token)) {
+      return;
+    }
+    await this.warmChatsCache(token);
   }
 
-  private async warmChatsCache(): Promise<void> {
+  private async warmChatsCache(token: number): Promise<void> {
+    if (!this.isCurrentRun(token)) {
+      return;
+    }
     hilog.info(DOMAIN, TAG, 'Warming chats cache with a single loadChats request...');
 
-    if (!storeRef) {
+    const store: AppStore | null = storeRef;
+    if (!store) {
       hilog.warn(DOMAIN, TAG, 'Chats warmup skipped: storeRef is null');
       return;
     }
 
     try {
-      const loadChatsUseCase = createLoadChatsUseCase(storeRef, getTdGatewayAdapter());
+      const loadChatsUseCase = createLoadChatsUseCase(store, getTdGatewayAdapter());
       await loadChatsUseCase.warmup();
+      if (!this.isCurrentRun(token)) {
+        return;
+      }
       hilog.info(DOMAIN, TAG, 'Chats cache warmup finished via LoadChatsUseCase');
     } catch (error) {
+      if (!this.isCurrentRun(token)) {
+        return;
+      }
       const err = error as AppError;
       if (err.tdlibCode === 404) {
         hilog.info(DOMAIN, TAG, 'Chats cache warmup reached end of dialogs immediately');
@@ -145,18 +191,25 @@ class AuthSideEffect {
     }
   }
 
-  private async resolveCurrentUser(): Promise<void> {
+  private async resolveCurrentUser(token: number): Promise<void> {
+    if (!this.isCurrentRun(token)) {
+      return;
+    }
     hilog.info(DOMAIN, TAG, 'Auth ready, resolving current user via getMe...');
 
     try {
       const response: TdObject = await this.gateway.send('getMe', new TdObject());
+      if (!this.isCurrentRun(token)) {
+        return;
+      }
       const responseType: string = response.getType();
 
       if (responseType === 'user') {
         const userId: number = response.getTopLevelNumber('id');
         hilog.info(DOMAIN, TAG, 'getMe resolved: userId=' + userId);
 
-        if (!storeRef) {
+        const store: AppStore | null = storeRef;
+        if (!store) {
           hilog.error(DOMAIN, TAG, 'getMe: storeRef is null — call setAuthSideEffectStore() before start()');
           return;
         }
@@ -164,7 +217,10 @@ class AuthSideEffect {
           hilog.error(DOMAIN, TAG, 'getMe: invalid userId=' + userId);
           return;
         }
-        await storeRef.dispatch(createMyUserResolvedEvent(userId));
+        await store.dispatch(createMyUserResolvedEvent(userId));
+        if (!this.isCurrentRun(token)) {
+          return;
+        }
         hilog.info(DOMAIN, TAG, 'myUserResolved dispatched');
       } else if (responseType === 'error') {
         const code: number = response.getNumber('code');
@@ -172,12 +228,18 @@ class AuthSideEffect {
         hilog.error(DOMAIN, TAG, 'getMe error: code=' + code + ' message=' + message);
       }
     } catch (error) {
+      if (!this.isCurrentRun(token)) {
+        return;
+      }
       const err = error as AppError;
       hilog.error(DOMAIN, TAG, 'getMe failed: ' + err.message + ' | tdlib: ' + err.technicalMessage + ' | code: ' + err.tdlibCode);
     }
   }
 
-  private async sendTdlibParameters(): Promise<void> {
+  private async sendTdlibParameters(token: number): Promise<void> {
+    if (!this.isCurrentRun(token)) {
+      return;
+    }
     if (this.tdlibParamsAccepted) {
       return;
     }
@@ -249,6 +311,9 @@ class AuthSideEffect {
 
     try {
       const response: TdObject = await this.gateway.send('setTdlibParameters', params);
+      if (!this.isCurrentRun(token)) {
+        return;
+      }
       const responseType: string = response.getType();
 
       if (responseType === 'ok') {
@@ -264,6 +329,9 @@ class AuthSideEffect {
         hilog.error(DOMAIN, TAG, 'setTdlibParameters error: code=' + code + ' message=' + message);
       }
     } catch (error) {
+      if (!this.isCurrentRun(token)) {
+        return;
+      }
       const err = error as AppError;
       if (err.tdlibCode === 400 && err.technicalMessage.toLowerCase().indexOf('unexpected settdlibparameters') >= 0) {
         this.tdlibParamsAccepted = true;
@@ -271,7 +339,9 @@ class AuthSideEffect {
       }
       hilog.error(DOMAIN, TAG, 'setTdlibParameters failed: ' + err.message + ' | tdlib: ' + err.technicalMessage + ' | code: ' + err.tdlibCode);
     } finally {
-      this.tdlibParamsInFlight = false;
+      if (this.isCurrentRun(token)) {
+        this.tdlibParamsInFlight = false;
+      }
     }
   }
 }

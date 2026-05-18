@@ -1,6 +1,7 @@
 import { TgSettingsRow, TgSettingsTrailing } from '../atoms/TgSettingsRow';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgSettingsRow' })
 @ComponentV2
 export struct TgSettingsRowDemo {
   @Local private notificationsEnabled: boolean = true;

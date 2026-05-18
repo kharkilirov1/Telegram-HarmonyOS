@@ -19,23 +19,57 @@ export class LoadChatsUseCase {
   private store: AppStore;
   private gateway: TdGatewayPort;
   private cooldownUntilMs: number = 0;
+  private isActive: boolean = true;
+  private lifecycleToken: number = 0;
+  private waitCancelers: (() => void)[] = [];
 
   constructor(store: AppStore, gateway: TdGatewayPort) {
     this.store = store;
     this.gateway = gateway;
   }
 
-  private async waitForChatCountGrowth(baselineCount: number): Promise<number> {
+  cancel(): void {
+    if (!this.isActive) {
+      return;
+    }
+    this.isActive = false;
+    this.lifecycleToken++;
+    this.cooldownUntilMs = 0;
+
+    const cancelers: (() => void)[] = this.waitCancelers.slice();
+    this.waitCancelers = [];
+    cancelers.forEach((cancelWait: () => void): void => {
+      cancelWait();
+    });
+  }
+
+  private isCurrentRun(token: number): boolean {
+    return this.isActive && token === this.lifecycleToken;
+  }
+
+  private async waitForChatCountGrowth(baselineCount: number, token: number): Promise<number> {
+    if (!this.isCurrentRun(token)) {
+      return baselineCount;
+    }
+
     return new Promise<number>((resolve: (value: number) => void) => {
       let settled: boolean = false;
       let unsubscribe: (() => void) | undefined = undefined;
       let timerId: number = -1;
+      let cancelWait: (() => void) | undefined = undefined;
 
       const finish = (count: number): void => {
         if (settled) {
           return;
         }
         settled = true;
+        if (cancelWait !== undefined) {
+          const cancelIndex: number = this.waitCancelers.indexOf(cancelWait);
+          if (cancelIndex >= 0) {
+            this.waitCancelers.splice(cancelIndex, 1);
+          }
+          cancelWait = undefined;
+        }
         if (unsubscribe !== undefined) {
           unsubscribe();
           unsubscribe = undefined;
@@ -47,7 +81,16 @@ export class LoadChatsUseCase {
         resolve(count);
       };
 
+      cancelWait = (): void => {
+        finish(this.store.getState().chats.orderedChatIds.length);
+      };
+      this.waitCancelers.push(cancelWait);
+
       unsubscribe = this.store.subscribe((newState, prevState) => {
+        if (!this.isCurrentRun(token)) {
+          finish(newState.chats.orderedChatIds.length);
+          return;
+        }
         if (newState.chats === prevState.chats) {
           return;
         }
@@ -61,6 +104,11 @@ export class LoadChatsUseCase {
         finish(this.store.getState().chats.orderedChatIds.length);
       }, CHAT_GROWTH_WAIT_TIMEOUT_MS) as number;
 
+      if (!this.isCurrentRun(token)) {
+        finish(this.store.getState().chats.orderedChatIds.length);
+        return;
+      }
+
       const immediateCount = this.store.getState().chats.orderedChatIds.length;
       if (immediateCount > baselineCount) {
         finish(immediateCount);
@@ -70,6 +118,11 @@ export class LoadChatsUseCase {
 
   // Main entry point - loads initial or more chats
   async execute(limit: number = 20, phase: ChatsLoadPhase = 'pagination'): Promise<void> {
+    const token: number = this.lifecycleToken;
+    if (!this.isCurrentRun(token)) {
+      return;
+    }
+
     if (selectIsChatsLoading(this.store.getState())) {
       hilog.info(DOMAIN, TAG, 'Already loading, skipping');
       return;
@@ -89,15 +142,24 @@ export class LoadChatsUseCase {
     let nextHasMore: boolean = state.chats.hasMore;
     try {
       await this.store.dispatch(createChatsLoadStateChangedEvent(true, nextHasMore, phase));
+      if (!this.isCurrentRun(token)) {
+        return;
+      }
       const baselineCount = state.chats.orderedChatIds.length;
       hilog.info(DOMAIN, TAG, 'Loading chats, limit: %{public}d', limit);
 
       // Send loadChats command to TDLib
       const command = createLoadChatsCommand(limit);
       await this.gateway.send(command);
+      if (!this.isCurrentRun(token)) {
+        return;
+      }
 
       hilog.info(DOMAIN, TAG, 'Chats load command sent');
-      const observedCount = await this.waitForChatCountGrowth(baselineCount);
+      const observedCount = await this.waitForChatCountGrowth(baselineCount, token);
+      if (!this.isCurrentRun(token)) {
+        return;
+      }
       if (observedCount > baselineCount) {
         this.cooldownUntilMs = 0;
         hilog.info(DOMAIN, TAG, 'Chats list grew by %{public}d', observedCount - baselineCount);
@@ -107,6 +169,9 @@ export class LoadChatsUseCase {
       }
 
     } catch (error) {
+      if (!this.isCurrentRun(token)) {
+        return;
+      }
       const err = error as AppError;
       if (err.tdlibCode === 404) {
         nextHasMore = false;
@@ -124,6 +189,9 @@ export class LoadChatsUseCase {
         err.retryable !== false
       );
     } finally {
+      if (!this.isCurrentRun(token)) {
+        return;
+      }
       await this.store.dispatch(createChatsLoadStateChangedEvent(false, nextHasMore, 'idle'));
     }
   }
@@ -144,18 +212,31 @@ export class LoadChatsUseCase {
 
   // Check if loading
   isLoadingInProgress(): boolean {
+    if (!this.isActive) {
+      return false;
+    }
     return selectIsChatsLoading(this.store.getState());
   }
 
   hasMoreChats(): boolean {
+    if (!this.isActive) {
+      return false;
+    }
     return selectHasMoreChats(this.store.getState());
   }
 
   // Refresh chats (reload)
   async refresh(): Promise<void> {
+    const token: number = this.lifecycleToken;
+    if (!this.isCurrentRun(token)) {
+      return;
+    }
     hilog.info(DOMAIN, TAG, 'Refreshing chats');
     this.cooldownUntilMs = 0;
     await this.store.dispatch(createChatsLoadStateChangedEvent(false, true, 'idle'));
+    if (!this.isCurrentRun(token)) {
+      return;
+    }
     return this.loadInitial();
   }
 }
@@ -174,5 +255,8 @@ export function createLoadChatsUseCase(
 let loadChatsUseCaseInstance: LoadChatsUseCase | null = null;
 
 export function resetLoadChatsUseCase(): void {
+  if (loadChatsUseCaseInstance !== null) {
+    loadChatsUseCaseInstance.cancel();
+  }
   loadChatsUseCaseInstance = null;
 }

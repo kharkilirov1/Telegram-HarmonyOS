@@ -1,6 +1,7 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgStickerView } from '../atoms/TgStickerView';
 
+@Preview({ title: 'TgStickerView' })
 @ComponentV2
 export struct TgStickerViewDemo {
   @Builder

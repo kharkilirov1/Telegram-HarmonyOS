@@ -1,6 +1,7 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgInstantVideoBubble } from '../atoms/TgInstantVideoBubble';
 
+@Preview({ title: 'TgInstantVideoBubble' })
 @ComponentV2
 export struct TgInstantVideoBubbleDemo {
   @Builder

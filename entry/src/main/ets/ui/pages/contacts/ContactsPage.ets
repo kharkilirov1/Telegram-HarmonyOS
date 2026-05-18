@@ -5,7 +5,6 @@
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, User } from '../../../core/model/AppState';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
-import { TgTopBar } from '../../tg_ui/atoms/TgTopBar';
 import { TgAvatar } from '../../tg_ui/atoms/TgAvatar';
 import { localized } from '../../../core/utils/AppResource';
 import { fileUri } from '@kit.CoreFileKit';
@@ -35,22 +34,52 @@ export struct ContactsPage {
 
   private unsubscribe?: () => void;
   private rebuildScheduled: boolean = false;
+  private rebuildTimerId: number = -1;
+  private pageLifecycleToken: number = 0;
   private mainWindow?: window.Window;
 
+  private clearRebuildTimer(): void {
+    if (this.rebuildTimerId !== -1) {
+      clearTimeout(this.rebuildTimerId);
+      this.rebuildTimerId = -1;
+    }
+    this.rebuildScheduled = false;
+  }
+
   aboutToAppear(): void {
+    this.pageLifecycleToken += 1;
+    this.clearRebuildTimer();
     hilog.info(DOMAIN, TAG, 'ContactsPage aboutToAppear');
     this.computeSafeInsets();
     this.bindWindowSizeListener();
+
+    if (this.unsubscribe !== undefined) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
+    }
 
     try {
       const runtime = getAppCoreRuntime();
       const store = runtime.getStore();
       this.rebuildContacts(store.getState());
 
-      this.unsubscribe = store.subscribe((_newState: AppState, _prevState: AppState) => {
+      const subscriptionToken: number = this.pageLifecycleToken;
+      let activeUnsubscribe: (() => void) | undefined = undefined;
+      activeUnsubscribe = store.subscribe((_newState: AppState, _prevState: AppState) => {
+        if (subscriptionToken !== this.pageLifecycleToken || this.unsubscribe !== activeUnsubscribe) {
+          return;
+        }
         if (!this.rebuildScheduled) {
           this.rebuildScheduled = true;
-          setTimeout(() => {
+          const scheduledToken: number = this.pageLifecycleToken;
+          let scheduledTimerId: number = -1;
+          scheduledTimerId = setTimeout(() => {
+            if (scheduledToken !== this.pageLifecycleToken ||
+              this.rebuildTimerId !== scheduledTimerId ||
+              this.unsubscribe !== activeUnsubscribe) {
+              return;
+            }
+            this.rebuildTimerId = -1;
             this.rebuildScheduled = false;
             try {
               const currentState = getAppCoreRuntime().getStore().getState();
@@ -58,15 +87,19 @@ export struct ContactsPage {
             } catch (e) {
               hilog.error(DOMAIN, TAG, 'Rebuild failed: %{public}s', String(e));
             }
-          }, 300);
+          }, 300) as number;
+          this.rebuildTimerId = scheduledTimerId;
         }
       });
+      this.unsubscribe = activeUnsubscribe;
     } catch (e) {
       hilog.error(DOMAIN, TAG, 'Init failed: %{public}s', String(e));
     }
   }
 
   aboutToDisappear(): void {
+    this.pageLifecycleToken += 1;
+    this.clearRebuildTimer();
     if (this.unsubscribe !== undefined) {
       this.unsubscribe();
       this.unsubscribe = undefined;
@@ -81,7 +114,12 @@ export struct ContactsPage {
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
       this.mainWindow = getMainWindow(context);
       if (this.mainWindow !== undefined) {
+        const lifecycleToken: number = this.pageLifecycleToken;
+        const boundWindow: window.Window = this.mainWindow;
         this.mainWindow.on('windowSizeChange', (_size: window.Size) => {
+          if (lifecycleToken !== this.pageLifecycleToken || this.mainWindow !== boundWindow) {
+            return;
+          }
           this.computeSafeInsets();
         });
       }
@@ -250,7 +288,6 @@ export struct ContactsPage {
         .alignItems(HorizontalAlign.Center)
       }
 
-      TgTopBar({ title: localized($r('app.string.contacts_title').id, 'Contacts') })
     }
     .width('100%')
     .height('100%')

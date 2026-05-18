@@ -1,6 +1,7 @@
 import { TgMessageBubbleBase, TgMessageTextKind } from '../atoms/TgMessageBubbleBase';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgMessageBubble' })
 @ComponentV2
 export struct TgMessageBubbleDemo {
   private incomingShortText: string = 'Incoming short bubble.';

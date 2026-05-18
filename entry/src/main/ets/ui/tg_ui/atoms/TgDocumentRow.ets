@@ -44,6 +44,10 @@ export struct TgDocumentRow {
     return this.downloadProgress >= 0 && this.downloadProgress < 1;
   }
 
+  private isTransferActive(): boolean {
+    return this.isDownloading || this.hasProgress();
+  }
+
   private normalizedProgress(): number {
     return Math.max(0, Math.min(1, this.downloadProgress));
   }
@@ -113,7 +117,7 @@ export struct TgDocumentRow {
   }
 
   private shouldShowExtensionBadge(): boolean {
-    return !this.hasProgress() && !this.isDownloading && this.extensionBadgeText().trim().length > 0;
+    return !this.isTransferActive() && this.extensionBadgeText().trim().length > 0;
   }
 
   private metaLine(): string {
@@ -155,7 +159,7 @@ export struct TgDocumentRow {
 
   @Builder
   private buildActionChip() {
-    if (!this.hasProgress() && !this.isDownloading) {
+    if (!this.isTransferActive()) {
       Row() {
         TgIcon({
           src: this.leadingIconResource(),
@@ -176,12 +180,21 @@ export struct TgDocumentRow {
       .onClick((event: ClickEvent) => {
         this.onDownloadToggle();
       })
+      .transition({
+        type: TransitionType.All,
+        opacity: 0,
+        scale: {
+          x: TgUiTokens.MEDIA_STATUS_TRANSITION_SCALE,
+          y: TgUiTokens.MEDIA_STATUS_TRANSITION_SCALE
+        }
+      })
+      .animation({ duration: TgUiTokens.MEDIA_STATUS_ANIM_DURATION, curve: Curve.EaseInOut })
     }
   }
 
   @Builder
   private buildTilePrimaryFace() {
-    if (this.isDownloading) {
+    if (this.isTransferActive()) {
       Stack({ alignContent: Alignment.Center }) {
         if (this.hasProgress()) {
           Progress({
@@ -191,22 +204,34 @@ export struct TgDocumentRow {
           })
             .width(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
             .height(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
-            .color('#FFFFFF')
+            .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
             .backgroundColor(Color.Transparent)
             .style({ strokeWidth: TgUiTokens.DOCUMENT_ROW_PROGRESS_RING_STROKE })
         } else {
           LoadingProgress()
             .width(TgUiTokens.DOCUMENT_ROW_ICON_SIZE)
             .height(TgUiTokens.DOCUMENT_ROW_ICON_SIZE)
-            .color('#FFFFFF')
+            .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
         }
-        Image($r('sys.media.ohos_ic_public_cancel'))
-          .width(16).height(16).fillColor('#FFFFFF')
+        TgIcon({
+          src: TgUiTokens.ICON_RES_CLOSE,
+          iconSize: TgUiTokens.MEDIA_CANCEL_ICON_SIZE,
+          tintColor: TgUiTokens.MEDIA_PROGRESS_COLOR
+        })
       }
       .width(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
       .height(TgUiTokens.DOCUMENT_ROW_ICON_BOX_SIZE)
-      .backgroundColor('#40000000') // Dark overlay
+      .backgroundColor(TgUiTokens.MEDIA_OVERLAY_DARK)
       .borderRadius(TgUiTokens.DOCUMENT_ROW_ICON_RADIUS)
+      .transition({
+        type: TransitionType.All,
+        opacity: 0,
+        scale: {
+          x: TgUiTokens.MEDIA_STATUS_TRANSITION_SCALE,
+          y: TgUiTokens.MEDIA_STATUS_TRANSITION_SCALE
+        }
+      })
+      .animation({ duration: TgUiTokens.MEDIA_STATUS_ANIM_DURATION, curve: Curve.EaseInOut })
     } else if (this.isDownloaded() && this.isImageOrPdf()) {
       Image(this.documentPath)
         .width('100%')
@@ -265,7 +290,7 @@ export struct TgDocumentRow {
       .borderRadius(TgUiTokens.DOCUMENT_ROW_ICON_RADIUS)
       .clip(true)
       .onClick((event: ClickEvent) => {
-        if (!this.isDownloaded() || this.hasProgress() || this.isDownloading) {
+        if (!this.isDownloaded() || this.isTransferActive()) {
           this.onDownloadToggle();
         }
       })

@@ -2,165 +2,130 @@ import { describe, it, expect } from '@ohos/hypium';
 import {
   AppError,
   AppErrorKind,
-  classifyTdlibError
-} from '../../../main/ets/services/AppError';
+  classifyTdlibError,
+  ERR_TDLIB_CLIENT_DESTROYED,
+  ERR_TDLIB_INIT_TIMEOUT
+} from '../../../main/ets/core/model/AppError';
 
 /**
- * Unit tests for AppError — error classification and user-facing message mapping.
- * Validates that TDLib error codes/messages map to the correct AppErrorKind
- * and user-facing messages.
+ * Unit tests for the current core AppError model and TDLib error classifier.
  */
-
 export default function appErrorTest() {
   describe('AppError', () => {
 
-    // -----------------------------------------------------------------------
-    // classifyTdlibError — network errors
-    // -----------------------------------------------------------------------
     describe('classifyTdlibError — network', () => {
+      it('classifies initialization timeout as retryable network error', 0, () => {
+        const error = classifyTdlibError(0, `${ERR_TDLIB_INIT_TIMEOUT}: ready timeout`);
+        expect(error.kind).assertEqual(AppErrorKind.NETWORK);
+        expect(error.retryable).assertTrue();
+        expect(error.userMessage.indexOf('Initialization timed out') >= 0).assertTrue();
+      });
 
-      it('should classify timeout as NETWORK', 0, () => {
+      it('classifies destroyed-client constant as non-retryable network interruption', 0, () => {
+        const error = classifyTdlibError(0, ERR_TDLIB_CLIENT_DESTROYED);
+        expect(error.kind).assertEqual(AppErrorKind.NETWORK);
+        expect(error.retryable).assertFalse();
+        expect(error.userMessage).assertEqual('Connection interrupted.');
+      });
+
+      it('classifies generic timeouts as retryable network errors', 0, () => {
         const error = classifyTdlibError(0, 'Request timed out after 30000ms');
         expect(error.kind).assertEqual(AppErrorKind.NETWORK);
         expect(error.retryable).assertTrue();
       });
 
-      it('should classify client destroyed as NETWORK', 0, () => {
-        const error = classifyTdlibError(0, 'Client destroyed');
-        expect(error.kind).assertEqual(AppErrorKind.NETWORK);
-        expect(error.retryable).assertTrue();
-      });
-
-      it('should classify 5xx as NETWORK', 0, () => {
-        const error = classifyTdlibError(500, 'Internal Server Error');
-        expect(error.kind).assertEqual(AppErrorKind.NETWORK);
-        expect(error.retryable).assertTrue();
-      });
-
-      it('should classify 502 as NETWORK', 0, () => {
+      it('classifies server 5xx as retryable network errors', 0, () => {
         const error = classifyTdlibError(502, 'Bad Gateway');
         expect(error.kind).assertEqual(AppErrorKind.NETWORK);
         expect(error.retryable).assertTrue();
+        expect(error.userMessage.indexOf('Server error') >= 0).assertTrue();
       });
     });
 
-    // -----------------------------------------------------------------------
-    // classifyTdlibError — auth errors
-    // -----------------------------------------------------------------------
     describe('classifyTdlibError — auth', () => {
-
-      it('should classify 401 as AUTH', 0, () => {
+      it('classifies 401 as non-retryable auth error', 0, () => {
         const error = classifyTdlibError(401, 'Unauthorized');
         expect(error.kind).assertEqual(AppErrorKind.AUTH);
         expect(error.retryable).assertFalse();
-        expect(error.userMessage).assertContain('Session expired');
+        expect(error.userMessage.indexOf('Session expired') >= 0).assertTrue();
       });
 
-      it('should classify 403 as AUTH', 0, () => {
+      it('classifies 403 as non-retryable auth error', 0, () => {
         const error = classifyTdlibError(403, 'Forbidden');
         expect(error.kind).assertEqual(AppErrorKind.AUTH);
         expect(error.retryable).assertFalse();
-        expect(error.userMessage).assertContain('Access denied');
+        expect(error.userMessage).assertEqual('Access denied.');
       });
     });
 
-    // -----------------------------------------------------------------------
-    // classifyTdlibError — rate limiting
-    // -----------------------------------------------------------------------
     describe('classifyTdlibError — rate limit', () => {
-
-      it('should classify 420 as RATE_LIMIT', 0, () => {
-        const error = classifyTdlibError(420, 'FLOOD_WAIT_30');
+      it('classifies 420 FLOOD_WAIT as retryable rate limit and preserves seconds', 0, () => {
+        const error = classifyTdlibError(420, 'FLOOD_WAIT_60');
         expect(error.kind).assertEqual(AppErrorKind.RATE_LIMIT);
         expect(error.retryable).assertTrue();
-        expect(error.userMessage).assertContain('30');
+        expect(error.userMessage.indexOf('60 seconds') >= 0).assertTrue();
       });
 
-      it('should classify 429 as RATE_LIMIT', 0, () => {
+      it('defaults bare FLOOD_WAIT to 30 seconds', 0, () => {
+        const error = classifyTdlibError(420, 'FLOOD_WAIT');
+        expect(error.kind).assertEqual(AppErrorKind.RATE_LIMIT);
+        expect(error.userMessage.indexOf('30 seconds') >= 0).assertTrue();
+      });
+
+      it('classifies 429 as retryable rate limit', 0, () => {
         const error = classifyTdlibError(429, 'Too Many Requests');
         expect(error.kind).assertEqual(AppErrorKind.RATE_LIMIT);
         expect(error.retryable).assertTrue();
       });
-
-      it('should extract FLOOD_WAIT seconds', 0, () => {
-        const error = classifyTdlibError(420, 'FLOOD_WAIT_60');
-        expect(error.userMessage).assertContain('60');
-      });
-
-      it('should default FLOOD_WAIT to 30s when no match', 0, () => {
-        const error = classifyTdlibError(420, 'FLOOD_WAIT');
-        expect(error.userMessage).assertContain('30');
-      });
     });
 
-    // -----------------------------------------------------------------------
-    // classifyTdlibError — 400 errors
-    // -----------------------------------------------------------------------
-    describe('classifyTdlibError — 400', () => {
-
-      it('should classify CHAT_NOT_FOUND', 0, () => {
+    describe('classifyTdlibError — common TDLib 400 errors', () => {
+      it('maps CHAT_NOT_FOUND to user-facing TDLib error', 0, () => {
         const error = classifyTdlibError(400, 'CHAT_NOT_FOUND');
         expect(error.kind).assertEqual(AppErrorKind.TDLIB_ERROR);
-        expect(error.userMessage).assertContain('Chat not found');
+        expect(error.userMessage).assertEqual('Chat not found.');
+        expect(error.retryable).assertFalse();
       });
 
-      it('should classify MESSAGE_NOT_FOUND', 0, () => {
+      it('maps MESSAGE_NOT_FOUND to user-facing TDLib error', 0, () => {
         const error = classifyTdlibError(400, 'MESSAGE_NOT_FOUND');
         expect(error.kind).assertEqual(AppErrorKind.TDLIB_ERROR);
-        expect(error.userMessage).assertContain('Message not found');
+        expect(error.userMessage).assertEqual('Message not found.');
       });
 
-      it('should classify USER_NOT_FOUND', 0, () => {
+      it('maps USER_NOT_FOUND to user-facing TDLib error', 0, () => {
         const error = classifyTdlibError(400, 'USER_NOT_FOUND');
         expect(error.kind).assertEqual(AppErrorKind.TDLIB_ERROR);
-        expect(error.userMessage).assertContain('User not found');
+        expect(error.userMessage).assertEqual('User not found.');
       });
 
-      it('should classify PEER_ID_INVALID', 0, () => {
-        const error = classifyTdlibError(400, 'PEER_ID_INVALID');
-        expect(error.kind).assertEqual(AppErrorKind.TDLIB_ERROR);
-        expect(error.userMessage).assertContain('Invalid chat');
-      });
-
-      it('should classify MESSAGE_TOO_LONG', 0, () => {
-        const error = classifyTdlibError(400, 'MESSAGE_TOO_LONG');
-        expect(error.kind).assertEqual(AppErrorKind.TDLIB_ERROR);
-        expect(error.userMessage).assertContain('too long');
-      });
-
-      it('should classify CHAT_WRITE_FORBIDDEN', 0, () => {
-        const error = classifyTdlibError(400, 'CHAT_WRITE_FORBIDDEN');
-        expect(error.kind).assertEqual(AppErrorKind.TDLIB_ERROR);
-        expect(error.userMessage).assertContain('cannot write');
-      });
-
-      it('should fallback unknown 400 to TDLIB_ERROR', 0, () => {
-        const error = classifyTdlibError(400, 'UNKNOWN_THING');
-        expect(error.kind).assertEqual(AppErrorKind.TDLIB_ERROR);
-        expect(error.userMessage).assertEqual('Request failed.');
+      it('maps write-forbidden and unknown 400 variants', 0, () => {
+        const forbidden = classifyTdlibError(400, 'CHAT_WRITE_FORBIDDEN');
+        const unknown = classifyTdlibError(400, 'UNKNOWN_THING');
+        expect(forbidden.userMessage.indexOf('cannot write') >= 0).assertTrue();
+        expect(unknown.kind).assertEqual(AppErrorKind.TDLIB_ERROR);
+        expect(unknown.userMessage).assertEqual('Request failed.');
       });
     });
 
-    // -----------------------------------------------------------------------
-    // classifyTdlibError — unknown errors
-    // -----------------------------------------------------------------------
-    describe('classifyTdlibError — unknown', () => {
-
-      it('should classify unrecognized code as UNKNOWN', 0, () => {
+    describe('classifyTdlibError — fallback', () => {
+      it('classifies unrecognized codes as unknown non-retryable errors', 0, () => {
         const error = classifyTdlibError(999, 'Something odd');
         expect(error.kind).assertEqual(AppErrorKind.UNKNOWN);
         expect(error.retryable).assertFalse();
+        expect(error.userMessage.indexOf('unexpected') >= 0).assertTrue();
       });
     });
 
-    // -----------------------------------------------------------------------
-    // AppError constructor
-    // -----------------------------------------------------------------------
     describe('AppError constructor', () => {
-
-      it('should store all fields', 0, () => {
+      it('stores explicit fields', 0, () => {
         const error = new AppError(
-          AppErrorKind.FILE, 'Upload failed', 'Disk full', 507, true);
+          AppErrorKind.FILE,
+          'Upload failed',
+          'Disk full',
+          507,
+          true
+        );
         expect(error.kind).assertEqual(AppErrorKind.FILE);
         expect(error.userMessage).assertEqual('Upload failed');
         expect(error.technicalMessage).assertEqual('Disk full');
@@ -168,7 +133,7 @@ export default function appErrorTest() {
         expect(error.retryable).assertTrue();
       });
 
-      it('should default optional fields', 0, () => {
+      it('defaults optional fields', 0, () => {
         const error = new AppError(AppErrorKind.UNKNOWN, 'Error');
         expect(error.technicalMessage).assertEqual('');
         expect(error.tdlibCode).assertEqual(0);

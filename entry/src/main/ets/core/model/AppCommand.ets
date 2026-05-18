@@ -35,6 +35,14 @@ export class SendMessagePayload {
   replyToMessageId: MessageId = '0';
 }
 
+export class SendMediaMessagePayload {
+  chatId: ChatId = 0;
+  mediaKind: string = 'document';
+  localPath: string = '';
+  caption: string = '';
+  replyToMessageId: MessageId = '0';
+}
+
 export class ViewMessagesPayload {
   chatId: ChatId = 0;
   messageIds: MessageId[] = [];
@@ -136,6 +144,11 @@ export class DownloadFilePayload {
   synchronous: boolean = false;
 }
 
+export class CancelDownloadFilePayload {
+  fileId: number = 0;
+  onlyIfPending: boolean = false;
+}
+
 // Command classes
 export class SetPhoneNumberCommand extends AppCommand {
   type: string = 'setPhoneNumber';
@@ -173,6 +186,11 @@ export class OpenChatCommand extends AppCommand {
 export class SendMessageCommand extends AppCommand {
   type: string = 'sendMessage';
   payload: SendMessagePayload = new SendMessagePayload();
+}
+
+export class SendMediaMessageCommand extends AppCommand {
+  type: string = 'sendMediaMessage';
+  payload: SendMediaMessagePayload = new SendMediaMessagePayload();
 }
 
 export class ViewMessagesCommand extends AppCommand {
@@ -265,6 +283,11 @@ export class DownloadFileCommand extends AppCommand {
   payload: DownloadFilePayload = new DownloadFilePayload();
 }
 
+export class CancelDownloadFileCommand extends AppCommand {
+  type: string = 'cancelDownloadFile';
+  payload: CancelDownloadFilePayload = new CancelDownloadFilePayload();
+}
+
 export class RequestQrCodeAuthCommand extends AppCommand {
   type: string = 'requestQrCodeAuth';
 }
@@ -283,6 +306,7 @@ export type AnyAppCommand =
   | LoadChatsCommand
   | OpenChatCommand
   | SendMessageCommand
+  | SendMediaMessageCommand
   | ViewMessagesCommand
   | GetChatHistoryCommand
   | GetUserCommand
@@ -301,6 +325,7 @@ export type AnyAppCommand =
   | ToggleChatIsMarkedAsUnreadCommand
   | SearchChatMessagesCommand
   | DownloadFileCommand
+  | CancelDownloadFileCommand
   | RequestQrCodeAuthCommand
   | LogoutCommand;
 
@@ -351,6 +376,22 @@ export function createSendMessageCommand(
   const cmd = new SendMessageCommand();
   cmd.payload.chatId = chatId;
   cmd.payload.text = text;
+  cmd.payload.replyToMessageId = replyToMessageId || '0';
+  return cmd;
+}
+
+export function createSendMediaMessageCommand(
+  chatId: ChatId,
+  mediaKind: string,
+  localPath: string,
+  caption: string = '',
+  replyToMessageId?: MessageId
+): SendMediaMessageCommand {
+  const cmd = new SendMediaMessageCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.mediaKind = mediaKind;
+  cmd.payload.localPath = localPath;
+  cmd.payload.caption = caption;
   cmd.payload.replyToMessageId = replyToMessageId || '0';
   return cmd;
 }
@@ -530,6 +571,16 @@ export function createDownloadFileCommand(
   cmd.payload.fileId = fileId;
   cmd.payload.priority = priority;
   cmd.payload.synchronous = synchronous;
+  return cmd;
+}
+
+export function createCancelDownloadFileCommand(
+  fileId: number,
+  onlyIfPending: boolean = false
+): CancelDownloadFileCommand {
+  const cmd = new CancelDownloadFileCommand();
+  cmd.payload.fileId = fileId;
+  cmd.payload.onlyIfPending = onlyIfPending;
   return cmd;
 }
 

@@ -1,6 +1,7 @@
 import { TgMessageBubbleBase } from '../atoms/TgMessageBubbleBase';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgMessageBubbleBase' })
 @ComponentV2
 export struct TgMessageBubbleBaseDemo {
   build() {

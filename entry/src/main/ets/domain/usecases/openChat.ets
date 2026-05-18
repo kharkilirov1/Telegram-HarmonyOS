@@ -60,11 +60,15 @@ export class OpenChatUseCase {
         return;
       }
 
-      await this.hydratePrivatePeerIfMissing(chatId);
+      await this.hydratePrivatePeerIfMissing(chatId, requestSeq);
+      if (!this.isLatestRequest(requestSeq)) {
+        hilog.info(DOMAIN, TAG, 'Stale openChat hydration continuation ignored for %{public}d', chatId);
+        return;
+      }
 
       // 2. Load messages if requested
       if (loadMessages) {
-        await this.loadChatMessagesIfNeeded(chatId, limit);
+        await this.loadChatMessagesIfNeeded(chatId, limit, requestSeq);
       }
 
     } catch (error) {
@@ -96,7 +100,10 @@ export class OpenChatUseCase {
     return requestSeq === this.openRequestSeq;
   }
 
-  private async hydratePrivatePeerIfMissing(chatId: ChatId): Promise<void> {
+  private async hydratePrivatePeerIfMissing(chatId: ChatId, requestSeq: number): Promise<void> {
+    if (!this.isLatestRequest(requestSeq)) {
+      return;
+    }
     const chat = this.store.getState().chats.chats.get(chatId);
     if (!chat || chat.peerUserId <= 0) {
       return;
@@ -105,13 +112,19 @@ export class OpenChatUseCase {
     try {
       await this.historyLoader.hydrateUsersIfMissing([chat.peerUserId]);
     } catch (error) {
+      if (!this.isLatestRequest(requestSeq)) {
+        return;
+      }
       hilog.info(DOMAIN, TAG, 'Peer user hydration skipped for chat %{public}d: %{public}s',
         chatId, String(error));
     }
   }
 
   // Load messages for a chat when local cache is empty.
-  private async loadChatMessagesIfNeeded(chatId: ChatId, limit: number): Promise<void> {
+  private async loadChatMessagesIfNeeded(chatId: ChatId, limit: number, requestSeq: number): Promise<void> {
+    if (!this.isLatestRequest(requestSeq)) {
+      return;
+    }
     const params = new LoadChatHistoryParams();
     params.chatId = chatId;
     params.limit = limit;
@@ -135,6 +148,9 @@ export class OpenChatUseCase {
     try {
       await this.historyLoader.execute(params);
     } catch (error) {
+      if (!this.isLatestRequest(requestSeq)) {
+        return;
+      }
       const err = error as Error;
       hilog.error(DOMAIN, TAG, 'Failed to load messages: %{public}s', err.message);
       // Don't throw - chat is still opened

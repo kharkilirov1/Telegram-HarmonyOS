@@ -20,12 +20,26 @@ export const selectChatById = (chatId: ChatId) => (state: AppState): Chat | unde
   return state.chats.chats.get(chatId);
 };
 
+// Memoization entries — cache by source Map reference (immutable state pattern)
+class ChatListMemoEntry {
+  source?: Map<ChatId, Chat>;
+  result: Chat[] = [];
+}
+
+const orderedChatsMemo: ChatListMemoEntry = new ChatListMemoEntry();
+const pinnedChatsMemo: ChatListMemoEntry = new ChatListMemoEntry();
+const unpinnedChatsMemo: ChatListMemoEntry = new ChatListMemoEntry();
+
 // Ordered chats list (for UI rendering)
 export const selectOrderedChats = (state: AppState): Chat[] => {
   const chats = state.chats.chats;
   const orderedChatIds = state.chats.orderedChatIds;
-  const result: Chat[] = [];
 
+  if (orderedChatsMemo.source === chats) {
+    return orderedChatsMemo.result;
+  }
+
+  const result: Chat[] = [];
   for (const chatId of orderedChatIds) {
     const chat = chats.get(chatId);
     if (chat) {
@@ -33,15 +47,21 @@ export const selectOrderedChats = (state: AppState): Chat[] => {
     }
   }
 
+  orderedChatsMemo.source = chats;
+  orderedChatsMemo.result = result;
   return result;
 };
 
 // Pinned chats selector
 export const selectPinnedChats = (state: AppState): Chat[] => {
   const chats = state.chats.chats;
+
+  if (pinnedChatsMemo.source === chats) {
+    return pinnedChatsMemo.result;
+  }
+
   const orderedChatIds = state.chats.orderedChatIds;
   const result: Chat[] = [];
-
   for (const chatId of orderedChatIds) {
     const chat = chats.get(chatId);
     if (chat && chat.isPinned) {
@@ -49,15 +69,21 @@ export const selectPinnedChats = (state: AppState): Chat[] => {
     }
   }
 
+  pinnedChatsMemo.source = chats;
+  pinnedChatsMemo.result = result;
   return result;
 };
 
 // Unpinned chats selector
 export const selectUnpinnedChats = (state: AppState): Chat[] => {
   const chats = state.chats.chats;
+
+  if (unpinnedChatsMemo.source === chats) {
+    return unpinnedChatsMemo.result;
+  }
+
   const orderedChatIds = state.chats.orderedChatIds;
   const result: Chat[] = [];
-
   for (const chatId of orderedChatIds) {
     const chat = chats.get(chatId);
     if (chat && !chat.isPinned) {
@@ -65,17 +91,26 @@ export const selectUnpinnedChats = (state: AppState): Chat[] => {
     }
   }
 
+  unpinnedChatsMemo.source = chats;
+  unpinnedChatsMemo.result = result;
   return result;
 };
 
-// Unread counts
-export const selectTotalUnreadCount = (state: AppState): number => {
-  let total = 0;
+// Unread counts (memoized by chat-map reference)
+let unreadCountMemoSource: Map<ChatId, Chat> | undefined = undefined;
+let unreadCountMemoResult: number = -1;
 
-  for (const chat of state.chats.chats.values()) {
+export const selectTotalUnreadCount = (state: AppState): number => {
+  const chats = state.chats.chats;
+  if (unreadCountMemoSource === chats && unreadCountMemoResult >= 0) {
+    return unreadCountMemoResult;
+  }
+  let total = 0;
+  for (const chat of chats.values()) {
     total += chat.unreadCount;
   }
-
+  unreadCountMemoSource = chats;
+  unreadCountMemoResult = total;
   return total;
 };
 

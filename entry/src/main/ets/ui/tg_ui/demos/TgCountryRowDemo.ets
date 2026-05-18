@@ -1,6 +1,7 @@
 import { TgCountryRow } from '../atoms/TgCountryRow';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgCountryRow' })
 @ComponentV2
 export struct TgCountryRowDemo {
   build() {

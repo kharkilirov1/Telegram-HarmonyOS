@@ -4,7 +4,7 @@ import { TgGroupedPhotoBubble } from './TgGroupedPhotoBubble';
 import { TgVideoBubble } from './TgVideoBubble';
 import { TgAnimationBubble } from './TgAnimationBubble';
 import { TgReplySnippet } from './TgReplySnippet';
-import { TgMessageTextBodyV2 } from './TgMessageTextBodyV2';
+import { TgTextBodyV3 } from './TgTextBodyV3';
 import { TgMessageMeta, TgMessageSendStatus } from './TgMessageMeta';
 
 @ComponentV2
@@ -69,31 +69,31 @@ export struct TgMediaBubbleShellV2 {
 
   private bubbleRadius(): number | BorderRadiuses {
     const defaultRadius = this.isOutgoing ? TgUiTokens.BUBBLE_RADIUS_OUTGOING : TgUiTokens.BUBBLE_RADIUS_INCOMING;
-    const smallRadius = 6;
+    const smallRadius = TgUiTokens.BUBBLE_RADIUS_GROUPED;
 
     if (this.groupingFlags === 'none') {
       return defaultRadius;
     }
 
     if (this.isOutgoing) {
-      if (this.groupingFlags === 'both') {
+      if (this.groupingFlags === 'middle' || this.groupingFlags === 'both') {
         return { topLeft: defaultRadius, bottomLeft: defaultRadius, topRight: smallRadius, bottomRight: smallRadius };
       }
       if (this.groupingFlags === 'top') {
-        return { topLeft: defaultRadius, bottomLeft: defaultRadius, topRight: smallRadius, bottomRight: defaultRadius };
-      }
-      if (this.groupingFlags === 'bottom') {
         return { topLeft: defaultRadius, bottomLeft: defaultRadius, topRight: defaultRadius, bottomRight: smallRadius };
       }
+      if (this.groupingFlags === 'bottom') {
+        return { topLeft: defaultRadius, bottomLeft: defaultRadius, topRight: smallRadius, bottomRight: defaultRadius };
+      }
     } else {
-      if (this.groupingFlags === 'both') {
+      if (this.groupingFlags === 'middle' || this.groupingFlags === 'both') {
         return { topRight: defaultRadius, bottomRight: defaultRadius, topLeft: smallRadius, bottomLeft: smallRadius };
       }
       if (this.groupingFlags === 'top') {
-        return { topRight: defaultRadius, bottomRight: defaultRadius, topLeft: smallRadius, bottomLeft: defaultRadius };
+        return { topRight: defaultRadius, bottomRight: defaultRadius, topLeft: defaultRadius, bottomLeft: smallRadius };
       }
       if (this.groupingFlags === 'bottom') {
-        return { topRight: defaultRadius, bottomRight: defaultRadius, topLeft: defaultRadius, bottomLeft: smallRadius };
+        return { topRight: defaultRadius, bottomRight: defaultRadius, topLeft: smallRadius, bottomLeft: defaultRadius };
       }
     }
 
@@ -353,14 +353,15 @@ export struct TgMediaBubbleShellV2 {
 
           if (this.hasCaptionQuoteBlocks()) {
             Stack({ alignContent: Alignment.BottomEnd }) {
-              TgMessageTextBodyV2({
+              TgTextBodyV3({
                 text: this.caption.trim(),
                 isOutgoing: this.isOutgoing,
                 quoteAccentHex: !this.isOutgoing && this.senderColorHex.length > 0 ? this.senderColorHex : '',
-                metaReserveText: this.buildMetaReserve(),
+                contentWidth: this.visualMediaBubbleWidth() - TgUiTokens.BUBBLE_PADDING_H * 2,
                 quoteOffsets: this.captionQuoteOffsets,
                 quoteLengths: this.captionQuoteLengths,
-                quoteCollapsedFlags: this.captionQuoteCollapsedFlags
+                quoteCollapsedFlags: this.captionQuoteCollapsedFlags,
+                textEntities: [],
               })
 
               Row() {

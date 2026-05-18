@@ -45,11 +45,9 @@ export struct TgSettingsRow {
   private buildTrailing() {
     if (this.trailingType === TgSettingsTrailing.Arrow) {
       Row() {
-        TgIcon({
-          src: TgUiTokens.ICON_RES_ARROW_RIGHT,
-          iconSize: TgUiTokens.SETTINGS_ROW_ARROW_SIZE,
-          tintColor: TgUiTokens.SETTINGS_ROW_ARROW_COLOR
-        })
+        SymbolGlyph($r('sys.symbol.chevron_right'))
+          .fontSize(TgUiTokens.SETTINGS_ROW_ARROW_SIZE)
+          .fontColor([TgUiTokens.SETTINGS_ROW_ARROW_COLOR])
       }
     } else if (this.trailingType === TgSettingsTrailing.Text) {
       Row() {
@@ -58,11 +56,9 @@ export struct TgSettingsRow {
           .fontColor(TgUiTokens.SETTINGS_ROW_TRAILING_COLOR)
           .maxLines(1)
 
-        TgIcon({
-          src: TgUiTokens.ICON_RES_ARROW_RIGHT,
-          iconSize: TgUiTokens.SETTINGS_ROW_ARROW_SIZE,
-          tintColor: TgUiTokens.SETTINGS_ROW_ARROW_COLOR
-        })
+        SymbolGlyph($r('sys.symbol.chevron_right'))
+          .fontSize(TgUiTokens.SETTINGS_ROW_ARROW_SIZE)
+          .fontColor([TgUiTokens.SETTINGS_ROW_ARROW_COLOR])
           .margin({ left: TgUiTokens.SPACE_4 })
       }
       .alignItems(VerticalAlign.Center)

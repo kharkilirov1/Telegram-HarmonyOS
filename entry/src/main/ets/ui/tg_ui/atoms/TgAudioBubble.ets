@@ -51,6 +51,10 @@ export struct TgAudioBubble {
     return this.downloadProgress >= 0 && this.downloadProgress < 1;
   }
 
+  private isTransferActive(): boolean {
+    return this.isDownloading || this.hasDownloadProgress();
+  }
+
   private normalizedDownloadProgress(): number {
     return Math.max(0, Math.min(1, this.downloadProgress));
   }
@@ -144,7 +148,7 @@ export struct TgAudioBubble {
           ]
         })
 
-      if (this.isDownloading) {
+      if (this.isTransferActive()) {
         Stack({ alignContent: Alignment.Center }) {
           if (this.hasDownloadProgress()) {
             Progress({
@@ -163,10 +167,11 @@ export struct TgAudioBubble {
               .height(TgUiTokens.AUDIO_BUBBLE_ART_SIZE)
               .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
           }
-          Image($r('sys.media.ohos_ic_public_cancel'))
-            .width(TgUiTokens.MEDIA_CANCEL_ICON_SIZE)
-            .height(TgUiTokens.MEDIA_CANCEL_ICON_SIZE)
-            .fillColor(TgUiTokens.MEDIA_PROGRESS_COLOR)
+          TgIcon({
+            src: TgUiTokens.ICON_RES_CLOSE,
+            iconSize: TgUiTokens.MEDIA_CANCEL_ICON_SIZE,
+            tintColor: TgUiTokens.MEDIA_PROGRESS_COLOR
+          })
         }
         .width(TgUiTokens.AUDIO_BUBBLE_ART_SIZE)
         .height(TgUiTokens.AUDIO_BUBBLE_ART_SIZE)

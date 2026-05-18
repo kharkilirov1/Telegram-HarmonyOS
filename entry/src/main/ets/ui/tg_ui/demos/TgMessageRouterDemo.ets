@@ -1,6 +1,7 @@
 import { TgMessageRouter } from '../molecules/TgMessageRouter';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgMessageRouter' })
 @ComponentV2
 export struct TgMessageRouterDemo {
   @Builder

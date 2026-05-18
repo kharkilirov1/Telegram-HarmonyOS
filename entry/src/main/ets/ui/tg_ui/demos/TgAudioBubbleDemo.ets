@@ -1,6 +1,7 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgAudioBubble } from '../atoms/TgAudioBubble';
 
+@Preview({ title: 'TgAudioBubble' })
 @ComponentV2
 export struct TgAudioBubbleDemo {
   @Builder
@@ -60,6 +61,8 @@ export struct TgAudioBubbleDemo {
         this.caseBlock('06 downloading 41%', 'Roads', 'Portishead', 305, false, '', true, 0.41)
         this.caseBlock('07 downloading indeterminate', 'Unreleased Demo', '', 0, true, '', true, -1)
         this.caseBlock('08 long title ellipsis', 'Very Long Track Title That Should Definitely Ellipsize On Two Lines', 'Unknown Artist With A Very Long Name Too', 421)
+        this.caseBlock('09 determinate transfer from progress only', 'Progress-only State', 'Router guard case', 178,
+          false, '', false, 0.58)
       }
       .width('100%')
       .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)

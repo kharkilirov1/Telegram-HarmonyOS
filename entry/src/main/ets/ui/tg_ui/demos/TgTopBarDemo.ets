@@ -1,6 +1,7 @@
 import { TgTopBar } from '../atoms/TgTopBar';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgTopBar' })
 @ComponentV2
 export struct TgTopBarDemo {
   build() {

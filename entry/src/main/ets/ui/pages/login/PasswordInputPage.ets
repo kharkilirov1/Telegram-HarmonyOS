@@ -28,6 +28,40 @@ export struct PasswordInputPage {
   @Local private didForgotWithNoRecovery: boolean = false;
   @Local private showResetOption: boolean = false;
 
+  private pageLifecycleToken: number = 0;
+  private shakeAnimationSerial: number = 0;
+  private passwordSubmitRequestSerial: number = 0;
+  private forgotPasswordRequestSerial: number = 0;
+
+  private isCurrentPasswordContinuation(scheduledToken: number): boolean {
+    return scheduledToken === this.pageLifecycleToken;
+  }
+
+  private isCurrentShakeAnimation(scheduledToken: number, scheduledSerial: number): boolean {
+    return this.isCurrentPasswordContinuation(scheduledToken) && scheduledSerial === this.shakeAnimationSerial;
+  }
+
+  private isCurrentPasswordSubmitRequest(scheduledToken: number, scheduledSerial: number): boolean {
+    return this.isCurrentPasswordContinuation(scheduledToken) && scheduledSerial === this.passwordSubmitRequestSerial;
+  }
+
+  private isCurrentForgotPasswordRequest(scheduledToken: number, scheduledSerial: number): boolean {
+    return this.isCurrentPasswordContinuation(scheduledToken) && scheduledSerial === this.forgotPasswordRequestSerial;
+  }
+
+  aboutToAppear(): void {
+    this.pageLifecycleToken += 1;
+  }
+
+  aboutToDisappear(): void {
+    this.pageLifecycleToken += 1;
+    this.shakeAnimationSerial += 1;
+    this.passwordSubmitRequestSerial += 1;
+    this.forgotPasswordRequestSerial += 1;
+    this.shakeOffset = 0;
+    this.buttonState = 'default';
+  }
+
   build() {
     Column() {
       Scroll() {
@@ -154,12 +188,18 @@ export struct PasswordInputPage {
   // ─── Submit Password ───
   private async submitPassword(): Promise<void> {
     if (this.password.length === 0) return;
+    const requestToken: number = this.pageLifecycleToken;
+    this.passwordSubmitRequestSerial += 1;
+    const requestSerial: number = this.passwordSubmitRequestSerial;
     this.buttonState = 'progress';
     this.errorMessage = '';
 
     const controller = LoginController.getInstance();
     const result = await controller.checkPassword(this.password);
 
+    if (!this.isCurrentPasswordSubmitRequest(requestToken, requestSerial)) {
+      return;
+    }
     if (result.success) {
       this.buttonState = 'default';
       this.onPasswordAccepted();
@@ -174,8 +214,14 @@ export struct PasswordInputPage {
 
   // ─── Forgot Password ───
   private async handleForgot(): Promise<void> {
+    const requestToken: number = this.pageLifecycleToken;
+    this.forgotPasswordRequestSerial += 1;
+    const requestSerial: number = this.forgotPasswordRequestSerial;
     const controller = LoginController.getInstance();
     const result = await controller.requestPasswordRecovery();
+    if (!this.isCurrentForgotPasswordRequest(requestToken, requestSerial)) {
+      return;
+    }
 
     if (result.success) {
       // Recovery flow page is not ported yet — avoid dead tap with explicit fallback state.
@@ -199,26 +245,49 @@ export struct PasswordInputPage {
   private animateShake(): void {
     const uiContext = this.getUIContext();
     if (!uiContext) return;
+    const animationToken: number = this.pageLifecycleToken;
+    this.shakeAnimationSerial += 1;
+    const animationSerial: number = this.shakeAnimationSerial;
     uiContext.keyframeAnimateTo({ iterations: 1 }, [
       {
         duration: 100,
         curve: Curve.Linear,
-        event: () => { this.shakeOffset = 12; }
+        event: () => {
+          if (!this.isCurrentShakeAnimation(animationToken, animationSerial)) {
+            return;
+          }
+          this.shakeOffset = 12;
+        }
       },
       {
         duration: 100,
         curve: Curve.Linear,
-        event: () => { this.shakeOffset = -12; }
+        event: () => {
+          if (!this.isCurrentShakeAnimation(animationToken, animationSerial)) {
+            return;
+          }
+          this.shakeOffset = -12;
+        }
       },
       {
         duration: 100,
         curve: Curve.Linear,
-        event: () => { this.shakeOffset = 12; }
+        event: () => {
+          if (!this.isCurrentShakeAnimation(animationToken, animationSerial)) {
+            return;
+          }
+          this.shakeOffset = 12;
+        }
       },
       {
         duration: 100,
         curve: Curve.Linear,
-        event: () => { this.shakeOffset = 0; }
+        event: () => {
+          if (!this.isCurrentShakeAnimation(animationToken, animationSerial)) {
+            return;
+          }
+          this.shakeOffset = 0;
+        }
       }
     ]);
   }

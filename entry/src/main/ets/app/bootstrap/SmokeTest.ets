@@ -53,11 +53,13 @@ export class SmokeTest {
       hilog.error(DOMAIN, TAG, 'Smoke test failed: %{public}s', err.message);
       return false;
     } finally {
+      this.cleanupSubscription();
       this.isRunning = false;
     }
   }
 
   private setupSubscriptions(): void {
+    this.cleanupSubscription();
     this.unsubscribe = this.gateway.subscribeUpdates((update: TdObject) => {
       const type = safeString(tdGetProperty(update, '@type'));
 
@@ -85,31 +87,61 @@ export class SmokeTest {
     });
   }
 
+  private cleanupSubscription(): void {
+    if (this.unsubscribe) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
+    }
+  }
+
   private async waitForAuthState(timeoutMs: number): Promise<void> {
     return new Promise((resolve, reject) => {
       let resolved = false;
+      let timeoutId: number = -1;
+      let unsubscribe: (() => void) | undefined = undefined;
 
-      const timeoutId = setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
-          reject(new Error(`Таймаут ожидания состояния авторизации (${timeoutMs}ms)`));
+      const cleanup = (): void => {
+        if (timeoutId !== -1) {
+          clearTimeout(timeoutId);
+          timeoutId = -1;
         }
-      }, timeoutMs);
+        if (unsubscribe !== undefined) {
+          unsubscribe();
+          unsubscribe = undefined;
+        }
+      };
 
-      const unsubscribe = this.gateway.subscribeUpdates((update: TdObject) => {
+      const finishResolve = (): void => {
+        if (resolved) {
+          return;
+        }
+        resolved = true;
+        cleanup();
+        this.log('✓ Состояние авторизации: ready');
+        resolve();
+      };
+
+      const finishReject = (error: Error): void => {
+        if (resolved) {
+          return;
+        }
+        resolved = true;
+        cleanup();
+        reject(error);
+      };
+
+      timeoutId = setTimeout(() => {
+        finishReject(new Error(`Таймаут ожидания состояния авторизации (${timeoutMs}ms)`));
+      }, timeoutMs) as number;
+
+      unsubscribe = this.gateway.subscribeUpdates((update: TdObject) => {
         const updateType = safeString(tdGetProperty(update, '@type'));
         if (updateType !== 'updateAuthorizationState') return;
 
         const authStateObj = asRecord(tdGetProperty(update, 'authorization_state'));
         const authState = safeString(tdGetProperty(authStateObj, '@type'));
         if (authState === 'authorizationStateReady') {
-          if (!resolved) {
-            resolved = true;
-            clearTimeout(timeoutId);
-            unsubscribe();
-            this.log('✓ Состояние авторизации: ready');
-            resolve();
-          }
+          finishResolve();
         }
       });
     });
@@ -132,11 +164,12 @@ export class SmokeTest {
   }
 
   stop(): void {
-    if (this.unsubscribe) {
-      this.unsubscribe();
-    }
-    this.gateway.destroy();
-    this.log('TdGateway остановлен');
+    this.cleanupSubscription();
+    this.gateway.destroy()
+      .catch((error: Error): void => {
+        hilog.warn(DOMAIN, TAG, 'TdGateway stop failed: %{public}s', String(error));
+      });
+    this.log('TdGateway stop requested');
     this.isRunning = false;
   }
 }

@@ -17,6 +17,8 @@
   - visual state machine for meta status icon (`none`, `clock`, `delivered`, `read`, `failed`).
 - `submodules/TelegramPresentationData/Sources/Resources/PresentationResourcesChatList.swift`
   - status icon resources (`clock`, checks, etc.) and badge/pin visual assets.
+- `submodules/ChatListUI/Sources/Node/ChatListBadgeNode.swift`
+  - unread/mention counters are project-owned stretchable badge backgrounds with measured text width; they are not platform/system badges.
 
 ## 3) Props / inputs
 - `timeText: string` — top-right time.
@@ -35,6 +37,7 @@
 - pinned: bottom pin icon.
 - unread active: bottom unread badge.
 - unread muted: bottom unread badge in muted style.
+- mention + unread: mention dot and unread capsule share the same project-owned background color path.
 
 ## 5) Layout rules
 - Right meta cluster is always right-aligned and width-reserved:
@@ -46,9 +49,11 @@
 - **Anti-jump rule #2 (vertical reserve):**
   - bottom row always exists with fixed geometry;
   - if no badge/pin, render invisible placeholder (tokenized size) instead of collapsing row.
-  - placeholder width is reserved to badge max visual width (`UNREAD_BADGE_MAX_WIDTH`) so `none ↔ 99+ ↔ pin` does not micro-shift.
+  - placeholder width is reserved to badge max visual width (`UNREAD_BADGE_MAX_WIDTH`) so `none ↔ compact unread ↔ pin` does not micro-shift.
 - Priority for bottom content:
   - `unreadBadge` (if `unreadCount > 0`) → else `pin` (if pinned) → else placeholder.
+- Unread count formatting follows Telegram iOS `compactNumericCountString`: `1...999` exact, then compact `K` / `M` with one decimal when needed (`1K`, `2.5K`, `1.2M`). It must not clamp at `99+`.
+- Unread badge is rendered by the atom as a custom Row/Text capsule. Do not use ArkUI `Badge` here: the stock component can inject platform outline/halo styling that does not match Telegram's chat-list counters.
 
 ## 6) Token mapping
 - Source: `entry/src/main/ets/ui/tg_ui/tokens/TgUiTokens.ets`
@@ -63,7 +68,7 @@
   - colors:
     - `COLOR_TEXT_META`
     - `COLOR_STATUS_PENDING/SENT/READ/FAILED`
-    - pin/unread colors via `TgIcon` + `TgUnreadBadge` tokens
+    - pin/unread colors via `TgIcon` + project-owned unread capsule tokens
   - icons:
     - `ICON_RES_CLOCK`
     - `ICON_RES_CHECK_SINGLE`
@@ -74,10 +79,12 @@
 ## 7) Acceptance checklist
 - [x] Right cluster min-width reserved and right aligned
 - [x] Bottom row vertical geometry is always reserved (no collapse)
-- [x] Placeholder width reserves worst-case bottom content (`99+` / pin)
+- [x] Placeholder width reserves worst-case bottom content (`compact K/M` / pin)
 - [x] `badge ↔ pin ↔ none` does not shift left text block in demo probe
 - [x] Time/status top row and bottom badge row are independent and stable
 - [x] Failed-state checks included (`failed only` and `failed + unread`)
 - [x] All visual constants tokenized
+- [x] Unread badge avoids stock ArkUI `Badge` halo/border and owns capsule geometry locally
+- [x] Unread badge uses compact K/M count formatting instead of `99+` clamping
 - [x] Demo covers required states (`none/sending/sent/read/pinned/unread/muted`)
 - [ ] Final side-by-side polish against iOS screenshot sequence

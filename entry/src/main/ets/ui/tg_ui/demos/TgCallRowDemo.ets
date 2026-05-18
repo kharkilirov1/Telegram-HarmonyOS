@@ -1,6 +1,7 @@
 import { TgCallRow, TgCallType } from '../atoms/TgCallRow';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgCallRow' })
 @ComponentV2
 export struct TgCallRowDemo {
   build() {

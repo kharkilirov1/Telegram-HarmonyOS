@@ -2,6 +2,7 @@ import { TgChatTopBar } from '../atoms/TgChatTopBar';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 
+@Preview({ title: 'TgChatTopBar' })
 @ComponentV2
 export struct TgChatTopBarDemo {
   build() {

@@ -230,22 +230,31 @@ export class MediaPlaybackController {
         return;
       }
       let resolved = false;
-      const handler = (state: media.AVPlayerState): void => {
+      let timerId: number = -1;
+      let handler: (state: media.AVPlayerState) => void = (_state: media.AVPlayerState): void => {};
+      const cleanup = (): void => {
+        try { player.off('stateChange', handler); } catch (_e) {}
+        if (timerId >= 0) {
+          clearTimeout(timerId);
+          timerId = -1;
+        }
+      };
+      handler = (state: media.AVPlayerState): void => {
         if (state === targetState && !resolved) {
           resolved = true;
-          try { player.off('stateChange', handler); } catch (_e) {}
+          cleanup();
           resolve();
         } else if (state === 'error' && !resolved) {
           resolved = true;
-          try { player.off('stateChange', handler); } catch (_e) {}
+          cleanup();
           reject(new Error('AVPlayer entered error state'));
         }
       };
       player.on('stateChange', handler);
-      setTimeout(() => {
+      timerId = setTimeout(() => {
         if (!resolved) {
           resolved = true;
-          try { player.off('stateChange', handler); } catch (_e) {}
+          cleanup();
           // If already in target state by now, resolve anyway
           if (player.state === targetState) {
             resolve();

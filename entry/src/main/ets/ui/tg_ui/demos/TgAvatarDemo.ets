@@ -1,6 +1,7 @@
 import { TgAvatar } from '../atoms/TgAvatar';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgAvatar' })
 @ComponentV2
 export struct TgAvatarDemo {
   build() {

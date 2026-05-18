@@ -1,6 +1,7 @@
 import { TgDateSeparator, TgUnreadMarker } from '../atoms/TgDateSeparator';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
+@Preview({ title: 'TgDateSeparator' })
 @ComponentV2
 export struct TgDateSeparatorDemo {
   private longDateText: string = 'Wednesday, February 25, 2026';

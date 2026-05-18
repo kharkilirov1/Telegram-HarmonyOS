@@ -134,6 +134,30 @@ export struct TgInstantVideoBubble {
   }
 
   @Builder
+  private buildCenterIconButton(src: Resource, onTap: () => void) {
+    Stack({ alignContent: Alignment.Center }) {
+      TgIcon({
+        src: src,
+        iconSize: TgUiTokens.INSTANT_VIDEO_BUBBLE_PLAY_ICON_SIZE + 4,
+        tintColor: TgUiTokens.MEDIA_RING_PROGRESS_COLOR
+      })
+    }
+    .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+    .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
+    .backgroundColor(Color.Transparent)
+    .onClick(() => onTap())
+    .transition({
+      type: TransitionType.All,
+      opacity: 0,
+      scale: {
+        x: TgUiTokens.MEDIA_STATUS_TRANSITION_SCALE,
+        y: TgUiTokens.MEDIA_STATUS_TRANSITION_SCALE
+      }
+    })
+    .animation({ duration: TgUiTokens.MEDIA_STATUS_ANIM_DURATION, curve: Curve.EaseInOut })
+  }
+
+  @Builder
   private buildCenterOverlay() {
     if (this.isDownloadPending) {
       Stack({ alignContent: Alignment.Center }) {
@@ -145,41 +169,32 @@ export struct TgInstantVideoBubble {
             .height(this.bubbleSize() - 4)
             .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
         }
-        Image($r('sys.media.ohos_ic_public_cancel'))
-          .width(TgUiTokens.MEDIA_CANCEL_ICON_SIZE + 4).height(TgUiTokens.MEDIA_CANCEL_ICON_SIZE + 4).fillColor(TgUiTokens.MEDIA_PROGRESS_COLOR)
+
+        TgIcon({
+          src: TgUiTokens.ICON_RES_CLOSE,
+          iconSize: TgUiTokens.MEDIA_CANCEL_ICON_SIZE + 4,
+          tintColor: TgUiTokens.MEDIA_PROGRESS_COLOR
+        })
       }
       .width(this.bubbleSize())
       .height(this.bubbleSize())
       .backgroundColor(TgUiTokens.MEDIA_OVERLAY_DARK) // Dark overlay
       .borderRadius(this.bubbleSize() / 2)
       .onClick(() => this.onDownloadToggle())
+      .transition({
+        type: TransitionType.All,
+        opacity: 0,
+        scale: {
+          x: TgUiTokens.MEDIA_STATUS_TRANSITION_SCALE,
+          y: TgUiTokens.MEDIA_STATUS_TRANSITION_SCALE
+        }
+      })
+      .animation({ duration: TgUiTokens.MEDIA_STATUS_ANIM_DURATION, curve: Curve.EaseInOut })
     } else if (!this.hasLocalVideo()) {
-      Stack() {
-        TgIcon({
-          src: TgUiTokens.ICON_RES_DOWNLOAD,
-          iconSize: TgUiTokens.INSTANT_VIDEO_BUBBLE_PLAY_ICON_SIZE + 4,
-          tintColor: TgUiTokens.MEDIA_PROGRESS_COLOR
-        })
-      }
-      .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-      .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-      .backgroundColor(TgUiTokens.MEDIA_OVERLAY_DARK)
-      .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
-      .onClick(() => this.onDownloadToggle())
+      this.buildCenterIconButton(TgUiTokens.ICON_RES_DOWNLOAD, () => this.onDownloadToggle())
     } else {
       // Downloaded: play button
-      Stack() {
-        TgIcon({
-          src: TgUiTokens.ICON_RES_PLAY,
-          iconSize: TgUiTokens.INSTANT_VIDEO_BUBBLE_PLAY_ICON_SIZE + 4,
-          tintColor: TgUiTokens.MEDIA_PROGRESS_COLOR
-        })
-      }
-      .width(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-      .height(TgUiTokens.VIDEO_BUBBLE_PLAY_BG_SIZE)
-      .backgroundColor(TgUiTokens.MEDIA_OVERLAY_DARK)
-      .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
-      .onClick(() => this.onPlayToggle())
+      this.buildCenterIconButton(TgUiTokens.ICON_RES_PLAY, () => this.onPlayToggle())
     }
   }
 

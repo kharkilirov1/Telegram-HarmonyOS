@@ -1,3 +1,19 @@
 {
-  "routerMap": []
+  "routerMap": [
+    {
+      "name": "TgChatScreenPage",
+      "pageSourceFile": "src/main/ets/ui/pages/chat/TgChatScreenPage.ets",
+      "buildFunction": "TgChatScreenPageBuilder"
+    },
+    {
+      "name": "TgProfilePage",
+      "pageSourceFile": "src/main/ets/ui/pages/profile/TgProfilePage.ets",
+      "buildFunction": "TgProfilePageBuilder"
+    },
+    {
+      "name": "TgForwardTargetPickerPage",
+      "pageSourceFile": "src/main/ets/ui/pages/forward/TgForwardTargetPickerPage.ets",
+      "buildFunction": "TgForwardTargetPickerPageBuilder"
+    }
+  ]
 }

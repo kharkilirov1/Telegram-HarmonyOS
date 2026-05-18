@@ -1,6 +1,7 @@
 import { CountryInfo } from '../../services/CountryService';
 import { TgCountryGroup, TgCountrySelectionScreen } from '../molecules/TgCountrySelectionScreen';
 
+@Preview({ title: 'TgCountrySelectionScreen' })
 @ComponentV2
 export struct TgCountrySelectionScreenDemo {
   @Local searchText: string = '';

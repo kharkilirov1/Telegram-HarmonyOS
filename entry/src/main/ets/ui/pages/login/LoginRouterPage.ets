@@ -21,7 +21,15 @@ struct LoginRouterPage {
   pageStack: NavPathStack = new NavPathStack();
   @Local showMainUI: boolean = false;
 
+  private pageLifecycleToken: number = 0;
+  private transitionTimerId: number = -1;
+
+  private isCurrentTransitionCallback(scheduledToken: number): boolean {
+    return scheduledToken === this.pageLifecycleToken;
+  }
+
   aboutToAppear(): void {
+    this.pageLifecycleToken += 1;
     // If already authenticated (app restart), skip login flow
     const currentAuth = AppStorage.get<string>(StorageKeys.AUTH_STATUS);
     if (currentAuth === 'ready') {
@@ -33,6 +41,11 @@ struct LoginRouterPage {
     }
   }
 
+  aboutToDisappear(): void {
+    this.pageLifecycleToken += 1;
+    this.clearTransitionTimer();
+  }
+
   /**
    * Wait for data readiness before showing MainTabsPage.
    * Adapts iOS pattern: isReady signal + timeout.
@@ -42,9 +55,13 @@ struct LoginRouterPage {
    * - MAX_WAIT: safety timeout (show tabs regardless)
    */
   private waitForDataAndTransition(): void {
+    const transitionToken: number = this.pageLifecycleToken;
     const startTime = Date.now();
 
     const check = (): void => {
+      if (!this.isCurrentTransitionCallback(transitionToken)) {
+        return;
+      }
       const elapsed = Date.now() - startTime;
       const connStatus = AppStorage.get<string>(StorageKeys.CONNECTION_STATUS) || '';
       const chatCount = AppStorage.get<number>(StorageKeys.CHATS_COUNT) || 0;
@@ -58,12 +75,31 @@ struct LoginRouterPage {
           elapsed, chatCount, connStatus, chatsIsLoading ? 'true' : 'false', chatsLoadPhase);
         this.showMainUI = true;
       } else {
-        setTimeout(check, POLL_INTERVAL_MS);
+        this.scheduleTransitionCheck(check, POLL_INTERVAL_MS);
       }
     };
 
     // Start polling after minimum wait
-    setTimeout(check, MIN_WAIT_MS);
+    this.scheduleTransitionCheck(check, MIN_WAIT_MS);
+  }
+
+  private scheduleTransitionCheck(callback: () => void, delayMs: number): void {
+    this.clearTransitionTimer();
+    const timerId: number = setTimeout(() => {
+      if (this.transitionTimerId !== timerId) {
+        return;
+      }
+      this.transitionTimerId = -1;
+      callback();
+    }, delayMs) as number;
+    this.transitionTimerId = timerId;
+  }
+
+  private clearTransitionTimer(): void {
+    if (this.transitionTimerId !== -1) {
+      clearTimeout(this.transitionTimerId);
+      this.transitionTimerId = -1;
+    }
   }
 
   @Builder

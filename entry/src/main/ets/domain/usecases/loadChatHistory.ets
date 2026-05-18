@@ -65,6 +65,7 @@ class MessageWindowResult {
 export class LoadChatHistoryUseCase {
   private store: AppStore;
   private gateway: TdGatewayPort;
+  private instanceGeneration: number;
   private static inFlightChatIds: Set<ChatId> = new Set<ChatId>();
   private static inFlightRequestBuckets: Set<string> = new Set<string>();
   private static latestRequestSeqByBucket: Map<string, number> = new Map<string, number>();
@@ -75,10 +76,12 @@ export class LoadChatHistoryUseCase {
   private static canLoadNewer: Map<ChatId, boolean> = new Map<ChatId, boolean>();
   private static oldestMessageId: Map<ChatId, MessageId> = new Map<ChatId, MessageId>();
   private static newestMessageId: Map<ChatId, MessageId> = new Map<ChatId, MessageId>();
+  private static lifecycleGeneration: number = 0;
 
   constructor(store: AppStore, gateway: TdGatewayPort) {
     this.store = store;
     this.gateway = gateway;
+    this.instanceGeneration = LoadChatHistoryUseCase.lifecycleGeneration;
   }
 
   /**
@@ -86,6 +89,7 @@ export class LoadChatHistoryUseCase {
    * to prevent stale state when a new runtime + store is created.
    */
   static resetState(): void {
+    LoadChatHistoryUseCase.lifecycleGeneration++;
     LoadChatHistoryUseCase.inFlightChatIds.clear();
     LoadChatHistoryUseCase.inFlightRequestBuckets.clear();
     LoadChatHistoryUseCase.latestRequestSeqByBucket.clear();
@@ -99,7 +103,23 @@ export class LoadChatHistoryUseCase {
     hilog.info(DOMAIN, TAG, 'Static state reset (all caches cleared)');
   }
 
+  private getLifecycleGeneration(): number {
+    return this.instanceGeneration;
+  }
+
+  private isCurrentGeneration(generation: number): boolean {
+    return generation === this.instanceGeneration &&
+      generation === LoadChatHistoryUseCase.lifecycleGeneration;
+  }
+
+  private isInstanceCurrent(): boolean {
+    return this.isCurrentGeneration(this.instanceGeneration);
+  }
+
   hasNonPendingMessages(chatId: ChatId): boolean {
+    if (!this.isInstanceCurrent()) {
+      return false;
+    }
     const existingMessages = this.store.getState().messages.messages.get(chatId);
     if (!existingMessages || existingMessages.size === 0) {
       return false;
@@ -113,10 +133,16 @@ export class LoadChatHistoryUseCase {
   }
 
   hasHistoryBeenFetched(chatId: ChatId): boolean {
+    if (!this.isInstanceCurrent()) {
+      return false;
+    }
     return LoadChatHistoryUseCase.historyFetchedChatIds.has(chatId);
   }
 
   shouldRetry(chatId: ChatId): boolean {
+    if (!this.isInstanceCurrent()) {
+      return false;
+    }
     if (chatId === 0) {
       return false;
     }
@@ -132,6 +158,9 @@ export class LoadChatHistoryUseCase {
   }
 
   isLoading(chatId: ChatId, direction?: LoadChatHistoryDirection): boolean {
+    if (!this.isInstanceCurrent()) {
+      return false;
+    }
     if (direction !== undefined) {
       return LoadChatHistoryUseCase.inFlightRequestBuckets.has(this.getBucketKey(chatId, direction));
     }
@@ -139,20 +168,32 @@ export class LoadChatHistoryUseCase {
   }
 
   canLoadOlderMessages(chatId: ChatId): boolean {
+    if (!this.isInstanceCurrent()) {
+      return false;
+    }
     const value = LoadChatHistoryUseCase.canLoadOlder.get(chatId);
     // Default to true if we haven't loaded yet (initial load hasn't set it)
     return value !== false;
   }
 
   getOldestMessageId(chatId: ChatId): MessageId {
+    if (!this.isInstanceCurrent()) {
+      return '0';
+    }
     return LoadChatHistoryUseCase.oldestMessageId.get(chatId) || '0';
   }
 
   canLoadNewerMessages(chatId: ChatId): boolean {
+    if (!this.isInstanceCurrent()) {
+      return false;
+    }
     return LoadChatHistoryUseCase.canLoadNewer.get(chatId) === true;
   }
 
   getNewestMessageId(chatId: ChatId): MessageId {
+    if (!this.isInstanceCurrent()) {
+      return '0';
+    }
     return LoadChatHistoryUseCase.newestMessageId.get(chatId) || '0';
   }
 
@@ -295,9 +336,22 @@ export class LoadChatHistoryUseCase {
     return messageWindow.messageCount < Math.min(params.limit, INITIAL_HISTORY_TOP_UP_THRESHOLD);
   }
 
-  private async requestInitialOlderTopUp(chatId: ChatId, oldestId: MessageId, limit: number): Promise<void> {
+  private async requestInitialOlderTopUp(
+    chatId: ChatId,
+    oldestId: MessageId,
+    limit: number,
+    generation: number
+  ): Promise<void> {
+    if (!this.isCurrentGeneration(generation)) {
+      return;
+    }
+
     let currentOldestId = oldestId;
     for (let attempt = 0; attempt < INITIAL_HISTORY_MAX_TOP_UP_ATTEMPTS; attempt++) {
+      if (!this.isCurrentGeneration(generation)) {
+        return;
+      }
+
       const topUpParams = new LoadChatHistoryParams();
       topUpParams.chatId = chatId;
       topUpParams.fromMessageId = currentOldestId;
@@ -319,9 +373,15 @@ export class LoadChatHistoryUseCase {
       try {
         await this.execute(topUpParams);
       } catch (error) {
+        if (!this.isCurrentGeneration(generation)) {
+          return;
+        }
         hilog.warn(DOMAIN, TAG,
           'Initial older top-up failed for %{public}d from %{public}s: %{public}s',
           chatId, currentOldestId, String(error));
+        return;
+      }
+      if (!this.isCurrentGeneration(generation)) {
         return;
       }
 
@@ -378,9 +438,12 @@ export class LoadChatHistoryUseCase {
     return missingSenderIds;
   }
 
-  private async requestUserHydration(userId: number): Promise<AnyAppEvent[]> {
+  private async requestUserHydration(userId: number, generation: number): Promise<AnyAppEvent[]> {
     try {
       const response = await this.gateway.send(createGetUserCommand(userId));
+      if (!this.isCurrentGeneration(generation)) {
+        return [];
+      }
       const normalizedResponse = response as TdObject;
       if (!(normalizedResponse instanceof TdObject)) {
         return [];
@@ -388,18 +451,33 @@ export class LoadChatHistoryUseCase {
 
       return getEventNormalizer().normalize(normalizedResponse);
     } catch (error) {
+      if (!this.isCurrentGeneration(generation)) {
+        return [];
+      }
       hilog.info(DOMAIN, TAG,
         'Unable to hydrate user %{public}d from history sender set: %{public}s',
         userId, String(error));
       return [];
     } finally {
-      LoadChatHistoryUseCase.inFlightUserIds.delete(userId);
+      if (this.isCurrentGeneration(generation)) {
+        LoadChatHistoryUseCase.inFlightUserIds.delete(userId);
+      }
     }
   }
 
-  private async hydrateMissingUsers(userIds: number[]): Promise<number> {
+  private async hydrateMissingUsers(
+    userIds: number[],
+    generation: number = this.getLifecycleGeneration()
+  ): Promise<number> {
+    if (!this.isCurrentGeneration(generation)) {
+      return 0;
+    }
+
     const queuedUserIds: number[] = [];
     for (const userId of userIds) {
+      if (!this.isCurrentGeneration(generation)) {
+        return 0;
+      }
       if (userId <= 0 || this.store.getState().users.users.has(userId)) {
         continue;
       }
@@ -418,8 +496,14 @@ export class LoadChatHistoryUseCase {
 
     const batchedEvents: AnyAppEvent[] = [];
     for (let index = 0; index < queuedUserIds.length; index += MAX_PARALLEL_USER_HYDRATION_REQUESTS) {
+      if (!this.isCurrentGeneration(generation)) {
+        return 0;
+      }
       const chunk = queuedUserIds.slice(index, index + MAX_PARALLEL_USER_HYDRATION_REQUESTS);
-      const chunkResults = await Promise.all(chunk.map((userId: number) => this.requestUserHydration(userId)));
+      const chunkResults = await Promise.all(chunk.map((userId: number) => this.requestUserHydration(userId, generation)));
+      if (!this.isCurrentGeneration(generation)) {
+        return 0;
+      }
       for (const events of chunkResults) {
         if (events.length > 0) {
           batchedEvents.push(...events);
@@ -428,6 +512,9 @@ export class LoadChatHistoryUseCase {
     }
 
     if (batchedEvents.length > 0) {
+      if (!this.isCurrentGeneration(generation)) {
+        return 0;
+      }
       await this.store.dispatchBatch(batchedEvents);
     }
 
@@ -435,6 +522,10 @@ export class LoadChatHistoryUseCase {
   }
 
   async hydrateUsersIfMissing(userIds: number[]): Promise<number> {
+    const generation = this.getLifecycleGeneration();
+    if (!this.isCurrentGeneration(generation)) {
+      return 0;
+    }
     if (userIds.length === 0) {
       return 0;
     }
@@ -445,6 +536,9 @@ export class LoadChatHistoryUseCase {
     const now = Date.now();
 
     for (const userId of userIds) {
+      if (!this.isCurrentGeneration(generation)) {
+        return 0;
+      }
       if (userId <= 0 || seenUserIds.has(userId) || usersMap.has(userId)) {
         continue;
       }
@@ -468,10 +562,15 @@ export class LoadChatHistoryUseCase {
       return 0;
     }
 
-    return await this.hydrateMissingUsers(eligibleUserIds);
+    return await this.hydrateMissingUsers(eligibleUserIds, generation);
   }
 
   async execute(params: LoadChatHistoryParams): Promise<boolean> {
+    const generation = this.getLifecycleGeneration();
+    if (!this.isCurrentGeneration(generation)) {
+      return false;
+    }
+
     const chatId = params.chatId;
     if (chatId === 0) {
       return false;
@@ -503,6 +602,9 @@ export class LoadChatHistoryUseCase {
         params.onlyLocal
       );
       const response = await this.gateway.send(command);
+      if (!this.isCurrentGeneration(generation)) {
+        return false;
+      }
       const normalizedResponse = response as TdObject;
       if (!(normalizedResponse instanceof TdObject)) {
         hilog.warn(DOMAIN, TAG, 'getChatHistory returned non-object response');
@@ -524,12 +626,21 @@ export class LoadChatHistoryUseCase {
         hilog.info(DOMAIN, TAG,
           'Deferring dispatch of short initial batch for %{public}d until older top-up completes',
           chatId);
-        await this.requestInitialOlderTopUp(chatId, messageWindow.oldestId, params.limit);
+        await this.requestInitialOlderTopUp(chatId, messageWindow.oldestId, params.limit, generation);
+        if (!this.isCurrentGeneration(generation)) {
+          return false;
+        }
       }
 
       const events = getEventNormalizer().normalize(normalizedResponse);
       if (events.length > 0) {
+        if (!this.isCurrentGeneration(generation)) {
+          return false;
+        }
         await this.store.dispatchBatch(events);
+        if (!this.isCurrentGeneration(generation)) {
+          return false;
+        }
         LoadChatHistoryUseCase.historyFetchedChatIds.add(chatId);
         hilog.info(DOMAIN, TAG, 'History fetched and dispatched for chat %{public}d (%{public}d events)',
           chatId, events.length);
@@ -540,6 +651,9 @@ export class LoadChatHistoryUseCase {
       }
 
       // Track pagination state: oldest message and whether more history exists
+      if (!this.isCurrentGeneration(generation)) {
+        return false;
+      }
       this.refreshPaginationState(chatId, params, messageWindow, previousOldestId, previousNewestId);
 
       const missingSenderIds = this.collectMissingSenderIds(normalizedResponse);
@@ -547,8 +661,11 @@ export class LoadChatHistoryUseCase {
         hilog.info(DOMAIN, TAG,
           'Scheduling background hydration for %{public}d missing users in chat %{public}d',
           missingSenderIds.length, chatId);
-        this.hydrateMissingUsers(missingSenderIds)
+        this.hydrateMissingUsers(missingSenderIds, generation)
           .then((hydratedCount: number) => {
+            if (!this.isCurrentGeneration(generation)) {
+              return;
+            }
             if (hydratedCount > 0) {
               hilog.info(DOMAIN, TAG,
                 'Background user hydration completed for chat %{public}d (%{public}d users)',
@@ -556,6 +673,9 @@ export class LoadChatHistoryUseCase {
             }
           })
           .catch((error: Object) => {
+            if (!this.isCurrentGeneration(generation)) {
+              return;
+            }
             hilog.warn(DOMAIN, TAG,
               'Background user hydration failed for chat %{public}d: %{public}s',
               chatId, String(error));
@@ -564,6 +684,9 @@ export class LoadChatHistoryUseCase {
 
       return true;
     } catch (error) {
+      if (!this.isCurrentGeneration(generation)) {
+        return false;
+      }
       hilog.warn(DOMAIN, TAG, 'History load failed for %{public}d: %{public}s',
         chatId, String(error));
       throw new AppError(
@@ -574,7 +697,9 @@ export class LoadChatHistoryUseCase {
         true
       );
     } finally {
-      this.releaseBucket(chatId, bucketReservation.bucketKey);
+      if (this.isCurrentGeneration(generation)) {
+        this.releaseBucket(chatId, bucketReservation.bucketKey);
+      }
     }
   }
 }

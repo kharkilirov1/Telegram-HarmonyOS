@@ -5,19 +5,30 @@ import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { chatUIState, navigationUIState } from '../../../core/model/UIStateModels';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState } from '../../../core/model/AppState';
-import { fileUri } from '@kit.CoreFileKit';
+import { fileIo, fileUri, picker } from '@kit.CoreFileKit';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { TgDateSeparator, TgUnreadMarker } from '../../tg_ui/atoms/TgDateSeparator';
 import { TgMessageRouter } from '../../tg_ui/molecules/TgMessageRouter';
 import { TgComposerInput } from '../../tg_ui/atoms/TgComposerInput';
+import { TgComposerEmojiPanel } from '../../tg_ui/atoms/TgComposerEmojiPanel';
 import { TgChatTopBar, TgChatTopBarSubtitleMode } from '../../tg_ui/atoms/TgChatTopBar';
 import { ProfileRouteParams } from '../profile/TgProfilePage';
+import { ForwardTargetPickerResult, ForwardTargetPickerRouteParams } from '../forward/TgForwardTargetPickerPage';
 import { ChatTimelineDataSource } from './ChatTimelineDataSource';
 import { ChatTimelineEntryVO, buildChatTimeline } from './ChatTimelineVO';
 import { MediaPlaybackController, MediaPlaybackSnapshot, MediaContentType } from './VoicePlaybackController';
+import { pendingForwardTransfer } from './PendingForwardTransfer';
+import { ChatMediaDownloadController } from './ChatMediaDownloadController';
 import { SendMessageParams, createSendMessageUseCase, SendMessageUseCase } from '../../../domain/usecases/sendMessage';
+import {
+  SendMediaMessageParams,
+  SendMediaMessageUseCase,
+  createSendMediaMessageUseCase
+} from '../../../domain/usecases/sendMediaMessage';
 import { EditMessageParams, createEditMessageUseCase, EditMessageUseCase } from '../../../domain/usecases/editMessage';
 import { DeleteMessagesParams, createDeleteMessagesUseCase, DeleteMessagesUseCase } from '../../../domain/usecases/deleteMessages';
+import { ForwardMessagesParams, ForwardMessagesUseCase, createForwardMessagesUseCase } from '../../../domain/usecases/forwardMessages';
+import { createOpenChatUseCase, OpenChatUseCase } from '../../../domain/usecases/openChat';
 import { SearchChatMessagesUseCase, SearchChatMessagesResult, createSearchChatMessagesUseCase } from '../../../domain/usecases/searchChatMessages';
 import { PinChatMessageUseCase, createPinChatMessageUseCase } from '../../../domain/usecases/pinChatMessage';
 import {
@@ -26,9 +37,7 @@ import {
   createLoadChatHistoryUseCase
 } from '../../../domain/usecases/loadChatHistory';
 import { createMarkChatReadUseCase, MarkChatReadUseCase } from '../../../domain/usecases/markChatRead';
-import { createCloseChatCommand, createDownloadFileCommand } from '../../../core/model/AppCommand';
-import { FileDownloadedEvent } from '../../../core/model/AppEvent';
-import { TdObject } from '../../../models/td/common/index';
+import { createCloseChatCommand } from '../../../core/model/AppCommand';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { localized } from '../../../core/utils/AppResource';
 import { MediaGalleryItem } from '../../../models/MediaGalleryItem';
@@ -37,6 +46,7 @@ import { computeTopBarHeight, computeChatBottomInset, getMainWindow, removeWindo
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { promptAction, uiObserver, window } from '@kit.ArkUI';
 import { common, Want, wantConstant } from '@kit.AbilityKit';
+import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { pasteboard } from '@kit.BasicServicesKit';
 
 const DOMAIN = 0x0021;
@@ -57,17 +67,25 @@ const INITIAL_HISTORY_PLACEHOLDER_RELEASE_COUNT = 1;
 
 declare function px2vp(value: number): number;
 
+class ChatScreenRouteParams {
+  chatId: number = 0;
+  chatTitle: string = '';
+
+  constructor(chatId: number, chatTitle: string = '') {
+    this.chatId = chatId;
+    this.chatTitle = chatTitle;
+  }
+}
+
 @ComponentV2
 export struct TgChatScreenPage {
   @Local pageStack: NavPathStack = new NavPathStack();
 
-  // Reactive state: local copy updated by @Monitor when chatUIState changes
+  // Reactive state: local copy initialized from route/navigation context.
   @Local activeChatId: number = 0;
   @Local private activeChatTitle: string = '';
-
-  // Reference to @ObservedV2 singletons (read-only access from model)
-  private chatState = chatUIState;
-  private navState = navigationUIState;
+  @Local private routeChatId: number = 0;
+  @Local private routeChatTitle: string = '';
 
   @Local private title: string = 'Chat';
   @Local private chatSubtitle: string = '';
@@ -81,6 +99,11 @@ export struct TgChatScreenPage {
   @Local private bottomOverlayInset: number = TgUiTokens.SPACE_8;
   @Local private composerTotalHeight: number = 52; // default: button(40) + vertical insets(12)
   @Local private composerDraftText: string = '';
+  @Local private showComposerEmojiPanel: boolean = false;
+  @Local private pendingAttachmentKind: string = '';
+  @Local private pendingAttachmentTitle: string = '';
+  @Local private pendingAttachmentPreview: string = '';
+  @Local private pendingAttachmentUris: string[] = [];
   @Local private awaitingInitialTimeline: boolean = false;
   @Local private prependScrollMask: boolean = false;
   @Local private listInitialIndex: number = 0;
@@ -88,6 +111,11 @@ export struct TgChatScreenPage {
   @Local private replyToAuthor: string = '';
   @Local private replyToPreview: string = '';
   @Local private replyToIsQuote: boolean = false;
+  @Local private isForwardingMessages: boolean = false;
+  @Local private forwardingMessageIds: string[] = [];
+  @Local private forwardSourceChatId: number = 0;
+  @Local private forwardTitle: string = '';
+  @Local private forwardPreview: string = '';
   // ── Media viewer state ──
   @Local private activeVoiceMessageId: string = '0';
   @Local private activeVoiceProgress: number = 0;
@@ -103,10 +131,17 @@ export struct TgChatScreenPage {
   private listScroller: Scroller = new Scroller();
   private unsubscribe?: () => void;
   private rebuildScheduled: boolean = false;
+  private rebuildTimerId: number = -1;
+  private pageLifecycleToken: number = 0;
+  private isClosing: boolean = false;
+  private transientTimerIds: Set<number> = new Set<number>();
   private mainWindow?: window.Window;
   private sendUseCase?: SendMessageUseCase;
+  private sendMediaUseCase?: SendMediaMessageUseCase;
   private editUseCase?: EditMessageUseCase;
   private deleteUseCase?: DeleteMessagesUseCase;
+  private forwardUseCase?: ForwardMessagesUseCase;
+  private openChatUseCase?: OpenChatUseCase;
   private searchUseCase?: SearchChatMessagesUseCase;
   private pinUseCase?: PinChatMessageUseCase;
   private loadChatHistoryUseCase?: LoadChatHistoryUseCase;
@@ -140,17 +175,7 @@ export struct TgChatScreenPage {
   private static scrollPositionCache: Map<number, string> = new Map<number, string>();
   private mediaPlaybackController?: MediaPlaybackController;
   private locallyListenedVoiceIds: Set<string> = new Set<string>();
-  private pendingMediaDownloadFileIds: Set<number> = new Set<number>();
-
-  @Monitor('chatState.activeChatId')
-  onActiveChatIdChanged(_mon: IMonitor): void {
-    const newId = this.chatState.activeChatId;
-    if (newId === this.activeChatId) {
-      return;
-    }
-    this.activeChatId = newId;
-    this.onActiveChatChanged();
-  }
+  private mediaDownloadCtrl: ChatMediaDownloadController = new ChatMediaDownloadController();
 
   private onActiveChatChanged(): void {
     try {
@@ -178,6 +203,8 @@ export struct TgChatScreenPage {
       this.isApplyingTimelineDiff = false;
       this.listInitialIndex = 0;
       this.composerDraftText = '';
+      this.showComposerEmojiPanel = false;
+      this.clearPendingAttachment();
 
       this.clearPendingMediaDownloads();
       if (this.paginationRecheckTimerId >= 0) {
@@ -206,22 +233,22 @@ export struct TgChatScreenPage {
 
   aboutToAppear(): void {
     try {
-      // Init from singleton — set by ChatListPage before NavStack push
-      this.activeChatId = navigationUIState.activeChatId;
-      this.activeChatTitle = navigationUIState.activeChatTitle;
+      this.isClosing = false;
+      this.pageLifecycleToken++;
       this.bindNavigationStack();
+      this.syncOwnedChatContext();
       navigationUIState.chatScreenVisible = true;
       AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
       this.computeSafeInsets();
 
-      // Sync initial activeChatId from model
-      this.activeChatId = this.chatState.activeChatId;
-
       const runtime = getAppCoreRuntime();
       const store = runtime.getStore();
       this.sendUseCase = createSendMessageUseCase(getTdGatewayAdapter());
+      this.sendMediaUseCase = createSendMediaMessageUseCase(getTdGatewayAdapter());
       this.editUseCase = createEditMessageUseCase(getTdGatewayAdapter());
       this.deleteUseCase = createDeleteMessagesUseCase(getTdGatewayAdapter());
+      this.forwardUseCase = createForwardMessagesUseCase(getTdGatewayAdapter());
+      this.openChatUseCase = createOpenChatUseCase(store, getTdGatewayAdapter());
       this.searchUseCase = createSearchChatMessagesUseCase(getTdGatewayAdapter());
       this.pinUseCase = createPinChatMessageUseCase(getTdGatewayAdapter());
       this.loadChatHistoryUseCase = createLoadChatHistoryUseCase(store, getTdGatewayAdapter());
@@ -250,18 +277,36 @@ export struct TgChatScreenPage {
       const entryChat = initialState.chats.chats.get(this.activeChatId);
       this.stickyLastReadMessageId = (entryChat && entryChat.unreadCount > 0)
         ? entryChat.lastReadInboxMessageId : '';
+      this.applyPendingForwardTransferIfNeeded();
       this.rebuildTimeline(initialState);
       this.scheduleHistoryLoad(this.activeChatId, 0);
       // Do NOT call maybeMarkChatRead here — openChat hasn't reached TDLib yet.
       // The store subscription will call it after history loads (openChat is done by then).
 
-      this.unsubscribe = store.subscribe((_newState: AppState, _prevState: AppState) => {
+      if (this.unsubscribe !== undefined) {
+        this.unsubscribe();
+        this.unsubscribe = undefined;
+      }
+
+      const lifecycleToken: number = this.pageLifecycleToken;
+      let activeUnsubscribe: (() => void) | undefined = undefined;
+      activeUnsubscribe = store.subscribe((_newState: AppState, _prevState: AppState) => {
+        if (lifecycleToken !== this.pageLifecycleToken || this.unsubscribe !== activeUnsubscribe) {
+          return;
+        }
         if (!this.shouldReactToStoreChange(_newState, _prevState)) {
           return;
         }
         if (!this.rebuildScheduled) {
           this.rebuildScheduled = true;
-          setTimeout(() => {
+          let scheduledTimerId: number = -1;
+          scheduledTimerId = setTimeout(() => {
+            if (lifecycleToken !== this.pageLifecycleToken ||
+              this.rebuildTimerId !== scheduledTimerId ||
+              this.unsubscribe !== activeUnsubscribe) {
+              return;
+            }
+            this.rebuildTimerId = -1;
             this.rebuildScheduled = false;
             try {
               const currentState = getAppCoreRuntime().getStore().getState();
@@ -270,9 +315,11 @@ export struct TgChatScreenPage {
             } catch (e) {
               hilog.error(DOMAIN, TAG, 'Timeline rebuild failed: %{public}s', String(e));
             }
-          }, 0);
+          }, 0) as number;
+          this.rebuildTimerId = scheduledTimerId;
         }
       });
+      this.unsubscribe = activeUnsubscribe;
 
       this.bindWindowSizeListener();
     } catch (e) {
@@ -281,6 +328,8 @@ export struct TgChatScreenPage {
   }
 
   aboutToDisappear(): void {
+    this.isClosing = false;
+    this.pageLifecycleToken++;
     // Send closeChat to TDLib (best effort, fire-and-forget)
     // Use lastOpenedChatId because activeChatId may already be zeroed by handleBackPress
     const closingChatId = this.lastOpenedChatId;
@@ -296,15 +345,25 @@ export struct TgChatScreenPage {
     // Nav lock is set by handleBackPress — do not re-extend in aboutToDisappear
     navigationUIState.chatScreenVisible = false;
     AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
-    AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, 0);
-    AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, '');
+    this.clearOwnedChatContext();
     if (this.historyFallbackTimerId >= 0) {
       clearTimeout(this.historyFallbackTimerId);
       this.historyFallbackTimerId = -1;
     }
+    if (this.rebuildTimerId >= 0) {
+      clearTimeout(this.rebuildTimerId);
+      this.rebuildTimerId = -1;
+    }
+    if (this.searchDebounceTimerId !== -1) {
+      clearTimeout(this.searchDebounceTimerId);
+      this.searchDebounceTimerId = -1;
+    }
+    this.clearTransientTimers();
+    this.rebuildScheduled = false;
     this.isLoadingOlder = false;
     this.isLoadingNewer = false;
     this.isMarkingChatRead = false;
+    this.isSending = false;
     this.suppressLoadOlderUntil = 0;
     this.unreadRestoreIndex = -1;
     this.stickyLastReadMessageId = '';
@@ -319,8 +378,16 @@ export struct TgChatScreenPage {
     }
     this.resetPaginationState();
     this.awaitingInitialTimeline = false;
+    this.sendUseCase = undefined;
+    this.sendMediaUseCase = undefined;
+    this.editUseCase = undefined;
+    this.deleteUseCase = undefined;
+    this.forwardUseCase = undefined;
+    this.searchUseCase = undefined;
+    this.pinUseCase = undefined;
     this.loadChatHistoryUseCase = undefined;
     this.markChatReadUseCase = undefined;
+    this.openChatUseCase = undefined;
     if (this.unsubscribe !== undefined) {
       this.unsubscribe();
       this.unsubscribe = undefined;
@@ -351,6 +418,63 @@ export struct TgChatScreenPage {
     return newState.users.users !== prevState.users.users;
   }
 
+  private scheduleLifecycleTask(delayMs: number, task: () => void): void {
+    const lifecycleToken: number = this.pageLifecycleToken;
+    let timerId: number = -1;
+    timerId = setTimeout(() => {
+      if (lifecycleToken !== this.pageLifecycleToken || !this.transientTimerIds.has(timerId)) {
+        return;
+      }
+      this.transientTimerIds.delete(timerId);
+      task();
+    }, delayMs) as number;
+    this.transientTimerIds.add(timerId);
+  }
+
+  private clearTransientTimers(): void {
+    this.transientTimerIds.forEach((timerId: number): void => {
+      clearTimeout(timerId);
+    });
+    this.transientTimerIds.clear();
+  }
+
+  private syncOwnedChatContext(): void {
+    const ownedChatId = this.routeChatId > 0 ? this.routeChatId : navigationUIState.activeChatId;
+    const ownedChatTitle = this.resolveOwnedChatTitle();
+
+    this.activeChatId = ownedChatId;
+    this.activeChatTitle = ownedChatTitle;
+
+    navigationUIState.activeChatId = ownedChatId;
+    navigationUIState.activeChatTitle = ownedChatTitle;
+    chatUIState.activeChatId = ownedChatId;
+    chatUIState.activeChatTitle = ownedChatTitle;
+    AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, ownedChatId);
+    AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, ownedChatTitle);
+  }
+
+  private clearOwnedChatContext(): void {
+    navigationUIState.activeChatId = 0;
+    navigationUIState.activeChatTitle = '';
+    chatUIState.activeChatId = 0;
+    chatUIState.activeChatTitle = '';
+    AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, 0);
+    AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, '');
+  }
+
+  private resolveOwnedChatTitle(): string {
+    if (this.routeChatTitle.length > 0) {
+      return this.routeChatTitle;
+    }
+    if (this.routeChatId > 0 && navigationUIState.activeChatId === this.routeChatId) {
+      return navigationUIState.activeChatTitle;
+    }
+    if (this.routeChatId === 0) {
+      return navigationUIState.activeChatTitle;
+    }
+    return this.activeChatTitle;
+  }
+
   private computeSafeInsets(): void {
     try {
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
@@ -366,10 +490,15 @@ export struct TgChatScreenPage {
     try {
       removeWindowSizeListener(this.mainWindow);
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      this.mainWindow = getMainWindow(context);
-      if (this.mainWindow !== undefined) {
-        this.updateTimelineContainerWidth(this.mainWindow.getWindowProperties().windowRect.width);
-        this.mainWindow.on('windowSizeChange', (size: window.Size) => {
+      const boundWindow = getMainWindow(context);
+      this.mainWindow = boundWindow;
+      if (boundWindow !== undefined) {
+        const lifecycleToken: number = this.pageLifecycleToken;
+        this.updateTimelineContainerWidth(boundWindow.getWindowProperties().windowRect.width);
+        boundWindow.on('windowSizeChange', (size: window.Size) => {
+          if (lifecycleToken !== this.pageLifecycleToken || this.mainWindow !== boundWindow) {
+            return;
+          }
           this.updateTimelineContainerWidth(size.width);
           this.computeSafeInsets();
         });
@@ -405,8 +534,12 @@ export struct TgChatScreenPage {
     this.resetPlaybackState();
     const controller = new MediaPlaybackController();
     this.mediaPlaybackController = controller;
+    const lifecycleToken: number = this.pageLifecycleToken;
+    const chatId: number = this.activeChatId;
     controller.setListener((snapshot: MediaPlaybackSnapshot): void => {
-      if (this.mediaPlaybackController !== controller) {
+      if (lifecycleToken !== this.pageLifecycleToken ||
+        this.mediaPlaybackController !== controller ||
+        this.activeChatId !== chatId) {
         return;
       }
       if (snapshot.contentType === 'voice') {
@@ -432,7 +565,9 @@ export struct TgChatScreenPage {
       }
     });
     controller.setOnCompleted((messageId: string, contentType: MediaContentType): void => {
-      if (this.mediaPlaybackController !== controller) {
+      if (lifecycleToken !== this.pageLifecycleToken ||
+        this.mediaPlaybackController !== controller ||
+        this.activeChatId !== chatId) {
         return;
       }
       this.handlePlaybackCompleted(messageId, contentType);
@@ -633,8 +768,8 @@ export struct TgChatScreenPage {
   private rebuildTimeline(state: AppState): void {
     if (this.activeChatId === 0) {
       this.dataSource.applyDiff([]);
-      this.title = this.chatState.activeChatTitle.length > 0
-        ? this.chatState.activeChatTitle
+      this.title = this.activeChatTitle.length > 0
+        ? this.activeChatTitle
         : localized($r('app.string.chats_title').id, 'Chat');
       this.chatSubtitle = '';
       this.chatSubtitleMode = TgChatTopBarSubtitleMode.Secondary;
@@ -650,7 +785,19 @@ export struct TgChatScreenPage {
 
     const result = buildChatTimeline(this.activeChatId, state, this.stickyLastReadMessageId);
     const chat = state.chats.chats.get(this.activeChatId);
-    this.title = result.chatTitle.length > 0 ? result.chatTitle : this.chatState.activeChatTitle;
+    const resolvedTitle = result.chatTitle.length > 0 ? result.chatTitle : this.activeChatTitle;
+    this.title = resolvedTitle.length > 0 ? resolvedTitle : localized($r('app.string.chats_title').id, 'Chat');
+    if (result.chatTitle.length > 0) {
+      this.activeChatTitle = result.chatTitle;
+      if (this.routeChatId === this.activeChatId) {
+        this.routeChatTitle = result.chatTitle;
+      }
+      if (navigationUIState.activeChatId === this.activeChatId) {
+        navigationUIState.activeChatTitle = result.chatTitle;
+        chatUIState.activeChatTitle = result.chatTitle;
+        AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, result.chatTitle);
+      }
+    }
     this.updateChatTopBarData(state);
     this.unreadRestoreIndex = result.unreadEntryIndex;
     const prevCount = this.previousDataCount;
@@ -703,9 +850,9 @@ export struct TgChatScreenPage {
           anchorKey, prependCount, savedStartIndex, savedEndIndex);
       } else if (prevCount > 0 && newCount > prevCount && this.isNearBottom()) {
         // New messages arrived while user is at bottom — stay at bottom
-        setTimeout(() => {
+        this.scheduleLifecycleTask(16, () => {
           this.listScroller.scrollEdge(Edge.Bottom);
-        }, 16);
+        });
       }
     }
   }
@@ -800,14 +947,20 @@ export struct TgChatScreenPage {
     if (this.paginationRecheckTimerId >= 0) {
       clearTimeout(this.paginationRecheckTimerId);
     }
-    this.paginationRecheckTimerId = setTimeout(() => {
+    const lifecycleToken: number = this.pageLifecycleToken;
+    let scheduledTimerId: number = -1;
+    scheduledTimerId = setTimeout(() => {
+      if (lifecycleToken !== this.pageLifecycleToken || this.paginationRecheckTimerId !== scheduledTimerId) {
+        return;
+      }
       this.paginationRecheckTimerId = -1;
       if (this.rebuildScheduled || this.isApplyingTimelineDiff) {
         this.schedulePaginationRecheck(16);
         return;
       }
       this.recheckPaginationEdge();
-    }, delayMs);
+    }, delayMs) as number;
+    this.paginationRecheckTimerId = scheduledTimerId;
   }
 
   private loadOlderMessages(): void {
@@ -834,9 +987,15 @@ export struct TgChatScreenPage {
     params.direction = 'older';
     params.reason = 'default';
 
+    const lifecycleToken: number = this.pageLifecycleToken;
     useCase.execute(params)
       .catch((_: Error) => {})
       .finally(() => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.loadChatHistoryUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
         this.isLoadingOlder = false;
         this.schedulePaginationRecheck();
       });
@@ -897,9 +1056,15 @@ export struct TgChatScreenPage {
     params.direction = 'newer';
     params.reason = 'default';
 
+    const lifecycleToken: number = this.pageLifecycleToken;
     useCase.execute(params)
       .catch((_: Error) => {})
       .finally(() => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.loadChatHistoryUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
         this.isLoadingNewer = false;
         this.schedulePaginationRecheck();
       });
@@ -907,7 +1072,8 @@ export struct TgChatScreenPage {
 
   private maybeMarkChatRead(state: AppState): void {
     const chatId = this.activeChatId;
-    if (chatId === 0 || !this.markChatReadUseCase || this.isMarkingChatRead) {
+    const useCase = this.markChatReadUseCase;
+    if (chatId === 0 || !useCase || this.isMarkingChatRead) {
       return;
     }
 
@@ -924,111 +1090,51 @@ export struct TgChatScreenPage {
 
     this.lastMarkReadRequestKey = requestKey;
     this.isMarkingChatRead = true;
-    this.markChatReadUseCase.execute({ chatId: chatId })
+    const lifecycleToken: number = this.pageLifecycleToken;
+    useCase.execute({ chatId: chatId })
       .catch((error: Object) => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.markChatReadUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
         hilog.warn(DOMAIN, TAG, 'markChatRead failed for %{public}d: %{public}s', chatId, String(error));
         if (this.activeChatId === chatId && this.lastMarkReadRequestKey === requestKey) {
           this.lastMarkReadRequestKey = '';
         }
       })
       .finally(() => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.markChatReadUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
         this.isMarkingChatRead = false;
       });
   }
 
   private requestMediaDownload(fileId: number): void {
-    if (fileId <= 0) return;
-    if (this.pendingMediaDownloadFileIds.has(fileId)) {
-      hilog.info(DOMAIN, TAG, 'Skip duplicate on-demand download request: fileId=%{public}d', fileId);
-      return;
-    }
-    this.pendingMediaDownloadFileIds.add(fileId);
-    this.pendingMediaDownloadVersion++;
-    hilog.info(DOMAIN, TAG, 'On-demand media download requested: fileId=%{public}d', fileId);
-    const command = createDownloadFileCommand(fileId, 5, false);
-    getTdGatewayAdapter().send(command)
-      .then((response: Object): void => {
-        try {
-          const tdResponse = response as TdObject;
-          const local = tdResponse.getObject('local');
-          const isComplete = local.getBool('is_downloading_completed');
-          const path = local.getString('path');
-          if (isComplete && path.length > 0) {
-            hilog.info(DOMAIN, TAG, 'On-demand file ready: fileId=%{public}d', fileId);
-            const event = new FileDownloadedEvent();
-            event.fileId = fileId;
-            event.localPath = path;
-            event.isComplete = true;
-            event.timestamp = Date.now();
-            getAppCoreRuntime().getStore().dispatch(event);
-            if (this.pendingMediaDownloadFileIds.delete(fileId)) {
-              this.pendingMediaDownloadVersion++;
-            }
-          }
-        } catch (_e) {
-          if (this.pendingMediaDownloadFileIds.delete(fileId)) {
-            this.pendingMediaDownloadVersion++;
-          }
-        }
-      })
-      .catch((error: Error): void => {
-        hilog.warn(DOMAIN, TAG, 'On-demand download failed: fileId=%{public}d: %{public}s', fileId, error.message);
-        if (this.pendingMediaDownloadFileIds.delete(fileId)) {
-          this.pendingMediaDownloadVersion++;
-        }
-      });
+    this.mediaDownloadCtrl.requestMediaDownload(fileId, this.pageLifecycleToken);
+    this.pendingMediaDownloadVersion = this.mediaDownloadCtrl.getVersion();
+  }
+
+  private cancelMediaDownload(fileId: number): void {
+    this.mediaDownloadCtrl.cancelMediaDownload(fileId);
+    this.pendingMediaDownloadVersion = this.mediaDownloadCtrl.getVersion();
   }
 
   private clearPendingMediaDownloads(): void {
-    if (this.pendingMediaDownloadFileIds.size === 0) {
-      return;
-    }
-    this.pendingMediaDownloadFileIds.clear();
-    this.pendingMediaDownloadVersion++;
+    this.mediaDownloadCtrl.clearPendingDownloads();
+    this.pendingMediaDownloadVersion = this.mediaDownloadCtrl.getVersion();
   }
 
   private isMediaDownloadPending(fileId: number): boolean {
-    if (fileId <= 0) {
-      return false;
-    }
-    return this.pendingMediaDownloadFileIds.has(fileId);
+    return this.mediaDownloadCtrl.isDownloadPending(fileId);
   }
 
   private syncResolvedPendingDownloads(entries: ChatTimelineEntryVO[]): void {
-    if (this.pendingMediaDownloadFileIds.size === 0 || entries.length === 0) {
-      return;
-    }
-    const resolved: Set<number> = new Set<number>();
-    for (const entry of entries) {
-      if (entry.kind !== 'message') {
-        continue;
-      }
-      const message = entry.message;
-      if (message.documentFileId > 0 && message.documentPath.length > 0) {
-        resolved.add(message.documentFileId);
-      }
-      if (message.audioFileId > 0 && message.audioPath.length > 0) {
-        resolved.add(message.audioFileId);
-      }
-      if (message.voiceFileId > 0 && message.voicePath.length > 0) {
-        resolved.add(message.voiceFileId);
-      }
-      if (message.videoFileId > 0 && message.videoPath.length > 0) {
-        resolved.add(message.videoFileId);
-      }
-    }
-    if (resolved.size === 0) {
-      return;
-    }
-    let changed = false;
-    resolved.forEach((fileId: number) => {
-      if (this.pendingMediaDownloadFileIds.delete(fileId)) {
-        changed = true;
-      }
-    });
-    if (changed) {
-      this.pendingMediaDownloadVersion++;
-    }
+    this.mediaDownloadCtrl.syncResolvedDownloads(entries);
+    this.pendingMediaDownloadVersion = this.mediaDownloadCtrl.getVersion();
   }
 
 
@@ -1155,21 +1261,32 @@ export struct TgChatScreenPage {
         if (ct === 'photoAlbum') {
           for (let j = 0; j < entry.message.albumPhotoPaths.length; j++) {
             const albumItem = new MediaGalleryItem();
+            const albumFileId = j < entry.message.albumPhotoFileIds.length ? entry.message.albumPhotoFileIds[j] : 0;
+            const albumHasLocal = j < entry.message.albumPhotoHasLocal.length ? entry.message.albumPhotoHasLocal[j] : false;
             albumItem.type = 'photo';
-            albumItem.path = entry.message.albumPhotoPaths[j];
+            albumItem.path = albumHasLocal ? entry.message.albumPhotoPaths[j] : '';
             albumItem.thumbnailPath = entry.message.albumPhotoPaths[j];
             albumItem.caption = j === 0 ? entry.message.caption : '';
             albumItem.senderName = entry.message.senderName;
             albumItem.timestamp = entry.message.timeText;
             albumItem.width = j < entry.message.albumPhotoWidths.length ? entry.message.albumPhotoWidths[j] : 0;
             albumItem.height = j < entry.message.albumPhotoHeights.length ? entry.message.albumPhotoHeights[j] : 0;
-            albumItem.fileId = entry.message.photoFileId;
+            albumItem.fileId = albumFileId;
+            albumItem.messageId = entry.message.messageId + '_album_' + j.toString();
+            albumItem.isDownloading =
+              (j < entry.message.albumPhotoDownloading.length ? entry.message.albumPhotoDownloading[j] : false) ||
+                this.isMediaDownloadPending(albumFileId);
+            albumItem.downloadProgress =
+              j < entry.message.albumPhotoDownloadProgress.length ? entry.message.albumPhotoDownloadProgress[j] : -1;
             items.push(albumItem);
           }
         } else {
           const item = new MediaGalleryItem();
+          const fileId = ct === 'photo' ? entry.message.photoFileId : entry.message.videoFileId;
           item.type = ct;
-          item.path = ct === 'photo' ? entry.message.photoPath : entry.message.videoPath;
+          item.path = ct === 'photo'
+            ? (entry.message.hasLocalPhoto ? entry.message.photoPath : '')
+            : entry.message.videoPath;
           item.thumbnailPath = ct === 'photo' ? entry.message.photoPath : entry.message.videoThumbPath;
           item.caption = entry.message.caption;
           item.senderName = entry.message.senderName;
@@ -1177,7 +1294,11 @@ export struct TgChatScreenPage {
           item.width = ct === 'photo' ? entry.message.photoWidth : entry.message.videoWidth;
           item.height = ct === 'photo' ? entry.message.photoHeight : entry.message.videoHeight;
           item.durationSec = entry.message.videoDuration;
-          item.fileId = ct === 'photo' ? entry.message.photoFileId : entry.message.videoFileId;
+          item.fileId = fileId;
+          item.messageId = entry.message.messageId;
+          item.isDownloading = (ct === 'photo' ? entry.message.isPhotoDownloading : entry.message.isVideoDownloading) ||
+            this.isMediaDownloadPending(fileId);
+          item.downloadProgress = ct === 'photo' ? entry.message.photoDownloadProgress : entry.message.videoDownloadProgress;
           items.push(item);
         }
       }
@@ -1225,11 +1346,16 @@ export struct TgChatScreenPage {
       },
       onDownloadRequest: (fileId: number): void => {
         this.requestMediaDownload(fileId);
+      },
+      onDownloadCancel: (fileId: number): void => {
+        this.cancelMediaDownload(fileId);
       }
     })
   }
 
   private startReply(messageId: string, author: string, preview: string, isQuote: boolean = false): void {
+    this.clearEditMode(false);
+    this.clearForwardMode();
     this.replyToMessageId = messageId;
     this.replyToAuthor = author.length > 0 ? author : 'Message';
     const trimmed = preview.trim();
@@ -1237,11 +1363,144 @@ export struct TgChatScreenPage {
     this.replyToIsQuote = isQuote;
   }
 
-  private cancelReply(): void {
+  private clearReplyMode(): void {
     this.replyToMessageId = '0';
     this.replyToAuthor = '';
     this.replyToPreview = '';
     this.replyToIsQuote = false;
+  }
+
+  private cancelReply(): void {
+    this.clearReplyMode();
+  }
+
+  private clearEditMode(clearDraft: boolean): void {
+    this.isEditingMessage = false;
+    this.editingMessageId = '0';
+    this.editingOriginalText = '';
+    if (clearDraft) {
+      this.composerDraftText = '';
+    }
+  }
+
+  private clearForwardMode(): void {
+    this.isForwardingMessages = false;
+    this.forwardingMessageIds = [];
+    this.forwardSourceChatId = 0;
+    this.forwardTitle = '';
+    this.forwardPreview = '';
+  }
+
+  private buildForwardTitle(messageCount: number): string {
+    if (messageCount <= 1) {
+      return localized($r('app.string.forwarded_message').id, 'Forwarded message');
+    }
+    return `${localized($r('app.string.action_forward').id, 'Forward')} ${messageCount}`;
+  }
+
+  private buildForwardPreview(author: string, preview: string): string {
+    const safeAuthor = author.trim().length > 0 ? author.trim() : 'Message';
+    const safePreview = preview.trim().length > 0 ? preview.trim() : 'Message';
+    return `${safeAuthor}: ${safePreview}`;
+  }
+
+  private applyPendingForwardTransferIfNeeded(): void {
+    const payload = pendingForwardTransfer.consumeFor(this.activeChatId);
+    if (payload === undefined) {
+      return;
+    }
+    this.startForwardMessages(payload.messageIds, payload.author, payload.preview, payload.sourceChatId);
+  }
+
+  private requestOpenChatData(chatId: number): void {
+    const openChatUseCase = this.openChatUseCase;
+    if (!openChatUseCase || chatId === 0) {
+      return;
+    }
+    const lifecycleToken: number = this.pageLifecycleToken;
+    openChatUseCase.execute({
+      chatId: chatId,
+      loadMessages: true,
+      limit: 50
+    }).catch((error: Object) => {
+      if (lifecycleToken !== this.pageLifecycleToken || this.openChatUseCase !== openChatUseCase) {
+        return;
+      }
+      hilog.warn(DOMAIN, TAG, 'openChat flow failed: %{public}s', String(error));
+    });
+  }
+
+  private startForwardMessages(messageIds: string[], author: string, preview: string, fromChatId: number): void {
+    if (messageIds.length === 0 || fromChatId === 0) {
+      return;
+    }
+    this.clearReplyMode();
+    this.clearEditMode(false);
+    this.isForwardingMessages = true;
+    this.forwardingMessageIds = [...messageIds];
+    this.forwardSourceChatId = fromChatId;
+    this.forwardTitle = this.buildForwardTitle(messageIds.length);
+    this.forwardPreview = this.buildForwardPreview(author, preview);
+  }
+
+  private cancelForwardMessages(): void {
+    this.clearForwardMode();
+  }
+
+  private openForwardTargetPicker(messageIds: string[], author: string, preview: string): void {
+    if (messageIds.length === 0 || this.activeChatId === 0) {
+      return;
+    }
+    const navStack: NavPathStack | undefined = this.bindNavigationStack();
+    if (navStack === undefined) {
+      hilog.error(DOMAIN, TAG, 'Navigation stack unavailable for forward picker');
+      return;
+    }
+
+    const sourceChatId = this.activeChatId;
+    const lifecycleToken: number = this.pageLifecycleToken;
+    try {
+      navStack.pushPathByName(
+        'TgForwardTargetPickerPage',
+        new ForwardTargetPickerRouteParams(sourceChatId),
+        (popInfo) => {
+          if (lifecycleToken !== this.pageLifecycleToken || this.activeChatId !== sourceChatId) {
+            return;
+          }
+          const result = popInfo.result as ForwardTargetPickerResult | undefined;
+          if (!result || result.chatId === 0) {
+            return;
+          }
+          if (result.chatId === sourceChatId) {
+            this.startForwardMessages(messageIds, author, preview, sourceChatId);
+            return;
+          }
+
+          const prevChatId: number = navigationUIState.activeChatId;
+          const prevTitle: string = navigationUIState.activeChatTitle;
+          const prevChatScreenVisible: boolean = navigationUIState.chatScreenVisible;
+          pendingForwardTransfer.arm(result.chatId, sourceChatId, messageIds, author, preview);
+          navigationUIState.activeChatId = result.chatId;
+          navigationUIState.activeChatTitle = result.chatTitle;
+          navigationUIState.chatScreenVisible = true;
+          AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
+
+          try {
+            navStack.pushPathByName('TgChatScreenPage', new ChatScreenRouteParams(result.chatId, result.chatTitle));
+            this.requestOpenChatData(result.chatId);
+          } catch (error) {
+            pendingForwardTransfer.clear();
+            navigationUIState.activeChatId = prevChatId;
+            navigationUIState.activeChatTitle = prevTitle;
+            navigationUIState.chatScreenVisible = prevChatScreenVisible;
+            AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, prevChatScreenVisible);
+            hilog.error(DOMAIN, TAG, 'Failed to push forwarded target chat: %{public}s', String(error));
+          }
+        }
+      );
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, 'Failed to push forward target picker: %{public}s', String(error));
+    }
   }
 
   private copyMessageText(text: string): void {
@@ -1365,7 +1624,7 @@ export struct TgChatScreenPage {
     // 4. Forward
     buttons.push(forwardBtn);
     actions.push(() => {
-      hilog.info(DOMAIN, TAG, 'Forward requested for message %{public}s', messageId);
+      this.openForwardTargetPicker([messageId], author, preview);
     });
 
     // 5. Pin (iOS: after Select, before Delete)
@@ -1383,10 +1642,15 @@ export struct TgChatScreenPage {
       this.handleDeleteMessage(messageId);
     });
 
+    const lifecycleToken: number = this.pageLifecycleToken;
+    const chatId: number = this.activeChatId;
     this.getUIContext().getPromptAction().showActionMenu({
       title: '',
       buttons: buttons as [promptAction.Button, promptAction.Button?, promptAction.Button?, promptAction.Button?, promptAction.Button?, promptAction.Button?]
     }).then((result: promptAction.ActionMenuSuccessResponse) => {
+      if (lifecycleToken !== this.pageLifecycleToken || this.activeChatId !== chatId) {
+        return;
+      }
       if (result.index >= 0 && result.index < actions.length) {
         actions[result.index]();
       }
@@ -1401,43 +1665,374 @@ export struct TgChatScreenPage {
       this.handleEditMessage(text);
       return;
     }
-    if (this.isSending || this.activeChatId === 0 || !this.sendUseCase) {
+    if (this.isForwardingMessages) {
+      this.handleForwardMessages(text);
       return;
     }
+    if (this.pendingAttachmentUris.length > 0) {
+      this.handleSendPendingAttachment(text);
+      return;
+    }
+    const useCase = this.sendUseCase;
+    const chatId = this.activeChatId;
+    if (this.isSending || chatId === 0 || !useCase) {
+      return;
+    }
+    this.showComposerEmojiPanel = false;
     this.isSending = true;
     const params = new SendMessageParams();
-    params.chatId = this.activeChatId;
+    params.chatId = chatId;
     params.text = text;
     if (this.replyToMessageId !== '0') {
       params.replyToMessageId = this.replyToMessageId;
     }
     const sentText = text;
     this.composerDraftText = '';
-    this.cancelReply();
+    this.clearReplyMode();
     // Snapshot near-bottom state before async send completes.
     const wasNearBottom = this.isNearBottom();
-    this.sendUseCase.execute(params)
+    const lifecycleToken: number = this.pageLifecycleToken;
+    useCase.execute(params)
       .then(() => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.sendUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
         // Only auto-scroll to bottom if user was already near bottom.
         // If reading old messages, don't yank viewport away.
         if (wasNearBottom) {
-          setTimeout(() => {
+          this.scheduleLifecycleTask(100, () => {
             this.listScroller.scrollEdge(Edge.Bottom);
-          }, 100);
+          });
         }
       })
       .catch((err: Error) => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.sendUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
         if (this.composerDraftText.trim().length === 0 && this.activeChatId === params.chatId) {
           this.composerDraftText = sentText;
         }
         hilog.error(DOMAIN, TAG, 'Send failed: %{public}s', err.message);
       })
       .finally(() => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.sendUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
         this.isSending = false;
       });
   }
 
+  private handleSendPendingAttachment(caption: string): void {
+    const useCase = this.sendMediaUseCase;
+    const chatId = this.activeChatId;
+    if (this.isSending || chatId === 0 || !useCase || this.pendingAttachmentUris.length === 0) {
+      return;
+    }
+
+    const sourceUri = this.pendingAttachmentUris[0];
+    const mediaKind = this.pendingAttachmentKind.length > 0 ? this.pendingAttachmentKind : 'document';
+    const replyToMessageId = this.replyToMessageId;
+    const wasNearBottom = this.isNearBottom();
+    const lifecycleToken: number = this.pageLifecycleToken;
+
+    this.showComposerEmojiPanel = false;
+    this.isSending = true;
+
+    this.preparePickedAttachmentLocalPath(mediaKind, sourceUri)
+      .then((localPath: string) => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.sendMediaUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return Promise.resolve();
+        }
+
+        const params = new SendMediaMessageParams();
+        params.chatId = chatId;
+        params.mediaKind = mediaKind;
+        params.localPath = localPath;
+        params.caption = caption;
+        if (replyToMessageId !== '0') {
+          params.replyToMessageId = replyToMessageId;
+        }
+        return useCase.execute(params);
+      })
+      .then(() => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.sendMediaUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
+        this.composerDraftText = '';
+        this.clearPendingAttachment();
+        this.clearReplyMode();
+        if (wasNearBottom) {
+          this.scheduleLifecycleTask(100, () => {
+            this.listScroller.scrollEdge(Edge.Bottom);
+          });
+        }
+      })
+      .catch((err: Error) => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.sendMediaUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
+        hilog.error(DOMAIN, TAG, 'Media send failed: %{public}s', err.message);
+        this.showComposerPendingToast(localized($r('app.string.composer_media_send_failed').id,
+          'Could not send media'));
+      })
+      .finally(() => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.sendMediaUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
+        this.isSending = false;
+      });
+  }
+
+  private showComposerPendingToast(message: string): void {
+    try {
+      this.getUIContext().getPromptAction().showToast({ message: message, duration: 1500 });
+    } catch (_error) {
+      // Composer auxiliary actions are non-critical; ignore toast failures.
+    }
+  }
+
+  private handleComposerAttachPress(): void {
+    this.showComposerEmojiPanel = false;
+    const buttons: promptAction.Button[] = [
+      { text: localized($r('app.string.photo').id, 'Photo'), color: TgUiTokens.COLOR_TEXT_TITLE },
+      { text: localized($r('app.string.video').id, 'Video'), color: TgUiTokens.COLOR_TEXT_TITLE },
+      { text: localized($r('app.string.document_label').id, 'Document'), color: TgUiTokens.COLOR_TEXT_TITLE }
+    ];
+    const actions: (() => void)[] = [
+      () => {
+        this.openPhotoAttachmentPicker('photo');
+      },
+      () => {
+        this.openPhotoAttachmentPicker('video');
+      },
+      () => {
+        this.openDocumentAttachmentPicker();
+      }
+    ];
+    const lifecycleToken: number = this.pageLifecycleToken;
+    const chatId: number = this.activeChatId;
+    this.getUIContext().getPromptAction().showActionMenu({
+      title: '',
+      buttons: buttons as [promptAction.Button, promptAction.Button?, promptAction.Button?,
+        promptAction.Button?, promptAction.Button?, promptAction.Button?]
+    }).then((result: promptAction.ActionMenuSuccessResponse) => {
+      if (lifecycleToken !== this.pageLifecycleToken || this.activeChatId !== chatId) {
+        return;
+      }
+      if (result.index >= 0 && result.index < actions.length) {
+        actions[result.index]();
+      }
+    }).catch((_: Error) => {
+      // User dismissed — no action needed.
+    });
+  }
+
+  private handleComposerEmojiPress(): void {
+    if (this.activeChatId === 0) {
+      return;
+    }
+    this.showComposerEmojiPanel = !this.showComposerEmojiPanel;
+  }
+
+  private handleComposerVoicePress(): void {
+    this.showComposerEmojiPanel = false;
+    this.showComposerPendingToast(localized($r('app.string.composer_voice_unavailable').id,
+      'Voice recording is not available yet'));
+  }
+
+  private handleComposerEmojiSelected(emoji: string): void {
+    if (this.activeChatId === 0 || emoji.length === 0) {
+      return;
+    }
+    this.composerDraftText = `${this.composerDraftText}${emoji}`;
+  }
+
+  private handleComposerStickerPress(): void {
+    this.showComposerPendingToast(localized($r('app.string.composer_stickers_unavailable').id,
+      'Stickers are not available yet'));
+  }
+
+  private async openPhotoAttachmentPicker(kind: string): Promise<void> {
+    try {
+      const photoPicker = new photoAccessHelper.PhotoViewPicker();
+      const result = await photoPicker.select({
+        MIMEType: kind === 'video'
+          ? photoAccessHelper.PhotoViewMIMETypes.VIDEO_TYPE
+          : photoAccessHelper.PhotoViewMIMETypes.IMAGE_TYPE,
+        maxSelectNumber: 1,
+        isSearchSupported: true,
+        isPhotoTakingSupported: true
+      });
+      if (result.photoUris.length === 0) {
+        return;
+      }
+      const title = kind === 'video'
+        ? localized($r('app.string.video').id, 'Video')
+        : localized($r('app.string.photo').id, 'Photo');
+      this.setPendingAttachment(kind, title, result.photoUris);
+    } catch (error) {
+      this.handleAttachmentPickerError(error);
+    }
+  }
+
+  private async openDocumentAttachmentPicker(): Promise<void> {
+    try {
+      const documentOptions = new picker.DocumentSelectOptions();
+      documentOptions.maxSelectNumber = 1;
+      const documentPicker = new picker.DocumentViewPicker();
+      const result: string[] = await documentPicker.select(documentOptions);
+      if (!result || result.length === 0) {
+        return;
+      }
+      this.setPendingAttachment('document',
+        localized($r('app.string.document_label').id, 'Document'),
+        result);
+    } catch (error) {
+      this.handleAttachmentPickerError(error);
+    }
+  }
+
+  private handleAttachmentPickerError(error: Object): void {
+    const message = String(error);
+    if (message.toLowerCase().includes('cancel')) {
+      return;
+    }
+    hilog.error(DOMAIN, TAG, 'Attachment picker failed: %{public}s', message);
+    this.showComposerPendingToast(localized($r('app.string.composer_attachment_unavailable').id,
+      'Attachment picker is not available yet'));
+  }
+
+  private setPendingAttachment(kind: string, title: string, uris: string[]): void {
+    this.pendingAttachmentKind = kind;
+    this.pendingAttachmentTitle = title;
+    this.pendingAttachmentUris = uris;
+    this.pendingAttachmentPreview = this.buildAttachmentPreview(uris);
+    this.showComposerEmojiPanel = false;
+  }
+
+  private clearPendingAttachment(): void {
+    this.pendingAttachmentKind = '';
+    this.pendingAttachmentTitle = '';
+    this.pendingAttachmentPreview = '';
+    this.pendingAttachmentUris = [];
+  }
+
+  private async preparePickedAttachmentLocalPath(kind: string, sourceUri: string): Promise<string> {
+    const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+    const targetDir = this.ensureComposerSendMediaDir(context);
+    const targetPath = `${targetDir}/${this.buildComposerSendMediaFileName(kind, sourceUri)}`;
+    let sourceFile: fileIo.File | undefined = undefined;
+
+    try {
+      sourceFile = fileIo.openSync(sourceUri, fileIo.OpenMode.READ_ONLY);
+      fileIo.copyFileSync(sourceFile.fd, targetPath);
+      return targetPath;
+    } catch (error) {
+      const err = error as Error;
+      throw new Error(`Prepare picked attachment failed: ${err.message}`);
+    } finally {
+      if (sourceFile !== undefined) {
+        try {
+          fileIo.closeSync(sourceFile);
+        } catch (closeError) {
+          hilog.warn(DOMAIN, TAG, 'Attachment source close failed: %{public}s', String(closeError));
+        }
+      }
+    }
+  }
+
+  private ensureComposerSendMediaDir(context: common.UIAbilityContext): string {
+    const targetDir = `${context.filesDir}/composer_send_media`;
+    try {
+      if (fileIo.accessSync(targetDir)) {
+        return targetDir;
+      }
+    } catch (_error) {
+      // Directory does not exist or cannot be accessed; mkdir below will surface real failures.
+    }
+    try {
+      fileIo.mkdirSync(targetDir, true);
+    } catch (error) {
+      const err = error as Error;
+      throw new Error(`Create composer media directory failed: ${err.message}`);
+    }
+    return targetDir;
+  }
+
+  private buildComposerSendMediaFileName(kind: string, sourceUri: string): string {
+    const rawName = this.safeAttachmentFileName(this.lastUriSegment(sourceUri));
+    const extension = this.attachmentFileExtension(kind, rawName);
+    const baseName = this.attachmentFileStem(rawName);
+    return `tg_send_${kind}_${Date.now()}_${baseName}${extension}`;
+  }
+
+  private safeAttachmentFileName(name: string): string {
+    let decoded = name;
+    try {
+      decoded = decodeURIComponent(name);
+    } catch (_error) {
+      decoded = name;
+    }
+    const safe = decoded.replace(/[^A-Za-z0-9._-]/g, '_');
+    return safe.length > 0 ? safe.substring(0, 48) : 'attachment';
+  }
+
+  private attachmentFileStem(fileName: string): string {
+    const dotIndex = fileName.lastIndexOf('.');
+    const stem = dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
+    return stem.length > 0 ? stem : 'attachment';
+  }
+
+  private attachmentFileExtension(kind: string, fileName: string): string {
+    const dotIndex = fileName.lastIndexOf('.');
+    if (dotIndex >= 0 && dotIndex < fileName.length - 1 && fileName.length - dotIndex <= 12) {
+      return fileName.substring(dotIndex);
+    }
+    switch (kind) {
+      case 'photo':
+        return '.jpg';
+      case 'video':
+        return '.mp4';
+      default:
+        return '.bin';
+    }
+  }
+
+  private buildAttachmentPreview(uris: string[]): string {
+    if (uris.length === 0) {
+      return '';
+    }
+    const first = this.lastUriSegment(uris[0]);
+    if (uris.length === 1) {
+      return first;
+    }
+    return `${first} +${uris.length - 1}`;
+  }
+
+  private lastUriSegment(uri: string): string {
+    const withoutQuery = uri.split('?')[0];
+    const parts = withoutQuery.split('/');
+    const last = parts.length > 0 ? parts[parts.length - 1] : uri;
+    return last.length > 0 ? last : uri;
+  }
+
   private startEditMessage(messageId: string, originalText: string): void {
+    this.clearReplyMode();
+    this.clearForwardMode();
     this.isEditingMessage = true;
     this.editingMessageId = messageId;
     this.editingOriginalText = originalText;
@@ -1446,14 +2041,14 @@ export struct TgChatScreenPage {
   }
 
   private cancelEditMessage(): void {
-    this.isEditingMessage = false;
-    this.editingMessageId = '0';
-    this.editingOriginalText = '';
-    this.composerDraftText = '';
+    this.clearEditMode(true);
   }
 
   private handleEditMessage(newText: string): void {
-    if (!this.editUseCase || this.activeChatId === 0 || this.editingMessageId === '0') {
+    const useCase = this.editUseCase;
+    const chatId = this.activeChatId;
+    const messageId = this.editingMessageId;
+    if (!useCase || chatId === 0 || messageId === '0') {
       return;
     }
     if (newText.trim().length === 0) {
@@ -1468,49 +2063,177 @@ export struct TgChatScreenPage {
     }
 
     const params = new EditMessageParams();
-    params.chatId = this.activeChatId;
-    params.messageId = this.editingMessageId;
+    params.chatId = chatId;
+    params.messageId = messageId;
     params.text = newText;
-    const editId = this.editingMessageId;
+    const editId = messageId;
 
-    this.cancelEditMessage();
+    this.clearEditMode(true);
 
-    this.editUseCase.execute(params)
+    const lifecycleToken: number = this.pageLifecycleToken;
+    useCase.execute(params)
       .then(() => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.editUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
         hilog.info(DOMAIN, TAG, 'Message %{public}s edited', editId);
       })
       .catch((err: Error) => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.editUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
         hilog.error(DOMAIN, TAG, 'Edit failed: %{public}s', err.message);
       });
   }
 
-  private handlePinMessage(messageId: string): void {
-    if (!this.pinUseCase || this.activeChatId === 0) return;
+  private handleForwardMessages(commentText: string): void {
+    const forwardUseCase = this.forwardUseCase;
+    const sendUseCase = this.sendUseCase;
+    if (this.isSending || this.activeChatId === 0 || !forwardUseCase) {
+      return;
+    }
+    if (this.forwardSourceChatId === 0 || this.forwardingMessageIds.length === 0) {
+      return;
+    }
 
-    this.pinUseCase.pin(this.activeChatId, messageId, false, false)
+    const targetChatId = this.activeChatId;
+    const sourceChatId = this.forwardSourceChatId;
+    const messageIds = [...this.forwardingMessageIds];
+    const previewTitle = this.forwardTitle;
+    const previewText = this.forwardPreview;
+    const trimmedComment = commentText.trim();
+    const wasNearBottom = this.isNearBottom();
+    let commentSent = false;
+
+    this.isSending = true;
+    this.composerDraftText = '';
+    this.clearReplyMode();
+    this.clearEditMode(false);
+    this.clearForwardMode();
+
+    const lifecycleToken: number = this.pageLifecycleToken;
+    Promise.resolve()
+      .then(async () => {
+        if (trimmedComment.length > 0 && sendUseCase) {
+          const sendParams = new SendMessageParams();
+          sendParams.chatId = targetChatId;
+          sendParams.text = trimmedComment;
+          await sendUseCase.execute(sendParams);
+          commentSent = true;
+        }
+
+        const params = new ForwardMessagesParams();
+        params.chatId = targetChatId;
+        params.fromChatId = sourceChatId;
+        params.messageIds = messageIds;
+        await forwardUseCase.execute(params);
+
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.forwardUseCase !== forwardUseCase ||
+          this.activeChatId !== targetChatId ||
+          (sendUseCase !== undefined && this.sendUseCase !== sendUseCase)) {
+          return;
+        }
+        if (wasNearBottom) {
+          this.scheduleLifecycleTask(100, () => {
+            this.listScroller.scrollEdge(Edge.Bottom);
+          });
+        }
+      })
       .then(() => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.forwardUseCase !== forwardUseCase ||
+          this.activeChatId !== targetChatId ||
+          (sendUseCase !== undefined && this.sendUseCase !== sendUseCase)) {
+          return;
+        }
+        hilog.info(DOMAIN, TAG, 'Forwarded %{public}d messages into chat %{public}d', messageIds.length, targetChatId);
+      })
+      .catch((err: Error) => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.forwardUseCase !== forwardUseCase ||
+          this.activeChatId !== targetChatId ||
+          (sendUseCase !== undefined && this.sendUseCase !== sendUseCase)) {
+          return;
+        }
+        this.isForwardingMessages = true;
+        this.forwardingMessageIds = [...messageIds];
+        this.forwardSourceChatId = sourceChatId;
+        this.forwardTitle = previewTitle;
+        this.forwardPreview = previewText;
+        if (!commentSent && trimmedComment.length > 0) {
+          this.composerDraftText = trimmedComment;
+        }
+        hilog.error(DOMAIN, TAG, 'Forward failed: %{public}s', err.message);
+      })
+      .finally(() => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.forwardUseCase !== forwardUseCase ||
+          this.activeChatId !== targetChatId ||
+          (sendUseCase !== undefined && this.sendUseCase !== sendUseCase)) {
+          return;
+        }
+        this.isSending = false;
+      });
+  }
+
+  private handlePinMessage(messageId: string): void {
+    const useCase = this.pinUseCase;
+    const chatId = this.activeChatId;
+    if (!useCase || chatId === 0) return;
+
+    const lifecycleToken: number = this.pageLifecycleToken;
+    useCase.pin(chatId, messageId, false, false)
+      .then(() => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.pinUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
         hilog.info(DOMAIN, TAG, 'Message %{public}s pinned', messageId);
       })
       .catch((err: Error) => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.pinUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
         hilog.error(DOMAIN, TAG, 'Pin failed: %{public}s', err.message);
       });
   }
 
   private handleDeleteMessage(messageId: string): void {
-    if (!this.deleteUseCase || this.activeChatId === 0) {
+    const useCase = this.deleteUseCase;
+    const chatId = this.activeChatId;
+    if (!useCase || chatId === 0) {
       return;
     }
 
     const params = new DeleteMessagesParams();
-    params.chatId = this.activeChatId;
+    params.chatId = chatId;
     params.messageIds = [messageId];
     params.revoke = true;
 
-    this.deleteUseCase.execute(params)
+    const lifecycleToken: number = this.pageLifecycleToken;
+    useCase.execute(params)
       .then(() => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.deleteUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
         hilog.info(DOMAIN, TAG, 'Message %{public}s deleted', messageId);
       })
       .catch((err: Error) => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.deleteUseCase !== useCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
         hilog.error(DOMAIN, TAG, 'Delete failed: %{public}s', err.message);
       });
   }
@@ -1520,21 +2243,38 @@ export struct TgChatScreenPage {
     // iOS ref: 0.2s debounce before sending search request
     if (this.searchDebounceTimerId !== -1) {
       clearTimeout(this.searchDebounceTimerId);
+      this.searchDebounceTimerId = -1;
     }
     if (query.trim().length === 0) {
       return;
     }
-    this.searchDebounceTimerId = setTimeout(() => {
+    const lifecycleToken: number = this.pageLifecycleToken;
+    let scheduledTimerId: number = -1;
+    scheduledTimerId = setTimeout(() => {
+      if (lifecycleToken !== this.pageLifecycleToken || this.searchDebounceTimerId !== scheduledTimerId) {
+        return;
+      }
       this.searchDebounceTimerId = -1;
       this.executeSearch(query);
-    }, 200);
+    }, 200) as number;
+    this.searchDebounceTimerId = scheduledTimerId;
   }
 
   private executeSearch(query: string): void {
-    if (!this.searchUseCase || this.activeChatId === 0) return;
+    const useCase = this.searchUseCase;
+    const chatId = this.activeChatId;
+    if (!useCase || chatId === 0) return;
 
-    this.searchUseCase.execute(this.activeChatId, query)
+    const lifecycleToken: number = this.pageLifecycleToken;
+    useCase.execute(chatId, query)
       .then((result: SearchChatMessagesResult) => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.searchUseCase !== useCase ||
+          this.activeChatId !== chatId ||
+          !this.isSearchMode ||
+          this.searchQuery !== query) {
+          return;
+        }
         if (result.messageIds.length > 0) {
           // Auto-navigate to first result (iOS pattern)
           const firstId = result.messageIds[0];
@@ -1552,6 +2292,13 @@ export struct TgChatScreenPage {
         }
       })
       .catch((err: Error) => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.searchUseCase !== useCase ||
+          this.activeChatId !== chatId ||
+          !this.isSearchMode ||
+          this.searchQuery !== query) {
+          return;
+        }
         hilog.error(DOMAIN, TAG, 'Search failed: %{public}s', err.message);
       });
   }
@@ -1569,26 +2316,73 @@ export struct TgChatScreenPage {
     if (this.activeChatId <= 0) return;
     hilog.info(DOMAIN, TAG, 'openProfile chatId=%{public}d', this.activeChatId);
     const navStack: NavPathStack | undefined = this.bindNavigationStack();
-    if (navStack !== undefined) {
-      const params = new ProfileRouteParams(this.activeChatId);
+    if (navStack === undefined) {
+      hilog.error(DOMAIN, TAG, 'Navigation stack unavailable for profile page');
+      return;
+    }
+    const params = new ProfileRouteParams(this.activeChatId);
+    try {
       navStack.pushPathByName('TgProfilePage', params);
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, 'Failed to push profile page: %{public}s', String(error));
     }
   }
 
   private handleBackPress(): void {
     hilog.info(DOMAIN, TAG, 'handleBackPress called');
+    if (this.isClosing) {
+      hilog.warn(DOMAIN, TAG, 'Ignoring duplicate chat screen back pop while closing');
+      return;
+    }
+    const navStack: NavPathStack | undefined = this.bindNavigationStack();
+    if (navStack === undefined) {
+      hilog.error(DOMAIN, TAG, 'pageStack is undefined in handleBackPress!');
+      return;
+    }
+    try {
+      if (navStack.size() <= 0) {
+        hilog.error(DOMAIN, TAG, 'Cannot pop chat screen: pageStack is empty');
+        return;
+      }
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, 'Cannot inspect chat screen pageStack before pop: %{public}s', String(error));
+      return;
+    }
+
+    const prevNavLockUntil: number = navigationUIState.chatNavLockUntil;
+    const prevChatScreenVisible: boolean = navigationUIState.chatScreenVisible;
+    const prevNavigationChatId: number = navigationUIState.activeChatId;
+    const prevNavigationTitle: string = navigationUIState.activeChatTitle;
+    const prevChatStateId: number = chatUIState.activeChatId;
+    const prevChatStateTitle: string = chatUIState.activeChatTitle;
+    const prevStoredChatId: number = AppStorage.get<number>(StorageKeys.ACTIVE_CHAT_ID) ?? prevNavigationChatId;
+    const prevStoredTitle: string = AppStorage.get<string>(StorageKeys.ACTIVE_CHAT_TITLE) ?? prevNavigationTitle;
+
     this.saveScrollPosition();
-    AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, Date.now() + CHAT_NAV_TRANSITION_LOCK_MS);
+    this.isClosing = true;
+    const navLockUntil = Date.now() + CHAT_NAV_TRANSITION_LOCK_MS;
+    navigationUIState.chatNavLockUntil = navLockUntil;
+    AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, navLockUntil);
     navigationUIState.chatScreenVisible = false;
     AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
-    AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, 0);
-    AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, '');
-    const navStack: NavPathStack | undefined = this.bindNavigationStack();
-    if (navStack !== undefined) {
+    this.clearOwnedChatContext();
+
+    try {
       hilog.info(DOMAIN, TAG, 'Popping from pageStack');
       navStack.pop();
-    } else {
-      hilog.error(DOMAIN, TAG, 'pageStack is undefined in handleBackPress!');
+    } catch (error) {
+      this.isClosing = false;
+      navigationUIState.chatNavLockUntil = prevNavLockUntil;
+      AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, prevNavLockUntil);
+      navigationUIState.chatScreenVisible = prevChatScreenVisible;
+      AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, prevChatScreenVisible);
+      navigationUIState.activeChatId = prevNavigationChatId;
+      navigationUIState.activeChatTitle = prevNavigationTitle;
+      chatUIState.activeChatId = prevChatStateId;
+      chatUIState.activeChatTitle = prevChatStateTitle;
+      AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, prevStoredChatId);
+      AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, prevStoredTitle);
+      hilog.error(DOMAIN, TAG, 'Failed to pop chat screen: %{public}s', String(error));
     }
   }
 
@@ -1629,12 +2423,12 @@ export struct TgChatScreenPage {
         const targetIndex = this.listInitialIndex;
         this.armAutoPaginationUnlock(targetIndex, 'initialRestore');
         this.lastVisibleStartIndex = targetIndex;
-        setTimeout(() => {
+        this.scheduleLifecycleTask(16, () => {
           this.guardProgrammaticScroll();
           this.listScroller.scrollToIndex(targetIndex, false, ScrollAlign.START);
           // After guard expires, check if near edge → trigger pagination
           this.schedulePaginationRecheck(PROGRAMMATIC_SCROLL_GUARD_MS + 50);
-        }, 16);
+        });
       } else {
         // Bottom: initialIndex handles position. Schedule pagination recheck
         // after guard expires — onScrollIndex may not re-fire for static lists.
@@ -1646,15 +2440,15 @@ export struct TgChatScreenPage {
         const targetIndex = this.listInitialIndex;
         this.armAutoPaginationUnlock(targetIndex, 'switchRestore');
         this.lastVisibleStartIndex = targetIndex;
-        setTimeout(() => {
+        this.scheduleLifecycleTask(16, () => {
           this.guardProgrammaticScroll();
           this.listScroller.scrollToIndex(targetIndex, false, ScrollAlign.START);
           this.schedulePaginationRecheck(PROGRAMMATIC_SCROLL_GUARD_MS + 50);
-        }, 16);
+        });
       } else {
-        setTimeout(() => {
+        this.scheduleLifecycleTask(16, () => {
           this.listScroller.scrollEdge(Edge.Bottom);
-        }, 16);
+        });
         this.schedulePaginationRecheck(PROGRAMMATIC_SCROLL_GUARD_MS + 50);
       }
     }
@@ -1680,10 +2474,18 @@ export struct TgChatScreenPage {
     const delayMs = attempt === 0
       ? HISTORY_INITIAL_DELAY_MS
       : HISTORY_RETRY_BASE_DELAY_MS * attempt;
-    this.historyFallbackTimerId = setTimeout(() => {
+    const lifecycleToken: number = this.pageLifecycleToken;
+    let scheduledTimerId: number = -1;
+    scheduledTimerId = setTimeout(() => {
+      if (lifecycleToken !== this.pageLifecycleToken ||
+        this.historyFallbackTimerId !== scheduledTimerId ||
+        this.activeChatId !== chatId) {
+        return;
+      }
       this.historyFallbackTimerId = -1;
       this.requestHistoryWithRetry(chatId, attempt);
-    }, delayMs);
+    }, delayMs) as number;
+    this.historyFallbackTimerId = scheduledTimerId;
   }
 
   private shouldRetryHistoryLoad(chatId: number): boolean {
@@ -1724,8 +2526,14 @@ export struct TgChatScreenPage {
     params.limit = 50;
     params.direction = 'initial';
     params.reason = 'restore';
+    const lifecycleToken: number = this.pageLifecycleToken;
     historyUseCase.execute(params)
       .then(() => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.loadChatHistoryUseCase !== historyUseCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
         if (this.shouldRetryHistoryLoad(chatId) &&
           attempt + 1 < HISTORY_MAX_RETRY_ATTEMPTS &&
           this.activeChatId === chatId) {
@@ -1733,6 +2541,11 @@ export struct TgChatScreenPage {
         }
       })
       .catch((error: Object) => {
+        if (lifecycleToken !== this.pageLifecycleToken ||
+          this.loadChatHistoryUseCase !== historyUseCase ||
+          this.activeChatId !== chatId) {
+          return;
+        }
         hilog.warn(DOMAIN, TAG, 'history load attempt %{public}d failed: %{public}s',
           attempt + 1, String(error));
         if (this.shouldRetryHistoryLoad(chatId) &&
@@ -1765,8 +2578,9 @@ export struct TgChatScreenPage {
     const outKey = entry.message.isOutgoing ? 'out' : 'in';
     const replyKey = entry.message.showReplySnippet ? 'r1' : 'r0';
     const senderKey = entry.message.showSenderName ? 's1' : 's0';
+    const groupKey = entry.message.groupingFlags;
     const statusKey = entry.message.sendStatus.toString();
-    return `chat_msg_${contentKey}_${outKey}_${replyKey}_${senderKey}_${statusKey}`;
+    return `chat_msg_${contentKey}_${outKey}_${replyKey}_${senderKey}_${groupKey}_${statusKey}`;
   }
 
   @Builder
@@ -1777,6 +2591,7 @@ export struct TgChatScreenPage {
         contentType: entry.message.contentType,
         isOutgoing: entry.message.isOutgoing,
         containerWidth: this.timelineContainerWidth,
+        groupingFlags: entry.message.groupingFlags,
         text: entry.message.text,
         isEmojiOnly: entry.message.isEmojiOnly,
         forceBreakAll: entry.message.forceBreakAll,
@@ -1871,6 +2686,9 @@ export struct TgChatScreenPage {
         isShortVideo: entry.message.isShortVideo,
         onMediaDownloadRequest: (fileId: number): void => {
           this.requestMediaDownload(fileId);
+        },
+        onMediaDownloadCancel: (fileId: number): void => {
+          this.cancelMediaDownload(fileId);
         },
         onMediaGalleryOpen: (messageId: string): void => {
           this.handleMediaGalleryOpen(messageId);
@@ -2058,6 +2876,19 @@ export struct TgChatScreenPage {
             Blank()
               .hitTestBehavior(HitTestMode.None)
             Column() {
+              if (this.showComposerEmojiPanel) {
+                TgComposerEmojiPanel({
+                  title: localized($r('app.string.sticker_packs_recent').id, 'Recent'),
+                  stickersTitle: localized($r('app.string.stickers_tab').id, 'Stickers'),
+                  onEmojiSelected: (emoji: string): void => {
+                    this.handleComposerEmojiSelected(emoji);
+                  },
+                  onStickerPress: (): void => {
+                    this.handleComposerStickerPress();
+                  }
+                })
+              }
+
               TgComposerInput({
                 text: this.composerDraftText,
                 placeholder: localized($r('app.string.message_placeholder').id, 'Message'),
@@ -2071,17 +2902,39 @@ export struct TgChatScreenPage {
                 replyHasThumbnail: false,
                 showEditSnippet: this.isEditingMessage,
                 editPreview: this.editingOriginalText,
+                showForwardSnippet: this.isForwardingMessages,
+                forwardTitle: this.forwardTitle,
+                forwardPreview: this.forwardPreview,
+                showAttachmentSnippet: this.pendingAttachmentUris.length > 0,
+                attachmentKind: this.pendingAttachmentKind,
+                attachmentTitle: this.pendingAttachmentTitle,
+                attachmentPreview: this.pendingAttachmentPreview,
                 onTextChange: (value: string): void => {
                   this.composerDraftText = value;
                 },
                 onSendPress: (text: string): void => {
                   this.handleSendMessage(text);
                 },
+                onAttachPress: (): void => {
+                  this.handleComposerAttachPress();
+                },
+                onEmojiPress: (): void => {
+                  this.handleComposerEmojiPress();
+                },
+                onVoicePress: (): void => {
+                  this.handleComposerVoicePress();
+                },
                 onReplyCancelPress: (): void => {
                   this.cancelReply();
                 },
                 onEditCancelPress: (): void => {
                   this.cancelEditMessage();
+                },
+                onForwardCancelPress: (): void => {
+                  this.cancelForwardMessages();
+                },
+                onAttachmentCancelPress: (): void => {
+                  this.clearPendingAttachment();
                 }
               })
           }
@@ -2108,9 +2961,23 @@ export struct TgChatScreenPage {
     .hideTitleBar(true)
     .hideBackButton(true)
     .hideToolBar(true)
+    .onReady((context: NavDestinationContext) => {
+      this.pageStack = context.pathStack;
+      const params = context.pathInfo.param as ChatScreenRouteParams;
+      if (params && params.chatId > 0) {
+        this.routeChatId = params.chatId;
+        this.routeChatTitle = params.chatTitle ? params.chatTitle : '';
+      }
+    })
     .onBackPressed(() => {
       this.handleBackPress();
       return true;
     })
   }
+}
+
+// System route table builder — referenced by route_map.json
+@Builder
+export function TgChatScreenPageBuilder() {
+  TgChatScreenPage()
 }

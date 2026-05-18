@@ -2,6 +2,7 @@ import { TgAnimationBubble } from '../atoms/TgAnimationBubble';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
 @Entry
+@Preview({ title: 'TgAnimationBubble' })
 @ComponentV2
 struct TgAnimationBubbleDemo {
   build() {

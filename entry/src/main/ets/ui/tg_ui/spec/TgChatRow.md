@@ -46,7 +46,7 @@
 
 ## 4) State matrix (demo coverage)
 - normal (no unread)
-- unread `1/99/99+`
+- unread `1/99/207/2.5K`
 - pinned (no unread)
 - muted (no unread)
 - muted + unread
