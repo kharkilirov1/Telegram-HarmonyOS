@@ -64,7 +64,7 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - `TgChatScreenPage.ets` still owns timeline/playback/safe-area coordination; composer, message actions, and search are now extracted
 - Tests now cover basic `AuthSideEffect` singleton/store seam and common use-case validation/dispatch; deeper side-effect runtime tests still need device/integration seam
 - `libtdlib_napi.so` is externally built and not verified by current CI/smoke boundary
-- Device/emulator runtime behavior still requires a signed deployment pass
+- Device/emulator runtime behavior still requires a signed deployment pass; local check found no hdc target and no signing config
 
 ## Working Tree
 

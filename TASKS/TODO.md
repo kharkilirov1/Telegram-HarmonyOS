@@ -36,10 +36,10 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md`
 ### Technical debt (Phase 3+)
 - [ ] Deeper integration tests for `AuthSideEffect` ready/warmup flow once TDLib/app-context test seam exists
 - [x] `services/` legacy cleanup check: only `ConfigLocal.ets` + example remain; no removable legacy service layer found
-- [ ] Evaluate `LazyForEach` → `Repeat` / `@ReusableV2` migration only as a separate performance phase
-- [ ] Signed device/emulator runtime verification
+- [x] Evaluated `LazyForEach` → `Repeat` / `@ReusableV2`: current live usages are `ChatListPage` and `TgChatScreenPage` with `reuseId`; keep as-is until a measured perf phase/device target exists
+- [ ] Signed device/emulator runtime verification — blocked locally: `hdc list targets` returned `[Empty]` and `build-profile.json5` has empty `signingConfigs`
 
 ### Known blockers
-- Missing signing config for HarmonyOS device/emulator deployment
+- Missing signing config for HarmonyOS device/emulator deployment; no connected hdc target detected in this pass
 - `libtdlib_napi.so` — external build, not verified in current CI/smoke boundary
 - CodeRabbit CLI is not usable from native Windows Git Bash installer (`Unsupported operating system: mingw64_nt-*`); use WSL/Linux/macOS or another review path if CodeRabbit is required
