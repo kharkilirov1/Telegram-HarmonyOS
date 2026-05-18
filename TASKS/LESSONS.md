@@ -165,3 +165,17 @@ Last updated: 2026-05-18
 - `TgChatScreenPage.ets` at 3094 lines mixes subscriptions, 6 use cases, composer, emoji panel, gallery, navigation, voice playback, and context menu.
 - A page this size is impossible to review, hard to test, and prone to merge conflicts.
 - Decompose before adding more features: ViewModel + Controller + Panel sub-components.
+
+## 44. Direct TDLib adapter responses are `TdObject`, not plain records
+- `TdGatewayAdapter.send()` returns the `TdObject` from the gateway as `Object`.
+- Do not cast direct TDLib responses to `Record<string, Object>` and index into them.
+- Use `TdObject` accessors (`getObject`, `getString`, `getBool`, `getNumber`) for direct responses too.
+
+## 45. ArkTS object literal restrictions affect controller extraction
+- Do not return ad-hoc object-literal host adapters from component methods; ArkTS rejects untyped object literals.
+- Prefer explicit host methods on the component and pass `this` to extracted controllers.
+- Avoid host method names that collide with `@Local` field names.
+
+## 46. Command serializers should be handler-dispatched, not switch-owned
+- Keep each TDLib command serializer in a small handler function.
+- Register handlers by command type so adding a command does not grow one high-conflict switch body.

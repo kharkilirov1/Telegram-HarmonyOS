@@ -110,4 +110,4 @@ This atom intentionally excludes:
 
 ## 2026-03-23 narrow update
 - Visual-media captions now support explicit quote ranges via `captionQuoteOffsets` / `captionQuoteLengths` / `captionQuoteCollapsedFlags`.
-- When a caption contains blockquote entities, the shell routes the caption through `TgMessageTextBodyV2` instead of the plain `Text + invisible meta reserve` path.
+- When a caption contains blockquote entities, the active shell routes the caption through `TgTextBodyV3` instead of the plain `Text + invisible meta reserve` path.

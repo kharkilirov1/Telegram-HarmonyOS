@@ -19,9 +19,14 @@
 4. Glass atoms use `@StorageLink(StorageKeys.GLASS_MODE)` so downgrade is reactive at runtime without restart.
 
 ## Current integrations
-- `AppTopBar`
 - `TgTopBar`
-- `TgTabBar`
+- `TgChatTopBar`
+- `TgChatListNavigationBar`
+- `TgTopChromeBackground`
+- `TgComposerInput`
+- `TgComposerEmojiPanel`
+
+Historical: old custom `TgTabBar` integration was superseded by the API23 `HdsTabs` root shell.
 
 ## Runtime downgrade trigger
 - `EntryAbility.onMemoryLevel` sets `StorageKeys.GLASS_MODE = 'fallback'` on moderate/low/critical memory pressure.

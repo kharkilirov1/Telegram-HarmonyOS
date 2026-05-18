@@ -12,7 +12,7 @@
 
 ## Inputs / outputs
 - Input: design decisions for chat list atom pipeline.
-- Output: single token source for atoms (`TgIcon`, `TgAvatar`, `TgUnreadBadge`, `TgChatMeta`, `TgChatRow`).
+- Output: single token source for atoms (`TgIcon`, `TgAvatar`, `TgChatMeta`, `TgChatRow`) and the inline unread/mention capsules now owned by `TgChatMeta`.
 
 ## Token groups
 - Colors: background/text/meta/separator/unread/icon/online

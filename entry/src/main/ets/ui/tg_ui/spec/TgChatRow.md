@@ -89,7 +89,7 @@
   - `CHAT_ROW_TITLE_FONT_SIZE`, `CHAT_ROW_PREVIEW_FONT_SIZE`
   - colors (`COLOR_TEXT_TITLE`, `COLOR_TEXT_PREVIEW`, `COLOR_CHAT_ROW_PINNED_BG`, separator)
   - mute icon sizing and resources
-  - meta/badge tokens consumed transitively via `TgChatMeta` and `TgUnreadBadge`
+  - meta/badge tokens consumed transitively via `TgChatMeta`; unread/mention capsules are inline in `TgChatMeta` in the active branch
 
 ## 7) Acceptance checklist
 - [x] `@ComponentV2` row is used in the live chat-list path and `ChatListPage` still applies `reuseId(...)`

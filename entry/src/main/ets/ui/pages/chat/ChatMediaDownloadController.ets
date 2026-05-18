@@ -10,6 +10,7 @@ import {
 } from '../../../core/model/AppCommand';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
+import { TdObject } from '../../../models/TdTypes';
 import { ChatTimelineEntryVO } from './ChatTimelineVO';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
@@ -42,10 +43,10 @@ export class ChatMediaDownloadController {
           return;
         }
         try {
-          const tdResponse = response as Record<string, Object>;
-          const local = tdResponse['local'] as Record<string, Object>;
-          const isComplete = local['is_downloading_completed'] as boolean;
-          const path = local['path'] as string;
+          const tdResponse = response as TdObject;
+          const local = tdResponse.getObject('local');
+          const isComplete = local.getBool('is_downloading_completed');
+          const path = local.getString('path');
           if (isComplete && path.length > 0) {
             hilog.info(DOMAIN, TAG, 'On-demand file ready: fileId=%{public}d', capturedFileId);
             const event = new FileDownloadedEvent();

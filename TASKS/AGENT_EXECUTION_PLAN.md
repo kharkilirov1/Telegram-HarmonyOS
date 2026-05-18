@@ -62,7 +62,7 @@ Do **not** start from “which ArkUI component looks similar”. Start from “w
 - Do not spend large effort manually polishing shell chrome just to mimic iOS if the platform already offers a strong native direction.
 - For future execution:
   1. protect Telegram-defining surfaces (`TgChatRow`, message atoms, composer semantics, meta/badge/status logic),
-  2. evaluate shell containers (`TgTabBar`, upper chrome hosts, search hosts) as native/hybrid candidates first,
+  2. evaluate shell containers (historical custom `TgTabBar`, upper chrome hosts, search hosts) as native/hybrid candidates first,
   3. keep API 22 fallbacks while the repo target remains API 22 and API 23 remains a beta/staging direction.
 
 ## Current default starting phase

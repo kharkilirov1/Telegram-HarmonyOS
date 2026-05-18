@@ -3,7 +3,7 @@
 > Date: 2026-02-26
 > Status: active
 > Canonical contract: follows `MASTER_PLAN_TELEGRAM_UI.md`
-> Maintenance note (2026-03-22): this roadmap captures the original A–E atom migration. For the current post-media-gallery reality (32 atoms / 2 molecules / 34 demos / 37 specs, plus live shell path), prefer `STATUS.md` and `PROJECT_ANALYSIS.md`. `TgSearchBar` is still part of the library, but the live Chats shell now uses stock ArkUI `Search` inside `TgChatListNavigationBar`. `TgTopChromeBackground` is now the shared upper-background primitive extracted from the layered upper-chrome architecture. E-1/E-2 remain important as historical migration steps, but their standalone demo/spec artifacts were later removed after Contacts/Settings switched to inline runtime layout.
+> Maintenance note (2026-05-18): this roadmap captures the original A–E atom migration. For the current post-media-gallery/API23 HDS shell reality, prefer `STATUS.md` and `TASKS/TODO.md`. `TgSearchBar`, custom `TgTabBar`, `TgTextBubbleV2`, and standalone `TgUnreadBadge` are historical; active paths use stock `Search`, API23 `HdsTabs`, `TgTextBubbleV3`/`TgTextBodyV3`, and inline `TgChatMeta` unread capsules.
 
 ---
 
@@ -13,7 +13,7 @@
 - [x] TgTokens
 - [x] TgIcon
 - [x] TgAvatar
-- [x] TgUnreadBadge
+- [x] TgUnreadBadge (historical standalone atom; active unread capsule is inline in `TgChatMeta`)
 - [x] TgChatMeta
 
 ### Phase B — ChatList MVP
@@ -60,12 +60,12 @@ Current state:
 
 | Step | Atom | Description | Status |
 |------|------|-------------|--------|
-| D-1 | **TgTabBar** | Custom glass tab bar: island shape + blur-over-content + icons inside island + TabsController integration | DONE |
-| D-2 | **TgSearchBar** | Search input bar for chat list header (iOS-like pull-down or inline) | DONE |
+| D-1 | **TgTabBar** | Historical custom glass tab bar; active root shell now uses API23 `HdsTabs` / `HdsNavigation` | SUPERSEDED |
+| D-2 | **TgSearchBar** | Historical standalone search atom; active chat-list header uses stock ArkUI `Search` inside `TgChatListNavigationBar` | SUPERSEDED |
 | D-3 | **TgTopBar v2** | Top bar with blur-over-content (Stack overlay layout so list scrolls under bar) | DONE |
 
 ### Resolved issues from Phase D
-- Tab bar: replaced built-in Tabs bar with custom TgTabBar in Stack overlay (barHeight(0) + floating island)
+- Tab bar: historical custom `TgTabBar` was later superseded by API23 `HdsTabs` with floating style
 - Top bar: ChatListPage + TgChatScreenPage use Stack layout + contentStartOffset — list scrolls under translucent bar
 - Background contrast: glass_tab_bg and glass_nav_bg are semi-transparent, blur works on content behind them
 

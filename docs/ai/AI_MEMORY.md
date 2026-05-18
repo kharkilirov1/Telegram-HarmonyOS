@@ -1,9 +1,9 @@
 # AI Memory — Telegram-HarmonyOS
 
-## 0) Maintenance sync (2026-03-22)
-- Current `tg_ui` inventory: **32 atoms / 2 molecules / 34 demos / 37 spec files**.
-- Live Chats shell path is `TgTabBar` / `TgChatListNavigationBar` / `TgChatRow` / `TgChatTopBar` / `TgMessageRouter`; `TgTopBar` remains active on secondary tabs. Older mentions of `AppTopBar`, `AppTabBarItem`, `AppListRow`, `ChatListItem`, and `USE_TG_CHATLIST_V2` below are historical.
-- `TgSearchBar` still exists in `tg_ui`, but the live Chats shell uses stock ArkUI `Search` inside `TgChatListNavigationBar`.
+## 0) Maintenance sync (2026-05-18)
+- Current `tg_ui` inventory is post-cleanup/API23-HDS-shell; use `STATUS.md` for exact current counts.
+- Live Chats shell path is API23 `HdsTabs`/`HdsNavigation` + `TgChatListNavigationBar` + `TgChatRow` + `TgChatTopBar` + `TgMessageRouter`; older mentions of custom `TgTabBar`, `AppTopBar`, `AppTabBarItem`, `AppListRow`, `ChatListItem`, and `USE_TG_CHATLIST_V2` below are historical.
+- `TgSearchBar`, `TgUnreadBadge`, `TgTextBubbleV2`, and custom `TgTabBar` standalone files are historical in this branch; active equivalents are stock `Search`, inline `TgChatMeta` badge, `TgTextBubbleV3`/`TgTextBodyV3`, and API23 `HdsTabs`.
 - `scripts/smoke-ui-phase0.ps1` / `.sh` were resynced to the current shell path, and `scripts/smoke-build.ps1` now resolves `hvigorw` from PATH or the default DevEco install path.
 - Per user confirmation on 2026-03-22, the previously pending emulator/device/runtime verification items for the current branch are considered passed and should no longer be treated as active blockers.
 - Dark-theme parity was repaired for `sender_color_8` plus attach/call/reaction/story colors.
@@ -81,11 +81,7 @@ Master UI contract (frozen):
     - atom: `entry/src/main/ets/ui/tg_ui/atoms/TgAvatar.ets`
     - demo: `entry/src/main/ets/ui/tg_ui/demos/TgAvatarDemo.ets`
     - includes online-dot overlay geometry and size variants (`40/54/60`) from token source
-  - Step 3 `TgUnreadBadge` completed:
-    - spec: `entry/src/main/ets/ui/tg_ui/spec/TgUnreadBadge.md`
-    - atom: `entry/src/main/ets/ui/tg_ui/atoms/TgUnreadBadge.ets`
-    - demo: `entry/src/main/ets/ui/tg_ui/demos/TgUnreadBadgeDemo.ets`
-    - historical atom contract was `count<=0 hidden`, `1..99 exact`, `>=100 => 99+`; active `TgChatMeta` later superseded this with Telegram iOS compact `K/M` formatting.
+  - Step 3 `TgUnreadBadge` was a historical standalone atom; its spec/atom/demo were later removed. Active unread rendering lives inline in `TgChatMeta` and follows Telegram iOS compact `K/M` formatting (`1...999`, then `1K`, `2.5K`, `1.2M`).
   - Step 4 `TgChatMeta` completed:
     - spec: `entry/src/main/ets/ui/tg_ui/spec/TgChatMeta.md`
     - atom: `entry/src/main/ets/ui/tg_ui/atoms/TgChatMeta.ets`
@@ -283,7 +279,7 @@ Master UI contract (frozen):
   - C.1-5: completed (`TgStickerView`)
   - C.1-6: TgMessageRouter (content-type → bubble atom routing)
   - C.1-7: integration into TgChatScreenPage
-- Shell polish (tab bar blur, top bar blur) deferred to Phase D — will be rebuilt from scratch as proper atoms (TgTabBar, TgTopBar v2)
+- Historical shell polish note: custom `TgTabBar`/top-bar blur work was later superseded by API23 `HdsTabs` for root tabs and shared `TgTopChromeBackground`/`TgTopBar`/`TgChatTopBar` primitives for upper chrome.
 - MainTabsPage modified: removed Stack wrapper, using built-in Tabs blur; `.hideToolBar(true)` added to all Navigation blocks
 - glass_tab_bg alpha reduced to 70% (light: `#B3F2F2F7`, dark: `#B32C2C2E`)
 

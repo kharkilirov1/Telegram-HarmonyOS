@@ -1,5 +1,6 @@
 # TgMessageTextBodyV2
 
+- Status: `archived` — implementation/demo removed; active text/quote rendering path is `TgTextBodyV3` / `TgTextBubbleV3`.
 ## Goal
 Render **visible blockquote segments inside text-message bubbles** without reopening the whole router or pretending that all text entities are already supported.
 
@@ -48,4 +49,4 @@ This atom is a narrow first step:
 - [ ] atom remains presentation-only
 
 ## Demo
-- `entry/src/main/ets/ui/tg_ui/demos/TgMessageTextBodyV2Demo.ets`
+- Historical demo removed; use `entry/src/main/ets/ui/tg_ui/demos/TgTextBubbleV3Demo.ets` for active quote/text coverage.

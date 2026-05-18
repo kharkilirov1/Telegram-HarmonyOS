@@ -1,5 +1,6 @@
 # TgFilterBar Component Passport
 
+- Status: `archived` — standalone atom/demo removed from the active API23 shell branch; chat-list filtering should be reintroduced only as a deliberate product slice.
 ## 1) Scope
 - Atom: `TgFilterBar`
 - Target layer: `atoms`

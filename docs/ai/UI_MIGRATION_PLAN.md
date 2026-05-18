@@ -1,15 +1,15 @@
 # UI Migration Plan (iOS Reference → HarmonyOS)
 
-Last updated: 2026-03-22
+Last updated: 2026-05-18
 
 ## Canonical contract
 - Source of truth: `docs/ai/MASTER_PLAN_TELEGRAM_UI.md`
 - If this file conflicts with the master plan, follow the master plan.
 
 ## Status sync (2026-03-22)
-- Current live Chats runtime path is `TgTabBar`, `TgChatListNavigationBar`, `TgChatRow`, `TgChatTopBar`, `TgMessageRouter`.
+- Current live Chats runtime path is API23 `HdsTabs`/`HdsNavigation` + `TgChatListNavigationBar` + `TgChatRow` + `TgChatTopBar` + `TgMessageRouter`; the old custom `TgTabBar` is historical.
 - `TgTopBar` remains active on secondary tabs (`ContactsPage`, `CallsPage`, `SettingsPage`).
-- `TgSearchBar` still exists in `tg_ui` inventory/demo/spec, but the live Chats shell uses stock ArkUI `Search` inside `TgChatListNavigationBar`.
+- `TgSearchBar` is no longer an active standalone atom/demo/spec; the live Chats shell uses stock ArkUI `Search` inside `TgChatListNavigationBar`.
 - Current runtime gate is `TgUiFeatureFlags.USE_TG_CHAT_V2`; older mentions of `USE_TG_CHATLIST_V2`, `ChatListItem`, `AppTopBar`, or `AppTabBarItem` below should be treated as historical notes.
 - `scripts/smoke-ui-phase0.*` validate the active shell path (`ChatListPage` + `TgChatListNavigationBar` + `Search`) rather than removed legacy shell files.
 - For post-Phase-E/media-gallery reality, prefer `STATUS.md` + `PROJECT_ANALYSIS.md`; this file remains a migration-plan/history document.
@@ -138,9 +138,8 @@ Status update (2026-02-25):
     - atom: `entry/src/main/ets/ui/tg_ui/atoms/TgAvatar.ets`
     - demo: `entry/src/main/ets/ui/tg_ui/demos/TgAvatarDemo.ets`
   - `TgUnreadBadge`:
-    - spec: `entry/src/main/ets/ui/tg_ui/spec/TgUnreadBadge.md`
-    - atom: `entry/src/main/ets/ui/tg_ui/atoms/TgUnreadBadge.ets`
-    - demo: `entry/src/main/ets/ui/tg_ui/demos/TgUnreadBadgeDemo.ets`
+    - historical standalone spec/atom/demo later removed
+    - active unread rendering lives inline in `TgChatMeta` with Telegram iOS compact `K/M` formatting
   - `TgChatMeta`:
     - spec: `entry/src/main/ets/ui/tg_ui/spec/TgChatMeta.md`
     - atom: `entry/src/main/ets/ui/tg_ui/atoms/TgChatMeta.ets`
