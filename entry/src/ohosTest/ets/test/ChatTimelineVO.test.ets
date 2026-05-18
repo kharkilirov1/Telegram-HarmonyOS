@@ -7,6 +7,12 @@ import {
   ChatTimelineBuildResult,
   buildChatTimeline
 } from '../../../main/ets/ui/pages/chat/ChatTimelineVO';
+import {
+  PendingMediaOpenIntent,
+  resolvePendingMediaOpenIntent
+} from '../../../main/ets/ui/pages/chat/PendingMediaOpenIntent';
+import { resolveRefreshedMediaGalleryState } from '../../../main/ets/ui/pages/chat/MediaGalleryState';
+import { MediaGalleryItem } from '../../../main/ets/models/MediaGalleryItem';
 import { AppState, Chat, User, UsersState, ChatsState } from '../../../main/ets/core/model/AppState';
 import { TgMessageSendStatus } from '../../../main/ets/ui/tg_ui/atoms/TgMessageMeta';
 
@@ -35,6 +41,22 @@ function makeStateWithChat(chatId: number, accentColorId: number): AppState {
   chat.accentColorId = accentColorId;
   state.chats.chats.set(chatId, chat);
   return state;
+}
+
+function makePendingMediaEntry(messageId: string): ChatTimelineEntryVO {
+  const entry = new ChatTimelineEntryVO();
+  entry.kind = 'message';
+  entry.message.messageId = messageId;
+  return entry;
+}
+
+function makeGalleryItem(messageId: string, fileId: number, type: string = 'photo', path: string = ''): MediaGalleryItem {
+  const item = new MediaGalleryItem();
+  item.messageId = messageId;
+  item.fileId = fileId;
+  item.type = type;
+  item.path = path;
+  return item;
 }
 
 export default function chatTimelineVOTest() {
@@ -311,6 +333,135 @@ export default function chatTimelineVOTest() {
       it('should default entries to empty array', 0, () => {
         const result = new ChatTimelineBuildResult();
         expect(result.entries.length).assertEqual(0);
+      });
+    });
+
+    // -----------------------------------------------------------------------
+    // PendingMediaOpenIntent — download completion continuation
+    // -----------------------------------------------------------------------
+    describe('PendingMediaOpenIntent', () => {
+
+      it('should stay unresolved when no local document path exists yet', 0, () => {
+        const intent = new PendingMediaOpenIntent();
+        intent.set('document', 42, 'm1', 'application/pdf', 100, 7);
+
+        const entry = makePendingMediaEntry('m1');
+        entry.message.documentFileId = 42;
+
+        const resolution = resolvePendingMediaOpenIntent(intent, [entry], 100, 7);
+        expect(resolution === undefined).assertTrue();
+      });
+
+      it('should resolve a downloaded document for the tapped message', 0, () => {
+        const intent = new PendingMediaOpenIntent();
+        intent.set('document', 42, 'm1', 'application/pdf', 100, 7);
+
+        const entry = makePendingMediaEntry('m1');
+        entry.message.documentFileId = 42;
+        entry.message.documentPath = 'file://docs/report.pdf';
+
+        const resolution = resolvePendingMediaOpenIntent(intent, [entry], 100, 7);
+        expect(resolution !== undefined).assertTrue();
+        if (resolution) {
+          expect(resolution.kind).assertEqual('document');
+          expect(resolution.fileId).assertEqual(42);
+          expect(resolution.messageId).assertEqual('m1');
+          expect(resolution.path).assertEqual('file://docs/report.pdf');
+          expect(resolution.mimeType).assertEqual('application/pdf');
+        }
+      });
+
+      it('should resolve downloaded audio with raw playback path', 0, () => {
+        const intent = new PendingMediaOpenIntent();
+        intent.set('audio', 77, 'song', 'audio/mpeg', 100, 7);
+
+        const entry = makePendingMediaEntry('song');
+        entry.message.audioFileId = 77;
+        entry.message.audioPath = '/data/storage/song.mp3';
+
+        const resolution = resolvePendingMediaOpenIntent(intent, [entry], 100, 7);
+        expect(resolution !== undefined).assertTrue();
+        if (resolution) {
+          expect(resolution.kind).assertEqual('audio');
+          expect(resolution.path).assertEqual('/data/storage/song.mp3');
+        }
+      });
+
+      it('should resolve downloaded voice with raw playback path', 0, () => {
+        const intent = new PendingMediaOpenIntent();
+        intent.set('voice', 88, 'voice1', '', 100, 7);
+
+        const entry = makePendingMediaEntry('voice1');
+        entry.message.voiceFileId = 88;
+        entry.message.voicePath = '/data/storage/voice.ogg';
+        entry.message.mimeType = 'audio/ogg';
+
+        const resolution = resolvePendingMediaOpenIntent(intent, [entry], 100, 7);
+        expect(resolution !== undefined).assertTrue();
+        if (resolution) {
+          expect(resolution.kind).assertEqual('voice');
+          expect(resolution.path).assertEqual('/data/storage/voice.ogg');
+          expect(resolution.mimeType).assertEqual('audio/ogg');
+        }
+      });
+
+      it('should ignore stale chat, lifecycle, or different message matches', 0, () => {
+        const intent = new PendingMediaOpenIntent();
+        intent.set('audio', 77, 'song', 'audio/mpeg', 100, 7);
+
+        const entry = makePendingMediaEntry('other');
+        entry.message.audioFileId = 77;
+        entry.message.audioPath = '/data/storage/song.mp3';
+
+        expect(resolvePendingMediaOpenIntent(intent, [entry], 100, 7) === undefined).assertTrue();
+        expect(resolvePendingMediaOpenIntent(intent, [entry], 101, 7) === undefined).assertTrue();
+        expect(resolvePendingMediaOpenIntent(intent, [entry], 100, 8) === undefined).assertTrue();
+      });
+    });
+
+    // -----------------------------------------------------------------------
+    // MediaGalleryState — open gallery refresh after download/file update
+    // -----------------------------------------------------------------------
+    describe('MediaGalleryState', () => {
+
+      it('should preserve current gallery item by message and file identity after refresh', 0, () => {
+        const previous = [
+          makeGalleryItem('photo-1', 11),
+          makeGalleryItem('video-1', 22, 'video')
+        ];
+        const refreshed = [
+          makeGalleryItem('photo-1', 11, 'photo', '/data/photo.jpg'),
+          makeGalleryItem('video-1', 22, 'video', '/data/video.mp4')
+        ];
+
+        const result = resolveRefreshedMediaGalleryState(previous, 1, refreshed);
+
+        expect(result.shouldClose).assertFalse();
+        expect(result.currentIndex).assertEqual(1);
+        expect(result.items[1].path).assertEqual('/data/video.mp4');
+      });
+
+      it('should clamp gallery index when the current item disappears', 0, () => {
+        const previous = [
+          makeGalleryItem('photo-1', 11),
+          makeGalleryItem('video-1', 22, 'video')
+        ];
+        const refreshed = [
+          makeGalleryItem('photo-1', 11)
+        ];
+
+        const result = resolveRefreshedMediaGalleryState(previous, 1, refreshed);
+
+        expect(result.shouldClose).assertFalse();
+        expect(result.currentIndex).assertEqual(0);
+      });
+
+      it('should request gallery close when refreshed media list is empty', 0, () => {
+        const result = resolveRefreshedMediaGalleryState([makeGalleryItem('photo-1', 11)], 0, []);
+
+        expect(result.shouldClose).assertTrue();
+        expect(result.currentIndex).assertEqual(0);
+        expect(result.items.length).assertEqual(0);
       });
     });
   });

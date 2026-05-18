@@ -14,6 +14,8 @@ import {
   FileTransferUpdatedEvent
 } from '../../../main/ets/core/model/AppEvent';
 import { createCancelDownloadFileCommand, createDownloadFileCommand } from '../../../main/ets/core/model/AppCommand';
+import { ChatMediaDownloadController } from '../../../main/ets/ui/pages/chat/ChatMediaDownloadController';
+import { ChatTimelineEntryVO } from '../../../main/ets/ui/pages/chat/ChatTimelineVO';
 
 /**
  * Unit tests for the current file update/download pipeline.
@@ -159,6 +161,73 @@ export default function filePipelineTest() {
         expect(command.type).assertEqual('cancelDownloadFile');
         expect(command.payload.fileId).assertEqual(77);
         expect(command.payload.onlyIfPending).assertFalse();
+      });
+    });
+
+    describe('ChatMediaDownloadController retry status', () => {
+      it('should expose failed download status for retry-capable bubbles', 0, () => {
+        const controller = new ChatMediaDownloadController();
+        const initialVersion = controller.getVersion();
+
+        controller.recordDownloadFailure(77, ' network failed ');
+
+        expect(controller.getVersion()).assertEqual(initialVersion + 1);
+        expect(controller.isDownloadPending(77)).assertFalse();
+        expect(controller.isDownloadFailed(77)).assertTrue();
+        expect(controller.getDownloadFailureMessage(77)).assertEqual('network failed');
+
+        const status = controller.getDownloadStatus(77);
+        expect(status.isPending).assertFalse();
+        expect(status.isFailed).assertTrue();
+        expect(status.errorMessage).assertEqual('network failed');
+      });
+
+      it('should clear failed status when the file is resolved in the timeline', 0, () => {
+        const controller = new ChatMediaDownloadController();
+        controller.recordDownloadFailure(88, 'failed');
+
+        const entry = new ChatTimelineEntryVO();
+        entry.kind = 'message';
+        entry.message.audioFileId = 88;
+        entry.message.audioPath = '/data/storage/song.mp3';
+
+        controller.syncResolvedDownloads([entry]);
+
+        expect(controller.isDownloadFailed(88)).assertFalse();
+        expect(controller.getDownloadFailureMessage(88)).assertEqual('');
+      });
+
+      it('should clear failed photo and album download status when local media appears', 0, () => {
+        const controller = new ChatMediaDownloadController();
+        controller.recordDownloadFailure(101, 'photo failed');
+        controller.recordDownloadFailure(202, 'album failed');
+
+        const photoEntry = new ChatTimelineEntryVO();
+        photoEntry.kind = 'message';
+        photoEntry.message.photoFileId = 101;
+        photoEntry.message.photoPath = 'file://photos/p1.jpg';
+        photoEntry.message.hasLocalPhoto = true;
+
+        const albumEntry = new ChatTimelineEntryVO();
+        albumEntry.kind = 'message';
+        albumEntry.message.albumPhotoFileIds = [202];
+        albumEntry.message.albumPhotoPaths = ['file://photos/a1.jpg'];
+        albumEntry.message.albumPhotoHasLocal = [true];
+
+        controller.syncResolvedDownloads([photoEntry, albumEntry]);
+
+        expect(controller.isDownloadFailed(101)).assertFalse();
+        expect(controller.isDownloadFailed(202)).assertFalse();
+      });
+
+      it('should clear failed status on explicit pending reset', 0, () => {
+        const controller = new ChatMediaDownloadController();
+        controller.recordDownloadFailure(99, 'failed');
+
+        controller.clearPendingDownloads();
+
+        expect(controller.isDownloadFailed(99)).assertFalse();
+        expect(controller.getDownloadStatus(99).isFailed).assertFalse();
       });
     });
   });

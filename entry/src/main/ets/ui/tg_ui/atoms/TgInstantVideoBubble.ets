@@ -9,6 +9,7 @@ export struct TgInstantVideoBubble {
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
   @Param noBubbleWrap: boolean = false;
   @Param isDownloadPending: boolean = false;
+  @Param isDownloadFailed: boolean = false;
   @Param downloadProgress: number = -1;
   @Event onTap: () => void = () => {};
   @Event onPlayToggle: () => void = () => {};
@@ -190,7 +191,7 @@ export struct TgInstantVideoBubble {
         }
       })
       .animation({ duration: TgUiTokens.MEDIA_STATUS_ANIM_DURATION, curve: Curve.EaseInOut })
-    } else if (!this.hasLocalVideo()) {
+    } else if (!this.hasLocalVideo() || this.isDownloadFailed) {
       this.buildCenterIconButton(TgUiTokens.ICON_RES_DOWNLOAD, () => this.onDownloadToggle())
     } else {
       // Downloaded: play button

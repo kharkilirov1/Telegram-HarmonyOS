@@ -11,5 +11,6 @@ export class MediaGalleryItem {
   fileId: number = 0;
   messageId: string = '';
   isDownloading: boolean = false;
+  isDownloadFailed: boolean = false;
   downloadProgress: number = -1;
 }

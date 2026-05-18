@@ -17,9 +17,28 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 const DOMAIN = 0x0021;
 const TAG = 'ChatMediaDownload';
 
+export class MediaDownloadStatus {
+  isPending: boolean = false;
+  isFailed: boolean = false;
+  errorMessage: string = '';
+}
+
 export class ChatMediaDownloadController {
   private pendingFileIds: Set<number> = new Set<number>();
+  private failedFileMessages: Map<number, string> = new Map<number, string>();
   private version: number = 0;
+  private changeListener?: (version: number) => void;
+
+  setChangeListener(listener?: (version: number) => void): void {
+    this.changeListener = listener;
+  }
+
+  private bumpVersion(): void {
+    this.version++;
+    if (this.changeListener) {
+      this.changeListener(this.version);
+    }
+  }
 
   getVersion(): number {
     return this.version;
@@ -31,8 +50,11 @@ export class ChatMediaDownloadController {
       hilog.info(DOMAIN, TAG, 'Skip duplicate on-demand download: fileId=%{public}d', fileId);
       return;
     }
+    if (this.failedFileMessages.delete(fileId)) {
+      this.bumpVersion();
+    }
     this.pendingFileIds.add(fileId);
-    this.version++;
+    this.bumpVersion();
     hilog.info(DOMAIN, TAG, 'On-demand media download requested: fileId=%{public}d', fileId);
     const token = lifecycleToken;
     const capturedFileId = fileId;
@@ -56,13 +78,14 @@ export class ChatMediaDownloadController {
             event.timestamp = Date.now();
             getAppCoreRuntime().getStore().dispatch(event);
             if (this.pendingFileIds.delete(capturedFileId)) {
-              this.version++;
+              this.bumpVersion();
+            }
+            if (this.failedFileMessages.delete(capturedFileId)) {
+              this.bumpVersion();
             }
           }
-        } catch (_e) {
-          if (this.pendingFileIds.delete(capturedFileId)) {
-            this.version++;
-          }
+        } catch (error) {
+          this.recordDownloadFailure(capturedFileId, 'Invalid download response: ' + String(error));
         }
       })
       .catch((error: Error): void => {
@@ -71,17 +94,16 @@ export class ChatMediaDownloadController {
         }
         hilog.warn(DOMAIN, TAG, 'On-demand download failed: fileId=%{public}d: %{public}s',
           capturedFileId, error.message);
-        if (this.pendingFileIds.delete(capturedFileId)) {
-          this.version++;
-        }
+        this.recordDownloadFailure(capturedFileId, error.message);
       });
   }
 
   cancelMediaDownload(fileId: number): void {
     if (fileId <= 0) return;
     const wasPending = this.pendingFileIds.delete(fileId);
-    if (wasPending) {
-      this.version++;
+    const wasFailed = this.failedFileMessages.delete(fileId);
+    if (wasPending || wasFailed) {
+      this.bumpVersion();
     }
     const event = new FileTransferUpdatedEvent();
     event.fileId = fileId;
@@ -103,11 +125,12 @@ export class ChatMediaDownloadController {
   }
 
   clearPendingDownloads(): void {
-    if (this.pendingFileIds.size === 0) {
+    if (this.pendingFileIds.size === 0 && this.failedFileMessages.size === 0) {
       return;
     }
     this.pendingFileIds.clear();
-    this.version++;
+    this.failedFileMessages.clear();
+    this.bumpVersion();
   }
 
   isDownloadPending(fileId: number): boolean {
@@ -117,8 +140,46 @@ export class ChatMediaDownloadController {
     return this.pendingFileIds.has(fileId);
   }
 
+  isDownloadFailed(fileId: number): boolean {
+    if (fileId <= 0) {
+      return false;
+    }
+    return this.failedFileMessages.has(fileId);
+  }
+
+  getDownloadFailureMessage(fileId: number): string {
+    if (fileId <= 0) {
+      return '';
+    }
+    return this.failedFileMessages.get(fileId) || '';
+  }
+
+  getDownloadStatus(fileId: number): MediaDownloadStatus {
+    const status = new MediaDownloadStatus();
+    if (fileId <= 0) {
+      return status;
+    }
+    status.isPending = this.pendingFileIds.has(fileId);
+    status.isFailed = this.failedFileMessages.has(fileId);
+    status.errorMessage = this.failedFileMessages.get(fileId) || '';
+    return status;
+  }
+
+  recordDownloadFailure(fileId: number, message: string): void {
+    if (fileId <= 0) {
+      return;
+    }
+    const normalizedMessage = message.trim().length > 0 ? message.trim() : 'Download failed';
+    const wasPending = this.pendingFileIds.delete(fileId);
+    const previousMessage = this.failedFileMessages.get(fileId) || '';
+    this.failedFileMessages.set(fileId, normalizedMessage);
+    if (wasPending || previousMessage !== normalizedMessage) {
+      this.bumpVersion();
+    }
+  }
+
   syncResolvedDownloads(entries: ChatTimelineEntryVO[]): void {
-    if (this.pendingFileIds.size === 0 || entries.length === 0) {
+    if ((this.pendingFileIds.size === 0 && this.failedFileMessages.size === 0) || entries.length === 0) {
       return;
     }
     const resolved: Set<number> = new Set<number>();
@@ -127,6 +188,17 @@ export class ChatMediaDownloadController {
         continue;
       }
       const msg = entry.message;
+      if (msg.photoFileId > 0 && msg.hasLocalPhoto && msg.photoPath.length > 0) {
+        resolved.add(msg.photoFileId);
+      }
+      for (let i = 0; i < msg.albumPhotoFileIds.length; i++) {
+        const albumFileId = msg.albumPhotoFileIds[i];
+        const albumHasLocal = i < msg.albumPhotoHasLocal.length ? msg.albumPhotoHasLocal[i] : false;
+        const albumPath = i < msg.albumPhotoPaths.length ? msg.albumPhotoPaths[i] : '';
+        if (albumFileId > 0 && albumHasLocal && albumPath.length > 0) {
+          resolved.add(albumFileId);
+        }
+      }
       if (msg.documentFileId > 0 && msg.documentPath.length > 0) {
         resolved.add(msg.documentFileId);
       }
@@ -148,9 +220,12 @@ export class ChatMediaDownloadController {
       if (this.pendingFileIds.delete(fileId)) {
         changed = true;
       }
+      if (this.failedFileMessages.delete(fileId)) {
+        changed = true;
+      }
     });
     if (changed) {
-      this.version++;
+      this.bumpVersion();
     }
   }
 }

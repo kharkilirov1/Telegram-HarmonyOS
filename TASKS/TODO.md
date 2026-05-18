@@ -1,6 +1,6 @@
 # TODO — Telegram-HarmonyOS
 
-Last updated: 2026-05-18
+Last updated: 2026-05-19
 
 Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md`
 
@@ -44,8 +44,12 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md`
 - [x] Current review-fix/decomposition/tests follow-up patch committed locally
 
 ### Phase 5 next candidates
-- [ ] Media behavior completion: review remaining photo/video/document/voice playback/download gaps against `TASKS/AGENT_EXECUTION_PLAN.md`
-- [ ] Decide next narrow media slice after inspecting current `TgMessageRouter` and active bubble controllers
+- [x] Media behavior completion: reviewed remaining photo/video/document/voice playback/download gaps against `TASKS/AGENT_EXECUTION_PLAN.md`
+- [x] Narrow runtime slice selected and implemented: tap unloaded document/audio/voice → `downloadFile` → resolve local path → open/play
+- [x] Added pure coverage for pending media open intent resolution and stale lifecycle/chat guards
+- [x] Explicit failed-download/retry state in `ChatMediaDownloadController` + bubble params, without UI-polish expansion
+- [x] Media gallery download/retry continuation for photo/video: refresh open gallery after timeline file-path updates, preserve current index, propagate failed state into gallery items, clear photo/album failed states when resolved
+- [ ] Later Phase 5 slice: propagate asynchronous TDLib transfer failures if a concrete `updateFile`/TDLib failure shape is captured on device
 
 ### Technical debt (Phase 3+)
 - [ ] Deeper integration tests for `AuthSideEffect` ready/warmup flow once TDLib/app-context test seam exists

@@ -9,6 +9,7 @@ export struct TgMediaGalleryPage {
   @Param initialIndex: number = 0;
   @Param statusBarHeight: number = 0;
   @Event onDismiss: () => void = () => {};
+  @Event onIndexChange: (index: number) => void = (_: number) => {};
   @Event onDownloadRequest: (fileId: number) => void = (_: number) => {};
   @Event onDownloadCancel: (fileId: number) => void = (_: number) => {};
 
@@ -32,6 +33,15 @@ export struct TgMediaGalleryPage {
 
   aboutToAppear(): void {
     this.currentIndex = this.clampedIndex(this.initialIndex);
+  }
+
+  @Monitor('mediaItems', 'initialIndex')
+  onExternalGalleryStateChanged(): void {
+    const nextIndex = this.clampedIndex(this.initialIndex);
+    if (this.currentIndex !== nextIndex) {
+      this.currentIndex = nextIndex;
+    }
+    this.clearResolvedLocalDownloads();
   }
 
   aboutToDisappear(): void {
@@ -71,6 +81,20 @@ export struct TgMediaGalleryPage {
   private isLocalDownloadPending(fileId: number): boolean {
     const version = this.localDownloadVersion;
     return version >= 0 && fileId > 0 && this.localDownloadFileIds.has(fileId);
+  }
+
+  private clearResolvedLocalDownloads(): void {
+    let changed = false;
+    for (let i = 0; i < this.mediaItems.length; i++) {
+      const item = this.mediaItems[i];
+      if (item.fileId > 0 && this.hasFile(item.path) && this.localDownloadFileIds.has(item.fileId)) {
+        this.localDownloadFileIds.delete(item.fileId);
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.localDownloadVersion++;
+    }
   }
 
   private isTransferActive(item: MediaGalleryItem): boolean {
@@ -115,6 +139,7 @@ export struct TgMediaGalleryPage {
     this.prevVideoCommand = 'stop';
 
     this.currentIndex = index;
+    this.onIndexChange(index);
     this.resetZoom();
 
     // Auto-play if current is video/animation
@@ -299,48 +324,61 @@ export struct TgMediaGalleryPage {
           .height('100%')
           .opacity(0.72)
       }
-      Column({ space: 8 }) {
-        if (this.isTransferActive(item)) {
-          Stack({ alignContent: Alignment.Center }) {
-            if (this.hasDownloadProgress(item)) {
-              Progress({
-                value: this.normalizedDownloadProgress(item) * 100,
-                total: 100,
-                type: ProgressType.Ring
+      Column({ space: 10 }) {
+        Column({ space: 8 }) {
+          if (this.isTransferActive(item)) {
+            Stack({ alignContent: Alignment.Center }) {
+              if (this.hasDownloadProgress(item)) {
+                Progress({
+                  value: this.normalizedDownloadProgress(item) * 100,
+                  total: 100,
+                  type: ProgressType.Ring
+                })
+                  .width(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
+                  .height(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
+                  .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
+                  .backgroundColor(Color.Transparent)
+                  .style({ strokeWidth: TgUiTokens.MEDIA_PROGRESS_STROKE })
+              } else {
+                LoadingProgress()
+                  .width(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_ICON_SIZE)
+                  .height(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_ICON_SIZE)
+                  .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
+              }
+              TgIcon({
+                src: TgUiTokens.ICON_RES_CLOSE,
+                iconSize: TgUiTokens.MEDIA_CANCEL_ICON_SIZE,
+                tintColor: TgUiTokens.MEDIA_PROGRESS_COLOR
               })
-                .width(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
-                .height(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
-                .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
-                .backgroundColor(Color.Transparent)
-                .style({ strokeWidth: TgUiTokens.MEDIA_PROGRESS_STROKE })
-            } else {
-              LoadingProgress()
-                .width(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_ICON_SIZE)
-                .height(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_ICON_SIZE)
-                .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
             }
+            .width(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
+            .height(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
+          } else {
             TgIcon({
-              src: TgUiTokens.ICON_RES_CLOSE,
-              iconSize: TgUiTokens.MEDIA_CANCEL_ICON_SIZE,
-              tintColor: TgUiTokens.MEDIA_PROGRESS_COLOR
+              src: TgUiTokens.ICON_RES_DOWNLOAD,
+              iconSize: TgUiTokens.MEDIA_GALLERY_DOWNLOAD_ICON_SIZE,
+              tintColor: TgUiTokens.MEDIA_GALLERY_TEXT_PRIMARY
             })
           }
-          .width(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
-          .height(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
-        } else {
-          TgIcon({
-            src: TgUiTokens.ICON_RES_DOWNLOAD,
-            iconSize: TgUiTokens.MEDIA_GALLERY_DOWNLOAD_ICON_SIZE,
-            tintColor: TgUiTokens.MEDIA_GALLERY_TEXT_PRIMARY
-          })
+        }
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+        .width(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
+        .height(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
+        .backgroundColor(TgUiTokens.MEDIA_GALLERY_PILL_BG)
+        .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
+
+        if (item.isDownloadFailed && !this.isTransferActive(item)) {
+          Text('Download failed - tap to retry')
+            .fontSize(TgUiTokens.FONT_META_SIZE)
+            .fontColor(TgUiTokens.MEDIA_GALLERY_TEXT_PRIMARY)
+            .textAlign(TextAlign.Center)
+            .maxLines(2)
+            .padding({ left: 16, right: 16 })
         }
       }
       .justifyContent(FlexAlign.Center)
       .alignItems(HorizontalAlign.Center)
-      .width(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
-      .height(TgUiTokens.MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE)
-      .backgroundColor(TgUiTokens.MEDIA_GALLERY_PILL_BG)
-      .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
       .onClick(() => this.handleDownloadToggle(item))
     }
     .width('100%')

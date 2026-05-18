@@ -10,6 +10,7 @@ export struct TgDocumentRow {
   @Param documentPath: string = ''; // file:// URI when downloaded
   @Param downloadProgress: number = -1; // -1: hidden, 0..1: visible
   @Param isDownloading: boolean = false;
+  @Param isDownloadFailed: boolean = false;
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
   @Param maxWidthRatio: number = TgUiTokens.BUBBLE_MAX_WIDTH_RATIO;
   @Param noBubbleWrap: boolean = false;
@@ -26,6 +27,9 @@ export struct TgDocumentRow {
   }
 
   private metaColor(): ResourceColor {
+    if (this.isDownloadFailed && !this.isDownloaded() && !this.isTransferActive()) {
+      return TgUiTokens.COLOR_TEXT_ERROR;
+    }
     return this.isOutgoing ? TgUiTokens.DOCUMENT_ROW_META_OUTGOING : TgUiTokens.DOCUMENT_ROW_META_INCOMING;
   }
 
@@ -133,6 +137,9 @@ export struct TgDocumentRow {
         return 'Downloading • ' + sizeLabel;
       }
       return 'Downloading';
+    }
+    if (this.isDownloadFailed && !this.isDownloaded()) {
+      return 'Download failed • tap to retry';
     }
     const mime = this.mimeLabel();
     if (sizeLabel.length > 0) {

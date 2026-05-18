@@ -17,6 +17,13 @@ import { ChatTimelineDataSource } from './ChatTimelineDataSource';
 import { ChatTimelineEntryVO, buildChatTimeline } from './ChatTimelineVO';
 import { MediaPlaybackController, MediaPlaybackSnapshot, MediaContentType } from './VoicePlaybackController';
 import { ChatMediaDownloadController } from './ChatMediaDownloadController';
+import {
+  PendingMediaOpenIntent,
+  PendingMediaOpenKind,
+  PendingMediaOpenResolution,
+  resolvePendingMediaOpenIntent
+} from './PendingMediaOpenIntent';
+import { resolveRefreshedMediaGalleryState } from './MediaGalleryState';
 import { ChatScreenRouteParams } from './ChatScreenRouteParams';
 import { ChatComposerController } from './ChatComposerController';
 import {
@@ -119,6 +126,7 @@ export struct TgChatScreenPage {
   @Local private showMediaGallery: boolean = false;
   @Local private galleryItems: MediaGalleryItem[] = [];
   @Local private galleryInitialIndex: number = 0;
+  @Local private galleryCurrentIndex: number = 0;
   private dataSource: ChatTimelineDataSource = new ChatTimelineDataSource();
   private listScroller: Scroller = new Scroller();
   private unsubscribe?: () => void;
@@ -167,6 +175,7 @@ export struct TgChatScreenPage {
   private mediaPlaybackController?: MediaPlaybackController;
   private locallyListenedVoiceIds: Set<string> = new Set<string>();
   private mediaDownloadCtrl: ChatMediaDownloadController = new ChatMediaDownloadController();
+  private pendingMediaOpenIntent: PendingMediaOpenIntent = new PendingMediaOpenIntent();
   private composerCtrl: ChatComposerController = new ChatComposerController();
   private messageActionsCtrl: ChatMessageActionsController = new ChatMessageActionsController();
   private searchCtrl: ChatSearchController = new ChatSearchController();
@@ -450,6 +459,13 @@ export struct TgChatScreenPage {
       this.pinUseCase = createPinChatMessageUseCase(getTdGatewayAdapter());
       this.loadChatHistoryUseCase = createLoadChatHistoryUseCase(store, getTdGatewayAdapter());
       this.markChatReadUseCase = createMarkChatReadUseCase(store, getTdGatewayAdapter());
+      const mediaLifecycleToken: number = this.pageLifecycleToken;
+      this.mediaDownloadCtrl.setChangeListener((version: number): void => {
+        if (mediaLifecycleToken !== this.pageLifecycleToken) {
+          return;
+        }
+        this.pendingMediaDownloadVersion = version;
+      });
       this.currentScrollChatId = this.activeChatId;
       this.lastOpenedChatId = this.activeChatId;
       this.needsScrollRestore = true;
@@ -566,6 +582,7 @@ export struct TgChatScreenPage {
     this.isApplyingTimelineDiff = false;
 
     this.clearPendingMediaDownloads();
+    this.mediaDownloadCtrl.setChangeListener(undefined);
     if (this.paginationRecheckTimerId >= 0) {
       clearTimeout(this.paginationRecheckTimerId);
       this.paginationRecheckTimerId = -1;
@@ -974,6 +991,7 @@ export struct TgChatScreenPage {
       this.awaitingInitialTimeline = false;
 
       this.clearPendingMediaDownloads();
+      this.pendingMediaOpenIntent.reset();
       return;
     }
 
@@ -1012,6 +1030,8 @@ export struct TgChatScreenPage {
     }
 
     this.syncResolvedPendingDownloads(result.entries);
+    this.fulfillPendingMediaOpenIntent(result.entries);
+    this.refreshOpenMediaGalleryItems();
     const newCount = this.dataSource.totalCount();
     this.previousDataCount = newCount;
 
@@ -1314,11 +1334,15 @@ export struct TgChatScreenPage {
 
   private cancelMediaDownload(fileId: number): void {
     this.mediaDownloadCtrl.cancelMediaDownload(fileId);
+    if (this.pendingMediaOpenIntent.matchesFile(fileId)) {
+      this.pendingMediaOpenIntent.reset();
+    }
     this.pendingMediaDownloadVersion = this.mediaDownloadCtrl.getVersion();
   }
 
   private clearPendingMediaDownloads(): void {
     this.mediaDownloadCtrl.clearPendingDownloads();
+    this.pendingMediaOpenIntent.reset();
     this.pendingMediaDownloadVersion = this.mediaDownloadCtrl.getVersion();
   }
 
@@ -1326,19 +1350,54 @@ export struct TgChatScreenPage {
     return this.mediaDownloadCtrl.isDownloadPending(fileId);
   }
 
+  private isMediaDownloadFailed(fileId: number): boolean {
+    return this.mediaDownloadCtrl.isDownloadFailed(fileId);
+  }
+
   private syncResolvedPendingDownloads(entries: ChatTimelineEntryVO[]): void {
     this.mediaDownloadCtrl.syncResolvedDownloads(entries);
     this.pendingMediaDownloadVersion = this.mediaDownloadCtrl.getVersion();
+  }
+
+  private rememberPendingMediaOpenIntent(kind: PendingMediaOpenKind, fileId: number, messageId: string,
+    mimeType: string = ''): void {
+    this.pendingMediaOpenIntent.set(kind, fileId, messageId, mimeType, this.activeChatId, this.pageLifecycleToken);
+  }
+
+  private clearPendingMediaOpenIntent(fileId: number): void {
+    if (this.pendingMediaOpenIntent.matchesFile(fileId)) {
+      this.pendingMediaOpenIntent.reset();
+    }
+  }
+
+  private fulfillPendingMediaOpenIntent(entries: ChatTimelineEntryVO[]): void {
+    const resolution: PendingMediaOpenResolution | undefined =
+      resolvePendingMediaOpenIntent(this.pendingMediaOpenIntent, entries, this.activeChatId, this.pageLifecycleToken);
+    if (!resolution) {
+      return;
+    }
+    this.pendingMediaOpenIntent.reset();
+    if (resolution.kind === 'document') {
+      this.openDocumentFile(resolution.path, resolution.mimeType);
+      return;
+    }
+    if (resolution.kind === 'audio') {
+      this.handleAudioTap(resolution.path, resolution.fileId, resolution.mimeType, resolution.messageId);
+      return;
+    }
+    this.handleVoiceTap(resolution.messageId, resolution.path, resolution.fileId);
   }
 
 
   private handleVoiceTap(messageId: string, voicePath: string, voiceFileId: number): void {
     if (voicePath.trim().length === 0) {
       if (voiceFileId > 0) {
+        this.rememberPendingMediaOpenIntent('voice', voiceFileId, messageId);
         this.requestMediaDownload(voiceFileId);
       }
       return;
     }
+    this.clearPendingMediaOpenIntent(voiceFileId);
     if (!this.mediaPlaybackController) {
       this.setupMediaPlaybackController();
     }
@@ -1388,23 +1447,28 @@ export struct TgChatScreenPage {
     } catch (_error) {}
   }
 
-  private handleDocumentTap(documentPath: string, documentFileId: number, mimeType: string): void {
+  private handleDocumentTap(documentPath: string, documentFileId: number, mimeType: string,
+    messageId: string = '0'): void {
     if (documentPath.trim().length === 0) {
       if (documentFileId > 0) {
+        this.rememberPendingMediaOpenIntent('document', documentFileId, messageId, mimeType);
         this.requestMediaDownload(documentFileId);
       }
       return;
     }
+    this.clearPendingMediaOpenIntent(documentFileId);
     this.openDocumentFile(documentPath, mimeType);
   }
 
   private handleAudioTap(audioPath: string, audioFileId: number, mimeType: string, messageId: string = '0'): void {
     if (audioPath.trim().length === 0) {
       if (audioFileId > 0) {
+        this.rememberPendingMediaOpenIntent('audio', audioFileId, messageId, mimeType);
         this.requestMediaDownload(audioFileId);
       }
       return;
     }
+    this.clearPendingMediaOpenIntent(audioFileId);
     // Inline playback via unified MediaPlaybackController (like Telegram iOS/Android)
     if (!this.mediaPlaybackController) {
       this.setupMediaPlaybackController();
@@ -1470,6 +1534,7 @@ export struct TgChatScreenPage {
             albumItem.isDownloading =
               (j < entry.message.albumPhotoDownloading.length ? entry.message.albumPhotoDownloading[j] : false) ||
                 this.isMediaDownloadPending(albumFileId);
+            albumItem.isDownloadFailed = this.isMediaDownloadFailed(albumFileId);
             albumItem.downloadProgress =
               j < entry.message.albumPhotoDownloadProgress.length ? entry.message.albumPhotoDownloadProgress[j] : -1;
             items.push(albumItem);
@@ -1492,6 +1557,7 @@ export struct TgChatScreenPage {
           item.messageId = entry.message.messageId;
           item.isDownloading = (ct === 'photo' ? entry.message.isPhotoDownloading : entry.message.isVideoDownloading) ||
             this.isMediaDownloadPending(fileId);
+          item.isDownloadFailed = this.isMediaDownloadFailed(fileId);
           item.downloadProgress = ct === 'photo' ? entry.message.photoDownloadProgress : entry.message.videoDownloadProgress;
           items.push(item);
         }
@@ -1526,17 +1592,43 @@ export struct TgChatScreenPage {
     }
     this.galleryItems = items;
     this.galleryInitialIndex = Math.min(targetIndex, items.length - 1);
+    this.galleryCurrentIndex = this.galleryInitialIndex;
     this.showMediaGallery = true;
+  }
+
+  private refreshOpenMediaGalleryItems(): void {
+    if (!this.showMediaGallery) {
+      return;
+    }
+    const result = resolveRefreshedMediaGalleryState(
+      this.galleryItems,
+      this.galleryCurrentIndex,
+      this.buildMediaGalleryItems()
+    );
+    if (result.shouldClose) {
+      this.galleryItems = [];
+      this.galleryInitialIndex = 0;
+      this.galleryCurrentIndex = 0;
+      this.showMediaGallery = false;
+      return;
+    }
+    this.galleryItems = result.items;
+    this.galleryCurrentIndex = result.currentIndex;
+    this.galleryInitialIndex = result.currentIndex;
   }
 
   @Builder
   private buildMediaGallery() {
     TgMediaGalleryPage({
       mediaItems: this.galleryItems,
-      initialIndex: this.galleryInitialIndex,
+      initialIndex: this.galleryCurrentIndex,
       statusBarHeight: Math.max(0, this.topBarTotalHeight - TgUiTokens.TOP_BAR_HEIGHT - TgUiTokens.TOP_BAR_BOTTOM_PADDING),
       onDismiss: (): void => {
         this.showMediaGallery = false;
+        this.galleryCurrentIndex = 0;
+      },
+      onIndexChange: (index: number): void => {
+        this.galleryCurrentIndex = index;
       },
       onDownloadRequest: (fileId: number): void => {
         this.requestMediaDownload(fileId);
@@ -1968,6 +2060,7 @@ export struct TgChatScreenPage {
         photoPath: entry.message.photoPath,
         hasLocalPhoto: entry.message.hasLocalPhoto,
         isPhotoDownloading: entry.message.isPhotoDownloading || this.isMediaDownloadPending(entry.message.photoFileId),
+        isPhotoDownloadFailed: this.isMediaDownloadFailed(entry.message.photoFileId),
         photoDownloadProgress: entry.message.photoDownloadProgress,
         photoWidth: entry.message.photoWidth,
         photoHeight: entry.message.photoHeight,
@@ -1977,6 +2070,7 @@ export struct TgChatScreenPage {
         videoThumbPath: entry.message.videoThumbPath,
         videoPath: entry.message.videoPath,
         isVideoDownloading: entry.message.isVideoDownloading || this.isMediaDownloadPending(entry.message.videoFileId),
+        isVideoDownloadFailed: this.isMediaDownloadFailed(entry.message.videoFileId),
         videoDownloadProgress: entry.message.videoDownloadProgress,
         videoDuration: entry.message.videoDuration,
         videoWidth: entry.message.videoWidth,
@@ -1985,10 +2079,12 @@ export struct TgChatScreenPage {
         documentFileId: entry.message.documentFileId,
         isDocumentDownloading: entry.message.isDocumentDownloading ||
           this.isMediaDownloadPending(entry.message.documentFileId),
+        isDocumentDownloadFailed: this.isMediaDownloadFailed(entry.message.documentFileId),
         documentDownloadProgress: entry.message.documentDownloadProgress,
         audioPath: entry.message.audioPath,
         audioFileId: entry.message.audioFileId,
         isAudioDownloading: entry.message.isAudioDownloading || this.isMediaDownloadPending(entry.message.audioFileId),
+        isAudioDownloadFailed: this.isMediaDownloadFailed(entry.message.audioFileId),
         audioDownloadProgress: entry.message.audioDownloadProgress,
         audioDuration: entry.message.audioDuration,
         audioTitle: entry.message.audioTitle,
@@ -1999,6 +2095,7 @@ export struct TgChatScreenPage {
         voicePath: entry.message.voicePath,
         voiceFileId: entry.message.voiceFileId,
         isVoiceDownloading: entry.message.isVoiceDownloading || this.isMediaDownloadPending(entry.message.voiceFileId),
+        isVoiceDownloadFailed: this.isMediaDownloadFailed(entry.message.voiceFileId),
         voiceDownloadProgress: entry.message.voiceDownloadProgress,
         voiceDuration: entry.message.voiceDuration,
         voiceWaveform: entry.message.voiceWaveform,
@@ -2064,7 +2161,7 @@ export struct TgChatScreenPage {
           this.handleMediaGalleryOpen(entry.message.messageId);
         },
         onDocumentTap: (documentPath: string, documentFileId: number, mimeType: string): void => {
-          this.handleDocumentTap(documentPath, documentFileId, mimeType);
+          this.handleDocumentTap(documentPath, documentFileId, mimeType, entry.message.messageId);
         },
         onAudioTap: (audioPath: string, audioFileId: number, mimeType: string): void => {
           this.handleAudioTap(audioPath, audioFileId, mimeType, entry.message.messageId);

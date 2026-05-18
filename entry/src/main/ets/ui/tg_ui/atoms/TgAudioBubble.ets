@@ -10,6 +10,7 @@ export struct TgAudioBubble {
   @Param mimeType: string = '';
   @Param audioPath: string = '';
   @Param isDownloading: boolean = false;
+  @Param isDownloadFailed: boolean = false;
   @Param downloadProgress: number = -1;
   @Param isOutgoing: boolean = false;
   @Param isPlaying: boolean = false;
@@ -31,6 +32,9 @@ export struct TgAudioBubble {
   }
 
   private metaColor(): ResourceColor {
+    if (this.isDownloadFailed && !this.isDownloaded() && !this.isTransferActive()) {
+      return TgUiTokens.COLOR_TEXT_ERROR;
+    }
     return this.isOutgoing ? TgUiTokens.DOCUMENT_ROW_META_OUTGOING : TgUiTokens.DOCUMENT_ROW_META_INCOMING;
   }
 
@@ -114,6 +118,9 @@ export struct TgAudioBubble {
     if (this.isDownloading) {
       const sizeLabel = this.formatFileSize(this.fileSize);
       return sizeLabel.length > 0 ? sizeLabel : '...';
+    }
+    if (this.isDownloadFailed && !this.isDownloaded()) {
+      return 'Download failed • tap to retry';
     }
     // Normal state: performer first, then size fallback (iOS: performer ?? fileSize)
     const performer = this.performer.trim();

@@ -18,6 +18,7 @@ export struct TgVideoBubble {
   @Param useRegularMaxDimensions: boolean = false;
   @Param isShortVideo: boolean = false;
   @Param isDownloadPending: boolean = false;
+  @Param isDownloadFailed: boolean = false;
   @Param downloadProgress: number = -1;
   @Event onVideoPlayTap: () => void = () => {};
   @Event onDownloadToggle: () => void = () => {};
@@ -269,7 +270,7 @@ export struct TgVideoBubble {
 
       if (this.isDownloadPending) {
         this.buildDownloadingStatusButton()
-      } else if (!this.hasLocalVideo()) {
+      } else if (!this.hasLocalVideo() || this.isDownloadFailed) {
         this.buildIdleStatusButton(TgUiTokens.ICON_RES_DOWNLOAD, () => this.onDownloadToggle())
       } else if (this.shouldShowPlayOverlay()) {
         this.buildIdleStatusButton(TgUiTokens.ICON_RES_PLAY, () => this.onVideoPlayTap())

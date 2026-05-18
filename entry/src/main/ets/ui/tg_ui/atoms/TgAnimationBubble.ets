@@ -15,6 +15,7 @@ export struct TgAnimationBubble {
   @Param noBubbleWrap: boolean = false;
   @Param useRegularMaxDimensions: boolean = false;
   @Param isDownloadPending: boolean = false;
+  @Param isDownloadFailed: boolean = false;
   @Param downloadProgress: number = -1;
   @Event onAnimationTap: () => void = () => {};
   @Event onDownloadToggle: () => void = () => {};
@@ -251,7 +252,7 @@ export struct TgAnimationBubble {
 
       if (this.isDownloadPending) {
         this.buildDownloadingStatusButton()
-      } else if (!this.hasLocalAnimation()) {
+      } else if (!this.hasLocalAnimation() || this.isDownloadFailed) {
         this.buildIdleStatusButton(TgUiTokens.ICON_RES_DOWNLOAD, () => this.onDownloadToggle())
       }
 

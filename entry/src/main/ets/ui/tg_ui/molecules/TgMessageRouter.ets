@@ -58,6 +58,7 @@ export struct TgMessageRouter {
   @Param photoFileId: number = 0;
   @Param hasLocalPhoto: boolean = false;
   @Param isPhotoDownloading: boolean = false;
+  @Param isPhotoDownloadFailed: boolean = false;
   @Param photoDownloadProgress: number = -1;
   @Param photoWidth: number = 0;
   @Param photoHeight: number = 0;
@@ -71,6 +72,7 @@ export struct TgMessageRouter {
   @Param videoFileId: number = 0;
   @Param isShortVideo: boolean = false;
   @Param isVideoDownloading: boolean = false;
+  @Param isVideoDownloadFailed: boolean = false;
   @Param videoDownloadProgress: number = -1;
   @Param videoDuration: number = 0;
   @Param videoWidth: number = 0;
@@ -80,10 +82,12 @@ export struct TgMessageRouter {
   @Param documentPath: string = '';
   @Param documentFileId: number = 0;
   @Param isDocumentDownloading: boolean = false;
+  @Param isDocumentDownloadFailed: boolean = false;
   @Param documentDownloadProgress: number = -1;
   @Param audioPath: string = '';
   @Param audioFileId: number = 0;
   @Param isAudioDownloading: boolean = false;
+  @Param isAudioDownloadFailed: boolean = false;
   @Param audioDownloadProgress: number = -1;
   @Param audioDuration: number = 0;
   @Param audioTitle: string = '';
@@ -112,6 +116,7 @@ export struct TgMessageRouter {
   @Param voicePath: string = '';
   @Param voiceFileId: number = 0;
   @Param isVoiceDownloading: boolean = false;
+  @Param isVoiceDownloadFailed: boolean = false;
   @Param voiceDownloadProgress: number = -1;
   @Param voiceDuration: number = 0;
   @Param voiceWaveform: string = '';
@@ -517,6 +522,7 @@ export struct TgMessageRouter {
         photoPath: this.photoPath,
         hasLocalPhoto: this.hasLocalPhoto,
         isDownloading: this.isPhotoDownloading,
+        isDownloadFailed: this.isPhotoDownloadFailed,
         downloadProgress: this.photoDownloadProgress,
         caption: this.caption,
         isOutgoing: this.isOutgoing,
@@ -556,6 +562,7 @@ export struct TgMessageRouter {
         containerWidth: this.maxBubbleWidth(),
         noBubbleWrap: true,
         isDownloadPending: this.isVideoDownloading,
+        isDownloadFailed: this.isVideoDownloadFailed,
         downloadProgress: this.videoDownloadProgress,
         onTap: () => { this.onVideoTap(); },
         onPlayToggle: () => { this.onVideoTap(); },
@@ -580,6 +587,7 @@ export struct TgMessageRouter {
         noBubbleWrap: true,
         useRegularMaxDimensions: this.usesRegularBubbleLayout(),
         isDownloadPending: this.isVideoDownloading,
+        isDownloadFailed: this.isVideoDownloadFailed,
         downloadProgress: this.videoDownloadProgress,
         onAnimationTap: () => { this.onMediaGalleryOpen(this.messageId); },
         onDownloadToggle: () => {
@@ -605,6 +613,7 @@ export struct TgMessageRouter {
         isShortVideo: this.isShortVideo,
         useRegularMaxDimensions: this.usesRegularBubbleLayout(),
         isDownloadPending: this.isVideoDownloading,
+        isDownloadFailed: this.isVideoDownloadFailed,
         downloadProgress: this.videoDownloadProgress,
         onVideoPlayTap: () => { this.onMediaGalleryOpen(this.messageId); },
         onDownloadToggle: () => {
@@ -625,6 +634,7 @@ export struct TgMessageRouter {
         audioPath: this.documentPath,
         downloadProgress: this.documentDownloadProgress,
         isDownloading: this.isDocumentDownloading,
+        isDownloadFailed: this.isDocumentDownloadFailed,
         isOutgoing: this.isOutgoing,
         isPlaying: this.isAudioPlaying,
         playbackProgress: this.audioPlaybackProgress,
@@ -652,6 +662,7 @@ export struct TgMessageRouter {
         documentPath: this.documentPath,
         downloadProgress: this.documentDownloadProgress,
         isDownloading: this.isDocumentDownloading,
+        isDownloadFailed: this.isDocumentDownloadFailed,
         isOutgoing: this.isOutgoing,
         containerWidth: this.maxBubbleWidth(),
         noBubbleWrap: true,
@@ -676,6 +687,7 @@ export struct TgMessageRouter {
         audioPath: this.audioPath,
         downloadProgress: this.audioDownloadProgress,
         isDownloading: this.isAudioDownloading,
+        isDownloadFailed: this.isAudioDownloadFailed,
         isOutgoing: this.isOutgoing,
         isPlaying: this.isAudioPlaying,
         playbackProgress: this.audioPlaybackProgress,
@@ -705,6 +717,7 @@ export struct TgMessageRouter {
         isListened: this.isVoiceListened,
         hasLocalFile: this.voicePath.length > 0,
         isDownloading: this.isVoiceDownloading,
+        isDownloadFailed: this.isVoiceDownloadFailed,
         downloadProgress: this.voiceDownloadProgress,
         containerWidth: this.maxBubbleWidth(),
         maxWidthRatio: 1.0,
@@ -1048,6 +1061,7 @@ export struct TgMessageRouter {
           photoFileId: this.photoFileId,
           hasLocalPhoto: this.hasLocalPhoto,
           isPhotoDownloading: this.isPhotoDownloading,
+          isPhotoDownloadFailed: this.isPhotoDownloadFailed,
           photoDownloadProgress: this.photoDownloadProgress,
           photoWidth: this.photoWidth,
           photoHeight: this.photoHeight,
@@ -1059,6 +1073,7 @@ export struct TgMessageRouter {
           videoFileId: this.videoFileId,
           isShortVideo: this.isShortVideo,
           isVideoDownloading: this.isVideoDownloading,
+          isVideoDownloadFailed: this.isVideoDownloadFailed,
           videoDownloadProgress: this.videoDownloadProgress,
           videoDuration: this.videoDuration,
           videoWidth: this.videoWidth,

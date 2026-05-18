@@ -6,6 +6,7 @@ export struct TgPhotoBubble {
   @Param photoPath: string | Resource = '';
   @Param hasLocalPhoto: boolean = false;
   @Param isDownloading: boolean = false;
+  @Param isDownloadFailed: boolean = false;
   @Param downloadProgress: number = -1;
   @Param caption: string = '';
   @Param isOutgoing: boolean = false;
@@ -233,7 +234,7 @@ export struct TgPhotoBubble {
 
       if (this.isDownloading) {
         this.buildDownloadingStatusButton()
-      } else if (!this.hasLocalPhoto) {
+      } else if (!this.hasLocalPhoto || this.isDownloadFailed) {
         this.buildIdleStatusButton(TgUiTokens.ICON_RES_DOWNLOAD, () => this.onDownloadToggle())
       }
     }

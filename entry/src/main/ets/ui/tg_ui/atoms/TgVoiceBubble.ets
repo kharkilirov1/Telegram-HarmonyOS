@@ -11,6 +11,7 @@ export struct TgVoiceBubble {
   @Param isListened: boolean = false;
   @Param hasLocalFile: boolean = true;
   @Param isDownloading: boolean = false;
+  @Param isDownloadFailed: boolean = false;
   @Param downloadProgress: number = -1;
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
   @Param maxWidthRatio: number = TgUiTokens.BUBBLE_MAX_WIDTH_RATIO;
@@ -56,6 +57,9 @@ export struct TgVoiceBubble {
   }
 
   private durationColor(): ResourceColor {
+    if (this.isDownloadFailed && !this.hasLocalFile && !this.isTransferActive()) {
+      return TgUiTokens.COLOR_TEXT_ERROR;
+    }
     if (!this.hasLocalFile || this.isTransferActive()) {
       return this.isOutgoing ? TgUiTokens.VOICE_BUBBLE_DURATION_OUTGOING : TgUiTokens.VOICE_BUBBLE_DURATION_INCOMING;
     }
@@ -80,6 +84,9 @@ export struct TgVoiceBubble {
     }
     if (this.isDownloading) {
       return '...';
+    }
+    if (this.isDownloadFailed && !this.hasLocalFile) {
+      return 'Retry';
     }
     return this.formatDuration();
   }

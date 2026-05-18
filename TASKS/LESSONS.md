@@ -1,6 +1,6 @@
 # LESSONS — repeated mistakes and project-specific pitfalls
 
-Last updated: 2026-05-18
+Last updated: 2026-05-19
 
 ## 1. Do not mix V1 and V2 ArkUI decorators casually
 - `tg_ui` is `@ComponentV2`.
@@ -192,3 +192,18 @@ Last updated: 2026-05-18
 - TDLib `searchCallMessages` takes opaque `offset:string` and returns `FoundMessages.next_offset`.
 - Do not reuse chat-history `from_message_id` / `next_from_message_id` semantics for calls search.
 - Ground call-history pagination in `td_api.tl` before wiring UI state.
+
+## 50. User-initiated media downloads must carry the tap intent
+- Starting `downloadFile` is not enough for product behavior: document/audio/voice taps should resume into open/play after `fileDownloaded` updates the message path.
+- Store the intent with chat id + lifecycle token + message id + file id, and resolve it only from rebuilt timeline entries.
+- Clear the intent on cancel, navigation, or pending-download reset to avoid stale auto-open/play.
+
+## 51. Download failure state needs a page-local change signal
+- A controller can record failed `downloadFile` requests, but the UI will not repaint unless the page observes controller version changes.
+- Keep retry state page-local for on-demand media failures; clear it on retry, cancel, resolved local path, and navigation reset.
+- Do not over-polish the error UI first: expose status through bubble params and keep tap-to-retry behavior deterministic.
+
+## 52. Open media galleries must refresh from the rebuilt timeline
+- A gallery opened on an unloaded photo/video can outlive the `downloadFile` request that resolves the local path.
+- Do not let the overlay keep stale `MediaGalleryItem` snapshots; rebuild gallery params after timeline diff, preserve current item by message/file identity, and clear local pending UI when the path appears.
+- Include photo and album file ids in resolved-download cleanup, not only document/audio/voice/video.

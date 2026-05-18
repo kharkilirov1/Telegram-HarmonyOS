@@ -25,6 +25,7 @@ export struct TgMediaBubbleShellV2 {
   @Param photoFileId: number = 0;
   @Param hasLocalPhoto: boolean = false;
   @Param isPhotoDownloading: boolean = false;
+  @Param isPhotoDownloadFailed: boolean = false;
   @Param photoDownloadProgress: number = -1;
   @Param photoWidth: number = 0;
   @Param photoHeight: number = 0;
@@ -37,6 +38,7 @@ export struct TgMediaBubbleShellV2 {
   @Param videoFileId: number = 0;
   @Param isShortVideo: boolean = false;
   @Param isVideoDownloading: boolean = false;
+  @Param isVideoDownloadFailed: boolean = false;
   @Param videoDownloadProgress: number = -1;
   @Param videoDuration: number = 0;
   @Param videoWidth: number = 0;
@@ -212,6 +214,7 @@ export struct TgMediaBubbleShellV2 {
         photoPath: this.photoPath,
         hasLocalPhoto: this.hasLocalPhoto,
         isDownloading: this.isPhotoDownloading,
+        isDownloadFailed: this.isPhotoDownloadFailed,
         downloadProgress: this.photoDownloadProgress,
         caption: this.caption,
         isOutgoing: this.isOutgoing,
@@ -254,6 +257,7 @@ export struct TgMediaBubbleShellV2 {
         noBubbleWrap: true,
         useRegularMaxDimensions: this.usesRegularBubbleLayout(),
         isDownloadPending: this.isVideoDownloading,
+        isDownloadFailed: this.isVideoDownloadFailed,
         downloadProgress: this.videoDownloadProgress,
         onAnimationTap: () => { this.onMediaGalleryOpen(this.messageId); },
         onDownloadToggle: () => {
@@ -277,6 +281,7 @@ export struct TgMediaBubbleShellV2 {
         isShortVideo: this.isShortVideo,
         useRegularMaxDimensions: this.usesRegularBubbleLayout(),
         isDownloadPending: this.isVideoDownloading,
+        isDownloadFailed: this.isVideoDownloadFailed,
         downloadProgress: this.videoDownloadProgress,
         onVideoPlayTap: () => { this.onMediaGalleryOpen(this.messageId); },
         onDownloadToggle: () => {

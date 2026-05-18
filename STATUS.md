@@ -1,13 +1,13 @@
 # STATUS — Telegram-HarmonyOS
 
-Snapshot date: 2026-05-18
+Snapshot date: 2026-05-19
 
 ## Current State
 
 - **Branch:** `dev`
-- **Phase:** Phase 4 — Real Calls implementation (per `TASKS/AGENT_EXECUTION_PLAN.md`)
-- **Last committed baseline:** local `HEAD` before current calls-pagination fix
-- **Current follow-up:** TDLib calls search offset contract fixed; build/smoke green locally
+- **Phase:** Phase 5 — Media behavior completion (per `TASKS/AGENT_EXECUTION_PLAN.md`)
+- **Last committed baseline:** `f1da0b7 fix: align calls pagination with tdlib offset`
+- **Current follow-up:** Media download behavior now covers user intent continuation, failed-download retry state, and open gallery refresh after photo/video file updates
 - **Build:** `scripts/smoke-build.ps1` — green on last run
 - **Smoke:** `scripts/smoke-ui-phase0.ps1` — green; `bash ./scripts/smoke-ui-phase0.sh` — green on last run
 - **Warnings:** unverified `libtdlib_napi.so`, missing signing config
@@ -24,7 +24,20 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - Root shell: API23 `HdsTabs` + `HdsNavigation` (D14)
 - Chat-list unread badge is now a project-owned inline `TgChatMeta` capsule, not a standalone `TgUnreadBadge` atom
 
-## Recent Changes (2026-05-18 current follow-up)
+## Recent Changes (2026-05-19 current follow-up)
+
+### Media behavior runtime
+- Added `PendingMediaOpenIntent.ets` to track tap intent for unloaded document/audio/voice media across `downloadFile` progress updates
+- `TgChatScreenPage` now resolves the pending intent after timeline rebuild and opens documents or starts inline audio/voice playback when file paths arrive
+- Cancel/clear paths now reset the pending media open intent so stale downloads cannot auto-open after navigation/cancel
+- Added `ChatTimelineVO.test.ets` coverage for pending media open resolution, stale chat/lifecycle guards, and document/audio/voice paths
+- `ChatMediaDownloadController` now tracks failed on-demand downloads, exposes retry-capable status, and clears failure on retry/cancel/resolved file paths
+- Media bubble params now receive failed-download booleans; document/audio/voice rows expose non-polished retry status text while visual media keeps the retry download affordance
+- Open `TgMediaGalleryPage` state now receives refreshed media items after timeline file-path updates, preserving the currently viewed item and clearing local pending download affordances once the file path arrives
+- Gallery items now carry failed-download state for photo/video/album entries, and `ChatMediaDownloadController.syncResolvedDownloads()` clears photo/album failures when local media appears
+- Added `ChatTimelineVO.test.ets` coverage for gallery refresh state preservation and `FilePipeline.test.ets` coverage for failed-download status, resolved-path cleanup, photo/album cleanup, and reset cleanup
+
+## Recent Changes (2026-05-18 calls follow-up)
 
 ### Calls real data flow
 - `searchCallMessages` now follows the local TDLib `td_api.tl` contract: request `offset:string`, response `FoundMessages.next_offset:string`
