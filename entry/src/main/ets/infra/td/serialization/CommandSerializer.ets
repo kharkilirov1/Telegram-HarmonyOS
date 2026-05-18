@@ -271,7 +271,7 @@ function serializeGetUser(command: AnyAppCommand, result: SerializedCommand): vo
 function serializeSearchCallMessages(command: AnyAppCommand, result: SerializedCommand): void {
   const cmd = command as SearchCallMessagesCommand;
   result.method = 'searchCallMessages';
-  result.params.setString('_from_message_id_json', cmd.payload.fromMessageId);
+  result.params.setString('offset', cmd.payload.offset);
   result.params.setNumber('limit', cmd.payload.limit);
   result.params.setBool('only_missed', cmd.payload.onlyMissed);
 }

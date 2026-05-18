@@ -187,3 +187,8 @@ Last updated: 2026-05-18
 ## 48. Debounced search belongs outside the page body
 - Keep timer ownership and stale-result guards in a controller.
 - Let the page expose only active chat id, query state, and message-id scrolling.
+
+## 49. `searchCallMessages` is not `getChatHistory`
+- TDLib `searchCallMessages` takes opaque `offset:string` and returns `FoundMessages.next_offset`.
+- Do not reuse chat-history `from_message_id` / `next_from_message_id` semantics for calls search.
+- Ground call-history pagination in `td_api.tl` before wiring UI state.

@@ -4,7 +4,17 @@ Last updated: 2026-05-18
 
 Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md`
 
-## Active Phase: Phase 2 — Consolidate current working batch
+## Active Phase: Phase 5 — Media behavior completion
+
+### Phase 4 completed this session (2026-05-18)
+- [x] Inspected current Calls real-data path (`CallsPage`, `LoadCallsUseCase`, `TgCallRow`) and Telegram references
+- [x] Verified TDLib source contract in local `td_api.tl`: `searchCallMessages(offset, limit, only_missed) -> FoundMessages.next_offset`
+- [x] Fixed `SearchCallMessagesPayload` / `CommandSerializer` to use opaque `offset:string` instead of chat-history-style `_from_message_id_json`
+- [x] Fixed `LoadCallsUseCase` and `CallsPage` pagination state to consume `next_offset`
+- [x] Added `CommandSerializer.test.ets` coverage for `searchCallMessages`
+- [x] Expanded `LoadCalls.test.ets` to cover foundMessages parsing, missed/outgoing mapping, pagination, and direct `chat`/`user` hydration
+- [x] Build: `scripts/smoke-build.ps1` — BUILD SUCCESSFUL on last run
+- [x] Smoke: `scripts/smoke-ui-phase0.ps1` + `.sh` — passed on last run
 
 ### Phase 2 completed this session (2026-05-18)
 - [x] `TdGateway.ets`: replaced `getMethodTimeout()` if/else chain with `Record<string, number>` Map
@@ -32,6 +42,10 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md`
 
 ### Phase 2 remaining work
 - [x] Current review-fix/decomposition/tests follow-up patch committed locally
+
+### Phase 5 next candidates
+- [ ] Media behavior completion: review remaining photo/video/document/voice playback/download gaps against `TASKS/AGENT_EXECUTION_PLAN.md`
+- [ ] Decide next narrow media slice after inspecting current `TgMessageRouter` and active bubble controllers
 
 ### Technical debt (Phase 3+)
 - [ ] Deeper integration tests for `AuthSideEffect` ready/warmup flow once TDLib/app-context test seam exists

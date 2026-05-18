@@ -5,9 +5,9 @@ Snapshot date: 2026-05-18
 ## Current State
 
 - **Branch:** `dev`
-- **Phase:** Phase 2 — Consolidate current working batch (per `TASKS/AGENT_EXECUTION_PLAN.md`)
-- **Last committed baseline:** local `HEAD` (latest committed Phase 2 refactor/test/docs state)
-- **Current follow-up:** clean after committed controller/test refactors
+- **Phase:** Phase 4 — Real Calls implementation (per `TASKS/AGENT_EXECUTION_PLAN.md`)
+- **Last committed baseline:** local `HEAD` before current calls-pagination fix
+- **Current follow-up:** TDLib calls search offset contract fixed; build/smoke green locally
 - **Build:** `scripts/smoke-build.ps1` — green on last run
 - **Smoke:** `scripts/smoke-ui-phase0.ps1` — green; `bash ./scripts/smoke-ui-phase0.sh` — green on last run
 - **Warnings:** unverified `libtdlib_napi.so`, missing signing config
@@ -23,6 +23,14 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - UI: `@ComponentV2` decorators, token-first via `TgUiTokens.ets`
 - Root shell: API23 `HdsTabs` + `HdsNavigation` (D14)
 - Chat-list unread badge is now a project-owned inline `TgChatMeta` capsule, not a standalone `TgUnreadBadge` atom
+
+## Recent Changes (2026-05-18 current follow-up)
+
+### Calls real data flow
+- `searchCallMessages` now follows the local TDLib `td_api.tl` contract: request `offset:string`, response `FoundMessages.next_offset:string`
+- `LoadCallsUseCase` and `CallsPage` use opaque offset pagination instead of chat-history-style `from_message_id`
+- `LoadCalls.test.ets` now covers parser behavior for real `foundMessages`, missed/outgoing mapping, `next_offset`, and direct `chat`/`user` hydration
+- `CommandSerializer.test.ets` now covers the `searchCallMessages` serializer path
 
 ## Recent Changes (2026-05-18 consolidated batch)
 
@@ -62,6 +70,7 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 ## Known Issues
 
 - `TgChatScreenPage.ets` still owns timeline/playback/safe-area coordination; composer, message actions, and search are now extracted
+- Calls page data flow is build-verified against TDLib API shape, but real account/device runtime still needs signed device/emulator verification
 - Tests now cover basic `AuthSideEffect` singleton/store seam and common use-case validation/dispatch; deeper side-effect runtime tests still need device/integration seam
 - `libtdlib_napi.so` is externally built and not verified by current CI/smoke boundary
 - Device/emulator runtime behavior still requires a signed deployment pass; local check found no hdc target and no signing config

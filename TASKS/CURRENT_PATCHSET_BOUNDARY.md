@@ -4,54 +4,38 @@ Last updated: 2026-05-18
 
 ## Baseline
 
-- Last committed baseline: local `HEAD` (latest committed Phase 2 refactor/test/docs state)
-- The old broad dirty-tree batch has been committed.
-- Current review-fix/decomposition/tests patch has been committed locally.
+- Last committed baseline: local `HEAD` before the current Phase 4 calls-pagination follow-up
+- The Phase 2 review-fix/decomposition/tests patch has been committed locally.
+- Current patchset is the next unblocked Phase 4 slice.
 
 ## Current follow-up patch scope
 
 ### Code fixes / refactors
-- `entry/src/main/ets/ui/pages/chat/ChatMediaDownloadController.ets`
-  - Direct `downloadFile` responses flow through `TdGatewayAdapter` as `TdObject` instances.
-  - The controller uses `.getObject('local')`, `.getBool('is_downloading_completed')`, and `.getString('path')` instead of treating the response as a plain `Record`.
-- `entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets`
-  - Composer and message-action logic removed from the page body; page remains the reactive state/navigation owner.
-- `entry/src/main/ets/ui/pages/chat/ChatComposerController.ets`
-  - Owns send-message branching, media send preparation, emoji panel handlers, attachment picker flow, and picked-file local copy.
-- `entry/src/main/ets/ui/pages/chat/ChatMessageActionsController.ets`
-  - Owns action sheet actions: reply, edit, copy, forward target flow, pin, delete, and forward submission.
-- `entry/src/main/ets/ui/pages/chat/ChatScreenRouteParams.ets`
-  - Shared route params extracted from the page file.
+- `entry/src/main/ets/core/model/AppCommand.ets`
+  - `SearchCallMessagesPayload` now carries TDLib's opaque `offset:string`.
 - `entry/src/main/ets/infra/td/serialization/CommandSerializer.ets`
-  - Replaced large per-command `switch` with command-type dispatch handler registration.
-- `entry/src/main/ets/ui/pages/chat/ChatSearchController.ets`
-  - Owns debounced in-chat search requests and first-result navigation.
+  - `searchCallMessages` serializes `offset`, `limit`, and `only_missed`; no chat-history `_from_message_id_json`.
+- `entry/src/main/ets/domain/usecases/loadCalls.ets`
+  - Reads `FoundMessages.next_offset` and exposes `LoadCallsResult.nextOffset`.
+- `entry/src/main/ets/ui/pages/calls/CallsPage.ets`
+  - Carries next-page state as opaque TDLib offset for calls pagination.
 - `entry/src/ohosTest/ets/test/CommandSerializer.test.ets`
-  - Covers serializer dispatch handlers and `buildTdlibRequestJson` raw nested JSON expansion.
-- `entry/src/ohosTest/ets/test/UseCases.test.ets`
-  - Covers common use-case validation and gateway command dispatch.
-- `entry/src/ohosTest/ets/test/AuthSideEffect.test.ets`
-  - Covers basic singleton/store seam without native TDLib startup.
+  - Covers `searchCallMessages` serializer output.
+- `entry/src/ohosTest/ets/test/LoadCalls.test.ets`
+  - Covers foundMessages parsing, missed/outgoing mapping, next_offset, and direct chat/user hydration.
 
 ### Hygiene / docs
 - `STATUS.md`
 - `TASKS/TODO.md`
 - `TASKS/LESSONS.md`
 - `TASKS/CURRENT_PATCHSET_BOUNDARY.md`
-- `entry/src/main/ets/domain/selectors/chatSelectors.ets` (line-ending hygiene only)
-- `entry/src/main/ets/ui/tg_ui/spec/TgChatRow.md`
-- `entry/src/main/ets/ui/tg_ui/spec/TgMediaBubbleShellV2.md`
-- `entry/src/main/ets/ui/tg_ui/spec/TgMessageTextBodyV2.md`
-- `entry/src/main/ets/ui/tg_ui/spec/TgFilterBar.md`
-- `entry/src/main/ets/ui/tg_ui/spec/TgTokens.md`
-- `docs/ai/AI_MEMORY.md`
-- `docs/ai/UI_MIGRATION_PLAN.md`
-- `docs/ai/ATOM_ROADMAP.md`
 
 ## Out of scope for this follow-up
 
-- Additional `TgChatScreenPage.ets` decomposition beyond composer/actions/search
-- New UI atoms/demos
+- Call-start VoIP behavior from the call row
+- Call history deletion/action mode
+- Group-call join/create behavior
+- New UI atoms/demos or broad calls UI redesign
 - Device/emulator signing/deployment
 - Any destructive git history rewrite or amend
 

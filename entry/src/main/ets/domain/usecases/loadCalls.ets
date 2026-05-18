@@ -1,6 +1,6 @@
 // LoadCalls use case - real recent calls data path for CallsPage.
 // Grounding:
-// - TDLib official docs: searchCallMessages(from_message_id, limit, only_missed)
+// - TDLib td_api.tl: searchCallMessages(offset, limit, only_missed) -> FoundMessages.next_offset
 // - Android ref: CallLogActivity loads phone calls via TL_messages_search + inputMessagesFilterPhoneCalls
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -32,7 +32,7 @@ export type CallHistoryDirection = 'incoming' | 'outgoing' | 'missed';
 export type CallHistoryContentType = 'messageCall' | 'messageGroupCall';
 
 export class LoadCallsParams {
-  fromMessageId: MessageId = '0';
+  offset: string = '';
   limit: number = 50;
   onlyMissed: boolean = false;
 }
@@ -53,7 +53,7 @@ export class CallHistoryRecord {
 
 export class LoadCallsResult {
   records: CallHistoryRecord[] = [];
-  nextFromMessageId: MessageId = '0';
+  nextOffset: string = '';
   hasMore: boolean = false;
 }
 
@@ -71,7 +71,7 @@ export class LoadCallsUseCase {
   async execute(params: LoadCallsParams): Promise<LoadCallsResult> {
     const result = new LoadCallsResult();
     const response = await this.gateway.send(
-      createSearchCallMessagesCommand(params.fromMessageId, params.limit, params.onlyMissed)
+      createSearchCallMessagesCommand(params.offset, params.limit, params.onlyMissed)
     );
     const tdResponse = response as TdObject;
     if (!(tdResponse instanceof TdObject)) {
@@ -86,13 +86,13 @@ export class LoadCallsUseCase {
     await this.hydrateUsersIfMissing(this.collectMissingPeerUsers(records));
 
     result.records = records;
-    result.nextFromMessageId = tdGetInt64(tdResponse, 'next_from_message_id');
-    result.hasMore = result.nextFromMessageId !== '0';
+    result.nextOffset = tdGetString(tdResponse, 'next_offset');
+    result.hasMore = result.nextOffset.length > 0;
 
     hilog.info(DOMAIN, TAG,
-      'Loaded %{public}d call records, nextFromMessageId=%{public}s, hasMore=%{public}s',
+      'Loaded %{public}d call records, nextOffset=%{public}s, hasMore=%{public}s',
       result.records.length,
-      result.nextFromMessageId,
+      result.nextOffset,
       result.hasMore ? 'true' : 'false');
 
     return result;

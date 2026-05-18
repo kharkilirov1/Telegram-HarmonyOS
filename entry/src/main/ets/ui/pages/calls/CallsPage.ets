@@ -1,6 +1,7 @@
 // CallsPage — Calls tab with real TDLib-backed recent calls list.
 // Grounding:
 // - HarmonyOS docs: List + ListItem + onScrollIndex for paginated list rendering
+// - TDLib td_api.tl: searchCallMessages uses opaque offset/next_offset pagination
 // - Android ref: CallLogActivity loads call history via server search + paginates near list end
 // - iOS ref: CallListController is backed by a real call list, not placeholder text
 
@@ -138,7 +139,7 @@ export struct CallsPage {
   private mainWindow?: window.Window;
   private loadCallsUseCase?: LoadCallsUseCase;
   private loadedRecords: CallHistoryRecord[] = [];
-  private nextFromMessageId: string = '0';
+  private nextOffset: string = '';
   private hasMore: boolean = true;
   private initialLoadRequested: boolean = false;
   private loadMoreScheduled: boolean = false;
@@ -271,7 +272,7 @@ export struct CallsPage {
     }
     this.initialLoadRequested = true;
     this.loadedRecords = [];
-    this.nextFromMessageId = '0';
+    this.nextOffset = '';
     this.hasMore = true;
     this.fetchCalls(true);
   }
@@ -313,7 +314,7 @@ export struct CallsPage {
 
     this.isLoading = true;
     const params = new LoadCallsParams();
-    params.fromMessageId = reset ? '0' : this.nextFromMessageId;
+    params.offset = reset ? '' : this.nextOffset;
     params.limit = 40;
     params.onlyMissed = false;
 
@@ -327,7 +328,7 @@ export struct CallsPage {
           this.loadedRecords = [];
         }
         this.appendRecords(result.records);
-        this.nextFromMessageId = result.nextFromMessageId;
+        this.nextOffset = result.nextOffset;
         this.hasMore = result.hasMore;
         this.rebuildRows(getAppCoreRuntime().getStore().getState());
       })

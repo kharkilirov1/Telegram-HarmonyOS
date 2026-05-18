@@ -61,7 +61,7 @@ export class GetUserPayload {
 }
 
 export class SearchCallMessagesPayload {
-  fromMessageId: MessageId = '0';
+  offset: string = '';
   limit: number = 50;
   onlyMissed: boolean = false;
 }
@@ -426,12 +426,12 @@ export function createGetUserCommand(userId: UserId): GetUserCommand {
 }
 
 export function createSearchCallMessagesCommand(
-  fromMessageId: MessageId = '0',
+  offset: string = '',
   limit: number = 50,
   onlyMissed: boolean = false
 ): SearchCallMessagesCommand {
   const cmd = new SearchCallMessagesCommand();
-  cmd.payload.fromMessageId = fromMessageId;
+  cmd.payload.offset = offset;
   cmd.payload.limit = limit;
   cmd.payload.onlyMissed = onlyMissed;
   return cmd;

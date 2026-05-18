@@ -11,6 +11,7 @@ import {
   createRequestPasswordRecoveryCommand,
   createSendMediaMessageCommand,
   createSendMessageCommand,
+  createSearchCallMessagesCommand,
   createSetChatMuteCommand,
   createToggleChatIsMarkedAsUnreadCommand,
   createViewMessagesCommand
@@ -129,6 +130,15 @@ export default function commandSerializerTest() {
         const cancel = serializeCommand(createCancelDownloadFileCommand(42, true));
         expect(cancel.method).assertEqual('cancelDownloadFile');
         expect(cancel.params.getBool('only_if_pending')).assertTrue();
+      });
+
+      it('should serialize call search using TDLib offset pagination', 0, () => {
+        const calls = serializeCommand(createSearchCallMessagesCommand('opaque-offset', 40, true));
+        expect(calls.method).assertEqual('searchCallMessages');
+        expect(calls.params.getString('offset')).assertEqual('opaque-offset');
+        expect(calls.params.getNumber('limit')).assertEqual(40);
+        expect(calls.params.getBool('only_missed')).assertTrue();
+        expect(calls.params.getString('_from_message_id_json')).assertEqual('');
       });
     });
 
