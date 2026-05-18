@@ -6,7 +6,7 @@ Snapshot date: 2026-05-18
 
 - **Branch:** `dev`
 - **Phase:** Phase 2 — Consolidate current working batch (per `TASKS/AGENT_EXECUTION_PLAN.md`)
-- **Last committed baseline:** `ff97f3e` (`test: cover serializers and use cases`)
+- **Last committed baseline:** local `HEAD` (latest committed Phase 2 refactor/test/docs state)
 - **Current follow-up:** clean after committed controller/test refactors
 - **Build:** `scripts/smoke-build.ps1` — green on last run
 - **Smoke:** `scripts/smoke-ui-phase0.ps1` — green; `bash ./scripts/smoke-ui-phase0.sh` — green on last run
@@ -69,4 +69,4 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 ## Working Tree
 
 - Working tree expected clean after committed controller/test refactors
-- No broad dirty-tree backlog should remain after `ff97f3e`
+- No broad dirty-tree backlog should remain after local `HEAD`

@@ -4,7 +4,7 @@ Last updated: 2026-05-18
 
 ## Baseline
 
-- Last committed baseline: `ff97f3e` (`test: cover serializers and use cases`)
+- Last committed baseline: local `HEAD` (latest committed Phase 2 refactor/test/docs state)
 - The old broad dirty-tree batch has been committed.
 - Current review-fix/decomposition/tests patch has been committed locally.
 
