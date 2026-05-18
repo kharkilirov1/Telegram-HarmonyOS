@@ -31,7 +31,7 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md`
 - [x] Smoke: `scripts/smoke-ui-phase0.ps1` + `.sh` — passed on last run
 
 ### Phase 2 remaining work
-- [ ] Commit/review current search/tests follow-up patch when requested by user
+- [x] Current review-fix/decomposition/tests follow-up patch committed locally
 
 ### Technical debt (Phase 3+)
 - [ ] Deeper integration tests for `AuthSideEffect` ready/warmup flow once TDLib/app-context test seam exists

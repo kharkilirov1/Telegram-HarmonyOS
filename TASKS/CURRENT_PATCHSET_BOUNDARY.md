@@ -4,9 +4,9 @@ Last updated: 2026-05-18
 
 ## Baseline
 
-- Last committed baseline: `b762cf1` (`fix: repo cleanup + TdGateway refactor + tests + selector memoization`)
+- Last committed baseline: `ff97f3e` (`test: cover serializers and use cases`)
 - The old broad dirty-tree batch has been committed.
-- Current follow-up patch covers review fixes + Phase 2 decomposition/refactor + documentation/spec hygiene.
+- Current review-fix/decomposition/tests patch has been committed locally.
 
 ## Current follow-up patch scope
 

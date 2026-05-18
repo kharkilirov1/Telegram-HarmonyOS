@@ -6,8 +6,8 @@ Snapshot date: 2026-05-18
 
 - **Branch:** `dev`
 - **Phase:** Phase 2 — Consolidate current working batch (per `TASKS/AGENT_EXECUTION_PLAN.md`)
-- **Last committed baseline:** `b762cf1` (`fix: repo cleanup + TdGateway refactor + tests + selector memoization`)
-- **Current follow-up:** uncommitted review-fix + Phase 2 decomposition patch (media response parsing, chat composer/actions controllers, CommandSerializer dispatch handlers, docs/spec hygiene)
+- **Last committed baseline:** `ff97f3e` (`test: cover serializers and use cases`)
+- **Current follow-up:** clean after committed controller/test refactors
 - **Build:** `scripts/smoke-build.ps1` — green on last run
 - **Smoke:** `scripts/smoke-ui-phase0.ps1` — green; `bash ./scripts/smoke-ui-phase0.sh` — green on last run
 - **Warnings:** unverified `libtdlib_napi.so`, missing signing config
@@ -68,5 +68,5 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 
 ## Working Tree
 
-- Expected after this follow-up: uncommitted patch containing review fix + Phase 2 decomposition/refactor + docs/spec hygiene
-- No broad dirty-tree backlog should remain after `b762cf1`
+- Working tree expected clean after committed controller/test refactors
+- No broad dirty-tree backlog should remain after `ff97f3e`
