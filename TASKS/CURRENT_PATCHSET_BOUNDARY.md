@@ -24,6 +24,14 @@ Last updated: 2026-05-18
   - Shared route params extracted from the page file.
 - `entry/src/main/ets/infra/td/serialization/CommandSerializer.ets`
   - Replaced large per-command `switch` with command-type dispatch handler registration.
+- `entry/src/main/ets/ui/pages/chat/ChatSearchController.ets`
+  - Owns debounced in-chat search requests and first-result navigation.
+- `entry/src/ohosTest/ets/test/CommandSerializer.test.ets`
+  - Covers serializer dispatch handlers and `buildTdlibRequestJson` raw nested JSON expansion.
+- `entry/src/ohosTest/ets/test/UseCases.test.ets`
+  - Covers common use-case validation and gateway command dispatch.
+- `entry/src/ohosTest/ets/test/AuthSideEffect.test.ets`
+  - Covers basic singleton/store seam without native TDLib startup.
 
 ### Hygiene / docs
 - `STATUS.md`
@@ -42,7 +50,7 @@ Last updated: 2026-05-18
 
 ## Out of scope for this follow-up
 
-- Additional `TgChatScreenPage.ets` decomposition beyond composer/actions
+- Additional `TgChatScreenPage.ets` decomposition beyond composer/actions/search
 - New UI atoms/demos
 - Device/emulator signing/deployment
 - Any destructive git history rewrite or amend

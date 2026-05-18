@@ -179,3 +179,11 @@ Last updated: 2026-05-18
 ## 46. Command serializers should be handler-dispatched, not switch-owned
 - Keep each TDLib command serializer in a small handler function.
 - Register handlers by command type so adding a command does not grow one high-conflict switch body.
+
+## 47. Side-effect tests need explicit seams
+- Pure use cases can be tested with a fake `TdGatewayPort`.
+- `AuthSideEffect` currently couples to singleton TD gateway and app context; keep basic seam tests local until a richer injectable runtime seam exists.
+
+## 48. Debounced search belongs outside the page body
+- Keep timer ownership and stale-result guards in a controller.
+- Let the page expose only active chat id, query state, and message-id scrolling.

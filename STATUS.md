@@ -41,6 +41,7 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - `ChatComposerController.ets` extracted composer send/edit/forward handoff, emoji panel, attachment picker, and picked-file preparation
 - `ChatMessageActionsController.ets` extracted reply/edit/copy/forward/pin/delete action menu and action-mode orchestration
 - `ChatScreenRouteParams.ets` now owns chat route params shared by page/actions controller
+- `ChatSearchController.ets` extracted debounced in-chat search and result navigation
 
 ### Chat UI
 - Unread counters: Telegram-style compact `K`/`M` instead of `99+`
@@ -50,7 +51,7 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - Active rich text path is `TgTextBubbleV3` / `TgTextBodyV3`
 
 ### Tests
-- New/active: `TdGateway`, `EventNormalizer`, `AppStateModels`, `TextEngine`, `ChatTimelineVO`, `MessagesReducer`, `StateClone`, `ChatCommands`, `FilePipeline`, `LoadCalls`, `MessageDtoParser`, `UserDto`, `AppError`
+- New/active: `TdGateway`, `EventNormalizer`, `CommandSerializer`, `UseCases`, `AuthSideEffect`, `AppStateModels`, `TextEngine`, `ChatTimelineVO`, `MessagesReducer`, `StateClone`, `ChatCommands`, `FilePipeline`, `LoadCalls`, `MessageDtoParser`, `UserDto`, `AppError`
 - Deleted legacy service/controller tests that no longer match current architecture
 
 ### Performance / cleanup
@@ -60,8 +61,8 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 
 ## Known Issues
 
-- `TgChatScreenPage.ets` still owns timeline/search/playback/safe-area coordination; composer and message actions are now extracted
-- Tests still missing for `AuthSideEffect` and most use cases
+- `TgChatScreenPage.ets` still owns timeline/playback/safe-area coordination; composer, message actions, and search are now extracted
+- Tests now cover basic `AuthSideEffect` singleton/store seam and common use-case validation/dispatch; deeper side-effect runtime tests still need device/integration seam
 - `libtdlib_napi.so` is externally built and not verified by current CI/smoke boundary
 - Device/emulator runtime behavior still requires a signed deployment pass
 

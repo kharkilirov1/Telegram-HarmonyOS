@@ -19,6 +19,10 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md`
 - [x] Extracted `ChatMessageActionsController.ets` from `TgChatScreenPage.ets` (reply/edit/copy/forward/pin/delete menu, forward target flow, action-mode state)
 - [x] Added `ChatScreenRouteParams.ets` so chat route params are shared outside the page file
 - [x] Refactored `CommandSerializer.ets` from one large `switch` into command-type dispatch handlers
+- [x] Extracted `ChatSearchController.ets` from `TgChatScreenPage.ets` (debounced search + first-result navigation)
+- [x] Added `CommandSerializer.test.ets` coverage for dispatch handlers and raw nested JSON expansion
+- [x] Added `UseCases.test.ets` coverage for send/media/edit/delete/forward validation and dispatch
+- [x] Added `AuthSideEffect.test.ets` basic singleton/store seam coverage without native TDLib startup
 - [x] Selector memoization: `selectOrderedChats`, `selectPinnedChats`, `selectUnpinnedChats`, `selectTotalUnreadCount`
 - [x] Cleaned stale docs/spec references to removed standalone atoms (`TgUnreadBadge`, `TgMessageTextBodyV2`, custom `TgTabBar` shell)
 - [x] Normalized `chatSelectors.ets` line endings / `git diff --check` hygiene
@@ -27,11 +31,11 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md`
 - [x] Smoke: `scripts/smoke-ui-phase0.ps1` + `.sh` — passed on last run
 
 ### Phase 2 remaining work
-- [ ] Commit/review current uncommitted follow-up patch when requested by user
+- [ ] Commit/review current search/tests follow-up patch when requested by user
 
 ### Technical debt (Phase 3+)
-- [ ] Tests: `AuthSideEffect`, use cases coverage
-- [ ] Migrate any remaining `services/` legacy to Clean Architecture layers
+- [ ] Deeper integration tests for `AuthSideEffect` ready/warmup flow once TDLib/app-context test seam exists
+- [x] `services/` legacy cleanup check: only `ConfigLocal.ets` + example remain; no removable legacy service layer found
 - [ ] Evaluate `LazyForEach` → `Repeat` / `@ReusableV2` migration only as a separate performance phase
 - [ ] Signed device/emulator runtime verification
 

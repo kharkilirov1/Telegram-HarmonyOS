@@ -23,6 +23,7 @@ import {
   ChatForwardModeState,
   ChatMessageActionsController
 } from './ChatMessageActionsController';
+import { ChatSearchController } from './ChatSearchController';
 import { createSendMessageUseCase, SendMessageUseCase } from '../../../domain/usecases/sendMessage';
 import {
   SendMediaMessageUseCase,
@@ -32,7 +33,7 @@ import { createEditMessageUseCase, EditMessageUseCase } from '../../../domain/us
 import { createDeleteMessagesUseCase, DeleteMessagesUseCase } from '../../../domain/usecases/deleteMessages';
 import { ForwardMessagesUseCase, createForwardMessagesUseCase } from '../../../domain/usecases/forwardMessages';
 import { createOpenChatUseCase, OpenChatUseCase } from '../../../domain/usecases/openChat';
-import { SearchChatMessagesUseCase, SearchChatMessagesResult, createSearchChatMessagesUseCase } from '../../../domain/usecases/searchChatMessages';
+import { SearchChatMessagesUseCase, createSearchChatMessagesUseCase } from '../../../domain/usecases/searchChatMessages';
 import { PinChatMessageUseCase, createPinChatMessageUseCase } from '../../../domain/usecases/pinChatMessage';
 import {
   LoadChatHistoryUseCase,
@@ -145,7 +146,6 @@ export struct TgChatScreenPage {
   // Search mode state
   @Local private isSearchMode: boolean = false;
   @Local private searchQuery: string = '';
-  private searchDebounceTimerId: number = -1;
   private isLoadingOlder: boolean = false;
   private isLoadingNewer: boolean = false;
   private isMarkingChatRead: boolean = false;
@@ -169,6 +169,7 @@ export struct TgChatScreenPage {
   private mediaDownloadCtrl: ChatMediaDownloadController = new ChatMediaDownloadController();
   private composerCtrl: ChatComposerController = new ChatComposerController();
   private messageActionsCtrl: ChatMessageActionsController = new ChatMessageActionsController();
+  private searchCtrl: ChatSearchController = new ChatSearchController();
 
   getActiveChatId(): number {
     return this.activeChatId;
@@ -204,6 +205,10 @@ export struct TgChatScreenPage {
 
   getPinUseCase(): PinChatMessageUseCase | undefined {
     return this.pinUseCase;
+  }
+
+  getSearchUseCase(): SearchChatMessagesUseCase | undefined {
+    return this.searchUseCase;
   }
 
   isSendingMessage(): boolean {
@@ -339,6 +344,34 @@ export struct TgChatScreenPage {
     this.forwardSourceChatId = 0;
     this.forwardTitle = '';
     this.forwardPreview = '';
+  }
+
+  isSearchModeActive(): boolean {
+    return this.isSearchMode;
+  }
+
+  getSearchQuery(): string {
+    return this.searchQuery;
+  }
+
+  setSearchQuery(value: string): void {
+    this.searchQuery = value;
+  }
+
+  setSearchModeActive(value: boolean): void {
+    this.isSearchMode = value;
+  }
+
+  scrollToMessageId(messageId: string): boolean {
+    const count = this.dataSource.totalCount();
+    for (let i = 0; i < count; i++) {
+      const entry: ChatTimelineEntryVO = this.dataSource.getData(i);
+      if (entry.kind === 'message' && entry.message.messageId === messageId) {
+        this.listScroller.scrollToIndex(i);
+        return true;
+      }
+    }
+    return false;
   }
 
   private onActiveChatChanged(): void {
@@ -518,10 +551,7 @@ export struct TgChatScreenPage {
       clearTimeout(this.rebuildTimerId);
       this.rebuildTimerId = -1;
     }
-    if (this.searchDebounceTimerId !== -1) {
-      clearTimeout(this.searchDebounceTimerId);
-      this.searchDebounceTimerId = -1;
-    }
+    this.searchCtrl.clearPendingTimer();
     this.clearTransientTimers();
     this.rebuildScheduled = false;
     this.isLoadingOlder = false;
@@ -1636,77 +1666,11 @@ export struct TgChatScreenPage {
   }
 
   private handleSearchQueryChange(query: string): void {
-    this.searchQuery = query;
-    // iOS ref: 0.2s debounce before sending search request
-    if (this.searchDebounceTimerId !== -1) {
-      clearTimeout(this.searchDebounceTimerId);
-      this.searchDebounceTimerId = -1;
-    }
-    if (query.trim().length === 0) {
-      return;
-    }
-    const lifecycleToken: number = this.pageLifecycleToken;
-    let scheduledTimerId: number = -1;
-    scheduledTimerId = setTimeout(() => {
-      if (lifecycleToken !== this.pageLifecycleToken || this.searchDebounceTimerId !== scheduledTimerId) {
-        return;
-      }
-      this.searchDebounceTimerId = -1;
-      this.executeSearch(query);
-    }, 200) as number;
-    this.searchDebounceTimerId = scheduledTimerId;
-  }
-
-  private executeSearch(query: string): void {
-    const useCase = this.searchUseCase;
-    const chatId = this.activeChatId;
-    if (!useCase || chatId === 0) return;
-
-    const lifecycleToken: number = this.pageLifecycleToken;
-    useCase.execute(chatId, query)
-      .then((result: SearchChatMessagesResult) => {
-        if (lifecycleToken !== this.pageLifecycleToken ||
-          this.searchUseCase !== useCase ||
-          this.activeChatId !== chatId ||
-          !this.isSearchMode ||
-          this.searchQuery !== query) {
-          return;
-        }
-        if (result.messageIds.length > 0) {
-          // Auto-navigate to first result (iOS pattern)
-          const firstId = result.messageIds[0];
-          const count = this.dataSource.totalCount();
-          for (let i = 0; i < count; i++) {
-            const entry: ChatTimelineEntryVO = this.dataSource.getData(i);
-            if (entry.kind === 'message' && entry.message.messageId === firstId) {
-              this.listScroller.scrollToIndex(i);
-              break;
-            }
-          }
-          hilog.info(DOMAIN, TAG, 'Search: navigated to first of %{public}d results', result.totalCount);
-        } else {
-          hilog.info(DOMAIN, TAG, 'Search: no results for "%{public}s"', query);
-        }
-      })
-      .catch((err: Error) => {
-        if (lifecycleToken !== this.pageLifecycleToken ||
-          this.searchUseCase !== useCase ||
-          this.activeChatId !== chatId ||
-          !this.isSearchMode ||
-          this.searchQuery !== query) {
-          return;
-        }
-        hilog.error(DOMAIN, TAG, 'Search failed: %{public}s', err.message);
-      });
+    this.searchCtrl.handleSearchQueryChange(query, this);
   }
 
   private closeSearch(): void {
-    this.isSearchMode = false;
-    this.searchQuery = '';
-    if (this.searchDebounceTimerId !== -1) {
-      clearTimeout(this.searchDebounceTimerId);
-      this.searchDebounceTimerId = -1;
-    }
+    this.searchCtrl.closeSearch(this);
   }
 
   private openProfile(): void {

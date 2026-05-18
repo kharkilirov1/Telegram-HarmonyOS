@@ -9,8 +9,11 @@ import chatTimelineVOTest from './ChatTimelineVO.test';
 import textEngineTest from './TextEngine.test';
 import appStateModelsTest from './AppStateModels.test';
 import appErrorTest from './AppError.test';
+import authSideEffectTest from './AuthSideEffect.test';
 import loadCallsTest from './LoadCalls.test';
 import chatCommandsTest from './ChatCommands.test';
+import commandSerializerTest from './CommandSerializer.test';
+import useCasesTest from './UseCases.test';
 import userDtoTest from './UserDto.test';
 import filePipelineTest from './FilePipeline.test';
 import tdGatewayTest from './TdGateway.test';
@@ -22,7 +25,9 @@ export default function testsuite() {
   stateCloneTest();
   appStateModelsTest();
   appErrorTest();
+  authSideEffectTest();
   chatCommandsTest();
+  commandSerializerTest();
   filePipelineTest();
 
   // Infrastructure
@@ -31,6 +36,7 @@ export default function testsuite() {
 
   // Feature use cases
   loadCallsTest();
+  useCasesTest();
 
   // DTO / parsing layer
   messageDtoParserTest();
