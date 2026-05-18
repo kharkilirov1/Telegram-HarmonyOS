@@ -11,7 +11,7 @@ Snapshot date: 2026-05-18
 - **Build:** `scripts/smoke-build.ps1` — green on last run
 - **Smoke:** `scripts/smoke-ui-phase0.ps1` — green; `bash ./scripts/smoke-ui-phase0.sh` — green on last run
 - **Warnings:** unverified `libtdlib_napi.so`, missing signing config
-- **Device/emulator verification:** not performed in this pass
+- **Device/emulator verification:** blocked locally (`hdc list targets` = `[Empty]`, `signingConfigs` empty)
 
 ## Architecture
 
