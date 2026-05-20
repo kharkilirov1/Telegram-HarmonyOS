@@ -14,6 +14,15 @@ export struct SolidRoundedButton {
   @Event onPress: () => void = (): void => {};
 
   @Local private btnScale: number = 1.0;
+  private getAccessibilityText(): string {
+    if (this.buttonState === 'progress') {
+      return 'Loading';
+    } else if (this.buttonState === 'success') {
+      return 'Success';
+    }
+    return this.title;
+  }
+
 
   build() {
     Button() {
@@ -41,6 +50,9 @@ export struct SolidRoundedButton {
     .borderRadius(TgUiTokens.LOGIN_BUTTON_RADIUS)
     .backgroundColor(this.isEnabled ? TgUiTokens.LOGIN_BUTTON_BG : TgUiTokens.LOGIN_BUTTON_DISABLED_BG)
     .enabled(this.isEnabled && this.buttonState === 'default')
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.getAccessibilityText())
+
     .scale({ x: this.btnScale, y: this.btnScale })
     .onClick(() => {
       this.animatePress();
