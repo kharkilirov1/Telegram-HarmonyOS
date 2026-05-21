@@ -81,6 +81,8 @@ export struct TgTopBar {
     .height(TgUiTokens.TOP_BAR_ACTION_TOUCH)
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.showBackAction ? 'Back' : this.leftText)
     .onClick(() => {
       if (this.showBackAction) {
         this.onBackPress();
@@ -94,33 +96,39 @@ export struct TgTopBar {
   private buildRightSlot() {
     Row() {
       if (this.showSecondRightAction) {
-        TgIcon({
-          src: this.secondRightIcon,
-          iconSize: TgUiTokens.TOP_BAR_ACTION_ICON_SIZE,
-          tintColor: TgUiTokens.COLOR_ICON_PRIMARY
-        })
-          .margin({ right: TgUiTokens.SPACE_16 })
-          .onClick(() => {
-            this.onSecondRightPress();
+        Row() {
+          TgIcon({
+            src: this.secondRightIcon,
+            iconSize: TgUiTokens.TOP_BAR_ACTION_ICON_SIZE,
+            tintColor: TgUiTokens.COLOR_ICON_PRIMARY
           })
+        }
+        .margin({ right: TgUiTokens.SPACE_16 })
+        .accessibilityGroup(true)
+        .accessibilityDescription('More options')
+        .onClick(() => {
+          this.onSecondRightPress();
+        })
       }
 
       if (this.showRightAction) {
-        TgIcon({
-          src: this.rightIcon,
-          iconSize: TgUiTokens.TOP_BAR_ACTION_ICON_SIZE,
-          tintColor: TgUiTokens.COLOR_ICON_PRIMARY
+        Row() {
+          TgIcon({
+            src: this.rightIcon,
+            iconSize: TgUiTokens.TOP_BAR_ACTION_ICON_SIZE,
+            tintColor: TgUiTokens.COLOR_ICON_PRIMARY
+          })
+        }
+        .accessibilityGroup(true)
+        .accessibilityDescription('Action')
+        .onClick(() => {
+          this.onRightPress();
         })
       }
     }
     .height(TgUiTokens.TOP_BAR_ACTION_TOUCH)
     .justifyContent(FlexAlign.End)
     .alignItems(VerticalAlign.Center)
-    .onClick(() => {
-      if (this.showRightAction && !this.showSecondRightAction) {
-        this.onRightPress();
-      }
-    })
   }
 
   build() {

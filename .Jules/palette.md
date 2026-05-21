@@ -1,0 +1,3 @@
+## 2024-05-21 - Accessible App Top Bars
+**Learning:** When making custom container components interactive and accessible in ArkUI, explicitly apply `.accessibilityGroup(true)` and `.accessibilityDescription()` ONLY to the interactive parent wrapper (e.g. `Row`/`Column`), rather than grouping multiple distinct buttons under a single wrapper.
+**Action:** If a slot has multiple buttons, wrap each icon in its own `Row`, apply the `onClick` handler to that `Row`, and set `.accessibilityGroup(true)` and `.accessibilityDescription()` on each individual `Row`. Avoid hardcoding overly generic strings, but ensure all interactive elements have labels.
