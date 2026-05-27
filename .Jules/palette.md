@@ -1,0 +1,3 @@
+## 2024-05-24 - Dynamic Accessibility for Dual-Purpose Buttons
+**Learning:** Dual-purpose buttons (like Send/Mic) that dynamically change based on component state require dynamically computed accessibility descriptions so screen readers correctly announce current capabilities.
+**Action:** Apply dynamic expressions to `.accessibilityDescription()` using the same conditions that determine the visual state of the button.

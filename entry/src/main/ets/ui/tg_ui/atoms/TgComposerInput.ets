@@ -110,6 +110,8 @@ export struct TgComposerInput {
             tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
           })
         }
+        .accessibilityGroup(true)
+        .accessibilityDescription('Cancel edit')
         .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
         .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
         .flexShrink(0)
@@ -152,6 +154,8 @@ export struct TgComposerInput {
             tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
           })
         }
+        .accessibilityGroup(true)
+        .accessibilityDescription('Cancel reply')
         .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
         .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
         .flexShrink(0)
@@ -190,6 +194,8 @@ export struct TgComposerInput {
               tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
             })
           }
+          .accessibilityGroup(true)
+          .accessibilityDescription('Attach media')
           .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
           .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
           .flexShrink(0)
@@ -247,6 +253,8 @@ export struct TgComposerInput {
                 tintColor: TgUiTokens.COMPOSER_ACTION_INACTIVE
               })
             }
+            .accessibilityGroup(true)
+            .accessibilityDescription('Insert emoji')
             .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
             .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
             .flexShrink(0)
@@ -274,6 +282,8 @@ export struct TgComposerInput {
               : TgUiTokens.COMPOSER_ACTION_INACTIVE
           })
         }
+        .accessibilityGroup(true)
+        .accessibilityDescription(this.canSend() ? 'Send message' : 'Record voice message')
         .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
         .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
         .flexShrink(0)
