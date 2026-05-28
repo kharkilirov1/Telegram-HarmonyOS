@@ -1,0 +1,3 @@
+## 2024-05-28 - Added Accessibility Descriptions to Icon-Only Buttons in ChatTopBar
+**Learning:** Icon-only interactive components like `TgIcon` inside complex UI structures (e.g., `TgChatTopBar`) need explicit screen reader labels. Without `.accessibilityDescription()`, these buttons are completely silent to visually impaired users on HarmonyOS.
+**Action:** Always wrap standalone interactive icons in a `Row` or `Column` when they manage `onClick` directly, and apply `.accessibilityGroup(true)` along with a clear, hardcoded `.accessibilityDescription()` (e.g., 'Back', 'Clear search', 'Profile').
