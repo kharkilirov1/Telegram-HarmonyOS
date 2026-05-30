@@ -1,0 +1,3 @@
+## 2024-05-30 - Interactive Icon-Only Components and Multi-Layered Capsules Accessibility
+**Learning:** Screen readers fragment each text component separately in interactive multi-layered containers (like top bar capsules). For icon-only components that are interactive, applying accessibility directly to them causes redundant announcements.
+**Action:** Apply `.accessibilityGroup(true)` to the root interactive container. For icon-only interactive components, wrap them in a `Row`/`Column`, move `onClick` handlers and margins to the wrapper, and set `.accessibilityGroup(true)` and `.accessibilityDescription()` on the wrapper to avoid fragmented/redundant announcements.
