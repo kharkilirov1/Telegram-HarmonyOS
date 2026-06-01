@@ -1,0 +1,3 @@
+## 2024-06-01 - Interactive Icon Atoms in ArkUI
+**Learning:** In ArkUI, when making custom components (like `TgIcon`) interactive, applying the `.onClick()` handler and accessibility descriptions directly to the icon shrinks the touch target. The framework's idiomatic approach is to wrap the icon in a `Row` or `Column` to control the touch area (e.g., `COMPOSER_BUTTON_SIZE`), move margins to this wrapper, and apply `.accessibilityGroup(true)` and `.accessibilityDescription()` to the wrapper to prevent fragmented screen reader announcements.
+**Action:** When adding accessibility to interactive ArkUI elements, always target the parent wrapper that manages the touch dimensions and interaction state, not the inner visual node.
