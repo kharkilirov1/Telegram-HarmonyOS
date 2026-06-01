@@ -1,0 +1,3 @@
+## 2026-06-01 - Interactive Custom Components Accessibility
+**Learning:** When making custom container components interactive and accessible, explicitly applying .accessibilityGroup(true) and .accessibilityDescription() ONLY to the interactive parent wrapper (e.g., Row/Column) avoids redundant screen reader announcements. If an icon-only component (like TgIcon) needs to be interactive, wrapping it in a Row/Column and moving the onClick handler and margins to the wrapper is required.
+**Action:** Always wrap interactive @ComponentV2 sub-components (like TgIcon) in a standard ArkUI container (Row/Column) before adding accessibility descriptions and onClick handlers.
