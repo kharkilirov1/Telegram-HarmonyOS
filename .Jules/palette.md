@@ -1,0 +1,1 @@
+## 2024-06-02 - Missing ARIA Labels on Navigation Top Bars\n**Learning:** Interactive areas constructed via `Row` wrappers on top bars (`TgChatListNavigationBar`, `TgChatTopBar`) lack `.accessibilityGroup(true)` and `.accessibilityDescription()`.\n**Action:** Add accessibility Group and Description modifiers to clickable wrapper elements in ArkUI components.

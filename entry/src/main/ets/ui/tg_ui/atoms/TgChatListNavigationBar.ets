@@ -80,6 +80,8 @@ export struct TgChatListNavigationBar {
       .height(TgUiTokens.TOP_BAR_ACTION_TOUCH)
       .justifyContent(FlexAlign.End)
       .alignItems(VerticalAlign.Center)
+      .accessibilityGroup(true)
+      .accessibilityDescription('Compose')
       .onClick(() => {
         this.onComposePress();
       })
