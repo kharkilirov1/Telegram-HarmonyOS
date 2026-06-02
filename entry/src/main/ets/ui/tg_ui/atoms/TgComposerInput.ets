@@ -116,6 +116,8 @@ export struct TgComposerInput {
         .justifyContent(FlexAlign.Center)
         .alignItems(VerticalAlign.Center)
         .margin({ left: TgUiTokens.COMPOSER_REPLY_CLOSE_GAP })
+        .accessibilityGroup(true)
+        .accessibilityDescription('Cancel editing')
         .onClick(() => {
           this.onEditCancelPress();
         })
@@ -158,6 +160,8 @@ export struct TgComposerInput {
         .justifyContent(FlexAlign.Center)
         .alignItems(VerticalAlign.Center)
         .margin({ left: TgUiTokens.COMPOSER_REPLY_CLOSE_GAP })
+        .accessibilityGroup(true)
+        .accessibilityDescription('Cancel reply')
         .onClick(() => {
           this.onReplyCancelPress();
         })
@@ -287,6 +291,8 @@ export struct TgComposerInput {
           color: TgUiTokens.COMPOSER_CAPSULE_BORDER
         })
         .clip(true)
+        .accessibilityGroup(true)
+        .accessibilityDescription(this.canSend() ? 'Send message' : 'Record voice message')
         .onClick(() => {
           this.handleSend();
         })
