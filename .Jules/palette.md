@@ -1,0 +1,3 @@
+## 2024-05-24 - Interactive Component Accessibility Grouping
+**Learning:** In ArkUI, wrapping icon-only or text-based interactive elements in containers without explicit `accessibilityGroup` and `accessibilityDescription` leads to screen reader fragmentation or missing labels. Hardcoded string literals (e.g., 'Compose') or component parameters (e.g., `this.editText`) are safer than `$r(...)` for ARIA labels to avoid resource compilation errors during automated checks.
+**Action:** Always apply `.accessibilityGroup(true)` and `.accessibilityDescription(...)` to the interactive parent wrapper (`Row`/`Column`) rather than the inner elements to ensure a unified and safe screen reader announcement.
