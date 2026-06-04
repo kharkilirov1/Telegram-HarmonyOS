@@ -1,0 +1,3 @@
+## 2024-05-24 - Icon-only Interactive Wrappers
+**Learning:** When adding accessibility modifiers to ArkUI components, if an icon-only component needs to be interactive, wrapping it in a `Row`/`Column` and applying accessibility attributes there avoids redundant screen reader announcements.
+**Action:** Ensure all interactive `TgIcon` instances are wrapped in a parent container before applying `.accessibilityGroup(true)` and `.accessibilityDescription()`.
