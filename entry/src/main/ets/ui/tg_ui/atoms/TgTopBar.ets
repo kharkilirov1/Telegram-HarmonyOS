@@ -81,6 +81,8 @@ export struct TgTopBar {
     .height(TgUiTokens.TOP_BAR_ACTION_TOUCH)
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
+    .accessibilityGroup(true)
+    .accessibilityDescription('Go back')
     .onClick(() => {
       if (this.showBackAction) {
         this.onBackPress();
