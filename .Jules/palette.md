@@ -1,0 +1,3 @@
+## 2024-06-06 - Dynamic Screen Reader Descriptions for Dual-Purpose Components
+**Learning:** In ArkUI, dual-purpose interactive components (like a send button that becomes a microphone when empty) require dynamic accessibility descriptions. Hardcoding a static string fails to communicate the component's current capability to screen reader users when its state changes.
+**Action:** Use ternary operators or state-dependent expressions (e.g., `this.canSend() ? 'Send message' : 'Record voice message'`) directly in the `.accessibilityDescription()` modifier, applied to the interactive parent wrapper, to ensure screen readers announce the exact real-time functionality of dynamic icons.
