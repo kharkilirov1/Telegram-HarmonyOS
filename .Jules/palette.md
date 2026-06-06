@@ -1,0 +1,3 @@
+## 2024-06-06 - Accessible Capsule Navigation in ArkUI
+**Learning:** When building complex multi-layered interactive containers (like the top bar capsules), applying `.accessibilityGroup(true)` to the root interactive container prevents screen readers from fragmenting each child text/icon component separately. Additionally, icon-only components like `TgIcon` shouldn't accept `onClick` directly if they need an accessibility description; they should be wrapped in a container where the interaction and accessibility modifiers live.
+**Action:** Always apply `.accessibilityGroup(true)` and a calculated `.accessibilityDescription()` to the outer interactive wrapper (e.g., `Row` or `Column`) of custom UI controls to ensure cohesive screen reader announcements.
