@@ -116,6 +116,8 @@ export struct TgComposerInput {
         .justifyContent(FlexAlign.Center)
         .alignItems(VerticalAlign.Center)
         .margin({ left: TgUiTokens.COMPOSER_REPLY_CLOSE_GAP })
+        .accessibilityGroup(true)
+        .accessibilityDescription('Cancel edit')
         .onClick(() => {
           this.onEditCancelPress();
         })
@@ -158,6 +160,8 @@ export struct TgComposerInput {
         .justifyContent(FlexAlign.Center)
         .alignItems(VerticalAlign.Center)
         .margin({ left: TgUiTokens.COMPOSER_REPLY_CLOSE_GAP })
+        .accessibilityGroup(true)
+        .accessibilityDescription('Cancel reply')
         .onClick(() => {
           this.onReplyCancelPress();
         })
@@ -195,6 +199,8 @@ export struct TgComposerInput {
           .flexShrink(0)
           .justifyContent(FlexAlign.Center)
           .alignItems(VerticalAlign.Center)
+          .accessibilityGroup(true)
+          .accessibilityDescription('Attach media')
           .backgroundColor(this.capsuleBg())
           .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
           .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
@@ -252,6 +258,8 @@ export struct TgComposerInput {
             .flexShrink(0)
             .justifyContent(FlexAlign.Center)
             .alignItems(VerticalAlign.Center)
+            .accessibilityGroup(true)
+            .accessibilityDescription('Open emoji keyboard')
           }
         }
         .layoutWeight(1)
@@ -287,6 +295,8 @@ export struct TgComposerInput {
           color: TgUiTokens.COMPOSER_CAPSULE_BORDER
         })
         .clip(true)
+        .accessibilityGroup(true)
+        .accessibilityDescription(this.canSend() ? 'Send' : 'Record voice message')
         .onClick(() => {
           this.handleSend();
         })
