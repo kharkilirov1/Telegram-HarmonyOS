@@ -1,0 +1,3 @@
+## 2024-06-08 - Accessible Top Bar Capsules
+**Learning:** For interactive ArkUI capsules and icon-only components in a top bar, screen readers can fragment text or announce confusing labels if not grouped. Wrapping icon-only components in interactive containers allows adding accurate accessibility descriptions without shrinking the touch target. Dynamic descriptions (like chat title + subtitle) provide rich context.
+**Action:** Always wrap interactive icon-only components in ArkUI with Row/Column, move onClick handlers/margins to the wrapper, and apply `.accessibilityGroup(true)` and `.accessibilityDescription()` dynamically based on state.
