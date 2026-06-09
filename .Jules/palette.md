@@ -1,0 +1,3 @@
+## 2024-06-09 - Navigation Capsule Accessibility
+**Learning:** Custom interactive iOS-style navigation capsules (like `TgChatTopBar` and `TgChatListNavigationBar`) in this codebase often use icon-only layouts without ARIA equivalents. Additionally, raw `TgIcon` components used for clear actions in search bars lack touch wrappers, meaning applying accessibility directly shrinks the touch target.
+**Action:** Always apply `.accessibilityGroup(true)` and `.accessibilityDescription()` to the outermost interactive wrapper (e.g. `Row`/`Column`) for custom interactive capsules. For icon-only components needing interactivity, wrap them in a `Row` and move the `onClick` and `.accessibility*` modifiers to the wrapper to preserve the intended touch target size.
