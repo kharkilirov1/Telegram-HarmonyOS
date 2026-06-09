@@ -1,0 +1,3 @@
+## 2024-05-24 - Interactive Row Components Need Explicit Accessibility
+**Learning:** In this app's design system, custom interactive elements are often built using `Row` or `Column` components with `.onClick()` handlers rather than native `Button` components. These elements lack built-in accessibility roles and labels. Furthermore, dual-purpose buttons (like Send/Mic) fail to communicate their current state to screen readers.
+**Action:** Always apply `.accessibilityGroup(true)` and dynamically computed `.accessibilityDescription()` to any `Row` or `Column` that serves as a custom button to ensure screen reader users understand the interactive target and its current capability.
