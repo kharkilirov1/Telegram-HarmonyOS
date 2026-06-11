@@ -96,6 +96,8 @@ export struct TgSettingsRow {
         right: TgUiTokens.SETTINGS_ROW_PADDING_H
       })
       .alignItems(VerticalAlign.Center)
+      .accessibilityGroup(true)
+      .accessibilityDescription(this.trailingType === TgSettingsTrailing.Toggle ? (this.title + ', ' + (this.toggleValue ? 'Enabled' : 'Disabled')) : (this.trailingType === TgSettingsTrailing.Text ? this.title + ', ' + this.trailingText : this.title))
       .onClick(() => {
         this.onRowClick();
       })
