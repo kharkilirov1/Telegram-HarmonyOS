@@ -287,8 +287,6 @@ export struct TgComposerInput {
           color: TgUiTokens.COMPOSER_CAPSULE_BORDER
         })
         .clip(true)
-        .accessibilityGroup(true)
-        .accessibilityDescription(this.canSend() ? 'Send message' : 'Record voice message')
         .onClick(() => {
           this.handleSend();
         })
