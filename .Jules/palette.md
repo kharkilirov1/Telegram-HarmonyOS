@@ -1,0 +1,3 @@
+## 2024-06-12 - ArkUI Interactive Capsules Accessibility
+**Learning:** In ArkUI, complex interactive containers (like chat navigation capsules) need `.accessibilityGroup(true)` applied to their root wrapper to prevent screen readers from fragmenting internal text components. For icon-only components, applying `onClick` directly shrinks the touch target and causes redundant announcements.
+**Action:** Always apply `.accessibilityGroup(true)` to interactive parent wrappers. For icon-only interactive elements, wrap them in a `Row` or `Column`, move the `onClick` and layout modifiers (like `margin`) to the wrapper, and apply `.accessibilityDescription()` to the wrapper.
