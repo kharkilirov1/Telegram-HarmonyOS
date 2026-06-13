@@ -119,6 +119,8 @@ export struct TgComposerInput {
         .onClick(() => {
           this.onEditCancelPress();
         })
+        .accessibilityGroup(true)
+        .accessibilityDescription('Cancel editing')
       }
       .width('100%')
       .alignItems(VerticalAlign.Center)
@@ -161,6 +163,8 @@ export struct TgComposerInput {
         .onClick(() => {
           this.onReplyCancelPress();
         })
+        .accessibilityGroup(true)
+        .accessibilityDescription('Cancel reply')
       }
       .width('100%')
       .alignItems(VerticalAlign.Center)
@@ -200,6 +204,8 @@ export struct TgComposerInput {
           .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
           .border({ width: TgUiTokens.COMPOSER_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
           .clip(true)
+          .accessibilityGroup(true)
+          .accessibilityDescription('Attach media')
         }
 
         // ── Text field (separate glass capsule) ──
@@ -252,6 +258,8 @@ export struct TgComposerInput {
             .flexShrink(0)
             .justifyContent(FlexAlign.Center)
             .alignItems(VerticalAlign.Center)
+            .accessibilityGroup(true)
+            .accessibilityDescription('Emoji')
           }
         }
         .layoutWeight(1)
@@ -290,6 +298,8 @@ export struct TgComposerInput {
         .onClick(() => {
           this.handleSend();
         })
+        .accessibilityGroup(true)
+        .accessibilityDescription(this.canSend() ? 'Send message' : 'Record voice message')
       }
       .width('100%')
       .alignItems(VerticalAlign.Bottom)
