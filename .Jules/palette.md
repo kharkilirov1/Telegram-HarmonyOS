@@ -1,0 +1,3 @@
+## 2024-06-15 - Interactive Icon Accessibility
+**Learning:** Icon-only buttons (like those in Composer Input) lack semantic meaning for screen readers. Buttons with dynamic states (e.g., Send vs Mic) must compute their accessibility descriptions dynamically so that screen readers announce the current capability.
+**Action:** Explicitly applied `.accessibilityGroup(true)` and `.accessibilityDescription(...)` to the wrapper containers of icon-only interactive elements in ArkUI components, ensuring dynamic descriptions change based on state (e.g., this.canSend() ? 'Send message' : 'Record voice message').
