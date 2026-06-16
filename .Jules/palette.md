@@ -1,0 +1,3 @@
+## 2024-06-16 - ArkUI Accessibility Grouping & Touch Targets
+**Learning:** In ArkUI, applying click handlers directly to icon-only components shrinks the touch target. Applying `.accessibilityGroup(true)` to complex layered containers (like top bar capsules) prevents the screen reader from fragmenting text components separately.
+**Action:** Always wrap interactive icon-only components in a `Row` or `Column`, moving the `onClick` handler, margins, and accessibility modifiers (`.accessibilityGroup(true)` and `.accessibilityDescription()`) to the wrapper to preserve touch target size and ensure proper screen reader announcements. For multi-layered containers, apply `.accessibilityGroup(true)` to the root container.
