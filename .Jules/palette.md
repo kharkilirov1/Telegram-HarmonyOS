@@ -1,0 +1,3 @@
+## 2024-05-24 - Interactive Custom Capsules & Icon Accessibility
+**Learning:** In complex ArkUI components like top bar capsules, screen readers may fragment text components separately. Additionally, applying `onClick` directly to `TgIcon` causes the interactive area to shrink and lacks screen reader announcements.
+**Action:** Wrap icon-only buttons in interactive containers (like `Row`) to preserve touch targets, and apply `.accessibilityGroup(true)` and `.accessibilityDescription()` to the outermost interactive wrapper (e.g., capsules or custom rows) to ensure unified and accurate screen reader announcements.
