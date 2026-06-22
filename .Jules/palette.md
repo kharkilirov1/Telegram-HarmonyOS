@@ -1,0 +1,3 @@
+## 2024-06-22 - Wrap Interactive Icons in Accessible Parent Containers
+**Learning:** If an icon-only component needs to be interactive and accessible but does not have an explicit parent wrapper, applying click handlers and accessibility properties directly to it may cause issues. Wrapping it in a Row/Column and moving the interaction logic and accessibility properties to the wrapper prevents screen reader issues and maintains a solid touch target.
+**Action:** Always verify if an interactive icon-only component has a designated container before applying accessibility attributes, and explicitly wrap it if necessary.
