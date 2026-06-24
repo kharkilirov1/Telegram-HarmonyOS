@@ -1,0 +1,3 @@
+## 2024-05-20 - Adding Accessibility to Interactive Capsules in ArkUI
+**Learning:** Interactive multi-layered containers like the glass capsules in TgChatTopBar cause screen readers to fragment each text component separately unless explicitly grouped. Icon-only buttons (like search clear) need a wrapper Row/Column to hold the click handler and accessibility modifiers to prevent shrinking the touch target area.
+**Action:** Always apply `.accessibilityGroup(true)` and `.accessibilityDescription('Label')` to the root interactive container (Row/Column) rather than individual elements, and wrap standalone interactive icons in a layout container to preserve touch margins.
