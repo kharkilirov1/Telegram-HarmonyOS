@@ -1,0 +1,3 @@
+## 2024-06-24 - Screen Reader Fragmentation in Multi-layered Capsules
+**Learning:** Complex multi-layered containers with text and icons (like `TgChatTopBar` capsules) fragment into multiple screen reader announcements if the root interactive element lacks accessibility grouping. Additionally, adding interactivity to bare icons (like `TgIcon`) shrinks touch targets and bypasses structural semantics.
+**Action:** Always apply `.accessibilityGroup(true)` and a descriptive `.accessibilityDescription()` to the root `Row` or `Column` of interactive capsules to group content. For icon-only components, wrap them in a container to manage the touch area and attach accessibility attributes there.
