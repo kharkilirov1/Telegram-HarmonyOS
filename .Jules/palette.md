@@ -1,3 +1,0 @@
-## 2026-06-26 - Adding accessibility to icon-only buttons
-**Learning:** In ArkUI, interactive containers with icon-only elements (like the Compose and Back buttons in top bars) don't naturally expose their functionality to screen readers. We need to explicitly set `.accessibilityGroup(true)` and `.accessibilityDescription()` on the interactive parent container to ensure the touch target remains large while providing proper screen reader context.
-**Action:** Add `accessibilityGroup(true)` and `accessibilityDescription` to the `Row` containers of icon-only interactive actions in `TgChatListNavigationBar` and `TgChatTopBar`.
