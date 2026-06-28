@@ -1,0 +1,3 @@
+## 2024-05-24 - Screen Reader Support for Top Bar Actions
+**Learning:** Icon-only actions in custom ArkUI top bars (like Compose) lack default accessibility labels, preventing screen readers from announcing their purpose. Applying accessibility labels directly to the root `Row` container that manages the touch target size prevents the interactive area from shrinking and properly groups the element.
+**Action:** Always apply `.accessibilityGroup(true)` and `.accessibilityDescription('...')` to the interactive wrapper of icon-only elements to ensure accessibility without breaking UX interaction size.
