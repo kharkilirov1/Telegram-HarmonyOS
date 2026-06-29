@@ -1,0 +1,3 @@
+## 2024-06-29 - Accessibility Grouping in Top Bars
+**Learning:** When making complex, multi-layered or nested components interactive and accessible (like iOS-style capsule top bars or generic action containers), applying `.accessibilityGroup(true)` and `.accessibilityDescription()` to the root interactive wrapper (e.g. Row/Column) ensures screen readers read it as a single cohesive element, rather than fragmenting each text/icon separately, and preserves touch target sizes compared to wrapping inner elements.
+**Action:** Always apply accessibility modifiers directly to the parent container that handles the `onClick` event in custom navigation/top bar components. Avoid hardcoding generic descriptions for highly reusable slots.
