@@ -105,6 +105,8 @@ export struct TgChatTopBar {
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
     .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .clip(true)
+    .accessibilityGroup(true)
+    .accessibilityDescription("Go back")
     .renderGroup(true)
     .onClick(() => {
       this.onBackPress();
@@ -145,6 +147,8 @@ export struct TgChatTopBar {
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
     .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .clip(true)
+    .accessibilityGroup(true)
+    .accessibilityDescription("Chat title")
     .renderGroup(true)
     .onClick(() => {
       this.onTitlePress();
@@ -215,6 +219,8 @@ export struct TgChatTopBar {
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
     .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .clip(true)
+    .accessibilityGroup(true)
+    .accessibilityDescription("View profile")
     .renderGroup(true)
     .onClick(() => {
       this.onAvatarPress();
