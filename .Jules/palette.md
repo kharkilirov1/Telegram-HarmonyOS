@@ -1,0 +1,3 @@
+## 2024-05-24 - Composer Input Accessibility Learnings
+**Learning:** In ArkUI components with dynamic state (like the Send/Mic button in `TgComposerInput`), the `.accessibilityDescription()` can and should be computed dynamically using a ternary operator (e.g., `this.canSend() ? 'Send' : 'Voice message'`) to ensure screen readers always announce the current valid action without needing separate conditional renders.
+**Action:** Always verify if an icon button has multiple states (like send/mic or play/pause) and use dynamic expressions for its accessibility description to keep screen reader context accurate.
