@@ -110,6 +110,8 @@ export struct TgSearchBar {
         .onClick(() => {
           this.handleClear();
         })
+        .accessibilityGroup(true)
+        .accessibilityDescription('Clear')
       }
     }
     .width('100%')

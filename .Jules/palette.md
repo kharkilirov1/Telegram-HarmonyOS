@@ -1,0 +1,3 @@
+## 2024-07-01 - Icon Accessibility in ArkUI
+**Learning:** Icon-only buttons without text labels are inaccessible to screen readers. In ArkUI components with custom layouts, explicitly apply `.accessibilityGroup(true)` and `.accessibilityDescription()` to the interactive wrapper element rather than the bare icon itself.
+**Action:** Always wrap interactive icon-only elements in layout containers (like Row/Column) if they aren't already, move `onClick` actions and margins to the wrapper, and apply accessibility attributes there to maintain touch target sizes and avoid redundant screen reader announcements.
