@@ -1,0 +1,3 @@
+## 2024-10-24 - Accessibility improvements for ArkUI Icon-only Buttons
+**Learning:** In ArkUI custom top bar components, icon-only buttons (like `TgIcon`) without explicit text need to be wrapped in a layout container (like `Row`) to preserve touch targets. The container should then receive the `onClick` handler, `.accessibilityGroup(true)`, and a hardcoded `.accessibilityDescription(...)` to ensure screen readers announce them properly while keeping UI margins intact.
+**Action:** Consistently wrap interactive icon-only components in `Row`/`Column` wrappers and apply accessibility descriptions at the wrapper level.
