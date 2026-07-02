@@ -109,6 +109,8 @@ export struct TgChatTopBar {
     .onClick(() => {
       this.onBackPress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Back')
   }
 
   @Builder
@@ -149,6 +151,8 @@ export struct TgChatTopBar {
     .onClick(() => {
       this.onTitlePress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.subtitle.length > 0 ? `${this.title}, ${this.subtitle}` : this.title)
   }
 
   @Builder
@@ -219,6 +223,8 @@ export struct TgChatTopBar {
     .onClick(() => {
       this.onAvatarPress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Profile')
   }
 
   build() {

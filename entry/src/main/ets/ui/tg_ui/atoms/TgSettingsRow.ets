@@ -99,6 +99,8 @@ export struct TgSettingsRow {
       .onClick(() => {
         this.onRowClick();
       })
+      .accessibilityGroup(true)
+      .accessibilityDescription(this.title)
 
       if (this.showSeparator) {
         Row()
