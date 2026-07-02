@@ -16,10 +16,11 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 
 ## R1 backlog (дефекты первого прогона 2026-07-02)
 
-- [ ] **[P0] Cold-start `THREAD_BLOCK_6S` сохраняется** (fresh capture `appfreeze-...-20260703013437580`): main thread занят `uvLoopTask` 8+ секунд, стек внутри `libtdlib_napi.so`, TDLib шлёт батчи по 50 ответов каждые ~90 мс; фриз происходит ДО старта media-вотчера (01:34:26 vs 01:35:48) — виновник разбор батчей в конвейере Dispatcher→Normalizer→Store, не загрузки. Направление: чанкинг/yield обработки батчей на main thread, backpressure на NAPI-мосту, отложить тяжёлые редьюсеры холодного старта
-- [ ] **[P1] Пагинация вглубь не срабатывает**: чат открылся на верхе загруженного окна («22 июн»), свайпы вверх не подгружают старую историю (вниз к новым — скроллится нормально)
-- [ ] **[P2] Приложение открывается на вкладке Contacts** вместо Chats после запуска — проверить дефолтный таб
+- [x] **[P0] FIXED `eb81eca`**: cold-start `THREAD_BLOCK_6S` — TdGateway теперь ставит NAPI-батчи в очередь и осушает слайсами по 8 мс с yield через `setTimeout(0)`. Witness: холодный старт на эмуляторе 80+ секунд без нового appfreeze (раньше фриз через ~17 с), конвейер жив (Pipeline ready, чаты обновляются)
+- [x] **[P1] FIXED `eb81eca`** (код + частичный рантайм): edge-lock пагинации — unlock `blockAutoPaginationUntilUserScroll` по touch-drag (на статичном крае `onDidScroll` не стреляет) + перепланирование recheck сквозь suppress-окно. Runtime: unlock по drag подтверждён hilog; сценарий «якорь ровно на краю окна» переподтвердить в догфуде
+- [x] **[P2] FIXED `eb81eca`**: `HdsTabs({ index })` — `changeIndex` в `aboutToAppear` уходил до привязки контроллера. Witness: `MainTabsPage appeared with tab index: 2` + скриншот, приложение открывается на Chats
 - [ ] **[P3] Сверить open-position семантику**: открытие на «22 июн» без видимого unread-разделителя — сравнить с эталоном Telegram (unread boundary + divider)
+- [ ] UI-polish бэклог (замечание пользователя, R2/R3): верхние табы и нижний композер «некрасивые» — собрать конкретные претензии по экранам чат-листа/чата и свериться с iOS-референсом перед правками
 - [ ] Полный проход оставшихся пунктов чеклиста: фото полноэкран, войсы, видео/док по тапу, стикеры/GIF, отправка (текст — с санкции пользователя), день догфуда
 - [ ] Re-run AppFreeze scenario после фикса P0 (замечание: fresh freeze детектился и на debug-провизии эмулятора, вопреки release-only оговорке в доках)
 - [ ] Add pure unit coverage for `DownloadMessageMediaUseCase` throttle/budget behavior (scheduleScan dedupe, budget cap + rescan chain, stop() timer cleanup) — рантайм-поведение подтверждено hilog: Enqueued 4→4→2 с шагом 600 мс

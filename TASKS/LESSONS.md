@@ -229,6 +229,16 @@ Last updated: 2026-05-19
 - Направление фикса: чанкинг/yield обработки батчей в главном потоке, backpressure на NAPI-мосту, отложенные тяжёлые редьюсеры на холодном старте.
 - AppFreeze-детекция сработала на debug-провизии эмулятора, несмотря на release-only оговорку в доках — эмулятор пригоден для freeze-ретестов.
 
+## 58. Штормы NAPI-батчей лечатся бюджетным дрейном на main thread
+- Решение P0: очередь батчей в TdGateway + осушение слайсами по 8 мс с yield через `setTimeout(0)` — watchdog и vsync получают ход между слайсами, cold-start freeze ушёл (80+ с чистого старта против фриза на ~17 с).
+- Дрейн обязан работать и в состоянии 'destroying': close-flow ждёт `authorizationStateClosed` через тот же конвейер; очередь чистится только в самом конце destroy/cleanup.
+- Следующий резерв производительности (если понадобится): убрать двойную сериализацию — dispatchItem делает `JSON.stringify`, а нижние слои снова парсят.
+
+## 59. ArkUI: события не приходят на статичном крае и до привязки контроллера
+- `onDidScroll` не стреляет, когда лист упёрся в край и контент не движется — «разблокировку по скроллу» надо дублировать через `onTouch` (drag ≥ порога), иначе флаг вечный.
+- `TabsController.changeIndex()` в `aboutToAppear` — no-op (контроллер ещё не привязан к построенному компоненту); стартовый таб задаётся параметром `index` в опциях Tabs/HdsTabs.
+- Одноразовые `schedulePaginationRecheck` глотаются suppress-окном — на статичном крае перепланируй recheck, там `onScrollIndex` больше не стрельнёт.
+
 ## 54. HarmonyOS timer/AppFreeze doc contracts for the throttled media watcher
 - Docs DB cross-check (2026-07-02): `setTimeout` returns `number` in ArkTS, so the `as number` cast is redundant; `clearTimeout` with a stale/unknown id is a documented safe no-op, but timers must be cleared on the thread that created them.
 - Timers do not fire while the app is in background; expired timers fire after foreground restore — the 600ms rescan chain pauses in background and resumes on foreground, which is acceptable for auto-downloads.

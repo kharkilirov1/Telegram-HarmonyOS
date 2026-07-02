@@ -7,7 +7,7 @@ Snapshot date: 2026-07-02
 - **Branch:** `dev`
 - **Phase:** R1 — MVP-стабилизация (Release Track v2 per `TASKS/AGENT_EXECUTION_PLAN.md`); R0 завершён 2026-07-02
 - **Direction:** минимальный релизный клиент v0.1.0 (MVP-чеклист в плане) → фичи маленькими обновлениями v0.x; ширина роадмапа больше не цель
-- **Last committed baseline:** `eb1fac1 fix: throttle startup media auto-downloads`
+- **Last committed baseline:** `eb81eca fix: keep main thread responsive during tdlib batch storms` (P0 cold-start freeze, P1 pagination edge-lock, P2 default tab — эмуляторные witness в TODO)
 - **Current follow-up:** Media download behavior now covers user intent continuation, failed-download retry state, open gallery refresh, and a startup AppFreeze mitigation for background media auto-downloads
 - **Build:** `scripts/smoke-build.ps1` — green (re-run 2026-07-02 with the `DownloadMessageMediaUseCase` throttling patch in tree)
 - **Smoke:** `scripts/smoke-ui-phase0.ps1` — green (re-run 2026-07-02); `bash ./scripts/smoke-ui-phase0.sh` — green on last run 2026-05-19
