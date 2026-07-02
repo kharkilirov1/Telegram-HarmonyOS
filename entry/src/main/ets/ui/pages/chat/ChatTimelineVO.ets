@@ -4,6 +4,10 @@ import { compareInt64 } from '../../../core/utils/tdAccessors';
 import { getString } from '../../../core/utils/AppResource';
 import { TgMessageSendStatus } from '../../tg_ui/atoms/TgMessageMeta';
 import { fileUri } from '@kit.CoreFileKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const DOMAIN = 0x0021;
+const TAG = 'ChatTimelineVO';
 
 // Convert sandbox path to file:// URI for ArkUI Image/Video components
 function toFileUri(path: string): string {
@@ -968,6 +972,12 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
   const messages = selectChatMessagesForChatView(chatId)(state);
   const messageMap = state.messages.messages.get(chatId) || new Map<string, Message>();
   const unreadStartIndex = firstUnreadIncomingIndex(messages, chat, stickyLastReadMessageId);
+  if (unreadStartIndex < 0 && (stickyLastReadMessageId.length > 0 || chat.unreadCount > 0) && messages.length > 0) {
+    hilog.info(DOMAIN, TAG,
+      'unread divider skipped: sticky=%{public}s lastRead=%{public}s unread=%{public}d msgs=%{public}d first=%{public}s last=%{public}s',
+      stickyLastReadMessageId, chat.lastReadInboxMessageId, chat.unreadCount, messages.length,
+      messages[0].id, messages[messages.length - 1].id);
+  }
 
   let previousDay = '';
   let prevSenderId = -1;
