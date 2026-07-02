@@ -7,7 +7,7 @@ Snapshot date: 2026-07-02
 - **Branch:** `dev`
 - **Phase:** R1 — MVP-стабилизация (Release Track v2 per `TASKS/AGENT_EXECUTION_PLAN.md`); R0 завершён 2026-07-02
 - **Direction:** минимальный релизный клиент v0.1.0 (MVP-чеклист в плане) → фичи маленькими обновлениями v0.x; ширина роадмапа больше не цель
-- **Last committed baseline:** `d3d7883 fix: yield drain slices through a nonzero timer delay` (пост-логиновый freeze-килл закрыт; ранее: `019521e` active-chat media priority, `eb81eca` P0/P1/P2)
+- **Last committed baseline:** `531a677 fix: resolve media paths from completed transfers in timeline` (живое обновление медиа + пейсинг дрейна; ранее: `d3d7883`, `019521e`, `eb81eca`)
 - **Release gate update:** добавлен R1.5 «Внешний вид» — пользователь заморозил релиз до приведения внешки в порядок
 - Эмулятор снова залогинен (2026-07-03); медиа-приоритет активного чата подтверждён рантаймом; следующий дефект — P4-b (пути тумб не доезжают до открытого таймлайна)
 - **Current follow-up:** Media download behavior now covers user intent continuation, failed-download retry state, open gallery refresh, and a startup AppFreeze mitigation for background media auto-downloads
