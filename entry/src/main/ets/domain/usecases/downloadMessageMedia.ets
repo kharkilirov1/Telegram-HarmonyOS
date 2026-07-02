@@ -1,7 +1,8 @@
 // DownloadMessageMedia use case — triggers TDLib downloadFile for message media
 //
 // Subscribes to store changes. When a message has a fileId > 0 but empty path,
-// enqueues a download. Priority: thumbnails first (10), selective small-media second (5).
+// enqueues a bounded background download. Priority: thumbnails first (10),
+// selective small-media second (5). Full-size photo/video/document/audio stay on-demand.
 // TDLib responds with updateFile → FileNormalizer → FileDownloadedEvent → filesReducer.
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -22,8 +23,12 @@ export class DownloadMessageMediaUseCase {
   private gateway: TdGatewayPort;
   private pendingFileIds: Set<number> = new Set<number>();
   private unsubscribe: (() => void) | null = null;
+  private scanScheduled: boolean = false;
+  private scanTimerId: number = -1;
   private isRunning: boolean = false;
   private lifecycleToken: number = 0;
+  private static readonly SCAN_THROTTLE_MS = 600;
+  private static readonly MAX_ENQUEUES_PER_SCAN = 4;
 
   constructor(store: AppStore, gateway: TdGatewayPort) {
     this.store = store;
@@ -37,8 +42,8 @@ export class DownloadMessageMediaUseCase {
 
     hilog.info(DOMAIN, TAG, 'Starting message media download watcher');
 
-    // Scan current state
-    this.scanAndDownload(this.store.getState());
+    // Defer the initial scan so cold-start routing/first-frame work wins the main thread.
+    this.scheduleScan(DownloadMessageMediaUseCase.SCAN_THROTTLE_MS);
 
     // Subscribe for future changes
     if (this.unsubscribe !== null) {
@@ -52,7 +57,7 @@ export class DownloadMessageMediaUseCase {
         return;
       }
       if (newState.messages !== prevState.messages) {
-        this.scanAndDownload(newState);
+        this.scheduleScan();
       }
     });
     this.unsubscribe = activeUnsubscribe;
@@ -66,7 +71,12 @@ export class DownloadMessageMediaUseCase {
     if (activeUnsubscribe) {
       activeUnsubscribe();
     }
+    if (this.scanTimerId !== -1) {
+      clearTimeout(this.scanTimerId);
+      this.scanTimerId = -1;
+    }
     this.pendingFileIds.clear();
+    this.scanScheduled = false;
   }
 
   private isCurrentRun(token: number): boolean {
@@ -77,47 +87,70 @@ export class DownloadMessageMediaUseCase {
     return this.isCurrentRun(token) && this.unsubscribe === unsubscribe;
   }
 
+  private scheduleScan(delayMs: number = DownloadMessageMediaUseCase.SCAN_THROTTLE_MS): void {
+    if (!this.isRunning || this.scanScheduled) {
+      return;
+    }
+    this.scanScheduled = true;
+    const token = this.lifecycleToken;
+    this.scanTimerId = setTimeout(() => {
+      this.scanTimerId = -1;
+      this.scanScheduled = false;
+      if (!this.isCurrentRun(token)) {
+        return;
+      }
+      this.scanAndDownload(this.store.getState());
+    }, delayMs) as number;
+  }
+
   private scanAndDownload(state: AppState): void {
     if (!this.isRunning) {
       return;
     }
     let enqueued = 0;
+    let remainingBudget = DownloadMessageMediaUseCase.MAX_ENQUEUES_PER_SCAN;
 
     state.messages.messages.forEach((chatMessages: Map<string, Message>) => {
       chatMessages.forEach((message: Message) => {
-        enqueued += this.scanContent(message.content);
+        if (remainingBudget <= 0) {
+          return;
+        }
+        const added = this.scanContent(message.content, remainingBudget);
+        enqueued += added;
+        remainingBudget -= added;
       });
     });
 
     if (enqueued > 0) {
       hilog.info(DOMAIN, TAG, 'Enqueued %{public}d media downloads', enqueued);
     }
+    if (remainingBudget <= 0) {
+      this.scheduleScan(DownloadMessageMediaUseCase.SCAN_THROTTLE_MS);
+    }
   }
 
-  private scanContent(content: MessageContent): number {
+  private scanContent(content: MessageContent, budget: number): number {
     let count = 0;
 
-    // Photo — keep thumbnail + full photo auto-download so fullscreen photo viewing
-    // can still open the real asset without an extra photo-specific transfer state machine.
-    count += this.scanFileSlot(content.photoThumbFileId, content.photoThumbPath, THUMB_PRIORITY);
-    count += this.scanFileSlot(content.photoFileId, content.photoPath, MEDIA_PRIORITY);
+    // Photo — thumbnail only. Full photo is resolved by explicit tap/gallery download state.
+    count += this.scanFileSlot(content.photoThumbFileId, content.photoThumbPath, THUMB_PRIORITY, budget - count);
 
     // Video — download thumbnail only (full video on demand)
-    count += this.scanFileSlot(content.videoThumbFileId, content.videoThumbPath, THUMB_PRIORITY);
+    count += this.scanFileSlot(content.videoThumbFileId, content.videoThumbPath, THUMB_PRIORITY, budget - count);
 
     // Sticker — auto-download (small files)
-    count += this.scanFileSlot(content.stickerFileId, content.stickerPath, MEDIA_PRIORITY);
+    count += this.scanFileSlot(content.stickerFileId, content.stickerPath, MEDIA_PRIORITY, budget - count);
 
     // Voice — auto-download (small files, Telegram iOS/Android always auto-download voice)
-    count += this.scanFileSlot(content.voiceFileId, content.voicePath, MEDIA_PRIORITY);
+    count += this.scanFileSlot(content.voiceFileId, content.voicePath, MEDIA_PRIORITY, budget - count);
 
     // Animation (GIF) — auto-download (Telegram auto-downloads GIFs)
-    count += this.scanFileSlot(content.animationFileId, content.animationPath, MEDIA_PRIORITY);
+    count += this.scanFileSlot(content.animationFileId, content.animationPath, MEDIA_PRIORITY, budget - count);
 
     // Video note (circles) — auto-download (small, Telegram always auto-downloads)
-    count += this.scanFileSlot(content.videoNoteFileId, content.videoNotePath, MEDIA_PRIORITY);
+    count += this.scanFileSlot(content.videoNoteFileId, content.videoNotePath, MEDIA_PRIORITY, budget - count);
 
-    // Document / Audio / full Video stay on-demand — user taps to download.
+    // Document / Audio / full Photo / full Video stay on-demand — user taps to download.
 
     return count;
   }
@@ -126,20 +159,20 @@ export class DownloadMessageMediaUseCase {
    * Check a single fileId/path slot. If path resolved — clean up pendingFileIds.
    * If path still empty — enqueue download. Returns 1 if enqueued, 0 otherwise.
    */
-  private scanFileSlot(fileId: number, path: string, priority: number): number {
+  private scanFileSlot(fileId: number, path: string, priority: number, budget: number): number {
     if (fileId <= 0) return 0;
     if (path.length > 0) {
       // File already downloaded — remove from pending if it was tracked
       this.pendingFileIds.delete(fileId);
       return 0;
     }
-    this.enqueueDownload(fileId, priority);
-    return 1;
+    if (budget <= 0) return 0;
+    return this.enqueueDownload(fileId, priority) ? 1 : 0;
   }
 
-  private enqueueDownload(fileId: number, priority: number): void {
-    if (!this.isRunning) return;
-    if (this.pendingFileIds.has(fileId)) return;
+  private enqueueDownload(fileId: number, priority: number): boolean {
+    if (!this.isRunning) return false;
+    if (this.pendingFileIds.has(fileId)) return false;
     this.pendingFileIds.add(fileId);
 
     const command = createDownloadFileCommand(fileId, priority, false);
@@ -181,6 +214,7 @@ export class DownloadMessageMediaUseCase {
         hilog.warn(DOMAIN, TAG, 'Download failed fileId=%{public}d: %{public}s', fileId, error.message);
         this.pendingFileIds.delete(fileId);
       });
+    return true;
   }
 }
 
