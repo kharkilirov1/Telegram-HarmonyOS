@@ -94,11 +94,12 @@ export class TdGatewayImpl implements TdGateway {
   private drainScheduled: boolean = false;
   private drainTimerId: number = -1;
   private static readonly DRAIN_BUDGET_MS = 8;
-  // 0ms нельзя: нулевой таймер, взведённый из таймерного колбэка, дозревает в той же
-  // uv-таймерной фазе — цепочка слайсов сливается в один uv_timer_task и блокирует
-  // main thread (THREAD_BLOCK_6S на пост-логиновом шторме). 1ms уводит слайс в
-  // следующий оборот цикла, где watchdog/vsync получают ход.
-  private static readonly DRAIN_YIELD_MS = 1;
+  // Нулевые/малые фиксированные задержки ненадёжны: ohos loop handler прокачивает
+  // дозревшие таймеры внутри одного uv_timer_task, и цепочка слайсов сливается в
+  // непрерывную блокировку main thread (THREAD_BLOCK_6S). Следующий слайс
+  // планируется с задержкой >= фактической длительности предыдущего (пейсинг):
+  // дрейн занимает не более ~50% времени main thread при любом размере элементов.
+  private static readonly DRAIN_YIELD_MS = 2;
 
   private constructor() {}
 
@@ -511,7 +512,8 @@ export class TdGatewayImpl implements TdGateway {
     this.scheduleDrain(dispatcher);
   }
 
-  private scheduleDrain(dispatcher: MainThreadDispatcher): void {
+  private scheduleDrain(dispatcher: MainThreadDispatcher,
+    delayMs: number = TdGatewayImpl.DRAIN_YIELD_MS): void {
     if (this.drainScheduled) {
       return;
     }
@@ -520,7 +522,7 @@ export class TdGatewayImpl implements TdGateway {
       this.drainTimerId = -1;
       this.drainScheduled = false;
       this.drainSlice(dispatcher);
-    }, TdGatewayImpl.DRAIN_YIELD_MS) as number;
+    }, delayMs) as number;
   }
 
   private drainSlice(dispatcher: MainThreadDispatcher): void {
@@ -541,7 +543,8 @@ export class TdGatewayImpl implements TdGateway {
       this.dispatchItem(obj, dispatcher);
     }
     if (this.drainIndex < this.drainItems.length || this.pendingBatchQueue.length > 0) {
-      this.scheduleDrain(dispatcher);
+      const elapsed = Date.now() - sliceStart;
+      this.scheduleDrain(dispatcher, Math.max(TdGatewayImpl.DRAIN_YIELD_MS, elapsed));
     }
   }
 

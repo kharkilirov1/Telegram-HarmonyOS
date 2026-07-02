@@ -5,6 +5,10 @@
 import { AppState, FileTransfer, Message, MessageContent, MessageQuoteEntity, ReducerAction } from '../model/AppState';
 import { FileDownloadedEvent, FileTransferUpdatedEvent } from '../model/AppEvent';
 import { cloneAppState, cloneChat, cloneStateForFiles, cloneUser } from '../utils/stateClone';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const DOMAIN = 0x0003;
+const TAG = 'FilesReducer';
 
 function contentMatchesFileId(content: MessageContent, fileId: number): boolean {
   return content.photoFileId === fileId ||
@@ -232,6 +236,9 @@ export function filesReducer(state: AppState, action: ReducerAction): AppState {
       });
     });
   }
+
+  hilog.info(DOMAIN, TAG, 'fileDownloaded fileId=%{public}d needsUpdate=%{public}d msgMatch=%{public}d',
+    fileId, needsUpdate ? 1 : 0, messageNeedsUpdate ? 1 : 0);
 
   if (!needsUpdate) {
     return state;

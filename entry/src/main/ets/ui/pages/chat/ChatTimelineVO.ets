@@ -548,6 +548,21 @@ function resolveTransfer(fileId: number, state: AppState): FileTransfer | undefi
   return state.files.transfers.get(fileId);
 }
 
+// Живое обновление медиа: fileDownloaded не всегда матчится в контент по fileId
+// (TDLib может пере-нумеровать file id между постановкой и завершением), но
+// files.transfers заполняется на каждый updateFile. Пустой контент-путь
+// добираем из завершённого transfer — страница перерисовывается по transfers.
+function resolveContentPath(contentPath: string, fileId: number, state: AppState): string {
+  if (contentPath.length > 0 || fileId <= 0) {
+    return contentPath;
+  }
+  const transfer = state.files.transfers.get(fileId);
+  if (transfer !== undefined && transfer.isDownloadingCompleted && transfer.localPath.length > 0) {
+    return transfer.localPath;
+  }
+  return contentPath;
+}
+
 function resolveTransferTotalSize(transfer: FileTransfer | undefined): number {
   if (!transfer) {
     return 0;
@@ -743,10 +758,12 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
 
   // Photo — convert sandbox path to file:// URI
   const photoTransfer = resolveTransfer(content.photoFileId, state);
-  const rawPhotoPath = content.photoPath.length > 0 ? content.photoPath : content.photoThumbPath;
+  const resolvedPhotoFull = resolveContentPath(content.photoPath, content.photoFileId, state);
+  const rawPhotoPath = resolvedPhotoFull.length > 0 ? resolvedPhotoFull
+    : resolveContentPath(content.photoThumbPath, content.photoThumbFileId, state);
   row.photoPath = toFileUri(rawPhotoPath);
   row.photoFileId = content.photoFileId;
-  row.hasLocalPhoto = content.photoPath.length > 0;
+  row.hasLocalPhoto = resolvedPhotoFull.length > 0;
   row.isPhotoDownloading = isTransferActive(photoTransfer);
   row.photoDownloadProgress = resolveTransferProgress(photoTransfer);
   row.photoWidth = content.photoWidth;
@@ -754,7 +771,8 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
 
   // Video — thumbnail as file:// URI, full video path for playback
   const videoTransfer = resolveTransfer(content.videoFileId, state);
-  const rawVideoThumb = content.videoThumbPath.length > 0 ? content.videoThumbPath : content.videoPath;
+  const resolvedVideoThumb = resolveContentPath(content.videoThumbPath, content.videoThumbFileId, state);
+  const rawVideoThumb = resolvedVideoThumb.length > 0 ? resolvedVideoThumb : content.videoPath;
   row.videoThumbPath = toFileUri(rawVideoThumb);
   row.videoPath = toFileUri(content.videoPath);
   row.videoDuration = content.videoDuration;
@@ -910,11 +928,13 @@ function buildPhotoAlbumEntry(albumMessages: Message[], chat: Chat, state: AppSt
   for (const message of albumMessages) {
     const content = message.content;
     const photoTransfer = resolveTransfer(content.photoFileId, state);
-    const rawPhotoPath = content.photoPath.length > 0 ? content.photoPath : content.photoThumbPath;
+    const resolvedFull = resolveContentPath(content.photoPath, content.photoFileId, state);
+    const rawPhotoPath = resolvedFull.length > 0 ? resolvedFull
+      : resolveContentPath(content.photoThumbPath, content.photoThumbFileId, state);
     const photoUri = toFileUri(rawPhotoPath);
     entry.message.albumPhotoPaths.push(photoUri);
     entry.message.albumPhotoFileIds.push(content.photoFileId);
-    entry.message.albumPhotoHasLocal.push(content.photoPath.length > 0);
+    entry.message.albumPhotoHasLocal.push(resolvedFull.length > 0);
     entry.message.albumPhotoDownloading.push(isTransferActive(photoTransfer));
     entry.message.albumPhotoDownloadProgress.push(resolveTransferProgress(photoTransfer));
     entry.message.albumPhotoWidths.push(content.photoWidth);
