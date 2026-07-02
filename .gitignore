@@ -65,3 +65,7 @@ tmp/
 
 # Manual runtime verification artifacts
 TASKS/runtime-sweeps/forward-runtime-sweep-*.md
+
+# JVM crash dumps / CPL index
+hs_err_pid*.log
+.cpl/

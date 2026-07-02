@@ -207,3 +207,19 @@ Last updated: 2026-05-19
 - A gallery opened on an unloaded photo/video can outlive the `downloadFile` request that resolves the local path.
 - Do not let the overlay keep stale `MediaGalleryItem` snapshots; rebuild gallery params after timeline diff, preserve current item by message/file identity, and clear local pending UI when the path appears.
 - Include photo and album file ids in resolved-download cleanup, not only document/audio/voice/video.
+
+## 53. Startup background downloads must be bounded
+- AppFreeze baseline `THREAD_BLOCK_6S` showed cold-start TDLib batches plus repeated `DownloadMedia` scans/enqueues on the main thread.
+- Background media download watchers must throttle store-triggered scans, cap enqueues per scan, and avoid full-size media auto-downloads during startup.
+- Keep full photo/video/document/audio under explicit tap/download continuation; use background auto-download only for thumbnails and genuinely small Telegram media.
+
+## 55. Release track replaces breadth phases
+- Phase-роадмап без видимой пользователю финишной черты («media behavior completion») привёл к дрейфу и потере ориентира.
+- План v2: MVP-чеклист как единственный гейт R1, явный freeze-список, после v0.1.0 — одна фича = один релиз v0.x.
+- Мета-тулинг (heartbeat/sweep) заморожен, пока реальная регрессия его не потребует.
+
+## 54. HarmonyOS timer/AppFreeze doc contracts for the throttled media watcher
+- Docs DB cross-check (2026-07-02): `setTimeout` returns `number` in ArkTS, so the `as number` cast is redundant; `clearTimeout` with a stale/unknown id is a documented safe no-op, but timers must be cleared on the thread that created them.
+- Timers do not fire while the app is in background; expired timers fire after foreground restore — the 600ms rescan chain pauses in background and resumes on foreground, which is acceptable for auto-downloads.
+- `THREAD_BLOCK_6S` is a watchdog activation check inserted into the main thread; chunking scans via `setTimeout` yields the event loop between chunks, which is exactly what the watchdog needs.
+- AppFreeze detection applies to release-version apps only (not debug) — re-verification must match the original capture's build type.

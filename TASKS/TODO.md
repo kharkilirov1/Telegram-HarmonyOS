@@ -1,10 +1,25 @@
 # TODO — Telegram-HarmonyOS
 
-Last updated: 2026-05-19
+Last updated: 2026-07-02
 
-Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md`
+Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0 → R1 → R2 → R3+)
 
-## Active Phase: Phase 5 — Media behavior completion
+## Active Phase: R0 — Консолидация и чистка
+
+- [x] Закоммитить верифицированный throttling-патч `DownloadMessageMediaUseCase`: `eb1fac1` (build/smoke green 2026-07-02)
+- [x] Архивировать старый план → `TASKS/ARCHIVE/AGENT_EXECUTION_PLAN_2026-05-18.md`; записан Release Track v2
+- [x] `.gitignore`: добавить `.cpl/`, `hs_err_pid*.log`
+- [x] Обновить `TASKS/CURRENT_PATCHSET_BOUNDARY.md` под релизный трек
+- [ ] Прогнать MVP-чеклист (см. план) один раз на эмуляторе; провалы записать дефектами в R1 backlog — **блокер:** `hdc list targets` = `[Empty]` (2026-07-02); нужен запущенный эмулятор с установленной свежей сборкой (DevEco → Device Manager → Run)
+
+## R1 backlog
+
+- [ ] Пройти MVP-чеклист на эмуляторе; каждый провал = отдельный дефект здесь
+- [ ] Re-run emulator AppFreeze scenario: no fresh `THREAD_BLOCK_6S` on cold start (docs: AppFreeze detection applies to release-version builds only — match original capture build type)
+- [ ] Add pure unit coverage for `DownloadMessageMediaUseCase` throttle/budget behavior (scheduleScan dedupe, budget cap + rescan chain, stop() timer cleanup)
+- [ ] Propagate asynchronous TDLib transfer failures if a concrete `updateFile` failure shape is captured on emulator/device
+
+## History (завершённые фазы старого плана)
 
 ### Phase 4 completed this session (2026-05-18)
 - [x] Inspected current Calls real-data path (`CallsPage`, `LoadCallsUseCase`, `TgCallRow`) and Telegram references
@@ -49,13 +64,15 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md`
 - [x] Added pure coverage for pending media open intent resolution and stale lifecycle/chat guards
 - [x] Explicit failed-download/retry state in `ChatMediaDownloadController` + bubble params, without UI-polish expansion
 - [x] Media gallery download/retry continuation for photo/video: refresh open gallery after timeline file-path updates, preserve current index, propagate failed state into gallery items, clear photo/album failed states when resolved
-- [ ] Later Phase 5 slice: propagate asynchronous TDLib transfer failures if a concrete `updateFile`/TDLib failure shape is captured on device
+- [x] AppFreeze mitigation from emulator faultlogger: throttle/cap startup `DownloadMessageMediaUseCase` background scans and keep full photo/video/document/audio on explicit tap/download flow
+- Открытые пункты перенесены в `## R1 backlog` (см. выше)
 
-### Technical debt (Phase 3+)
+### Technical debt (пост-R1)
 - [ ] Deeper integration tests for `AuthSideEffect` ready/warmup flow once TDLib/app-context test seam exists
 - [x] `services/` legacy cleanup check: only `ConfigLocal.ets` + example remain; no removable legacy service layer found
 - [x] Evaluated `LazyForEach` → `Repeat` / `@ReusableV2`: current live usages are `ChatListPage` and `TgChatScreenPage` with `reuseId`; keep as-is until a measured perf phase/device target exists
-- [ ] Signed device/emulator runtime verification — blocked locally: `hdc list targets` returned `[Empty]` and `build-profile.json5` has empty `signingConfigs`
+- [ ] Signing config (`signingConfigs` в `build-profile.json5`) — теперь это R2 (релизная упаковка), не блокер текущей работы
+- AppFreeze baseline artifact: `THREAD_BLOCK_6S` at `2026-05-20 02:58:05.425` (re-check — в R1 backlog)
 
 ### Known blockers
 - Missing signing config for HarmonyOS device/emulator deployment; no connected hdc target detected in this pass

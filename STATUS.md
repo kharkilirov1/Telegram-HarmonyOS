@@ -1,15 +1,16 @@
 # STATUS — Telegram-HarmonyOS
 
-Snapshot date: 2026-05-19
+Snapshot date: 2026-07-02
 
 ## Current State
 
 - **Branch:** `dev`
-- **Phase:** Phase 5 — Media behavior completion (per `TASKS/AGENT_EXECUTION_PLAN.md`)
-- **Last committed baseline:** `f1da0b7 fix: align calls pagination with tdlib offset`
-- **Current follow-up:** Media download behavior now covers user intent continuation, failed-download retry state, and open gallery refresh after photo/video file updates
-- **Build:** `scripts/smoke-build.ps1` — green on last run
-- **Smoke:** `scripts/smoke-ui-phase0.ps1` — green; `bash ./scripts/smoke-ui-phase0.sh` — green on last run
+- **Phase:** R0 — Консолидация и чистка (Release Track v2 per `TASKS/AGENT_EXECUTION_PLAN.md`)
+- **Direction:** минимальный релизный клиент v0.1.0 (MVP-чеклист в плане) → фичи маленькими обновлениями v0.x; ширина роадмапа больше не цель
+- **Last committed baseline:** `eb1fac1 fix: throttle startup media auto-downloads`
+- **Current follow-up:** Media download behavior now covers user intent continuation, failed-download retry state, open gallery refresh, and a startup AppFreeze mitigation for background media auto-downloads
+- **Build:** `scripts/smoke-build.ps1` — green (re-run 2026-07-02 with the `DownloadMessageMediaUseCase` throttling patch in tree)
+- **Smoke:** `scripts/smoke-ui-phase0.ps1` — green (re-run 2026-07-02); `bash ./scripts/smoke-ui-phase0.sh` — green on last run 2026-05-19
 - **Warnings:** unverified `libtdlib_napi.so`, missing signing config
 - **Device/emulator verification:** blocked locally (`hdc list targets` = `[Empty]`, `signingConfigs` empty)
 
@@ -36,6 +37,8 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - Open `TgMediaGalleryPage` state now receives refreshed media items after timeline file-path updates, preserving the currently viewed item and clearing local pending download affordances once the file path arrives
 - Gallery items now carry failed-download state for photo/video/album entries, and `ChatMediaDownloadController.syncResolvedDownloads()` clears photo/album failures when local media appears
 - Added `ChatTimelineVO.test.ets` coverage for gallery refresh state preservation and `FilePipeline.test.ets` coverage for failed-download status, resolved-path cleanup, photo/album cleanup, and reset cleanup
+- Device AppFreeze capture `appfreeze-com.telegram.harmonyos-20260520025805.425.txt` showed `THREAD_BLOCK_6S` during cold start while TDLib delivered many 50-response batches and `DownloadMedia` repeatedly enqueued background downloads on the main thread
+- `DownloadMessageMediaUseCase` now defers/throttles scans, caps background auto-download enqueues per scan, and stops startup full-photo auto-download; full photo/video/document/audio remain explicit tap/download flows
 
 ## Recent Changes (2026-05-18 calls follow-up)
 
@@ -87,8 +90,11 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - Tests now cover basic `AuthSideEffect` singleton/store seam and common use-case validation/dispatch; deeper side-effect runtime tests still need device/integration seam
 - `libtdlib_napi.so` is externally built and not verified by current CI/smoke boundary
 - Device/emulator runtime behavior still requires a signed deployment pass; local check found no hdc target and no signing config
+- Startup AppFreeze should be re-tested on emulator/device with fresh faultlogger capture after `DownloadMessageMediaUseCase` throttling (per docs, AppFreeze detection applies to release-version apps — match the original capture's build type)
+- `DownloadMessageMediaUseCase` throttle/budget logic has no unit test; scan still iterates the full messages map per pass (budget caps enqueues, not iteration)
 
 ## Working Tree
 
-- Working tree expected clean after committed controller/test refactors
-- No broad dirty-tree backlog should remain after local `HEAD`
+- Throttling patch committed as `eb1fac1`; Release Track v2 docs pivot committed as the follow-up docs commit
+- Untracked local junk: `hs_err_pid33160.log`, `.cpl/` — gitignored 2026-07-02
+- R0 remaining: MVP-чеклист run on emulator (blocked: no live hdc target on 2026-07-02)
