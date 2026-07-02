@@ -218,6 +218,17 @@ Last updated: 2026-05-19
 - План v2: MVP-чеклист как единственный гейт R1, явный freeze-список, после v0.1.0 — одна фича = один релиз v0.x.
 - Мета-тулинг (heartbeat/sweep) заморожен, пока реальная регрессия его не потребует.
 
+## 56. Полный эмуляторный цикл доступен из CLI без DevEco GUI
+- `Emulator.exe -start "<hvd name>"` (из `DevEco Studio\tools\emulator`) поднимает зарегистрированный инстанс; справка бинаря богаче официальной доки (`-list`, `-config`, `-license`).
+- Unsigned HAP ставится на эмулятор через `hdc install -r` — подпись нужна только для реального устройства; это разблокирует автономный цикл build→install→run→observe.
+- Использовать hdc из SDK DevEco, не из PATH; в Git Bash device-пути требуют `MSYS_NO_PATHCONV=1`, а `file recv` на Windows ломается на абсолютных путях — принимать файл относительным именем из целевого каталога.
+- `uitest uiInput click/swipe/keyEvent` + `snapshot_display` достаточно для прогона UI-чеклиста без ручного участия.
+
+## 57. Cold-start freeze — это конвейер TDLib-батчей, не загрузки медиа
+- Свежий `THREAD_BLOCK_6S` (2026-07-03 01:34): main thread 8+ секунд в `uvLoopTask`, стек в `libtdlib_napi.so`, батчи по 50 ответов каждые ~90 мс; media-вотчер стартовал только через минуту после фриза — троттлинг загрузок работает (hilog: Enqueued 4→4→2 шаг 600 мс), но не лечит корень.
+- Направление фикса: чанкинг/yield обработки батчей в главном потоке, backpressure на NAPI-мосту, отложенные тяжёлые редьюсеры на холодном старте.
+- AppFreeze-детекция сработала на debug-провизии эмулятора, несмотря на release-only оговорку в доках — эмулятор пригоден для freeze-ретестов.
+
 ## 54. HarmonyOS timer/AppFreeze doc contracts for the throttled media watcher
 - Docs DB cross-check (2026-07-02): `setTimeout` returns `number` in ArkTS, so the `as number` cast is redundant; `clearTimeout` with a stale/unknown id is a documented safe no-op, but timers must be cleared on the thread that created them.
 - Timers do not fire while the app is in background; expired timers fire after foreground restore — the 600ms rescan chain pauses in background and resumes on foreground, which is acceptable for auto-downloads.

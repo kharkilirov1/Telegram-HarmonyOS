@@ -5,7 +5,7 @@ Snapshot date: 2026-07-02
 ## Current State
 
 - **Branch:** `dev`
-- **Phase:** R0 — Консолидация и чистка (Release Track v2 per `TASKS/AGENT_EXECUTION_PLAN.md`)
+- **Phase:** R1 — MVP-стабилизация (Release Track v2 per `TASKS/AGENT_EXECUTION_PLAN.md`); R0 завершён 2026-07-02
 - **Direction:** минимальный релизный клиент v0.1.0 (MVP-чеклист в плане) → фичи маленькими обновлениями v0.x; ширина роадмапа больше не цель
 - **Last committed baseline:** `eb1fac1 fix: throttle startup media auto-downloads`
 - **Current follow-up:** Media download behavior now covers user intent continuation, failed-download retry state, open gallery refresh, and a startup AppFreeze mitigation for background media auto-downloads
@@ -93,8 +93,16 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - Startup AppFreeze should be re-tested on emulator/device with fresh faultlogger capture after `DownloadMessageMediaUseCase` throttling (per docs, AppFreeze detection applies to release-version apps — match the original capture's build type)
 - `DownloadMessageMediaUseCase` throttle/budget logic has no unit test; scan still iterates the full messages map per pass (budget caps enqueues, not iteration)
 
+## Emulator loop (unlocked 2026-07-02)
+
+- Эмулятор стартует из CLI: `"C:\Program Files\Huawei\DevEco Studio\tools\emulator\Emulator.exe" -start "Pura 90 Pro Max"` (инстансы зарегистрированы, imageRoot берётся из реестра)
+- hdc: использовать SDK-бинарь `DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe`; таргет `127.0.0.1:5555`
+- **Unsigned HAP устанавливается на эмулятор** (`hdc install -r entry-default-unsigned.hap`) — подпись нужна только для реального устройства (R2)
+- Git Bash: для device-путей обязателен `MSYS_NO_PATHCONV=1`; `file recv` — с относительным путём из целевой папки
+- Telegram-сессия на эмуляторе жива (userdata сохраняется между запусками)
+
 ## Working Tree
 
-- Throttling patch committed as `eb1fac1`; Release Track v2 docs pivot committed as the follow-up docs commit
-- Untracked local junk: `hs_err_pid33160.log`, `.cpl/` — gitignored 2026-07-02
-- R0 remaining: MVP-чеклист run on emulator (blocked: no live hdc target on 2026-07-02)
+- Throttling patch committed as `eb1fac1`; Release Track v2 docs pivot + первый MVP-прогон committed follow-up
+- R0 завершён 2026-07-02: MVP-чеклист прогнан, дефекты P0-P3 записаны в `TASKS/TODO.md` R1 backlog
+- Активная фаза теперь R1: первоочередной дефект — P0 cold-start `THREAD_BLOCK_6S` (uvLoopTask/TDLib batch pipeline на main thread)

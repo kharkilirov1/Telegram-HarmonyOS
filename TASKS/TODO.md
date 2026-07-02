@@ -4,19 +4,25 @@ Last updated: 2026-07-02
 
 Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0 → R1 → R2 → R3+)
 
-## Active Phase: R0 — Консолидация и чистка
+## Active Phase: R1 — MVP-стабилизация
+
+### R0 — Консолидация и чистка (завершена 2026-07-02)
 
 - [x] Закоммитить верифицированный throttling-патч `DownloadMessageMediaUseCase`: `eb1fac1` (build/smoke green 2026-07-02)
 - [x] Архивировать старый план → `TASKS/ARCHIVE/AGENT_EXECUTION_PLAN_2026-05-18.md`; записан Release Track v2
 - [x] `.gitignore`: добавить `.cpl/`, `hs_err_pid*.log`
 - [x] Обновить `TASKS/CURRENT_PATCHSET_BOUNDARY.md` под релизный трек
-- [ ] Прогнать MVP-чеклист (см. план) один раз на эмуляторе; провалы записать дефектами в R1 backlog — **блокер:** `hdc list targets` = `[Empty]` (2026-07-02); нужен запущенный эмулятор с установленной свежей сборкой (DevEco → Device Manager → Run)
+- [x] Прогнать MVP-чеклист первый раз на эмуляторе (2026-07-02): эмулятор поднят из CLI (`Emulator -start "Pura 90 Pro Max"`), unsigned HAP установлен через hdc, дефекты записаны в R1 backlog
 
-## R1 backlog
+## R1 backlog (дефекты первого прогона 2026-07-02)
 
-- [ ] Пройти MVP-чеклист на эмуляторе; каждый провал = отдельный дефект здесь
-- [ ] Re-run emulator AppFreeze scenario: no fresh `THREAD_BLOCK_6S` on cold start (docs: AppFreeze detection applies to release-version builds only — match original capture build type)
-- [ ] Add pure unit coverage for `DownloadMessageMediaUseCase` throttle/budget behavior (scheduleScan dedupe, budget cap + rescan chain, stop() timer cleanup)
+- [ ] **[P0] Cold-start `THREAD_BLOCK_6S` сохраняется** (fresh capture `appfreeze-...-20260703013437580`): main thread занят `uvLoopTask` 8+ секунд, стек внутри `libtdlib_napi.so`, TDLib шлёт батчи по 50 ответов каждые ~90 мс; фриз происходит ДО старта media-вотчера (01:34:26 vs 01:35:48) — виновник разбор батчей в конвейере Dispatcher→Normalizer→Store, не загрузки. Направление: чанкинг/yield обработки батчей на main thread, backpressure на NAPI-мосту, отложить тяжёлые редьюсеры холодного старта
+- [ ] **[P1] Пагинация вглубь не срабатывает**: чат открылся на верхе загруженного окна («22 июн»), свайпы вверх не подгружают старую историю (вниз к новым — скроллится нормально)
+- [ ] **[P2] Приложение открывается на вкладке Contacts** вместо Chats после запуска — проверить дефолтный таб
+- [ ] **[P3] Сверить open-position семантику**: открытие на «22 июн» без видимого unread-разделителя — сравнить с эталоном Telegram (unread boundary + divider)
+- [ ] Полный проход оставшихся пунктов чеклиста: фото полноэкран, войсы, видео/док по тапу, стикеры/GIF, отправка (текст — с санкции пользователя), день догфуда
+- [ ] Re-run AppFreeze scenario после фикса P0 (замечание: fresh freeze детектился и на debug-провизии эмулятора, вопреки release-only оговорке в доках)
+- [ ] Add pure unit coverage for `DownloadMessageMediaUseCase` throttle/budget behavior (scheduleScan dedupe, budget cap + rescan chain, stop() timer cleanup) — рантайм-поведение подтверждено hilog: Enqueued 4→4→2 с шагом 600 мс
 - [ ] Propagate asynchronous TDLib transfer failures if a concrete `updateFile` failure shape is captured on emulator/device
 
 ## History (завершённые фазы старого плана)
