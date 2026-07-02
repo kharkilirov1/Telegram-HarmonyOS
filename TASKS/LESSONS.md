@@ -239,6 +239,16 @@ Last updated: 2026-05-19
 - `TabsController.changeIndex()` в `aboutToAppear` — no-op (контроллер ещё не привязан к построенному компоненту); стартовый таб задаётся параметром `index` в опциях Tabs/HdsTabs.
 - Одноразовые `schedulePaginationRecheck` глотаются suppress-окном — на статичном крае перепланируй recheck, там `onScrollIndex` больше не стрельнёт.
 
+## 60. `hdc install -r` одного HAP'а пересоздаёт весь бандл
+- Установка ohosTest-HAP через `install -r` удалила entry-модуль и ВСЕ данные приложения — TDLib-сессия эмулятора потеряна, потребовался ручной релогин.
+- Multi-HAP бандл обновлять только полным набором HAP'ов; тестовый HAP не ставить поверх рабочей сессии.
+- Прогон юнитов: `hvigorw onDeviceTest` требует подписанный HAP; ручной `aa test -s unittest OpenHarmonyTestRunner` в этой конфигурации завис — до R2 юниты гонять из DevEco.
+
+## 61. Незарегистрированная цель ohosTest = мёртвые тесты
+- В `entry/build-profile.json5` отсутствовал target `ohosTest` — весь тестовый сьют никогда не компилировался и накопил синтаксическую гниль (`it('...', async 0, ...)` во множестве файлов, unknown-cast).
+- Регистрация цели + починка синтаксиса вернули компайл-гейт: `hvigorw --mode module -p module=entry@ohosTest assembleHap` теперь зелёный и должен быть частью верификации при правках тестов.
+- Формат цели подтверждён локальными официальными Codelabs (`targets: [{name: "default"}, {name: "ohosTest"}]`), когда RAG-база молчит — локальные референсы вторые в очереди.
+
 ## 54. HarmonyOS timer/AppFreeze doc contracts for the throttled media watcher
 - Docs DB cross-check (2026-07-02): `setTimeout` returns `number` in ArkTS, so the `as number` cast is redundant; `clearTimeout` with a stale/unknown id is a documented safe no-op, but timers must be cleared on the thread that created them.
 - Timers do not fire while the app is in background; expired timers fire after foreground restore — the 600ms rescan chain pauses in background and resumes on foreground, which is acceptable for auto-downloads.

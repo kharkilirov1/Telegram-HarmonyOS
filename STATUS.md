@@ -7,7 +7,9 @@ Snapshot date: 2026-07-02
 - **Branch:** `dev`
 - **Phase:** R1 — MVP-стабилизация (Release Track v2 per `TASKS/AGENT_EXECUTION_PLAN.md`); R0 завершён 2026-07-02
 - **Direction:** минимальный релизный клиент v0.1.0 (MVP-чеклист в плане) → фичи маленькими обновлениями v0.x; ширина роадмапа больше не цель
-- **Last committed baseline:** `eb81eca fix: keep main thread responsive during tdlib batch storms` (P0 cold-start freeze, P1 pagination edge-lock, P2 default tab — эмуляторные witness в TODO)
+- **Last committed baseline:** `d22f628 test: register ohosTest target and repair suite syntax` (+ `019521e` active-chat media priority, `eb81eca` P0/P1/P2 fixes — эмуляторные witness в TODO)
+- **Release gate update:** добавлен R1.5 «Внешний вид» — пользователь заморозил релиз до приведения внешки в порядок
+- **Внимание:** эмулятор разлогинен инцидентом `install -r` (2026-07-02) — рантайм-witness медиа-приоритета ждёт ручного входа
 - **Current follow-up:** Media download behavior now covers user intent continuation, failed-download retry state, open gallery refresh, and a startup AppFreeze mitigation for background media auto-downloads
 - **Build:** `scripts/smoke-build.ps1` — green (re-run 2026-07-02 with the `DownloadMessageMediaUseCase` throttling patch in tree)
 - **Smoke:** `scripts/smoke-ui-phase0.ps1` — green (re-run 2026-07-02); `bash ./scripts/smoke-ui-phase0.sh` — green on last run 2026-05-19
@@ -98,6 +100,7 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - Эмулятор стартует из CLI: `"C:\Program Files\Huawei\DevEco Studio\tools\emulator\Emulator.exe" -start "Pura 90 Pro Max"` (инстансы зарегистрированы, imageRoot берётся из реестра)
 - hdc: использовать SDK-бинарь `DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe`; таргет `127.0.0.1:5555`
 - **Unsigned HAP устанавливается на эмулятор** (`hdc install -r entry-default-unsigned.hap`) — подпись нужна только для реального устройства (R2)
+- **ОСТОРОЖНО:** `install -r` с ОДНИМ HAP'ом пересоздаёт бандл целиком — установка ohosTest-HAP этим путём стёрла entry-модуль и данные приложения (TDLib-сессию). Тестовый HAP ставить только вместе с entry или не ставить вовсе
 - Git Bash: для device-путей обязателен `MSYS_NO_PATHCONV=1`; `file recv` — с относительным путём из целевой папки
 - Telegram-сессия на эмуляторе жива (userdata сохраняется между запусками)
 
