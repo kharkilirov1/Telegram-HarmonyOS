@@ -7,9 +7,9 @@ Snapshot date: 2026-07-02
 - **Branch:** `dev`
 - **Phase:** R1 — MVP-стабилизация (Release Track v2 per `TASKS/AGENT_EXECUTION_PLAN.md`); R0 завершён 2026-07-02
 - **Direction:** минимальный релизный клиент v0.1.0 (MVP-чеклист в плане) → фичи маленькими обновлениями v0.x; ширина роадмапа больше не цель
-- **Last committed baseline:** `d22f628 test: register ohosTest target and repair suite syntax` (+ `019521e` active-chat media priority, `eb81eca` P0/P1/P2 fixes — эмуляторные witness в TODO)
+- **Last committed baseline:** `d3d7883 fix: yield drain slices through a nonzero timer delay` (пост-логиновый freeze-килл закрыт; ранее: `019521e` active-chat media priority, `eb81eca` P0/P1/P2)
 - **Release gate update:** добавлен R1.5 «Внешний вид» — пользователь заморозил релиз до приведения внешки в порядок
-- **Внимание:** эмулятор разлогинен инцидентом `install -r` (2026-07-02) — рантайм-witness медиа-приоритета ждёт ручного входа
+- Эмулятор снова залогинен (2026-07-03); медиа-приоритет активного чата подтверждён рантаймом; следующий дефект — P4-b (пути тумб не доезжают до открытого таймлайна)
 - **Current follow-up:** Media download behavior now covers user intent continuation, failed-download retry state, open gallery refresh, and a startup AppFreeze mitigation for background media auto-downloads
 - **Build:** `scripts/smoke-build.ps1` — green (re-run 2026-07-02 with the `DownloadMessageMediaUseCase` throttling patch in tree)
 - **Smoke:** `scripts/smoke-ui-phase0.ps1` — green (re-run 2026-07-02); `bash ./scripts/smoke-ui-phase0.sh` — green on last run 2026-05-19
