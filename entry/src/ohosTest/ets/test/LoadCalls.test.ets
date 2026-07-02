@@ -163,7 +163,7 @@ export default function loadCallsTest() {
     });
 
     describe('LoadCallsUseCase', () => {
-      it('should parse FoundMessages call records and next_offset', async 0, async () => {
+      it('should parse FoundMessages call records and next_offset', 0, async () => {
         const state = createInitialAppState();
         state.auth.userId = 1;
         state.chats.chats.set(10, makeChat(10, 2, 'Alice chat', '/chat/alice.jpg'));
@@ -218,7 +218,7 @@ export default function loadCallsTest() {
         expect(result.records[1].fallbackTitle).assertEqual('Carol chat');
       });
 
-      it('should hydrate missing chat and user direct TDLib responses', async 0, async () => {
+      it('should hydrate missing chat and user direct TDLib responses', 0, async () => {
         const state = createInitialAppState();
         state.auth.userId = 1;
         const store = makeStore(state);

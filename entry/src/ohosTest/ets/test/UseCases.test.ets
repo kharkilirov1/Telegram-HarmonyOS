@@ -44,7 +44,7 @@ export default function useCasesTest() {
   describe('UseCases', () => {
 
     describe('SendMessageUseCase', () => {
-      it('should send command with reply id', async 0, async () => {
+      it('should send command with reply id', 0, async () => {
         const gateway = new FakeGateway();
         const useCase = new SendMessageUseCase(gateway);
         const params = new SendMessageParams();
@@ -58,7 +58,7 @@ export default function useCasesTest() {
         expect(gateway.sentCommands[0].type).assertEqual('sendMessage');
       });
 
-      it('should reject empty message text before gateway send', async 0, async () => {
+      it('should reject empty message text before gateway send', 0, async () => {
         const gateway = new FakeGateway();
         const useCase = new SendMessageUseCase(gateway);
         const params = new SendMessageParams();
@@ -78,7 +78,7 @@ export default function useCasesTest() {
     });
 
     describe('SendMediaMessageUseCase', () => {
-      it('should send supported local media command', async 0, async () => {
+      it('should send supported local media command', 0, async () => {
         const gateway = new FakeGateway();
         const useCase = new SendMediaMessageUseCase(gateway);
         const params = new SendMediaMessageParams();
@@ -93,7 +93,7 @@ export default function useCasesTest() {
         expect(gateway.sentCommands[0].type).assertEqual('sendMediaMessage');
       });
 
-      it('should reject unsupported media kind', async 0, async () => {
+      it('should reject unsupported media kind', 0, async () => {
         const gateway = new FakeGateway();
         const useCase = new SendMediaMessageUseCase(gateway);
         const params = new SendMediaMessageParams();
@@ -114,7 +114,7 @@ export default function useCasesTest() {
     });
 
     describe('Message mutation use cases', () => {
-      it('should send edit, delete, and forward commands', async 0, async () => {
+      it('should send edit, delete, and forward commands', 0, async () => {
         const gateway = new FakeGateway();
 
         const editParams = new EditMessageParams();
@@ -141,7 +141,7 @@ export default function useCasesTest() {
         expect(gateway.sentCommands[2].type).assertEqual('forwardMessages');
       });
 
-      it('should reject invalid mutation params before gateway send', async 0, async () => {
+      it('should reject invalid mutation params before gateway send', 0, async () => {
         const gateway = new FakeGateway();
         const deleteParams = new DeleteMessagesParams();
         deleteParams.chatId = 10;

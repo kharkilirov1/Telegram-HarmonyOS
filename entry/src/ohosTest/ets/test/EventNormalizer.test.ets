@@ -35,7 +35,7 @@ export default function eventNormalizerTest() {
     describe('normalize with empty/null input', () => {
       it('should return empty array for null-like input', 0, () => {
         const normalizer = getEventNormalizer();
-        const nullObj = null as unknown as TdObject;
+        const nullObj = null as ESObject as TdObject;
         const result = normalizer.normalize(nullObj);
         expect(result.length).assertEqual(0);
       });

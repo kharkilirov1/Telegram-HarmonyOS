@@ -65,7 +65,7 @@ export default function tdGatewayTest() {
     });
 
     describe('send validation', () => {
-      it('should reject empty method name', async 0, () => {
+      it('should reject empty method name', 0, async () => {
         const gw = getTdGateway();
         let gotError = false;
         try {
@@ -76,7 +76,7 @@ export default function tdGatewayTest() {
         expect(gotError).assertTrue();
       });
 
-      it('should reject send when not ready', async 0, () => {
+      it('should reject send when not ready', 0, async () => {
         const gw = getTdGateway();
         let gotError = false;
         try {

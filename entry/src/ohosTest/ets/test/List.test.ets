@@ -14,6 +14,7 @@ import loadCallsTest from './LoadCalls.test';
 import chatCommandsTest from './ChatCommands.test';
 import commandSerializerTest from './CommandSerializer.test';
 import useCasesTest from './UseCases.test';
+import downloadMessageMediaTest from './DownloadMessageMedia.test';
 import userDtoTest from './UserDto.test';
 import filePipelineTest from './FilePipeline.test';
 import tdGatewayTest from './TdGateway.test';
@@ -37,6 +38,7 @@ export default function testsuite() {
   // Feature use cases
   loadCallsTest();
   useCasesTest();
+  downloadMessageMediaTest();
 
   // DTO / parsing layer
   messageDtoParserTest();
