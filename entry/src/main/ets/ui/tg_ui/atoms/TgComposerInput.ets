@@ -135,13 +135,9 @@ export struct TgComposerInput {
     .flexShrink(0)
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
-    .backgroundColor(this.canSend() ? TgUiTokens.COMPOSER_ACTION_ACTIVE : this.capsuleBg())
-    .backgroundBlurStyle(this.canSend() ? BlurStyle.NONE : this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    // R1.5: плоская иконка микрофона; заливка остаётся только у активного send
+    .backgroundColor(this.canSend() ? TgUiTokens.COMPOSER_ACTION_ACTIVE : Color.Transparent)
     .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
-    .border({
-      width: this.canSend() || isInsideCapsule ? 0 : TgUiTokens.COMPOSER_BORDER_WIDTH,
-      color: TgUiTokens.COMPOSER_CAPSULE_BORDER
-    })
     .clip(true)
     .onClick(() => {
       if (this.isDisabled) {
@@ -443,11 +439,9 @@ export struct TgComposerInput {
           .flexShrink(0)
           .justifyContent(FlexAlign.Center)
           .alignItems(VerticalAlign.Center)
-          .backgroundColor(this.capsuleBg())
-          .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+          // R1.5: плоская скрепка без капсулы
+          .backgroundColor(Color.Transparent)
           .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
-          .border({ width: TgUiTokens.COMPOSER_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
-          .clip(true)
           .onClick(() => {
             if (!this.isDisabled) {
               this.onAttachPress();

@@ -100,12 +100,9 @@ export struct TgChatTopBar {
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
-    .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    // R1.5: плоский телеграмный топ-бар — без стеклянной капсулы
+    .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
-    .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
-    .clip(true)
-    .renderGroup(true)
     .onClick(() => {
       this.onBackPress();
     })
@@ -140,12 +137,9 @@ export struct TgChatTopBar {
       left: TgUiTokens.CHAT_TOP_BAR_TITLE_PADDING_H,
       right: TgUiTokens.CHAT_TOP_BAR_TITLE_PADDING_H
     })
-    .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    // R1.5: тайтл без пилюли — чистый текст по центру
+    .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
-    .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
-    .clip(true)
-    .renderGroup(true)
     .onClick(() => {
       this.onTitlePress();
     })
@@ -210,12 +204,9 @@ export struct TgChatTopBar {
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
-    .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    // R1.5: аватар без капсулы
+    .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
-    .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
-    .clip(true)
-    .renderGroup(true)
     .onClick(() => {
       this.onAvatarPress();
     })
