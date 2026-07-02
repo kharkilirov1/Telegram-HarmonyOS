@@ -99,7 +99,9 @@ export struct MainTabsPage {
   }
 
   build() {
-    HdsTabs({ controller: this.controller }) {
+    // index обязателен: controller.changeIndex() в aboutToAppear уходит до
+    // привязки контроллера и молча игнорируется — без index стартовый таб был 0.
+    HdsTabs({ index: this.selectedIndex, controller: this.controller }) {
       // Tab 0: Contacts
       TabContent() {
         HdsNavigation(this.contactsNavStack) {

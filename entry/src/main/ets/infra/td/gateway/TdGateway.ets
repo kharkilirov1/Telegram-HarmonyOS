@@ -88,6 +88,12 @@ export class TdGatewayImpl implements TdGateway {
   private pendingRequests: Map<string, PendingRequest> = new Map();
   private requestCounter: number = 0;
   private timeoutCount: number = 0;
+  private pendingBatchQueue: string[] = [];
+  private drainItems: Object[] = [];
+  private drainIndex: number = 0;
+  private drainScheduled: boolean = false;
+  private drainTimerId: number = -1;
+  private static readonly DRAIN_BUDGET_MS = 8;
 
   private constructor() {}
 
@@ -138,11 +144,13 @@ export class TdGatewayImpl implements TdGateway {
       // Запускаем нативный receive loop.
       // Мы НЕ смешиваем бизнес-логику с callback слоем:
       // только определяем тип payload и передаём в dispatcher.
-      // NAPI receive loop теперь отправляет батчи — JSON-массив: [obj1, obj2, ...]
-      // Парсим массив и диспатчим каждый элемент отдельно.
+      // NAPI receive loop отправляет батчи — JSON-массив: [obj1, obj2, ...]
+      // Батчи ставятся в очередь и осушаются слайсами с бюджетом времени,
+      // с yield через setTimeout(0) между слайсами (см. drainSlice) — иначе
+      // холодный старт блокирует main thread (THREAD_BLOCK_6S).
       tdlib.startReceiveLoop((batchJson: string) => {
         try {
-          this.dispatchBatch(batchJson, dispatcher);
+          this.enqueueBatch(batchJson, dispatcher);
         } catch (error) {
           Logger.error('Error in receive loop relay', String(error));
         }
@@ -159,6 +167,7 @@ export class TdGatewayImpl implements TdGateway {
 
   private cleanupAfterInitializeFailure(): void {
     getMainThreadDispatcher().unsubscribe();
+    this.resetBatchDrain();
     try {
       if (this.clientId > 0) {
         tdlib.stopReceiveLoop();
@@ -380,6 +389,8 @@ export class TdGatewayImpl implements TdGateway {
       Logger.warn(`TDLib stopReceiveLoop failed during destroy: ${String(error)}`);
     }
 
+    this.resetBatchDrain();
+
     const shutdownError = new AppError(AppErrorKind.NETWORK, 'Gateway destroyed', '', 0, true);
     for (const entry of this.pendingRequests.entries()) {
       const req = entry[1];
@@ -485,36 +496,91 @@ export class TdGatewayImpl implements TdGateway {
    * Парсит батч JSON-массив из NAPI и диспатчит каждый элемент.
    * NAPI receive loop шлёт: [obj1, obj2, ...] — один callback вместо N.
    */
-  private dispatchBatch(batchJson: string, dispatcher: MainThreadDispatcher): void {
-    let items: Object[];
+  // Очередь батчей + инкрементальный дрейн. NAPI thread-safe function может
+  // доставить несколько батчей по 50 ответов за один uv-тик; синхронная
+  // обработка блокировала main thread (THREAD_BLOCK_6S на холодном старте).
+  // Дрейн работает и в состоянии 'destroying' — close-flow ждёт
+  // authorizationStateClosed через тот же конвейер.
+  private enqueueBatch(batchJson: string, dispatcher: MainThreadDispatcher): void {
+    this.pendingBatchQueue.push(batchJson);
+    this.scheduleDrain(dispatcher);
+  }
+
+  private scheduleDrain(dispatcher: MainThreadDispatcher): void {
+    if (this.drainScheduled) {
+      return;
+    }
+    this.drainScheduled = true;
+    this.drainTimerId = setTimeout(() => {
+      this.drainTimerId = -1;
+      this.drainScheduled = false;
+      this.drainSlice(dispatcher);
+    }, 0) as number;
+  }
+
+  private drainSlice(dispatcher: MainThreadDispatcher): void {
+    const sliceStart = Date.now();
+    while (Date.now() - sliceStart < TdGatewayImpl.DRAIN_BUDGET_MS) {
+      if (this.drainIndex >= this.drainItems.length) {
+        this.drainItems = [];
+        this.drainIndex = 0;
+        const nextBatch = this.pendingBatchQueue.shift();
+        if (nextBatch === undefined) {
+          return;
+        }
+        this.loadBatchForDrain(nextBatch, dispatcher);
+        continue;
+      }
+      const obj = this.drainItems[this.drainIndex] as Record<string, Object>;
+      this.drainIndex++;
+      this.dispatchItem(obj, dispatcher);
+    }
+    if (this.drainIndex < this.drainItems.length || this.pendingBatchQueue.length > 0) {
+      this.scheduleDrain(dispatcher);
+    }
+  }
+
+  private loadBatchForDrain(batchJson: string, dispatcher: MainThreadDispatcher): void {
+    let parsed: Object;
     try {
-      items = JSON.parse(batchJson) as Object[];
+      parsed = JSON.parse(batchJson) as Object;
     } catch {
       Logger.error('Malformed batch JSON');
       return;
     }
-
-    if (!Array.isArray(items)) {
-      // Fallback: shouldn't happen with new NAPI, but safe
-      if (this.isResponseJson(batchJson)) {
-        dispatcher.dispatchResponse(batchJson);
-      } else {
-        dispatcher.dispatchUpdate(batchJson);
-      }
+    if (Array.isArray(parsed)) {
+      this.drainItems = parsed as Object[];
+      this.drainIndex = 0;
       return;
     }
-
-    for (let i = 0; i < items.length; i++) {
-      const obj = items[i] as Record<string, Object>;
-      const rawJson = JSON.stringify(obj);
-      // Check @extra directly on parsed object — avoids double-parse
-      const hasExtra = obj !== null && obj !== undefined && obj['@extra'] !== undefined;
-      if (hasExtra) {
-        dispatcher.dispatchResponse(rawJson);
-      } else {
-        dispatcher.dispatchUpdate(rawJson);
-      }
+    // Fallback: одиночный объект вместо массива (не должно случаться с батчевым NAPI)
+    if (this.isResponseJson(batchJson)) {
+      dispatcher.dispatchResponse(batchJson);
+    } else {
+      dispatcher.dispatchUpdate(batchJson);
     }
+  }
+
+  private dispatchItem(obj: Record<string, Object>, dispatcher: MainThreadDispatcher): void {
+    const rawJson = JSON.stringify(obj);
+    // Check @extra directly on parsed object — avoids double-parse
+    const hasExtra = obj !== null && obj !== undefined && obj['@extra'] !== undefined;
+    if (hasExtra) {
+      dispatcher.dispatchResponse(rawJson);
+    } else {
+      dispatcher.dispatchUpdate(rawJson);
+    }
+  }
+
+  private resetBatchDrain(): void {
+    if (this.drainTimerId !== -1) {
+      clearTimeout(this.drainTimerId);
+      this.drainTimerId = -1;
+    }
+    this.drainScheduled = false;
+    this.pendingBatchQueue = [];
+    this.drainItems = [];
+    this.drainIndex = 0;
   }
 
   /**

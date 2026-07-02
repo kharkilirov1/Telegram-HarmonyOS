@@ -72,6 +72,7 @@ const PROGRAMMATIC_SCROLL_GUARD_MS = 320;
 // Use 25 for scroll trigger (aggressive prefetch like Android).
 const TIMELINE_TOP_EDGE_TRIGGER_INDEX = 25;
 const TIMELINE_BOTTOM_EDGE_TRIGGER_GAP = 5;
+const TIMELINE_TOUCH_UNLOCK_DISTANCE = 12;
 const INITIAL_HISTORY_PLACEHOLDER_RELEASE_COUNT = 1;
 
 declare function px2vp(value: number): number;
@@ -169,6 +170,7 @@ export struct TgChatScreenPage {
   private stickyLastReadMessageId: string = '';
   private lastMarkReadRequestKey: string = '';
   private blockAutoPaginationUntilUserScroll: boolean = false;
+  private timelineTouchStartY: number = -1;
   private isApplyingTimelineDiff: boolean = false;
   private paginationRecheckTimerId: number = -1;
   private static scrollPositionCache: Map<number, string> = new Map<number, string>();
@@ -1153,6 +1155,33 @@ export struct TgChatScreenPage {
       scrollState, scrollOffset.toString());
   }
 
+  // На краю списка перетаскивание не двигает контент, onDidScroll не стреляет,
+  // и blockAutoPaginationUntilUserScroll никогда не снимается — разблокируем
+  // по самому жесту и принудительно перепроверяем край.
+  private handleTimelineTouch(event: TouchEvent): void {
+    if (event.touches.length === 0) {
+      return;
+    }
+    const touchY = event.touches[0].y;
+    if (event.type === TouchType.Down) {
+      this.timelineTouchStartY = touchY;
+      return;
+    }
+    if (event.type !== TouchType.Move) {
+      return;
+    }
+    if (!this.blockAutoPaginationUntilUserScroll || this.isApplyingTimelineDiff) {
+      return;
+    }
+    if (this.timelineTouchStartY < 0 ||
+      Math.abs(touchY - this.timelineTouchStartY) < TIMELINE_TOUCH_UNLOCK_DISTANCE) {
+      return;
+    }
+    this.blockAutoPaginationUntilUserScroll = false;
+    hilog.info(DOMAIN, TAG, 'Auto pagination unlocked by touch drag at edge');
+    this.schedulePaginationRecheck(0);
+  }
+
   private shouldSuppressLoadOlder(): boolean {
     return Date.now() < this.suppressLoadOlderUntil;
   }
@@ -1227,6 +1256,9 @@ export struct TgChatScreenPage {
       return;
     }
     if (this.shouldSuppressLoadOlder()) {
+      // Suppress-окно временное — не бросаем перепроверку, а откладываем её,
+      // иначе на статичном крае onScrollIndex больше не стрельнёт.
+      this.schedulePaginationRecheck(PROGRAMMATIC_SCROLL_GUARD_MS / 2);
       return;
     }
     const start = this.lastVisibleStartIndex;
@@ -2273,6 +2305,9 @@ export struct TgChatScreenPage {
                 if (this.isNearBottomPaginationEdge(end, totalCount) && !this.isLoadingNewer) {
                   this.loadNewerMessages();
                 }
+              })
+              .onTouch((event: TouchEvent) => {
+                this.handleTimelineTouch(event);
               })
             } else {
               Column({ space: TgUiTokens.SPACE_8 }) {
