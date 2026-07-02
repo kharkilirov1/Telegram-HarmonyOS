@@ -6,6 +6,7 @@
 // TDLib responds with updateFile → FileNormalizer → FileDownloadedEvent → filesReducer.
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { navigationUIState } from '../../core/model/UIStateModels';
 import { AppStore } from '../../core/store/AppStore';
 import { TdGatewayPort } from '../ports/TdGatewayPort';
 import { AppState, Message, MessageContent } from '../../core/model/AppState';
@@ -30,9 +31,12 @@ export class DownloadMessageMediaUseCase {
   private static readonly SCAN_THROTTLE_MS = 600;
   private static readonly MAX_ENQUEUES_PER_SCAN = 4;
 
-  constructor(store: AppStore, gateway: TdGatewayPort) {
+  private activeChatIdProvider: () => number;
+
+  constructor(store: AppStore, gateway: TdGatewayPort, activeChatIdProvider: (() => number) | null = null) {
     this.store = store;
     this.gateway = gateway;
+    this.activeChatIdProvider = activeChatIdProvider ?? ((): number => navigationUIState.activeChatId);
   }
 
   start(): void {
@@ -110,7 +114,25 @@ export class DownloadMessageMediaUseCase {
     let enqueued = 0;
     let remainingBudget = DownloadMessageMediaUseCase.MAX_ENQUEUES_PER_SCAN;
 
-    state.messages.messages.forEach((chatMessages: Map<string, Message>) => {
+    // Активный чат сканируется первым: иначе видимые тумбы голодают позади
+    // сотен сообщений других чатов при бюджете MAX_ENQUEUES_PER_SCAN за проход.
+    const activeChatId = this.activeChatIdProvider();
+    const activeMessages = activeChatId !== 0 ? state.messages.messages.get(activeChatId) : undefined;
+    if (activeMessages) {
+      activeMessages.forEach((message: Message) => {
+        if (remainingBudget <= 0) {
+          return;
+        }
+        const added = this.scanContent(message.content, remainingBudget);
+        enqueued += added;
+        remainingBudget -= added;
+      });
+    }
+
+    state.messages.messages.forEach((chatMessages: Map<string, Message>, chatId: number) => {
+      if (chatId === activeChatId) {
+        return;
+      }
       chatMessages.forEach((message: Message) => {
         if (remainingBudget <= 0) {
           return;
