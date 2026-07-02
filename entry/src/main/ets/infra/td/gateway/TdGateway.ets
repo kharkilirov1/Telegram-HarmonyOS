@@ -94,6 +94,11 @@ export class TdGatewayImpl implements TdGateway {
   private drainScheduled: boolean = false;
   private drainTimerId: number = -1;
   private static readonly DRAIN_BUDGET_MS = 8;
+  // 0ms нельзя: нулевой таймер, взведённый из таймерного колбэка, дозревает в той же
+  // uv-таймерной фазе — цепочка слайсов сливается в один uv_timer_task и блокирует
+  // main thread (THREAD_BLOCK_6S на пост-логиновом шторме). 1ms уводит слайс в
+  // следующий оборот цикла, где watchdog/vsync получают ход.
+  private static readonly DRAIN_YIELD_MS = 1;
 
   private constructor() {}
 
@@ -515,7 +520,7 @@ export class TdGatewayImpl implements TdGateway {
       this.drainTimerId = -1;
       this.drainScheduled = false;
       this.drainSlice(dispatcher);
-    }, 0) as number;
+    }, TdGatewayImpl.DRAIN_YIELD_MS) as number;
   }
 
   private drainSlice(dispatcher: MainThreadDispatcher): void {
