@@ -263,15 +263,13 @@ export struct TgPhotoBubble {
   }
 
   private handleSurfaceTap(): void {
-    if (this.isDownloading) {
-      // Already downloading — no-op (cancel handled by overlay button)
-      return;
-    }
-    if (this.hasLocalPhoto) {
-      this.onPhotoTap();
-    } else {
+    // Telegram-семантика: тап всегда открывает просмотр; если фото ещё не
+    // скачано — параллельно стартует загрузка, галерея показывает прогресс
+    // и подхватит файл живьём (gallery refresh по timeline-обновлениям).
+    if (!this.hasLocalPhoto && !this.isDownloading) {
       this.onDownloadToggle();
     }
+    this.onPhotoTap();
   }
 
   @Builder
