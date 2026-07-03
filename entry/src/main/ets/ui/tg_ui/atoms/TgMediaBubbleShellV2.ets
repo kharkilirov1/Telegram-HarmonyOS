@@ -22,6 +22,7 @@ export struct TgMediaBubbleShellV2 {
   @Param captionQuoteCollapsedFlags: boolean[] = [];
 
   @Param photoPath: string = '';
+  @Param photoMinithumb: string = '';
   @Param photoFileId: number = 0;
   @Param hasLocalPhoto: boolean = false;
   @Param isPhotoDownloading: boolean = false;
@@ -30,6 +31,7 @@ export struct TgMediaBubbleShellV2 {
   @Param photoWidth: number = 0;
   @Param photoHeight: number = 0;
   @Param albumPhotoPaths: string[] = [];
+  @Param albumPhotoMinithumbs: string[] = [];
   @Param albumPhotoWidths: number[] = [];
   @Param albumPhotoHeights: number[] = [];
 
@@ -212,6 +214,7 @@ export struct TgMediaBubbleShellV2 {
     if (this.mediaKind === 'photo') {
       TgPhotoBubble({
         photoPath: this.photoPath,
+        photoMinithumb: this.photoMinithumb,
         hasLocalPhoto: this.hasLocalPhoto,
         isDownloading: this.isPhotoDownloading,
         isDownloadFailed: this.isPhotoDownloadFailed,
@@ -234,6 +237,7 @@ export struct TgMediaBubbleShellV2 {
     } else if (this.mediaKind === 'photoAlbum') {
       TgGroupedPhotoBubble({
         photoPaths: this.albumPhotoPaths,
+        photoMinithumbs: this.albumPhotoMinithumbs,
         photoWidths: this.albumPhotoWidths,
         photoHeights: this.albumPhotoHeights,
         isOutgoing: this.isOutgoing,

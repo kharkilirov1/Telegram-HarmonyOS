@@ -49,6 +49,7 @@ export class MessageContentDto {
   photoThumbFileId: number = 0;
   photoWidth: number = 0;
   photoHeight: number = 0;
+  photoMinithumb: string = '';
 
   videoPath: string = '';
   videoThumbPath: string = '';
@@ -424,6 +425,7 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.photoThumbFileId = photoThumb.fileId;
       contentDto.photoWidth = dimensions.width;
       contentDto.photoHeight = dimensions.height;
+      contentDto.photoMinithumb = tdGetString(tdGetObject(photoObj, 'minithumbnail'), 'data');
       break;
     }
     case 'messageVideo': {

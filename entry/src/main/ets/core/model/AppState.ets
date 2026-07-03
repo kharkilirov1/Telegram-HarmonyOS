@@ -114,6 +114,7 @@ export class MessageContent {
   photoThumbFileId: number = 0;
   photoWidth: number = 0;
   photoHeight: number = 0;
+  photoMinithumb: string = ''; // base64 JPEG из TDLib minithumbnail — мгновенный blur-превью
 
   // Video
   videoPath: string = '';

@@ -153,6 +153,7 @@ export class ChatTimelineDataSource implements IDataSource {
       this.sameNumberArray(prev.captionQuoteLengths, next.captionQuoteLengths) &&
       this.sameBoolArray(prev.captionQuoteCollapsedFlags, next.captionQuoteCollapsedFlags) &&
       prev.photoPath === next.photoPath &&
+      prev.photoMinithumb === next.photoMinithumb &&
       prev.photoFileId === next.photoFileId &&
       prev.hasLocalPhoto === next.hasLocalPhoto &&
       prev.isPhotoDownloading === next.isPhotoDownloading &&
@@ -160,6 +161,7 @@ export class ChatTimelineDataSource implements IDataSource {
       prev.photoWidth === next.photoWidth &&
       prev.photoHeight === next.photoHeight &&
       this.sameStringArray(prev.albumPhotoPaths, next.albumPhotoPaths) &&
+      this.sameStringArray(prev.albumPhotoMinithumbs, next.albumPhotoMinithumbs) &&
       this.sameNumberArray(prev.albumPhotoFileIds, next.albumPhotoFileIds) &&
       this.sameBoolArray(prev.albumPhotoHasLocal, next.albumPhotoHasLocal) &&
       this.sameBoolArray(prev.albumPhotoDownloading, next.albumPhotoDownloading) &&

@@ -5,10 +5,6 @@
 import { AppState, FileTransfer, Message, MessageContent, MessageQuoteEntity, ReducerAction } from '../model/AppState';
 import { FileDownloadedEvent, FileTransferUpdatedEvent } from '../model/AppEvent';
 import { cloneAppState, cloneChat, cloneStateForFiles, cloneUser } from '../utils/stateClone';
-import { hilog } from '@kit.PerformanceAnalysisKit';
-
-const DOMAIN = 0x0003;
-const TAG = 'FilesReducer';
 
 function contentMatchesFileId(content: MessageContent, fileId: number): boolean {
   return content.photoFileId === fileId ||
@@ -43,6 +39,7 @@ function applyFilePathToContent(content: MessageContent, fileId: number, localPa
   c.photoThumbFileId = content.photoThumbFileId;
   c.photoWidth = content.photoWidth;
   c.photoHeight = content.photoHeight;
+  c.photoMinithumb = content.photoMinithumb;
 
   c.videoPath = content.videoFileId === fileId ? localPath : content.videoPath;
   c.videoThumbPath = content.videoThumbFileId === fileId ? localPath : content.videoThumbPath;
@@ -237,8 +234,8 @@ export function filesReducer(state: AppState, action: ReducerAction): AppState {
     });
   }
 
-  hilog.info(DOMAIN, TAG, 'fileDownloaded fileId=%{public}d needsUpdate=%{public}d msgMatch=%{public}d',
-    fileId, needsUpdate ? 1 : 0, messageNeedsUpdate ? 1 : 0);
+  // ВНИМАНИЕ: не логировать здесь per-file на info — при медиа-штормах сотни
+  // hilog-строк/с блокируют main thread внутри HiLogPrint (freeze 2026-07-03 13:29).
 
   if (!needsUpdate) {
     return state;

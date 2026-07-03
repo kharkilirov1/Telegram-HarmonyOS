@@ -138,6 +138,7 @@ export class ChatMessageRowVO {
 
   // Photo
   photoPath: string = '';
+  photoMinithumb: string = ''; // data:image/jpeg;base64,... для blur-превью
   photoFileId: number = 0;
   hasLocalPhoto: boolean = false;
   isPhotoDownloading: boolean = false;
@@ -145,6 +146,7 @@ export class ChatMessageRowVO {
   photoWidth: number = 0;
   photoHeight: number = 0;
   albumPhotoPaths: string[] = [];
+  albumPhotoMinithumbs: string[] = [];
   albumPhotoFileIds: number[] = [];
   albumPhotoHasLocal: boolean[] = [];
   albumPhotoDownloading: boolean[] = [];
@@ -766,6 +768,8 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   const rawPhotoPath = resolvedPhotoFull.length > 0 ? resolvedPhotoFull
     : resolveContentPath(content.photoThumbPath, content.photoThumbFileId, state);
   row.photoPath = toFileUri(rawPhotoPath);
+  row.photoMinithumb = content.photoMinithumb.length > 0
+    ? 'data:image/jpeg;base64,' + content.photoMinithumb : '';
   row.photoFileId = content.photoFileId;
   row.hasLocalPhoto = resolvedPhotoFull.length > 0;
   row.isPhotoDownloading = isTransferActive(photoTransfer);
@@ -922,6 +926,7 @@ function buildPhotoAlbumEntry(albumMessages: Message[], chat: Chat, state: AppSt
   entry.message.photoWidth = 0;
   entry.message.photoHeight = 0;
   entry.message.albumPhotoPaths = [];
+  entry.message.albumPhotoMinithumbs = [];
   entry.message.albumPhotoFileIds = [];
   entry.message.albumPhotoHasLocal = [];
   entry.message.albumPhotoDownloading = [];
@@ -937,6 +942,8 @@ function buildPhotoAlbumEntry(albumMessages: Message[], chat: Chat, state: AppSt
       : resolveContentPath(content.photoThumbPath, content.photoThumbFileId, state);
     const photoUri = toFileUri(rawPhotoPath);
     entry.message.albumPhotoPaths.push(photoUri);
+    entry.message.albumPhotoMinithumbs.push(content.photoMinithumb.length > 0
+      ? 'data:image/jpeg;base64,' + content.photoMinithumb : '');
     entry.message.albumPhotoFileIds.push(content.photoFileId);
     entry.message.albumPhotoHasLocal.push(resolvedFull.length > 0);
     entry.message.albumPhotoDownloading.push(isTransferActive(photoTransfer));

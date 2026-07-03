@@ -196,7 +196,6 @@ export class DownloadMessageMediaUseCase {
     if (!this.isRunning) return false;
     if (this.pendingFileIds.has(fileId)) return false;
     this.pendingFileIds.add(fileId);
-    hilog.info(DOMAIN, TAG, 'enqueue fileId=%{public}d prio=%{public}d', fileId, priority);
 
     const command = createDownloadFileCommand(fileId, priority, false);
     const store = this.store;

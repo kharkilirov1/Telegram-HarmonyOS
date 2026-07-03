@@ -55,6 +55,7 @@ export struct TgMessageRouter {
 
   // ── Photo ──
   @Param photoPath: string = '';
+  @Param photoMinithumb: string = '';
   @Param photoFileId: number = 0;
   @Param hasLocalPhoto: boolean = false;
   @Param isPhotoDownloading: boolean = false;
@@ -63,6 +64,7 @@ export struct TgMessageRouter {
   @Param photoWidth: number = 0;
   @Param photoHeight: number = 0;
   @Param albumPhotoPaths: string[] = [];
+  @Param albumPhotoMinithumbs: string[] = [];
   @Param albumPhotoWidths: number[] = [];
   @Param albumPhotoHeights: number[] = [];
 
@@ -520,6 +522,7 @@ export struct TgMessageRouter {
     if (this.contentType === 'photo') {
       TgPhotoBubble({
         photoPath: this.photoPath,
+        photoMinithumb: this.photoMinithumb,
         hasLocalPhoto: this.hasLocalPhoto,
         isDownloading: this.isPhotoDownloading,
         isDownloadFailed: this.isPhotoDownloadFailed,
@@ -544,6 +547,7 @@ export struct TgMessageRouter {
     } else if (this.contentType === 'photoAlbum') {
       TgGroupedPhotoBubble({
         photoPaths: this.albumPhotoPaths,
+        photoMinithumbs: this.albumPhotoMinithumbs,
         photoWidths: this.albumPhotoWidths,
         photoHeights: this.albumPhotoHeights,
         isOutgoing: this.isOutgoing,
@@ -1058,6 +1062,7 @@ export struct TgMessageRouter {
           captionQuoteLengths: this.captionQuoteLengths,
           captionQuoteCollapsedFlags: this.captionQuoteCollapsedFlags,
           photoPath: this.photoPath,
+          photoMinithumb: this.photoMinithumb,
           photoFileId: this.photoFileId,
           hasLocalPhoto: this.hasLocalPhoto,
           isPhotoDownloading: this.isPhotoDownloading,
@@ -1066,6 +1071,7 @@ export struct TgMessageRouter {
           photoWidth: this.photoWidth,
           photoHeight: this.photoHeight,
           albumPhotoPaths: this.albumPhotoPaths,
+          albumPhotoMinithumbs: this.albumPhotoMinithumbs,
           albumPhotoWidths: this.albumPhotoWidths,
           albumPhotoHeights: this.albumPhotoHeights,
           videoThumbPath: this.videoThumbPath,

@@ -38,7 +38,9 @@ function handleUpdateFile(events: AnyAppEvent[], update: TdObject): void {
   transferEvent.timestamp = Date.now();
   events.push(transferEvent);
 
-  hilog.info(DOMAIN, TAG,
+  // debug, не info: updateFile прилетает сотнями при штормах — info-запись в hilog
+  // блокирует main thread внутри HiLogPrint (см. freeze 2026-07-03 13:29)
+  hilog.debug(DOMAIN, TAG,
     'updateFile fileId=%{public}d active=%{public}s complete=%{public}s progress=%{public}d/%{public}d path=%{public}s',
     fileId,
     isDownloadingActive ? 'true' : 'false',
@@ -54,7 +56,7 @@ function handleUpdateFile(events: AnyAppEvent[], update: TdObject): void {
     event.isComplete = true;
     event.timestamp = Date.now();
     events.push(event);
-    hilog.info(DOMAIN, TAG, 'FileDownloadedEvent emitted for fileId=%{public}d', fileId);
+    hilog.debug(DOMAIN, TAG, 'FileDownloadedEvent emitted for fileId=%{public}d', fileId);
   }
 }
 

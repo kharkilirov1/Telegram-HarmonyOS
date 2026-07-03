@@ -4,6 +4,7 @@ import { TgIcon } from './TgIcon';
 @ComponentV2
 export struct TgPhotoBubble {
   @Param photoPath: string | Resource = '';
+  @Param photoMinithumb: string = '';
   @Param hasLocalPhoto: boolean = false;
   @Param isDownloading: boolean = false;
   @Param isDownloadFailed: boolean = false;
@@ -121,23 +122,37 @@ export struct TgPhotoBubble {
 
   @Builder
   private buildPlaceholder() {
-    Column({ space: TgUiTokens.SPACE_6 }) {
-      TgIcon({
-        src: TgUiTokens.ICON_RES_PHOTO,
-        iconSize: TgUiTokens.ICON_SIZE_XL,
-        tintColor: TgUiTokens.PHOTO_BUBBLE_PLACEHOLDER_ICON
-      })
+    Stack({ alignContent: Alignment.Center }) {
+      if (this.photoMinithumb.length > 0) {
+        // R1.5: telegram-style мгновенный превью — blur поверх minithumbnail из TDLib
+        Image(this.photoMinithumb)
+          .width('100%')
+          .height('100%')
+          .objectFit(ImageFit.Cover)
+          .blur(TgUiTokens.PHOTO_BUBBLE_MINITHUMB_BLUR)
+      } else {
+        Column({ space: TgUiTokens.SPACE_6 }) {
+          TgIcon({
+            src: TgUiTokens.ICON_RES_PHOTO,
+            iconSize: TgUiTokens.ICON_SIZE_XL,
+            tintColor: TgUiTokens.PHOTO_BUBBLE_PLACEHOLDER_ICON
+          })
 
-      Text($r('app.string.photo'))
-        .fontSize(TgUiTokens.FONT_META_SIZE)
-        .fontColor(TgUiTokens.PHOTO_BUBBLE_PLACEHOLDER_ICON)
+          Text($r('app.string.photo'))
+            .fontSize(TgUiTokens.FONT_META_SIZE)
+            .fontColor(TgUiTokens.PHOTO_BUBBLE_PLACEHOLDER_ICON)
+        }
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+        .width('100%')
+        .height('100%')
+      }
     }
     .width(this.maxMediaWidth())
     .height(this.maxMediaHeight())
-    .justifyContent(FlexAlign.Center)
-    .alignItems(HorizontalAlign.Center)
     .backgroundColor(TgUiTokens.PHOTO_BUBBLE_PLACEHOLDER_BG)
     .borderRadius(TgUiTokens.PHOTO_BUBBLE_RADIUS - TgUiTokens.PHOTO_BUBBLE_IMAGE_INSET)
+    .clip(true)
   }
 
   @Builder

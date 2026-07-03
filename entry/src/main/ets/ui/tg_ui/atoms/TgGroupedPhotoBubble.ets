@@ -4,6 +4,7 @@ import { TgIcon } from './TgIcon';
 @ComponentV2
 export struct TgGroupedPhotoBubble {
   @Param photoPaths: string[] = [];
+  @Param photoMinithumbs: string[] = [];
   @Param photoWidths: number[] = [];
   @Param photoHeights: number[] = [];
   @Param isOutgoing: boolean = false;
@@ -75,25 +76,43 @@ export struct TgGroupedPhotoBubble {
     return index < this.photoPaths.length ? this.photoPaths[index] : '';
   }
 
-  @Builder
-  private buildPlaceholder(width: number, height: number) {
-    Column({ space: TgUiTokens.SPACE_6 }) {
-      TgIcon({
-        src: TgUiTokens.ICON_RES_PHOTO,
-        iconSize: TgUiTokens.ICON_SIZE_XL,
-        tintColor: TgUiTokens.PHOTO_BUBBLE_PLACEHOLDER_ICON
-      })
+  private cellMinithumb(index: number): string {
+    return index < this.photoMinithumbs.length ? this.photoMinithumbs[index] : '';
+  }
 
-      Text($r('app.string.photo'))
-        .fontSize(TgUiTokens.FONT_META_SIZE)
-        .fontColor(TgUiTokens.PHOTO_BUBBLE_PLACEHOLDER_ICON)
+  @Builder
+  private buildPlaceholder(index: number, width: number, height: number) {
+    Stack({ alignContent: Alignment.Center }) {
+      if (this.cellMinithumb(index).length > 0) {
+        // R1.5: blur-minithumbnail вместо серого плейсхолдера
+        Image(this.cellMinithumb(index))
+          .width('100%')
+          .height('100%')
+          .objectFit(ImageFit.Cover)
+          .blur(TgUiTokens.PHOTO_BUBBLE_MINITHUMB_BLUR)
+      } else {
+        Column({ space: TgUiTokens.SPACE_6 }) {
+          TgIcon({
+            src: TgUiTokens.ICON_RES_PHOTO,
+            iconSize: TgUiTokens.ICON_SIZE_XL,
+            tintColor: TgUiTokens.PHOTO_BUBBLE_PLACEHOLDER_ICON
+          })
+
+          Text($r('app.string.photo'))
+            .fontSize(TgUiTokens.FONT_META_SIZE)
+            .fontColor(TgUiTokens.PHOTO_BUBBLE_PLACEHOLDER_ICON)
+        }
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+        .width('100%')
+        .height('100%')
+      }
     }
     .width(width)
     .height(height)
-    .justifyContent(FlexAlign.Center)
-    .alignItems(HorizontalAlign.Center)
     .backgroundColor(TgUiTokens.PHOTO_BUBBLE_PLACEHOLDER_BG)
     .borderRadius(TgUiTokens.RADIUS_6)
+    .clip(true)
   }
 
   @Builder
@@ -107,7 +126,7 @@ export struct TgGroupedPhotoBubble {
           .borderRadius(TgUiTokens.RADIUS_6)
           .clip(true)
       } else {
-        this.buildPlaceholder(width, height)
+        this.buildPlaceholder(index, width, height)
       }
 
       if (showOverlay) {

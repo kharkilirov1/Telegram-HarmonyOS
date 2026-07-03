@@ -63,6 +63,7 @@ function contentFromDto(dto: MessageContentDto): MessageContent {
   content.photoThumbFileId = dto.photoThumbFileId;
   content.photoWidth = dto.photoWidth;
   content.photoHeight = dto.photoHeight;
+  content.photoMinithumb = dto.photoMinithumb;
 
   content.videoPath = dto.videoPath;
   content.videoThumbPath = dto.videoThumbPath;
@@ -195,6 +196,7 @@ function cloneMessage(msg: Message): Message {
   clonedContent.photoThumbFileId = msg.content.photoThumbFileId;
   clonedContent.photoWidth = msg.content.photoWidth;
   clonedContent.photoHeight = msg.content.photoHeight;
+  clonedContent.photoMinithumb = msg.content.photoMinithumb;
   clonedContent.videoPath = msg.content.videoPath;
   clonedContent.videoThumbPath = msg.content.videoThumbPath;
   clonedContent.videoFileId = msg.content.videoFileId;

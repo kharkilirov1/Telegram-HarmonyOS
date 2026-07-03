@@ -53,6 +53,7 @@ export class TgUiTokens {
   static readonly MSG_QUOTE_BG_OUTGOING: string = 'rgba(51, 144, 236, 0.10)';
   static readonly PHOTO_BUBBLE_PLACEHOLDER_BG: Resource = $r('app.color.placeholder_bg');
   static readonly PHOTO_BUBBLE_PLACEHOLDER_ICON: Resource = $r('app.color.text_secondary');
+  static readonly PHOTO_BUBBLE_MINITHUMB_BLUR: number = 24;
   static readonly PHOTO_BUBBLE_CAPTION_TEXT_INCOMING: Resource = $r('app.color.text_primary');
   static readonly PHOTO_BUBBLE_CAPTION_TEXT_OUTGOING: Resource = $r('app.color.text_primary');
   static readonly VIDEO_BUBBLE_PLACEHOLDER_BG: Resource = $r('app.color.placeholder_bg');
