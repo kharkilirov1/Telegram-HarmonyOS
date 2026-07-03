@@ -1,0 +1,3 @@
+## 2024-06-25 - Interactive Components and Accessibility
+**Learning:** For interactive components (such as a Row containing a TgIcon with a custom touch area), `.accessibilityGroup(true)` and `.accessibilityDescription(...)` should be placed directly on the parent wrapper (the component that receives the onClick handler) rather than the icon itself. Modifying the inner element can disrupt the interactive area, and grouping them prevents fragmented text component readings.
+**Action:** When making custom container components interactive and accessible in ArkUI, explicitly apply `.accessibilityGroup(true)` and `.accessibilityDescription()` to the interactive parent wrapper (e.g., Row/Column).
