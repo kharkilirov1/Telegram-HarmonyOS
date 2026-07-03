@@ -1,0 +1,10 @@
+--- entry/src/main/ets/ui/tg_ui/atoms/TgChatTopBar.ets
++++ entry/src/main/ets/ui/tg_ui/atoms/TgChatTopBar.ets
+@@ -107,6 +107,8 @@
+     .clip(true)
+     .renderGroup(true)
++    .accessibilityGroup(true)
++    .accessibilityDescription('Navigate back')
+     .onClick(() => {
+       this.onBackPress();
+     })

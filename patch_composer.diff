@@ -1,0 +1,16 @@
+--- entry/src/main/ets/ui/tg_ui/atoms/TgComposerInput.ets
++++ entry/src/main/ets/ui/tg_ui/atoms/TgComposerInput.ets
+@@ -200,4 +200,6 @@
+           .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
+           .border({ width: TgUiTokens.COMPOSER_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
+           .clip(true)
++          .accessibilityGroup(true)
++          .accessibilityDescription('Attach media')
+         }
+@@ -287,4 +289,6 @@
+           color: TgUiTokens.COMPOSER_CAPSULE_BORDER
+         })
+         .clip(true)
++        .accessibilityGroup(true)
++        .accessibilityDescription(this.canSend() ? 'Send message' : 'Record voice message')
+         .onClick(() => {
