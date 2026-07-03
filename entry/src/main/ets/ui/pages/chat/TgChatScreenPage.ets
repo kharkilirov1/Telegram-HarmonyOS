@@ -1359,9 +1359,14 @@ export struct TgChatScreenPage {
       });
   }
 
-  private requestMediaDownload(fileId: number): void {
+  private requestMediaDownload(fileId: number, messageId: string = ''): void {
     this.mediaDownloadCtrl.requestMediaDownload(fileId, this.pageLifecycleToken);
     this.pendingMediaDownloadVersion = this.mediaDownloadCtrl.getVersion();
+    if (messageId.length > 0) {
+      // Мгновенный отклик на тап: LazyForEach-строка перерисовывается сразу
+      // (pending-состояние живёт в контроллере и без notify не доезжает до бабла)
+      this.dataSource.notifyItemChangedByMessageId(messageId);
+    }
   }
 
   private cancelMediaDownload(fileId: number): void {
@@ -2178,7 +2183,7 @@ export struct TgChatScreenPage {
         sendStatus: entry.message.sendStatus,
         isShortVideo: entry.message.isShortVideo,
         onMediaDownloadRequest: (fileId: number): void => {
-          this.requestMediaDownload(fileId);
+          this.requestMediaDownload(fileId, entry.message.messageId);
         },
         onMediaDownloadCancel: (fileId: number): void => {
           this.cancelMediaDownload(fileId);

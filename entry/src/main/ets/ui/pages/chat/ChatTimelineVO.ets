@@ -785,7 +785,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   row.videoThumbPath = toFileUri(rawVideoThumb);
   row.videoMinithumb = content.videoMinithumb.length > 0
     ? 'data:image/jpeg;base64,' + content.videoMinithumb : '';
-  row.videoPath = toFileUri(content.videoPath);
+  row.videoPath = toFileUri(resolveContentPath(content.videoPath, content.videoFileId, state));
   row.videoDuration = content.videoDuration;
   row.isShortVideo = content.videoDuration > 0 && content.videoDuration <= 30;
   row.videoWidth = content.videoWidth;
@@ -801,7 +801,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
     row.videoThumbPath = toFileUri(rawAnimThumb);
     row.videoMinithumb = content.videoMinithumb.length > 0
       ? 'data:image/jpeg;base64,' + content.videoMinithumb : '';
-    row.videoPath = toFileUri(content.animationPath);
+    row.videoPath = toFileUri(resolveContentPath(content.animationPath, content.animationFileId, state));
     row.videoDuration = content.animationDuration;
     row.isShortVideo = true; // GIFs always inline
     row.videoWidth = content.animationWidth;
@@ -818,7 +818,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
     row.videoThumbPath = toFileUri(rawVideoNoteThumb);
     row.videoMinithumb = content.videoMinithumb.length > 0
       ? 'data:image/jpeg;base64,' + content.videoMinithumb : '';
-    row.videoPath = toFileUri(content.videoNotePath);
+    row.videoPath = toFileUri(resolveContentPath(content.videoNotePath, content.videoNoteFileId, state));
     row.videoDuration = content.videoNoteDuration;
     row.videoWidth = content.videoNoteLength;
     row.videoHeight = content.videoNoteLength;
