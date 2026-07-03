@@ -46,7 +46,7 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
   1. [x] Тап — мгновенный отклик: фикс `e387795` (requestMediaDownload → notifyItemChangedByMessageId; pending-состояние контроллера теперь перерисовывает строку). Runtime-witness кольца — первым делом в следующем заходе
   1b. [x] Скачанное видео/GIF/кружок не выходили из download-состояния: полный путь теперь добирается из transfers (`e387795`). Witness: альбомы и видео в ленте рендерятся живыми тумбами
   2. Галерея не открывается по тапу, пока файл не скачан (ожидание: открыться с blur+прогрессом)
-  3. P4-c root cause (id-mismatch) — канонический путь контент-путей
+  3. **P4-c — АКТИВНЫЙ БЛОКЕР медиа-UX, следующий приоритет №1.** Живое репро: фото в канале с чёткой тумбой и вечной кнопкой загрузки — файл скачан, но путь в transfers лежит под НОВЫМ file id, контент ссылается на старый; resolveContentPath не находит, hasLocalPhoto=false, тап перекачивает по кругу, галерея не открывается. Канон решения: хранить remote unique_id per media-слот (парсер), filesReducer матчит fileDownloaded сначала по fileId, затем по unique_id — и обновляет fileId в контенте. Объём: parser+model+reducers по всем слотам (photo full/thumb, video+thumb, document, audio, voice, sticker, animation, videoNote). После этого transfers-фоллбэк станет страховкой, а тап-галерея (`фикс в TgPhotoBubble уже внесён`) заработает
   4. Видеоплеер/полноэкран фото — прогнать и записать дефекты
   5. Войсы: play/pause/прогресс — прогнать
   6. Документы: скачивание/открытие — прогнать
