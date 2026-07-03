@@ -23,6 +23,7 @@ export struct TgMediaBubbleShellV2 {
 
   @Param photoPath: string = '';
   @Param photoMinithumb: string = '';
+  @Param videoMinithumb: string = '';
   @Param photoFileId: number = 0;
   @Param hasLocalPhoto: boolean = false;
   @Param isPhotoDownloading: boolean = false;
@@ -251,6 +252,7 @@ export struct TgMediaBubbleShellV2 {
     } else if (this.mediaKind === 'animation') {
       TgAnimationBubble({
         thumbnailPath: this.videoThumbPath,
+        videoMinithumb: this.videoMinithumb,
         animationPath: this.videoPath,
         caption: this.caption,
         isOutgoing: this.isOutgoing,
@@ -273,6 +275,7 @@ export struct TgMediaBubbleShellV2 {
     } else {
       TgVideoBubble({
         thumbnailPath: this.videoThumbPath,
+        videoMinithumb: this.videoMinithumb,
         videoPath: this.videoPath,
         durationSec: this.videoDuration,
         caption: this.caption,

@@ -5,6 +5,7 @@ import { TgInlineVideoView } from './TgInlineVideoView';
 @ComponentV2
 export struct TgAnimationBubble {
   @Param thumbnailPath: string | Resource = '';
+  @Param videoMinithumb: string = '';
   @Param animationPath: string | Resource = '';
   @Param caption: string = '';
   @Param isOutgoing: boolean = false;
@@ -111,22 +112,36 @@ export struct TgAnimationBubble {
 
   @Builder
   private buildPlaceholder() {
-    Column({ space: TgUiTokens.SPACE_6 }) {
-      TgIcon({
-        src: TgUiTokens.ICON_RES_VIDEO,
-        iconSize: TgUiTokens.ICON_SIZE_XL,
-        tintColor: TgUiTokens.VIDEO_BUBBLE_PLACEHOLDER_ICON
-      })
-      Text('GIF')
-        .fontSize(TgUiTokens.FONT_META_SIZE)
-        .fontColor(TgUiTokens.VIDEO_BUBBLE_PLACEHOLDER_ICON)
+    Stack({ alignContent: Alignment.Center }) {
+      if (this.videoMinithumb.length > 0) {
+        // R1.5: blur-minithumbnail вместо серого плейсхолдера
+        Image(this.videoMinithumb)
+          .width('100%')
+          .height('100%')
+          .objectFit(ImageFit.Cover)
+          .blur(TgUiTokens.PHOTO_BUBBLE_MINITHUMB_BLUR)
+      } else {
+        Column({ space: TgUiTokens.SPACE_6 }) {
+          TgIcon({
+            src: TgUiTokens.ICON_RES_VIDEO,
+            iconSize: TgUiTokens.ICON_SIZE_XL,
+            tintColor: TgUiTokens.VIDEO_BUBBLE_PLACEHOLDER_ICON
+          })
+          Text('GIF')
+            .fontSize(TgUiTokens.FONT_META_SIZE)
+            .fontColor(TgUiTokens.VIDEO_BUBBLE_PLACEHOLDER_ICON)
+        }
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+        .width('100%')
+        .height('100%')
+      }
     }
     .width(this.computedMediaWidth())
     .height(this.computedMediaHeight())
-    .justifyContent(FlexAlign.Center)
-    .alignItems(HorizontalAlign.Center)
     .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLACEHOLDER_BG)
     .borderRadius(TgUiTokens.VIDEO_BUBBLE_RADIUS - TgUiTokens.VIDEO_BUBBLE_IMAGE_INSET)
+    .clip(true)
   }
 
   @Builder

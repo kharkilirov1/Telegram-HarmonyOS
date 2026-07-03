@@ -119,6 +119,7 @@ export class MessageContent {
   // Video
   videoPath: string = '';
   videoThumbPath: string = '';
+  videoMinithumb: string = ''; // base64 JPEG из TDLib minithumbnail (video/animation/videoNote)
   videoFileId: number = 0;
   videoThumbFileId: number = 0;
   videoDuration: number = 0;

@@ -56,6 +56,7 @@ export struct TgMessageRouter {
   // ── Photo ──
   @Param photoPath: string = '';
   @Param photoMinithumb: string = '';
+  @Param videoMinithumb: string = '';
   @Param photoFileId: number = 0;
   @Param hasLocalPhoto: boolean = false;
   @Param isPhotoDownloading: boolean = false;
@@ -581,6 +582,7 @@ export struct TgMessageRouter {
     } else if (this.contentType === 'animation') {
       TgAnimationBubble({
         thumbnailPath: this.videoThumbPath,
+        videoMinithumb: this.videoMinithumb,
         animationPath: this.videoPath,
         caption: this.caption,
         isOutgoing: this.isOutgoing,
@@ -605,6 +607,7 @@ export struct TgMessageRouter {
     } else if (this.contentType === 'video') {
       TgVideoBubble({
         thumbnailPath: this.videoThumbPath,
+        videoMinithumb: this.videoMinithumb,
         videoPath: this.videoPath,
         durationSec: this.videoDuration,
         caption: this.caption,
@@ -1075,6 +1078,7 @@ export struct TgMessageRouter {
           albumPhotoWidths: this.albumPhotoWidths,
           albumPhotoHeights: this.albumPhotoHeights,
           videoThumbPath: this.videoThumbPath,
+          videoMinithumb: this.videoMinithumb,
           videoPath: this.videoPath,
           videoFileId: this.videoFileId,
           isShortVideo: this.isShortVideo,

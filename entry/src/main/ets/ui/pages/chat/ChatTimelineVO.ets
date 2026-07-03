@@ -156,6 +156,7 @@ export class ChatMessageRowVO {
 
   // Video / Animation
   videoThumbPath: string = '';
+  videoMinithumb: string = ''; // data:image/jpeg;base64,... для blur-превью
   videoPath: string = '';
   videoDuration: number = 0;
   isShortVideo: boolean = false;
@@ -782,6 +783,8 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   const resolvedVideoThumb = resolveContentPath(content.videoThumbPath, content.videoThumbFileId, state);
   const rawVideoThumb = resolvedVideoThumb.length > 0 ? resolvedVideoThumb : content.videoPath;
   row.videoThumbPath = toFileUri(rawVideoThumb);
+  row.videoMinithumb = content.videoMinithumb.length > 0
+    ? 'data:image/jpeg;base64,' + content.videoMinithumb : '';
   row.videoPath = toFileUri(content.videoPath);
   row.videoDuration = content.videoDuration;
   row.isShortVideo = content.videoDuration > 0 && content.videoDuration <= 30;
@@ -796,6 +799,8 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
     const animationTransfer = resolveTransfer(content.animationFileId, state);
     const rawAnimThumb = content.videoThumbPath.length > 0 ? content.videoThumbPath : content.animationPath;
     row.videoThumbPath = toFileUri(rawAnimThumb);
+    row.videoMinithumb = content.videoMinithumb.length > 0
+      ? 'data:image/jpeg;base64,' + content.videoMinithumb : '';
     row.videoPath = toFileUri(content.animationPath);
     row.videoDuration = content.animationDuration;
     row.isShortVideo = true; // GIFs always inline
@@ -811,6 +816,8 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
     const videoNoteTransfer = resolveTransfer(content.videoNoteFileId, state);
     const rawVideoNoteThumb = content.videoThumbPath.length > 0 ? content.videoThumbPath : content.videoNotePath;
     row.videoThumbPath = toFileUri(rawVideoNoteThumb);
+    row.videoMinithumb = content.videoMinithumb.length > 0
+      ? 'data:image/jpeg;base64,' + content.videoMinithumb : '';
     row.videoPath = toFileUri(content.videoNotePath);
     row.videoDuration = content.videoNoteDuration;
     row.videoWidth = content.videoNoteLength;

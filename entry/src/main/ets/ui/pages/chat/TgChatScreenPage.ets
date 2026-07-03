@@ -2102,6 +2102,7 @@ export struct TgChatScreenPage {
         albumPhotoWidths: entry.message.albumPhotoWidths,
         albumPhotoHeights: entry.message.albumPhotoHeights,
         videoThumbPath: entry.message.videoThumbPath,
+        videoMinithumb: entry.message.videoMinithumb,
         videoPath: entry.message.videoPath,
         isVideoDownloading: entry.message.isVideoDownloading || this.isMediaDownloadPending(entry.message.videoFileId),
         isVideoDownloadFailed: this.isMediaDownloadFailed(entry.message.videoFileId),

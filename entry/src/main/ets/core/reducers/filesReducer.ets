@@ -43,6 +43,7 @@ function applyFilePathToContent(content: MessageContent, fileId: number, localPa
 
   c.videoPath = content.videoFileId === fileId ? localPath : content.videoPath;
   c.videoThumbPath = content.videoThumbFileId === fileId ? localPath : content.videoThumbPath;
+  c.videoMinithumb = content.videoMinithumb;
   c.videoFileId = content.videoFileId;
   c.videoThumbFileId = content.videoThumbFileId;
   c.videoDuration = content.videoDuration;

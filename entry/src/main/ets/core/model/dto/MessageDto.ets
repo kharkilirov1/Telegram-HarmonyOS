@@ -53,6 +53,7 @@ export class MessageContentDto {
 
   videoPath: string = '';
   videoThumbPath: string = '';
+  videoMinithumb: string = '';
   videoFileId: number = 0;
   videoThumbFileId: number = 0;
   videoDuration: number = 0;
@@ -440,6 +441,7 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.videoPath = extractLocalFilePath(videoFile);
       contentDto.videoFileId = extractFileId(videoFile);
       contentDto.videoThumbPath = extractThumbnailPath(videoObj);
+      contentDto.videoMinithumb = tdGetString(tdGetObject(videoObj, 'minithumbnail'), 'data');
       contentDto.videoThumbFileId = extractThumbnailFileId(videoObj);
       contentDto.videoDuration = tdGetNumber(videoObj, 'duration');
       contentDto.videoWidth = tdGetNumber(videoObj, 'width');
@@ -585,6 +587,7 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.animationPath = extractLocalFilePath(animationFile);
       contentDto.animationFileId = extractFileId(animationFile);
       contentDto.videoThumbPath = extractThumbnailPath(animationObj);
+      contentDto.videoMinithumb = tdGetString(tdGetObject(animationObj, 'minithumbnail'), 'data');
       contentDto.videoThumbFileId = extractThumbnailFileId(animationObj);
       contentDto.animationDuration = tdGetNumber(animationObj, 'duration');
       contentDto.animationWidth = tdGetNumber(animationObj, 'width');
@@ -602,6 +605,7 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.videoNotePath = extractLocalFilePath(videoNoteFile);
       contentDto.videoNoteFileId = extractFileId(videoNoteFile);
       contentDto.videoThumbPath = extractThumbnailPath(videoNoteObj);
+      contentDto.videoMinithumb = tdGetString(tdGetObject(videoNoteObj, 'minithumbnail'), 'data');
       contentDto.videoThumbFileId = extractThumbnailFileId(videoNoteObj);
       contentDto.videoNoteDuration = tdGetNumber(videoNoteObj, 'duration');
       contentDto.videoNoteLength = tdGetNumber(videoNoteObj, 'length');

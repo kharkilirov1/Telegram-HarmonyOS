@@ -169,6 +169,7 @@ export class ChatTimelineDataSource implements IDataSource {
       this.sameNumberArray(prev.albumPhotoWidths, next.albumPhotoWidths) &&
       this.sameNumberArray(prev.albumPhotoHeights, next.albumPhotoHeights) &&
       prev.videoThumbPath === next.videoThumbPath &&
+      prev.videoMinithumb === next.videoMinithumb &&
       prev.videoPath === next.videoPath &&
       prev.videoDuration === next.videoDuration &&
       prev.videoWidth === next.videoWidth &&
