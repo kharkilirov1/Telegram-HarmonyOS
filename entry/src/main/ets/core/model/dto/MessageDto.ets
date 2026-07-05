@@ -50,6 +50,8 @@ export class MessageContentDto {
   photoWidth: number = 0;
   photoHeight: number = 0;
   photoMinithumb: string = '';
+  photoUniqueId: string = '';
+  photoThumbUniqueId: string = '';
 
   videoPath: string = '';
   videoThumbPath: string = '';
@@ -282,6 +284,13 @@ function extractThumbnailFileId(parentObj: TdObject): number {
 class PhotoFileInfo {
   path: string = '';
   fileId: number = 0;
+  uniqueId: string = '';
+}
+
+// TDLib remote.unique_id — стабильный ключ файла: file id пере-нумеруется
+// между сессиями/запросами, unique_id — нет (канон для алиасинга transfers).
+function extractRemoteUniqueId(fileObj: TdObject): string {
+  return tdGetString(tdGetObject(fileObj, 'remote'), 'unique_id');
 }
 
 function extractPhotoMain(photoObj: TdObject): PhotoFileInfo {
@@ -297,6 +306,7 @@ function extractPhotoMain(photoObj: TdObject): PhotoFileInfo {
       bestArea = area;
       result.path = extractLocalFilePath(fileObj);
       result.fileId = extractFileId(fileObj);
+      result.uniqueId = extractRemoteUniqueId(fileObj);
     }
   }
   return result;
@@ -316,6 +326,7 @@ function extractPhotoThumb(photoObj: TdObject): PhotoFileInfo {
       smallestArea = area;
       result.path = extractLocalFilePath(fileObj);
       result.fileId = extractFileId(fileObj);
+      result.uniqueId = extractRemoteUniqueId(fileObj);
     }
   }
   return result;
@@ -427,6 +438,8 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.photoWidth = dimensions.width;
       contentDto.photoHeight = dimensions.height;
       contentDto.photoMinithumb = tdGetString(tdGetObject(photoObj, 'minithumbnail'), 'data');
+      contentDto.photoUniqueId = photoMain.uniqueId;
+      contentDto.photoThumbUniqueId = photoThumb.uniqueId;
       break;
     }
     case 'messageVideo': {

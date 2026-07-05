@@ -15,7 +15,21 @@ import {
 } from '../../../main/ets/core/model/AppEvent';
 import { createCancelDownloadFileCommand, createDownloadFileCommand } from '../../../main/ets/core/model/AppCommand';
 import { ChatMediaDownloadController } from '../../../main/ets/ui/pages/chat/ChatMediaDownloadController';
-import { ChatTimelineEntryVO } from '../../../main/ets/ui/pages/chat/ChatTimelineVO';
+import { ChatTimelineEntryVO, resolveContentPath } from '../../../main/ets/ui/pages/chat/ChatTimelineVO';
+
+// P4-c helper: собрать нормализованное событие завершённой загрузки с remote.unique_id.
+// Верхний уровень — ArkTS запрещает вложенные функции (arkts-no-nested-funcs).
+function completeTransferUpdate(fileId: number, uniqueId: string, path: string): FileTransferUpdatedEvent {
+  const update = TdObject.fromJSON(
+    '{"@type":"updateFile","file":{"@type":"file","id":' + fileId + ',"size":100,' +
+      '"remote":{"@type":"remoteFile","unique_id":"' + uniqueId + '"},' +
+      '"local":{"@type":"localFile","path":"' + path + '",' +
+      '"is_downloading_active":false,"is_downloading_completed":true,' +
+      '"download_offset":0,"downloaded_prefix_size":100,"downloaded_size":100}}}'
+  );
+  const events = new EventNormalizerImpl().normalize(update);
+  return events[0] as FileTransferUpdatedEvent;
+}
 
 /**
  * Unit tests for the current file update/download pipeline.
@@ -228,6 +242,58 @@ export default function filePipelineTest() {
 
         expect(controller.isDownloadFailed(99)).assertFalse();
         expect(controller.getDownloadStatus(99).isFailed).assertFalse();
+      });
+    });
+
+    // P4-c: TDLib пере-нумерует file id между постановкой и завершением. Контент
+    // ссылается на СТАРЫЙ id; transfers лежит под НОВЫМ. remote.unique_id стабилен —
+    // filesReducer строит реестр aliases[uniqueId]→fileId[], resolveContentPath
+    // добирает путь по алиасу, когда прямой fileId промахивается.
+    describe('unique_id alias resolution', () => {
+      it('normalizer carries remote.unique_id into transfer/download events', 0, () => {
+        const event = completeTransferUpdate(500, 'UID-A', '/data/photos/a.jpg');
+        expect(event.uniqueId).assertEqual('UID-A');
+      });
+
+      it('filesReducer registers uniqueId -> fileId in aliases', 0, () => {
+        const state = createInitialAppState();
+        const next = filesReducer(state, completeTransferUpdate(501, 'UID-B', '/data/photos/b.jpg'));
+        const ids = next.files.aliases.get('UID-B');
+        expect(ids !== undefined).assertTrue();
+        expect((ids as number[]).includes(501)).assertTrue();
+      });
+
+      it('resolveContentPath falls back to aliased completed transfer', 0, () => {
+        // Симулируем mismatch: контент ссылается на fileId 42 (старый),
+        // а скачанный файл пришёл под fileId 43 с тем же uniqueId.
+        const state = createInitialAppState();
+        const afterDownload = filesReducer(state, completeTransferUpdate(43, 'UID-SHARED', '/data/photos/x.jpg'));
+
+        // Прямой путь по старому id промахивается, алиас находит новый transfer.
+        const resolved = resolveContentPath('', 42, afterDownload, 'UID-SHARED');
+        expect(resolved).assertEqual('/data/photos/x.jpg');
+      });
+
+      it('resolveContentPath returns empty when neither id nor alias matches', 0, () => {
+        const state = createInitialAppState();
+        const resolved = resolveContentPath('', 42, state, 'UID-UNKNOWN');
+        expect(resolved).assertEqual('');
+      });
+
+      it('resolveContentPath prefers a non-empty content path over transfers', 0, () => {
+        const state = createInitialAppState();
+        const afterDownload = filesReducer(state, completeTransferUpdate(43, 'UID-SHARED', '/data/photos/x.jpg'));
+        const resolved = resolveContentPath('/data/photos/original.jpg', 42, afterDownload, 'UID-SHARED');
+        expect(resolved).assertEqual('/data/photos/original.jpg');
+      });
+
+      it('aliases survive filesReducer state clones (shared append-only registry)', 0, () => {
+        let state = createInitialAppState();
+        state = filesReducer(state, completeTransferUpdate(60, 'UID-C', '/data/photos/c.jpg'));
+        state = filesReducer(state, completeTransferUpdate(61, 'UID-C', '/data/photos/c.jpg'));
+        const ids = state.files.aliases.get('UID-C');
+        expect(ids !== undefined).assertTrue();
+        expect((ids as number[]).length).assertEqual(2);
       });
     });
   });

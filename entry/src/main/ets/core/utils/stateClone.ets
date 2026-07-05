@@ -85,6 +85,7 @@ export function cloneMessagesState(messages: MessagesState): MessagesState {
 export function cloneFilesState(files: FilesState): FilesState {
   const newFiles = new FilesState();
   newFiles.transfers = new Map<number, FileTransfer>(files.transfers);
+  newFiles.aliases = files.aliases; // append-only реестр unique_id→fileId[], шарится сознательно
   return newFiles;
 }
 

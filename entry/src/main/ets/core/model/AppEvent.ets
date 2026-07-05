@@ -196,6 +196,7 @@ export class ChatFullInfoEvent extends AppEvent {
 export class FileDownloadedEvent extends AppEvent {
   type: string = 'fileDownloaded';
   fileId: number = 0;
+  uniqueId: string = ''; // TDLib remote.unique_id — стабильный ключ для алиасинга
   localPath: string = '';
   isComplete: boolean = false;
 }
@@ -203,6 +204,7 @@ export class FileDownloadedEvent extends AppEvent {
 export class FileTransferUpdatedEvent extends AppEvent {
   type: string = 'fileTransferUpdated';
   fileId: number = 0;
+  uniqueId: string = '';
   localPath: string = '';
   isComplete: boolean = false;
   isDownloadingActive: boolean = false;

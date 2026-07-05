@@ -115,6 +115,8 @@ export class MessageContent {
   photoWidth: number = 0;
   photoHeight: number = 0;
   photoMinithumb: string = ''; // base64 JPEG из TDLib minithumbnail — мгновенный blur-превью
+  photoUniqueId: string = ''; // remote.unique_id полноразмерного фото
+  photoThumbUniqueId: string = ''; // remote.unique_id тумбы
 
   // Video
   videoPath: string = '';
@@ -248,6 +250,10 @@ export class FileTransfer {
 
 export class FilesState {
   transfers: Map<number, FileTransfer> = new Map<number, FileTransfer>();
+  // Append-only реестр: remote.unique_id → все известные file id этого файла.
+  // TDLib пере-нумерует file id; реестр позволяет алиасить transfers под
+  // старые id. Разделяется между стейтами по ссылке сознательно (append-only).
+  aliases: Map<string, number[]> = new Map<string, number[]>();
 }
 
 export class AccentColorDefinition {

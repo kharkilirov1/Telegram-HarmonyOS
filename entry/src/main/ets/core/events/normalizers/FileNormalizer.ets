@@ -16,6 +16,7 @@ function handleUpdateFile(events: AnyAppEvent[], update: TdObject): void {
   if (fileId <= 0) return;
 
   const local = tdGetObject(file, 'local');
+  const uniqueId = tdGetString(tdGetObject(file, 'remote'), 'unique_id');
   const size = file.getTopLevelNumber('size');
   const expectedSize = file.getTopLevelNumber('expected_size');
   const isComplete = tdGetBoolean(local, 'is_downloading_completed');
@@ -27,6 +28,7 @@ function handleUpdateFile(events: AnyAppEvent[], update: TdObject): void {
 
   const transferEvent = new FileTransferUpdatedEvent();
   transferEvent.fileId = fileId;
+  transferEvent.uniqueId = uniqueId;
   transferEvent.localPath = localPath;
   transferEvent.isComplete = isComplete;
   transferEvent.isDownloadingActive = isDownloadingActive;
@@ -52,6 +54,7 @@ function handleUpdateFile(events: AnyAppEvent[], update: TdObject): void {
   if (isComplete && localPath.length > 0) {
     const event = new FileDownloadedEvent();
     event.fileId = fileId;
+    event.uniqueId = uniqueId;
     event.localPath = localPath;
     event.isComplete = true;
     event.timestamp = Date.now();

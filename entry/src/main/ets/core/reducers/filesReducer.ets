@@ -160,12 +160,29 @@ function sameTransfer(a: FileTransfer | undefined, b: FileTransfer): boolean {
     a.downloadedSize === b.downloadedSize;
 }
 
+// Append-only реестр unique_id→fileId[]. Мутируем на месте: реестр шарится по
+// ссылке между стейтами (см. cloneFilesState), монотонен и не участвует в
+// diff-рендеринге (страница перерисовывается по transfers/version). Даёт
+// resolveContentPath найти скачанный файл, когда TDLib выдал новый fileId.
+function registerFileAlias(state: AppState, uniqueId: string, fileId: number): void {
+  if (uniqueId.length === 0 || fileId <= 0) {
+    return;
+  }
+  const existingIds = state.files.aliases.get(uniqueId);
+  if (existingIds === undefined) {
+    state.files.aliases.set(uniqueId, [fileId]);
+  } else if (!existingIds.includes(fileId)) {
+    existingIds.push(fileId);
+  }
+}
+
 export function filesReducer(state: AppState, action: ReducerAction): AppState {
   if (action.type === 'fileTransferUpdated') {
     const event = action as FileTransferUpdatedEvent;
     if (!event.fileId) {
       return state;
     }
+    registerFileAlias(state, event.uniqueId, event.fileId);
 
     const existing = state.files.transfers.get(event.fileId);
     const nextTransfer = applyTransferEvent(existing, event);
@@ -191,6 +208,7 @@ export function filesReducer(state: AppState, action: ReducerAction): AppState {
 
   const fileId = event.fileId;
   const localPath = event.localPath;
+  registerFileAlias(state, event.uniqueId, fileId);
 
   // Pre-scan: check if any user, chat, or message needs this file
   let needsUpdate = false;

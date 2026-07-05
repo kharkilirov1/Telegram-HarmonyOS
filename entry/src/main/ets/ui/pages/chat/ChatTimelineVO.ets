@@ -555,17 +555,42 @@ function resolveTransfer(fileId: number, state: AppState): FileTransfer | undefi
   return state.files.transfers.get(fileId);
 }
 
-// Живое обновление медиа: fileDownloaded не всегда матчится в контент по fileId
-// (TDLib может пере-нумеровать file id между постановкой и завершением), но
-// files.transfers заполняется на каждый updateFile. Пустой контент-путь
-// добираем из завершённого transfer — страница перерисовывается по transfers.
-function resolveContentPath(contentPath: string, fileId: number, state: AppState): string {
-  if (contentPath.length > 0 || fileId <= 0) {
-    return contentPath;
+function completedTransferPath(fileId: number, state: AppState): string {
+  if (fileId <= 0) {
+    return '';
   }
   const transfer = state.files.transfers.get(fileId);
   if (transfer !== undefined && transfer.isDownloadingCompleted && transfer.localPath.length > 0) {
     return transfer.localPath;
+  }
+  return '';
+}
+
+// Живое обновление медиа: fileDownloaded не всегда матчится в контент по fileId
+// (TDLib пере-нумерует file id между постановкой и завершением). files.transfers
+// заполняется на каждый updateFile, а files.aliases связывает стабильный
+// remote.unique_id со всеми известными fileId. Пустой контент-путь добираем:
+// сначала прямо по fileId, затем по любому алиасу uniqueId — страница
+// перерисовывается по transfers.
+export function resolveContentPath(contentPath: string, fileId: number, state: AppState,
+  uniqueId: string = ''): string {
+  if (contentPath.length > 0) {
+    return contentPath;
+  }
+  const direct = completedTransferPath(fileId, state);
+  if (direct.length > 0) {
+    return direct;
+  }
+  if (uniqueId.length > 0) {
+    const aliasIds = state.files.aliases.get(uniqueId);
+    if (aliasIds !== undefined) {
+      for (const aliasId of aliasIds) {
+        const aliased = completedTransferPath(aliasId, state);
+        if (aliased.length > 0) {
+          return aliased;
+        }
+      }
+    }
   }
   return contentPath;
 }
@@ -765,9 +790,9 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
 
   // Photo — convert sandbox path to file:// URI
   const photoTransfer = resolveTransfer(content.photoFileId, state);
-  const resolvedPhotoFull = resolveContentPath(content.photoPath, content.photoFileId, state);
+  const resolvedPhotoFull = resolveContentPath(content.photoPath, content.photoFileId, state, content.photoUniqueId);
   const rawPhotoPath = resolvedPhotoFull.length > 0 ? resolvedPhotoFull
-    : resolveContentPath(content.photoThumbPath, content.photoThumbFileId, state);
+    : resolveContentPath(content.photoThumbPath, content.photoThumbFileId, state, content.photoThumbUniqueId);
   row.photoPath = toFileUri(rawPhotoPath);
   row.photoMinithumb = content.photoMinithumb.length > 0
     ? 'data:image/jpeg;base64,' + content.photoMinithumb : '';
@@ -944,9 +969,9 @@ function buildPhotoAlbumEntry(albumMessages: Message[], chat: Chat, state: AppSt
   for (const message of albumMessages) {
     const content = message.content;
     const photoTransfer = resolveTransfer(content.photoFileId, state);
-    const resolvedFull = resolveContentPath(content.photoPath, content.photoFileId, state);
+    const resolvedFull = resolveContentPath(content.photoPath, content.photoFileId, state, content.photoUniqueId);
     const rawPhotoPath = resolvedFull.length > 0 ? resolvedFull
-      : resolveContentPath(content.photoThumbPath, content.photoThumbFileId, state);
+      : resolveContentPath(content.photoThumbPath, content.photoThumbFileId, state, content.photoThumbUniqueId);
     const photoUri = toFileUri(rawPhotoPath);
     entry.message.albumPhotoPaths.push(photoUri);
     entry.message.albumPhotoMinithumbs.push(content.photoMinithumb.length > 0
