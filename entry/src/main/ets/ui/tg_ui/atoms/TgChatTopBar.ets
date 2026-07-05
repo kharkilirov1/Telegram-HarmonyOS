@@ -109,6 +109,8 @@ export struct TgChatTopBar {
     .onClick(() => {
       this.onBackPress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Go back')
   }
 
   @Builder
@@ -149,6 +151,8 @@ export struct TgChatTopBar {
     .onClick(() => {
       this.onTitlePress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Chat information')
   }
 
   @Builder
@@ -169,15 +173,19 @@ export struct TgChatTopBar {
           this.onSearchQueryChange(value);
         })
 
-      TgIcon({
-        src: $r('app.media.ic_close'),
-        iconSize: 18,
-        tintColor: TgUiTokens.COLOR_ICON_PRIMARY
-      })
-        .onClick(() => {
-          this.onSearchClose();
+      Row() {
+        TgIcon({
+          src: $r('app.media.ic_close'),
+          iconSize: 18,
+          tintColor: TgUiTokens.COLOR_ICON_PRIMARY
         })
-        .margin({ right: 4 })
+      }
+      .margin({ right: 4 })
+      .onClick(() => {
+        this.onSearchClose();
+      })
+      .accessibilityGroup(true)
+      .accessibilityDescription('Clear search')
     }
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .layoutWeight(1)
@@ -219,6 +227,8 @@ export struct TgChatTopBar {
     .onClick(() => {
       this.onAvatarPress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Chat profile')
   }
 
   build() {
