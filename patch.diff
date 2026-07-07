@@ -1,0 +1,57 @@
+--- entry/src/main/ets/ui/tg_ui/atoms/TgChatTopBar.ets
++++ entry/src/main/ets/ui/tg_ui/atoms/TgChatTopBar.ets
+@@ -106,6 +106,8 @@
+     .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
+     .clip(true)
+     .renderGroup(true)
++    .accessibilityGroup(true)
++    .accessibilityDescription('Back')
+     .onClick(() => {
+       this.onBackPress();
+     })
+@@ -146,6 +148,8 @@
+     .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
+     .clip(true)
+     .renderGroup(true)
++    .accessibilityGroup(true)
++    .accessibilityDescription('Chat details')
+     .onClick(() => {
+       this.onTitlePress();
+     })
+@@ -169,14 +173,18 @@
+           this.onSearchQueryChange(value);
+         })
+
+-      TgIcon({
+-        src: $r('app.media.ic_close'),
+-        iconSize: 18,
+-        tintColor: TgUiTokens.COLOR_ICON_PRIMARY
+-      })
+-        .onClick(() => {
+-          this.onSearchClose();
+-        })
+-        .margin({ right: 4 })
++      Row() {
++        TgIcon({
++          src: $r('app.media.ic_close'),
++          iconSize: 18,
++          tintColor: TgUiTokens.COLOR_ICON_PRIMARY
++        })
++      }
++      .onClick(() => {
++        this.onSearchClose();
++      })
++      .margin({ right: 4 })
++      .accessibilityGroup(true)
++      .accessibilityDescription('Clear search')
+     }
+     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
+@@ -216,6 +224,8 @@
+     .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
+     .clip(true)
+     .renderGroup(true)
++    .accessibilityGroup(true)
++    .accessibilityDescription('User profile')
+     .onClick(() => {
+       this.onAvatarPress();
+     })
