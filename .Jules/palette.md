@@ -1,0 +1,3 @@
+## 2024-10-24 - Screen Reader Fragmentation in ArkUI Top Bars
+**Learning:** In complex ArkUI layouts like the iOS-style top bar capsules (e.g., `TgChatTopBar` and `TgTopBar`), interactive elements containing both icons and text or complex layouts get fragmented by the screen reader if accessibility is not applied properly.
+**Action:** When making custom container components interactive, apply `.accessibilityGroup(true)` and `.accessibilityDescription()` to the interactive parent wrapper (e.g., Row/Column) to avoid redundant screen reader announcements and ensure the correct element is read. Also avoid using literal hex colors as it's not supported by the environment.

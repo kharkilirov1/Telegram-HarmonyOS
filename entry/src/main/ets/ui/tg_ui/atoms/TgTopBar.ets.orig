@@ -102,8 +102,6 @@ export struct TgTopBar {
           tintColor: TgUiTokens.COLOR_ICON_PRIMARY
         })
           .margin({ right: TgUiTokens.SPACE_16 })
-          .accessibilityGroup(true)
-          .accessibilityDescription('Action')
           .onClick(() => {
             this.onSecondRightPress();
           })

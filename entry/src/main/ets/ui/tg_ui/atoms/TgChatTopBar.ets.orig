@@ -178,8 +178,6 @@ export struct TgChatTopBar {
         iconSize: 18,
         tintColor: TgUiTokens.COLOR_ICON_PRIMARY
       })
-        .accessibilityGroup(true)
-        .accessibilityDescription('Clear search')
         .onClick(() => {
           this.onSearchClose();
         })
