@@ -34,6 +34,14 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - **Каталог наборов 3/3 (`3187c50`, тик 26)**: лента вкладок паков (getInstalledStickerSets; тумба пака или cover-emoji), тап → getStickerSet с per-set кэшем; превью докачиваются последовательно с прерыванием по смене вкладки. **Witness: вкладки живые, грид переключился на пак, 👍 из пака доставлен (17:13)**. Стикер-трек ЗАКРЫТ (3/3); остался полиш (превью [Sticker] в чат-листе, lazy-анимация в гриде)
 - Урок 78 усилен: «force stop successfully» может НЕ убить процесс — STIME сверять с `hdc shell date` обязательно (повторный force-stop добил)
 
+## Recent Changes (2026-07-08 вечер, тики 36-38 — ПЛАСТ: профиль чата открыт и гидратирован)
+
+- **Доступ (`53cf080`)**: HitTestMode.Transparent на топ-баре отдавал тапы списку (title/avatar onClick не стрелял) — снят; guard openProfile `<=0` резал группы (отрицательные id) — `===0`
+- **Гидратация (`480f1eb`)**: ещё два гварда того же класса (loadProfile + onReady `>0`); системный титлбар NavDestination скрыт, своя шапка с back под topInset. Урок 87: `chatId <= 0|> 0` — grep-паттерн системной мины
+- **Witness обеих веток**: File (группа) — аватар «F» в цвете чата, имя, Notifications, Shared Media; zai (private) — «Z»+online-точка, зелёный статус, username-секция
+- Shared Media — декоративные строки, отдельный будущий слэб (searchChatMessages filter-грид)
+- Прогоны reply/edit/forward закрыты ранее (тики 32-35): пикер, префилл (`!!`-биндинг, урок 86), editDate-key
+
 ## Recent Changes (2026-07-08 вечер, тик 28 — live-refresh: корень найден, канон-фикс key-штампа)
 
 - **Урок 84 (`f87a996`)**: LazyForEach пересобирает строку ТОЛЬКО при смене key — notifyDataChange со стабильным msg_id был no-op для V2-строк (Monitor-проба: @Param не обновлялись). Фикс: mediaRenderStamp в key (пути/downloading/прогресс-бакеты/альбом) + stableKey для diff-структуры; снят .reuseId (V1-механизм на V2-строке)
