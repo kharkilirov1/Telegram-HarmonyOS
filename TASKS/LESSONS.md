@@ -1,6 +1,11 @@
 # LESSONS — repeated mistakes and project-specific pitfalls
 
-Last updated: 2026-05-19
+Last updated: 2026-07-08
+
+## 82. file:// URI и POSIX-путь — разные валюты: zlib/fs требуют путь, Image/AVPlayer едят URI
+- Симптом: `zlib.GZip.gzopen(file://com.telegram…/data/…)` → «No such file or access mode error», хотя Image по тому же значению рисует. Таймлайн-VO раздаёт `fileUri.getUriFromPath(path)` (URI с authority=bundle) — файловые API его не понимают.
+- Конверсии: путь→URI `fileUri.getUriFromPath(p)`; URI→путь `new fileUri.FileUri(uri).path` (или срез authority после `file://`). Перед любым fs/zlib-вызовом значения из VO нормализовать в путь.
+- Смежное (эмулятор-автоматика): свайп это `uinput -T -m x1 y1 x2 y2 speed` — `-M` (мышь) молча не скроллит список; и hdc-пути `/data/...` в Git Bash требуют `MSYS_NO_PATHCONV=1`, иначе превращаются в `C:/Program Files/Git/data/...`.
 
 ## 1. Do not mix V1 and V2 ArkUI decorators casually
 - `tg_ui` is `@ComponentV2`.

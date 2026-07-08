@@ -60,6 +60,14 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 - [ ] Add pure unit coverage for `DownloadMessageMediaUseCase` throttle/budget behavior (scheduleScan dedupe, budget cap + rescan chain, stop() timer cleanup) — рантайм-поведение подтверждено hilog: Enqueued 4→4→2 с шагом 600 мс
 - [ ] Propagate asynchronous TDLib transfer failures if a concrete `updateFile` failure shape is captured on emulator/device
 
+## ПЛАСТ-волна (мандат пользователя 2026-07-08: «бери пласты больше», цель — превью-качество)
+
+### Стикер-трек
+- [x] **1/3 TGS-анимация (`f6aa764`)**: `TgTgsPlayer` (zlib GZip → lottie на Canvas, per-instance destroy); file://→POSIX нормализация (урок 82). Witness: три tgs в File анимируются (дельта кадров 1.2 с)
+- [x] **2/3 Панель recent + отправка (`b72f846`)**: пилюля Stickers → грид 4 колонки, статичные превью + фоновая докачка; тап → `inputMessageSticker`+`inputFileRemote`. Witness: стикер отправлен из панели, дошёл (галочки 17:03), анимируется в таймлайне
+- [ ] **3/3 Каталог наборов**: getInstalledStickerSets/getStickerSet (команды уже в сериализаторе), горизонтальные вкладки паков в панели, избранные/поиск — следующий пласт
+- [ ] Полиш: превью `[Sticker]` в чат-листе → «🧩 Стикер» (humanizeBracketPreview), lazy-анимация tgs в панели (по видимости), кэш распакованного lottie JSON
+
 ## Релизная оркестрация 2026-07-08 (я + hermes deepseek-v4-pro)
 
 - [x] **[P4-d → FIXED] THREAD_BLOCK_6S на тяжёлом канале**: эскалирующий drain-backoff (`drainHotStreak`, cap 250мс) + backpressure `isDrainCongested()` → media-watcher откладывает скан. Witness: репро-сценарий (открытие DimaViper при ресинке) — 40+с жизни без нового appfreeze против килла за ~9с; юнит-тесты + ohosTest компайл-гейт зелёные

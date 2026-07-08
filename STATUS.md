@@ -7,7 +7,7 @@ Snapshot date: 2026-07-08 (вечер, после 17 содержательны�
 - **Branch:** `dev` (всё запушено в origin; разрешение на автоном. коммиты/пуши получено 2026-07-08)
 - **Phase:** R1/R1.5 — автономная часть ИСЧЕРПАНА; гейты ждут пользователя: день догфуда (R1), приёмка внешки (R1.5), сертификат+release-сборка (R2)
 - **Direction:** минимальный релизный клиент v0.1.0 → фичи маленькими обновлениями v0.x
-- **Last committed baseline:** `35fd99f` (тик 17: unique_id канон на все медиа-слоты)
+- **Last committed baseline:** `b72f846` (тики 24-25: TGS-анимация через lottie + панель recent-стикеров с отправкой)
 - **MVP-чеклист:** сведён с witness'ами в `TASKS/AGENT_EXECUTION_PLAN.md` — зелёное всё, что проверяемо без пользователя; остатки: reply/edit/forward-прогон руками, открытие вьюеров, стикер-рендер (нужен стикер в File), release-AppFreeze, догфуд
 - **R1.5 внешка:** закрыта (18 фиксов со скрин-witness'ами за тики 1-13); poll-бабл ждёт repro-опроса
 - **Repro-корзина для File:** ОПРОС (скрепка → Опрос) + СТИКЕР — разблокируют 2 последних автономных пункта
@@ -26,6 +26,12 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - UI: `@ComponentV2` decorators, token-first via `TgUiTokens.ets`
 - Root shell: API23 `HdsTabs` + `HdsNavigation` (D14)
 - Chat-list unread badge is now a project-owned inline `TgChatMeta` capsule, not a standalone `TgUnreadBadge` atom
+
+## Recent Changes (2026-07-08 вечер, тики 24-25 — ПЛАСТ: стикер-трек 1-2/3, мандат «пласты больше»)
+
+- **TGS-анимация живая (`f6aa764`)**: новый атом `TgTgsPlayer` — .tgs = gzip(lottie JSON): `@ohos.zlib` GZip стримит файл → `@ohos/lottie` играет на Canvas; per-instance name + `lottie.destroy` в `aboutToDisappear`. Ключевой фикс: VO раздаёт file:// URI, zlib требует POSIX-путь (урок 82). **Witness: три tgs-вишенки в File анимируются (дельта кадров на снапшотах 1.2 с)**
+- **Панель recent-стикеров + отправка (`b72f846`)**: пилюля Stickers в emoji-панели → грид 4 колонки (`TgComposerStickerPanel`, статичные превью webp/thumb/emoji-fallback, докачка синхронным downloadFile в фоне); тап → `sendMessage(inputMessageSticker + inputFileRemote(remote.id))`. Цепочка: 4 команды в AppCommand+union → CommandSerializer → `stickerPanel.ets` usecase (request-response через gateway.send). **Witness: стикер из панели отправлен в File (галочки 17:03) и анимируется в таймлайне через TgTgsPlayer — полный E2E**
+- Слэб 3/3 стикер-трека (каталог наборов getInstalledStickerSets, вкладки паков) — следующий пласт
 
 ## Recent Changes (2026-07-08 вечер, тики 20-21 — стикер-repro отработан, emoji-fallback)
 
