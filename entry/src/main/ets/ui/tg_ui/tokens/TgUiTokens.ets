@@ -670,11 +670,11 @@ export class TgUiTokens {
   static readonly COMPOSER_EMOJI_PANEL_TOP_GAP: number = 4;
   static readonly COMPOSER_EMOJI_PANEL_ROW_GAP: number = 4;
   static readonly COMPOSER_EMOJI_PANEL_HEADER_HEIGHT: number = 26;
-  static readonly COMPOSER_EMOJI_CELL_SIZE: number = 36;
+  static readonly COMPOSER_EMOJI_CELL_SIZE: number = 40;
   static readonly COMPOSER_EMOJI_CELL_RADIUS: number = 12;
   static readonly COMPOSER_EMOJI_CELL_GAP: number = 4;
-  static readonly COMPOSER_EMOJI_COLUMNS: number = 6;
-  static readonly COMPOSER_EMOJI_TEXT_SIZE: number = 24;
+  static readonly COMPOSER_EMOJI_COLUMNS: number = 8;
+  static readonly COMPOSER_EMOJI_TEXT_SIZE: number = 28;
   static readonly COMPOSER_EMOJI_HEADER_SIZE: number = 13;
   static readonly COMPOSER_EMOJI_PILL_HEIGHT: number = 26;
   static readonly COMPOSER_EMOJI_PILL_RADIUS: number = 13;
@@ -692,7 +692,7 @@ export class TgUiTokens {
 
   // ── In-chat search ──
   static readonly SEARCH_NAV_BAR_HEIGHT: number = 44;
-  static readonly SEARCH_HIT_FLASH: string = 'rgba(0, 122, 255, 0.15)';
+  static readonly SEARCH_HIT_FLASH: string = 'rgba(0, 122, 255, 0.28)';
 
   // ── Scroll-to-bottom FAB (iOS chat pattern) ──
   static readonly SCROLL_FAB_SIZE: number = 40;

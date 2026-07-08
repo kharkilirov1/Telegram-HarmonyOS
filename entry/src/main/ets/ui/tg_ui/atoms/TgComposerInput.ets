@@ -160,6 +160,7 @@ export struct TgComposerInput {
       TgGlassPolicy.glassOptions())
     .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
     .clip(true)
+    .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.85 })
     .onClick(() => {
       if (this.isDisabled) {
         return;
@@ -465,6 +466,7 @@ export struct TgComposerInput {
           .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
           .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
           .clip(true)
+          .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.85 })
           .onClick(() => {
             if (!this.isDisabled) {
               this.onAttachPress();
@@ -482,7 +484,9 @@ export struct TgComposerInput {
 
           Row() {
             TextArea({ text: this.textBuffer!!, placeholder: this.placeholder, controller: this.textController })
-              .style(TextContentStyle.INLINE)
+              // DEFAULT, not INLINE: the INLINE focus state paints an opaque
+              // system block + blue frame over the glass capsule while typing
+              .style(TextContentStyle.DEFAULT)
               .fontSize(TgUiTokens.COMPOSER_TEXT_SIZE)
               .fontWeight(TgUiTokens.COMPOSER_TEXT_WEIGHT)
               .fontColor(TgUiTokens.COMPOSER_TEXT)
@@ -529,6 +533,7 @@ export struct TgComposerInput {
               .flexShrink(0)
               .justifyContent(FlexAlign.Center)
               .alignItems(VerticalAlign.Center)
+              .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.8 })
               .onClick(() => {
                 if (!this.isDisabled) {
                   this.textController.stopEditing();
