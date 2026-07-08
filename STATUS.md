@@ -27,6 +27,12 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - Root shell: API23 `HdsTabs` + `HdsNavigation` (D14)
 - Chat-list unread badge is now a project-owned inline `TgChatMeta` capsule, not a standalone `TgUnreadBadge` atom
 
+## Recent Changes (2026-07-08 вечер, тик 17 — P4-c ext: unique_id на все медиа-слоты)
+
+- Канон remote.unique_id разнесён с фото на video(+thumb)/document/audio/voice/sticker(+thumb)/animation/videoNote: DTO-extract → 9 полей MessageContent → reducer map+clone → resolveContentPath во всех VO-вызовах; doc/audio/voice/sticker впервые получили канон-резолв (были прямые пути)
+- Механизм покрыт слот-агностичными FilePipeline-тестами; smoke-build/smoke-ui/ohosTest зелёные; закоммичено/запушено (`f0d3e5d`)
+- Тики 14-16 — холостые проверки repro-корзины (File): опрос/стикер так и не приехали
+
 ## Recent Changes (2026-07-08 вечер, тик 13 — 10-минутное окно группировки + человеческие превью)
 
 - **Time-window**: группировка отправителя рвётся при Δt ≥ 600с (точный iOS-контракт `ChatMessageItemImpl.swift:151`); prevTimestamp трекается во всех ветках билд-цикла VO. Witness: HarmonyOSHub — посты через 42 мин/4.5 ч раздельные, минутная пара слиплась
