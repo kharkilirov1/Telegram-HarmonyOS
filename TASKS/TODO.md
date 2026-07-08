@@ -66,7 +66,8 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 - [x] **Таб-бар**: плавающий HDS-остров → плоский полноширинный iOS-бар (48vp + системный inset, блюр COMPONENT_ULTRA_THICK, tab_bar_flat_bg); иконка Chats — чат-облачко ellipsis_message вместо домика; резерв контента в SafeAreaUtils пересчитан
 - [x] **Settings-иконки** приведены к iOS Telegram: закладка/колокольчик/замок/папка/translate (TgSettingsRow принял symbolRes поверх iconRes; имена символов валидирует компилятор, полный список — toolchains/id_defined.json)
 - [x] **Contacts**: скрыты удалённые аккаунты (мёртвая строка «Unknown» сверху), fallback имени — +телефон → «Удалённый аккаунт»
-- [ ] UI-дефекты волны (следующие тики): компактные тайтлы Contacts/Calls/Settings vs огромный HDS mainTitle (спорно — уточнить вкус), сепараторы контактов во всю ширину (iOS: от текста), секции-буквы + поиск в Contacts, формат даты в Calls («11.02.26» → «11 фев»), Appearance-иконка (смайл → кисть/луна)
+- [x] **Волна 2 (тик 45, `cf7fed1`)**: scroll-to-bottom FAB (появление по onScrollIndex/canLoadNewer, из середины истории — jump к lastMessage; witness: свайп → FAB → тап → низ чата, FAB скрыт); Appearance-иконка → moon_fill; сепараторы контактов — false positive (inset 68 уже стоял); «пустые стикеры после скролла» — снято (недокачанная лента, не рендер)
+- [ ] UI-дефекты волны (следующие тики): компактные тайтлы Contacts/Calls/Settings vs HDS mainTitle (вкус пользователя), секции-буквы + поиск в Contacts, формат даты в Calls («11.02.26» → «11 фев», нужны 12 месяц-ресурсов ×3 локали), бейдж непрочитанных на FAB (iOS)
 - [ ] Nekogram как референс: opensource (GPL) форк telegram-android — клонировать в рефы при необходимости фич сверх официального клиента
 
 ### Поиск по чату (тик 41, `4fca834`)
