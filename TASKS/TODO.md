@@ -62,6 +62,10 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 
 ## ПЛАСТ-волна (мандат пользователя 2026-07-08: «бери пласты больше», цель — превью-качество)
 
+### Профиль чата (тик 36, `53cf080`)
+- [x] **Доступ к профилю ПОЧИНЕН (двойной замок)**: (1) HitTestMode.Transparent на топ-баре отдавал тапы списку под ним — onClick тайтла/аватара не стрелял; (2) guard openProfile `<= 0` резал группы/каналы (у супергрупп id отрицательный). Witness: тап по тайтлу → «title tapped» → TgProfilePage onShown, экран рендерится (аватар-блок, Notifications, Shared Media)
+- [ ] Контент профиля: имя чата не рендерится, аватар — заглушка «TG» (не гидратируется из chat), back-кнопка наезжает на статусбар (safe-area); Shared Media разделы — проверить наполнение
+
 ### Медиа-вьюеры (тик 27, `33cfbe2`)
 - [x] **Тап-загрузка video/photo из бабла — починена**: photoFileId/videoFileId НЕ передавались в TgMessageRouter (обработчик кнопки молча выходил на fileId=0). Witness: тап по кнопке видео в Москваче → `downloadFile` → файл скачан (hilog 17:27/17:38); фото/анимация в WARSHAL → запрос ушёл (18:01)
 - [x] **Pre-scan filesReducer расширен unique_id-матчем** (+юнит-тест renumbered-кейса): быстрые загрузки шлют один updateFile без промежуточных transfer-событий; при renumbered id скан пропускал запись transfers
