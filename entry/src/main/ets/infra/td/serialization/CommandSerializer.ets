@@ -261,6 +261,9 @@ function serializeSearchChatMessages(command: AnyAppCommand, result: SerializedC
   result.params.setString('_from_message_id_json', cmd.payload.fromMessageId);
   result.params.setNumber('offset', cmd.payload.offset);
   result.params.setNumber('limit', cmd.payload.limit);
+  if (cmd.payload.filterType.length > 0) {
+    result.params.setString('_filter_json', '{"@type":"searchMessagesFilter' + cmd.payload.filterType + '"}');
+  }
 }
 
 function serializeViewMessages(command: AnyAppCommand, result: SerializedCommand): void {

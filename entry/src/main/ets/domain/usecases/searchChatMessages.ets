@@ -5,7 +5,7 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { TdGatewayPort } from '../ports/TdGatewayPort';
 import { ChatId, MessageId } from '../../core/model/EntityId';
-import { createSearchChatMessagesCommand } from '../../core/model/AppCommand';
+import { createSearchChatMessagesCommand, createDownloadFileCommand } from '../../core/model/AppCommand';
 import { AppError, AppErrorKind } from '../../core/model/AppError';
 import { TdObject } from '../../models/TdTypes';
 import { tdGetNumber, tdGetString } from '../../core/utils/tdAccessors';
@@ -18,11 +18,90 @@ export class SearchChatMessagesResult {
   totalCount: number = 0;
 }
 
+// One tile of the profile Shared Media grid (photo or video thumbnail)
+export class SharedMediaItem {
+  messageId: string = '0';
+  isVideo: boolean = false;
+  thumbFileId: number = 0;
+  thumbPath: string = '';
+  duration: number = 0;
+}
+
+function parseSharedMediaItem(msg: TdObject): SharedMediaItem | undefined {
+  const item = new SharedMediaItem();
+  item.messageId = msg.getInt64String('id');
+  const content = msg.getObject('content');
+  const ctype = content.getType();
+  if (ctype === 'messagePhoto') {
+    // pick the last (largest) photo size that has a file
+    const sizes = content.getObject('photo').getArray('sizes');
+    if (sizes.length === 0) {
+      return undefined;
+    }
+    const mid = sizes[Math.min(1, sizes.length - 1)];
+    const file = mid.getObject('photo');
+    item.thumbFileId = file.getNumber('id');
+    const local = file.getObject('local');
+    if (local.getBool('is_downloading_completed')) {
+      item.thumbPath = local.getString('path');
+    }
+    return item;
+  }
+  if (ctype === 'messageVideo') {
+    item.isVideo = true;
+    const video = content.getObject('video');
+    item.duration = video.getNumber('duration');
+    const thumbFile = video.getObject('thumbnail').getObject('file');
+    item.thumbFileId = thumbFile.getNumber('id');
+    const local = thumbFile.getObject('local');
+    if (local.getBool('is_downloading_completed')) {
+      item.thumbPath = local.getString('path');
+    }
+    return item;
+  }
+  return undefined;
+}
+
 export class SearchChatMessagesUseCase {
   private gateway: TdGatewayPort;
 
   constructor(gateway: TdGatewayPort) {
     this.gateway = gateway;
+  }
+
+  // Shared Media grid: photo/video messages of the chat (newest first)
+  async searchChatMedia(chatId: ChatId, fromMessageId: MessageId = '0',
+    limit: number = 60): Promise<SharedMediaItem[]> {
+    const command = createSearchChatMessagesCommand(chatId, '', fromMessageId, 0, limit);
+    command.payload.filterType = 'PhotoAndVideo';
+    const response = await this.gateway.send(command) as TdObject;
+    const messages = response.getArray('messages');
+    const items: SharedMediaItem[] = [];
+    for (let i = 0; i < messages.length; i++) {
+      const item = parseSharedMediaItem(messages[i]);
+      if (item !== undefined) {
+        items.push(item);
+      }
+    }
+    hilog.info(DOMAIN, TAG, 'Shared media loaded: %{public}d of %{public}d msgs',
+      items.length, messages.length);
+    return items;
+  }
+
+  // Downloads one thumbnail synchronously, returns sandbox path ('' on failure)
+  async downloadThumb(fileId: number): Promise<string> {
+    if (fileId <= 0) {
+      return '';
+    }
+    try {
+      const response = await this.gateway.send(createDownloadFileCommand(fileId, 1, true)) as TdObject;
+      const local = response.getObject('local');
+      if (local.getBool('is_downloading_completed')) {
+        return local.getString('path');
+      }
+    } catch (_e) {
+    }
+    return '';
   }
 
   async execute(chatId: ChatId, query: string, fromMessageId: MessageId = '0'): Promise<SearchChatMessagesResult> {

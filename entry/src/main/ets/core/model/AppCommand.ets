@@ -141,6 +141,8 @@ export class SearchChatMessagesPayload {
   fromMessageId: MessageId = '0';
   offset: number = 0;
   limit: number = 100;
+  // '' = no filter; else a SearchMessagesFilter suffix like 'PhotoAndVideo'
+  filterType: string = '';
 }
 
 export class DownloadFilePayload {

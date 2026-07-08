@@ -7,6 +7,7 @@ import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, User, Chat } from '../../../core/model/AppState';
 import { loadUserFullInfo, loadSupergroupFullInfo } from '../../../domain/usecases/loadProfileInfo';
 import { TgAvatar } from '../../tg_ui/atoms/TgAvatar';
+import { SharedMediaRouteParams } from './TgSharedMediaPage';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { fileUri } from '@kit.CoreFileKit';
 import { window } from '@kit.ArkUI';
@@ -229,6 +230,15 @@ export struct TgProfilePage {
     if (this.storeUnsubscribe) {
       this.storeUnsubscribe();
       this.storeUnsubscribe = undefined;
+    }
+  }
+
+  private openSharedMedia(): void {
+    if (this.chatId === 0) return;
+    try {
+      this.pageStack.pushPathByName('TgSharedMediaPage', new SharedMediaRouteParams(this.chatId));
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, 'Failed to push shared media: %{public}s', String(error));
     }
   }
 
@@ -500,7 +510,12 @@ export struct TgProfilePage {
       this.buildSectionHeader('Shared Media')
 
       Column() {
-        this.buildDisclosureRow('Media', '', true)
+        Column() {
+          this.buildDisclosureRow('Media', '', true)
+        }
+        .onClick(() => {
+          this.openSharedMedia();
+        })
         this.buildDisclosureRow('Files', '', true)
         this.buildDisclosureRow('Links', '', true)
         this.buildDisclosureRow('Voice', '', false)

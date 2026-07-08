@@ -14,6 +14,11 @@
       "name": "TgForwardTargetPickerPage",
       "pageSourceFile": "src/main/ets/ui/pages/forward/TgForwardTargetPickerPage.ets",
       "buildFunction": "TgForwardTargetPickerPageBuilder"
+    },
+    {
+      "name": "TgSharedMediaPage",
+      "pageSourceFile": "src/main/ets/ui/pages/profile/TgSharedMediaPage.ets",
+      "buildFunction": "TgSharedMediaPageBuilder"
     }
   ]
 }
