@@ -64,7 +64,8 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 
 ### Профиль чата (тик 36, `53cf080`)
 - [x] **Доступ к профилю ПОЧИНЕН (двойной замок)**: (1) HitTestMode.Transparent на топ-баре отдавал тапы списку под ним — onClick тайтла/аватара не стрелял; (2) guard openProfile `<= 0` резал группы/каналы (у супергрупп id отрицательный). Witness: тап по тайтлу → «title tapped» → TgProfilePage onShown, экран рендерится (аватар-блок, Notifications, Shared Media)
-- [ ] Контент профиля: имя чата не рендерится, аватар — заглушка «TG» (не гидратируется из chat), back-кнопка наезжает на статусбар (safe-area); Shared Media разделы — проверить наполнение
+- [x] **Контент профиля гидратируется (`480f1eb`)**: тот же класс «отрицательный id» ×2 (loadProfile `<= 0` + onReady `> 0`) — оба сведены к `!== 0`; системный титлбар NavDestination скрыт, добавлена своя шапка с back под topInset. Witness: профиль File — аватар «F» в цвете чата, имя, Notifications, Shared Media; back под статусбаром, pop работает
+- [ ] Профиль: Shared Media разделы — проверить наполнение (Media/Files/Links/Voice — открываются ли, есть ли данные); members-секция на группе с участниками; профиль ЮЗЕРА (приватный чат) прогнать
 
 ### Медиа-вьюеры (тик 27, `33cfbe2`)
 - [x] **Тап-загрузка video/photo из бабла — починена**: photoFileId/videoFileId НЕ передавались в TgMessageRouter (обработчик кнопки молча выходил на fileId=0). Witness: тап по кнопке видео в Москваче → `downloadFile` → файл скачан (hilog 17:27/17:38); фото/анимация в WARSHAL → запрос ушёл (18:01)
