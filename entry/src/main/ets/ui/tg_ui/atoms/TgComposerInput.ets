@@ -154,8 +154,10 @@ export struct TgComposerInput {
     .flexShrink(0)
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
-    // R1.5: плоская иконка микрофона; заливка остаётся только у активного send
-    .backgroundColor(this.canSend() ? TgUiTokens.COMPOSER_ACTION_ACTIVE : Color.Transparent)
+    // Glass circle when idle; solid accent only for the active send state
+    .backgroundColor(this.canSend() ? TgUiTokens.COMPOSER_ACTION_ACTIVE : this.capsuleBg())
+    .backgroundBlurStyle(this.canSend() ? BlurStyle.NONE : this.capsuleBlurStyle(),
+      TgGlassPolicy.glassOptions())
     .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
     .clip(true)
     .onClick(() => {
@@ -458,9 +460,11 @@ export struct TgComposerInput {
           .flexShrink(0)
           .justifyContent(FlexAlign.Center)
           .alignItems(VerticalAlign.Center)
-          // R1.5: плоская скрепка без капсулы
-          .backgroundColor(Color.Transparent)
+          // Glass circle — matches the floating tab bar material (iOS 26 line)
+          .backgroundColor(this.capsuleBg())
+          .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
           .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
+          .clip(true)
           .onClick(() => {
             if (!this.isDisabled) {
               this.onAttachPress();

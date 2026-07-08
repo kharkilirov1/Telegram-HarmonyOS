@@ -65,8 +65,8 @@ if (-not (Select-String -Path $mainTabsFile -Pattern 'HdsTabs\(')) {
   exit 1
 }
 
-if (-not (Select-String -Path $mainTabsFile -Pattern 'barBackgroundBlurStyle\(')) {
-  Write-Error 'MainTabsPage must keep the flat full-width tab bar blurred (iOS pattern).'
+if (-not (Select-String -Path $mainTabsFile -Pattern 'barFloatingStyle\(')) {
+  Write-Error 'MainTabsPage must keep the native HDS floating tab bar (user decision, iOS 26 parity).'
   exit 1
 }
 

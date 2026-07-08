@@ -49,7 +49,9 @@ export class TgGlassPolicy {
   }
 
   static composerBlurStyle(): BlurStyle {
-    return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE;
+    // THICK reads as real material on dark chat backgrounds; ULTRA_THIN was
+    // indistinguishable from a flat plate
+    return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.COMPONENT_THICK : BlurStyle.NONE;
   }
 
   static searchBlurStyle(): BlurStyle {

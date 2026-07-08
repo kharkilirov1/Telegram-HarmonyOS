@@ -12,25 +12,24 @@ import { StorageKeys } from '../../app/bridge/AppStoreBridge';
 import { navigationUIState, chatsUIState } from '../../core/model/UIStateModels';
 import { TgUiTokens } from '../tg_ui/tokens/TgUiTokens';
 import {
+  hdsMaterial,
   HdsNavigation,
   HdsNavigationAttribute,
   HdsTabs,
   HdsTabsAttribute,
   HdsTabsController
 } from '@kit.UIDesignKit';
-import { SymbolGlyphModifier, window } from '@kit.ArkUI';
-import { common } from '@kit.AbilityKit';
+import { SymbolGlyphModifier } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN = 0x0020;
 const TAG = 'MainTabsPage';
-
-declare function px2vp(value: number): number;
+const TAB_BAR_FLOATING_VISIBLE_HEIGHT = 48;
+const TAB_BAR_FLOATING_BOTTOM_MARGIN = 28;
 
 @ComponentV2
 export struct MainTabsPage {
   @Local selectedIndex: number = 2;
-  @Local private bottomInset: number = 0;
   private navState = navigationUIState;
   private chatsState = chatsUIState;
 
@@ -44,9 +43,8 @@ export struct MainTabsPage {
     return this.selectedIndex === 2 && this.navState.chatScreenVisible;
   }
 
-  // Flat iOS-style bar: 48vp of content + the system inset the bar covers
   private rootTabBarHeight(): number {
-    return this.isChatDetailVisible() ? 0 : TgUiTokens.TAB_BAR_FLAT_HEIGHT + this.bottomInset;
+    return this.isChatDetailVisible() ? 0 : TAB_BAR_FLOATING_VISIBLE_HEIGHT;
   }
 
   aboutToAppear(): void {
@@ -55,20 +53,6 @@ export struct MainTabsPage {
     AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
     this.navState.chatScreenVisible = false;
     this.controller.changeIndex(this.selectedIndex);
-    try {
-      const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      const mainWindow = context.windowStage.getMainWindowSync();
-      const systemArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
-      let inset = px2vp(systemArea.bottomRect.height);
-      try {
-        const navArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
-        inset = Math.max(inset, px2vp(navArea.bottomRect.height));
-      } catch (_e) {
-      }
-      this.bottomInset = inset;
-    } catch (_e) {
-      this.bottomInset = 0;
-    }
     hilog.info(DOMAIN, TAG, 'MainTabsPage appeared with tab index: %{public}d', this.selectedIndex);
   }
 
@@ -137,8 +121,6 @@ export struct MainTabsPage {
     .justifyContent(FlexAlign.Center)
     .width('100%')
     .height('100%')
-    // The bar body covers the system inset — keep the icon in the 48vp zone
-    .padding({ bottom: this.bottomInset })
   }
 
   @Builder
@@ -173,7 +155,7 @@ export struct MainTabsPage {
             .fontColor([$r('sys.color.ohos_id_color_activated')])
         },
         'Contacts'
-      ).padding({ bottom: this.bottomInset }))
+      ))
 
       // Tab 1: Calls
       TabContent() {
@@ -194,7 +176,7 @@ export struct MainTabsPage {
             .fontColor([$r('sys.color.ohos_id_color_activated')])
         },
         'Calls'
-      ).padding({ bottom: this.bottomInset }))
+      ))
 
       // Tab 2: Chats
       TabContent() {
@@ -227,16 +209,22 @@ export struct MainTabsPage {
             .fontColor([$r('sys.color.ohos_id_color_activated')])
         },
         'Settings'
-      ).padding({ bottom: this.bottomInset }))
+      ))
     }
     .barOverlap(!this.isChatDetailVisible())
     .barPosition(BarPosition.End)
     .barHeight(this.rootTabBarHeight())
     .vertical(false)
-    // Flat full-width bar (iOS pattern) — the floating capsule island read as
-    // foreign next to Telegram references
-    .barBackgroundColor(TgUiTokens.TAB_BAR_FLAT_BG)
-    .barBackgroundBlurStyle(BlurStyle.COMPONENT_ULTRA_THICK)
+    // Native HDS floating bar (API 23 immersive material) — matches the
+    // iOS 26 Liquid Glass floating tab bar Telegram itself adopted
+    .barFloatingStyle({
+      barBottomMargin: this.isChatDetailVisible() ? 0 : TAB_BAR_FLOATING_BOTTOM_MARGIN,
+      barOpacity: this.isChatDetailVisible() ? 0 : 1,
+      systemMaterialEffect: {
+        materialType: hdsMaterial.MaterialType.ADAPTIVE,
+        materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+      }
+    })
     .animationDuration(0)
     .scrollable(false)
     .onChange((index: number) => {
