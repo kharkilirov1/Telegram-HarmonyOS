@@ -357,8 +357,6 @@ export class ChatTimelineDataSource implements IDataSource {
       this.items = newItems;
       for (let i = 0; i < newItems.length; i++) {
         if (!this.sameEntry(oldItems[i], newItems[i])) {
-          // debug (targeted domain): tracks live media refresh reaching the row
-          hilog.debug(DOMAIN, TAG, 'sameOrder row changed idx=%{public}d key=%{public}s', i, newItems[i].key);
           this.notifyDataChange(i);
         }
       }

@@ -898,16 +898,6 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   row.videoMinithumb = content.videoMinithumb.length > 0
     ? 'data:image/jpeg;base64,' + content.videoMinithumb : '';
   row.videoPath = toFileUri(resolveContentPath(content.videoPath, content.videoFileId, state, content.videoUniqueId));
-  // TEMP diagnostic (live-refresh hunt) — debug, remove after: one line per
-  // video message per rebuild, safe only under a targeted -D domain
-  if (content.type === 'video') {
-    const t = state.files.transfers.get(content.videoFileId);
-    hilog.debug(DOMAIN, TAG,
-      'video row id=%{public}s fid=%{public}d cPath=%{public}d rPath=%{public}d tHit=%{public}s tDone=%{public}s uid=%{public}d',
-      message.id, content.videoFileId, content.videoPath.length, row.videoPath.length,
-      String(t !== undefined), String(t !== undefined && t.isDownloadingCompleted),
-      content.videoUniqueId.length);
-  }
   row.videoDuration = content.videoDuration;
   row.isShortVideo = content.videoDuration > 0 && content.videoDuration <= 30;
   row.videoWidth = content.videoWidth;

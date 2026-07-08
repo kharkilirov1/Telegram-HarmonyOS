@@ -547,8 +547,6 @@ export struct TgChatScreenPage {
             this.rebuildScheduled = false;
             try {
               const currentState = getAppCoreRuntime().getStore().getState();
-              // per-rebuild — debug only (enable via targeted domain, lesson 83)
-              hilog.debug(DOMAIN, TAG, 'store-change rebuild fired');
               this.rebuildTimeline(currentState);
               this.maybeMarkChatRead(currentState);
             } catch (e) {

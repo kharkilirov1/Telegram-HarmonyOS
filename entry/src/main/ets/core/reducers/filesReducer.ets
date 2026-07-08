@@ -115,6 +115,20 @@ function applyFilePathToContent(content: MessageContent, fileId: number, localPa
   c.videoNoteDuration = content.videoNoteDuration;
   c.videoNoteLength = content.videoNoteLength;
 
+  // remote.unique_id fields — dropping them here broke alias resolution for
+  // any later renumbered download of the same message (runtime saw uid=0)
+  c.photoUniqueId = content.photoUniqueId;
+  c.photoThumbUniqueId = content.photoThumbUniqueId;
+  c.videoUniqueId = content.videoUniqueId;
+  c.videoThumbUniqueId = content.videoThumbUniqueId;
+  c.documentUniqueId = content.documentUniqueId;
+  c.audioUniqueId = content.audioUniqueId;
+  c.voiceUniqueId = content.voiceUniqueId;
+  c.stickerUniqueId = content.stickerUniqueId;
+  c.stickerThumbUniqueId = content.stickerThumbUniqueId;
+  c.animationUniqueId = content.animationUniqueId;
+  c.videoNoteUniqueId = content.videoNoteUniqueId;
+
   return c;
 }
 
