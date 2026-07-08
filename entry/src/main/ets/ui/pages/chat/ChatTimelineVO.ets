@@ -1102,6 +1102,10 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
 
   let previousDay = '';
   let prevSenderId = -1;
+  // iOS merges consecutive messages only within a 10-minute window
+  // (ChatMessageItemImpl.swift: abs(lhs - rhs) < 10 * 60 && sameAuthor)
+  const SENDER_GROUP_MERGE_WINDOW_SEC = 600;
+  let prevTimestamp = 0;
   let index = 0;
   while (index < messages.length) {
     const message = messages[index];
@@ -1132,6 +1136,10 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
       result.entries.push(unreadEntry);
     }
 
+    if (prevTimestamp > 0 && message.timestamp - prevTimestamp >= SENDER_GROUP_MERGE_WINDOW_SEC) {
+      prevSenderId = -1; // Time gap breaks the sender group (iOS 10-minute window)
+    }
+
     // TDLib itself reports messageUnsupported for content newer than our tdlib
     // build — show it as a centered service line, not a bracketed bubble
     const isUnsupported = message.content.type === 'unknown'
@@ -1145,6 +1153,7 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
         : buildServiceMessageText(message, state);
       result.entries.push(serviceEntry);
       prevSenderId = -1; // Service line breaks the sender group (iOS pattern)
+      prevTimestamp = message.timestamp;
       index += groupCount;
       continue;
     }
@@ -1161,6 +1170,7 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
     } else {
       prevSenderId = message.senderId > 0 ? message.senderId : message.senderChatId;
     }
+    prevTimestamp = message.timestamp;
     index += groupCount;
   }
 

@@ -212,8 +212,48 @@ function fallbackMessageTextForType(contentType: string): string {
       return '👤 Contact';
     case 'poll':
       return '📊 Poll';
+    case 'unsupported':
+      return 'Unsupported message';
     default:
       return 'Message';
+  }
+}
+
+// ChatDto builds last-message previews as '[X]' (contentType minus the 'message'
+// prefix) — map the known service/unsupported placeholders to human text here,
+// on the UI layer, keeping the DTO locale-free.
+function humanizeBracketPreview(text: string): string {
+  if (!text.startsWith('[') || !text.endsWith(']')) {
+    return text;
+  }
+  const inner = text.substring(1, text.length - 1);
+  if (inner === 'Unsupported') {
+    return fallbackMessageTextForType('unsupported');
+  }
+  const asServiceType = 'message' + inner;
+  const preview = serviceMessagePreview(asServiceType);
+  return preview === 'Service message' ? text : preview;
+}
+
+// Human preview for chat-event messages instead of the raw [messageX] placeholder
+function serviceMessagePreview(serviceType: string): string {
+  switch (serviceType) {
+    case 'messageChatAddMembers':
+    case 'messageChatJoinByLink':
+    case 'messageChatJoinByRequest':
+      return 'Joined the group';
+    case 'messageChatDeleteMember':
+      return 'Left the group';
+    case 'messagePinMessage':
+      return '📌 Pinned message';
+    case 'messageChatChangeTitle':
+    case 'messageChatChangePhoto':
+    case 'messageChatDeletePhoto':
+      return 'Chat updated';
+    case 'messageContactRegistered':
+      return 'Joined Telegram';
+    default:
+      return 'Service message';
   }
 }
 
@@ -224,7 +264,13 @@ function snapshotFromMessage(message: Message): LastMessageSnapshot {
   snapshot.senderId = message.senderId;
   snapshot.isOutgoing = message.isOutgoing;
   const text = collapsePreviewWhitespace(message.content.text);
-  snapshot.text = text.length > 0 ? text : fallbackMessageTextForType(message.content.type);
+  if (message.content.type === 'service') {
+    snapshot.text = serviceMessagePreview(message.content.serviceType);
+  } else if (text === '[messageUnsupported]') {
+    snapshot.text = fallbackMessageTextForType('unsupported');
+  } else {
+    snapshot.text = text.length > 0 ? text : fallbackMessageTextForType(message.content.type);
+  }
   return snapshot;
 }
 
@@ -239,7 +285,7 @@ function resolveLastMessageSnapshot(chat: Chat, state: AppState): LastMessageSna
   const fromChat = new LastMessageSnapshot();
   if (chat.lastMessage) {
     fromChat.id = chat.lastMessage.id;
-    fromChat.text = collapsePreviewWhitespace(chat.lastMessage.text);
+    fromChat.text = humanizeBracketPreview(collapsePreviewWhitespace(chat.lastMessage.text));
     fromChat.timestamp = chat.lastMessage.timestamp;
   }
 

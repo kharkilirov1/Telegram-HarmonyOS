@@ -27,6 +27,13 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - Root shell: API23 `HdsTabs` + `HdsNavigation` (D14)
 - Chat-list unread badge is now a project-owned inline `TgChatMeta` capsule, not a standalone `TgUnreadBadge` atom
 
+## Recent Changes (2026-07-08 вечер, тик 13 — 10-минутное окно группировки + человеческие превью)
+
+- **Time-window**: группировка отправителя рвётся при Δt ≥ 600с (точный iOS-контракт `ChatMessageItemImpl.swift:151`); prevTimestamp трекается во всех ветках билд-цикла VO. Witness: HarmonyOSHub — посты через 42 мин/4.5 ч раздельные, минутная пара слиплась
+- **Превью чат-листа**: `humanizeBracketPreview` на UI-слое конвертирует `[X]`-плейсхолдеры ChatDto (Unsupported → «Unsupported message», сервисные → Joined the group/Left/📌 Pinned/Chat updated); DTO остаётся locale-free
+- Гейты зелёные; закоммичено/запушено этим тиком
+- **Автономный бэклог исчерпан**: остались poll-repro (нужен настоящий опрос), догфуд/приёмка/сертификат — пункты пользователя
+
 ## Recent Changes (2026-07-08 вечер, тик 12 — хвосты добраны + unsupported-капсула)
 
 - `TgBubbleTail` хелперами (`buildIncomingTail/buildOutgoingTail`) разнесён на contact/location/poll/doc/audio/voice-ветки Router (медиа/кружки/стикеры — без хвостов, iOS)
