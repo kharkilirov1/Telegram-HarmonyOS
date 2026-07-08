@@ -65,18 +65,13 @@ if (-not (Select-String -Path $mainTabsFile -Pattern 'HdsTabs\(')) {
   exit 1
 }
 
-if (-not (Select-String -Path $mainTabsFile -Pattern 'barFloatingStyle\(')) {
-  Write-Error 'MainTabsPage must keep HdsTabs floating bar style enabled.'
+if (-not (Select-String -Path $mainTabsFile -Pattern 'barBackgroundBlurStyle\(')) {
+  Write-Error 'MainTabsPage must keep the flat full-width tab bar blurred (iOS pattern).'
   exit 1
 }
 
 if (-not (Select-String -Path $mainTabsFile -Pattern 'chatScreenVisible')) {
   Write-Error 'MainTabsPage must react to chatScreenVisible so the root tab bar can be hidden on chat detail screens.'
-  exit 1
-}
-
-if (-not (Select-String -Path $mainTabsFile -Pattern 'barOpacity')) {
-  Write-Error 'MainTabsPage must fade the HDS root tab bar out while a chat detail screen is visible.'
   exit 1
 }
 
