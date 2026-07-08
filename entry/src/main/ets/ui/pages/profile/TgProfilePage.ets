@@ -144,7 +144,7 @@ export struct TgProfilePage {
   }
 
   private loadProfile(chatId: number): void {
-    if (chatId <= 0) return;
+    if (chatId === 0) return; // groups/channels have negative ids
     this.chatId = chatId;
 
     const runtime = getAppCoreRuntime();
@@ -520,6 +520,21 @@ export struct TgProfilePage {
   build() {
     NavDestination() {
       Column() {
+        // Custom compact header: system title bar is hidden (it drew its back
+        // button inside the status bar area)
+        Row() {
+          Image($r('app.media.ic_back'))
+            .width(24)
+            .height(24)
+            .fillColor(TgUiTokens.COMPOSER_ACTION_ACTIVE)
+            .onClick(() => {
+              this.handleBackPress();
+            })
+          Blank()
+        }
+        .width('100%')
+        .padding({ left: 16, right: 16, top: this.topInset + 8, bottom: 4 })
+
         Scroll() {
           Column() {
             // Header (avatar + name + status)
@@ -564,11 +579,11 @@ export struct TgProfilePage {
       .height('100%')
       .backgroundColor(TgUiTokens.COLOR_BG_SECONDARY)
     }
-    .title(this.title)
+    .hideTitleBar(true)
     .onReady((context: NavDestinationContext) => {
       hilog.info(DOMAIN, TAG, 'onReady');
       const params = context.pathInfo.param as ProfileRouteParams;
-      if (params && params.chatId > 0) {
+      if (params && params.chatId !== 0) {
         this.loadProfile(params.chatId);
       }
       this.pageStack = context.pathStack;
