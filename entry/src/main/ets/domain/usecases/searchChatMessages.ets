@@ -18,16 +18,20 @@ export class SearchChatMessagesResult {
   totalCount: number = 0;
 }
 
-// One tile of the profile Shared Media grid (photo or video thumbnail)
+// One tile/row of the profile Shared Media page
 export class SharedMediaItem {
   messageId: string = '0';
+  kind: string = 'photo'; // photo | video | file | link | voice
   isVideo: boolean = false;
   thumbFileId: number = 0;
   thumbPath: string = '';
   duration: number = 0;
+  fileName: string = '';
+  fileSize: number = 0;
+  linkText: string = '';
 }
 
-function parseSharedMediaItem(msg: TdObject): SharedMediaItem | undefined {
+function parseSharedMediaItem(msg: TdObject, filterType: string): SharedMediaItem | undefined {
   const item = new SharedMediaItem();
   item.messageId = msg.getInt64String('id');
   const content = msg.getObject('content');
@@ -48,6 +52,7 @@ function parseSharedMediaItem(msg: TdObject): SharedMediaItem | undefined {
     return item;
   }
   if (ctype === 'messageVideo') {
+    item.kind = 'video';
     item.isVideo = true;
     const video = content.getObject('video');
     item.duration = video.getNumber('duration');
@@ -57,6 +62,32 @@ function parseSharedMediaItem(msg: TdObject): SharedMediaItem | undefined {
     if (local.getBool('is_downloading_completed')) {
       item.thumbPath = local.getString('path');
     }
+    return item;
+  }
+  if (ctype === 'messageDocument') {
+    item.kind = 'file';
+    const doc = content.getObject('document');
+    item.fileName = doc.getString('file_name');
+    item.fileSize = doc.getObject('document').getNumber('size');
+    return item;
+  }
+  if (ctype === 'messageVoiceNote') {
+    item.kind = 'voice';
+    item.duration = content.getObject('voice_note').getNumber('duration');
+    return item;
+  }
+  if (ctype === 'messageText') {
+    // Url filter returns text messages containing links
+    item.kind = 'link';
+    const text = content.getObject('text').getString('text');
+    item.linkText = text.length > 120 ? text.substring(0, 120) : text;
+    return item;
+  }
+  if (filterType === 'Url') {
+    // The Url filter also matches media whose CAPTION carries the link
+    item.kind = 'link';
+    const caption = content.getObject('caption').getString('text');
+    item.linkText = caption.length > 120 ? caption.substring(0, 120) : caption;
     return item;
   }
   return undefined;
@@ -70,15 +101,15 @@ export class SearchChatMessagesUseCase {
   }
 
   // Shared Media grid: photo/video messages of the chat (newest first)
-  async searchChatMedia(chatId: ChatId, fromMessageId: MessageId = '0',
-    limit: number = 60): Promise<SharedMediaItem[]> {
+  async searchChatMedia(chatId: ChatId, filterType: string = 'PhotoAndVideo',
+    fromMessageId: MessageId = '0', limit: number = 60): Promise<SharedMediaItem[]> {
     const command = createSearchChatMessagesCommand(chatId, '', fromMessageId, 0, limit);
-    command.payload.filterType = 'PhotoAndVideo';
+    command.payload.filterType = filterType;
     const response = await this.gateway.send(command) as TdObject;
     const messages = response.getArray('messages');
     const items: SharedMediaItem[] = [];
     for (let i = 0; i < messages.length; i++) {
-      const item = parseSharedMediaItem(messages[i]);
+      const item = parseSharedMediaItem(messages[i], filterType);
       if (item !== undefined) {
         items.push(item);
       }

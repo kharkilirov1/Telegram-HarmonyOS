@@ -22,25 +22,55 @@ declare function px2vp(value: number): number;
 
 export class SharedMediaRouteParams {
   chatId: number = 0;
+  filterType: string = 'PhotoAndVideo';
 
-  constructor(chatId: number) {
+  constructor(chatId: number, filterType: string = 'PhotoAndVideo') {
     this.chatId = chatId;
+    this.filterType = filterType;
   }
+}
+
+function pageTitleFor(filterType: string): string {
+  switch (filterType) {
+    case 'Document': return 'Files';
+    case 'Url': return 'Links';
+    case 'VoiceNote': return 'Voice';
+    default: return 'Media';
+  }
+}
+
+function formatSize(bytes: number): string {
+  if (bytes >= 1048576) {
+    return (bytes / 1048576).toFixed(1) + ' MB';
+  }
+  if (bytes >= 1024) {
+    return Math.round(bytes / 1024).toString() + ' KB';
+  }
+  return bytes.toString() + ' B';
 }
 
 @ObservedV2
 export class SharedMediaTileVO {
   readonly messageId: string;
+  readonly kind: string;
   readonly isVideo: boolean;
   readonly thumbFileId: number;
   readonly duration: number;
+  readonly fileName: string;
+  readonly fileSize: number;
+  readonly linkText: string;
   @Trace thumbUri: string = '';
 
-  constructor(messageId: string, isVideo: boolean, thumbFileId: number, duration: number) {
+  constructor(messageId: string, kind: string, isVideo: boolean, thumbFileId: number,
+    duration: number, fileName: string, fileSize: number, linkText: string) {
     this.messageId = messageId;
+    this.kind = kind;
     this.isVideo = isVideo;
     this.thumbFileId = thumbFileId;
     this.duration = duration;
+    this.fileName = fileName;
+    this.fileSize = fileSize;
+    this.linkText = linkText;
   }
 }
 
@@ -54,6 +84,7 @@ function formatDuration(totalSec: number): string {
 export struct TgSharedMediaPage {
   @Local pageStack: NavPathStack = new NavPathStack();
   @Local private chatId: number = 0;
+  @Local private filterType: string = 'PhotoAndVideo';
   @Local private tiles: SharedMediaTileVO[] = [];
   @Local private isLoading: boolean = true;
   @Local private topInset: number = 0;
@@ -90,13 +121,14 @@ export struct TgSharedMediaPage {
     this.useCase = createSearchChatMessagesUseCase(getTdGatewayAdapter());
     const token = this.lifecycleToken;
     this.isLoading = true;
-    this.useCase.searchChatMedia(chatId).then((items: SharedMediaItem[]) => {
+    this.useCase.searchChatMedia(chatId, this.filterType).then((items: SharedMediaItem[]) => {
       if (token !== this.lifecycleToken) {
         return;
       }
       const tiles: SharedMediaTileVO[] = [];
       for (const item of items) {
-        const tile = new SharedMediaTileVO(item.messageId, item.isVideo, item.thumbFileId, item.duration);
+        const tile = new SharedMediaTileVO(item.messageId, item.kind, item.isVideo,
+          item.thumbFileId, item.duration, item.fileName, item.fileSize, item.linkText);
         if (item.thumbPath.length > 0) {
           tile.thumbUri = fileUri.getUriFromPath(item.thumbPath);
         }
@@ -150,6 +182,50 @@ export struct TgSharedMediaPage {
   }
 
   @Builder
+  private buildListRow(tile: SharedMediaTileVO) {
+    Column() {
+      Row() {
+        Column() {
+          if (tile.kind === 'file') {
+            Text(tile.fileName.length > 0 ? tile.fileName : 'File')
+              .fontSize(16)
+              .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+            Text(formatSize(tile.fileSize))
+              .fontSize(13)
+              .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+              .margin({ top: 2 })
+          } else if (tile.kind === 'voice') {
+            Text('Voice message')
+              .fontSize(16)
+              .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+            Text(formatDuration(tile.duration))
+              .fontSize(13)
+              .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+              .margin({ top: 2 })
+          } else {
+            Text(tile.linkText.length > 0 ? tile.linkText : 'Link')
+              .fontSize(15)
+              .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+              .maxLines(2)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+          }
+        }
+        .alignItems(HorizontalAlign.Start)
+        .layoutWeight(1)
+      }
+      .width('100%')
+      .padding({ left: 16, right: 16, top: 10, bottom: 10 })
+
+      Divider()
+        .strokeWidth(0.5)
+        .color(TgUiTokens.COLOR_SEPARATOR)
+        .margin({ left: 16 })
+    }
+  }
+
+  @Builder
   private buildTile(tile: SharedMediaTileVO) {
     Stack({ alignContent: Alignment.BottomEnd }) {
       if (tile.thumbUri.length > 0) {
@@ -191,7 +267,7 @@ export struct TgSharedMediaPage {
               this.handleBackPress();
             })
 
-          Text('Media')
+          Text(pageTitleFor(this.filterType))
             .fontSize(TgUiTokens.CHAT_TOP_BAR_TITLE_SIZE)
             .fontWeight(FontWeight.Medium)
             .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
@@ -220,7 +296,7 @@ export struct TgSharedMediaPage {
           .width('100%')
           .layoutWeight(1)
           .justifyContent(FlexAlign.Center)
-        } else {
+        } else if (this.filterType === 'PhotoAndVideo') {
           Grid() {
             ForEach(this.tiles, (tile: SharedMediaTileVO) => {
               GridItem() {
@@ -234,6 +310,17 @@ export struct TgSharedMediaPage {
           .width('100%')
           .layoutWeight(1)
           .scrollBar(BarState.Off)
+        } else {
+          List() {
+            ForEach(this.tiles, (tile: SharedMediaTileVO) => {
+              ListItem() {
+                this.buildListRow(tile)
+              }
+            }, (tile: SharedMediaTileVO) => 'shl_' + tile.messageId)
+          }
+          .width('100%')
+          .layoutWeight(1)
+          .scrollBar(BarState.Off)
         }
       }
       .width('100%')
@@ -244,6 +331,9 @@ export struct TgSharedMediaPage {
     .onReady((context: NavDestinationContext) => {
       const params = context.pathInfo.param as SharedMediaRouteParams;
       if (params && params.chatId !== 0) {
+        if (params.filterType && params.filterType.length > 0) {
+          this.filterType = params.filterType;
+        }
         this.loadMedia(params.chatId);
       }
       this.pageStack = context.pathStack;

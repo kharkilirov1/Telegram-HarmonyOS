@@ -234,9 +234,13 @@ export struct TgProfilePage {
   }
 
   private openSharedMedia(): void {
+    this.openSharedMediaFiltered('PhotoAndVideo');
+  }
+
+  private openSharedMediaFiltered(filterType: string): void {
     if (this.chatId === 0) return;
     try {
-      this.pageStack.pushPathByName('TgSharedMediaPage', new SharedMediaRouteParams(this.chatId));
+      this.pageStack.pushPathByName('TgSharedMediaPage', new SharedMediaRouteParams(this.chatId, filterType));
     } catch (error) {
       hilog.error(DOMAIN, TAG, 'Failed to push shared media: %{public}s', String(error));
     }
@@ -516,9 +520,24 @@ export struct TgProfilePage {
         .onClick(() => {
           this.openSharedMedia();
         })
-        this.buildDisclosureRow('Files', '', true)
-        this.buildDisclosureRow('Links', '', true)
-        this.buildDisclosureRow('Voice', '', false)
+        Column() {
+          this.buildDisclosureRow('Files', '', true)
+        }
+        .onClick(() => {
+          this.openSharedMediaFiltered('Document');
+        })
+        Column() {
+          this.buildDisclosureRow('Links', '', true)
+        }
+        .onClick(() => {
+          this.openSharedMediaFiltered('Url');
+        })
+        Column() {
+          this.buildDisclosureRow('Voice', '', false)
+        }
+        .onClick(() => {
+          this.openSharedMediaFiltered('VoiceNote');
+        })
       }
       .width('100%')
       .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
