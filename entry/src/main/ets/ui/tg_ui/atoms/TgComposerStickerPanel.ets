@@ -43,15 +43,35 @@ export class StickerCellVO {
   }
 }
 
+// One pack tab in the strip; 'recent' is a synthetic tab, real packs carry a set id.
+@ObservedV2
+export class StickerSetTabVO {
+  readonly tabId: string;
+  readonly title: string;
+  readonly thumbFileId: number;
+  readonly fallbackEmoji: string;
+  @Trace thumbUri: string = '';
+
+  constructor(tabId: string, title: string, thumbFileId: number, fallbackEmoji: string) {
+    this.tabId = tabId;
+    this.title = title;
+    this.thumbFileId = thumbFileId;
+    this.fallbackEmoji = fallbackEmoji;
+  }
+}
+
 @ComponentV2
 export struct TgComposerStickerPanel {
   @Param title: string = 'Stickers';
   @Param emojiTitle: string = 'Emoji';
   @Param items: StickerCellVO[] = [];
+  @Param tabs: StickerSetTabVO[] = [];
+  @Param activeTabId: string = 'recent';
   @Param isLoading: boolean = false;
   @Param glassMode: string = TgGlassPolicy.MODE_AUTO;
 
   @Event onStickerSelected: (item: StickerCellVO) => void = (_: StickerCellVO) => {};
+  @Event onTabSelected: (tabId: string) => void = (_: string) => {};
   @Event onEmojiPress: () => void = () => {};
 
   private useBlur(): boolean {
@@ -85,6 +105,56 @@ export struct TgComposerStickerPanel {
     .onClick(() => {
       this.onStickerSelected(item);
     })
+  }
+
+  @Builder
+  private buildTab(tab: StickerSetTabVO) {
+    Row() {
+      if (tab.tabId === 'recent') {
+        Text('🕘')
+          .fontSize(TgUiTokens.COMPOSER_STICKER_TAB_EMOJI_SIZE)
+      } else if (tab.thumbUri.length > 0) {
+        Image(tab.thumbUri)
+          .width(TgUiTokens.COMPOSER_STICKER_TAB_SIZE - 8)
+          .height(TgUiTokens.COMPOSER_STICKER_TAB_SIZE - 8)
+          .objectFit(ImageFit.Contain)
+      } else if (tab.fallbackEmoji.length > 0) {
+        Text(tab.fallbackEmoji)
+          .fontSize(TgUiTokens.COMPOSER_STICKER_TAB_EMOJI_SIZE)
+      } else {
+        Text(tab.title.length > 0 ? tab.title.substring(0, 1) : '?')
+          .fontSize(TgUiTokens.COMPOSER_EMOJI_HEADER_SIZE)
+          .fontColor(TgUiTokens.COLOR_TEXT_META)
+      }
+    }
+    .width(TgUiTokens.COMPOSER_STICKER_TAB_SIZE)
+    .height(TgUiTokens.COMPOSER_STICKER_TAB_SIZE)
+    .justifyContent(FlexAlign.Center)
+    .alignItems(VerticalAlign.Center)
+    .borderRadius(TgUiTokens.COMPOSER_STICKER_TAB_RADIUS)
+    .backgroundColor(this.activeTabId === tab.tabId
+      ? TgUiTokens.COLOR_BG_SECONDARY
+      : Color.Transparent)
+    .onClick(() => {
+      this.onTabSelected(tab.tabId);
+    })
+  }
+
+  @Builder
+  private buildTabStrip() {
+    Scroll() {
+      Row({ space: TgUiTokens.COMPOSER_STICKER_TAB_GAP }) {
+        ForEach(this.tabs, (tab: StickerSetTabVO) => {
+          this.buildTab(tab)
+        }, (tab: StickerSetTabVO) => `sticker_tab_${tab.tabId}`)
+      }
+      .alignItems(VerticalAlign.Center)
+    }
+    .scrollable(ScrollDirection.Horizontal)
+    .scrollBar(BarState.Off)
+    .align(Alignment.Start)
+    .width('100%')
+    .height(TgUiTokens.COMPOSER_STICKER_TAB_STRIP_HEIGHT)
   }
 
   @Builder
@@ -128,6 +198,10 @@ export struct TgComposerStickerPanel {
         .width('100%')
         .height(TgUiTokens.COMPOSER_EMOJI_PANEL_HEADER_HEIGHT)
         .alignItems(VerticalAlign.Center)
+
+        if (this.tabs.length > 0) {
+          this.buildTabStrip()
+        }
 
         if (this.items.length === 0) {
           Row() {

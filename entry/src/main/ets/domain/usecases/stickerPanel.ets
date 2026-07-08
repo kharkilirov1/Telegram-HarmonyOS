@@ -9,8 +9,10 @@ import { TdGatewayPort } from '../ports/TdGatewayPort';
 import { ChatId } from '../../core/model/EntityId';
 import {
   createGetRecentStickersCommand,
+  createGetStickerSetCommand,
   createSendStickerCommand,
-  createDownloadFileCommand
+  createDownloadFileCommand,
+  GetInstalledStickerSetsCommand
 } from '../../core/model/AppCommand';
 import { TdObject } from '../../models/td/common/index';
 
@@ -38,6 +40,15 @@ export class SendStickerParams {
   width: number = 0;
   height: number = 0;
   emoji: string = '';
+}
+
+// One installed sticker set for the panel's pack tabs
+export class StickerSetInfoEntry {
+  setId: string = '0';
+  title: string = '';
+  thumbFileId: number = 0;
+  thumbPath: string = '';
+  coverEmoji: string = ''; // first cover's emoji — fallback tab icon
 }
 
 function parseStickerEntry(sticker: TdObject): StickerPanelEntry {
@@ -91,6 +102,55 @@ export class StickerPanelUseCase {
       }
     }
     hilog.info(DOMAIN, TAG, 'Recent stickers loaded: %{public}d', entries.length);
+    return entries;
+  }
+
+  async loadInstalledStickerSets(): Promise<StickerSetInfoEntry[]> {
+    const response = await this.gateway.send(new GetInstalledStickerSetsCommand()) as TdObject;
+    if (response.getType() !== 'stickerSets') {
+      hilog.warn(DOMAIN, TAG, 'Unexpected sticker sets response: %{public}s', response.getType());
+      return [];
+    }
+    const sets = response.getArray('sets');
+    const entries: StickerSetInfoEntry[] = [];
+    for (let i = 0; i < sets.length; i++) {
+      const set = sets[i];
+      const entry = new StickerSetInfoEntry();
+      entry.setId = set.getTopLevelInt64String('id');
+      entry.title = set.getString('title');
+      const thumbFile = set.getObject('thumbnail').getObject('file');
+      entry.thumbFileId = thumbFile.getNumber('id');
+      const thumbLocal = thumbFile.getObject('local');
+      if (thumbLocal.getBool('is_downloading_completed')) {
+        entry.thumbPath = thumbLocal.getString('path');
+      }
+      const covers = set.getArray('covers');
+      if (covers.length > 0) {
+        entry.coverEmoji = covers[0].getString('emoji');
+      }
+      if (entry.setId !== '0') {
+        entries.push(entry);
+      }
+    }
+    hilog.info(DOMAIN, TAG, 'Installed sticker sets loaded: %{public}d', entries.length);
+    return entries;
+  }
+
+  async loadStickerSet(setId: string): Promise<StickerPanelEntry[]> {
+    const response = await this.gateway.send(createGetStickerSetCommand(setId)) as TdObject;
+    if (response.getType() !== 'stickerSet') {
+      hilog.warn(DOMAIN, TAG, 'Unexpected sticker set response: %{public}s', response.getType());
+      return [];
+    }
+    const stickers = response.getArray('stickers');
+    const entries: StickerPanelEntry[] = [];
+    for (let i = 0; i < stickers.length; i++) {
+      const entry = parseStickerEntry(stickers[i]);
+      if (entry.remoteFileId.length > 0) {
+        entries.push(entry);
+      }
+    }
+    hilog.info(DOMAIN, TAG, 'Sticker set %{public}s loaded: %{public}d stickers', setId, entries.length);
     return entries;
   }
 

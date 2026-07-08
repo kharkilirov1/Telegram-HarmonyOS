@@ -11,7 +11,7 @@ import { TgDateSeparator, TgUnreadMarker } from '../../tg_ui/atoms/TgDateSeparat
 import { TgMessageRouter } from '../../tg_ui/molecules/TgMessageRouter';
 import { TgComposerInput } from '../../tg_ui/atoms/TgComposerInput';
 import { TgComposerEmojiPanel } from '../../tg_ui/atoms/TgComposerEmojiPanel';
-import { TgComposerStickerPanel, StickerCellVO } from '../../tg_ui/atoms/TgComposerStickerPanel';
+import { TgComposerStickerPanel, StickerCellVO, StickerSetTabVO } from '../../tg_ui/atoms/TgComposerStickerPanel';
 import { TgChatTopBar, TgChatTopBarSubtitleMode } from '../../tg_ui/atoms/TgChatTopBar';
 import { ProfileRouteParams } from '../profile/TgProfilePage';
 import { ChatTimelineDataSource } from './ChatTimelineDataSource';
@@ -37,6 +37,7 @@ import {
   createStickerPanelUseCase,
   StickerPanelUseCase,
   StickerPanelEntry,
+  StickerSetInfoEntry,
   SendStickerParams
 } from '../../../domain/usecases/stickerPanel';
 import {
@@ -111,6 +112,8 @@ export struct TgChatScreenPage {
   @Local private showComposerStickerPanel: boolean = false;
   @Local private stickerPanelItems: StickerCellVO[] = [];
   @Local private stickerPanelLoading: boolean = false;
+  @Local private stickerSetTabs: StickerSetTabVO[] = [];
+  @Local private activeStickerTabId: string = 'recent';
   @Local private pendingAttachmentKind: string = '';
   @Local private pendingAttachmentTitle: string = '';
   @Local private pendingAttachmentPreview: string = '';
@@ -158,6 +161,7 @@ export struct TgChatScreenPage {
   private pinUseCase?: PinChatMessageUseCase;
   private stickerPanelUseCase?: StickerPanelUseCase;
   private stickerPanelLoadedOnce: boolean = false;
+  private stickerSetCache: Map<string, StickerCellVO[]> = new Map<string, StickerCellVO[]>();
   private loadChatHistoryUseCase?: LoadChatHistoryUseCase;
   private markChatReadUseCase?: MarkChatReadUseCase;
   private isSending: boolean = false;
@@ -1858,28 +1862,49 @@ export struct TgChatScreenPage {
     return cell;
   }
 
-  // Fills missing preview files after the list is on screen: thumbnails first
-  // (grid renders them), then webp originals (sharper static previews).
-  private fetchStickerPanelFiles(cells: StickerCellVO[]): void {
+  // Fills missing preview files one by one (a pack can hold 100+ stickers —
+  // parallel downloadFile calls would storm TDLib). Stops when the user
+  // leaves the tab or the page dies.
+  private async fetchStickerPanelFiles(cells: StickerCellVO[], tabId: string): Promise<void> {
     const useCase = this.stickerPanelUseCase;
     if (!useCase) {
       return;
     }
     const token = this.pageLifecycleToken;
     for (const cell of cells) {
+      if (token !== this.pageLifecycleToken || this.activeStickerTabId !== tabId) {
+        return;
+      }
       if (cell.thumbPathUri.length === 0 && cell.thumbFileId > 0) {
-        useCase.downloadStickerFile(cell.thumbFileId).then((path: string) => {
-          if (token === this.pageLifecycleToken && path.length > 0) {
-            cell.thumbPathUri = fileUri.getUriFromPath(path);
-          }
-        });
+        const path = await useCase.downloadStickerFile(cell.thumbFileId);
+        if (path.length > 0) {
+          cell.thumbPathUri = fileUri.getUriFromPath(path);
+        }
       }
       if (cell.pathUri.length === 0 && !cell.isAnimated && !cell.isVideo && cell.fileId > 0) {
-        useCase.downloadStickerFile(cell.fileId).then((path: string) => {
-          if (token === this.pageLifecycleToken && path.length > 0) {
-            cell.pathUri = fileUri.getUriFromPath(path);
-          }
-        });
+        const path = await useCase.downloadStickerFile(cell.fileId);
+        if (path.length > 0) {
+          cell.pathUri = fileUri.getUriFromPath(path);
+        }
+      }
+    }
+  }
+
+  private async fetchStickerTabThumbs(tabs: StickerSetTabVO[]): Promise<void> {
+    const useCase = this.stickerPanelUseCase;
+    if (!useCase) {
+      return;
+    }
+    const token = this.pageLifecycleToken;
+    for (const tab of tabs) {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
+      if (tab.thumbUri.length === 0 && tab.thumbFileId > 0) {
+        const path = await useCase.downloadStickerFile(tab.thumbFileId);
+        if (path.length > 0) {
+          tab.thumbUri = fileUri.getUriFromPath(path);
+        }
       }
     }
   }
@@ -1899,10 +1924,74 @@ export struct TgChatScreenPage {
       for (const entry of entries) {
         cells.push(this.toStickerCellVO(entry));
       }
+      this.stickerSetCache.set('recent', cells);
       this.stickerPanelItems = cells;
       this.stickerPanelLoading = false;
       this.stickerPanelLoadedOnce = true;
-      this.fetchStickerPanelFiles(cells);
+      this.fetchStickerPanelFiles(cells, 'recent');
+      this.loadStickerSetTabs();
+    }).catch(() => {
+      if (token === this.pageLifecycleToken) {
+        this.stickerPanelLoading = false;
+      }
+    });
+  }
+
+  private loadStickerSetTabs(): void {
+    const useCase = this.stickerPanelUseCase;
+    if (!useCase || this.stickerSetTabs.length > 0) {
+      return;
+    }
+    const token = this.pageLifecycleToken;
+    useCase.loadInstalledStickerSets().then((sets: StickerSetInfoEntry[]) => {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
+      const tabs: StickerSetTabVO[] = [new StickerSetTabVO('recent', '', 0, '')];
+      for (const set of sets) {
+        const tab = new StickerSetTabVO(set.setId, set.title, set.thumbFileId, set.coverEmoji);
+        if (set.thumbPath.length > 0) {
+          tab.thumbUri = fileUri.getUriFromPath(set.thumbPath);
+        }
+        tabs.push(tab);
+      }
+      this.stickerSetTabs = tabs;
+      this.fetchStickerTabThumbs(tabs);
+    });
+  }
+
+  private handleStickerTabSelected(tabId: string): void {
+    if (this.activeStickerTabId === tabId) {
+      return;
+    }
+    this.activeStickerTabId = tabId;
+    const cached = this.stickerSetCache.get(tabId);
+    if (cached !== undefined) {
+      this.stickerPanelItems = cached;
+      this.fetchStickerPanelFiles(cached, tabId);
+      return;
+    }
+    const useCase = this.stickerPanelUseCase;
+    if (!useCase || tabId === 'recent') {
+      return;
+    }
+    this.stickerPanelItems = [];
+    this.stickerPanelLoading = true;
+    const token = this.pageLifecycleToken;
+    useCase.loadStickerSet(tabId).then((entries: StickerPanelEntry[]) => {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
+      const cells: StickerCellVO[] = [];
+      for (const entry of entries) {
+        cells.push(this.toStickerCellVO(entry));
+      }
+      this.stickerSetCache.set(tabId, cells);
+      this.stickerPanelLoading = false;
+      if (this.activeStickerTabId === tabId) {
+        this.stickerPanelItems = cells;
+        this.fetchStickerPanelFiles(cells, tabId);
+      }
     }).catch(() => {
       if (token === this.pageLifecycleToken) {
         this.stickerPanelLoading = false;
@@ -2566,9 +2655,14 @@ export struct TgChatScreenPage {
                   title: localized($r('app.string.stickers_tab').id, 'Stickers'),
                   emojiTitle: localized($r('app.string.emoji_tab').id, 'Emoji'),
                   items: this.stickerPanelItems,
+                  tabs: this.stickerSetTabs,
+                  activeTabId: this.activeStickerTabId,
                   isLoading: this.stickerPanelLoading,
                   onStickerSelected: (item: StickerCellVO): void => {
                     this.handleStickerSelected(item);
+                  },
+                  onTabSelected: (tabId: string): void => {
+                    this.handleStickerTabSelected(tabId);
                   },
                   onEmojiPress: (): void => {
                     this.setEmojiPanelVisible(true);
