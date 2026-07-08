@@ -547,6 +547,8 @@ export struct TgChatScreenPage {
             this.rebuildScheduled = false;
             try {
               const currentState = getAppCoreRuntime().getStore().getState();
+              // per-rebuild — debug only (enable via targeted domain, lesson 83)
+              hilog.debug(DOMAIN, TAG, 'store-change rebuild fired');
               this.rebuildTimeline(currentState);
               this.maybeMarkChatRead(currentState);
             } catch (e) {
@@ -2541,7 +2543,12 @@ export struct TgChatScreenPage {
                       this.buildTimelineEntry(entry)
                     }
                     .width('100%')
-                    .reuseId(this.entryReuseId(entry))
+                    // NO .reuseId here: V1 reuse on a @ComponentV2 row silently skips
+                    // @Param re-init — notifyDataChange re-rendered a STALE bubble
+                    // (download button survived a completed download; Monitor probe
+                    // confirmed fresh videoPath never reached the reused component).
+                    // Proper V2 reuse would be @ReusableV2 + .reuse() (API 18+) — a
+                    // separate migration if scroll perf ever demands it.
                   }
                 }, (entry: ChatTimelineEntryVO) => entry.key)
               }

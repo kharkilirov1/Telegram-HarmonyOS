@@ -212,7 +212,12 @@ export class ChatTimelineDataSource implements IDataSource {
   }
 
   private sameEntry(prev: ChatTimelineEntryVO, next: ChatTimelineEntryVO): boolean {
-    if (prev.key !== next.key || prev.kind !== next.kind) {
+    // Identity by stableKey: the full key carries the media render stamp and
+    // MUST differ for a changed row (LazyForEach only rebuilds on a new key)
+    if (prev.stableKey !== next.stableKey || prev.kind !== next.kind) {
+      return false;
+    }
+    if (prev.key !== next.key) {
       return false;
     }
     if (prev.kind === 'date') {
@@ -229,7 +234,7 @@ export class ChatTimelineDataSource implements IDataSource {
       return false;
     }
     for (let i = 0; i < oldItems.length; i++) {
-      if (oldItems[i].key !== newItems[i].key) {
+      if (oldItems[i].stableKey !== newItems[i].stableKey) {
         return false;
       }
     }
@@ -241,7 +246,7 @@ export class ChatTimelineDataSource implements IDataSource {
       return false;
     }
     for (let i = 0; i < oldItems.length; i++) {
-      if (oldItems[i].key !== newItems[i].key) {
+      if (oldItems[i].stableKey !== newItems[i].stableKey) {
         return false;
       }
     }
@@ -254,7 +259,7 @@ export class ChatTimelineDataSource implements IDataSource {
     }
     const offset = newItems.length - oldItems.length;
     for (let i = 0; i < oldItems.length; i++) {
-      if (oldItems[i].key !== newItems[i + offset].key) {
+      if (oldItems[i].stableKey !== newItems[i + offset].stableKey) {
         return false;
       }
     }
@@ -352,6 +357,8 @@ export class ChatTimelineDataSource implements IDataSource {
       this.items = newItems;
       for (let i = 0; i < newItems.length; i++) {
         if (!this.sameEntry(oldItems[i], newItems[i])) {
+          // debug (targeted domain): tracks live media refresh reaching the row
+          hilog.debug(DOMAIN, TAG, 'sameOrder row changed idx=%{public}d key=%{public}s', i, newItems[i].key);
           this.notifyDataChange(i);
         }
       }

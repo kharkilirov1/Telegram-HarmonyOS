@@ -1,12 +1,30 @@
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgIcon } from './TgIcon';
 import { TgInlineVideoView } from './TgInlineVideoView';
+
+const DOMAIN = 0x0021;
+const TAG = 'TgVideoBubble';
 
 @ComponentV2
 export struct TgVideoBubble {
   @Param thumbnailPath: string | Resource = '';
   @Param videoMinithumb: string = '';
   @Param videoPath: string | Resource = '';
+
+  // Probe: does a fresh videoPath @Param reach a reused row? (live-refresh hunt)
+  @Monitor('videoPath')
+  onVideoPathChanged(_m: IMonitor): void {
+    const len = typeof this.videoPath === 'string' ? this.videoPath.length : -1;
+    hilog.debug(DOMAIN, TAG, 'videoPath param changed len=%{public}d', len);
+  }
+
+  aboutToAppear(): void {
+    const len = typeof this.videoPath === 'string' ? this.videoPath.length : -1;
+    hilog.debug(DOMAIN, TAG,
+      'bubble created pathLen=%{public}d pending=%{public}s failed=%{public}s dur=%{public}d',
+      len, String(this.isDownloadPending), String(this.isDownloadFailed), this.durationSec);
+  }
   @Param durationSec: number = 0;
   @Param caption: string = '';
   @Param isOutgoing: boolean = false;

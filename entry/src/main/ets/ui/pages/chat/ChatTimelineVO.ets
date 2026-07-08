@@ -236,6 +236,11 @@ export class ChatMessageRowVO {
 
 export class ChatTimelineEntryVO {
   key: string = '';
+  // Identity WITHOUT the render stamp: diff paths (same-order/append/prepend
+  // detection) must treat a media-state change as the SAME row, while the
+  // LazyForEach keyGenerator uses `key` (with stamp) so the item is rebuilt —
+  // LazyForEach only rebuilds an item when its key changes (docs: Data Updates).
+  stableKey: string = '';
   kind: ChatTimelineEntryKind = 'message';
   dateText: string = '';
   unreadText: string = '';
@@ -893,6 +898,16 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   row.videoMinithumb = content.videoMinithumb.length > 0
     ? 'data:image/jpeg;base64,' + content.videoMinithumb : '';
   row.videoPath = toFileUri(resolveContentPath(content.videoPath, content.videoFileId, state, content.videoUniqueId));
+  // TEMP diagnostic (live-refresh hunt) — debug, remove after: one line per
+  // video message per rebuild, safe only under a targeted -D domain
+  if (content.type === 'video') {
+    const t = state.files.transfers.get(content.videoFileId);
+    hilog.debug(DOMAIN, TAG,
+      'video row id=%{public}s fid=%{public}d cPath=%{public}d rPath=%{public}d tHit=%{public}s tDone=%{public}s uid=%{public}d',
+      message.id, content.videoFileId, content.videoPath.length, row.videoPath.length,
+      String(t !== undefined), String(t !== undefined && t.isDownloadingCompleted),
+      content.videoUniqueId.length);
+  }
   row.videoDuration = content.videoDuration;
   row.isShortVideo = content.videoDuration > 0 && content.videoDuration <= 30;
   row.videoWidth = content.videoWidth;
@@ -1026,9 +1041,44 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
 
   const entry = new ChatTimelineEntryVO();
   entry.kind = 'message';
-  entry.key = 'msg_' + message.id;
+  entry.stableKey = 'msg_' + message.id;
+  entry.key = entry.stableKey + '_s' + mediaRenderStamp(row).toString();
   entry.message = row;
   return entry;
+}
+
+// Compact fingerprint of the row's mutable media state. Baked into the
+// LazyForEach key: a completed download (path appears) or a progress step
+// changes the key, forcing the item rebuild that actually refreshes the
+// @ComponentV2 row (@Param values are frozen otherwise).
+function mediaRenderStamp(row: ChatMessageRowVO): number {
+  let albumFilled = 0;
+  for (const p of row.albumPhotoPaths) {
+    if (p.length > 0) {
+      albumFilled++;
+    }
+  }
+  const progressBuckets =
+    Math.max(0, Math.floor(row.photoDownloadProgress * 10)) +
+    Math.max(0, Math.floor(row.videoDownloadProgress * 10)) +
+    Math.max(0, Math.floor(row.documentDownloadProgress * 10)) +
+    Math.max(0, Math.floor(row.audioDownloadProgress * 10)) +
+    Math.max(0, Math.floor(row.voiceDownloadProgress * 10));
+  return (row.photoPath.length > 0 ? 1 : 0)
+    + (row.videoPath.length > 0 ? 2 : 0)
+    + (row.videoThumbPath.length > 0 ? 4 : 0)
+    + (row.stickerPath.length > 0 ? 8 : 0)
+    + (row.documentPath.length > 0 ? 16 : 0)
+    + (row.audioPath.length > 0 ? 32 : 0)
+    + (row.voicePath.length > 0 ? 64 : 0)
+    + (row.hasLocalPhoto ? 128 : 0)
+    + (row.isPhotoDownloading ? 256 : 0)
+    + (row.isVideoDownloading ? 512 : 0)
+    + (row.isDocumentDownloading ? 1024 : 0)
+    + (row.isAudioDownloading ? 2048 : 0)
+    + (row.isVoiceDownloading ? 4096 : 0)
+    + albumFilled * 8192
+    + progressBuckets * 131072;
 }
 
 function buildPhotoAlbumEntry(albumMessages: Message[], chat: Chat, state: AppState,
@@ -1079,6 +1129,10 @@ function buildPhotoAlbumEntry(albumMessages: Message[], chat: Chat, state: AppSt
     entry.message.photoHeight = entry.message.albumPhotoHeights.length > 0 ? entry.message.albumPhotoHeights[0] : 0;
   }
 
+  // Album media fields were filled after buildMessageEntry computed the key —
+  // recompute so the render stamp reflects the album paths/progress
+  entry.key = entry.stableKey + '_s' + mediaRenderStamp(entry.message).toString();
+
   return entry;
 }
 
@@ -1124,6 +1178,7 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
       const dateEntry = new ChatTimelineEntryVO();
       dateEntry.kind = 'date';
       dateEntry.key = 'date_' + currentDay;
+      dateEntry.stableKey = dateEntry.key;
       dateEntry.dateText = formatDateSeparatorLabel(message.timestamp);
       result.entries.push(dateEntry);
     }
@@ -1133,6 +1188,7 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
       const unreadEntry = new ChatTimelineEntryVO();
       unreadEntry.kind = 'unread';
       unreadEntry.key = 'unread_before_' + message.id;
+      unreadEntry.stableKey = unreadEntry.key;
       unreadEntry.unreadText = localizedString($r('app.string.unread').id, 'Unread');
       result.unreadEntryIndex = result.entries.length;
       result.entries.push(unreadEntry);
@@ -1155,6 +1211,7 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
       const serviceEntry = new ChatTimelineEntryVO();
       serviceEntry.kind = 'service';
       serviceEntry.key = 'svc_' + message.id;
+      serviceEntry.stableKey = serviceEntry.key;
       serviceEntry.serviceText = isUnsupported
         ? localizedString($r('app.string.service_unsupported').id, 'Unsupported message')
         : buildServiceMessageText(message, state);
