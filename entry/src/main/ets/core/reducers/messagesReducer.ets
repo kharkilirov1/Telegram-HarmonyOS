@@ -9,7 +9,8 @@ import {
   MessageContentUpdatedEvent,
   MessageSendSucceededEvent,
   MessageSendFailedEvent,
-  MessagesDeletedEvent
+  MessagesDeletedEvent,
+  ChatMessagesResetEvent
 } from '../model/AppEvent';
 import { MessageDto, MessageContentDto } from '../model/dto/MessageDto';
 import { cloneStateForMessages } from '../utils/stateClone';
@@ -18,7 +19,8 @@ import { cloneStateForMessages } from '../utils/stateClone';
 function isMessageEvent(type: string): boolean {
   return type === 'newMessage' || type === 'messageUpdated' ||
     type === 'messageContentUpdated' || type === 'messageSendSucceeded' ||
-    type === 'messageSendFailed' || type === 'messagesDeleted';
+    type === 'messageSendFailed' || type === 'messagesDeleted' ||
+    type === 'chatMessagesReset';
 }
 
 // Convert MessageContentDto → MessageContent (AppState)
@@ -437,6 +439,12 @@ export function messagesReducer(state: AppState, action: ReducerAction): AppStat
           newState.messages.messages.delete(event.chatId);
         }
       }
+      break;
+    }
+
+    case 'chatMessagesReset': {
+      const event = action as ChatMessagesResetEvent;
+      newState.messages.messages.delete(event.chatId);
       break;
     }
   }

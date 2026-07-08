@@ -127,6 +127,14 @@ export class MessagesDeletedEvent extends AppEvent {
   fromCache: boolean = false;
 }
 
+// Local (not TDLib) event: drop all loaded messages of a chat before loading
+// a history window around an arbitrary message (jump-to-message). The store
+// models one contiguous range per chat, so a far jump must reset first.
+export class ChatMessagesResetEvent extends AppEvent {
+  type: string = 'chatMessagesReset';
+  chatId: ChatId = 0;
+}
+
 // --- User events ---
 
 // Явный интерфейс для частичного обновления пользователя
@@ -240,6 +248,7 @@ export type AnyAppEvent =
   | MessageSendSucceededEvent
   | MessageSendFailedEvent
   | MessagesDeletedEvent
+  | ChatMessagesResetEvent
   | UserUpdatedEvent
   | UserStatusChangedEvent
   | ChatActionEvent

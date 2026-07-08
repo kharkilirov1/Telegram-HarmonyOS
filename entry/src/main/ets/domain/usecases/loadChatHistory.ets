@@ -7,7 +7,7 @@ import { TdGatewayPort } from '../ports/TdGatewayPort';
 import { ChatId, MessageId } from '../../core/model/EntityId';
 import { createGetChatHistoryCommand, createGetUserCommand } from '../../core/model/AppCommand';
 import { getEventNormalizer } from '../../core/events/EventNormalizer';
-import { AnyAppEvent } from '../../core/model/AppEvent';
+import { AnyAppEvent, ChatMessagesResetEvent } from '../../core/model/AppEvent';
 import { AppError, AppErrorKind } from '../../core/model/AppError';
 import { TdObject } from '../../models/TdTypes';
 import { tdGetArray, tdGetObject, tdGetNumber, tdGetString, tdGetInt64, compareInt64 } from '../../core/utils/tdAccessors';
@@ -563,6 +563,40 @@ export class LoadChatHistoryUseCase {
     }
 
     return await this.hydrateMissingUsers(eligibleUserIds, generation);
+  }
+
+  // Jump-to-message: the store models ONE contiguous range per chat, so a far
+  // jump resets loaded messages first, then loads a window around the target.
+  // Both pagination edges reopen — the window sits mid-history.
+  async loadAroundMessage(chatId: ChatId, messageId: MessageId, limit: number = 40): Promise<boolean> {
+    if (chatId === 0 || messageId === '0' || messageId === '') {
+      return false;
+    }
+    const resetEvent = new ChatMessagesResetEvent();
+    resetEvent.chatId = chatId;
+    await this.store.dispatch(resetEvent);
+    if (!this.isInstanceCurrent()) {
+      return false;
+    }
+
+    LoadChatHistoryUseCase.oldestMessageId.delete(chatId);
+    LoadChatHistoryUseCase.newestMessageId.delete(chatId);
+    LoadChatHistoryUseCase.canLoadOlder.set(chatId, true);
+    LoadChatHistoryUseCase.canLoadNewer.set(chatId, true);
+
+    const params = new LoadChatHistoryParams();
+    params.chatId = chatId;
+    params.fromMessageId = messageId;
+    // Negative offset makes TDLib return messages NEWER than the anchor too,
+    // so the target lands mid-window instead of at the very top
+    params.offset = -Math.floor(limit / 2);
+    params.limit = limit;
+    params.direction = 'initial';
+    params.reason = 'aroundMessage';
+    params.force = true;
+    hilog.info(DOMAIN, TAG, 'Jump: loading window around %{public}s in chat %{public}d',
+      messageId, chatId);
+    return this.execute(params);
   }
 
   async execute(params: LoadChatHistoryParams): Promise<boolean> {

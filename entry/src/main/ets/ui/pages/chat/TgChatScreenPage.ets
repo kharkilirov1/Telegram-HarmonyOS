@@ -179,6 +179,9 @@ export struct TgChatScreenPage {
   @Local private searchResultLoaded: number = 0;
   private searchFlashTimerId: number = -1;
   private searchFlashMessageId: string = '';
+  // Jump-to-message: target waiting for its history window to arrive
+  private pendingJumpMessageId: string = '';
+  private pendingJumpAttempts: number = 0;
   private isLoadingOlder: boolean = false;
   private isLoadingNewer: boolean = false;
   private isMarkingChatRead: boolean = false;
@@ -421,6 +424,56 @@ export struct TgChatScreenPage {
     return false;
   }
 
+  // Scroll if the message is loaded; otherwise reset + load a history window
+  // around it and finish the scroll when the rebuilt timeline arrives
+  jumpToMessageId(messageId: string): void {
+    if (this.scrollToMessageId(messageId)) {
+      return;
+    }
+    const useCase = this.loadChatHistoryUseCase;
+    if (!useCase || this.activeChatId === 0) {
+      return;
+    }
+    const token = this.pageLifecycleToken;
+    this.pendingJumpMessageId = messageId;
+    this.pendingJumpAttempts = 0;
+    this.blockAutoPaginationUntilUserScroll = true;
+    useCase.loadAroundMessage(this.activeChatId, messageId)
+      .then((ok: boolean) => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        if (!ok) {
+          this.pendingJumpMessageId = '';
+        }
+      })
+      .catch((error: Error) => {
+        if (token === this.pageLifecycleToken) {
+          this.pendingJumpMessageId = '';
+          hilog.warn(DOMAIN, TAG, 'Jump failed: %{public}s', error.message);
+        }
+      });
+  }
+
+  // Called after every timeline diff: finish a pending jump once the target
+  // message is present. Bounded attempts — the target may have been deleted.
+  private fulfillPendingJump(): void {
+    if (this.pendingJumpMessageId === '') {
+      return;
+    }
+    const targetId = this.pendingJumpMessageId;
+    this.pendingJumpAttempts++;
+    // scrollToIndex right after a full reload needs the List to settle first
+    this.scheduleLifecycleTask(16, () => {
+      if (this.pendingJumpMessageId !== targetId) {
+        return;
+      }
+      if (this.scrollToMessageId(targetId) || this.pendingJumpAttempts >= 4) {
+        this.pendingJumpMessageId = '';
+      }
+    });
+  }
+
   // Flash the found bubble. Rows are plain VOs: only a key change rebuilds a
   // LazyForEach item, so flag + key bump + notify, then revert after a pause.
   private flashSearchHit(messageId: string, index: number): void {
@@ -495,6 +548,8 @@ export struct TgChatScreenPage {
       if (this.isSearchMode) {
         this.closeSearch();
       }
+      this.pendingJumpMessageId = '';
+      this.pendingJumpAttempts = 0;
 
       this.clearPendingMediaDownloads();
       if (this.paginationRecheckTimerId >= 0) {
@@ -1214,6 +1269,8 @@ export struct TgChatScreenPage {
         });
       }
     }
+
+    this.fulfillPendingJump();
   }
 
   private computeInitialIndex(totalCount: number): void {

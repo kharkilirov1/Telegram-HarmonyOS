@@ -19,6 +19,8 @@ export interface ChatSearchControllerHost {
   setSearchQuery(value: string): void;
   setSearchModeActive(value: boolean): void;
   scrollToMessageId(messageId: string): boolean;
+  // Scrolls when loaded, otherwise loads a history window around the target
+  jumpToMessageId(messageId: string): void;
   // position is 1-based among loaded results; total from TDLib (may exceed
   // loadedCount — only one page is fetched); 0/0/0 = none
   onSearchResultsUpdated(position: number, total: number, loadedCount: number): void;
@@ -83,7 +85,7 @@ export class ChatSearchController {
   }
 
   private navigateToCurrent(host: ChatSearchControllerHost): void {
-    host.scrollToMessageId(this.resultIds[this.currentIndex]);
+    host.jumpToMessageId(this.resultIds[this.currentIndex]);
     host.onSearchResultsUpdated(this.currentIndex + 1, this.totalCount, this.resultIds.length);
   }
 

@@ -14,7 +14,8 @@ import {
   MessageContentUpdatedEvent,
   MessageSendSucceededEvent,
   MessageSendFailedEvent,
-  MessagesDeletedEvent
+  MessagesDeletedEvent,
+  ChatMessagesResetEvent
 } from '../../../main/ets/core/model/AppEvent';
 import {
   MessageDto,
@@ -408,6 +409,35 @@ export default function messagesReducerTest() {
 
         const newState = messagesReducer(state, deleteEvent);
         expect(newState.messages.messages.get(9)!.has('901')).assertTrue();
+      });
+    });
+
+    // -----------------------------------------------------------------------
+    // chatMessagesReset (jump-to-message)
+    // -----------------------------------------------------------------------
+    describe('chatMessagesReset', () => {
+      it('should drop all messages of the chat and keep other chats intact', 0, () => {
+        let state = createEmptyState();
+        const dtoA = makeMessageDto('910', 9, 'In target chat');
+        const addA = new NewMessageEvent();
+        addA.chatId = 9;
+        addA.messageId = '910';
+        addA.messageData = dtoA;
+        state = messagesReducer(state, addA);
+
+        const dtoB = makeMessageDto('911', 10, 'In other chat');
+        const addB = new NewMessageEvent();
+        addB.chatId = 10;
+        addB.messageId = '911';
+        addB.messageData = dtoB;
+        state = messagesReducer(state, addB);
+
+        const resetEvent = new ChatMessagesResetEvent();
+        resetEvent.chatId = 9;
+
+        const newState = messagesReducer(state, resetEvent);
+        expect(newState.messages.messages.has(9)).assertFalse();
+        expect(newState.messages.messages.get(10)!.has('911')).assertTrue();
       });
     });
 
