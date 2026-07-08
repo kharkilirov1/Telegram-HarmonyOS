@@ -32,7 +32,10 @@ import {
   GetUserFullInfoCommand,
   GetSupergroupFullInfoCommand,
   DownloadFileCommand,
-  CancelDownloadFileCommand
+  CancelDownloadFileCommand,
+  GetRecentStickersCommand,
+  GetStickerSetCommand,
+  SendStickerCommand
 } from '../../../core/model/AppCommand';
 import { TdObject } from '../../../models/TdTypes';
 
@@ -79,6 +82,10 @@ COMMAND_SERIALIZATION_HANDLERS.set('getUserFullInfo', serializeGetUserFullInfo);
 COMMAND_SERIALIZATION_HANDLERS.set('getSupergroupFullInfo', serializeGetSupergroupFullInfo);
 COMMAND_SERIALIZATION_HANDLERS.set('downloadFile', serializeDownloadFile);
 COMMAND_SERIALIZATION_HANDLERS.set('cancelDownloadFile', serializeCancelDownloadFile);
+COMMAND_SERIALIZATION_HANDLERS.set('getRecentStickers', serializeGetRecentStickers);
+COMMAND_SERIALIZATION_HANDLERS.set('getInstalledStickerSets', serializeGetInstalledStickerSets);
+COMMAND_SERIALIZATION_HANDLERS.set('getStickerSet', serializeGetStickerSet);
+COMMAND_SERIALIZATION_HANDLERS.set('sendSticker', serializeSendSticker);
 COMMAND_SERIALIZATION_HANDLERS.set('requestQrCodeAuth', serializeRequestQrCodeAuth);
 COMMAND_SERIALIZATION_HANDLERS.set('logout', serializeLogout);
 
@@ -323,6 +330,38 @@ function serializeCancelDownloadFile(command: AnyAppCommand, result: SerializedC
   result.method = 'cancelDownloadFile';
   result.params.setNumber('file_id', cmd.payload.fileId);
   result.params.setBool('only_if_pending', cmd.payload.onlyIfPending);
+}
+
+function serializeGetRecentStickers(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetRecentStickersCommand;
+  result.method = 'getRecentStickers';
+  result.params.setBool('is_attached', cmd.payload.isAttached);
+}
+
+function serializeGetInstalledStickerSets(_command: AnyAppCommand, result: SerializedCommand): void {
+  result.method = 'getInstalledStickerSets';
+  result.params.setString('_sticker_type_json', '{"@type":"stickerTypeRegular"}');
+}
+
+function serializeGetStickerSet(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetStickerSetCommand;
+  result.method = 'getStickerSet';
+  // int64 as raw JSON number — setNumber would round-trip through double
+  result.params.setString('_set_id_json', cmd.payload.setId);
+}
+
+function serializeSendSticker(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SendStickerCommand;
+  result.method = 'sendMessage';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  const remoteId = escapeForJson(cmd.payload.remoteFileId);
+  const emoji = escapeForJson(cmd.payload.emoji);
+  const contentJson = `{"@type":"inputMessageSticker",`
+    + `"sticker":{"@type":"inputFileRemote","id":"${remoteId}"},`
+    + `"width":${Math.max(0, Math.floor(cmd.payload.width))},`
+    + `"height":${Math.max(0, Math.floor(cmd.payload.height))},`
+    + `"emoji":"${emoji}"}`;
+  result.params.setString('_input_message_content_json', contentJson);
 }
 
 function serializeRequestQrCodeAuth(_command: AnyAppCommand, result: SerializedCommand): void {

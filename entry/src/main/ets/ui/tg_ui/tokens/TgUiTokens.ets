@@ -679,6 +679,11 @@ export class TgUiTokens {
   static readonly COMPOSER_EMOJI_PILL_HEIGHT: number = 26;
   static readonly COMPOSER_EMOJI_PILL_RADIUS: number = 13;
   static readonly COMPOSER_EMOJI_PILL_PADDING_H: number = 10;
+  static readonly COMPOSER_STICKER_PANEL_HEIGHT: number = 246;
+  static readonly COMPOSER_STICKER_CELL_SIZE: number = 72;
+  static readonly COMPOSER_STICKER_CELL_GAP: number = 8;
+  static readonly COMPOSER_STICKER_COLUMNS: number = 4;
+  static readonly COMPOSER_STICKER_EMOJI_FALLBACK_SIZE: number = 40;
 
   // ── Tab bar capsule (iOS-aligned) ──
   static readonly TAB_BAR_ISLAND_HEIGHT: number = 57;

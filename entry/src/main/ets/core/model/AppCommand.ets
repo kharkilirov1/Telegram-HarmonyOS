@@ -154,6 +154,22 @@ export class CancelDownloadFilePayload {
   onlyIfPending: boolean = false;
 }
 
+export class GetRecentStickersPayload {
+  isAttached: boolean = false;
+}
+
+export class GetStickerSetPayload {
+  setId: string = '0'; // TDLib int64 — kept as string to avoid precision loss
+}
+
+export class SendStickerPayload {
+  chatId: ChatId = 0;
+  remoteFileId: string = ''; // sticker.file.remote.id → inputFileRemote
+  width: number = 0;
+  height: number = 0;
+  emoji: string = '';
+}
+
 // Command classes
 export class SetPhoneNumberCommand extends AppCommand {
   type: string = 'setPhoneNumber';
@@ -298,6 +314,25 @@ export class CancelDownloadFileCommand extends AppCommand {
   payload: CancelDownloadFilePayload = new CancelDownloadFilePayload();
 }
 
+export class GetRecentStickersCommand extends AppCommand {
+  type: string = 'getRecentStickers';
+  payload: GetRecentStickersPayload = new GetRecentStickersPayload();
+}
+
+export class GetInstalledStickerSetsCommand extends AppCommand {
+  type: string = 'getInstalledStickerSets';
+}
+
+export class GetStickerSetCommand extends AppCommand {
+  type: string = 'getStickerSet';
+  payload: GetStickerSetPayload = new GetStickerSetPayload();
+}
+
+export class SendStickerCommand extends AppCommand {
+  type: string = 'sendSticker';
+  payload: SendStickerPayload = new SendStickerPayload();
+}
+
 export class RequestQrCodeAuthCommand extends AppCommand {
   type: string = 'requestQrCodeAuth';
 }
@@ -337,6 +372,10 @@ export type AnyAppCommand =
   | SearchChatMessagesCommand
   | DownloadFileCommand
   | CancelDownloadFileCommand
+  | GetRecentStickersCommand
+  | GetInstalledStickerSetsCommand
+  | GetStickerSetCommand
+  | SendStickerCommand
   | RequestQrCodeAuthCommand
   | LogoutCommand;
 
@@ -604,4 +643,32 @@ export function createCancelDownloadFileCommand(
 
 export function createLogoutCommand(): LogoutCommand {
   return new LogoutCommand();
+}
+
+export function createGetRecentStickersCommand(isAttached: boolean = false): GetRecentStickersCommand {
+  const cmd = new GetRecentStickersCommand();
+  cmd.payload.isAttached = isAttached;
+  return cmd;
+}
+
+export function createGetStickerSetCommand(setId: string): GetStickerSetCommand {
+  const cmd = new GetStickerSetCommand();
+  cmd.payload.setId = setId;
+  return cmd;
+}
+
+export function createSendStickerCommand(
+  chatId: ChatId,
+  remoteFileId: string,
+  width: number,
+  height: number,
+  emoji: string
+): SendStickerCommand {
+  const cmd = new SendStickerCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.remoteFileId = remoteFileId;
+  cmd.payload.width = width;
+  cmd.payload.height = height;
+  cmd.payload.emoji = emoji;
+  return cmd;
 }
