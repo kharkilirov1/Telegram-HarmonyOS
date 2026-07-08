@@ -122,6 +122,15 @@ export class MessageContent {
   photoMinithumb: string = ''; // base64 JPEG из TDLib minithumbnail — мгновенный blur-превью
   photoUniqueId: string = ''; // remote.unique_id полноразмерного фото
   photoThumbUniqueId: string = ''; // remote.unique_id тумбы
+  videoUniqueId: string = '';
+  videoThumbUniqueId: string = ''; // shared by video/animation/videoNote thumbs
+  documentUniqueId: string = '';
+  audioUniqueId: string = '';
+  voiceUniqueId: string = '';
+  stickerUniqueId: string = '';
+  stickerThumbUniqueId: string = '';
+  animationUniqueId: string = '';
+  videoNoteUniqueId: string = '';
 
   // Video
   videoPath: string = '';

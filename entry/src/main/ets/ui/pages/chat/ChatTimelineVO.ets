@@ -886,12 +886,12 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
 
   // Video — thumbnail as file:// URI, full video path for playback
   const videoTransfer = resolveTransfer(content.videoFileId, state);
-  const resolvedVideoThumb = resolveContentPath(content.videoThumbPath, content.videoThumbFileId, state);
+  const resolvedVideoThumb = resolveContentPath(content.videoThumbPath, content.videoThumbFileId, state, content.videoThumbUniqueId);
   const rawVideoThumb = resolvedVideoThumb.length > 0 ? resolvedVideoThumb : content.videoPath;
   row.videoThumbPath = toFileUri(rawVideoThumb);
   row.videoMinithumb = content.videoMinithumb.length > 0
     ? 'data:image/jpeg;base64,' + content.videoMinithumb : '';
-  row.videoPath = toFileUri(resolveContentPath(content.videoPath, content.videoFileId, state));
+  row.videoPath = toFileUri(resolveContentPath(content.videoPath, content.videoFileId, state, content.videoUniqueId));
   row.videoDuration = content.videoDuration;
   row.isShortVideo = content.videoDuration > 0 && content.videoDuration <= 30;
   row.videoWidth = content.videoWidth;
@@ -907,7 +907,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
     row.videoThumbPath = toFileUri(rawAnimThumb);
     row.videoMinithumb = content.videoMinithumb.length > 0
       ? 'data:image/jpeg;base64,' + content.videoMinithumb : '';
-    row.videoPath = toFileUri(resolveContentPath(content.animationPath, content.animationFileId, state));
+    row.videoPath = toFileUri(resolveContentPath(content.animationPath, content.animationFileId, state, content.animationUniqueId));
     row.videoDuration = content.animationDuration;
     row.isShortVideo = true; // GIFs always inline
     row.videoWidth = content.animationWidth;
@@ -924,7 +924,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
     row.videoThumbPath = toFileUri(rawVideoNoteThumb);
     row.videoMinithumb = content.videoMinithumb.length > 0
       ? 'data:image/jpeg;base64,' + content.videoMinithumb : '';
-    row.videoPath = toFileUri(resolveContentPath(content.videoNotePath, content.videoNoteFileId, state));
+    row.videoPath = toFileUri(resolveContentPath(content.videoNotePath, content.videoNoteFileId, state, content.videoNoteUniqueId));
     row.videoDuration = content.videoNoteDuration;
     row.videoWidth = content.videoNoteLength;
     row.videoHeight = content.videoNoteLength;
@@ -935,7 +935,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
 
   // Document
   const documentTransfer = resolveTransfer(content.documentFileId, state);
-  row.documentPath = toFileUri(content.documentPath);
+  row.documentPath = toFileUri(resolveContentPath(content.documentPath, content.documentFileId, state, content.documentUniqueId));
   row.documentFileId = content.documentFileId;
   row.isDocumentDownloading = isTransferActive(documentTransfer);
   row.documentDownloadProgress = resolveTransferProgress(documentTransfer);
@@ -946,7 +946,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   // Audio / music
   if (content.type === 'audio') {
     const audioTransfer = resolveTransfer(content.audioFileId, state);
-    row.audioPath = content.audioPath;
+    row.audioPath = resolveContentPath(content.audioPath, content.audioFileId, state, content.audioUniqueId);
     row.audioFileId = content.audioFileId;
     row.isAudioDownloading = isTransferActive(audioTransfer);
     row.audioDownloadProgress = resolveTransferProgress(audioTransfer);
@@ -958,7 +958,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
 
   // Voice — convert path for playback
   const voiceTransfer = resolveTransfer(content.voiceFileId, state);
-  row.voicePath = content.voicePath;
+  row.voicePath = resolveContentPath(content.voicePath, content.voiceFileId, state, content.voiceUniqueId);
   row.voiceFileId = content.voiceFileId;
   row.isVoiceDownloading = isTransferActive(voiceTransfer);
   row.voiceDownloadProgress = resolveTransferProgress(voiceTransfer);
@@ -967,7 +967,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   row.isVoiceListened = content.isVoiceListened;
 
   // Sticker — convert path
-  row.stickerPath = toFileUri(content.stickerPath);
+  row.stickerPath = toFileUri(resolveContentPath(content.stickerPath, content.stickerFileId, state, content.stickerUniqueId));
   row.stickerThumbnailPath = toFileUri(content.stickerThumbnailPath);
   row.stickerWidth = content.stickerWidth;
   row.stickerHeight = content.stickerHeight;

@@ -58,6 +58,15 @@ export class MessageContentDto {
   photoMinithumb: string = '';
   photoUniqueId: string = '';
   photoThumbUniqueId: string = '';
+  videoUniqueId: string = '';
+  videoThumbUniqueId: string = '';
+  documentUniqueId: string = '';
+  audioUniqueId: string = '';
+  voiceUniqueId: string = '';
+  stickerUniqueId: string = '';
+  stickerThumbUniqueId: string = '';
+  animationUniqueId: string = '';
+  videoNoteUniqueId: string = '';
 
   videoPath: string = '';
   videoThumbPath: string = '';
@@ -288,6 +297,11 @@ function extractThumbnailFileId(parentObj: TdObject): number {
   return extractFileId(fileObj);
 }
 
+function extractThumbnailUniqueId(parentObj: TdObject): string {
+  const thumbnailObj = tdGetObject(parentObj, 'thumbnail');
+  return extractRemoteUniqueId(tdGetObject(thumbnailObj, 'file'));
+}
+
 class PhotoFileInfo {
   path: string = '';
   fileId: number = 0;
@@ -463,6 +477,8 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.videoThumbPath = extractThumbnailPath(videoObj);
       contentDto.videoMinithumb = tdGetString(tdGetObject(videoObj, 'minithumbnail'), 'data');
       contentDto.videoThumbFileId = extractThumbnailFileId(videoObj);
+      contentDto.videoUniqueId = extractRemoteUniqueId(videoFile);
+      contentDto.videoThumbUniqueId = extractThumbnailUniqueId(videoObj);
       contentDto.videoDuration = tdGetNumber(videoObj, 'duration');
       contentDto.videoWidth = tdGetNumber(videoObj, 'width');
       contentDto.videoHeight = tdGetNumber(videoObj, 'height');
@@ -482,6 +498,7 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.text = caption.length > 0 ? caption : '[File]';
       contentDto.documentPath = extractLocalFilePath(documentFile);
       contentDto.documentFileId = extractFileId(documentFile);
+      contentDto.documentUniqueId = extractRemoteUniqueId(documentFile);
       contentDto.fileName = tdGetString(documentObj, 'file_name');
       contentDto.fileSize = tdGetNumber(documentFile, 'size');
       contentDto.mimeType = tdGetString(documentObj, 'mime_type');
@@ -498,6 +515,7 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.text = caption.length > 0 ? caption : '[Audio]';
       contentDto.audioPath = extractLocalFilePath(audioFile);
       contentDto.audioFileId = extractFileId(audioFile);
+      contentDto.audioUniqueId = extractRemoteUniqueId(audioFile);
       contentDto.audioDuration = tdGetNumber(audioObj, 'duration');
       contentDto.audioTitle = tdGetString(audioObj, 'title');
       contentDto.audioPerformer = tdGetString(audioObj, 'performer');
@@ -517,6 +535,7 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.text = caption.length > 0 ? caption : '[Voice message]';
       contentDto.voicePath = extractLocalFilePath(voiceFile);
       contentDto.voiceFileId = extractFileId(voiceFile);
+      contentDto.voiceUniqueId = extractRemoteUniqueId(voiceFile);
       contentDto.voiceDuration = tdGetNumber(voiceObj, 'duration');
       contentDto.voiceWaveform = tdGetString(voiceObj, 'waveform');
       contentDto.isVoiceListened = tdGetBoolean(contentObj, 'is_listened');
@@ -531,6 +550,8 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.stickerPath = extractLocalFilePath(stickerFile);
       contentDto.stickerThumbnailPath = extractThumbnailPath(stickerObj);
       contentDto.stickerFileId = extractFileId(stickerFile);
+      contentDto.stickerUniqueId = extractRemoteUniqueId(stickerFile);
+      contentDto.stickerThumbUniqueId = extractThumbnailUniqueId(stickerObj);
       contentDto.stickerEmoji = tdGetString(stickerObj, 'emoji');
       contentDto.stickerWidth = tdGetNumber(stickerObj, 'width');
       contentDto.stickerHeight = tdGetNumber(stickerObj, 'height');
@@ -607,9 +628,11 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.text = caption.length > 0 ? caption : '[GIF]';
       contentDto.animationPath = extractLocalFilePath(animationFile);
       contentDto.animationFileId = extractFileId(animationFile);
+      contentDto.animationUniqueId = extractRemoteUniqueId(animationFile);
       contentDto.videoThumbPath = extractThumbnailPath(animationObj);
       contentDto.videoMinithumb = tdGetString(tdGetObject(animationObj, 'minithumbnail'), 'data');
       contentDto.videoThumbFileId = extractThumbnailFileId(animationObj);
+      contentDto.videoThumbUniqueId = extractThumbnailUniqueId(animationObj);
       contentDto.animationDuration = tdGetNumber(animationObj, 'duration');
       contentDto.animationWidth = tdGetNumber(animationObj, 'width');
       contentDto.animationHeight = tdGetNumber(animationObj, 'height');
@@ -625,9 +648,11 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.text = '[Video message]';
       contentDto.videoNotePath = extractLocalFilePath(videoNoteFile);
       contentDto.videoNoteFileId = extractFileId(videoNoteFile);
+      contentDto.videoNoteUniqueId = extractRemoteUniqueId(videoNoteFile);
       contentDto.videoThumbPath = extractThumbnailPath(videoNoteObj);
       contentDto.videoMinithumb = tdGetString(tdGetObject(videoNoteObj, 'minithumbnail'), 'data');
       contentDto.videoThumbFileId = extractThumbnailFileId(videoNoteObj);
+      contentDto.videoThumbUniqueId = extractThumbnailUniqueId(videoNoteObj);
       contentDto.videoNoteDuration = tdGetNumber(videoNoteObj, 'duration');
       contentDto.videoNoteLength = tdGetNumber(videoNoteObj, 'length');
       break;

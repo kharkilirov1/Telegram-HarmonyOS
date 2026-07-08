@@ -70,6 +70,15 @@ function contentFromDto(dto: MessageContentDto): MessageContent {
   content.photoMinithumb = dto.photoMinithumb;
   content.photoUniqueId = dto.photoUniqueId;
   content.photoThumbUniqueId = dto.photoThumbUniqueId;
+  content.videoUniqueId = dto.videoUniqueId;
+  content.videoThumbUniqueId = dto.videoThumbUniqueId;
+  content.documentUniqueId = dto.documentUniqueId;
+  content.audioUniqueId = dto.audioUniqueId;
+  content.voiceUniqueId = dto.voiceUniqueId;
+  content.stickerUniqueId = dto.stickerUniqueId;
+  content.stickerThumbUniqueId = dto.stickerThumbUniqueId;
+  content.animationUniqueId = dto.animationUniqueId;
+  content.videoNoteUniqueId = dto.videoNoteUniqueId;
 
   content.videoPath = dto.videoPath;
   content.videoThumbPath = dto.videoThumbPath;
@@ -210,6 +219,15 @@ function cloneMessage(msg: Message): Message {
   clonedContent.photoMinithumb = msg.content.photoMinithumb;
   clonedContent.photoUniqueId = msg.content.photoUniqueId;
   clonedContent.photoThumbUniqueId = msg.content.photoThumbUniqueId;
+  clonedContent.videoUniqueId = msg.content.videoUniqueId;
+  clonedContent.videoThumbUniqueId = msg.content.videoThumbUniqueId;
+  clonedContent.documentUniqueId = msg.content.documentUniqueId;
+  clonedContent.audioUniqueId = msg.content.audioUniqueId;
+  clonedContent.voiceUniqueId = msg.content.voiceUniqueId;
+  clonedContent.stickerUniqueId = msg.content.stickerUniqueId;
+  clonedContent.stickerThumbUniqueId = msg.content.stickerThumbUniqueId;
+  clonedContent.animationUniqueId = msg.content.animationUniqueId;
+  clonedContent.videoNoteUniqueId = msg.content.videoNoteUniqueId;
   clonedContent.videoPath = msg.content.videoPath;
   clonedContent.videoThumbPath = msg.content.videoThumbPath;
   clonedContent.videoMinithumb = msg.content.videoMinithumb;
