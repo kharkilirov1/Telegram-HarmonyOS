@@ -10,6 +10,7 @@ import {
   SharedMediaItem
 } from '../../../domain/usecases/searchChatMessages';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
+import { PendingJumpSignal } from '../chat/PendingJumpSignal';
 import { fileUri } from '@kit.CoreFileKit';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
@@ -166,6 +167,20 @@ export struct TgSharedMediaPage {
     }
   }
 
+  // Queue the jump, then unwind Shared Media + Profile back to the chat;
+  // the chat consumes the signal in onShown
+  private jumpToMessage(messageId: string): void {
+    if (messageId === '0' || this.chatId === 0) {
+      return;
+    }
+    PendingJumpSignal.set(this.chatId, messageId);
+    try {
+      this.pageStack.popToName('TgChatScreenPage');
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, 'popToName failed: %{public}s', String(error));
+    }
+  }
+
   private handleBackPress(): void {
     if (this.isClosing) {
       return;
@@ -302,6 +317,9 @@ export struct TgSharedMediaPage {
               GridItem() {
                 this.buildTile(tile)
               }
+              .onClick(() => {
+                this.jumpToMessage(tile.messageId);
+              })
             }, (tile: SharedMediaTileVO) => 'shm_' + tile.messageId)
           }
           .columnsTemplate('1fr 1fr 1fr')
@@ -316,6 +334,9 @@ export struct TgSharedMediaPage {
               ListItem() {
                 this.buildListRow(tile)
               }
+              .onClick(() => {
+                this.jumpToMessage(tile.messageId);
+              })
             }, (tile: SharedMediaTileVO) => 'shl_' + tile.messageId)
           }
           .width('100%')

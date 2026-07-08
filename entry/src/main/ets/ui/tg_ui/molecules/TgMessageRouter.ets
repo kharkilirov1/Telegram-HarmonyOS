@@ -118,6 +118,8 @@ export struct TgMessageRouter {
     (_: string, __: number, ___: string) => {};
   @Event onAudioTap: (audioPath: string, audioFileId: number, mimeType: string) => void =
     (_: string, __: number, ___: string) => {};
+  // Tap on the reply snippet — the page jumps to the original message
+  @Event onReplyPress: () => void = () => {};
 
   // ── Voice ──
   @Param voicePath: string = '';
@@ -866,6 +868,9 @@ export struct TgMessageRouter {
           replyThumbnailSrc: this.replyThumbnailSrc,
           timeText: this.timeText,
           sendStatus: this.sendStatus,
+          onReplyTap: (): void => {
+            this.onReplyPress();
+          }
         })
 
         if (this.isOutgoing && this.showBubbleTail()) {
@@ -906,6 +911,9 @@ export struct TgMessageRouter {
               containerWidth: this.maxBubbleWidth()
             })
               .margin({ bottom: TgUiTokens.SPACE_4 })
+              .onClick(() => {
+                this.onReplyPress();
+              })
           }
 
           if (this.caption.trim().length === 0) {
@@ -1217,6 +1225,9 @@ export struct TgMessageRouter {
                 containerWidth: this.maxBubbleWidth()
               })
             }
+            .onClick(() => {
+              this.onReplyPress();
+            })
             .padding({
               left: TgUiTokens.BUBBLE_PADDING_H,
               right: TgUiTokens.BUBBLE_PADDING_H,

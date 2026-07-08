@@ -32,6 +32,7 @@ import {
   ChatMessageActionsController
 } from './ChatMessageActionsController';
 import { ChatSearchController } from './ChatSearchController';
+import { PendingJumpSignal } from './PendingJumpSignal';
 import { createSendMessageUseCase, SendMessageUseCase } from '../../../domain/usecases/sendMessage';
 import {
   createStickerPanelUseCase,
@@ -429,6 +430,7 @@ export struct TgChatScreenPage {
   // around it and finish the scroll when the rebuilt timeline arrives
   jumpToMessageId(messageId: string): void {
     if (this.scrollToMessageId(messageId)) {
+      hilog.info(DOMAIN, TAG, 'Jump: scrolled to %{public}s in loaded timeline', messageId);
       return;
     }
     const useCase = this.loadChatHistoryUseCase;
@@ -2721,6 +2723,11 @@ export struct TgChatScreenPage {
         onAudioTap: (audioPath: string, audioFileId: number, mimeType: string): void => {
           this.handleAudioTap(audioPath, audioFileId, mimeType, entry.message.messageId);
         },
+        onReplyPress: (): void => {
+          if (entry.message.replyToMessageId !== '0') {
+            this.jumpToMessageId(entry.message.replyToMessageId);
+          }
+        },
         onVoiceTap: (messageId: string, voicePath: string, voiceFileId: number): void => {
           this.handleVoiceTap(messageId, voicePath, voiceFileId);
         },
@@ -3045,9 +3052,17 @@ export struct TgChatScreenPage {
     .onReady((context: NavDestinationContext) => {
       this.pageStack = context.pathStack;
       const params = context.pathInfo.param as ChatScreenRouteParams;
-      if (params && params.chatId > 0) {
+      // Group/channel ids are NEGATIVE — only 0 means "no chat" (lesson 87)
+      if (params && params.chatId !== 0) {
         this.routeChatId = params.chatId;
         this.routeChatTitle = params.chatTitle ? params.chatTitle : '';
+      }
+    })
+    .onShown(() => {
+      // A Shared Media row may have queued a jump before unwinding the stack
+      const pendingId = PendingJumpSignal.consume(this.activeChatId);
+      if (pendingId !== '0') {
+        this.jumpToMessageId(pendingId);
       }
     })
     .onBackPressed(() => {

@@ -117,6 +117,7 @@ export class ChatMessageRowVO {
   showSenderName: boolean = false;
 
   showReplySnippet: boolean = false;
+  replyToMessageId: string = '0';
   replyAuthor: string = '';
   replyAuthorColorHex: string = '';
   replyPreview: string = '';
@@ -1013,6 +1014,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
 
   if (message.replyToMessageId !== '0') {
     row.showReplySnippet = true;
+    row.replyToMessageId = message.replyToMessageId;
     row.replyPreview = resolveReplyPreview(messageById, message.replyToMessageId, message.replyQuoteText);
     row.replyThumbnailSrc = resolveReplyThumbnailSrc(messageById, message.replyToMessageId);
     row.replyHasThumbnail = row.replyThumbnailSrc.length > 0;
