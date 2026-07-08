@@ -222,6 +222,37 @@ function fallbackMessageTextForType(contentType: string): string {
 // ChatDto builds last-message previews as '[X]' (contentType minus the 'message'
 // prefix) — map the known service/unsupported placeholders to human text here,
 // on the UI layer, keeping the DTO locale-free.
+// Telegram-style media previews ('[Photo]' → '📷 Photo')
+function mediaBracketPreview(inner: string): string {
+  switch (inner) {
+    case 'Photo':
+      return '📷 Photo';
+    case 'Photo album':
+      return '📷 Album';
+    case 'Video':
+      return '📹 Video';
+    case 'GIF':
+      return '🎬 GIF';
+    case 'Video message':
+      return '📹 Video message';
+    case 'Voice message':
+      return '🎤 Voice message';
+    case 'File':
+      return '📎 File';
+    case 'Audio':
+      return '🎵 Audio';
+    case 'Sticker':
+      return '🧩 Sticker';
+    case 'Location':
+    case 'Venue':
+      return '📍 Location';
+    case 'Poll':
+      return '📊 Poll';
+    default:
+      return '';
+  }
+}
+
 function humanizeBracketPreview(text: string): string {
   if (!text.startsWith('[') || !text.endsWith(']')) {
     return text;
@@ -229,6 +260,10 @@ function humanizeBracketPreview(text: string): string {
   const inner = text.substring(1, text.length - 1);
   if (inner === 'Unsupported') {
     return fallbackMessageTextForType('unsupported');
+  }
+  const media = mediaBracketPreview(inner);
+  if (media.length > 0) {
+    return media;
   }
   const asServiceType = 'message' + inner;
   const preview = serviceMessagePreview(asServiceType);
