@@ -1,3 +1,4 @@
+import { hilog } from '@kit.PerformanceAnalysisKit';
 // TgChatTopBar — iOS-style capsule chat navigation bar
 // Layout: [← Back ○]  [Title capsule (content-width)]  [Avatar ○]
 // Title capsule stays centered between side controls.
@@ -138,6 +139,7 @@ export struct TgChatTopBar {
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
     .clickEffect({ level: ClickEffectLevel.LIGHT })
     .onClick(() => {
+      hilog.info(0x0021, 'TgChatTopBar', 'title tapped');
       this.onTitlePress();
     })
   }
@@ -206,6 +208,7 @@ export struct TgChatTopBar {
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
     .clickEffect({ level: ClickEffectLevel.LIGHT })
     .onClick(() => {
+      hilog.info(0x0021, 'TgChatTopBar', 'avatar tapped');
       this.onAvatarPress();
     })
   }

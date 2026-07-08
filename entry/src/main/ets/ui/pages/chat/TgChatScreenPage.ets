@@ -2116,7 +2116,7 @@ export struct TgChatScreenPage {
   }
 
   private openProfile(): void {
-    if (this.activeChatId <= 0) return;
+    if (this.activeChatId === 0) return; // groups/channels have negative ids
     hilog.info(DOMAIN, TAG, 'openProfile chatId=%{public}d', this.activeChatId);
     const navStack: NavPathStack | undefined = this.bindNavigationStack();
     if (navStack === undefined) {
@@ -2704,7 +2704,8 @@ export struct TgChatScreenPage {
             this.closeSearch();
           }
         })
-        .hitTestBehavior(HitTestMode.Transparent)
+        // Default hit-test: Transparent let the list underneath steal taps —
+        // title/avatar onClick never fired, profile would not open
 
         // ── Composer overlay (glass, floats over content at bottom) ──
         Column() {
