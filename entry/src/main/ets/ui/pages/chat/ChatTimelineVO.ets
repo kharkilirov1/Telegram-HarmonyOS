@@ -246,6 +246,9 @@ export class ChatTimelineEntryVO {
   unreadText: string = '';
   serviceText: string = '';
   message: ChatMessageRowVO = new ChatMessageRowVO();
+  // Search-hit flash: rows are plain VOs, so a repaint needs flag + key bump +
+  // notifyDataChange; the flag resets when the builder recreates the entry
+  searchFlash: boolean = false;
 }
 
 function localizedString(resourceId: number, fallback: string): string {

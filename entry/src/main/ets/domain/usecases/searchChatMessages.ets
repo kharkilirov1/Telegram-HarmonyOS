@@ -8,7 +8,7 @@ import { ChatId, MessageId } from '../../core/model/EntityId';
 import { createSearchChatMessagesCommand, createDownloadFileCommand } from '../../core/model/AppCommand';
 import { AppError, AppErrorKind } from '../../core/model/AppError';
 import { TdObject } from '../../models/TdTypes';
-import { tdGetNumber, tdGetString } from '../../core/utils/tdAccessors';
+import { tdGetNumber } from '../../core/utils/tdAccessors';
 
 const TAG = 'SearchChatMessages';
 const DOMAIN = 0x0013;
@@ -171,13 +171,14 @@ export class SearchChatMessagesUseCase {
       const messages = response.getArray('messages');
       for (let i = 0; i < messages.length; i++) {
         const msg = messages[i] as TdObject;
-        const id = tdGetString(msg, 'id');
+        // message.id is an int64 number — tdGetString returns '' for it
+        const id = msg.getInt64String('id');
         if (id.length > 0 && id !== '0') {
           ids.push(id);
         }
       }
-    } catch (_e) {
-      // Response format may vary — return what we have
+    } catch (e) {
+      hilog.warn(DOMAIN, TAG, 'extract failed: %{public}s', String(e));
     }
     return ids;
   }

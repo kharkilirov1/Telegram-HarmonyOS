@@ -174,6 +174,11 @@ export struct TgChatScreenPage {
   // Search mode state
   @Local private isSearchMode: boolean = false;
   @Local private searchQuery: string = '';
+  @Local private searchResultPos: number = 0;
+  @Local private searchResultTotal: number = 0;
+  @Local private searchResultLoaded: number = 0;
+  private searchFlashTimerId: number = -1;
+  private searchFlashMessageId: string = '';
   private isLoadingOlder: boolean = false;
   private isLoadingNewer: boolean = false;
   private isMarkingChatRead: boolean = false;
@@ -397,16 +402,65 @@ export struct TgChatScreenPage {
     this.isSearchMode = value;
   }
 
+  onSearchResultsUpdated(position: number, total: number, loadedCount: number): void {
+    this.searchResultPos = position;
+    this.searchResultTotal = total;
+    this.searchResultLoaded = loadedCount;
+  }
+
   scrollToMessageId(messageId: string): boolean {
     const count = this.dataSource.totalCount();
     for (let i = 0; i < count; i++) {
       const entry: ChatTimelineEntryVO = this.dataSource.getData(i);
       if (entry.kind === 'message' && entry.message.messageId === messageId) {
         this.listScroller.scrollToIndex(i);
+        this.flashSearchHit(messageId, i);
         return true;
       }
     }
     return false;
+  }
+
+  // Flash the found bubble. Rows are plain VOs: only a key change rebuilds a
+  // LazyForEach item, so flag + key bump + notify, then revert after a pause.
+  private flashSearchHit(messageId: string, index: number): void {
+    this.clearSearchFlash();
+    const entry: ChatTimelineEntryVO = this.dataSource.getData(index);
+    entry.searchFlash = true;
+    entry.key = entry.key + '_hl';
+    this.dataSource.notifyItemChangedByMessageId(messageId);
+    this.searchFlashMessageId = messageId;
+    this.searchFlashTimerId = setTimeout(() => {
+      this.searchFlashTimerId = -1;
+      this.clearSearchFlash();
+    }, 1600) as number;
+  }
+
+  private clearSearchFlash(): void {
+    if (this.searchFlashTimerId !== -1) {
+      clearTimeout(this.searchFlashTimerId);
+      this.searchFlashTimerId = -1;
+    }
+    const messageId = this.searchFlashMessageId;
+    if (messageId.length === 0) {
+      return;
+    }
+    this.searchFlashMessageId = '';
+    const count = this.dataSource.totalCount();
+    for (let i = 0; i < count; i++) {
+      const entry: ChatTimelineEntryVO = this.dataSource.getData(i);
+      if (entry.kind === 'message' && entry.message.messageId === messageId) {
+        // A timeline diff may have rebuilt the entry without the flag already
+        if (entry.searchFlash) {
+          entry.searchFlash = false;
+          if (entry.key.endsWith('_hl')) {
+            entry.key = entry.key.substring(0, entry.key.length - 3);
+          }
+          this.dataSource.notifyItemChangedByMessageId(messageId);
+        }
+        return;
+      }
+    }
   }
 
   private onActiveChatChanged(): void {
@@ -438,6 +492,9 @@ export struct TgChatScreenPage {
       this.showComposerEmojiPanel = false;
       this.showComposerStickerPanel = false;
       this.clearPendingAttachment();
+      if (this.isSearchMode) {
+        this.closeSearch();
+      }
 
       this.clearPendingMediaDownloads();
       if (this.paginationRecheckTimerId >= 0) {
@@ -2112,7 +2169,54 @@ export struct TgChatScreenPage {
   }
 
   private closeSearch(): void {
+    this.clearSearchFlash();
     this.searchCtrl.closeSearch(this);
+  }
+
+  // Search-mode replacement for the composer: up/down result navigation plus
+  // a "position / total" counter (iOS pattern)
+  @Builder
+  private buildSearchNavBar() {
+    Column() {
+      Divider()
+        .strokeWidth(0.5)
+        .color(TgUiTokens.COLOR_SEPARATOR)
+      Row() {
+        Image($r('app.media.ic_arrow_up'))
+          .width(24)
+          .height(24)
+          .fillColor(this.searchResultPos < this.searchResultLoaded
+            ? TgUiTokens.COMPOSER_ACTION_ACTIVE : TgUiTokens.COMPOSER_ACTION_INACTIVE)
+          .onClick(() => {
+            this.searchCtrl.goToOlderResult(this);
+          })
+        Image($r('app.media.ic_arrow_down'))
+          .width(24)
+          .height(24)
+          .margin({ left: TgUiTokens.SPACE_16 })
+          .fillColor(this.searchResultPos > 1
+            ? TgUiTokens.COMPOSER_ACTION_ACTIVE : TgUiTokens.COMPOSER_ACTION_INACTIVE)
+          .onClick(() => {
+            this.searchCtrl.goToNewerResult(this);
+          })
+        Blank()
+        if (this.searchResultTotal > 0) {
+          Text(this.searchResultPos.toString() + ' / ' + this.searchResultTotal.toString())
+            .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+            .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+        } else if (this.searchQuery.trim().length > 0) {
+          Text(localized($r('app.string.search_no_results').id, 'No results'))
+            .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+            .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+        }
+      }
+      .width('100%')
+      .height(TgUiTokens.SEARCH_NAV_BAR_HEIGHT)
+      .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16 })
+    }
+    .width('100%')
+    .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
+    .padding({ bottom: this.bottomOverlayInset })
   }
 
   private openProfile(): void {
@@ -2606,6 +2710,7 @@ export struct TgChatScreenPage {
                       this.buildTimelineEntry(entry)
                     }
                     .width('100%')
+                    .backgroundColor(entry.searchFlash ? TgUiTokens.SEARCH_HIT_FLASH : Color.Transparent)
                     // NO .reuseId here: V1 reuse on a @ComponentV2 row silently skips
                     // @Param re-init — notifyDataChange re-rendered a STALE bubble
                     // (download button survived a completed download; Monitor probe
@@ -2715,85 +2820,89 @@ export struct TgChatScreenPage {
             Blank()
               .hitTestBehavior(HitTestMode.None)
             Column() {
-              if (this.showComposerEmojiPanel) {
-                TgComposerEmojiPanel({
-                  title: localized($r('app.string.sticker_packs_recent').id, 'Recent'),
-                  stickersTitle: localized($r('app.string.stickers_tab').id, 'Stickers'),
-                  onEmojiSelected: (emoji: string): void => {
-                    this.handleComposerEmojiSelected(emoji);
+              if (this.isSearchMode) {
+                this.buildSearchNavBar()
+              } else {
+                if (this.showComposerEmojiPanel) {
+                  TgComposerEmojiPanel({
+                    title: localized($r('app.string.sticker_packs_recent').id, 'Recent'),
+                    stickersTitle: localized($r('app.string.stickers_tab').id, 'Stickers'),
+                    onEmojiSelected: (emoji: string): void => {
+                      this.handleComposerEmojiSelected(emoji);
+                    },
+                    onStickerPress: (): void => {
+                      this.handleComposerStickerPress();
+                    }
+                  })
+                } else if (this.showComposerStickerPanel) {
+                  TgComposerStickerPanel({
+                    title: localized($r('app.string.stickers_tab').id, 'Stickers'),
+                    emojiTitle: localized($r('app.string.emoji_tab').id, 'Emoji'),
+                    items: this.stickerPanelItems,
+                    tabs: this.stickerSetTabs,
+                    activeTabId: this.activeStickerTabId,
+                    isLoading: this.stickerPanelLoading,
+                    onStickerSelected: (item: StickerCellVO): void => {
+                      this.handleStickerSelected(item);
+                    },
+                    onTabSelected: (tabId: string): void => {
+                      this.handleStickerTabSelected(tabId);
+                    },
+                    onEmojiPress: (): void => {
+                      this.setEmojiPanelVisible(true);
+                    }
+                  })
+                }
+
+                TgComposerInput({
+                  text: this.composerDraftText,
+                  placeholder: localized($r('app.string.message_placeholder').id, 'Message'),
+                  isDisabled: this.activeChatId === 0,
+                  bottomInset: this.bottomOverlayInset,
+                  showReplySnippet: this.replyToMessageId !== '0',
+                  replyAuthor: this.replyToAuthor,
+                  replyPreview: this.replyToPreview,
+                  replyIsOutgoing: false,
+                  replyIsQuote: this.replyToIsQuote,
+                  replyHasThumbnail: false,
+                  showEditSnippet: this.isEditingMessage,
+                  editPreview: this.editingOriginalText,
+                  showForwardSnippet: this.isForwardingMessages,
+                  forwardTitle: this.forwardTitle,
+                  forwardPreview: this.forwardPreview,
+                  showAttachmentSnippet: this.pendingAttachmentUris.length > 0,
+                  attachmentKind: this.pendingAttachmentKind,
+                  attachmentTitle: this.pendingAttachmentTitle,
+                  attachmentPreview: this.pendingAttachmentPreview,
+                  onTextChange: (value: string): void => {
+                    this.composerDraftText = value;
                   },
-                  onStickerPress: (): void => {
-                    this.handleComposerStickerPress();
-                  }
-                })
-              } else if (this.showComposerStickerPanel) {
-                TgComposerStickerPanel({
-                  title: localized($r('app.string.stickers_tab').id, 'Stickers'),
-                  emojiTitle: localized($r('app.string.emoji_tab').id, 'Emoji'),
-                  items: this.stickerPanelItems,
-                  tabs: this.stickerSetTabs,
-                  activeTabId: this.activeStickerTabId,
-                  isLoading: this.stickerPanelLoading,
-                  onStickerSelected: (item: StickerCellVO): void => {
-                    this.handleStickerSelected(item);
+                  onSendPress: (text: string): void => {
+                    this.handleSendMessage(text);
                   },
-                  onTabSelected: (tabId: string): void => {
-                    this.handleStickerTabSelected(tabId);
+                  onAttachPress: (): void => {
+                    this.handleComposerAttachPress();
                   },
                   onEmojiPress: (): void => {
-                    this.setEmojiPanelVisible(true);
+                    this.handleComposerEmojiPress();
+                  },
+                  onVoicePress: (): void => {
+                    this.handleComposerVoicePress();
+                  },
+                  onReplyCancelPress: (): void => {
+                    this.cancelReply();
+                  },
+                  onEditCancelPress: (): void => {
+                    this.cancelEditMessage();
+                  },
+                  onForwardCancelPress: (): void => {
+                    this.cancelForwardMessages();
+                  },
+                  onAttachmentCancelPress: (): void => {
+                    this.clearPendingAttachment();
                   }
                 })
               }
-
-              TgComposerInput({
-                text: this.composerDraftText,
-                placeholder: localized($r('app.string.message_placeholder').id, 'Message'),
-                isDisabled: this.activeChatId === 0,
-                bottomInset: this.bottomOverlayInset,
-                showReplySnippet: this.replyToMessageId !== '0',
-                replyAuthor: this.replyToAuthor,
-                replyPreview: this.replyToPreview,
-                replyIsOutgoing: false,
-                replyIsQuote: this.replyToIsQuote,
-                replyHasThumbnail: false,
-                showEditSnippet: this.isEditingMessage,
-                editPreview: this.editingOriginalText,
-                showForwardSnippet: this.isForwardingMessages,
-                forwardTitle: this.forwardTitle,
-                forwardPreview: this.forwardPreview,
-                showAttachmentSnippet: this.pendingAttachmentUris.length > 0,
-                attachmentKind: this.pendingAttachmentKind,
-                attachmentTitle: this.pendingAttachmentTitle,
-                attachmentPreview: this.pendingAttachmentPreview,
-                onTextChange: (value: string): void => {
-                  this.composerDraftText = value;
-                },
-                onSendPress: (text: string): void => {
-                  this.handleSendMessage(text);
-                },
-                onAttachPress: (): void => {
-                  this.handleComposerAttachPress();
-                },
-                onEmojiPress: (): void => {
-                  this.handleComposerEmojiPress();
-                },
-                onVoicePress: (): void => {
-                  this.handleComposerVoicePress();
-                },
-                onReplyCancelPress: (): void => {
-                  this.cancelReply();
-                },
-                onEditCancelPress: (): void => {
-                  this.cancelEditMessage();
-                },
-                onForwardCancelPress: (): void => {
-                  this.cancelForwardMessages();
-                },
-                onAttachmentCancelPress: (): void => {
-                  this.clearPendingAttachment();
-                }
-              })
           }
           .onAreaChange((_oldArea: Area, newArea: Area) => {
             const h = newArea.height as number;
