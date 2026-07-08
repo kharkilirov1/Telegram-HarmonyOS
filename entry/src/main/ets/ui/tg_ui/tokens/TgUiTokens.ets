@@ -694,6 +694,10 @@ export class TgUiTokens {
   static readonly SEARCH_NAV_BAR_HEIGHT: number = 44;
   static readonly SEARCH_HIT_FLASH: string = 'rgba(0, 122, 255, 0.15)';
 
+  // ── Tab bar, flat full-width (iOS pattern) ──
+  static readonly TAB_BAR_FLAT_HEIGHT: number = 48;
+  static readonly TAB_BAR_FLAT_BG: Resource = $r('app.color.tab_bar_flat_bg');
+
   // ── Tab bar capsule (iOS-aligned) ──
   static readonly TAB_BAR_ISLAND_HEIGHT: number = 57;
   static readonly TAB_BAR_ISLAND_RADIUS: number = 999;

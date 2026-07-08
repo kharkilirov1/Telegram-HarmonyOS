@@ -179,7 +179,17 @@ export struct ContactsPage {
     if (user.username.length > 0) {
       return '@' + user.username;
     }
-    return 'Unknown';
+    if (user.phoneNumber.length > 0) {
+      return '+' + user.phoneNumber;
+    }
+    return localized($r('app.string.deleted_account').id, 'Deleted Account');
+  }
+
+  // No name, no username, no phone — a deleted account; Telegram hides these
+  private isDeletedAccount(user: User): boolean {
+    return (user.firstName + user.lastName).trim().length === 0 &&
+      user.username.length === 0 &&
+      user.phoneNumber.length === 0;
   }
 
   private rebuildContacts(state: AppState): void {
@@ -189,6 +199,9 @@ export struct ContactsPage {
         continue;
       }
       if (user.id === state.auth.userId) {
+        continue;
+      }
+      if (this.isDeletedAccount(user)) {
         continue;
       }
       const vo = new ContactVO();

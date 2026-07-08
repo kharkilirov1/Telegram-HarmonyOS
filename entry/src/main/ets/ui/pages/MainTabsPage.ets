@@ -12,25 +12,25 @@ import { StorageKeys } from '../../app/bridge/AppStoreBridge';
 import { navigationUIState, chatsUIState } from '../../core/model/UIStateModels';
 import { TgUiTokens } from '../tg_ui/tokens/TgUiTokens';
 import {
-  hdsMaterial,
   HdsNavigation,
   HdsNavigationAttribute,
   HdsTabs,
   HdsTabsAttribute,
   HdsTabsController
 } from '@kit.UIDesignKit';
-import { SymbolGlyphModifier } from '@kit.ArkUI';
+import { SymbolGlyphModifier, window } from '@kit.ArkUI';
+import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN = 0x0020;
 const TAG = 'MainTabsPage';
-const ROOT_TAB_BAR_VISIBLE_HEIGHT = 48;
-const ROOT_TAB_BAR_VISIBLE_BOTTOM_MARGIN = 28;
-const ROOT_TAB_BAR_VISIBLE_MASK_HEIGHT = 73;
+
+declare function px2vp(value: number): number;
 
 @ComponentV2
 export struct MainTabsPage {
   @Local selectedIndex: number = 2;
+  @Local private bottomInset: number = 0;
   private navState = navigationUIState;
   private chatsState = chatsUIState;
 
@@ -44,20 +44,9 @@ export struct MainTabsPage {
     return this.selectedIndex === 2 && this.navState.chatScreenVisible;
   }
 
+  // Flat iOS-style bar: 48vp of content + the system inset the bar covers
   private rootTabBarHeight(): number {
-    return this.isChatDetailVisible() ? 0 : ROOT_TAB_BAR_VISIBLE_HEIGHT;
-  }
-
-  private rootTabBarOpacity(): number {
-    return this.isChatDetailVisible() ? 0 : 1;
-  }
-
-  private rootTabBarBottomMargin(): number {
-    return this.isChatDetailVisible() ? 0 : ROOT_TAB_BAR_VISIBLE_BOTTOM_MARGIN;
-  }
-
-  private rootTabBarMaskHeight(): number {
-    return this.isChatDetailVisible() ? 0 : ROOT_TAB_BAR_VISIBLE_MASK_HEIGHT;
+    return this.isChatDetailVisible() ? 0 : TgUiTokens.TAB_BAR_FLAT_HEIGHT + this.bottomInset;
   }
 
   aboutToAppear(): void {
@@ -66,6 +55,20 @@ export struct MainTabsPage {
     AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
     this.navState.chatScreenVisible = false;
     this.controller.changeIndex(this.selectedIndex);
+    try {
+      const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      const mainWindow = context.windowStage.getMainWindowSync();
+      const systemArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+      let inset = px2vp(systemArea.bottomRect.height);
+      try {
+        const navArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
+        inset = Math.max(inset, px2vp(navArea.bottomRect.height));
+      } catch (_e) {
+      }
+      this.bottomInset = inset;
+    } catch (_e) {
+      this.bottomInset = 0;
+    }
     hilog.info(DOMAIN, TAG, 'MainTabsPage appeared with tab index: %{public}d', this.selectedIndex);
   }
 
@@ -102,7 +105,9 @@ export struct MainTabsPage {
   buildChatsTabBar() {
     Column() {
       Stack() {
-        SymbolGlyph($r('sys.symbol.house_fill'))
+        SymbolGlyph(this.selectedIndex === 2
+          ? $r('sys.symbol.ellipsis_message_fill')
+          : $r('sys.symbol.ellipsis_message'))
           .fontSize(24)
           .fontColor([this.selectedIndex === 2
             ? $r('sys.color.ohos_id_color_activated')
@@ -132,6 +137,8 @@ export struct MainTabsPage {
     .justifyContent(FlexAlign.Center)
     .width('100%')
     .height('100%')
+    // The bar body covers the system inset — keep the icon in the 48vp zone
+    .padding({ bottom: this.bottomInset })
   }
 
   @Builder
@@ -166,7 +173,7 @@ export struct MainTabsPage {
             .fontColor([$r('sys.color.ohos_id_color_activated')])
         },
         'Contacts'
-      ))
+      ).padding({ bottom: this.bottomInset }))
 
       // Tab 1: Calls
       TabContent() {
@@ -187,7 +194,7 @@ export struct MainTabsPage {
             .fontColor([$r('sys.color.ohos_id_color_activated')])
         },
         'Calls'
-      ))
+      ).padding({ bottom: this.bottomInset }))
 
       // Tab 2: Chats
       TabContent() {
@@ -220,23 +227,16 @@ export struct MainTabsPage {
             .fontColor([$r('sys.color.ohos_id_color_activated')])
         },
         'Settings'
-      ))
+      ).padding({ bottom: this.bottomInset }))
     }
     .barOverlap(!this.isChatDetailVisible())
     .barPosition(BarPosition.End)
     .barHeight(this.rootTabBarHeight())
     .vertical(false)
-    .barFloatingStyle({
-      barBottomMargin: this.rootTabBarBottomMargin(),
-      gradientMask: {
-        maskHeight: this.rootTabBarMaskHeight()
-      },
-      barOpacity: this.rootTabBarOpacity(),
-      systemMaterialEffect: {
-        materialType: hdsMaterial.MaterialType.ADAPTIVE,
-        materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
-      }
-    })
+    // Flat full-width bar (iOS pattern) — the floating capsule island read as
+    // foreign next to Telegram references
+    .barBackgroundColor(TgUiTokens.TAB_BAR_FLAT_BG)
+    .barBackgroundBlurStyle(BlurStyle.COMPONENT_ULTRA_THICK)
     .animationDuration(0)
     .scrollable(false)
     .onChange((index: number) => {

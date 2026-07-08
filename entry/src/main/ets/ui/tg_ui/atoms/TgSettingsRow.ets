@@ -15,6 +15,9 @@ export enum TgSettingsTrailing {
 export struct TgSettingsRow {
   @Param title: string = '';
   @Param iconRes: Resource = TgUiTokens.ICON_RES_SETTINGS;
+  // System symbol takes priority over iconRes — the local SVG pool lacks
+  // dedicated glyphs (bell, lock, bookmark...) the iOS reference uses
+  @Param symbolRes: Resource | undefined = undefined;
   @Param iconBgColor: ResourceColor = TgUiTokens.SETTINGS_ICON_COLOR_BLUE;
   @Param trailingType: TgSettingsTrailing = TgSettingsTrailing.Arrow;
   @Param trailingText: string = '';
@@ -27,11 +30,17 @@ export struct TgSettingsRow {
   @Builder
   private buildIconBox() {
     Row() {
-      TgIcon({
-        src: this.iconRes,
-        iconSize: TgUiTokens.SETTINGS_ROW_ICON_SIZE,
-        tintColor: TgUiTokens.SETTINGS_ROW_ICON_TINT
-      })
+      if (this.symbolRes !== undefined) {
+        SymbolGlyph(this.symbolRes)
+          .fontSize(TgUiTokens.SETTINGS_ROW_ICON_SIZE)
+          .fontColor([TgUiTokens.SETTINGS_ROW_ICON_TINT])
+      } else {
+        TgIcon({
+          src: this.iconRes,
+          iconSize: TgUiTokens.SETTINGS_ROW_ICON_SIZE,
+          tintColor: TgUiTokens.SETTINGS_ROW_ICON_TINT
+        })
+      }
     }
     .width(TgUiTokens.SETTINGS_ROW_ICON_BOX_SIZE)
     .height(TgUiTokens.SETTINGS_ROW_ICON_BOX_SIZE)

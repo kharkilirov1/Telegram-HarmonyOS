@@ -2471,6 +2471,10 @@
     {
       "name": "retry",
       "value": "Повторить"
+    },
+    {
+      "name": "deleted_account",
+      "value": "Удалённый аккаунт"
     }
   ]
 }

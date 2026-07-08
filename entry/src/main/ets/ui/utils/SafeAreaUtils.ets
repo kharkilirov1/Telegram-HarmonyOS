@@ -59,9 +59,8 @@ export function computeTabBottomInset(context: common.UIAbilityContext): number 
         bottomInset = Math.max(bottomInset, px2vp(navAvoidArea.bottomRect.height));
       } catch (_error) {
       }
-      return TgUiTokens.TAB_BAR_ISLAND_HEIGHT
-        + Math.max(bottomInset, TgUiTokens.TAB_BAR_ISLAND_BOTTOM_MARGIN)
-        + TgUiTokens.SPACE_6;
+      // Flat full-width bar: 48vp of content sitting on top of the system inset
+      return TgUiTokens.TAB_BAR_FLAT_HEIGHT + bottomInset + TgUiTokens.SPACE_6;
     }
   } catch (_error) {
   }

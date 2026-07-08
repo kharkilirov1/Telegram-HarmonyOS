@@ -2471,6 +2471,10 @@
     {
       "name": "retry",
       "value": "重试"
+    },
+    {
+      "name": "deleted_account",
+      "value": "已注销账户"
     }
   ]
 }

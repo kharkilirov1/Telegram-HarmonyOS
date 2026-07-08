@@ -2531,6 +2531,10 @@
     {
       "name": "group_label",
       "value": "group"
+    },
+    {
+      "name": "deleted_account",
+      "value": "Deleted Account"
     }
   ]
 }

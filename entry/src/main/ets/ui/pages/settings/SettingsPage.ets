@@ -185,7 +185,7 @@ export struct SettingsPage {
           Column() {
             TgSettingsRow({
               title: localized($r('app.string.saved_messages').id, 'Saved Messages'),
-              iconRes: TgUiTokens.ICON_RES_CHAT,
+              symbolRes: $r('sys.symbol.bookmark_fill'),
               iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_BLUE,
               trailingType: TgSettingsTrailing.Arrow,
               showSeparator: true
@@ -212,21 +212,21 @@ export struct SettingsPage {
           Column() {
             TgSettingsRow({
               title: localized($r('app.string.settings_notifications_sounds').id, 'Notifications and Sounds'),
-              iconRes: TgUiTokens.ICON_RES_MIC,
+              symbolRes: $r('sys.symbol.bell_fill'),
               iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_RED,
               trailingType: TgSettingsTrailing.Arrow,
               showSeparator: true
             })
             TgSettingsRow({
               title: localized($r('app.string.settings_privacy_security').id, 'Privacy and Security'),
-              iconRes: TgUiTokens.ICON_RES_SETTINGS,
+              symbolRes: $r('sys.symbol.lock_fill'),
               iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_BLUE,
               trailingType: TgSettingsTrailing.Arrow,
               showSeparator: true
             })
             TgSettingsRow({
               title: localized($r('app.string.settings_data_storage').id, 'Data and Storage'),
-              iconRes: TgUiTokens.ICON_RES_DOCUMENT,
+              symbolRes: $r('sys.symbol.folder_fill'),
               iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_GREEN,
               trailingType: TgSettingsTrailing.Arrow,
               showSeparator: true
@@ -240,7 +240,7 @@ export struct SettingsPage {
             })
             TgSettingsRow({
               title: localized($r('app.string.settings_language').id, 'Language'),
-              iconRes: TgUiTokens.ICON_RES_SEARCH,
+              symbolRes: $r('sys.symbol.translate'),
               iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_PURPLE,
               trailingType: TgSettingsTrailing.Text,
               trailingText: 'English',

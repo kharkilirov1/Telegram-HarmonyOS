@@ -391,6 +391,10 @@
     {
       "name": "comp_background_tertiary",
       "value": "#2C2C2E"
+    },
+    {
+      "name": "tab_bar_flat_bg",
+      "value": "#E61D1D1D"
     }
   ]
 }
