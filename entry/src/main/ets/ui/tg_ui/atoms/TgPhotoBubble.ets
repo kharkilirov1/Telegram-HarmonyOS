@@ -1,5 +1,9 @@
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgIcon } from './TgIcon';
+
+const DOMAIN = 0x0021;
+const TAG = 'TgPhotoBubble';
 
 @ComponentV2
 export struct TgPhotoBubble {
@@ -266,6 +270,10 @@ export struct TgPhotoBubble {
     // Telegram-семантика: тап всегда открывает просмотр; если фото ещё не
     // скачано — параллельно стартует загрузка, галерея показывает прогресс
     // и подхватит файл живьём (gallery refresh по timeline-обновлениям).
+    // info, not debug: fires once per user tap (no storm risk) and must be
+    // visible without flipping the global log level (lesson 78/83)
+    hilog.info(DOMAIN, TAG, 'surface tap hasLocal=%{public}s downloading=%{public}s',
+      String(this.hasLocalPhoto), String(this.isDownloading));
     if (!this.hasLocalPhoto && !this.isDownloading) {
       this.onDownloadToggle();
     }

@@ -3,6 +3,7 @@
 // Sticker is a special case: no bubble bg, content + meta stacked.
 // iOS ref: avatarInset=38pt ALWAYS reserved for incoming group msgs (34 avatar + 4 gap).
 
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgPhotoBubble } from '../atoms/TgPhotoBubble';
 import { TgBubbleTail } from '../atoms/TgBubbleTail';
@@ -25,6 +26,9 @@ import { TgContactBubble } from '../atoms/TgContactBubble';
 import { TgLocationBubble } from '../atoms/TgLocationBubble';
 import { TgPollBubble, TgPollOptionVO } from '../atoms/TgPollBubble';
 import { TextEntity } from '../../../core/model/AppState';
+
+const DOMAIN = 0x0021;
+const TAG = 'TgMessageRouter';
 
 @ComponentV2
 export struct TgMessageRouter {
@@ -572,6 +576,9 @@ export struct TgMessageRouter {
         useRegularMaxDimensions: this.usesRegularBubbleLayout(),
         onPhotoTap: () => { this.onPhotoTap(); },
         onDownloadToggle: () => {
+          // one line per user tap — info so it is visible without global -b D
+          hilog.info(DOMAIN, TAG, 'photo toggle fileId=%{public}d hasLocal=%{public}s downloading=%{public}s',
+            this.photoFileId, String(this.hasLocalPhoto), String(this.isPhotoDownloading));
           if (this.isPhotoDownloading && this.photoFileId > 0) {
             this.onMediaDownloadCancel(this.photoFileId);
           } else if (!this.hasLocalPhoto && this.photoFileId > 0) {

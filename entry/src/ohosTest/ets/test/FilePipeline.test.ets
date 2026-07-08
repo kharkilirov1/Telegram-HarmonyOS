@@ -159,6 +159,37 @@ export default function filePipelineTest() {
         const updated = filesReducer(state, event);
         expect(updated === state).assertTrue();
       });
+
+      it('should write transfer when renumbered id matches message only via unique_id', 0, () => {
+        const state: AppState = createInitialAppState();
+
+        const message = new Message();
+        message.id = '901';
+        message.chatId = 100;
+        message.content.videoFileId = 1200; // stale id from message parse
+        message.content.videoUniqueId = 'UQ-video-1';
+        const chatMessages = new Map<string, Message>();
+        chatMessages.set(message.id, message);
+        state.messages.messages.set(100, chatMessages);
+
+        const event = new FileDownloadedEvent();
+        event.fileId = 1348; // TDLib renumbered the same remote file
+        event.uniqueId = 'UQ-video-1';
+        event.localPath = '/data/files/video.mp4';
+        event.isComplete = true;
+
+        const updated = filesReducer(state, event);
+        expect(updated === state).assertFalse();
+        const transfer = updated.files.transfers.get(1348);
+        expect(transfer !== undefined).assertTrue();
+        if (transfer !== undefined) {
+          expect(transfer.localPath).assertEqual('/data/files/video.mp4');
+          expect(transfer.isDownloadingCompleted).assertTrue();
+        }
+        // alias registered so resolveContentPath can bridge stale id → new id
+        const aliasIds = updated.files.aliases.get('UQ-video-1');
+        expect(aliasIds !== undefined && aliasIds!.includes(1348)).assertTrue();
+      });
     });
 
     describe('downloadFile command', () => {

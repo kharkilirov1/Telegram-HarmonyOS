@@ -2,9 +2,13 @@
 // Keeps a fileId -> transfer-state map for UI download indicators and,
 // when a file completes, scans users/chats/messages to apply the local path.
 
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppState, FileTransfer, Message, MessageContent, MessageQuoteEntity, ReducerAction } from '../model/AppState';
 import { FileDownloadedEvent, FileTransferUpdatedEvent } from '../model/AppEvent';
 import { cloneAppState, cloneChat, cloneStateForFiles, cloneUser } from '../utils/stateClone';
+
+const DOMAIN = 0x0004;
+const TAG = 'FilesReducer';
 
 function contentMatchesFileId(content: MessageContent, fileId: number): boolean {
   return content.photoFileId === fileId ||
@@ -17,6 +21,28 @@ function contentMatchesFileId(content: MessageContent, fileId: number): boolean 
     content.stickerFileId === fileId ||
     content.animationFileId === fileId ||
     content.videoNoteFileId === fileId;
+}
+
+// TDLib renumbers file ids between message parse and download completion, so a
+// completed download may relate to a message only through remote.unique_id
+// (P4-c). Without this the pre-scan below skips the transfers write for fast
+// downloads (they emit no interim transfer updates) and the open chat never
+// live-refreshes — the path only appears after reopening the chat.
+function contentMatchesUniqueId(content: MessageContent, uniqueId: string): boolean {
+  if (uniqueId.length === 0) {
+    return false;
+  }
+  return content.photoUniqueId === uniqueId ||
+    content.photoThumbUniqueId === uniqueId ||
+    content.videoUniqueId === uniqueId ||
+    content.videoThumbUniqueId === uniqueId ||
+    content.documentUniqueId === uniqueId ||
+    content.audioUniqueId === uniqueId ||
+    content.voiceUniqueId === uniqueId ||
+    content.stickerUniqueId === uniqueId ||
+    content.stickerThumbUniqueId === uniqueId ||
+    content.animationUniqueId === uniqueId ||
+    content.videoNoteUniqueId === uniqueId;
 }
 
 function applyFilePathToContent(content: MessageContent, fileId: number, localPath: string): MessageContent {
@@ -228,14 +254,16 @@ export function filesReducer(state: AppState, action: ReducerAction): AppState {
     });
   }
 
-  // Scan messages for matching fileId
+  // Scan messages for matching fileId (direct id or unique_id alias — TDLib
+  // may have renumbered the id since the message was parsed)
   let messageNeedsUpdate = false;
   if (!needsUpdate) {
     state.messages.messages.forEach((chatMessages) => {
       if (messageNeedsUpdate) return;
       chatMessages.forEach((message) => {
         if (messageNeedsUpdate) return;
-        if (contentMatchesFileId(message.content, fileId)) {
+        if (contentMatchesFileId(message.content, fileId) ||
+          contentMatchesUniqueId(message.content, event.uniqueId)) {
           messageNeedsUpdate = true;
         }
       });
@@ -247,7 +275,8 @@ export function filesReducer(state: AppState, action: ReducerAction): AppState {
       if (messageNeedsUpdate) return;
       chatMessages.forEach((message) => {
         if (messageNeedsUpdate) return;
-        if (contentMatchesFileId(message.content, fileId)) {
+        if (contentMatchesFileId(message.content, fileId) ||
+          contentMatchesUniqueId(message.content, event.uniqueId)) {
           messageNeedsUpdate = true;
         }
       });
@@ -256,6 +285,8 @@ export function filesReducer(state: AppState, action: ReducerAction): AppState {
 
   // ВНИМАНИЕ: не логировать здесь per-file на info — при медиа-штормах сотни
   // hilog-строк/с блокируют main thread внутри HiLogPrint (freeze 2026-07-03 13:29).
+  hilog.debug(DOMAIN, TAG, 'fileDownloaded id=%{public}d uid=%{public}s needsUpdate=%{public}s',
+    fileId, event.uniqueId, String(needsUpdate));
 
   if (!needsUpdate) {
     return state;
