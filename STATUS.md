@@ -34,6 +34,13 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - **Каталог наборов 3/3 (`3187c50`, тик 26)**: лента вкладок паков (getInstalledStickerSets; тумба пака или cover-emoji), тап → getStickerSet с per-set кэшем; превью докачиваются последовательно с прерыванием по смене вкладки. **Witness: вкладки живые, грид переключился на пак, 👍 из пака доставлен (17:13)**. Стикер-трек ЗАКРЫТ (3/3); остался полиш (превью [Sticker] в чат-листе, lazy-анимация в гриде)
 - Урок 78 усилен: «force stop successfully» может НЕ убить процесс — STIME сверять с `hdc shell date` обязательно (повторный force-stop добил)
 
+## Recent Changes (2026-07-08 вечер, тик 27 — ПЛАСТ медиа-вьюеры: тап-загрузка починена, live-нить открыта)
+
+- **Тап-загрузка медиа починена (`33cfbe2`)**: photoFileId/videoFileId не передавались в Router — кнопка молча выходила на fileId=0. Witness: видео-тап → downloadFile → файл скачан (hilog)
+- **filesReducer: pre-scan по unique_id** (+тест) — быстрые загрузки с renumbered id теперь пишут transfers
+- **6-й THREAD_BLOCK_6S (17:49) диагностирован и убит**: глобальный `hilog -b D` оживил накопленные debug-логи (per-entry timeline на каждый rebuild) → writev-шторм. Per-entry лог УДАЛЁН; правило: debug включать только точечным доменом (`hilog -b D -D 0xD0000XX`), диагностика тапов — info-однострочники
+- **[ОТКРЫТ]** Live-обновление бабла при открытом чате после скачивания не происходит (до перезахода). Следующая нить: rebuildTimeline/diff-notify трасса
+
 ## Recent Changes (2026-07-08 вечер, тики 20-21 — стикер-repro отработан, emoji-fallback)
 
 - **Диагноз «опросы не видятся»**: их в File физически нет (per-entry debug-лог стора) — Telegram запрещает polls в Saved Messages; ждём от пользователя чат с опросом. Тред: два старых unsupported — не опросы

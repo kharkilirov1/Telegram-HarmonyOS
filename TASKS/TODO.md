@@ -62,6 +62,13 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 
 ## ПЛАСТ-волна (мандат пользователя 2026-07-08: «бери пласты больше», цель — превью-качество)
 
+### Медиа-вьюеры (тик 27, `33cfbe2`)
+- [x] **Тап-загрузка video/photo из бабла — починена**: photoFileId/videoFileId НЕ передавались в TgMessageRouter (обработчик кнопки молча выходил на fileId=0). Witness: тап по кнопке видео в Москваче → `downloadFile` → файл скачан (hilog 17:27/17:38); фото/анимация в WARSHAL → запрос ушёл (18:01)
+- [x] **Pre-scan filesReducer расширен unique_id-матчем** (+юнит-тест renumbered-кейса): быстрые загрузки шлют один updateFile без промежуточных transfer-событий; при renumbered id скан пропускал запись transfers
+- [x] **7-й фриз-класс убит**: per-entry timeline debug-лог УДАЛЁН (при глобальном `hilog -b D` = writev-шторм = THREAD_BLOCK_6S №6 17:49). Диагностика тапов — точечные info-логи (одна строка на клик)
+- [ ] **[ОТКРЫТ] Live-обновление бабла после FileDownloadedEvent при открытом чате НЕ происходит** (кнопка висит до перезахода; после перезахода файл рендерится). Reducer-фикс в бинаре, но чистый repro «скачалось при открытом чате → строка обновилась» не добыт (повторные тапы гасятся контроллером «file ready»). Следующая нить: инструментировать rebuildTimeline/diff-notify (точечный домен), проверить цепочку transfers→shouldReact→rebuild→sameMessage→notifyItemChanged
+- [ ] Видеоплеер полноэкран/галерея по тапу до скачивания — прогнать после закрытия live-нити
+
 ### Стикер-трек
 - [x] **1/3 TGS-анимация (`f6aa764`)**: `TgTgsPlayer` (zlib GZip → lottie на Canvas, per-instance destroy); file://→POSIX нормализация (урок 82). Witness: три tgs в File анимируются (дельта кадров 1.2 с)
 - [x] **2/3 Панель recent + отправка (`b72f846`)**: пилюля Stickers → грид 4 колонки, статичные превью + фоновая докачка; тап → `inputMessageSticker`+`inputFileRemote`. Witness: стикер отправлен из панели, дошёл (галочки 17:03), анимируется в таймлайне

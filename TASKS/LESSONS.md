@@ -2,6 +2,11 @@
 
 Last updated: 2026-07-08
 
+## 83. Глобальный `hilog -b D` оживляет ВСЕ накопленные debug-логи — это тот же writev-шторм
+- 6-й THREAD_BLOCK_6S (17:49): стек снова HiLogPrint→writev. «Безопасные» debug-логи (per-entry timeline на каждый rebuild, per-file normalizer) молчат лишь пока уровень INFO; глобальное включение D на живом синке = шторм = watchdog-килл.
+- Правила: (1) per-entry/per-rebuild логов не существует ни на каком уровне — удалять после диагностики; (2) debug включать только точечным доменом `hilog -b D -D 0xD0000XX`; (3) одноразовая диагностика пользовательского клика — info-однострочник (1 тап = 1 строка), виден без смены уровня.
+- Смежное: параметры @Param, влияющие на обработчики (fileId!), обязаны передаваться во ВСЕ вызовы компонента — молчаливый дефолт 0 превращает обработчик в no-op без единого лога (photoFileId/videoFileId в Router не передавались с самого создания медиа-веток).
+
 ## 82. file:// URI и POSIX-путь — разные валюты: zlib/fs требуют путь, Image/AVPlayer едят URI
 - Симптом: `zlib.GZip.gzopen(file://com.telegram…/data/…)` → «No such file or access mode error», хотя Image по тому же значению рисует. Таймлайн-VO раздаёт `fileUri.getUriFromPath(path)` (URI с authority=bundle) — файловые API его не понимают.
 - Конверсии: путь→URI `fileUri.getUriFromPath(p)`; URI→путь `new fileUri.FileUri(uri).path` (или срез authority после `file://`). Перед любым fs/zlib-вызовом значения из VO нормализовать в путь.
