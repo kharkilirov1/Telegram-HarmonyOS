@@ -34,6 +34,11 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - **Каталог наборов 3/3 (`3187c50`, тик 26)**: лента вкладок паков (getInstalledStickerSets; тумба пака или cover-emoji), тап → getStickerSet с per-set кэшем; превью докачиваются последовательно с прерыванием по смене вкладки. **Witness: вкладки живые, грид переключился на пак, 👍 из пака доставлен (17:13)**. Стикер-трек ЗАКРЫТ (3/3); остался полиш (превью [Sticker] в чат-листе, lazy-анимация в гриде)
 - Урок 78 усилен: «force stop successfully» может НЕ убить процесс — STIME сверять с `hdc shell date` обязательно (повторный force-stop добил)
 
+## Recent Changes (2026-07-08 вечер, тик 28 — live-refresh: корень найден, канон-фикс key-штампа)
+
+- **Урок 84 (`f87a996`)**: LazyForEach пересобирает строку ТОЛЬКО при смене key — notifyDataChange со стабильным msg_id был no-op для V2-строк (Monitor-проба: @Param не обновлялись). Фикс: mediaRenderStamp в key (пути/downloading/прогресс-бакеты/альбом) + stableKey для diff-структуры; снят .reuseId (V1-механизм на V2-строке). Witness: «вечная кнопка» на скачанном видео исчезла; полный live-переход перепроверить на свежем посте
+- Попутно: applyFilePathToContent теряет uniqueId при клоне (в TODO); диагностические debug-логи охоты снять после live-witness
+
 ## Recent Changes (2026-07-08 вечер, тик 27 — ПЛАСТ медиа-вьюеры: тап-загрузка починена, live-нить открыта)
 
 - **Тап-загрузка медиа починена (`33cfbe2`)**: photoFileId/videoFileId не передавались в Router — кнопка молча выходила на fileId=0. Witness: видео-тап → downloadFile → файл скачан (hilog)

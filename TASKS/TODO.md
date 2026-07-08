@@ -66,7 +66,10 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 - [x] **Тап-загрузка video/photo из бабла — починена**: photoFileId/videoFileId НЕ передавались в TgMessageRouter (обработчик кнопки молча выходил на fileId=0). Witness: тап по кнопке видео в Москваче → `downloadFile` → файл скачан (hilog 17:27/17:38); фото/анимация в WARSHAL → запрос ушёл (18:01)
 - [x] **Pre-scan filesReducer расширен unique_id-матчем** (+юнит-тест renumbered-кейса): быстрые загрузки шлют один updateFile без промежуточных transfer-событий; при renumbered id скан пропускал запись transfers
 - [x] **7-й фриз-класс убит**: per-entry timeline debug-лог УДАЛЁН (при глобальном `hilog -b D` = writev-шторм = THREAD_BLOCK_6S №6 17:49). Диагностика тапов — точечные info-логи (одна строка на клик)
-- [ ] **[ОТКРЫТ] Live-обновление бабла после FileDownloadedEvent при открытом чате НЕ происходит** (кнопка висит до перезахода; после перезахода файл рендерится). Reducer-фикс в бинаре, но чистый repro «скачалось при открытом чате → строка обновилась» не добыт (повторные тапы гасятся контроллером «file ready»). Следующая нить: инструментировать rebuildTimeline/diff-notify (точечный домен), проверить цепочку transfers→shouldReact→rebuild→sameMessage→notifyItemChanged
+- [x] **Live-обновление: корень найден и закрыт по канону (`f87a996`)**: LazyForEach пересобирает строку ТОЛЬКО при смене key (урок 84); notifyDataChange со стабильным msg_id-ключом был no-op для V2-строк (Monitor-проба: свежий videoPath не доезжал). Фикс: mediaRenderStamp в key + stableKey для diff-детекторов + пересчёт key альбома; попутно снят `.reuseId()` (V1-механизм на V2-строке). Косвенный witness: «вечная кнопка» на скачанном НПЗ-видео исчезла при том же наборе данных; полный live-переход «кнопка→кадр на глазах» перепроверить на свежем нескачанном посте
+- [ ] Снять временные debug-диагностики охоты (video row / bubble created / Monitor-проба / rebuild fired / row changed) после финального live-witness
+- [ ] Проверить, что playback-обновления (voice/audio isPlaying через notifyItemChangedByMessageId) живы после key-штампа — их канал тот же notifyDataChange
+- [ ] applyFilePathToContent теряет uniqueId-поля при клоне (uid=0 в логе) — добить копирование 11 uniqueId-полей
 - [ ] Видеоплеер полноэкран/галерея по тапу до скачивания — прогнать после закрытия live-нити
 
 ### Стикер-трек
