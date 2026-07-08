@@ -1136,6 +1136,13 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
       result.entries.push(unreadEntry);
     }
 
+    hilog.debug(DOMAIN, TAG,
+      'entry id=%{public}s type=%{public}s pollQ=%{public}d opts=%{public}d stkPath=%{public}d stkW=%{public}d anim=%{public}s videoStk=%{public}s',
+      message.id, message.content.type, message.content.pollQuestion.length,
+      message.content.pollOptions.length, message.content.stickerPath.length,
+      message.content.stickerWidth, String(message.content.isAnimatedSticker),
+      String(message.content.isVideoSticker));
+
     if (prevTimestamp > 0 && message.timestamp - prevTimestamp >= SENDER_GROUP_MERGE_WINDOW_SEC) {
       prevSenderId = -1; // Time gap breaks the sender group (iOS 10-minute window)
     }
