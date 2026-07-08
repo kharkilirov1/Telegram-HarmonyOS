@@ -27,6 +27,13 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - Root shell: API23 `HdsTabs` + `HdsNavigation` (D14)
 - Chat-list unread badge is now a project-owned inline `TgChatMeta` capsule, not a standalone `TgUnreadBadge` atom
 
+## Recent Changes (2026-07-08 вечер, тики 20-21 — стикер-repro отработан, emoji-fallback)
+
+- **Диагноз «опросы не видятся»**: их в File физически нет (per-entry debug-лог стора) — Telegram запрещает polls в Saved Messages; ждём от пользователя чат с опросом. Тред: два старых unsupported — не опросы
+- **Стикеры (7 шт) дошли, файлы скачаны**: 4 webm → видео-ветка (surface не попадает в snapshot_display — на живом экране, вероятно, играют; спросить пользователя), 3 tgs → thumbnail-fallback без тумбы от TDLib
+- **Emoji-fallback (тик 21)**: tgs/нескачанные стикеры показывают КРУПНЫЙ emoji стикера (96fp) вместо серой иконки — stickerEmoji прокинут content→VO→page→router→TgStickerView. **Witness: 🍑😧🤤 в File вместо трёх «лун»** (`31511f8`)
+- Debug-лог таймлайна оставлен на debug-уровне (`f56f5f7`, включение: hilog -b DEBUG -D 0x0021)
+
 ## Recent Changes (2026-07-08 вечер, тик 17 — P4-c ext: unique_id на все медиа-слоты)
 
 - Канон remote.unique_id разнесён с фото на video(+thumb)/document/audio/voice/sticker(+thumb)/animation/videoNote: DTO-extract → 9 полей MessageContent → reducer map+clone → resolveContentPath во всех VO-вызовах; doc/audio/voice/sticker впервые получили канон-резолв (были прямые пути)
