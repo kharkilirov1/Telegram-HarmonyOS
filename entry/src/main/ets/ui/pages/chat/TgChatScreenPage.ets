@@ -334,6 +334,8 @@ export struct TgChatScreenPage {
     this.isEditingMessage = true;
     this.editingMessageId = messageId;
     this.editingOriginalText = originalText;
+    // Telegram semantics: the composer is prefilled with the current text
+    this.composerDraftText = originalText;
   }
 
   getEditingMessageId(): string {

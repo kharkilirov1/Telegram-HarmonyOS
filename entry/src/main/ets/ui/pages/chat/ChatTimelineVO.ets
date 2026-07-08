@@ -1032,7 +1032,10 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   const entry = new ChatTimelineEntryVO();
   entry.kind = 'message';
   entry.stableKey = 'msg_' + message.id;
-  entry.key = entry.stableKey + '_s' + mediaRenderStamp(row).toString();
+  // editDate in the key: an edited message must rebuild its row (lesson 84 —
+  // text alone is not in the media stamp, so the key would not change)
+  entry.key = entry.stableKey + '_s' + mediaRenderStamp(row).toString()
+    + '_e' + message.editDate.toString();
   entry.message = row;
   return entry;
 }
@@ -1121,7 +1124,8 @@ function buildPhotoAlbumEntry(albumMessages: Message[], chat: Chat, state: AppSt
 
   // Album media fields were filled after buildMessageEntry computed the key —
   // recompute so the render stamp reflects the album paths/progress
-  entry.key = entry.stableKey + '_s' + mediaRenderStamp(entry.message).toString();
+  entry.key = entry.stableKey + '_s' + mediaRenderStamp(entry.message).toString()
+    + '_e' + primaryMessage.editDate.toString();
 
   return entry;
 }
