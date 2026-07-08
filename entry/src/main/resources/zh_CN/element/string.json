@@ -197,6 +197,10 @@
       "value": "视频聊天已结束"
     },
     {
+      "name": "service_unsupported",
+      "value": "不支持的消息"
+    },
+    {
       "name": "pin",
       "value": "置顶"
     },

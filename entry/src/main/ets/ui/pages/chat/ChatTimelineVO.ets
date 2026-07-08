@@ -1132,11 +1132,17 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
       result.entries.push(unreadEntry);
     }
 
-    if (message.content.type === 'service') {
+    // TDLib itself reports messageUnsupported for content newer than our tdlib
+    // build — show it as a centered service line, not a bracketed bubble
+    const isUnsupported = message.content.type === 'unknown'
+      && message.content.text === '[messageUnsupported]';
+    if (message.content.type === 'service' || isUnsupported) {
       const serviceEntry = new ChatTimelineEntryVO();
       serviceEntry.kind = 'service';
       serviceEntry.key = 'svc_' + message.id;
-      serviceEntry.serviceText = buildServiceMessageText(message, state);
+      serviceEntry.serviceText = isUnsupported
+        ? localizedString($r('app.string.service_unsupported').id, 'Unsupported message')
+        : buildServiceMessageText(message, state);
       result.entries.push(serviceEntry);
       prevSenderId = -1; // Service line breaks the sender group (iOS pattern)
       index += groupCount;

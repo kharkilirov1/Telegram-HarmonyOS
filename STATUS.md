@@ -27,6 +27,13 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - Root shell: API23 `HdsTabs` + `HdsNavigation` (D14)
 - Chat-list unread badge is now a project-owned inline `TgChatMeta` capsule, not a standalone `TgUnreadBadge` atom
 
+## Recent Changes (2026-07-08 вечер, тик 12 — хвосты добраны + unsupported-капсула)
+
+- `TgBubbleTail` хелперами (`buildIncomingTail/buildOutgoingTail`) разнесён на contact/location/poll/doc/audio/voice-ветки Router (медиа/кружки/стикеры — без хвостов, iOS)
+- `[messageUnsupported]` (TDLib-тип новее нашего tdlib) → центрированная сервисная капсула «Неподдерживаемое сообщение» (×3 локали)
+- **Witness: хвост у последнего исходящего дока в группе; unsupported-капсулы в File** (скрин tick12)
+- Гейты: smoke-build/smoke-ui/ohosTest зелёные; закоммичено и запушено этим же тиком
+
 ## Recent Changes (2026-07-08 вечер, тик 11 — Play/Pause добит, войс-MVP зелёный)
 
 - Корень: `stateChange('playing')` AVPlayer терялся (урок 81) — прогресс тикал при isPlaying=false. Фикс: `timeUpdateHandler` синхронизирует `isPlaying` с фактическим `player.state`; `pause()` ставит false+emit явно

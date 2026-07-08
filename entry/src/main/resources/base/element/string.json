@@ -197,6 +197,10 @@
       "value": "Video chat ended"
     },
     {
+      "name": "service_unsupported",
+      "value": "Unsupported message"
+    },
+    {
       "name": "pin",
       "value": "Pin"
     },

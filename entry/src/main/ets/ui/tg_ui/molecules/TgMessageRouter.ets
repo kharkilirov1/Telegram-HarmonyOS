@@ -202,6 +202,22 @@ export struct TgMessageRouter {
     return this.groupingFlags === 'none' || this.groupingFlags === 'bottom';
   }
 
+  @Builder
+  buildIncomingTail() {
+    if (!this.isOutgoing && this.showBubbleTail()) {
+      TgBubbleTail({ isOutgoing: false })
+        .margin({ left: -TgUiTokens.BUBBLE_TAIL_WIDTH })
+    }
+  }
+
+  @Builder
+  buildOutgoingTail() {
+    if (this.isOutgoing && this.showBubbleTail()) {
+      TgBubbleTail({ isOutgoing: true })
+        .margin({ right: -TgUiTokens.BUBBLE_TAIL_WIDTH })
+    }
+  }
+
   private isTextLike(): boolean {
     const ct = this.contentType;
     return ct === 'text'
@@ -945,6 +961,7 @@ export struct TgMessageRouter {
       // ── Contact bubble ──
       Row() {
         this.buildAvatarSlot()
+        this.buildIncomingTail()
         Column() {
           if (this.showSenderName && this.senderName.length > 0) {
             Text(this.senderName)
@@ -975,6 +992,8 @@ export struct TgMessageRouter {
           .padding({ left: TgUiTokens.BUBBLE_PADDING_H, right: TgUiTokens.BUBBLE_PADDING_H, top: TgUiTokens.BUBBLE_PADDING_V, bottom: TgUiTokens.BUBBLE_PADDING_V })
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
+
+        this.buildOutgoingTail()
       }
       .width('100%')
       .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
@@ -984,6 +1003,7 @@ export struct TgMessageRouter {
       // ── Location / venue bubble ──
       Row() {
         this.buildAvatarSlot()
+        this.buildIncomingTail()
         Column() {
           if (this.showSenderName && this.senderName.length > 0) {
             Text(this.senderName)
@@ -1030,6 +1050,8 @@ export struct TgMessageRouter {
           .padding({ left: TgUiTokens.BUBBLE_PADDING_H, right: TgUiTokens.BUBBLE_PADDING_H, top: TgUiTokens.BUBBLE_PADDING_V, bottom: TgUiTokens.BUBBLE_PADDING_V })
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
+
+        this.buildOutgoingTail()
       }
       .width('100%')
       .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
@@ -1039,6 +1061,7 @@ export struct TgMessageRouter {
       // ── Poll bubble ──
       Row() {
         this.buildAvatarSlot()
+        this.buildIncomingTail()
         Column() {
           if (this.showSenderName && this.senderName.length > 0) {
             Text(this.senderName)
@@ -1071,6 +1094,8 @@ export struct TgMessageRouter {
           .padding({ left: TgUiTokens.BUBBLE_PADDING_H, right: TgUiTokens.BUBBLE_PADDING_H, top: TgUiTokens.BUBBLE_PADDING_V, bottom: TgUiTokens.BUBBLE_PADDING_V })
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
+
+        this.buildOutgoingTail()
       }
       .width('100%')
       .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
@@ -1151,6 +1176,7 @@ export struct TgMessageRouter {
       // ── Non-visual media bubble (document, audio, voice) ──
       Row() {
         this.buildAvatarSlot()
+        this.buildIncomingTail()
 
         Column() {
           if (this.showSenderName && this.senderName.length > 0) {
@@ -1242,6 +1268,8 @@ export struct TgMessageRouter {
         .constraintSize({ maxWidth: this.maxBubbleWidth() })
         .backgroundColor(this.bubbleColor())
         .borderRadius(this.bubbleRadius())
+
+        this.buildOutgoingTail()
       }
       .width('100%')
       .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
