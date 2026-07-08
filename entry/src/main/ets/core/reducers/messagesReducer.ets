@@ -57,6 +57,10 @@ function contentFromDto(dto: MessageContentDto): MessageContent {
     return clone;
   });
 
+  content.serviceType = dto.serviceType;
+  content.serviceUserIds = dto.serviceUserIds.slice();
+  content.serviceTitle = dto.serviceTitle;
+
   content.photoPath = dto.photoPath;
   content.photoThumbPath = dto.photoThumbPath;
   content.photoFileId = dto.photoFileId;
@@ -102,6 +106,7 @@ function contentFromDto(dto: MessageContentDto): MessageContent {
   content.isAnimatedSticker = dto.isAnimatedSticker;
   content.isVideoSticker = dto.isVideoSticker;
   content.isPremiumSticker = dto.isPremiumSticker;
+  content.stickerThumbnailPath = dto.stickerThumbnailPath;
 
   content.animationPath = dto.animationPath;
   content.animationFileId = dto.animationFileId;
@@ -193,6 +198,9 @@ function cloneMessage(msg: Message): Message {
     ce.url = e.url; ce.userId = e.userId; ce.language = e.language;
     return ce;
   });
+  clonedContent.serviceType = msg.content.serviceType;
+  clonedContent.serviceUserIds = msg.content.serviceUserIds.slice();
+  clonedContent.serviceTitle = msg.content.serviceTitle;
   clonedContent.photoPath = msg.content.photoPath;
   clonedContent.photoThumbPath = msg.content.photoThumbPath;
   clonedContent.photoFileId = msg.content.photoFileId;
@@ -233,6 +241,7 @@ function cloneMessage(msg: Message): Message {
   clonedContent.isAnimatedSticker = msg.content.isAnimatedSticker;
   clonedContent.isVideoSticker = msg.content.isVideoSticker;
   clonedContent.isPremiumSticker = msg.content.isPremiumSticker;
+  clonedContent.stickerThumbnailPath = msg.content.stickerThumbnailPath;
   clonedContent.animationPath = msg.content.animationPath;
   clonedContent.animationFileId = msg.content.animationFileId;
   clonedContent.animationDuration = msg.content.animationDuration;

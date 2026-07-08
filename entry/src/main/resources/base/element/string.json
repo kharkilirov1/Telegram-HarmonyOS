@@ -145,6 +145,58 @@
       "value": "Unread"
     },
     {
+      "name": "service_joined_group",
+      "value": "{name} joined the group"
+    },
+    {
+      "name": "service_added_members",
+      "value": "{name} added {target}"
+    },
+    {
+      "name": "service_joined_by_link",
+      "value": "{name} joined the group via invite link"
+    },
+    {
+      "name": "service_left_group",
+      "value": "{name} left the group"
+    },
+    {
+      "name": "service_removed_member",
+      "value": "{name} removed {target}"
+    },
+    {
+      "name": "service_title_changed",
+      "value": "Chat name changed to \"{title}\""
+    },
+    {
+      "name": "service_group_created",
+      "value": "Group \"{title}\" created"
+    },
+    {
+      "name": "service_photo_changed",
+      "value": "{name} changed the chat photo"
+    },
+    {
+      "name": "service_photo_deleted",
+      "value": "{name} removed the chat photo"
+    },
+    {
+      "name": "service_pinned_message",
+      "value": "{name} pinned a message"
+    },
+    {
+      "name": "service_contact_registered",
+      "value": "{name} joined Telegram"
+    },
+    {
+      "name": "service_video_chat_started",
+      "value": "Video chat started"
+    },
+    {
+      "name": "service_video_chat_ended",
+      "value": "Video chat ended"
+    },
+    {
       "name": "pin",
       "value": "Pin"
     },
@@ -723,6 +775,14 @@
     {
       "name": "call_connecting",
       "value": "Connecting..."
+    },
+    {
+      "name": "connection_updating",
+      "value": "Updating..."
+    },
+    {
+      "name": "connection_waiting_network",
+      "value": "Waiting for network..."
     },
     {
       "name": "call_ringing",

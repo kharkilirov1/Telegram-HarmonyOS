@@ -90,6 +90,7 @@ export struct TgChatScreenPage {
   @Local private title: string = 'Chat';
   @Local private chatSubtitle: string = '';
   @Local private chatSubtitleMode: TgChatTopBarSubtitleMode = TgChatTopBarSubtitleMode.Secondary;
+  @Local private chatSubtitleSpinner: boolean = false;
   @Local private chatAvatarInitials: string = '';
   @Local private chatAvatarColorIndex: number = 0;
   @Local private chatAvatarImageSrc: string = '';
@@ -688,6 +689,12 @@ export struct TgChatScreenPage {
     return this.activeChatTitle;
   }
 
+  // Single source of truth for the status-bar inset, derived from the reactively
+  // recomputed topBarTotalHeight and passed down into TgChatTopBar as @Param.
+  private chatTopInset(): number {
+    return Math.max(0, this.topBarTotalHeight - TgUiTokens.TOP_BAR_HEIGHT - TgUiTokens.TOP_BAR_BOTTOM_PADDING);
+  }
+
   private computeSafeInsets(): void {
     try {
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
@@ -714,6 +721,15 @@ export struct TgChatScreenPage {
           }
           this.updateTimelineContainerWidth(size.width);
           this.computeSafeInsets();
+        });
+        // Status-bar / safe-area height changes are not guaranteed by windowSizeChange.
+        boundWindow.on('avoidAreaChange', (data: window.AvoidAreaOptions) => {
+          if (lifecycleToken !== this.pageLifecycleToken || this.mainWindow !== boundWindow) {
+            return;
+          }
+          if (data.type === window.AvoidAreaType.TYPE_SYSTEM) {
+            this.computeSafeInsets();
+          }
         });
       }
     } catch (_error) {
@@ -755,6 +771,8 @@ export struct TgChatScreenPage {
         this.activeChatId !== chatId) {
         return;
       }
+      const prevVoiceId: string = this.activeVoiceMessageId;
+      const prevAudioId: string = this.activeAudioMessageId;
       if (snapshot.contentType === 'voice') {
         this.activeVoiceMessageId = snapshot.messageId;
         this.activeVoiceProgress = snapshot.progress;
@@ -776,6 +794,9 @@ export struct TgChatScreenPage {
           this.activeVoicePlaying = false;
         }
       }
+      // Playback state lives on the page — LazyForEach rows only repaint via
+      // an explicit notify (lesson 65), so poke every affected row.
+      this.notifyPlaybackRows(prevVoiceId, prevAudioId, snapshot.messageId);
     });
     controller.setOnCompleted((messageId: string, contentType: MediaContentType): void => {
       if (lifecycleToken !== this.pageLifecycleToken ||
@@ -784,6 +805,22 @@ export struct TgChatScreenPage {
         return;
       }
       this.handlePlaybackCompleted(messageId, contentType);
+    });
+  }
+
+  private notifyPlaybackRows(prevVoiceId: string, prevAudioId: string, currentId: string): void {
+    const ids = new Set<string>();
+    if (prevVoiceId !== '0') {
+      ids.add(prevVoiceId);
+    }
+    if (prevAudioId !== '0') {
+      ids.add(prevAudioId);
+    }
+    if (currentId !== '0') {
+      ids.add(currentId);
+    }
+    ids.forEach((id: string): void => {
+      this.dataSource.notifyItemChangedByMessageId(id);
     });
   }
 
@@ -914,11 +951,25 @@ export struct TgChatScreenPage {
     return subjectName.length > 0 ? `${subjectName} ${actionLabel}` : actionLabel;
   }
 
+  private formatConnectionSubtitle(status: string): string {
+    switch (status) {
+      case 'connecting':
+        return localized($r('app.string.call_connecting').id, 'Connecting...');
+      case 'updating':
+        return localized($r('app.string.connection_updating').id, 'Updating...');
+      case 'waitingForNetwork':
+        return localized($r('app.string.connection_waiting_network').id, 'Waiting for network...');
+      default:
+        return '';
+    }
+  }
+
   private updateChatTopBarData(state: AppState): void {
     const chat = state.chats.chats.get(this.activeChatId);
     if (chat === undefined) {
       this.chatSubtitle = '';
       this.chatSubtitleMode = TgChatTopBarSubtitleMode.Secondary;
+      this.chatSubtitleSpinner = false;
       this.chatAvatarInitials = '';
       this.chatAvatarColorIndex = 0;
       this.chatAvatarImageSrc = '';
@@ -975,6 +1026,15 @@ export struct TgChatScreenPage {
       }
       this.chatSubtitle = this.formatTypingSubtitle(typingInfo.actionType, actorName);
       this.chatSubtitleMode = TgChatTopBarSubtitleMode.Activity;
+    }
+
+    // Connection problems override status/activity (Telegram/ArkGram parity: highest priority)
+    if (state.connection.status !== 'ready') {
+      this.chatSubtitle = this.formatConnectionSubtitle(state.connection.status);
+      this.chatSubtitleMode = TgChatTopBarSubtitleMode.Activity;
+      this.chatSubtitleSpinner = true;
+    } else {
+      this.chatSubtitleSpinner = false;
     }
   }
 
@@ -2064,6 +2124,9 @@ export struct TgChatScreenPage {
     if (entry.kind === 'unread') {
       return 'chat_unread_marker';
     }
+    if (entry.kind === 'service') {
+      return 'chat_service_line';
+    }
     const contentKey = entry.message.contentType;
     const outKey = entry.message.isOutgoing ? 'out' : 'in';
     const replyKey = entry.message.showReplySnippet ? 'r1' : 'r0';
@@ -2145,6 +2208,7 @@ export struct TgChatScreenPage {
         isAudioPlaying: this.isActiveAudioEntry(entry) ? this.activeAudioPlaying : false,
         audioPlaybackProgress: this.isActiveAudioEntry(entry) ? this.activeAudioProgress : 0,
         stickerPath: entry.message.stickerPath,
+        stickerThumbnailPath: entry.message.stickerThumbnailPath,
         stickerWidth: entry.message.stickerWidth,
         stickerHeight: entry.message.stickerHeight,
         isAnimatedSticker: entry.message.isAnimatedSticker,
@@ -2246,6 +2310,13 @@ export struct TgChatScreenPage {
         containerWidth: this.timelineContainerWidth
       })
         .padding({ top: TgUiTokens.SPACE_6, bottom: TgUiTokens.SPACE_6 })
+    } else if (entry.kind === 'service') {
+      TgDateSeparator({
+        text: entry.serviceText,
+        containerWidth: this.timelineContainerWidth,
+        maxLines: 3
+      })
+        .padding({ top: TgUiTokens.SPACE_4, bottom: TgUiTokens.SPACE_4 })
     } else {
       this.buildMessageItem(entry)
     }
@@ -2345,9 +2416,11 @@ export struct TgChatScreenPage {
 
         // ── Top bar overlay (glass capsules, floats over content) ──
         TgChatTopBar({
+          topInset: this.chatTopInset(),
           title: this.title,
           subtitle: this.chatSubtitle,
           subtitleMode: this.chatSubtitleMode,
+          showSubtitleSpinner: this.chatSubtitleSpinner,
           avatarInitials: this.chatAvatarInitials,
           avatarColorIndex: this.chatAvatarColorIndex,
           avatarImageSrc: this.chatAvatarImageSrc,

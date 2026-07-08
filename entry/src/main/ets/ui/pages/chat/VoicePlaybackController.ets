@@ -62,6 +62,11 @@ export class MediaPlaybackController {
     } else {
       this.currentProgress = 0;
     }
+    // stateChange('playing') has been observed getting lost (progress ticking with
+    // isPlaying=false) — sync the flag from the player's actual state on every tick
+    if (this.player) {
+      this.isPlaying = this.player.state === 'playing';
+    }
     this.emit();
   };
 
@@ -143,6 +148,9 @@ export class MediaPlaybackController {
       try {
         await this.player.pause();
       } catch (_error) {}
+      // Don't rely on the stateChange('paused') event alone (see timeUpdateHandler)
+      this.isPlaying = false;
+      this.emit();
     }
   }
 

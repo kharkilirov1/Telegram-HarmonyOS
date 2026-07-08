@@ -9,7 +9,8 @@ import { ContactsPage } from './contacts/ContactsPage';
 import { CallsPage } from './calls/CallsPage';
 import { SettingsPage } from './settings/SettingsPage';
 import { StorageKeys } from '../../app/bridge/AppStoreBridge';
-import { navigationUIState } from '../../core/model/UIStateModels';
+import { navigationUIState, chatsUIState } from '../../core/model/UIStateModels';
+import { TgUiTokens } from '../tg_ui/tokens/TgUiTokens';
 import {
   hdsMaterial,
   HdsNavigation,
@@ -31,6 +32,7 @@ const ROOT_TAB_BAR_VISIBLE_MASK_HEIGHT = 73;
 export struct MainTabsPage {
   @Local selectedIndex: number = 2;
   private navState = navigationUIState;
+  private chatsState = chatsUIState;
 
   private contactsNavStack: NavPathStack = new NavPathStack();
   private callsNavStack: NavPathStack = new NavPathStack();
@@ -87,6 +89,49 @@ export struct MainTabsPage {
       navigationUIState.chatScreenVisible = false;
       AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
     }
+  }
+
+  private tabBadgeText(): string {
+    const count = this.chatsState.totalUnreadCount;
+    return count > 999 ? '999+' : count.toString();
+  }
+
+  // Custom tab bar for Chats: stock BottomTabBarStyle has no badge API,
+  // so icon+label metrics are reproduced manually with an unread capsule on top
+  @Builder
+  buildChatsTabBar() {
+    Column() {
+      Stack() {
+        SymbolGlyph($r('sys.symbol.house_fill'))
+          .fontSize(24)
+          .fontColor([this.selectedIndex === 2
+            ? $r('sys.color.ohos_id_color_activated')
+            : $r('sys.color.ohos_id_color_bottom_tab_icon_off')])
+        if (this.chatsState.totalUnreadCount > 0) {
+          Text(this.tabBadgeText())
+            .fontSize(TgUiTokens.TAB_BADGE_FONT_SIZE)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(TgUiTokens.TAB_BADGE_TEXT)
+            .backgroundColor(TgUiTokens.TAB_BADGE_BG)
+            .height(TgUiTokens.TAB_BADGE_HEIGHT)
+            .constraintSize({ minWidth: TgUiTokens.TAB_BADGE_MIN_WIDTH })
+            .padding({ left: TgUiTokens.TAB_BADGE_PADDING_H, right: TgUiTokens.TAB_BADGE_PADDING_H })
+            .borderRadius(TgUiTokens.TAB_BADGE_HEIGHT / 2)
+            .textAlign(TextAlign.Center)
+            .position({ x: 14, y: -6 })
+        }
+      }
+
+      Text('Chats')
+        .fontSize(10)
+        .fontColor(this.selectedIndex === 2
+          ? $r('sys.color.ohos_id_color_activated')
+          : $r('sys.color.ohos_id_color_bottom_tab_icon_off'))
+        .margin({ top: 2 })
+    }
+    .justifyContent(FlexAlign.Center)
+    .width('100%')
+    .height('100%')
   }
 
   @Builder
@@ -154,15 +199,7 @@ export struct MainTabsPage {
         .navDestination(this.chatPageMap)
         .mode(NavigationMode.Stack)
       }
-      .tabBar(new BottomTabBarStyle(
-        {
-          normal: new SymbolGlyphModifier($r('sys.symbol.house_fill'))
-            .fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
-          selected: new SymbolGlyphModifier($r('sys.symbol.house_fill'))
-            .fontColor([$r('sys.color.ohos_id_color_activated')])
-        },
-        'Chats'
-      ))
+      .tabBar(this.buildChatsTabBar())
 
       // Tab 3: Settings
       TabContent() {

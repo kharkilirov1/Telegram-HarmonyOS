@@ -17,6 +17,7 @@ import {
   DeleteMessagesCommand,
   ForwardMessagesCommand,
   SetChatMuteCommand,
+  ToggleChatPinnedCommand,
   PinChatMessageCommand,
   UnpinChatMessageCommand,
   DeleteChatHistoryCommand,
@@ -62,6 +63,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('editMessageText', serializeEditMessageText);
 COMMAND_SERIALIZATION_HANDLERS.set('deleteMessages', serializeDeleteMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('forwardMessages', serializeForwardMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('setChatMute', serializeSetChatMute);
+COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
 COMMAND_SERIALIZATION_HANDLERS.set('pinChatMessage', serializePinChatMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('unpinChatMessage', serializeUnpinChatMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('deleteChatHistory', serializeDeleteChatHistory);
@@ -200,6 +202,14 @@ function serializeSetChatMute(command: AnyAppCommand, result: SerializedCommand)
   result.params.setNumber('chat_id', cmd.payload.chatId);
   const settingsJson = `{"@type":"chatNotificationSettings","use_default_mute_for":false,"mute_for":${cmd.payload.muteForSeconds}}`;
   result.params.setString('_notification_settings_json', settingsJson);
+}
+
+function serializeToggleChatIsPinned(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as ToggleChatPinnedCommand;
+  result.method = 'toggleChatIsPinned';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setBool('is_pinned', cmd.payload.isPinned);
+  result.params.setString('_chat_list_json', '{"@type":"chatListMain"}');
 }
 
 function serializePinChatMessage(command: AnyAppCommand, result: SerializedCommand): void {

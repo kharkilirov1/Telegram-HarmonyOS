@@ -4,8 +4,8 @@
 // iOS ref: avatarInset=38pt ALWAYS reserved for incoming group msgs (34 avatar + 4 gap).
 
 import { TgUiTokens } from '../tokens/TgUiTokens';
-import { TgMessageBubbleBase } from '../atoms/TgMessageBubbleBase';
 import { TgPhotoBubble } from '../atoms/TgPhotoBubble';
+import { TgBubbleTail } from '../atoms/TgBubbleTail';
 import { TgGroupedPhotoBubble } from '../atoms/TgGroupedPhotoBubble';
 import { TgVideoBubble } from '../atoms/TgVideoBubble';
 import { TgInstantVideoBubble } from '../atoms/TgInstantVideoBubble';
@@ -133,6 +133,7 @@ export struct TgMessageRouter {
 
   // ── Sticker ──
   @Param stickerPath: string = '';
+  @Param stickerThumbnailPath: string = '';
   @Param stickerWidth: number = 0;
   @Param stickerHeight: number = 0;
   @Param isAnimatedSticker: boolean = false;
@@ -169,6 +170,14 @@ export struct TgMessageRouter {
   @Param avatarImageSrc: string = '';
   @Param avatarInitials: string = '';
   @Param avatarColorIndex: number = 0;
+  // TDLib may register the avatar path before the file finishes downloading —
+  // a failed Image load falls back to the initials circle instead of an empty slot
+  @Local avatarLoadFailed: boolean = false;
+
+  @Monitor('avatarImageSrc')
+  onAvatarImageSrcChanged(): void {
+    this.avatarLoadFailed = false;
+  }
 
   // ── Reply snippet ──
   @Param showReplySnippet: boolean = false;
@@ -186,6 +195,11 @@ export struct TgMessageRouter {
 
   private isSticker(): boolean {
     return this.contentType === 'sticker';
+  }
+
+  // iOS: tail only on the last bubble of a sender group ('bottom' or standalone 'none')
+  private showBubbleTail(): boolean {
+    return this.groupingFlags === 'none' || this.groupingFlags === 'bottom';
   }
 
   private isTextLike(): boolean {
@@ -492,13 +506,16 @@ export struct TgMessageRouter {
     if (this.needsAvatarLane()) {
       Column() {
         if (this.showAvatar) {
-          if (this.avatarImageSrc.length > 0) {
+          if (this.avatarImageSrc.length > 0 && !this.avatarLoadFailed) {
             Image(this.avatarImageSrc)
               .width(TgUiTokens.MSG_AVATAR_SIZE)
               .height(TgUiTokens.MSG_AVATAR_SIZE)
               .borderRadius(TgUiTokens.MSG_AVATAR_SIZE / 2)
               .objectFit(ImageFit.Cover)
               .clip(true)
+              .onError(() => {
+                this.avatarLoadFailed = true;
+              })
           } else {
             Text(this.effectiveAvatarInitials())
               .fontSize(TgUiTokens.MSG_AVATAR_FONT_SIZE)
@@ -767,6 +784,7 @@ export struct TgMessageRouter {
           Stack({ alignContent: Alignment.BottomEnd }) {
             TgStickerView({
               stickerPath: this.stickerPath,
+              stickerThumbnailPath: this.stickerThumbnailPath,
               isOutgoing: this.isOutgoing,
               isAnimatedSticker: this.isAnimatedSticker,
               isVideoSticker: this.isVideoSticker,
@@ -790,6 +808,11 @@ export struct TgMessageRouter {
       // ── Text bubble: engine-driven V3 with pre-computed layout ──
       Row() {
         this.buildAvatarSlot()
+
+        if (!this.isOutgoing && this.showBubbleTail()) {
+          TgBubbleTail({ isOutgoing: false })
+            .margin({ left: -TgUiTokens.BUBBLE_TAIL_WIDTH })
+        }
 
         TgTextBubbleV3({
           layout: this.computeTextLayout(),
@@ -819,6 +842,11 @@ export struct TgMessageRouter {
           timeText: this.timeText,
           sendStatus: this.sendStatus,
         })
+
+        if (this.isOutgoing && this.showBubbleTail()) {
+          TgBubbleTail({ isOutgoing: true })
+            .margin({ right: -TgUiTokens.BUBBLE_TAIL_WIDTH })
+        }
       }
       .width('100%')
       .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)

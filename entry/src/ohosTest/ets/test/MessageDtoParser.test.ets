@@ -10,6 +10,7 @@ import {
   applyMessageUpdate,
   parseMessageContent
 } from '../../../main/ets/core/model/dto/MessageDto';
+import { TdObject } from '../../../main/ets/core/utils/tdAccessors';
 
 /**
  * Unit tests for MessageDto — DTO classes, enum values, parseMessageContent,
@@ -22,6 +23,48 @@ import {
 
 export default function messageDtoParserTest() {
   describe('MessageDtoParser', () => {
+
+    // -----------------------------------------------------------------------
+    // parseMessageContent — service (chat event) messages
+    // -----------------------------------------------------------------------
+    describe('parseMessageContent service messages', () => {
+      it('parses messageChatAddMembers into SERVICE with member ids', 0, () => {
+        const dto = parseMessageContent(TdObject.fromJSON(
+          '{"@type":"messageChatAddMembers","member_user_ids":[111,222]}'
+        ));
+        expect(dto.type).assertEqual(MessageContentType.SERVICE);
+        expect(dto.serviceType).assertEqual('messageChatAddMembers');
+        expect(dto.serviceUserIds.length).assertEqual(2);
+        expect(dto.serviceUserIds[0]).assertEqual(111);
+        expect(dto.serviceUserIds[1]).assertEqual(222);
+      });
+
+      it('parses messageChatChangeTitle into SERVICE with title', 0, () => {
+        const dto = parseMessageContent(TdObject.fromJSON(
+          '{"@type":"messageChatChangeTitle","title":"New Title"}'
+        ));
+        expect(dto.type).assertEqual(MessageContentType.SERVICE);
+        expect(dto.serviceType).assertEqual('messageChatChangeTitle');
+        expect(dto.serviceTitle).assertEqual('New Title');
+      });
+
+      it('parses messageChatDeleteMember into SERVICE with single user id', 0, () => {
+        const dto = parseMessageContent(TdObject.fromJSON(
+          '{"@type":"messageChatDeleteMember","user_id":333}'
+        ));
+        expect(dto.type).assertEqual(MessageContentType.SERVICE);
+        expect(dto.serviceUserIds.length).assertEqual(1);
+        expect(dto.serviceUserIds[0]).assertEqual(333);
+      });
+
+      it('keeps unknown content as UNKNOWN with bracket text', 0, () => {
+        const dto = parseMessageContent(TdObject.fromJSON(
+          '{"@type":"messageGiveawayCreated"}'
+        ));
+        expect(dto.type).assertEqual(MessageContentType.UNKNOWN);
+        expect(dto.text).assertEqual('[messageGiveawayCreated]');
+      });
+    });
 
     // -----------------------------------------------------------------------
     // MessageContentType enum values

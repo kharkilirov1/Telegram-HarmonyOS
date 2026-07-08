@@ -19,7 +19,7 @@ function toFileUri(path: string): string {
   }
 }
 
-export type ChatTimelineEntryKind = 'date' | 'unread' | 'message';
+export type ChatTimelineEntryKind = 'date' | 'unread' | 'message' | 'service';
 
 // Telegram peer-name fallback palette (iOS default single-color set).
 const SENDER_NAME_COLORS: string[] = [
@@ -195,6 +195,7 @@ export class ChatMessageRowVO {
 
   // Sticker
   stickerPath: string = '';
+  stickerThumbnailPath: string = '';
   stickerWidth: number = 0;
   stickerHeight: number = 0;
   isAnimatedSticker: boolean = false;
@@ -237,6 +238,7 @@ export class ChatTimelineEntryVO {
   kind: ChatTimelineEntryKind = 'message';
   dateText: string = '';
   unreadText: string = '';
+  serviceText: string = '';
   message: ChatMessageRowVO = new ChatMessageRowVO();
 }
 
@@ -355,6 +357,68 @@ function userDisplayName(user: User | undefined): string {
     return '@' + user.username;
   }
   return 'Unknown';
+}
+
+function serviceUserName(userId: number, state: AppState): string {
+  const user = state.users.users.get(userId);
+  return userDisplayName(user);
+}
+
+// Human-readable text for chat-event (service) messages, iOS-style centered line.
+// Templates come from string.json with {name}/{target}/{title} placeholders.
+function buildServiceMessageText(message: Message, state: AppState): string {
+  const content = message.content;
+  const actor = resolveSenderName(message, state);
+  switch (content.serviceType) {
+    case 'messageChatAddMembers': {
+      const ids = content.serviceUserIds;
+      const names = ids.map((id: number): string => serviceUserName(id, state)).join(', ');
+      if (ids.length === 1 && ids[0] === message.senderId) {
+        return localizedString($r('app.string.service_joined_group').id, '{name} joined the group')
+          .replace('{name}', names);
+      }
+      return localizedString($r('app.string.service_added_members').id, '{name} added {target}')
+        .replace('{name}', actor).replace('{target}', names);
+    }
+    case 'messageChatJoinByLink':
+    case 'messageChatJoinByRequest':
+      return localizedString($r('app.string.service_joined_by_link').id, '{name} joined the group via invite link')
+        .replace('{name}', actor);
+    case 'messageChatDeleteMember': {
+      const removedId = content.serviceUserIds.length > 0 ? content.serviceUserIds[0] : 0;
+      if (removedId === message.senderId || removedId === 0) {
+        return localizedString($r('app.string.service_left_group').id, '{name} left the group')
+          .replace('{name}', actor);
+      }
+      return localizedString($r('app.string.service_removed_member').id, '{name} removed {target}')
+        .replace('{name}', actor).replace('{target}', serviceUserName(removedId, state));
+    }
+    case 'messageChatChangeTitle':
+      return localizedString($r('app.string.service_title_changed').id, 'Chat name changed to "{title}"')
+        .replace('{title}', content.serviceTitle);
+    case 'messageBasicGroupChatCreate':
+    case 'messageSupergroupChatCreate':
+      return localizedString($r('app.string.service_group_created').id, 'Group "{title}" created')
+        .replace('{title}', content.serviceTitle);
+    case 'messageChatChangePhoto':
+      return localizedString($r('app.string.service_photo_changed').id, '{name} changed the chat photo')
+        .replace('{name}', actor);
+    case 'messageChatDeletePhoto':
+      return localizedString($r('app.string.service_photo_deleted').id, '{name} removed the chat photo')
+        .replace('{name}', actor);
+    case 'messagePinMessage':
+      return localizedString($r('app.string.service_pinned_message').id, '{name} pinned a message')
+        .replace('{name}', actor);
+    case 'messageContactRegistered':
+      return localizedString($r('app.string.service_contact_registered').id, '{name} joined Telegram')
+        .replace('{name}', actor);
+    case 'messageVideoChatStarted':
+      return localizedString($r('app.string.service_video_chat_started').id, 'Video chat started');
+    case 'messageVideoChatEnded':
+      return localizedString($r('app.string.service_video_chat_ended').id, 'Video chat ended');
+    default:
+      return content.serviceType.length > 0 ? `[${content.serviceType}]` : '[Service]';
+  }
 }
 
 function computeAvatarInitials(name: string): string {
@@ -538,14 +602,23 @@ function buildQuoteRanges(text: string, entities: MessageQuoteEntity[]): QuoteRa
   return merged;
 }
 
+// WordBreak.BREAK_WORD already wraps overflowing long tokens char-by-char while
+// keeping whole words intact (SDK enums.d.ts). BREAK_ALL is only better when the
+// text is essentially one solid token (hash/link pasted alone) — applying it to
+// mixed prose breaks ordinary words mid-word (witnessed in the File chat).
 function shouldForceBreakAll(text: string): boolean {
-  const words = text.split(/[\s\n]+/);
+  const trimmed = text.trim();
+  if (trimmed.length === 0) {
+    return false;
+  }
+  let longest = 0;
+  const words = trimmed.split(/[\s\n]+/);
   for (const word of words) {
-    if (word.length > 24) {
-      return true;
+    if (word.length > longest) {
+      longest = word.length;
     }
   }
-  return false;
+  return longest > 24 && longest >= trimmed.length * 0.8;
 }
 
 function resolveTransfer(fileId: number, state: AppState): FileTransfer | undefined {
@@ -692,8 +765,12 @@ function firstUnreadIncomingIndex(messages: Message[], chat: Chat, stickyLastRea
   return -1;
 }
 
+// Channels are deliberately NOT group chats here: channel posts carry no sender
+// name/avatar lane (iOS), and their consecutive grouping runs through the
+// else-branch via effectiveSenderId (senderChatId-aware). With 'channel' included,
+// the first post after every unread/date reset used to show a stray channel name.
 function isGroupChat(chat: Chat): boolean {
-  return chat.type === 'group' || chat.type === 'supergroup' || chat.type === 'channel';
+  return chat.type === 'group' || chat.type === 'supergroup';
 }
 
 function shouldReserveAvatarLane(chat: Chat): boolean {
@@ -783,8 +860,12 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
       }
     }
   } else {
-    // Private chat or outgoing: group consecutive messages from same direction
-    const effectiveSenderId = message.isOutgoing ? -2 : (message.senderId > 0 ? message.senderId : -3);
+    // Private chat, channel post, or outgoing: group consecutive messages from same sender.
+    // Must mirror the prevSenderId update in the build loop (sender chats — channels /
+    // anonymous admins — have senderId=0 and are tracked by senderChatId there).
+    const effectiveSenderId = message.isOutgoing ? -2
+      : (message.senderId > 0 ? message.senderId
+        : (message.senderChatId !== 0 ? message.senderChatId : -3));
     row.topSpacing = (prevSenderId === effectiveSenderId) ? 2 : 8;
   }
 
@@ -887,6 +968,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
 
   // Sticker — convert path
   row.stickerPath = toFileUri(content.stickerPath);
+  row.stickerThumbnailPath = toFileUri(content.stickerThumbnailPath);
   row.stickerWidth = content.stickerWidth;
   row.stickerHeight = content.stickerHeight;
   row.isAnimatedSticker = content.isAnimatedSticker;
@@ -1012,7 +1094,7 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
   const messageMap = state.messages.messages.get(chatId) || new Map<string, Message>();
   const unreadStartIndex = firstUnreadIncomingIndex(messages, chat, stickyLastReadMessageId);
   if (unreadStartIndex < 0 && (stickyLastReadMessageId.length > 0 || chat.unreadCount > 0) && messages.length > 0) {
-    hilog.info(DOMAIN, TAG,
+    hilog.debug(DOMAIN, TAG,
       'unread divider skipped: sticky=%{public}s lastRead=%{public}s unread=%{public}d msgs=%{public}d first=%{public}s last=%{public}s',
       stickyLastReadMessageId, chat.lastReadInboxMessageId, chat.unreadCount, messages.length,
       messages[0].id, messages[messages.length - 1].id);
@@ -1048,6 +1130,17 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
       unreadEntry.unreadText = localizedString($r('app.string.unread').id, 'Unread');
       result.unreadEntryIndex = result.entries.length;
       result.entries.push(unreadEntry);
+    }
+
+    if (message.content.type === 'service') {
+      const serviceEntry = new ChatTimelineEntryVO();
+      serviceEntry.kind = 'service';
+      serviceEntry.key = 'svc_' + message.id;
+      serviceEntry.serviceText = buildServiceMessageText(message, state);
+      result.entries.push(serviceEntry);
+      prevSenderId = -1; // Service line breaks the sender group (iOS pattern)
+      index += groupCount;
+      continue;
     }
 
     if (albumCount > 1) {

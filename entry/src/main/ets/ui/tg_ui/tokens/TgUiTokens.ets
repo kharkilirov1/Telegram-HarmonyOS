@@ -101,7 +101,8 @@ export class TgUiTokens {
   static readonly MEDIA_GALLERY_CLOSE_ICON_SIZE: number = 24;
   static readonly MEDIA_GALLERY_DOWNLOAD_BUTTON_SIZE: number = 80;
   static readonly MEDIA_GALLERY_DOWNLOAD_ICON_SIZE: number = 32;
-  static readonly MEDIA_GALLERY_DISMISS_THRESHOLD: number = 100;
+  static readonly MEDIA_GALLERY_DISMISS_THRESHOLD: number = 150;
+  static readonly MEDIA_GALLERY_CAPTION_MAX_HEIGHT: number = 200;
 
   // ── Voice waveform color tokens ──
   static readonly VOICE_WAVE_ACTIVE_INCOMING: string = '#3390EC';
@@ -167,6 +168,8 @@ export class TgUiTokens {
   static readonly TOP_BAR_ACTION_TOUCH: number = 44;
   static readonly TOP_BAR_ACTION_ICON_SIZE: number = 22;
   static readonly TOP_BAR_SEPARATOR_STROKE: number = 1;
+  // Fallback top inset when getWindowAvoidArea is unavailable (status-bar height; ArkGram uses 38vp)
+  static readonly STATUS_BAR_FALLBACK_INSET: number = 38;
   static readonly CHAT_TOP_BAR_CAPSULE_SIZE: number = 44;
   static readonly CHAT_TOP_BAR_CAPSULE_RADIUS: number = 22;
   static readonly CHAT_TOP_BAR_AVATAR_INNER: number = 38;
@@ -176,6 +179,8 @@ export class TgUiTokens {
   static readonly CHAT_TOP_BAR_TITLE_SIZE: number = 17;
   static readonly CHAT_TOP_BAR_TITLE_WEIGHT = FontWeight.Medium;
   static readonly CHAT_TOP_BAR_SUBTITLE_SIZE: number = 13;
+  static readonly CHAT_TOP_BAR_SPINNER_SIZE: number = 12;
+  static readonly CHAT_TOP_BAR_SPINNER_GAP: number = 5;
   static readonly CHAT_TOP_BAR_SUBTITLE_ACCENT: Resource = $r('app.color.telegram_blue');
   static readonly CHAT_TOP_BAR_BORDER_WIDTH: number = 0.5;
   static readonly CHAT_LIST_NAV_TITLE_WEIGHT = FontWeight.Medium;
@@ -205,6 +210,14 @@ export class TgUiTokens {
   static readonly UNREAD_BADGE_MIN_WIDTH: number = 20;
   static readonly UNREAD_BADGE_MAX_WIDTH: number = 52;
   static readonly UNREAD_BADGE_DISABLED_OPACITY: number = 0.45;
+
+  // Root tab bar unread badge (iOS dark accent: badgeFillColor 0xeb5545, white text)
+  static readonly TAB_BADGE_BG: string = '#EB5545';
+  static readonly TAB_BADGE_TEXT: string = '#FFFFFF';
+  static readonly TAB_BADGE_HEIGHT: number = 16;
+  static readonly TAB_BADGE_MIN_WIDTH: number = 16;
+  static readonly TAB_BADGE_FONT_SIZE: number = 10;
+  static readonly TAB_BADGE_PADDING_H: number = 4;
 
   // legacy aliases (keep while atoms are landing incrementally)
   static readonly UNREAD_BADGE_MIN_SIZE: number = 20;
@@ -256,7 +269,7 @@ export class TgUiTokens {
   static readonly CHAT_META_BOTTOM_PLACEHOLDER_WIDTH: number = TgUiTokens.UNREAD_BADGE_MAX_WIDTH;
   static readonly CHAT_META_BOTTOM_PLACEHOLDER_HEIGHT: number = TgUiTokens.UNREAD_BADGE_HEIGHT;
   static readonly CHAT_ROW_SEPARATOR_INSET: number = 80;
-  static readonly CHAT_ROW_PREVIEW_MAX_LINES: number = 2;
+  static readonly CHAT_ROW_PREVIEW_MAX_LINES: number = 1;
 
   // ── Message text / bubble groundwork (Phase C Step 0) ──
   // iOS: 0.85 compact, 0.65 regular; Android: ~screenWidth - 80dp
@@ -271,6 +284,9 @@ export class TgUiTokens {
   static readonly BUBBLE_RADIUS_INCOMING: number = 17;
   static readonly BUBBLE_RADIUS_OUTGOING: number = 17;
   static readonly BUBBLE_RADIUS_GROUPED: number = 6;
+  // iOS bubble tail (attached to the last bubble of a sender group)
+  static readonly BUBBLE_TAIL_WIDTH: number = 8;
+  static readonly BUBBLE_TAIL_HEIGHT: number = 14;
   static readonly MSG_BUBBLE_RADIUS: number = 17;
   static readonly MSG_DEMO_BASE_CONTAINER_WIDTH: number = 360;
   static readonly MSG_DEMO_NARROW_CONTAINER_WIDTH: number = 220;
@@ -608,13 +624,14 @@ export class TgUiTokens {
   static readonly DATE_SEPARATOR_SIDE_INSET: number = 16;
   static readonly DATE_SEPARATOR_MAX_WIDTH_RATIO: number = 0.72;
 
-  static readonly UNREAD_MARKER_BG: Resource = $r('app.color.telegram_blue');
+  // iOS dark theme: unreadBarFillColor 0x1b1b1b — flat edge-to-edge bar, not a blue capsule
+  static readonly UNREAD_MARKER_BG: Resource = $r('app.color.unread_bar_bg');
   static readonly UNREAD_MARKER_TEXT: Resource = $r('app.color.unread_text');
   static readonly UNREAD_MARKER_FONT_SIZE: number = 13;
   static readonly UNREAD_MARKER_FONT_WEIGHT = FontWeight.Medium;
   static readonly UNREAD_MARKER_LINE_HEIGHT: number = 16;
   static readonly UNREAD_MARKER_HEIGHT: number = 25;
-  static readonly UNREAD_MARKER_RADIUS: number = 8;
+  static readonly UNREAD_MARKER_RADIUS: number = 0;
   static readonly UNREAD_MARKER_SIDE_INSET: number = 0;
   static readonly UNREAD_MARKER_MAX_WIDTH_RATIO: number = 1.0;
 

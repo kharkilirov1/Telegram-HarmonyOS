@@ -107,6 +107,11 @@ export class SetChatMutePayload {
   muteForSeconds: number = 0; // 0 = unmute, >0 = mute duration
 }
 
+export class ToggleChatPinnedPayload {
+  chatId: ChatId = 0;
+  isPinned: boolean = false;
+}
+
 export class PinChatMessagePayload {
   chatId: ChatId = 0;
   messageId: MessageId = '0';
@@ -253,6 +258,11 @@ export class SetChatMuteCommand extends AppCommand {
   payload: SetChatMutePayload = new SetChatMutePayload();
 }
 
+export class ToggleChatPinnedCommand extends AppCommand {
+  type: string = 'toggleChatIsPinned';
+  payload: ToggleChatPinnedPayload = new ToggleChatPinnedPayload();
+}
+
 export class PinChatMessageCommand extends AppCommand {
   type: string = 'pinChatMessage';
   payload: PinChatMessagePayload = new PinChatMessagePayload();
@@ -319,6 +329,7 @@ export type AnyAppCommand =
   | DeleteMessagesCommand
   | ForwardMessagesCommand
   | SetChatMuteCommand
+  | ToggleChatPinnedCommand
   | PinChatMessageCommand
   | UnpinChatMessageCommand
   | DeleteChatHistoryCommand
@@ -505,6 +516,13 @@ export function createSetChatMuteCommand(chatId: ChatId, muteForSeconds: number)
   const cmd = new SetChatMuteCommand();
   cmd.payload.chatId = chatId;
   cmd.payload.muteForSeconds = muteForSeconds;
+  return cmd;
+}
+
+export function createToggleChatPinnedCommand(chatId: ChatId, isPinned: boolean): ToggleChatPinnedCommand {
+  const cmd = new ToggleChatPinnedCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.isPinned = isPinned;
   return cmd;
 }
 

@@ -28,6 +28,7 @@ import { createOpenChatUseCase, OpenChatUseCase, OpenChatParams } from '../../..
 import { createSetChatMuteUseCase, SetChatMuteUseCase, MUTE_FOREVER } from '../../../domain/usecases/setChatMute';
 import { createDeleteChatHistoryUseCase, DeleteChatHistoryUseCase } from '../../../domain/usecases/deleteChatHistory';
 import { createToggleChatUnreadUseCase, ToggleChatUnreadUseCase } from '../../../domain/usecases/toggleChatUnread';
+import { createToggleChatPinnedUseCase, ToggleChatPinnedUseCase } from '../../../domain/usecases/toggleChatPinned';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { uiObserver, window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
@@ -82,6 +83,7 @@ export struct ChatListPage {
   private loadChatsUseCase?: LoadChatsUseCase;
   private openChatUseCase?: OpenChatUseCase;
   private muteUseCase?: SetChatMuteUseCase;
+  private pinUseCase?: ToggleChatPinnedUseCase;
   private deleteChatUseCase?: DeleteChatHistoryUseCase;
   private toggleUnreadUseCase?: ToggleChatUnreadUseCase;
   private isOpeningChat: boolean = false;
@@ -213,6 +215,7 @@ export struct ChatListPage {
       this.loadChatsUseCase = createLoadChatsUseCase(store, getTdGatewayAdapter());
       this.openChatUseCase = createOpenChatUseCase(store, getTdGatewayAdapter());
       this.muteUseCase = createSetChatMuteUseCase(getTdGatewayAdapter());
+      this.pinUseCase = createToggleChatPinnedUseCase(getTdGatewayAdapter());
       this.deleteChatUseCase = createDeleteChatHistoryUseCase(getTdGatewayAdapter());
       this.toggleUnreadUseCase = createToggleChatUnreadUseCase(getTdGatewayAdapter());
       this.rebuildList(store.getState());
@@ -295,10 +298,22 @@ export struct ChatListPage {
           }
           this.computeSafeInsets();
         });
+        this.mainWindow.on('avoidAreaChange', (data: window.AvoidAreaOptions) => {
+          if (lifecycleToken !== this.pageLifecycleToken || this.mainWindow !== boundWindow) {
+            return;
+          }
+          if (data.type === window.AvoidAreaType.TYPE_SYSTEM) {
+            this.computeSafeInsets();
+          }
+        });
       }
     } catch (_error) {
       this.mainWindow = undefined;
     }
+  }
+
+  private chatListTopInset(): number {
+    return Math.max(0, this.topBarTotalHeight - TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT);
   }
 
   private computeSafeInsets(): void {
@@ -307,7 +322,7 @@ export struct ChatListPage {
       this.topBarTotalHeight = computeChatListTopBarHeight(context);
       this.listBottomInset = computeTabBottomInset(context);
     } catch (_error) {
-      this.topBarTotalHeight = TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT;
+      this.topBarTotalHeight = TgUiTokens.STATUS_BAR_FALLBACK_INSET + TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT;
       this.listBottomInset = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
     }
   }
@@ -472,23 +487,23 @@ export struct ChatListPage {
     }
   }
 
-  // iOS ref: swipe right reveals Read/Unread (grey/blue)
+  // iOS ref: swipe right reveals Read/Unread (grey/blue).
+  // Buttons (not Column.onClick) — clicks inside swipeAction only land on Button
+  // (witness: Codelabs PersonalAssistantPro ContactListPage pattern)
   @Builder
   private buildSwipeStartActions(item: ChatItemVO) {
     Row() {
-      Column() {
-        Text(item.unreadCount > 0 ? 'Read' : 'Unread')
-          .fontSize(12)
-          .fontColor(Color.White)
-      }
-      .width(72)
-      .height('100%')
-      .backgroundColor(item.unreadCount > 0 ? TgUiTokens.COLOR_TEXT_PREVIEW : TgUiTokens.COLOR_ICON_PRIMARY)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Center)
-      .onClick(() => {
-        this.handleToggleUnread(item);
-      })
+      Button(item.unreadCount > 0 ? 'Read' : 'Unread')
+        .type(ButtonType.Normal)
+        .fontSize(12)
+        .fontColor(Color.White)
+        .backgroundColor(item.unreadCount > 0 ? TgUiTokens.COLOR_TEXT_PREVIEW : TgUiTokens.COLOR_ICON_PRIMARY)
+        .width(72)
+        .height('100%')
+        .borderRadius(0)
+        .onClick(() => {
+          this.handleToggleUnread(item);
+        })
     }
     .height('100%')
   }
@@ -498,51 +513,55 @@ export struct ChatListPage {
   private buildSwipeEndActions(item: ChatItemVO) {
     Row() {
       // Pin/Unpin — green
-      Column() {
-        Text(item.isPinned ? 'Unpin' : 'Pin')
-          .fontSize(12)
-          .fontColor(Color.White)
-      }
-      .width(72)
-      .height('100%')
-      .backgroundColor(TgUiTokens.SWIPE_ACTION_PIN)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Center)
-      .onClick(() => {
-        hilog.info(DOMAIN, TAG, 'Pin toggle chatId=%{public}d', item.chatId);
-      })
+      Button(item.isPinned ? 'Unpin' : 'Pin')
+        .type(ButtonType.Normal)
+        .fontSize(12)
+        .fontColor(Color.White)
+        .backgroundColor(TgUiTokens.SWIPE_ACTION_PIN)
+        .width(72)
+        .height('100%')
+        .borderRadius(0)
+        .onClick(() => {
+          this.handlePinToggle(item);
+        })
 
       // Mute/Unmute — orange
-      Column() {
-        Text(item.isMuted ? 'Unmute' : 'Mute')
-          .fontSize(12)
-          .fontColor(Color.White)
-      }
-      .width(72)
-      .height('100%')
-      .backgroundColor(TgUiTokens.SWIPE_ACTION_MUTE)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Center)
-      .onClick(() => {
-        this.handleMuteToggle(item);
-      })
+      Button(item.isMuted ? 'Unmute' : 'Mute')
+        .type(ButtonType.Normal)
+        .fontSize(12)
+        .fontColor(Color.White)
+        .backgroundColor(TgUiTokens.SWIPE_ACTION_MUTE)
+        .width(72)
+        .height('100%')
+        .borderRadius(0)
+        .onClick(() => {
+          this.handleMuteToggle(item);
+        })
 
       // Delete — red
-      Column() {
-        Text('Delete')
-          .fontSize(12)
-          .fontColor(Color.White)
-      }
-      .width(72)
-      .height('100%')
-      .backgroundColor(TgUiTokens.SWIPE_ACTION_DELETE)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Center)
-      .onClick(() => {
-        this.handleDeleteChat(item);
+      Button('Delete')
+        .type(ButtonType.Normal)
+        .fontSize(12)
+        .fontColor(Color.White)
+        .backgroundColor(TgUiTokens.SWIPE_ACTION_DELETE)
+        .width(72)
+        .height('100%')
+        .borderRadius(0)
+        .onClick(() => {
+          this.handleDeleteChat(item);
       })
     }
     .height('100%')
+  }
+
+  // TDLib confirms with updateChatPosition → chatsReducer reorders; list rebuilds via subscription
+  private handlePinToggle(item: ChatItemVO): void {
+    const pinUseCase = this.pinUseCase;
+    if (!pinUseCase) return;
+    pinUseCase.setPinned(item.chatId, !item.isPinned)
+      .catch((error: Error) => {
+        hilog.error(DOMAIN, TAG, 'Pin toggle failed for %{public}d: %{public}s', item.chatId, error.message);
+      });
   }
 
   private handleMuteToggle(item: ChatItemVO): void {
@@ -956,21 +975,17 @@ export struct ChatListPage {
               }
             }
             .swipeAction({
-              start: {
-                builder: () => { this.buildSwipeStartActions(item); }
+              // Direct CustomBuilder form — the SwipeActionItem{builder} form left
+              // buttons unclickable (taps landed on the ListItem pressed-state only)
+              start: () => {
+                this.buildSwipeStartActions(item);
               },
-              end: {
-                builder: () => { this.buildSwipeEndActions(item); }
+              end: () => {
+                this.buildSwipeEndActions(item);
               }
             })
-            .stateStyles({
-              pressed: {
-                .backgroundColor(TgUiTokens.COLOR_BG_SECONDARY)
-              },
-              normal: {
-                .backgroundColor(Color.Transparent)
-              }
-            })
+            // NB: no stateStyles here — a pressed-state on the ListItem swallowed
+            // taps meant for swipeAction buttons (row press feedback lives in TgChatRow)
             .onClick(() => {
               this.openChat(item);
             })
@@ -1004,6 +1019,7 @@ export struct ChatListPage {
 
       // ── Top bar layer (overlays content, translucent + blur) ──
       TgChatListNavigationBar({
+        topInset: this.chatListTopInset(),
         title: localized($r('app.string.chats_title').id, 'Chats'),
         searchValue: this.searchQuery,
         searchPlaceholder: localized($r('app.string.search_placeholder').id, 'Search'),

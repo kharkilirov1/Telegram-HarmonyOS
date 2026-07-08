@@ -77,11 +77,14 @@ export struct TgTextBubbleV3 {
           ? { topLeft: big, topRight: small, bottomLeft: big, bottomRight: small }
           : { topLeft: small, topRight: big, bottomLeft: small, bottomRight: big }
       case 'bottom':
+        // Tail-side bottom corner stays small so the tail continues the contour
         return this.isOutgoing
-          ? { topLeft: big, topRight: small, bottomLeft: big, bottomRight: big }
-          : { topLeft: small, topRight: big, bottomLeft: big, bottomRight: big }
-      default: // 'none' — standalone
-        return { topLeft: big, topRight: big, bottomLeft: big, bottomRight: big }
+          ? { topLeft: big, topRight: small, bottomLeft: big, bottomRight: small }
+          : { topLeft: small, topRight: big, bottomLeft: small, bottomRight: big }
+      default: // 'none' — standalone (still carries a tail)
+        return this.isOutgoing
+          ? { topLeft: big, topRight: big, bottomLeft: big, bottomRight: small }
+          : { topLeft: big, topRight: big, bottomLeft: small, bottomRight: big }
     }
   }
 

@@ -126,7 +126,6 @@ export struct TgReplySnippet {
               .fontColor(this.titleColor())
               .maxLines(this.maxTitleLines())
               .textOverflow({ overflow: TextOverflow.Ellipsis })
-              .width('100%')
 
             Text(this.resolvedPreview())
               .fontSize(TgUiTokens.REPLY_SNIPPET_PREVIEW_SIZE)
@@ -135,13 +134,11 @@ export struct TgReplySnippet {
               .fontColor(this.previewColor())
               .maxLines(this.maxPreviewLines())
               .textOverflow({ overflow: TextOverflow.Ellipsis })
-              .width('100%')
           }
-          .layoutWeight(1)
+          .alignItems(HorizontalAlign.Start)
 
           this.buildThumbnailSlot()
         }
-        .layoutWeight(1)
         .alignItems(this.isQuote ? VerticalAlign.Top : VerticalAlign.Center)
       }
       .padding({
@@ -150,7 +147,6 @@ export struct TgReplySnippet {
         top: TgUiTokens.REPLY_SNIPPET_PADDING_V,
         bottom: TgUiTokens.REPLY_SNIPPET_PADDING_V
       })
-      .width('100%')
 
       Column() {}
         .width(TgUiTokens.REPLY_SNIPPET_BAR_WIDTH)
@@ -158,7 +154,6 @@ export struct TgReplySnippet {
         .backgroundColor(this.barColor())
     }
     .constraintSize({
-      minWidth: this.containerWidth > 0 ? this.containerWidth - TgUiTokens.BUBBLE_PADDING_H * 2 : undefined,
       maxWidth: this.maxSnippetWidth()
     })
     .backgroundColor(this.bgColor())

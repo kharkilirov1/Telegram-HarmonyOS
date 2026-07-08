@@ -5,6 +5,8 @@ export struct TgDateSeparator {
   @Param text: string = '';
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
   @Param maxWidthRatio: number = TgUiTokens.DATE_SEPARATOR_MAX_WIDTH_RATIO;
+  // Service (chat-event) lines reuse this capsule with multi-line text
+  @Param maxLines: number = 1;
 
   private safeText(): string {
     return this.text.length > 0 ? this.text : ' ';
@@ -22,7 +24,8 @@ export struct TgDateSeparator {
           .fontWeight(TgUiTokens.DATE_SEPARATOR_FONT_WEIGHT)
           .lineHeight(TgUiTokens.DATE_SEPARATOR_LINE_HEIGHT)
           .fontColor(TgUiTokens.DATE_SEPARATOR_TEXT)
-          .maxLines(1)
+          .maxLines(this.maxLines)
+          .textAlign(TextAlign.Center)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
       }
       .padding({

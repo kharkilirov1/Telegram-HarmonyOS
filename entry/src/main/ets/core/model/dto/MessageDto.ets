@@ -2,7 +2,7 @@
 // ArkTS compliant - uses TdObject wrapper class
 
 import { ChatId, MessageId, UserId } from '../EntityId';
-import { TdObject, tdGetString, tdGetNumber, tdGetBoolean, tdGetInt64, tdGetObject, tdGetArray, tdHasKeys } from '../../utils/tdAccessors';
+import { TdObject, tdGetString, tdGetNumber, tdGetBoolean, tdGetInt64, tdGetObject, tdGetArray, tdGetNumberArray, tdHasKeys } from '../../utils/tdAccessors';
 
 export enum MessageContentType {
   TEXT = 'text',
@@ -17,6 +17,7 @@ export enum MessageContentType {
   POLL = 'poll',
   ANIMATION = 'animation',
   VIDEO_NOTE = 'videoNote',
+  SERVICE = 'service',
   UNKNOWN = 'unknown'
 }
 
@@ -42,6 +43,11 @@ export class MessageContentDto {
   quoteEntities: MessageQuoteEntityDto[] = [];
   textEntities: TextEntityDto[] = [];
   captionEntities: TextEntityDto[] = [];
+
+  // Service messages (chat events): raw TDLib @type + payload for VO-side text resolve
+  serviceType: string = '';
+  serviceUserIds: number[] = [];
+  serviceTitle: string = '';
 
   photoPath: string = '';
   photoThumbPath: string = '';
@@ -81,6 +87,7 @@ export class MessageContentDto {
   isVoiceListened: boolean = false;
 
   stickerPath: string = '';
+  stickerThumbnailPath: string = '';
   stickerFileId: number = 0;
   stickerEmoji: string = '';
   stickerWidth: number = 0;
@@ -522,6 +529,7 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       const formatType = tdGetString(formatObj, '@type');
       contentDto.type = MessageContentType.STICKER;
       contentDto.stickerPath = extractLocalFilePath(stickerFile);
+      contentDto.stickerThumbnailPath = extractThumbnailPath(stickerObj);
       contentDto.stickerFileId = extractFileId(stickerFile);
       contentDto.stickerEmoji = tdGetString(stickerObj, 'emoji');
       contentDto.stickerWidth = tdGetNumber(stickerObj, 'width');
@@ -622,6 +630,45 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.videoThumbFileId = extractThumbnailFileId(videoNoteObj);
       contentDto.videoNoteDuration = tdGetNumber(videoNoteObj, 'duration');
       contentDto.videoNoteLength = tdGetNumber(videoNoteObj, 'length');
+      break;
+    }
+    case 'messageChatAddMembers': {
+      contentDto.type = MessageContentType.SERVICE;
+      contentDto.serviceType = contentType;
+      contentDto.serviceUserIds = tdGetNumberArray(contentObj, 'member_user_ids');
+      contentDto.text = `[${contentType}]`;
+      break;
+    }
+    case 'messageChatDeleteMember': {
+      contentDto.type = MessageContentType.SERVICE;
+      contentDto.serviceType = contentType;
+      contentDto.serviceUserIds = [tdGetNumber(contentObj, 'user_id')];
+      contentDto.text = `[${contentType}]`;
+      break;
+    }
+    case 'messageChatChangeTitle':
+    case 'messageBasicGroupChatCreate':
+    case 'messageSupergroupChatCreate': {
+      contentDto.type = MessageContentType.SERVICE;
+      contentDto.serviceType = contentType;
+      contentDto.serviceTitle = tdGetString(contentObj, 'title');
+      if (contentType === 'messageBasicGroupChatCreate') {
+        contentDto.serviceUserIds = tdGetNumberArray(contentObj, 'member_user_ids');
+      }
+      contentDto.text = `[${contentType}]`;
+      break;
+    }
+    case 'messageChatJoinByLink':
+    case 'messageChatJoinByRequest':
+    case 'messageChatChangePhoto':
+    case 'messageChatDeletePhoto':
+    case 'messagePinMessage':
+    case 'messageContactRegistered':
+    case 'messageVideoChatStarted':
+    case 'messageVideoChatEnded': {
+      contentDto.type = MessageContentType.SERVICE;
+      contentDto.serviceType = contentType;
+      contentDto.text = `[${contentType}]`;
       break;
     }
     default:

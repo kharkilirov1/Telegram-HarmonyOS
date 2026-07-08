@@ -208,12 +208,25 @@ export struct TgTextBodyV3 {
 
   private quoteBackground(): ResourceColor {
     if (this.quoteAccentHex.length > 0) {
-      const alpha = this.isOutgoing ? '1A' : '1F' // ~10% / ~12%
-      return this.quoteAccentHex + alpha
+      // NB: hex + alpha suffix is wrong here — ArkUI parses 8-digit hex as #AARRGGBB,
+      // so appending alpha shifts every channel (witnessed as an opaque green quote)
+      const rgba = this.accentRgba(this.isOutgoing ? 0.10 : 0.12)
+      if (rgba.length > 0) return rgba
     }
     return this.isOutgoing
       ? TgUiTokens.MSG_QUOTE_BG_OUTGOING
       : TgUiTokens.MSG_QUOTE_BG_INCOMING
+  }
+
+  private accentRgba(alpha: number): string {
+    const raw = this.quoteAccentHex.trim()
+    const value = raw.startsWith('#') ? raw.substring(1) : raw
+    if (value.length !== 6) return ''
+    const red = Number.parseInt(value.substring(0, 2), 16)
+    const green = Number.parseInt(value.substring(2, 4), 16)
+    const blue = Number.parseInt(value.substring(4, 6), 16)
+    if (Number.isNaN(red) || Number.isNaN(green) || Number.isNaN(blue)) return ''
+    return `rgba(${red}, ${green}, ${blue}, ${alpha})`
   }
 
   private linkColor(): ResourceColor {
@@ -272,10 +285,12 @@ export struct TgTextBodyV3 {
   @Builder
   buildQuoteSegment(segText: string, isCollapsed: boolean) {
     Row() {
-      // Left accent bar
+      // Left accent bar. height('100%') would resolve against the parent CONSTRAINT
+      // (list viewport) because the Row itself is auto-sized — matchParent resolves
+      // against the Row's final content height instead (witnessed screen-tall quotes)
       Column()
         .width(TgUiTokens.MSG_QUOTE_BAR_WIDTH)
-        .height('100%')
+        .height(LayoutPolicy.matchParent)
         .backgroundColor(this.quoteBarColor())
         .borderRadius(TgUiTokens.MSG_QUOTE_BAR_WIDTH / 2)
 

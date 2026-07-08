@@ -86,7 +86,11 @@
     },
     {
       "name": "date_separator_bg",
-      "value": "#B3000000"
+      "value": "#33000000"
+    },
+    {
+      "name": "unread_bar_bg",
+      "value": "#FF1B1B1B"
     },
     {
       "name": "sender_color_1",

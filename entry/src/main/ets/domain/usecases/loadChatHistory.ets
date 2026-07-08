@@ -312,7 +312,7 @@ export class LoadChatHistoryUseCase {
       LoadChatHistoryUseCase.canLoadNewer.set(chatId, canLoadNewer);
     }
 
-    hilog.info(DOMAIN, TAG,
+    hilog.debug(DOMAIN, TAG,
       'Window state for %{public}d: direction=%{public}s reason=%{public}s canOlder=%{public}s canNewer=%{public}s oldest=%{public}s newest=%{public}s',
       chatId,
       params.direction,
@@ -360,11 +360,11 @@ export class LoadChatHistoryUseCase {
       topUpParams.reason = 'default';
 
       if (attempt === 0) {
-        hilog.info(DOMAIN, TAG,
+        hilog.debug(DOMAIN, TAG,
           'Short initial history window for %{public}d; requesting one controlled older top-up from %{public}s',
           chatId, currentOldestId);
       } else {
-        hilog.info(DOMAIN, TAG,
+        hilog.debug(DOMAIN, TAG,
           'Initial history for %{public}d still shallow; requesting extra older top-up #%{public}d from %{public}s',
           chatId, attempt + 1, currentOldestId);
       }
@@ -454,7 +454,7 @@ export class LoadChatHistoryUseCase {
       if (!this.isCurrentGeneration(generation)) {
         return [];
       }
-      hilog.info(DOMAIN, TAG,
+      hilog.debug(DOMAIN, TAG,
         'Unable to hydrate user %{public}d from history sender set: %{public}s',
         userId, String(error));
       return [];
@@ -580,7 +580,7 @@ export class LoadChatHistoryUseCase {
 
     // Block only initial loads (not pagination) via historyFetchedChatIds
     if (!params.force && !isPagination && this.hasHistoryBeenFetched(chatId)) {
-      hilog.info(DOMAIN, TAG,
+      hilog.debug(DOMAIN, TAG,
         'Skipping history load for %{public}d (getChatHistory already completed)',
         chatId);
       return false;
@@ -588,7 +588,7 @@ export class LoadChatHistoryUseCase {
 
     const bucketReservation = this.reserveBucket(chatId, params.direction);
     if (bucketReservation === null) {
-      hilog.info(DOMAIN, TAG, 'History load already in progress for %{public}d bucket=%{public}s',
+      hilog.debug(DOMAIN, TAG, 'History load already in progress for %{public}d bucket=%{public}s',
         chatId, this.getBucketKey(chatId, params.direction));
       return false;
     }
@@ -612,7 +612,7 @@ export class LoadChatHistoryUseCase {
       }
 
       if (!this.isLatestBucketRequest(bucketReservation.bucketKey, bucketReservation.requestSeq)) {
-        hilog.info(DOMAIN, TAG, 'Ignoring stale history response for %{public}d bucket=%{public}s seq=%{public}d',
+        hilog.debug(DOMAIN, TAG, 'Ignoring stale history response for %{public}d bucket=%{public}s seq=%{public}d',
           chatId, bucketReservation.bucketKey, bucketReservation.requestSeq);
         return false;
       }
@@ -623,7 +623,7 @@ export class LoadChatHistoryUseCase {
       const messageWindow = this.updateMessageWindow(chatId, messages);
       const deferInitialDispatchForTopUp = this.shouldTopUpInitialWindow(params, messageWindow);
       if (deferInitialDispatchForTopUp) {
-        hilog.info(DOMAIN, TAG,
+        hilog.debug(DOMAIN, TAG,
           'Deferring dispatch of short initial batch for %{public}d until older top-up completes',
           chatId);
         await this.requestInitialOlderTopUp(chatId, messageWindow.oldestId, params.limit, generation);

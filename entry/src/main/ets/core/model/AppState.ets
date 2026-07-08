@@ -9,7 +9,7 @@ export type AuthStatus = 'notInitialized' | 'waitTdlibParameters' | 'waitPhoneNu
 export type ConnectionStatus = 'updating' | 'ready' | 'connecting' | 'waitingForNetwork';
 export type ChatType = 'private' | 'secret' | 'group' | 'supergroup' | 'channel';
 export type ChatsLoadPhase = 'idle' | 'bootstrap' | 'pagination';
-export type MessageContentType = 'text' | 'photo' | 'video' | 'document' | 'audio' | 'voice' | 'sticker' | 'location' | 'contact' | 'poll' | 'animation' | 'videoNote' | 'unknown';
+export type MessageContentType = 'text' | 'photo' | 'video' | 'document' | 'audio' | 'voice' | 'sticker' | 'location' | 'contact' | 'poll' | 'animation' | 'videoNote' | 'service' | 'unknown';
 export type MessageSendStatus = 'none' | 'pending' | 'sent' | 'failed';
 export type UserStatusType = 'online' | 'offline' | 'recently' | 'lastWeek' | 'lastMonth' | 'longTimeAgo';
 
@@ -107,6 +107,11 @@ export class MessageContent {
   textEntities: TextEntity[] = [];
   captionEntities: TextEntity[] = [];
 
+  // Service messages (chat events)
+  serviceType: string = '';
+  serviceUserIds: number[] = [];
+  serviceTitle: string = '';
+
   // Photo
   photoPath: string = '';
   photoThumbPath: string = '';
@@ -151,6 +156,7 @@ export class MessageContent {
 
   // Sticker
   stickerPath: string = '';
+  stickerThumbnailPath: string = '';
   stickerFileId: number = 0;
   stickerEmoji: string = '';
   stickerWidth: number = 0;

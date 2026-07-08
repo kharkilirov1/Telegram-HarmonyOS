@@ -145,6 +145,58 @@
       "value": "Не прочитано"
     },
     {
+      "name": "service_joined_group",
+      "value": "{name} вступил(а) в группу"
+    },
+    {
+      "name": "service_added_members",
+      "value": "{name} добавил(а) {target}"
+    },
+    {
+      "name": "service_joined_by_link",
+      "value": "{name} вступил(а) в группу по ссылке-приглашению"
+    },
+    {
+      "name": "service_left_group",
+      "value": "{name} покинул(а) группу"
+    },
+    {
+      "name": "service_removed_member",
+      "value": "{name} удалил(а) {target}"
+    },
+    {
+      "name": "service_title_changed",
+      "value": "Название изменено на «{title}»"
+    },
+    {
+      "name": "service_group_created",
+      "value": "Группа «{title}» создана"
+    },
+    {
+      "name": "service_photo_changed",
+      "value": "{name} обновил(а) фото чата"
+    },
+    {
+      "name": "service_photo_deleted",
+      "value": "{name} удалил(а) фото чата"
+    },
+    {
+      "name": "service_pinned_message",
+      "value": "{name} закрепил(а) сообщение"
+    },
+    {
+      "name": "service_contact_registered",
+      "value": "{name} теперь в Telegram"
+    },
+    {
+      "name": "service_video_chat_started",
+      "value": "Видеочат начат"
+    },
+    {
+      "name": "service_video_chat_ended",
+      "value": "Видеочат завершён"
+    },
+    {
       "name": "pin",
       "value": "Закрепить"
     },
@@ -723,6 +775,14 @@
     {
       "name": "call_connecting",
       "value": "Соединение..."
+    },
+    {
+      "name": "connection_updating",
+      "value": "Обновление..."
+    },
+    {
+      "name": "connection_waiting_network",
+      "value": "Ожидание сети..."
     },
     {
       "name": "call_ringing",

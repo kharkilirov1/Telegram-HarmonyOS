@@ -13,6 +13,7 @@ import {
   createSendMessageCommand,
   createSearchCallMessagesCommand,
   createSetChatMuteCommand,
+  createToggleChatPinnedCommand,
   createToggleChatIsMarkedAsUnreadCommand,
   createViewMessagesCommand
 } from '../../../main/ets/core/model/AppCommand';
@@ -47,6 +48,12 @@ export default function commandSerializerTest() {
         expect(mute.params.getNumber('chat_id')).assertEqual(100);
         expect(mute.params.getString('_notification_settings_json')
           .indexOf('"mute_for":3600') >= 0).assertTrue();
+
+        const pin = serializeCommand(createToggleChatPinnedCommand(100, true));
+        expect(pin.method).assertEqual('toggleChatIsPinned');
+        expect(pin.params.getNumber('chat_id')).assertEqual(100);
+        expect(pin.params.getBool('is_pinned')).assertTrue();
+        expect(pin.params.getString('_chat_list_json')).assertEqual('{"@type":"chatListMain"}');
 
         const unread = serializeCommand(createToggleChatIsMarkedAsUnreadCommand(100, true));
         expect(unread.method).assertEqual('toggleChatIsMarkedAsUnread');

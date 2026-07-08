@@ -145,6 +145,58 @@
       "value": "未读"
     },
     {
+      "name": "service_joined_group",
+      "value": "{name} 加入了群组"
+    },
+    {
+      "name": "service_added_members",
+      "value": "{name} 添加了 {target}"
+    },
+    {
+      "name": "service_joined_by_link",
+      "value": "{name} 通过邀请链接加入了群组"
+    },
+    {
+      "name": "service_left_group",
+      "value": "{name} 退出了群组"
+    },
+    {
+      "name": "service_removed_member",
+      "value": "{name} 移除了 {target}"
+    },
+    {
+      "name": "service_title_changed",
+      "value": "名称已更改为“{title}”"
+    },
+    {
+      "name": "service_group_created",
+      "value": "群组“{title}”已创建"
+    },
+    {
+      "name": "service_photo_changed",
+      "value": "{name} 更换了聊天照片"
+    },
+    {
+      "name": "service_photo_deleted",
+      "value": "{name} 删除了聊天照片"
+    },
+    {
+      "name": "service_pinned_message",
+      "value": "{name} 置顶了一条消息"
+    },
+    {
+      "name": "service_contact_registered",
+      "value": "{name} 加入了 Telegram"
+    },
+    {
+      "name": "service_video_chat_started",
+      "value": "视频聊天已开始"
+    },
+    {
+      "name": "service_video_chat_ended",
+      "value": "视频聊天已结束"
+    },
+    {
       "name": "pin",
       "value": "置顶"
     },
@@ -723,6 +775,14 @@
     {
       "name": "call_connecting",
       "value": "连接中..."
+    },
+    {
+      "name": "connection_updating",
+      "value": "更新中..."
+    },
+    {
+      "name": "connection_waiting_network",
+      "value": "等待网络..."
     },
     {
       "name": "call_ringing",
