@@ -60,12 +60,6 @@ export struct TgDocumentRow {
     return Math.floor(this.normalizedProgress() * 100).toString() + '%';
   }
 
-  private progressWidthLabel(): string {
-    const percent = Math.floor(this.normalizedProgress() * 100);
-    const clamped = Math.max(TgUiTokens.DOCUMENT_ROW_PROGRESS_MIN_VISIBLE_PERCENT, percent);
-    return clamped.toString() + '%';
-  }
-
   private detectExtension(): string {
     const name = this.safeFileName();
     const lastDot = name.lastIndexOf('.');

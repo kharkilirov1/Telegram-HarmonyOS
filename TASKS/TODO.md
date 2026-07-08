@@ -115,7 +115,7 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 - [ ] **[feature-трек] Стикеры TGS/webm** (#46 high): нужны deps `@ohos/lottie`+`@ohos.zlib`, runtime-verify (эмулятор), выяснить source `stickerPath` (thumbnail vs оригинал). Минимум: webm→`TgInlineVideoView`, tgs→thumbnail-fallback; полный TGS-движок — Canvas+lottie с per-instance destroy
 - [x] Документ: убрана двойная индикация загрузки (#17, Ring остаётся)
 - [x] Connection-спиннер (`LoadingProgress`) в шапке чата при connecting/updating
-- [ ] **[low, нужны дизайн-ассеты]** иконки типов документов pdf/audio/zip (#16 — есть только ic_document/ic_video); List.divider вместо внутристрочного Divider (#13); badge непрочитанного на табе Chats (риск HDS floating-tabBar, нужен эмулятор-verify); осиротевший `progressWidthLabel` в TgDocumentRow
+- [ ] **[low, нужны дизайн-ассеты]** иконки типов документов pdf/audio/zip (#16 — есть только ic_document/ic_video); List.divider вместо внутристрочного Divider (#13). ~~progressWidthLabel~~ удалён (тик 15); бейдж таба сделан (тик 5)
 - [ ] **[medium, данные готовы]** Badge непрочитанного на табе Chats; connection-state LoadingProgress; link-preview UI (нужен `content.webPage` в VO); geometryTransition бабл→fullscreen; large-screen split-view (`NavigationMode.Auto`)
 
 ## History (завершённые фазы старого плана)

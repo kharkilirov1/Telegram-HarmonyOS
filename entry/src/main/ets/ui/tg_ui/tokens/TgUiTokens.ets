@@ -435,7 +435,6 @@ export class TgUiTokens {
   static readonly DOCUMENT_ROW_PROGRESS_HEIGHT: number = 3;
   static readonly DOCUMENT_ROW_PROGRESS_RADIUS: number = 2;
   static readonly DOCUMENT_ROW_PROGRESS_TOP_GAP: number = 6;
-  static readonly DOCUMENT_ROW_PROGRESS_MIN_VISIBLE_PERCENT: number = 2;
   static readonly DOCUMENT_ROW_PROGRESS_RING_STROKE: number = 3;
   static readonly DOCUMENT_ROW_ACTION_SIZE: number = 22;
   static readonly DOCUMENT_ROW_ACTION_ICON_SIZE: number = 12;
