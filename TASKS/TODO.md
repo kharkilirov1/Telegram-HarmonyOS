@@ -65,8 +65,8 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 ### Стикер-трек
 - [x] **1/3 TGS-анимация (`f6aa764`)**: `TgTgsPlayer` (zlib GZip → lottie на Canvas, per-instance destroy); file://→POSIX нормализация (урок 82). Witness: три tgs в File анимируются (дельта кадров 1.2 с)
 - [x] **2/3 Панель recent + отправка (`b72f846`)**: пилюля Stickers → грид 4 колонки, статичные превью + фоновая докачка; тап → `inputMessageSticker`+`inputFileRemote`. Witness: стикер отправлен из панели, дошёл (галочки 17:03), анимируется в таймлайне
-- [ ] **3/3 Каталог наборов**: getInstalledStickerSets/getStickerSet (команды уже в сериализаторе), горизонтальные вкладки паков в панели, избранные/поиск — следующий пласт
-- [ ] Полиш: превью `[Sticker]` в чат-листе → «🧩 Стикер» (humanizeBracketPreview), lazy-анимация tgs в панели (по видимости), кэш распакованного lottie JSON
+- [x] **3/3 Каталог наборов (`3187c50`)**: лента вкладок (recent 🕘 + паки: тумба/cover-emoji), тап → getStickerSet + per-set кэш; докачка превью ПОСЛЕДОВАТЕЛЬНАЯ с прерыванием по смене вкладки (пак = 100+ стикеров, параллель штормит TDLib). Witness: вкладки отрисованы, переключение сменило грид на пак, 👍 из пака доставлен (галочки 17:13)
+- [ ] Полиш стикер-трека: превью `[Sticker]` в чат-листе → «🧩 Стикер» (humanizeBracketPreview), lazy-анимация tgs в панели (по видимости), кэш распакованного lottie JSON, избранные/поиск наборов
 
 ## Релизная оркестрация 2026-07-08 (я + hermes deepseek-v4-pro)
 

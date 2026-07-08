@@ -31,7 +31,8 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 
 - **TGS-анимация живая (`f6aa764`)**: новый атом `TgTgsPlayer` — .tgs = gzip(lottie JSON): `@ohos.zlib` GZip стримит файл → `@ohos/lottie` играет на Canvas; per-instance name + `lottie.destroy` в `aboutToDisappear`. Ключевой фикс: VO раздаёт file:// URI, zlib требует POSIX-путь (урок 82). **Witness: три tgs-вишенки в File анимируются (дельта кадров на снапшотах 1.2 с)**
 - **Панель recent-стикеров + отправка (`b72f846`)**: пилюля Stickers в emoji-панели → грид 4 колонки (`TgComposerStickerPanel`, статичные превью webp/thumb/emoji-fallback, докачка синхронным downloadFile в фоне); тап → `sendMessage(inputMessageSticker + inputFileRemote(remote.id))`. Цепочка: 4 команды в AppCommand+union → CommandSerializer → `stickerPanel.ets` usecase (request-response через gateway.send). **Witness: стикер из панели отправлен в File (галочки 17:03) и анимируется в таймлайне через TgTgsPlayer — полный E2E**
-- Слэб 3/3 стикер-трека (каталог наборов getInstalledStickerSets, вкладки паков) — следующий пласт
+- **Каталог наборов 3/3 (`3187c50`, тик 26)**: лента вкладок паков (getInstalledStickerSets; тумба пака или cover-emoji), тап → getStickerSet с per-set кэшем; превью докачиваются последовательно с прерыванием по смене вкладки. **Witness: вкладки живые, грид переключился на пак, 👍 из пака доставлен (17:13)**. Стикер-трек ЗАКРЫТ (3/3); остался полиш (превью [Sticker] в чат-листе, lazy-анимация в гриде)
+- Урок 78 усилен: «force stop successfully» может НЕ убить процесс — STIME сверять с `hdc shell date` обязательно (повторный force-stop добил)
 
 ## Recent Changes (2026-07-08 вечер, тики 20-21 — стикер-repro отработан, emoji-fallback)
 
