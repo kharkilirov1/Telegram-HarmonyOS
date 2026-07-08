@@ -9,6 +9,7 @@ export struct TgStickerView {
   @Param isOutgoing: boolean = false;
   @Param isAnimatedSticker: boolean = false;
   @Param isVideoSticker: boolean = false;
+  @Param stickerEmoji: string = '';
   @Param stickerWidth: number = 0;
   @Param stickerHeight: number = 0;
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
@@ -60,11 +61,18 @@ export struct TgStickerView {
   @Builder
   private buildPlaceholder() {
     Row() {
-      TgIcon({
-        src: TgUiTokens.ICON_RES_STICKER,
-        iconSize: TgUiTokens.STICKER_VIEW_PLACEHOLDER_SIZE,
-        tintColor: TgUiTokens.STICKER_VIEW_PLACEHOLDER_ICON
-      })
+      // A big sticker emoji reads far better than a generic icon while the
+      // real render is unavailable (tgs without thumbnail / not downloaded)
+      if (this.stickerEmoji.length > 0) {
+        Text(this.stickerEmoji)
+          .fontSize(TgUiTokens.STICKER_VIEW_EMOJI_FALLBACK_SIZE)
+      } else {
+        TgIcon({
+          src: TgUiTokens.ICON_RES_STICKER,
+          iconSize: TgUiTokens.STICKER_VIEW_PLACEHOLDER_SIZE,
+          tintColor: TgUiTokens.STICKER_VIEW_PLACEHOLDER_ICON
+        })
+      }
     }
     .width(this.computedStickerWidth())
     .height(this.computedStickerHeight())

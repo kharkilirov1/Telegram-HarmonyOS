@@ -2213,6 +2213,7 @@ export struct TgChatScreenPage {
         stickerHeight: entry.message.stickerHeight,
         isAnimatedSticker: entry.message.isAnimatedSticker,
         isVideoSticker: entry.message.isVideoSticker,
+        stickerEmoji: entry.message.stickerEmoji,
         contactFirstName: entry.message.contactFirstName,
         contactLastName: entry.message.contactLastName,
         contactPhoneNumber: entry.message.contactPhoneNumber,

@@ -284,6 +284,7 @@ export class TgUiTokens {
   static readonly BUBBLE_RADIUS_INCOMING: number = 17;
   static readonly BUBBLE_RADIUS_OUTGOING: number = 17;
   static readonly BUBBLE_RADIUS_GROUPED: number = 6;
+  static readonly STICKER_VIEW_EMOJI_FALLBACK_SIZE: number = 96;
   // iOS bubble tail (attached to the last bubble of a sender group)
   static readonly BUBBLE_TAIL_WIDTH: number = 8;
   static readonly BUBBLE_TAIL_HEIGHT: number = 14;

@@ -138,6 +138,7 @@ export struct TgMessageRouter {
   @Param stickerHeight: number = 0;
   @Param isAnimatedSticker: boolean = false;
   @Param isVideoSticker: boolean = false;
+  @Param stickerEmoji: string = '';
 
   // ── Contact ──
   @Param contactFirstName: string = '';
@@ -804,6 +805,7 @@ export struct TgMessageRouter {
               isOutgoing: this.isOutgoing,
               isAnimatedSticker: this.isAnimatedSticker,
               isVideoSticker: this.isVideoSticker,
+              stickerEmoji: this.stickerEmoji,
               stickerWidth: this.stickerWidth,
               stickerHeight: this.stickerHeight,
               containerWidth: this.stickerRenderWidth()
