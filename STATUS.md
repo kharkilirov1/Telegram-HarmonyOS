@@ -1,6 +1,6 @@
 # STATUS — Telegram-HarmonyOS
 
-Snapshot date: 2026-07-02
+Snapshot date: 2026-07-07
 
 ## Current State
 
@@ -26,6 +26,167 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 - UI: `@ComponentV2` decorators, token-first via `TgUiTokens.ets`
 - Root shell: API23 `HdsTabs` + `HdsNavigation` (D14)
 - Chat-list unread badge is now a project-owned inline `TgChatMeta` capsule, not a standalone `TgUnreadBadge` atom
+
+## Recent Changes (2026-07-08 вечер, тик 11 — Play/Pause добит, войс-MVP зелёный)
+
+- Корень: `stateChange('playing')` AVPlayer терялся (урок 81) — прогресс тикал при isPlaying=false. Фикс: `timeUpdateHandler` синхронизирует `isPlaying` с фактическим `player.state`; `pause()` ставит false+emit явно
+- **Witness: Pause-кнопка + бегущий waveform-прогресс на живом воспроизведении** (скрин pause_btn2)
+- **MVP-пункт «Войсы: play/pause/прогресс» — ЗЕЛЁНЫЙ** (в связке с notify-фиксом тика 10)
+- Гейты: smoke-build + ohosTest-компайл зелёные
+- Примечание: пользователь прислал второй `[messageUnsupported]` (14:14) — если это была попытка прислать опрос, то дошёл не-poll тип (checklist?); опрос создаётся в чате через скрепку → Poll
+
+## Recent Changes (2026-07-08 вечер, тик 10 — войс-нотификация строк + док-прогон)
+
+- **Войс-UI, шаг 1 FIXED**: snapshot-листенер `TgChatScreenPage` теперь пингует строки через `notifyPlaybackRows` (prev voice/audio + current) — LazyForEach-строка перерисовывается на тиках воспроизведения (урок 65). **Witness: waveform-прогресс бежит** (до фикса бабл был статичен при играющем звуке)
+- **Остаток (точный след в TODO)**: кнопка Play/Pause не переключается — контроллер эмитит `isPlaying=false` при живом воспроизведении (прогресс из тех же снапшотов долетает); копать выставление `isPlaying=true` в `VoicePlaybackController` (~35-51) vs async prepare
+- **Документ**: скачивание по тапу ✓ (мгновенно, hilog complete=true), смена иконки бабла на «скачан» ✓; открытие вьюером — в догфуд
+- Гейты зелёные (smoke-build; ohosTest-компайл от тика 9 актуален — тестовые файлы не менялись)
+
+## Recent Changes (2026-07-08 вечер, тик 9 — фикс разрыва слов + войс-прогон на живом repro)
+
+- **Typography FIXED**: `shouldForceBreakAll` сужен (BREAK_ALL только когда самый длинный токен ≥80% текста; SDK-факт: `BREAK_WORD` сам переносит переполняющие токены, сохраняя слова). Witness: Tailscale-текст в File читабелен, слова целые
+- **Пользователь закинул repro в Saved Messages**: войс 0:12 + 2 md-документа (+ `[messageUnsupported]` — новый TDLib-тип, вероятно чек-лист)
+- **Войс-прогон**: рендер бабла ✓ (waveform/длительность), тап → скачивание → **звук играет (hilog AudioSink, pts растёт)**; НО **UI не переходит в playing** (Play-кнопка/прогресс/таймер статичны) — новый дефект класса урока 65, след в TODO
+- Все гейты зелёные; следующий тик: документы (repro есть) + войс-UI-фикс
+
+## Recent Changes (2026-07-08 вечер, тик 8 — медиа-прогон MVP, без правок кода)
+
+Прогон-тик (дефекты записаны, код не трогался):
+- **Новый дефект typography**: `forceBreakAll` от одного длинного токена рвёт все слова сообщения («Se arch», «acco unt») — witness чат File; план фикса в TODO
+- **Видео по тапу** (живое подтверждение известного пункта медиа-волны №2): скачивание стартует, но плеер до завершения не открывается — ожидание «открыться сразу с blur+прогрессом»
+- **Пин из тика 7 стойкий**: после ресинка Rozetked Plus Chat остаётся первым пином
+- Войсы/документы/опрос в доступных чатах не найдены — **просьба к пользователю: закинуть в Saved Messages войс + документ + опрос** для дешёвого repro следующих тиков
+
+## Recent Changes (2026-07-08 вечер, тик 7 — свайп-экшены чат-листа добиты + пин чата)
+
+- Свайпы существовали, но кнопки не кликались: виновник `stateStyles(pressed)` на ListItem (глотал тапы свайп-зоны) — убран; кнопки переведены на `Button(ButtonType.Normal)` + прямая CustomBuilder-форма (канон Codelabs). Урок 80
+- **Пин чата реализован по-настоящему** (была hilog-заглушка): `toggleChatIsPinned` (контракт сверен по td_api.tl:12108) — AppCommand+AnyAppCommand-union (грабля arkts-no-structural-typing: новый класс ОБЯЗАН войти в union) → CommandSerializer (`_chat_list_json` chatListMain) → `ToggleChatPinnedUseCase` → ChatListPage wire; +кейс в CommandSerializer.test
+- **Live-witness: hilog «Toggling pin for chat … → Chat pin toggled», чат перескочил первым пином выше zai** (reorder через updateChatPosition)
+- Все гейты зелёные: smoke-build, smoke-ui, ohosTest-компайл
+
+## Recent Changes (2026-07-08 вечер, тик 6 — хвостики пузырей)
+
+- Новый атом `TgBubbleTail` (Path-лепесток цвета бабла; commands в px → vp2px, RAG по единицам молчал — witness скрином по уроку 68)
+- Рендер в text-ветке `TgMessageRouter` при `groupingFlags none|bottom` (последний в группе, iOS-паттерн); отрицательный margin утапливает хвост в аватар-gap — колонка баблов не сдвигается
+- `TgTextBubbleV3.bubbleRadius`: tail-side нижний угол → small для none/bottom (хвост продолжает контур бабла)
+- Токены `BUBBLE_TAIL_WIDTH/HEIGHT` (8/14)
+- **Witness: синий хвост у исходящего в zai; smoke-build/smoke-ui зелёные**
+- Не в этом тике: хвост для doc/voice/contact (iOS их имеет); входящий live-witness (атом общий)
+
+## Recent Changes (2026-07-08 вечер, тик 5 — бейдж непрочитанного на табе Chats)
+
+- У стокового `BottomTabBarStyle` badge-API нет (witness: `tab_content.d.ts` SDK, RAG молчит — урок 68 путь); HDS-badge только в HdsNavigation-меню
+- Решение: custom `.tabBar(this.buildChatsTabBar())` в MainTabsPage — Stack{SymbolGlyph house_fill 24 + капсула} + label, те же sys.color для active/inactive; データ уже текли: `chatsUIState.totalUnreadCount` (@Trace, число чатов с unread — iOS-семантика)
+- Токены `TAB_BADGE_*` (bg `#EB5545` = iOS dark `badgeFillColor`, белый текст, 16vp капсула)
+- **Witness: красная капсула «191» на табе; в неактивном состоянии таб серый, бейдж остаётся; floating HDS-бар цел; переключение табов работает** (скрины tab_badge/tab_settings)
+- Верификация: smoke-build + smoke-ui зелёные (smoke-контракт шелла не пострадал), install с force-stop
+
+## Recent Changes (2026-07-08 вечер, тик 4 — 5-й фриз пойман и убит + имя канала)
+
+Тик планировался под poll-бабл, но по дороге поймал и закрыл два более горячих дефекта.
+
+- **[P0] 5-й THREAD_BLOCK_6S (12:52, killed при скролле ФУТБОЛ-канала)**: стек — `HiLogPrint→writev` из ArkTS (лог-шторм; дрейн-бэкофф невиновен). Источник: 8 per-batch info-логов `loadChatHistory` + per-rebuild лог VO (P3-диагностика). Все → debug. **Witness: холодный рестарт → тот же скролл-шторм — процесс жив, новых appfreeze нет**
+- **Имя канала над постом — корень найден и убит**: `isGroupChat()` включал `'channel'` → имя у первого поста после каждого date/unread-сброса (это был и «HarmonyOSHub над альбомом»). `'channel'` исключён; группировка каналов теперь через `effectiveSenderId` (senderChatId-aware). Witness: посты после «Сегодня» чисты, слипание сохранено
+- **Poll-бабл**: опрос не найден в доступных чатах (repro нет) — код-инспекция расхождений не выявила; ждёт чата с опросом (можно переслать опрос в Saved Messages)
+- Уроки 77 (isGroupChat/channel + «аномалия после date/unread → ищи сброс prevSenderId») и 78 (per-batch логи; install -r без force-stop не рестартует процесс — проверять STIME)
+- Верификация: smoke-build/smoke-ui/ohosTest-компайл зелёные; шторм-ретест на правильном (свежем) процессе
+
+## Recent Changes (2026-07-08 вечер, тик 3 — сервисные сообщения)
+
+Фича R1.5 «сервисные сообщения» end-to-end. Witness: «Якуб теперь в Telegram» (contactRegistered), «Максим/Ольга Феофанова/Glen Musaj вступил(а) в группу» (chatAddMembers) — центрированные капсулы, имена из state.users.
+
+- 13 TDLib-типов chat-событий (контракт сверен по локальному `td_api.tl`): addMembers, joinByLink/Request, deleteMember, changeTitle/Photo/DeletePhoto, pin, basicGroup/supergroupCreate, contactRegistered, videoChatStarted/Ended
+- Цепочка слоёв целиком (урок 71): MessageDto (`SERVICE` + serviceType/serviceUserIds/serviceTitle) → MessageContent → messagesReducer map+clone → ChatTimelineVO (kind `'service'`, `buildServiceMessageText`, сброс sender-группы) → Page → `TgDateSeparator` (+`@Param maxLines`)
+- 13 строк ×3 локали (`{name}/{target}/{title}` подстановки); +4 юнита `parseMessageContent` (паттерн `TdObject.fromJSON`)
+- **Грабля:** в проекте ДВА `MessageContentType` — enum в MessageDto и union-type в AppState; расширять надо ОБА (компайл поймал: «no overlap»)
+- Верификация: smoke-build + smoke-ui + ohosTest компайл зелёные; эмулятор-witness
+- Новые minor: пустое/Unknown имя в сервисной строке (не в кеше/deleted); превью чат-листа сырое `[ChatAddMembers]`
+
+## Recent Changes (2026-07-08 вечер, тик 2 — разделители таймлайна по iOS-числам)
+
+Продолжение R1.5-цикла. Все witness'ы — скриншоты эмулятора (ArkGram Chat).
+
+- **Unread-бар**: `telegram_blue` капсула → iOS-полоса: новый ресурс `unread_bar_bg #FF1B1B1B` (реф: `unreadBarFillColor 0x1b1b1b` из DefaultDarkPresentationTheme.swift), `UNREAD_MARKER_RADIUS 8→0`
+- **Дата-пилюля**: `date_separator_bg #B3000000 → #33000000` (реф: `dateFillStatic alpha 0.2`)
+- **Снят false positive** «композер перекрывает контент»: `contentEndOffset` работает, в самом низу последний пост целиком над композером; «перекрытие» — штатный скролл под полупрозрачный композер
+- **«Имя над альбомом в канале»** — не локализован дистанционно (все рендеры имени гейтятся showSenderName, VO для каналов его не ставит); в TODO план hilog-диагностики, вслепую не чинился
+- Новый минор в бэклог: reply-плейсхолдеры «Reply / Сообщение» при неразрезолвленном оригинале
+- Верификация: smoke-build + smoke-ui зелёные, переустановка, скриншот-witness
+
+## Recent Changes (2026-07-08 вечер — R1.5 скриншот-аудит + 5 фиксов внешки)
+
+Заход по жалобе пользователя «сообщения не сливаются, цитаты в каналах широкие». Скриншот-аудит на эмуляторе (до/после в scratchpad), 5 фиксов, 7 новых дефектов в бэклог (`TASKS/TODO.md` → «R1.5 скриншот-аудит»).
+
+- **TgReplySnippet**: hug-content вместо принудительной ширины (`minWidth: containerWidth` + каскад `width('100%')`) — сниппет теперь по контенту. Witness: Dart&Flutter reply компактный
+- **TgTextBodyV3 quote**: (1) бар `height('100%')` в auto-Row раздувал плашку до вьюпорта → `LayoutPolicy.matchParent`; (2) фон `hex+'1F'` = сдвиг каналов `#AARRGGBB` (ядовито-зелёный) → `accentRgba()`. Witness: пост HarmonyOSHub — плашка по тексту, фон нормальный
+- **ChatTimelineVO**: группировка постов каналов чинится синхронизацией `effectiveSenderId` ↔ `prevSenderId` (senderId=0 → senderChatId). Witness: 3 поста слиплись с зазором 2vp
+- **TgMessageRouter**: `Image.onError` → fallback на инициалы (пустые слоты аватаров в группах при недокачанных файлах)
+- Верификация: smoke-build + smoke-ui + ohosTest компайл-гейт зелёные; переустановка на эмулятор, скриншоты «после»
+- Новые дефекты (не чинились): композер перекрывает контент, «Не прочитано»-плита, сервисные `[messageChatAddMembers]`, имя над альбомом в канале, чёрные дата-пилюли, группировка без time-window, ширина канальных баблов
+
+## Recent Changes (2026-07-08 — anti-freeze P4-d + стикеры + рантайм-прогон)
+
+Оркестрация: я + hermes deepseek-v4-pro как кодер (стикеры, юнит-тесты). Витнессы: build/smoke/ohosTest зелёные + эмуляторный прогон со скриншотами.
+
+### P0-класс: THREAD_BLOCK_6S при открытии тяжёлого канала — FIXED
+- Репро на старом бинаре: открытие канала при ресинке → фриз-килл через ~9с (`appfreeze-...-20260708031349888.log`, uv_timer_task, стек libark_jsruntime, CPU-bound)
+- Корень: слияние таймер-цепочек (drain-пейсинг + media-watcher 600мс + history) в один нескончаемый uv_timer_task; пейсинг elapsed×1 недостаточен
+- Фикс: (1) эскалирующий backoff в `TdGateway.drainSlice` — `drainHotStreak`, пауза `min(250, elapsed*(1+streak))`, сброс при осушении; (2) backpressure: `isDrainCongested()` в интерфейсе TdGateway + опционально в `TdGatewayPort`; media-watcher откладывает скан на 1500мс при шторме
+- **Witness: тот же канал, та же фаза ресинка — 40+ секунд жизни, pid стабилен, НОВЫХ appfreeze НЕТ** (против килла за ~9с до фикса)
+- Юнит-тесты (кодер, мной верифицированы + компайл-гейт ohosTest зелёный): congested→скан отложен; false/undefined→скан идёт; свежий gateway→false
+
+### Стикеры (MVP «стикеры отображаются») — код готов, рантайм не подтверждён
+- Развилка в `TgStickerView`: webm→`TgInlineVideoView` (autoPlay/loop/muted), tgs→thumbnail-fallback, static→Image, пусто→placeholder
+- `stickerThumbnailPath` по всей цепочке: MessageDto (extractThumbnailPath) → MessageContent → 3 маппинга редьюсеров → VO (toFileUri) → Page → Router → View
+- Кодер пропустил слой MessageContent+редьюсеры — дочинено мной (урок: делегат-патчи проверять по всем слоям клона)
+- **Честно: рантайм-рендер стикера не увиден** (стикер-сообщение глубоко в истории; погоня свайпами остановлена) — проверить в догфуде
+
+### Рантайм-прогон патченного билда (эмулятор, скриншот-witness)
+- Чат-лист: превью 1 строка ✓, аватары грузятся ✓, unread-бейджи/пины ✓, mark-read гасит бейдж ✓
+- Канал: альбом 2×2 с живыми тумбами + «+6» ✓, blur-плейсхолдеры ✓, divider «Не прочитано» ✓ (P3 тут собрался)
+- Группа: sender-имена/цвета, reply-сниппеты с thumbnail, bot-команды, ссылки, пагинация вглубь без залипаний ✓
+- Back из чата и повторное открытие ✓
+- **Новый дефект (R1.5): poll-бабл вылезает за левый край экрана** (вопрос и радиокнопки обрезаны) — в TODO
+
+### R2-подготовка
+- `versionName` 1.0.0 → **0.1.0** (AppScope/app.json5); versionCode 1 сохранён
+- Осталось (danger boundary — только с пользователем): signingConfigs/сертификат, release-сборка, тег
+
+## Recent Changes (2026-07-07 — UI-аудит через ArkGram + правки)
+
+Тройной UI-аудит (нативные решения ArkGram ↔ HarmonyOS RAG-доки ↔ наш код), 47 находок. Применено; `scripts/smoke-build.ps1` — BUILD SUCCESSFUL, `scripts/smoke-ui-phase0.ps1` — passed.
+
+### Топ-бар (чата + навбар чат-листа)
+- connection-state (Connecting/Updating/Waiting for network) проброшен в subtitle шапки чата с accent-цветом и приоритетом над typing (паттерн ArkGram `refreshSubtitle`); строки добавлены в base/ru_RU/zh_CN
+- Single source of truth для status-bar инсета: `@Local topInset`+`aboutToAppear` убраны из `TgChatTopBar` и `TgChatListNavigationBar`; инсет считается на странице и прокидывается `@Param topInset`
+- Реактивность через `avoidAreaChange` (on/off с парным снятием в `removeWindowSizeListener`) — раньше только `windowSizeChange`, который не гарантирует смену высоты статус-бара
+- Fallback инсета `0 → STATUS_BAR_FALLBACK_INSET (38vp)` вместо прилипания к статус-бару
+- `.clickEffect(LIGHT)` на back/title/avatar (press-фидбэк, аналог `stateEffect` у ArkGram)
+- `LoadingProgress`-спиннер перед subtitle при connecting/updating — завершение connection-фичи (`showSubtitleSpinner` @Param)
+
+### Композер
+- `TextAreaController.stopEditing()` при открытии эмодзи-панели — клавиатура и панель больше не конфликтуют
+- Мультивыбор вложений: `maxSelectNumber 1→10` (photo+document), отправка ВСЕХ выбранных (caption/reply — на первом); было `attachmentUris[0]`
+- Убран неиспользуемый параметр `buildActionButton(isInsideCapsule)`
+
+### Медиа
+- Video seek в галерее: `TgInlineVideoView.controls(this.showControls)` вместо хардкод `false` (нативная панель перемотки; галерея уже передавала `showControls:true`)
+- Dismiss-свайп галереи: rebound через `getUIContext().animateTo` (было мгновенное «щёлк»), порог `100→150`
+- Подпись вьюера в `Scroll` (`MEDIA_GALLERY_CAPTION_MAX_HEIGHT`) — длинные подписи прокручиваются, не режутся на 4 строках
+- Документ: убрана двойная индикация загрузки (линейный бар) — остался Ring в плитке + % в metaLine (#17). Осиротевший `progressWidthLabel` в `TgDocumentRow` — minor cleanup follow-up
+
+### Чат-лист / логин / cleanup
+- Превью чат-листа `CHAT_ROW_PREVIEW_MAX_LINES 2→1` (паритет Telegram/iOS/ArkGram)
+- Логин: автофокус поля на 4 экранах (Phone/Code/Password/Registration) через `getUIContext().getFocusController().requestFocus(id)`+`.onAppear()`; удалён мёртвый shake (`shakeOffset`/`animateError`) из `CodeInputView`
+- Убран мёртвый импорт `TgMessageBubbleBase` из `TgMessageRouter`
+
+### Отложено (обоснованно, не недоделка)
+- **`@ReusableV2` рециклинг (#1 high)**: проект осознанно откладывает `Repeat`/`@ReusableV2` на пост-v0.1.0 perf-трек (D7 + AGENT_EXECUTION_PLAN); `smoke-ui-phase0` закрепляет контракт `.reuseId()`; perf-выигрыш не verify без эмулятор-профайлера
+- **Стикеры TGS/webm (#46)**: L-фича, нужны deps (`@ohos/lottie`/`@ohos.zlib`) + runtime-verify (эмулятор), source `stickerPath` неопределён — отдельный трек
+- Документы #16 (иконки типов)/#17 (двойной прогресс), List.divider #13 — low, отдельным проходом
+
+### Новый референс
+- **ArkGram** (декомпилированный конкурент): карта в `ARKGRAM_REFERENCE.md`, проект в `C:\Users\Kharki\Desktop\ArkGram-RE\out\ArkGram-project`
 
 ## Recent Changes (2026-05-19 current follow-up)
 

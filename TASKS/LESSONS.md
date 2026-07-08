@@ -280,3 +280,68 @@ Last updated: 2026-05-19
 - Timers do not fire while the app is in background; expired timers fire after foreground restore — the 600ms rescan chain pauses in background and resumes on foreground, which is acceptable for auto-downloads.
 - `THREAD_BLOCK_6S` is a watchdog activation check inserted into the main thread; chunking scans via `setTimeout` yields the event loop between chunks, which is exactly what the watchdog needs.
 - AppFreeze detection applies to release-version apps only (not debug) — re-verification must match the original capture's build type.
+
+## 67. Декомпилированный конкурент (ArkGram) как native ArkTS-референс
+- ArkGram даёт нативные ArkUI-паттерны/числа, которых нет в iOS/Android-рефах: connection-state в шапке через реактивный `StorageLink`+`declareWatch`, `maxSelectNumber:10` мультивыбор, `Button.stateEffect` press-фидбэк, компоновка топ-бара (Row 60, title 16/Bold, статус 12px `#2AABEE`).
+- Где мы уже сильнее — НЕ копировать: measure-driven rich-text (`TgTextBodyV3`), инкрементальный `applyDiff`, `maintainVisibleContentPosition`-prepend, изолированные `NavPathStack`. Копировать его ffmpeg/ручной translate было бы регрессом.
+- Аудит выявил и неверные факты субагентов: `TgVideoPlayerPage.ets` из находки не существует (видео в галерее — через `TgInlineVideoView`). Проверять пути перед правкой.
+
+## 68. RAG-база неполна — witness для непокрытых API берётся из build
+- `clickEffect`, `TextAreaController.stopEditing`, `@ReusableV2` НЕ находятся в `search_harmonyos_docs` (2 разных запроса каждый), но `clickEffect`/`stopEditing` реальны — build подтвердил компиляцию. Для непокрытых RAG API witness = сам build (+ grep использований в проекте/Codelabs), а не «RAG молчит → значит нет».
+- `avoidAreaChange` (Callback<AvoidAreaOptions>, `.type`===`TYPE_SYSTEM`), `getFocusController().requestFocus(id)` (12+) — RAG подтвердил с примерами. Сверяйся, где база отвечает.
+
+## 70. Слияние uv-таймерной фазы лечится эскалацией, не константным пейсингом
+- Пейсинг «пауза ≥ elapsed» (Lesson 62) не выдержал шторм при открытии тяжёлого канала: drain+watcher+history-таймеры дозревают в паузе и продлевают один uv_timer_task, main thread CPU-bound 6+с (стек libark_jsruntime, killed).
+- Рабочая схема: (1) мультипликативный backoff подряд «горячих» слайсов до жёсткого потолка (250мс) со сбросом при осушении; (2) backpressure-сигнал `isDrainCongested()` — фоновые таймер-потребители (media watcher) откладывают свои тики при шторме.
+- Опциональный член порта (`isDrainCongested?: () => boolean`) сохраняет тестовые фейки минимальными; ArkTS-фейк ДОЛЖЕН декларировать поле явно (`= undefined`), иначе присвоение в тесте не компилируется.
+
+## 71. Делегирование кодеру: патч по цепочке слоёв проверять на КАЖДОМ слое
+- DeepSeek-кодер провёл `stickerThumbnailPath` DTO→VO→Page→Router→View, но пропустил слой модели (`MessageContent`) и все 3 клон-маппинга редьюсеров — компайл поймал, но клоны потеряли бы значение молчаливо (родственно Lesson 63/65).
+- Правило делегату/ревью: для нового поля контента чек-лист слоёв фиксированный — DTO, MessageContent, messagesReducer (dto→content И clone), filesReducer (clone), VO. Grep по соседнему полю (isVideoSticker) даёт полный список точек.
+- Отчёт кодера «N/N PASS» без компиляции — не witness; компайл-гейт и build остаются за оркестратором.
+
+## 72. hdc install: только относительный путь из cwd
+- `hdc install` с абсолютным Windows-путём склеивает его с cwd (`C:\...\proj\C:/...`) и падает `[Fail]`; при этом `aa start` после провала молча запускает СТАРЫЙ установленный бинарь — ретест на нём был бы ложным witness.
+- Всегда: `cd <proj> && hdc install -r entry/build/.../entry-default-unsigned.hap`, и проверять строку `install bundle successfully`.
+
+## 69. Single source of truth для safe-area инсета + smoke-контракт как ограничитель
+- Дублирование расчёта инсета (атом `aboutToAppear` + страница) даёт рассинхрон spacer↔contentOffset. Решение: страница считает инсет один раз → атому `@Param topInset`; подписка `avoidAreaChange` (windowSizeChange НЕ гарантирует смену высоты статус-бара) с парным `off()`; fallback — токен ~38vp, не 0.
+- `smoke-ui-phase0` требует `.reuseId()` в `ChatListPage` — миграция на `@ReusableV2` (аудит #1) сломала бы контракт. Проектный smoke-контракт закрепляет паттерны: проверяй его перед «улучшением» по аудиту, иначе зелёный аудит = красный smoke.
+
+## 73. Проценты внутри auto-sized контейнера ArkUI = родительский CONSTRAINT, не финальный размер
+- Ребёнок с `width('100%')`/`height('100%')` в контейнере, сайзящемся по контенту, получает процент от constraint родителя (в List-элементе — вьюпорт), а не от финальной ширины/высоты. Два проявления в одном стеке: `TgReplySnippet` растягивался `minWidth: containerWidth`-хаком поверх `width('100%')`-каскада; quote-бар `height('100%')` в auto-Row раздувал плашку цитаты до полутора экранов.
+- Решение для «полоса высотой с контент»: `LayoutPolicy.matchParent` (API 15+, в RAG есть: «size equals the parent's content area») — резолвится от финального размера родителя. Для ширины по контенту — убирать процентный каскад целиком (hug), Ellipsis у Text работает от `constraintSize.maxWidth` предка.
+- Симптом для диагностики: «плашка/бар на весь экран при коротком контенте» — сразу искать процентные размеры в auto-контейнере.
+
+## 74. 8-значный hex в ArkUI — это #AARRGGBB: конкатенация alpha в хвост сдвигает каналы
+- `quoteAccentHex + '1F'` дал `#8774E11F` → ArkUI прочитал A=87, R=74, G=E1, B=1F — непрозрачно-зелёная цитата вместо фиолетовой подложки 12%.
+- Для «accent с прозрачностью» — только `rgba(r, g, b, a)`-строка (паттерн `accentRgba()` в TgReplySnippet/TgTextBodyV3), не hex-суффикс.
+
+## 76. В проекте ДВА MessageContentType: enum (MessageDto) и union-type (AppState)
+- Новое значение типа контента добавляется в ОБА места: `enum MessageContentType` в `core/model/dto/MessageDto.ets` И `export type MessageContentType = '...'` в `core/model/AppState.ets` (строка 12). Забытый union ловится компилятором только на первом сравнении (`no overlap`), а не на присваивании.
+- Чек-лист нового contentType поверх урока 71: enum DTO + union AppState + поля DTO/MessageContent + messagesReducer map+clone + VO + Router/Page-рендер + (опц.) reuseId-ветка.
+
+## 75. Парные ветки вычисления sender-ключа обязаны зеркалить друг друга
+- Группировка сообщений: `effectiveSenderId` (ветка не-групп) давал `-3` для senderId=0, а `prevSenderId`-трекер хранил `senderChatId` — рассинхрон реальный, фикс верный. Уточнение тика 4: каналы шли ЧЕРЕЗ isGroupChat-ветку (в isGroupChat ошибочно входил 'channel'), поэтому симптом «каналы не группируются» этой парой не объяснялся; после исключения 'channel' из isGroupChat канальная группировка держится именно на зеркальности effectiveSenderId ↔ prevSenderId.
+- При правке одной из парных веток (вычисление ключа ↔ обновление трекера) grep по второй обязателен; лучше — выносить в одну функцию.
+
+## 81. AVPlayer stateChange('playing') может теряться — синхронизируй флаг по player.state в timeUpdate
+- Witness: прогресс тикал (timeUpdate живой), а isPlaying оставался false — событие 'playing' из on('stateChange') не пришло (подписка стояла до prepare, waitForState снимает только свой handler). Полагаться на дискретные stateChange-события для UI-флага нельзя.
+- Паттерн: в `timeUpdate`-обработчике выставлять `isPlaying = player.state === 'playing'` (тики идут только при воспроизведении), а в pause()/stop()-методах — явный `isPlaying=false; emit()` рядом с await, не дожидаясь события.
+
+## 80. stateStyles на ListItem глотает клики swipeAction-кнопок
+- Симптом: свайп-панель рисуется, но onClick кнопок не стреляет; на каждый тап в hilog только `AceStateStyle ... ChatListPage` (pressed-обработка ListItem). Виновник — `stateStyles({pressed})` на самом ListItem: он перехватывает касания зоны свайп-экшенов.
+- Рабочий канон (witness: Codelabs PersonalAssistantPro + наш live-пин): ListItem БЕЗ stateStyles (+ .onClick допустим), swipeAction в прямой CustomBuilder-форме `end: () => { this.builder(item) }`, кнопки — `Button(ButtonType.Normal)` с onClick.
+- Диагностика различает «клик не дошёл до кнопки» от «команда не ушла»: grep hilog по тегу usecase-а сразу после тапа.
+
+## 79. Бейдж на HDS/стоковых табах: только custom tabBar-builder
+- `BottomTabBarStyle` не имеет badge-API (проверка: `openharmony/ets/component/tab_content.d.ts`, RAG пуст), HDS-badge существует только для HdsNavigation-меню (`@hms.hds.hdsBaseComponent.d.ets`). Рабочий путь: `.tabBar(builder)` с воспроизведением метрик (SymbolGlyph 24 + label 10fp + те же `sys.color.ohos_id_color_activated/bottom_tab_icon_off`), floating-бар HdsTabs кастом-айтем переживает.
+- Витнесс интерактивности обязателен: активное/неактивное состояние + переключение (selectedIndex в builder-е реактивен через @Local).
+
+## 77. isGroupChat ≠ «у чата есть лента с отправителями»: channel в нём — дефект вида «имя после каждого сброса»
+- `'channel'` в isGroupChat включал sender-name-логику для постов канала; showSenderName проявлялся ТОЛЬКО у первого поста после сброса prevSenderId (date/unread-маркер) — дефект выглядел как «случайное имя над случайным постом» и трижды маскировался под «имя над альбомом». Диагностика: если аномалия появляется строго после date/unread — ищи сбросы prevSenderId.
+- Канал — не групповой чат: имени/аватар-лейна нет (iOS), группировка — по senderChatId в else-ветке.
+
+## 78. Горячий путь для hilog — это и per-batch/per-rebuild/per-scroll-tick, а не только per-file
+- 5-й THREAD_BLOCK_6S: main завис в `HiLogPrint→writev` (стек libhilog_napi) при скролле-пагинации канала — 8 info-логов loadChatHistory (в т.ч. «already in progress» на КАЖДЫЙ отклонённый скролл-триггер) + per-rebuild «unread divider skipped» в VO. Диагностические info-логи, добавленные «до следующего репро», обязаны быть debug с рождения.
+- Смежный факт: `hdc install -r` БЕЗ предварительного `aa force-stop` может не перезапустить процесс (STIME старый) — ретест уйдёт на старый бинарь; witness валиден только после force-stop → start (проверять STIME в ps).
