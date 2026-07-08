@@ -152,12 +152,8 @@ export class SearchChatMessagesUseCase {
       const result = new SearchChatMessagesResult();
       result.totalCount = tdGetNumber(response, 'total_count');
 
-      // Parse messages array from TDLib foundMessages/messages response
-      const messagesJson = tdGetString(response, '_messages_raw');
-      if (messagesJson.length > 0) {
-        // Parsed by gateway — extract message IDs
-        result.messageIds = this.extractMessageIds(response);
-      }
+      // foundChatMessages carries a plain messages array — extract ids directly
+      result.messageIds = this.extractMessageIds(response);
 
       hilog.info(DOMAIN, TAG, 'Found %{public}d messages (total=%{public}d)',
         result.messageIds.length, result.totalCount);

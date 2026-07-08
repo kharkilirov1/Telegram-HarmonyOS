@@ -2695,6 +2695,9 @@ export struct TgChatScreenPage {
           onAvatarPress: (): void => {
             this.openProfile();
           },
+          onSearchPress: (): void => {
+            this.isSearchMode = true;
+          },
           isSearchMode: this.isSearchMode,
           searchQuery: this.searchQuery,
           onSearchQueryChange: (query: string): void => {

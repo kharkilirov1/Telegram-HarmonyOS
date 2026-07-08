@@ -247,6 +247,15 @@ export struct TgChatTopBar {
               right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP
             })
 
+            Image($r('app.media.ic_search'))
+              .width(22)
+              .height(22)
+              .fillColor(TgUiTokens.COLOR_ICON_PRIMARY)
+              .margin({ right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP })
+              .onClick(() => {
+                this.onSearchPress();
+              })
+
             this.buildAvatarCapsule()
           }
         }
