@@ -88,6 +88,8 @@ export struct TgTopBar {
         this.onLeftTextPress();
       }
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.showBackAction ? 'Back' : this.leftText)
   }
 
   @Builder
@@ -103,6 +105,8 @@ export struct TgTopBar {
           .onClick(() => {
             this.onSecondRightPress();
           })
+          .accessibilityGroup(true)
+          .accessibilityDescription('More options')
       }
 
       if (this.showRightAction) {
@@ -121,6 +125,8 @@ export struct TgTopBar {
         this.onRightPress();
       }
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Action')
   }
 
   build() {

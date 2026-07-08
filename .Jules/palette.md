@@ -1,0 +1,3 @@
+## 2024-07-08 - Accessible Top Navigation Components
+**Learning:** Top navigation bars containing various action icons (e.g., Back, More, Search, Compose) lack proper screen reader descriptions. Applying `.accessibilityGroup(true)` to wrapper components prevents fragmentation, and dynamic `.accessibilityDescription()` ensures accurate contextual announcements. Icon-only interactive elements must be properly grouped and labeled to guarantee an intuitive screen reader experience.
+**Action:** Applied accessibility modifiers to interactive slots in `TgTopBar`, `TgChatListNavigationBar`, and `TgChatTopBar` (e.g., dynamically describing the left slot as "Back" or using the provided left text).
