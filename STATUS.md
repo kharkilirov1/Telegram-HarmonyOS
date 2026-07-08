@@ -1,20 +1,20 @@
 # STATUS — Telegram-HarmonyOS
 
-Snapshot date: 2026-07-07
+Snapshot date: 2026-07-08 (вечер, после 17 содержательных агент-тиков)
 
 ## Current State
 
-- **Branch:** `dev`
-- **Phase:** R1 — MVP-стабилизация (Release Track v2 per `TASKS/AGENT_EXECUTION_PLAN.md`); R0 завершён 2026-07-02
-- **Direction:** минимальный релизный клиент v0.1.0 (MVP-чеклист в плане) → фичи маленькими обновлениями v0.x; ширина роадмапа больше не цель
-- **Last committed baseline:** `b8cb7d8 fix: resolve media by TDLib remote.unique_id across file-id renumbering`
-- **Release gate update:** добавлен R1.5 «Внешний вид» — пользователь заморозил релиз до приведения внешки в порядок
-- Эмулятор снова залогинен (2026-07-03); медиа-приоритет активного чата подтверждён рантаймом; следующий дефект — P4-b (пути тумб не доезжают до открытого таймлайна)
-- **Current follow-up:** Media download behavior now covers user intent continuation, failed-download retry state, open gallery refresh, and a startup AppFreeze mitigation for background media auto-downloads
-- **Build:** `scripts/smoke-build.ps1` — green (re-run 2026-07-02 with the `DownloadMessageMediaUseCase` throttling patch in tree)
-- **Smoke:** `scripts/smoke-ui-phase0.ps1` — green (re-run 2026-07-02); `bash ./scripts/smoke-ui-phase0.sh` — green on last run 2026-05-19
-- **Warnings:** unverified `libtdlib_napi.so`, missing signing config
-- **Device/emulator verification:** blocked locally (`hdc list targets` = `[Empty]`, `signingConfigs` empty)
+- **Branch:** `dev` (всё запушено в origin; разрешение на автоном. коммиты/пуши получено 2026-07-08)
+- **Phase:** R1/R1.5 — автономная часть ИСЧЕРПАНА; гейты ждут пользователя: день догфуда (R1), приёмка внешки (R1.5), сертификат+release-сборка (R2)
+- **Direction:** минимальный релизный клиент v0.1.0 → фичи маленькими обновлениями v0.x
+- **Last committed baseline:** `35fd99f` (тик 17: unique_id канон на все медиа-слоты)
+- **MVP-чеклист:** сведён с witness'ами в `TASKS/AGENT_EXECUTION_PLAN.md` — зелёное всё, что проверяемо без пользователя; остатки: reply/edit/forward-прогон руками, открытие вьюеров, стикер-рендер (нужен стикер в File), release-AppFreeze, догфуд
+- **R1.5 внешка:** закрыта (18 фиксов со скрин-witness'ами за тики 1-13); poll-бабл ждёт repro-опроса
+- **Repro-корзина для File:** ОПРОС (скрепка → Опрос) + СТИКЕР — разблокируют 2 последних автономных пункта
+- **Build:** `scripts/smoke-build.ps1` — green (последний прогон тик 17, 2026-07-08)
+- **Smoke:** `scripts/smoke-ui-phase0.ps1` — green (тик 17); ohosTest-компайл — green (тик 17)
+- **Emulator:** живой цикл: `127.0.0.1:5555`, патченный HAP установлен, сессия залогинена; свежих appfreeze нет после фикса лог-шторма (тик 4)
+- **Warnings:** unverified `libtdlib_napi.so`; signing config отсутствует (R2, нужен пользователь в DevEco)
 
 ## Architecture
 
