@@ -233,7 +233,7 @@ export struct SettingsPage {
             })
             TgSettingsRow({
               title: localized($r('app.string.settings_appearance').id, 'Appearance'),
-              iconRes: TgUiTokens.ICON_RES_EMOJI,
+              symbolRes: $r('sys.symbol.moon_fill'),
               iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_BLUE,
               trailingType: TgSettingsTrailing.Arrow,
               showSeparator: true

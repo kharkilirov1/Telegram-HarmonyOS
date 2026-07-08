@@ -395,6 +395,10 @@
     {
       "name": "tab_bar_flat_bg",
       "value": "#F0F7F7F7"
+    },
+    {
+      "name": "scroll_fab_bg",
+      "value": "#F2FFFFFF"
     }
   ]
 }

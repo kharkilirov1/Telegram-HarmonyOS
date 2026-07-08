@@ -182,6 +182,7 @@ export struct TgChatScreenPage {
   // Jump-to-message: target waiting for its history window to arrive
   private pendingJumpMessageId: string = '';
   private pendingJumpAttempts: number = 0;
+  @Local private showScrollToBottom: boolean = false;
   private isLoadingOlder: boolean = false;
   private isLoadingNewer: boolean = false;
   private isMarkingChatRead: boolean = false;
@@ -453,6 +454,39 @@ export struct TgChatScreenPage {
           hilog.warn(DOMAIN, TAG, 'Jump failed: %{public}s', error.message);
         }
       });
+  }
+
+  // Visible when the viewport is away from the true bottom. After a jump the
+  // loaded window sits mid-history, so canLoadNewer keeps the button up even
+  // at the loaded edge — the real bottom is further down.
+  private refreshScrollToBottomVisibility(endIndex: number): void {
+    const total = this.dataSource.totalCount();
+    if (total === 0) {
+      this.showScrollToBottom = false;
+      return;
+    }
+    const nearBottom = total - 1 - endIndex <= 3;
+    const midHistory = this.loadChatHistoryUseCase !== undefined &&
+      this.loadChatHistoryUseCase.canLoadNewerMessages(this.activeChatId);
+    this.showScrollToBottom = !nearBottom || midHistory;
+  }
+
+  private handleScrollToBottomPress(): void {
+    const useCase = this.loadChatHistoryUseCase;
+    if (useCase && useCase.canLoadNewerMessages(this.activeChatId)) {
+      // Mid-history window (after a jump): go straight to the chat's last
+      // message instead of paging every window in between
+      try {
+        const state = getAppCoreRuntime().getStore().getState();
+        const chat = state.chats.chats.get(this.activeChatId);
+        if (chat && chat.lastMessage && chat.lastMessage.id !== '0') {
+          this.jumpToMessageId(chat.lastMessage.id);
+          return;
+        }
+      } catch (_e) {
+      }
+    }
+    this.listScroller.scrollEdge(Edge.Bottom);
   }
 
   // Called after every timeline diff: finish a pending jump once the target
@@ -2790,6 +2824,7 @@ export struct TgChatScreenPage {
               .onScrollIndex((start: number, end: number) => {
                 this.lastVisibleStartIndex = start;
                 this.lastVisibleEndIndex = end;
+                this.refreshScrollToBottomVisibility(end);
                 if (this.isApplyingTimelineDiff) {
                   return;
                 }
@@ -2876,6 +2911,29 @@ export struct TgChatScreenPage {
         Column() {
             Blank()
               .hitTestBehavior(HitTestMode.None)
+            if (this.showScrollToBottom && !this.isSearchMode && !this.showMediaGallery) {
+              Row() {
+                Blank()
+                  .hitTestBehavior(HitTestMode.None)
+                Column() {
+                  SymbolGlyph($r('sys.symbol.chevron_down'))
+                    .fontSize(20)
+                    .fontColor([TgUiTokens.COLOR_TEXT_TITLE])
+                }
+                .width(TgUiTokens.SCROLL_FAB_SIZE)
+                .height(TgUiTokens.SCROLL_FAB_SIZE)
+                .justifyContent(FlexAlign.Center)
+                .backgroundColor(TgUiTokens.SCROLL_FAB_BG)
+                .borderRadius(TgUiTokens.SCROLL_FAB_SIZE / 2)
+                .border({ width: 0.5, color: TgUiTokens.COLOR_SEPARATOR })
+                .onClick(() => {
+                  this.handleScrollToBottomPress();
+                })
+              }
+              .width('100%')
+              .padding({ right: TgUiTokens.SCROLL_FAB_MARGIN, bottom: TgUiTokens.SCROLL_FAB_MARGIN })
+              .hitTestBehavior(HitTestMode.Transparent)
+            }
             Column() {
               if (this.isSearchMode) {
                 this.buildSearchNavBar()
