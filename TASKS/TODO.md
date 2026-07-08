@@ -67,7 +67,9 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 - [x] **Извлечение id починено**: рудиментный гейт `_messages_raw` пропускал extractMessageIds — TDLib находил, список оставался пустым («Found 0 (total=3)»). Witness: «reply» → «Found 1 (total=1)», таймлайн позиционируется к результату
 - [x] **Навигация по результатам (тик 42, `8b2ab2d`)**: бар вместо композера в search-режиме — стрелки вверх/вниз + счётчик «pos / total», деактивация стрелок на краях; подсветка найденного бабла 1.6s (флаг + key-bump `_hl` + notify — механизм урока 84)
 - [x] **Корень «Found 0 (total=3)»**: message.id — int64-число, tdGetString молча отдавал '' → все id отфильтровывались; фикс getInt64String (как в Shared Media)
-- [ ] Поиск полиш: подгрузка следующей страницы результатов (limit=100, за пределами — стрелка упирается), прыжок к сообщению вне загруженного таймлайна (scrollToMessageId не находит → нужен loadChatHistory от id), состояние «ищем…» вместо мгновенного «Не найдено»
+- [x] **Jump-to-message (тик 43, `1f7a804`)**: ChatMessagesResetEvent + reducer + loadAroundMessage (reset якорей → окно from_message_id/offset=-20, обе кромки открыты) + pendingJump доскролл после diff. Поиск прыгает по ВСЕМУ множеству результатов. Witness: Rozetked «iphone» → Found 100 (total=2994) → Jump-окно reason=aroundMessage → цель на экране, «1 / 2994» → «2 / 2994»
+- [ ] Поиск полиш: подгрузка следующей страницы результатов (за 100 загруженных стрелка упирается), состояние «ищем…» вместо мгновенного «Не найдено», кнопка «вниз к свежим» после прыжка (iOS scroll-to-bottom FAB)
+- [ ] Jump-потребители: тап по reply-снипету → прыжок к оригиналу; Shared Media тап по строке/тайлу → прыжок к сообщению (даст витнесс Play/Pause войса)
 
 ### Профиль чата (тик 36, `53cf080`)
 - [x] **Доступ к профилю ПОЧИНЕН (двойной замок)**: (1) HitTestMode.Transparent на топ-баре отдавал тапы списку под ним — onClick тайтла/аватара не стрелял; (2) guard openProfile `<= 0` резал группы/каналы (у супергрупп id отрицательный). Witness: тап по тайтлу → «title tapped» → TgProfilePage onShown, экран рендерится (аватар-блок, Notifications, Shared Media)
