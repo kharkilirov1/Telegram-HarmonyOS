@@ -35,7 +35,8 @@ import {
   CancelDownloadFileCommand,
   GetRecentStickersCommand,
   GetStickerSetCommand,
-  SendStickerCommand
+  SendStickerCommand,
+  SendAnimationCommand
 } from '../../../core/model/AppCommand';
 import { TdObject } from '../../../models/TdTypes';
 
@@ -86,6 +87,8 @@ COMMAND_SERIALIZATION_HANDLERS.set('getRecentStickers', serializeGetRecentSticke
 COMMAND_SERIALIZATION_HANDLERS.set('getInstalledStickerSets', serializeGetInstalledStickerSets);
 COMMAND_SERIALIZATION_HANDLERS.set('getStickerSet', serializeGetStickerSet);
 COMMAND_SERIALIZATION_HANDLERS.set('sendSticker', serializeSendSticker);
+COMMAND_SERIALIZATION_HANDLERS.set('getSavedAnimations', serializeGetSavedAnimations);
+COMMAND_SERIALIZATION_HANDLERS.set('sendAnimation', serializeSendAnimation);
 COMMAND_SERIALIZATION_HANDLERS.set('requestQrCodeAuth', serializeRequestQrCodeAuth);
 COMMAND_SERIALIZATION_HANDLERS.set('logout', serializeLogout);
 
@@ -361,6 +364,27 @@ function serializeSendSticker(command: AnyAppCommand, result: SerializedCommand)
     + `"width":${Math.max(0, Math.floor(cmd.payload.width))},`
     + `"height":${Math.max(0, Math.floor(cmd.payload.height))},`
     + `"emoji":"${emoji}"}`;
+  result.params.setString('_input_message_content_json', contentJson);
+}
+
+function serializeGetSavedAnimations(_command: AnyAppCommand, result: SerializedCommand): void {
+  result.method = 'getSavedAnimations';
+}
+
+function serializeSendAnimation(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SendAnimationCommand;
+  result.method = 'sendMessage';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  const remoteId = escapeForJson(cmd.payload.remoteFileId);
+  const contentJson = `{"@type":"inputMessageAnimation",`
+    + `"animation":{"@type":"inputFileRemote","id":"${remoteId}"},`
+    + `"added_sticker_file_ids":[],`
+    + `"duration":${Math.max(0, Math.floor(cmd.payload.duration))},`
+    + `"width":${Math.max(0, Math.floor(cmd.payload.width))},`
+    + `"height":${Math.max(0, Math.floor(cmd.payload.height))},`
+    + `"caption":{"@type":"formattedText","text":"","entities":[]},`
+    + `"show_caption_above_media":false,`
+    + `"has_spoiler":false}`;
   result.params.setString('_input_message_content_json', contentJson);
 }
 

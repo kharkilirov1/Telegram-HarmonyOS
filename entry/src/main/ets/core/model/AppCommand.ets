@@ -170,6 +170,14 @@ export class SendStickerPayload {
   emoji: string = '';
 }
 
+export class SendAnimationPayload {
+  chatId: ChatId = 0;
+  remoteFileId: string = ''; // animation.file.remote.id → inputFileRemote
+  duration: number = 0;
+  width: number = 0;
+  height: number = 0;
+}
+
 // Command classes
 export class SetPhoneNumberCommand extends AppCommand {
   type: string = 'setPhoneNumber';
@@ -333,6 +341,15 @@ export class SendStickerCommand extends AppCommand {
   payload: SendStickerPayload = new SendStickerPayload();
 }
 
+export class GetSavedAnimationsCommand extends AppCommand {
+  type: string = 'getSavedAnimations';
+}
+
+export class SendAnimationCommand extends AppCommand {
+  type: string = 'sendAnimation';
+  payload: SendAnimationPayload = new SendAnimationPayload();
+}
+
 export class RequestQrCodeAuthCommand extends AppCommand {
   type: string = 'requestQrCodeAuth';
 }
@@ -376,6 +393,8 @@ export type AnyAppCommand =
   | GetInstalledStickerSetsCommand
   | GetStickerSetCommand
   | SendStickerCommand
+  | GetSavedAnimationsCommand
+  | SendAnimationCommand
   | RequestQrCodeAuthCommand
   | LogoutCommand;
 
@@ -670,5 +689,21 @@ export function createSendStickerCommand(
   cmd.payload.width = width;
   cmd.payload.height = height;
   cmd.payload.emoji = emoji;
+  return cmd;
+}
+
+export function createSendAnimationCommand(
+  chatId: ChatId,
+  remoteFileId: string,
+  duration: number,
+  width: number,
+  height: number
+): SendAnimationCommand {
+  const cmd = new SendAnimationCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.remoteFileId = remoteFileId;
+  cmd.payload.duration = duration;
+  cmd.payload.width = width;
+  cmd.payload.height = height;
   return cmd;
 }

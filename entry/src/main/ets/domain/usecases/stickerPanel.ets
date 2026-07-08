@@ -11,8 +11,10 @@ import {
   createGetRecentStickersCommand,
   createGetStickerSetCommand,
   createSendStickerCommand,
+  createSendAnimationCommand,
   createDownloadFileCommand,
-  GetInstalledStickerSetsCommand
+  GetInstalledStickerSetsCommand,
+  GetSavedAnimationsCommand
 } from '../../core/model/AppCommand';
 import { TdObject } from '../../models/td/common/index';
 
@@ -49,6 +51,25 @@ export class StickerSetInfoEntry {
   thumbFileId: number = 0;
   thumbPath: string = '';
   coverEmoji: string = ''; // first cover's emoji — fallback tab icon
+}
+
+// One saved GIF for the panel's GIF tab
+export class GifPanelEntry {
+  remoteFileId: string = ''; // animation.file.remote.id — send handle
+  fileId: number = 0;
+  thumbFileId: number = 0;
+  thumbPath: string = '';
+  duration: number = 0;
+  width: number = 0;
+  height: number = 0;
+}
+
+export class SendAnimationParams {
+  chatId: ChatId = 0;
+  remoteFileId: string = '';
+  duration: number = 0;
+  width: number = 0;
+  height: number = 0;
 }
 
 function parseStickerEntry(sticker: TdObject): StickerPanelEntry {
@@ -152,6 +173,47 @@ export class StickerPanelUseCase {
     }
     hilog.info(DOMAIN, TAG, 'Sticker set %{public}s loaded: %{public}d stickers', setId, entries.length);
     return entries;
+  }
+
+  async loadSavedAnimations(): Promise<GifPanelEntry[]> {
+    const response = await this.gateway.send(new GetSavedAnimationsCommand()) as TdObject;
+    if (response.getType() !== 'animations') {
+      hilog.warn(DOMAIN, TAG, 'Unexpected saved animations response: %{public}s', response.getType());
+      return [];
+    }
+    const animations = response.getArray('animations');
+    const entries: GifPanelEntry[] = [];
+    for (let i = 0; i < animations.length; i++) {
+      const anim = animations[i];
+      const entry = new GifPanelEntry();
+      entry.duration = anim.getNumber('duration');
+      entry.width = anim.getNumber('width');
+      entry.height = anim.getNumber('height');
+      const file = anim.getObject('animation');
+      entry.fileId = file.getNumber('id');
+      entry.remoteFileId = file.getObject('remote').getString('id');
+      const thumbFile = anim.getObject('thumbnail').getObject('file');
+      entry.thumbFileId = thumbFile.getNumber('id');
+      const thumbLocal = thumbFile.getObject('local');
+      if (thumbLocal.getBool('is_downloading_completed')) {
+        entry.thumbPath = thumbLocal.getString('path');
+      }
+      if (entry.remoteFileId.length > 0) {
+        entries.push(entry);
+      }
+    }
+    hilog.info(DOMAIN, TAG, 'Saved animations loaded: %{public}d', entries.length);
+    return entries;
+  }
+
+  async sendAnimation(params: SendAnimationParams): Promise<void> {
+    if (params.chatId === 0 || params.remoteFileId.length === 0) {
+      hilog.warn(DOMAIN, TAG, 'sendAnimation rejected: empty chat or file');
+      return;
+    }
+    await this.gateway.send(createSendAnimationCommand(
+      params.chatId, params.remoteFileId, params.duration, params.width, params.height));
+    hilog.info(DOMAIN, TAG, 'Animation sent to chat %{public}d', params.chatId);
   }
 
   // Downloads one sticker file and returns its sandbox path ('' on failure).

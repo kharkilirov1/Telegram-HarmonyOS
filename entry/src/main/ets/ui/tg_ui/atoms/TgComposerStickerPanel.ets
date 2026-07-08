@@ -20,6 +20,8 @@ export class StickerCellVO {
   readonly height: number;
   @Trace pathUri: string = '';      // file:// URI of the sticker file (webp usable directly)
   @Trace thumbPathUri: string = ''; // file:// URI of the thumbnail
+  isGif: boolean = false;           // GIF tab cell — tap sends inputMessageAnimation
+  duration: number = 0;             // animation duration (GIF cells)
 
   constructor(stickerId: string, remoteFileId: string, fileId: number, thumbFileId: number,
     emoji: string, isAnimated: boolean, isVideo: boolean, width: number, height: number) {
@@ -113,6 +115,13 @@ export struct TgComposerStickerPanel {
       if (tab.tabId === 'recent') {
         Text('🕘')
           .fontSize(TgUiTokens.COMPOSER_STICKER_TAB_EMOJI_SIZE)
+      } else if (tab.tabId === 'gifs') {
+        Text('GIF')
+          .fontSize(TgUiTokens.COMPOSER_EMOJI_HEADER_SIZE)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(this.activeTabId === 'gifs'
+            ? TgUiTokens.COMPOSER_ACTION_ACTIVE
+            : TgUiTokens.COLOR_TEXT_META)
       } else if (tab.thumbUri.length > 0) {
         Image(tab.thumbUri)
           .width(TgUiTokens.COMPOSER_STICKER_TAB_SIZE - 8)

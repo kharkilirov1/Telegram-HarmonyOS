@@ -38,7 +38,9 @@ import {
   StickerPanelUseCase,
   StickerPanelEntry,
   StickerSetInfoEntry,
-  SendStickerParams
+  GifPanelEntry,
+  SendStickerParams,
+  SendAnimationParams
 } from '../../../domain/usecases/stickerPanel';
 import {
   SendMediaMessageUseCase,
@@ -1947,7 +1949,10 @@ export struct TgChatScreenPage {
       if (token !== this.pageLifecycleToken) {
         return;
       }
-      const tabs: StickerSetTabVO[] = [new StickerSetTabVO('recent', '', 0, '')];
+      const tabs: StickerSetTabVO[] = [
+        new StickerSetTabVO('recent', '', 0, ''),
+        new StickerSetTabVO('gifs', 'GIF', 0, '')
+      ];
       for (const set of sets) {
         const tab = new StickerSetTabVO(set.setId, set.title, set.thumbFileId, set.coverEmoji);
         if (set.thumbPath.length > 0) {
@@ -1975,6 +1980,10 @@ export struct TgChatScreenPage {
     if (!useCase || tabId === 'recent') {
       return;
     }
+    if (tabId === 'gifs') {
+      this.loadGifPanel();
+      return;
+    }
     this.stickerPanelItems = [];
     this.stickerPanelLoading = true;
     const token = this.pageLifecycleToken;
@@ -1999,9 +2008,63 @@ export struct TgChatScreenPage {
     });
   }
 
+  private loadGifPanel(): void {
+    const useCase = this.stickerPanelUseCase;
+    if (!useCase) {
+      return;
+    }
+    const cached = this.stickerSetCache.get('gifs');
+    if (cached !== undefined) {
+      this.stickerPanelItems = cached;
+      this.fetchStickerPanelFiles(cached, 'gifs');
+      return;
+    }
+    this.stickerPanelItems = [];
+    this.stickerPanelLoading = true;
+    const token = this.pageLifecycleToken;
+    useCase.loadSavedAnimations().then((entries: GifPanelEntry[]) => {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
+      const cells: StickerCellVO[] = [];
+      for (const entry of entries) {
+        // GIF cells reuse the sticker cell VO: thumbnail preview + tap-to-send
+        const cell = new StickerCellVO('gif_' + entry.remoteFileId, entry.remoteFileId,
+          entry.fileId, entry.thumbFileId, '', false, true, entry.width, entry.height);
+        cell.isGif = true;
+        cell.duration = entry.duration;
+        if (entry.thumbPath.length > 0) {
+          cell.thumbPathUri = fileUri.getUriFromPath(entry.thumbPath);
+        }
+        cells.push(cell);
+      }
+      this.stickerSetCache.set('gifs', cells);
+      this.stickerPanelLoading = false;
+      if (this.activeStickerTabId === 'gifs') {
+        this.stickerPanelItems = cells;
+        this.fetchStickerPanelFiles(cells, 'gifs');
+      }
+    }).catch(() => {
+      if (token === this.pageLifecycleToken) {
+        this.stickerPanelLoading = false;
+      }
+    });
+  }
+
   private handleStickerSelected(cell: StickerCellVO): void {
     const useCase = this.stickerPanelUseCase;
     if (!useCase || this.activeChatId === 0) {
+      return;
+    }
+    if (cell.isGif) {
+      const gifParams = new SendAnimationParams();
+      gifParams.chatId = this.activeChatId;
+      gifParams.remoteFileId = cell.remoteFileId;
+      gifParams.duration = cell.duration;
+      gifParams.width = cell.width;
+      gifParams.height = cell.height;
+      useCase.sendAnimation(gifParams);
+      this.showComposerStickerPanel = false;
       return;
     }
     const params = new SendStickerParams();
