@@ -36,8 +36,9 @@ TDLib (C++ NAPI) → TdGateway → MainThreadDispatcher → EventNormalizer → 
 
 ## Recent Changes (2026-07-08 вечер, тик 28 — live-refresh: корень найден, канон-фикс key-штампа)
 
-- **Урок 84 (`f87a996`)**: LazyForEach пересобирает строку ТОЛЬКО при смене key — notifyDataChange со стабильным msg_id был no-op для V2-строк (Monitor-проба: @Param не обновлялись). Фикс: mediaRenderStamp в key (пути/downloading/прогресс-бакеты/альбом) + stableKey для diff-структуры; снят .reuseId (V1-механизм на V2-строке). Witness: «вечная кнопка» на скачанном видео исчезла; полный live-переход перепроверить на свежем посте
-- Попутно: applyFilePathToContent теряет uniqueId при клоне (в TODO); диагностические debug-логи охоты снять после live-witness
+- **Урок 84 (`f87a996`)**: LazyForEach пересобирает строку ТОЛЬКО при смене key — notifyDataChange со стабильным msg_id был no-op для V2-строк (Monitor-проба: @Param не обновлялись). Фикс: mediaRenderStamp в key (пути/downloading/прогресс-бакеты/альбом) + stableKey для diff-структуры; снят .reuseId (V1-механизм на V2-строке)
+- **ПОЛНЫЙ LIVE-WITNESS (тик 29, `9ca79f0`)**: свежий пост Москвача — блюр-minithumb перешёл в чёткий кадр видео на глазах (два снапшота с интервалом 5 с, без взаимодействий). Медиа-пласт: тап-загрузка + pre-scan uid + live-refresh + uniqueId-клон — ЗАКРЫТ; диагностика охоты снята
+- Остатки пласта: playback-канал (isPlaying через notify со стабильным key — тот же класс риска), полноэкран-прогон
 
 ## Recent Changes (2026-07-08 вечер, тик 27 — ПЛАСТ медиа-вьюеры: тап-загрузка починена, live-нить открыта)
 
