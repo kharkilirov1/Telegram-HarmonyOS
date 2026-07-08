@@ -13,6 +13,21 @@ import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 export struct TgComposerInput {
   @Param text: string = '';
   @Param placeholder: string = 'Message';
+  // TextArea keeps an internal buffer: a bare `text:` prop renders but typing
+  // starts from the stale buffer (edit-prefill got wiped by the first key).
+  // Two-way `!!` binding on a @Local mirror keeps prop and buffer in sync.
+  @Local textBuffer: string = '';
+
+  @Monitor('text')
+  onTextParamChanged(_m: IMonitor): void {
+    if (this.text !== this.textBuffer) {
+      this.textBuffer = this.text;
+    }
+  }
+
+  aboutToAppear(): void {
+    this.textBuffer = this.text;
+  }
   @Param isDisabled: boolean = false;
   @Param showAttachButton: boolean = true;
   @Param showEmojiButton: boolean = true;
@@ -462,7 +477,7 @@ export struct TgComposerInput {
           this.buildAccessorySeparator()
 
           Row() {
-            TextArea({ text: this.text, placeholder: this.placeholder, controller: this.textController })
+            TextArea({ text: this.textBuffer!!, placeholder: this.placeholder, controller: this.textController })
               .style(TextContentStyle.INLINE)
               .fontSize(TgUiTokens.COMPOSER_TEXT_SIZE)
               .fontWeight(TgUiTokens.COMPOSER_TEXT_WEIGHT)
