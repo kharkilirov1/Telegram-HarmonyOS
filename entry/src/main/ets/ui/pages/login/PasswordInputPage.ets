@@ -14,6 +14,9 @@ const TAG = 'PasswordInputPage';
 
 @ComponentV2
 export struct PasswordInputPage {
+  // Стабильный id поля ввода пароля — цель автофокуса при появлении шага.
+  private static readonly PASSWORD_INPUT_ID: string = 'login_password_input';
+
   @Param hint: string = '';
   @Param suggestReset: boolean = false;
   @Event onPasswordAccepted: () => void = (): void => {};
@@ -95,6 +98,7 @@ export struct PasswordInputPage {
                 text: this.password,
                 placeholder: this.getPasswordPlaceholder()
               })
+                .id(PasswordInputPage.PASSWORD_INPUT_ID)
                 .layoutWeight(1)
                 .height(TgUiTokens.LOGIN_TEXT_INPUT_HEIGHT)
                 .fontSize(TgUiTokens.LOGIN_INPUT_FONT_SIZE)
@@ -183,6 +187,16 @@ export struct PasswordInputPage {
     .width('100%')
     .height('100%')
     .backgroundColor(TgUiTokens.LOGIN_BG)
+    .onAppear(() => { this.focusPasswordInput(); })
+  }
+
+  // Фокусирует поле пароля и поднимает софт-клавиатуру при появлении шага.
+  private focusPasswordInput(): void {
+    try {
+      this.getUIContext().getFocusController().requestFocus(PasswordInputPage.PASSWORD_INPUT_ID);
+    } catch (e) {
+      // requestFocus бросает, если узел ещё не готов — не критично для UX.
+    }
   }
 
   // ─── Submit Password ───

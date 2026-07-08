@@ -65,6 +65,8 @@ export interface TdGateway {
   getState(): GatewayState;
   getGatewayStats(): GatewayStats;
   isReady(): boolean;
+  /** Backpressure: очередь update-батчей перегружена (шторм ресинка). */
+  isDrainCongested(): boolean;
 }
 
 class PendingRequest {
@@ -100,6 +102,13 @@ export class TdGatewayImpl implements TdGateway {
   // планируется с задержкой >= фактической длительности предыдущего (пейсинг):
   // дрейн занимает не более ~50% времени main thread при любом размере элементов.
   private static readonly DRAIN_YIELD_MS = 2;
+  // Эскалация пауз при шторме (P4-d, freeze 2026-07-08): пейсинга elapsed×1 мало —
+  // watcher/history/ArkUI-таймеры дозревают в паузе и продлевают ту же uv-фазу,
+  // main thread остаётся CPU-bound 6+ секунд. Подряд идущие «горячие» слайсы
+  // (упёрлись в бюджет) удлиняют паузу мультипликативно до жёсткого потолка,
+  // гарантируя watchdog/vsync окна даже при непрерывном притоке батчей.
+  private drainHotStreak: number = 0;
+  private static readonly DRAIN_BACKOFF_CAP_MS = 250;
 
   private constructor() {}
 
@@ -533,6 +542,7 @@ export class TdGatewayImpl implements TdGateway {
         this.drainIndex = 0;
         const nextBatch = this.pendingBatchQueue.shift();
         if (nextBatch === undefined) {
+          this.drainHotStreak = 0;
           return;
         }
         this.loadBatchForDrain(nextBatch, dispatcher);
@@ -544,8 +554,23 @@ export class TdGatewayImpl implements TdGateway {
     }
     if (this.drainIndex < this.drainItems.length || this.pendingBatchQueue.length > 0) {
       const elapsed = Date.now() - sliceStart;
-      this.scheduleDrain(dispatcher, Math.max(TdGatewayImpl.DRAIN_YIELD_MS, elapsed));
+      this.drainHotStreak++;
+      const backoff = Math.min(
+        TdGatewayImpl.DRAIN_BACKOFF_CAP_MS,
+        elapsed * (1 + this.drainHotStreak)
+      );
+      this.scheduleDrain(dispatcher, Math.max(TdGatewayImpl.DRAIN_YIELD_MS, backoff));
+    } else {
+      this.drainHotStreak = 0;
     }
+  }
+
+  /**
+   * Сигнал шторма для фоновых потребителей main thread (media watcher и т.п.):
+   * очередь батчей непуста или дрейн подряд упирается в бюджет.
+   */
+  isDrainCongested(): boolean {
+    return this.pendingBatchQueue.length > 0 || this.drainHotStreak > 0;
   }
 
   private loadBatchForDrain(batchJson: string, dispatcher: MainThreadDispatcher): void {
@@ -589,6 +614,7 @@ export class TdGatewayImpl implements TdGateway {
     this.pendingBatchQueue = [];
     this.drainItems = [];
     this.drainIndex = 0;
+    this.drainHotStreak = 0;
   }
 
   /**

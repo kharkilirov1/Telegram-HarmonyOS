@@ -30,6 +30,9 @@ export class DownloadMessageMediaUseCase {
   private lifecycleToken: number = 0;
   private static readonly SCAN_THROTTLE_MS = 600;
   private static readonly MAX_ENQUEUES_PER_SCAN = 4;
+  // Отсрочка скана при шторме батчей (P4-d): watcher-тики не должны продлевать
+  // и без того горячую uv-таймерную фазу main thread.
+  private static readonly CONGESTED_RETRY_MS = 1500;
 
   private activeChatIdProvider: () => number;
 
@@ -101,6 +104,11 @@ export class DownloadMessageMediaUseCase {
       this.scanTimerId = -1;
       this.scanScheduled = false;
       if (!this.isCurrentRun(token)) {
+        return;
+      }
+      const congestedProbe = this.gateway.isDrainCongested;
+      if (congestedProbe !== undefined && congestedProbe()) {
+        this.scheduleScan(DownloadMessageMediaUseCase.CONGESTED_RETRY_MS);
         return;
       }
       this.scanAndDownload(this.store.getState());

@@ -180,7 +180,7 @@ export class ChatComposerController {
       return;
     }
 
-    const sourceUri = attachmentUris[0];
+    const uris = attachmentUris.slice();
     const mediaKind = host.getPendingAttachmentKind().length > 0 ? host.getPendingAttachmentKind() : 'document';
     const replyToMessageId = host.getReplyToMessageId();
     const wasNearBottom = host.isNearBottom();
@@ -189,22 +189,7 @@ export class ChatComposerController {
     host.setEmojiPanelVisible(false);
     host.setSendingMessage(true);
 
-    this.preparePickedAttachmentLocalPath(mediaKind, sourceUri, host)
-      .then((localPath: string) => {
-        if (!this.isMediaSendContextActive(host, lifecycleToken, useCase, chatId)) {
-          return Promise.resolve();
-        }
-
-        const params = new SendMediaMessageParams();
-        params.chatId = chatId;
-        params.mediaKind = mediaKind;
-        params.localPath = localPath;
-        params.caption = caption;
-        if (replyToMessageId !== '0') {
-          params.replyToMessageId = replyToMessageId;
-        }
-        return useCase.execute(params);
-      })
+    this.sendAttachmentsSequentially(uris, mediaKind, caption, replyToMessageId, host, lifecycleToken, useCase, chatId)
       .then(() => {
         if (!this.isMediaSendContextActive(host, lifecycleToken, useCase, chatId)) {
           return;
@@ -232,6 +217,38 @@ export class ChatComposerController {
       });
   }
 
+  // Sends every picked attachment as its own media message (Telegram multi-select).
+  // Caption and reply are attached to the first item only.
+  private async sendAttachmentsSequentially(
+    uris: string[],
+    mediaKind: string,
+    caption: string,
+    replyToMessageId: string,
+    host: ChatComposerControllerHost,
+    lifecycleToken: number,
+    useCase: SendMediaMessageUseCase,
+    chatId: number
+  ): Promise<void> {
+    for (let i = 0; i < uris.length; i++) {
+      if (!this.isMediaSendContextActive(host, lifecycleToken, useCase, chatId)) {
+        return;
+      }
+      const localPath = await this.preparePickedAttachmentLocalPath(mediaKind, uris[i], host);
+      if (!this.isMediaSendContextActive(host, lifecycleToken, useCase, chatId)) {
+        return;
+      }
+      const params = new SendMediaMessageParams();
+      params.chatId = chatId;
+      params.mediaKind = mediaKind;
+      params.localPath = localPath;
+      params.caption = i === 0 ? caption : '';
+      if (i === 0 && replyToMessageId !== '0') {
+        params.replyToMessageId = replyToMessageId;
+      }
+      await useCase.execute(params);
+    }
+  }
+
   private showPendingToast(host: ChatComposerControllerHost, message: string): void {
     try {
       host.getChatUIContext().getPromptAction().showToast({ message: message, duration: 1500 });
@@ -247,7 +264,7 @@ export class ChatComposerController {
         MIMEType: kind === 'video'
           ? photoAccessHelper.PhotoViewMIMETypes.VIDEO_TYPE
           : photoAccessHelper.PhotoViewMIMETypes.IMAGE_TYPE,
-        maxSelectNumber: 1,
+        maxSelectNumber: 10,
         isSearchSupported: true,
         isPhotoTakingSupported: true
       });
@@ -266,7 +283,7 @@ export class ChatComposerController {
   private async openDocumentAttachmentPicker(host: ChatComposerControllerHost): Promise<void> {
     try {
       const documentOptions = new picker.DocumentSelectOptions();
-      documentOptions.maxSelectNumber = 1;
+      documentOptions.maxSelectNumber = 10;
       const documentPicker = new picker.DocumentViewPicker();
       const result: string[] = await documentPicker.select(documentOptions);
       if (!result || result.length === 0) {

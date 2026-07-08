@@ -155,8 +155,11 @@ export struct TgMediaGalleryPage {
     if (Math.abs(this.dismissOffsetY) > TgUiTokens.MEDIA_GALLERY_DISMISS_THRESHOLD) {
       this.onDismiss();
     } else {
-      this.dismissOffsetY = 0;
-      this.dismissOpacity = 1.0;
+      // Animate the rebound instead of snapping the frame back instantly.
+      this.getUIContext().animateTo({ duration: 200, curve: Curve.Friction }, () => {
+        this.dismissOffsetY = 0;
+        this.dismissOpacity = 1.0;
+      });
     }
   }
 
@@ -203,14 +206,17 @@ export struct TgMediaGalleryPage {
   @Builder
   private buildBottomBar() {
     if (this.showOverlay && this.currentItem() && this.currentItem()!.caption.trim().length > 0) {
-      Row() {
+      Scroll() {
         Text(this.currentItem()!.caption)
           .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
           .fontColor(TgUiTokens.MEDIA_GALLERY_TEXT_PRIMARY)
-          .maxLines(4)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .width('100%')
+          .textAlign(TextAlign.Start)
       }
       .width('100%')
+      .constraintSize({ maxHeight: TgUiTokens.MEDIA_GALLERY_CAPTION_MAX_HEIGHT })
+      .scrollBar(BarState.Off)
+      .align(Alignment.TopStart)
       .padding({ left: 16, right: 16, top: 12, bottom: 12 })
       .backgroundColor(TgUiTokens.MEDIA_GALLERY_OVERLAY_BG)
     }

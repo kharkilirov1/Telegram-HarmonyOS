@@ -13,6 +13,8 @@ import { TdObject } from '../../../main/ets/models/TdTypes';
 
 class FakeGateway implements TdGatewayPort {
   sentCommands: AnyAppCommand[] = [];
+  // Optional port member: undefined by default (backward-compat case relies on it)
+  isDrainCongested?: () => boolean = undefined;
 
   initialize(): Promise<void> {
     return Promise.resolve();
@@ -133,6 +135,62 @@ export default function downloadMessageMediaTest() {
       useCase.start();
       await sleep(750);
       expect(sentFileIds(gateway).length).assertEqual(1);
+      useCase.stop();
+    });
+
+    // P4-d anti-freeze: congested drain → scan deferred, no downloads sent
+    it('defers_scan_when_drain_is_congested', 0, async () => {
+      const chats = new Map<number, number[]>();
+      chats.set(101, [1, 2, 3, 4, 5, 6]);
+      const store = new AppStore(appReducer, stateWithChats(chats), false);
+      const gateway = new FakeGateway();
+      gateway.isDrainCongested = (): boolean => true;
+      const useCase = new DownloadMessageMediaUseCase(store, gateway, (): number => 0);
+
+      useCase.start();
+      // SCAN_THROTTLE_MS=600 fires → congested → reschedule CONGESTED_RETRY_MS=1500
+      await sleep(750);
+      expect(sentFileIds(gateway).length).assertEqual(0);
+
+      // After another ~800ms (total ~1550ms) the 1500ms retry hasn't fired yet
+      await sleep(800);
+      expect(sentFileIds(gateway).length).assertEqual(0);
+      useCase.stop();
+    });
+
+    // Explicit isDrainCongested=false — scan proceeds normally
+    it('scans_when_drain_is_explicitly_not_congested', 0, async () => {
+      const chats = new Map<number, number[]>();
+      chats.set(101, [1, 2, 3, 4, 5, 6]);
+      const store = new AppStore(appReducer, stateWithChats(chats), false);
+      const gateway = new FakeGateway();
+      gateway.isDrainCongested = (): boolean => false;
+      const useCase = new DownloadMessageMediaUseCase(store, gateway, (): number => 0);
+
+      useCase.start();
+      await sleep(750);
+      expect(sentFileIds(gateway).length).assertEqual(4);
+
+      await sleep(700);
+      expect(sentFileIds(gateway).length).assertEqual(6);
+      useCase.stop();
+    });
+
+    // Backward compat: undefined isDrainCongested → not congested → scan proceeds
+    it('scans_when_isDrainCongested_is_undefined', 0, async () => {
+      const chats = new Map<number, number[]>();
+      chats.set(101, [1, 2, 3, 4, 5, 6]);
+      const store = new AppStore(appReducer, stateWithChats(chats), false);
+      const gateway = new FakeGateway();
+      // isDrainCongested stays undefined (default FakeGateway)
+      const useCase = new DownloadMessageMediaUseCase(store, gateway, (): number => 0);
+
+      useCase.start();
+      await sleep(750);
+      expect(sentFileIds(gateway).length).assertEqual(4);
+
+      await sleep(700);
+      expect(sentFileIds(gateway).length).assertEqual(6);
       useCase.stop();
     });
   });

@@ -14,6 +14,9 @@ const TAG = 'RegistrationPage';
 
 @ComponentV2
 export struct RegistrationPage {
+  // Стабильный id поля First Name — цель автофокуса при появлении шага.
+  private static readonly FIRST_NAME_INPUT_ID: string = 'login_first_name_input';
+
   @Event onRegistered: () => void = (): void => {};
 
   @Local private firstName: string = '';
@@ -65,6 +68,7 @@ export struct RegistrationPage {
               text: this.firstName,
               placeholder: 'First Name'
             })
+              .id(RegistrationPage.FIRST_NAME_INPUT_ID)
               .width('100%')
               .height(TgUiTokens.LOGIN_INPUT_ROW_HEIGHT)
               .fontSize(TgUiTokens.LOGIN_INPUT_FONT_SIZE)
@@ -154,6 +158,16 @@ export struct RegistrationPage {
     .width('100%')
     .height('100%')
     .backgroundColor(TgUiTokens.LOGIN_BG)
+    .onAppear(() => { this.focusFirstNameInput(); })
+  }
+
+  // Фокусирует поле First Name и поднимает софт-клавиатуру при появлении шага.
+  private focusFirstNameInput(): void {
+    try {
+      this.getUIContext().getFocusController().requestFocus(RegistrationPage.FIRST_NAME_INPUT_ID);
+    } catch (e) {
+      // requestFocus бросает, если узел ещё не готов — не критично для UX.
+    }
   }
 
   private handleRegister(): void {

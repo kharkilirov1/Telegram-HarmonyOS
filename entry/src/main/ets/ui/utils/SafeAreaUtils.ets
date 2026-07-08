@@ -22,7 +22,7 @@ export function computeTopBarHeight(context: common.UIAbilityContext): number {
     }
   } catch (_error) {
   }
-  return TgUiTokens.TOP_BAR_HEIGHT;
+  return TgUiTokens.STATUS_BAR_FALLBACK_INSET + TgUiTokens.TOP_BAR_HEIGHT + TgUiTokens.TOP_BAR_BOTTOM_PADDING;
 }
 
 /**
@@ -40,7 +40,7 @@ export function computeChatListTopBarHeight(context: common.UIAbilityContext): n
     }
   } catch (_error) {
   }
-  return TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT;
+  return TgUiTokens.STATUS_BAR_FALLBACK_INSET + TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT;
 }
 
 /**
@@ -112,6 +112,10 @@ export function removeWindowSizeListener(mainWindow: window.Window | undefined):
   if (mainWindow !== undefined) {
     try {
       mainWindow.off('windowSizeChange');
+    } catch (_error) {
+    }
+    try {
+      mainWindow.off('avoidAreaChange');
     } catch (_error) {
     }
   }

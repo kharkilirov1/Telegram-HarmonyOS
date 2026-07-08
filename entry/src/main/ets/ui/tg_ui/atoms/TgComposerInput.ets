@@ -48,6 +48,10 @@ export struct TgComposerInput {
   @Event onForwardCancelPress: () => void = () => {};
   @Event onAttachmentCancelPress: () => void = () => {};
 
+  // Controls the TextArea so we can drop the soft keyboard when the emoji panel
+  // opens (otherwise system keyboard and panel fight for the same space).
+  private textController: TextAreaController = new TextAreaController();
+
   private hasText(): boolean {
     return this.text.trim().length > 0;
   }
@@ -120,7 +124,7 @@ export struct TgComposerInput {
   }
 
   @Builder
-  private buildActionButton(isInsideCapsule: boolean) {
+  private buildActionButton() {
     Row() {
       TgIcon({
         src: this.canSend() ? TgUiTokens.ICON_RES_SEND : TgUiTokens.ICON_RES_MIC,
@@ -458,7 +462,7 @@ export struct TgComposerInput {
           this.buildAccessorySeparator()
 
           Row() {
-            TextArea({ text: this.text, placeholder: this.placeholder })
+            TextArea({ text: this.text, placeholder: this.placeholder, controller: this.textController })
               .style(TextContentStyle.INLINE)
               .fontSize(TgUiTokens.COMPOSER_TEXT_SIZE)
               .fontWeight(TgUiTokens.COMPOSER_TEXT_WEIGHT)
@@ -508,13 +512,14 @@ export struct TgComposerInput {
               .alignItems(VerticalAlign.Center)
               .onClick(() => {
                 if (!this.isDisabled) {
+                  this.textController.stopEditing();
                   this.onEmojiPress();
                 }
               })
             }
 
             if (this.canSend()) {
-              this.buildActionButton(true)
+              this.buildActionButton()
             }
           }
           .width('100%')
@@ -532,7 +537,7 @@ export struct TgComposerInput {
 
         // ── Mic button remains a separate glass circle on idle input ──
         if (!this.canSend()) {
-          this.buildActionButton(false)
+          this.buildActionButton()
         }
       }
       .width('100%')

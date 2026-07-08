@@ -76,6 +76,7 @@ function applyFilePathToContent(content: MessageContent, fileId: number, localPa
   c.isAnimatedSticker = content.isAnimatedSticker;
   c.isVideoSticker = content.isVideoSticker;
   c.isPremiumSticker = content.isPremiumSticker;
+  c.stickerThumbnailPath = content.stickerThumbnailPath;
 
   c.animationPath = content.animationFileId === fileId ? localPath : content.animationPath;
   c.animationFileId = content.animationFileId;

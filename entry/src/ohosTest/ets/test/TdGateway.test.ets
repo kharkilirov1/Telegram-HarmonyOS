@@ -105,5 +105,12 @@ export default function tdGatewayTest() {
         expect(true).assertTrue();
       });
     });
+
+    describe('isDrainCongested', () => {
+      it('should return false for fresh idle gateway', 0, () => {
+        const gw = getTdGateway() as TdGatewayImpl;
+        expect(gw.isDrainCongested()).assertFalse();
+      });
+    });
   });
 }

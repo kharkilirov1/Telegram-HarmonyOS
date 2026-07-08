@@ -105,6 +105,10 @@ export class TdGatewayAdapter implements TdGatewayPort {
     }
   }
 
+  isDrainCongested = (): boolean => {
+    return this.gateway.isDrainCongested();
+  };
+
   async destroy(): Promise<void> {
     // Gateway уничтожается через AppCoreRuntime.shutdown()
     hilog.info(DOMAIN, TAG, 'Adapter destroy called (no-op, use AppCoreRuntime.shutdown)');

@@ -2,10 +2,6 @@ import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 import { TgIcon } from './TgIcon';
 import { TgTopChromeBackground } from './TgTopChromeBackground';
-import { window } from '@kit.ArkUI';
-import { common } from '@kit.AbilityKit';
-
-declare function px2vp(value: number): number;
 
 @ComponentV2
 export struct TgChatListNavigationBar {
@@ -22,21 +18,9 @@ export struct TgChatListNavigationBar {
   @Event onSearchChange: (value: string) => void = (_: string): void => {};
   @Event onSearchSubmit: (value: string) => void = (_: string): void => {};
 
-  @Local private topInset: number = 0;
-
-  aboutToAppear(): void {
-    try {
-      const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      const windowStage = context.windowStage;
-      if (windowStage) {
-        const mainWindow = windowStage.getMainWindowSync();
-        const avoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
-        this.topInset = px2vp(avoidArea.topRect.height);
-      }
-    } catch (_error) {
-      this.topInset = 0;
-    }
-  }
+  // Single source of truth: ChatListPage computes the status-bar inset (with
+  // avoidAreaChange reactivity) and passes it down. No independent read here.
+  @Param topInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
 
   private useRealtimeBlur(): boolean {
     return TgGlassPolicy.shouldUseRealtimeBlurForMode(this.glassMode);

@@ -108,7 +108,7 @@ export struct TgInlineVideoView {
           .autoPlay(this.autoPlay)
           .loop(this.loop)
           .muted(this.muted)
-          .controls(false)
+          .controls(this.showControls)
           .objectFit(ImageFit.Cover)
           .borderRadius(this.radius())
           .clip(true)

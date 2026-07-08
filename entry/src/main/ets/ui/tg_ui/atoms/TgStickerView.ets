@@ -1,9 +1,11 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgIcon } from './TgIcon';
+import { TgInlineVideoView } from './TgInlineVideoView';
 
 @ComponentV2
 export struct TgStickerView {
   @Param stickerPath: string | Resource = '';
+  @Param stickerThumbnailPath: string = '';
   @Param isOutgoing: boolean = false;
   @Param isAnimatedSticker: boolean = false;
   @Param isVideoSticker: boolean = false;
@@ -17,6 +19,10 @@ export struct TgStickerView {
       return this.stickerPath.trim().length > 0;
     }
     return true;
+  }
+
+  private hasThumbnail(): boolean {
+    return this.stickerThumbnailPath.trim().length > 0;
   }
 
   private maxStickerSide(): number {
@@ -52,27 +58,61 @@ export struct TgStickerView {
   }
 
   @Builder
+  private buildPlaceholder() {
+    Row() {
+      TgIcon({
+        src: TgUiTokens.ICON_RES_STICKER,
+        iconSize: TgUiTokens.STICKER_VIEW_PLACEHOLDER_SIZE,
+        tintColor: TgUiTokens.STICKER_VIEW_PLACEHOLDER_ICON
+      })
+    }
+    .width(this.computedStickerWidth())
+    .height(this.computedStickerHeight())
+    .justifyContent(FlexAlign.Center)
+    .alignItems(VerticalAlign.Center)
+    .backgroundColor(TgUiTokens.STICKER_VIEW_PLACEHOLDER_BG)
+    .borderRadius(TgUiTokens.RADIUS_12)
+  }
+
+  @Builder
   private buildStickerContent() {
-    if (this.hasSticker()) {
+    if (this.isVideoSticker && this.hasSticker()) {
+      // webm: play inline with TgInlineVideoView (autoPlay, loop, muted, no UI chrome)
+      Row() {
+        TgInlineVideoView({
+          videoPath: typeof this.stickerPath === 'string' ? this.stickerPath as string : '',
+          thumbnailPath: this.stickerThumbnailPath,
+          videoWidth: this.computedStickerWidth(),
+          videoHeight: this.computedStickerHeight(),
+          autoPlay: true,
+          loop: true,
+          muted: true,
+          showControls: false,
+          isCircular: false
+        })
+      }
+      .width(this.computedStickerWidth())
+      .height(this.computedStickerHeight())
+    } else if (this.isAnimatedSticker) {
+      // tgs: no lottie engine — fall back to thumbnail; placeholder if no thumbnail
+      if (this.hasThumbnail()) {
+        Image(this.stickerThumbnailPath)
+          .width(this.computedStickerWidth())
+          .height(this.computedStickerHeight())
+          .objectFit(ImageFit.Contain)
+          .interpolation(ImageInterpolation.High)
+      } else {
+        this.buildPlaceholder()
+      }
+    } else if (this.hasSticker()) {
+      // static PNG/WEBP
       Image(this.stickerPath)
         .width(this.computedStickerWidth())
         .height(this.computedStickerHeight())
         .objectFit(ImageFit.Contain)
         .interpolation(ImageInterpolation.High)
     } else {
-      Row() {
-        TgIcon({
-          src: TgUiTokens.ICON_RES_STICKER,
-          iconSize: TgUiTokens.STICKER_VIEW_PLACEHOLDER_SIZE,
-          tintColor: TgUiTokens.STICKER_VIEW_PLACEHOLDER_ICON
-        })
-      }
-      .width(this.computedStickerWidth())
-      .height(this.computedStickerHeight())
-      .justifyContent(FlexAlign.Center)
-      .alignItems(VerticalAlign.Center)
-      .backgroundColor(TgUiTokens.STICKER_VIEW_PLACEHOLDER_BG)
-      .borderRadius(TgUiTokens.RADIUS_12)
+      this.buildPlaceholder()
     }
   }
 
@@ -84,4 +124,3 @@ export struct TgStickerView {
     .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
   }
 }
-

@@ -18,6 +18,9 @@ const TAG = 'PhoneInputPage';
 
 @ComponentV2
 export struct PhoneInputPage {
+  // Стабильный id поля ввода номера — цель автофокуса при появлении шага.
+  private static readonly PHONE_INPUT_ID: string = 'login_phone_input';
+
   @Event onPhoneSent: () => void = (): void => {};
 
   @Local private countryCode: string = '+7';
@@ -182,6 +185,7 @@ export struct PhoneInputPage {
 
             // Phone number field
             TextInput({ text: this.phoneNumber, placeholder: this.getPhonePlaceholder() })
+              .id(PhoneInputPage.PHONE_INPUT_ID)
               .layoutWeight(1)
               .height(TgUiTokens.LOGIN_INPUT_ROW_HEIGHT)
               .fontSize(TgUiTokens.LOGIN_INPUT_FONT_SIZE)
@@ -250,6 +254,7 @@ export struct PhoneInputPage {
     .width('100%')
     .height('100%')
     .backgroundColor(TgUiTokens.LOGIN_BG)
+    .onAppear(() => { this.focusPhoneInput(); })
     .bindSheet($$this.isShowCountrySheet, this.countrySheetBuilder(), {
       height: SheetSize.LARGE,
       blurStyle: BlurStyle.Thick,
@@ -263,6 +268,15 @@ export struct PhoneInputPage {
   private handleNext(): void {
     if (!this.hasNumber) return;
     this.sendPhone();
+  }
+
+  // Фокусирует поле номера и поднимает софт-клавиатуру при появлении шага.
+  private focusPhoneInput(): void {
+    try {
+      this.getUIContext().getFocusController().requestFocus(PhoneInputPage.PHONE_INPUT_ID);
+    } catch (e) {
+      // requestFocus бросает, если узел ещё не готов — не критично для UX.
+    }
   }
 
   private async sendPhone(): Promise<void> {

@@ -7,10 +7,6 @@ import { TgIcon } from './TgIcon';
 import { TgAvatar } from './TgAvatar';
 import { TgTopChromeBackground } from './TgTopChromeBackground';
 import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
-import { window } from '@kit.ArkUI';
-import { common } from '@kit.AbilityKit';
-
-declare function px2vp(value: number): number;
 
 export enum TgChatTopBarSubtitleMode {
   Secondary = 'secondary',
@@ -23,6 +19,7 @@ export struct TgChatTopBar {
   @Param title: string = '';
   @Param subtitle: string = '';
   @Param subtitleMode: TgChatTopBarSubtitleMode = TgChatTopBarSubtitleMode.Secondary;
+  @Param showSubtitleSpinner: boolean = false;
   @Param avatarInitials: string = '';
   @Param avatarColorIndex: number = 0;
   @Param avatarImageSrc: string = '';
@@ -38,21 +35,9 @@ export struct TgChatTopBar {
   @Event onSearchQueryChange: (query: string) => void = (_query: string): void => {};
   @Event onSearchClose: () => void = (): void => {};
 
-  @Local topInset: number = 0;
-
-  aboutToAppear(): void {
-    try {
-      const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      const windowStage = context.windowStage;
-      if (windowStage) {
-        const mainWindow = windowStage.getMainWindowSync();
-        const avoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
-        this.topInset = px2vp(avoidArea.topRect.height);
-      }
-    } catch (_error) {
-      this.topInset = 0;
-    }
-  }
+  // Single source of truth: the screen computes the status-bar inset (with
+  // avoidAreaChange reactivity) and passes it down. No independent read here.
+  @Param topInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
 
   private useBlur(): boolean {
     return TgGlassPolicy.shouldUseRealtimeBlurForMode(this.glassMode);
@@ -103,6 +88,7 @@ export struct TgChatTopBar {
     // R1.5: плоский телеграмный топ-бар — без стеклянной капсулы
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
+    .clickEffect({ level: ClickEffectLevel.LIGHT })
     .onClick(() => {
       this.onBackPress();
     })
@@ -121,12 +107,22 @@ export struct TgChatTopBar {
         .textOverflow({ overflow: TextOverflow.Ellipsis })
 
       if (this.subtitle.length > 0) {
-        Text(this.subtitle)
-          .fontSize(TgUiTokens.CHAT_TOP_BAR_SUBTITLE_SIZE)
-          .fontColor(this.subtitleColor())
-          .maxLines(1)
-          .textAlign(TextAlign.Center)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
+        Row({ space: TgUiTokens.CHAT_TOP_BAR_SPINNER_GAP }) {
+          if (this.showSubtitleSpinner) {
+            LoadingProgress()
+              .width(TgUiTokens.CHAT_TOP_BAR_SPINNER_SIZE)
+              .height(TgUiTokens.CHAT_TOP_BAR_SPINNER_SIZE)
+              .color(this.subtitleColor())
+          }
+          Text(this.subtitle)
+            .fontSize(TgUiTokens.CHAT_TOP_BAR_SUBTITLE_SIZE)
+            .fontColor(this.subtitleColor())
+            .maxLines(1)
+            .textAlign(TextAlign.Center)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+        }
+        .alignItems(VerticalAlign.Center)
+        .justifyContent(FlexAlign.Center)
       }
     }
     .justifyContent(FlexAlign.Center)
@@ -140,6 +136,7 @@ export struct TgChatTopBar {
     // R1.5: тайтл без пилюли — чистый текст по центру
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
+    .clickEffect({ level: ClickEffectLevel.LIGHT })
     .onClick(() => {
       this.onTitlePress();
     })
@@ -207,6 +204,7 @@ export struct TgChatTopBar {
     // R1.5: аватар без капсулы
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
+    .clickEffect({ level: ClickEffectLevel.LIGHT })
     .onClick(() => {
       this.onAvatarPress();
     })

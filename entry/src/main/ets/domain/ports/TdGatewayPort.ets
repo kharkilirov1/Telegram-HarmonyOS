@@ -18,6 +18,11 @@ export interface TdGatewayPort {
   // Get current connection state
   getConnectionState(): 'connecting' | 'ready' | 'updating' | 'waitingForNetwork';
 
+  // Optional backpressure signal: update-batch drain is congested (storm).
+  // Background main-thread consumers (media watcher) should defer timer work.
+  // Optional so test fakes stay minimal; absence means "not congested".
+  isDrainCongested?: () => boolean;
+
   // Cleanup resources
   destroy(): Promise<void>;
 }

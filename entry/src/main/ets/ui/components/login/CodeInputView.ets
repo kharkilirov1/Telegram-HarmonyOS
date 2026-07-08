@@ -24,6 +24,9 @@ class DigitItem {
 
 @ComponentV2
 export struct CodeInputView {
+  // Стабильный id скрытого/текстового поля ввода — цель автофокуса при появлении шага.
+  private static readonly CODE_INPUT_ID: string = 'login_code_input';
+
   @Param codeLength: number = 5;
   @Param inputType: CodeInputType = 'numeric';
   @Param code: string = '';
@@ -32,7 +35,6 @@ export struct CodeInputView {
   @Event onTextChanged: (text: string) => void = (_text: string): void => {};
 
   @Local private isFocused: boolean = false;
-  @Local private shakeOffset: number = 0;
 
   build() {
     Stack({ alignContent: Alignment.Center }) {
@@ -42,7 +44,18 @@ export struct CodeInputView {
         this.buildTextField()
       }
     }
-    .offset({ x: this.shakeOffset })
+    .onAppear(() => { this.focusInput(); })
+  }
+
+  // Фокусирует поле ввода кода и поднимает софт-клавиатуру при появлении шага.
+  // Для numeric-режима реальный ввод идёт в скрытом (opacity 0) TextInput — без фокуса
+  // тап по невидимому полю ненадёжен, поэтому фокусируем программно.
+  private focusInput(): void {
+    try {
+      this.getUIContext().getFocusController().requestFocus(CodeInputView.CODE_INPUT_ID);
+    } catch (e) {
+      // requestFocus бросает, если узел ещё не готов — не критично для UX.
+    }
   }
 
   @Builder
@@ -72,6 +85,7 @@ export struct CodeInputView {
 
     // Реальное поле ввода (скрытое, как в iOS)
     TextInput({ text: this.code })
+      .id(CodeInputView.CODE_INPUT_ID)
       .width('100%')
       .height(TgUiTokens.LOGIN_CODE_CELL_HEIGHT)
       .opacity(0)
@@ -98,6 +112,7 @@ export struct CodeInputView {
     // iOS: для word/phrase — обычный TextFieldNode
     Column({ space: 0 }) {
       TextInput({ text: this.code, placeholder: this.inputType === 'word' ? this.wordPlaceholder() : this.phrasePlaceholder() })
+        .id(CodeInputView.CODE_INPUT_ID)
         .width('100%')
         .height(TgUiTokens.LOGIN_TEXT_INPUT_HEIGHT)
         .fontSize(TgUiTokens.LOGIN_INPUT_FONT_SIZE)
@@ -117,17 +132,6 @@ export struct CodeInputView {
         .color(this.isFocused ? TgUiTokens.LOGIN_CODE_CELL_BORDER_ACTIVE : TgUiTokens.LOGIN_SEPARATOR_COLOR)
     }
     .padding({ left: TgUiTokens.LOGIN_SIDE_INSET, right: TgUiTokens.LOGIN_SIDE_INSET })
-  }
-
-  // Shake анимация при ошибке
-  animateError(): void {
-    const sequence: number[] = [12, -12, 8, -8, 4, -4, 0];
-    let delay = 0;
-    for (let i = 0; i < sequence.length; i++) {
-      const offset = sequence[i];
-      setTimeout(() => { this.shakeOffset = offset; }, delay);
-      delay += 50;
-    }
   }
 
   // Сброс кода

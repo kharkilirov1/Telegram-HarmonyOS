@@ -262,28 +262,6 @@ export struct TgDocumentRow {
   }
 
   @Builder
-  private buildProgressBar() {
-    if (this.hasProgress()) {
-      Stack({ alignContent: Alignment.Start }) {
-        Row()
-          .width('100%')
-          .height(TgUiTokens.DOCUMENT_ROW_PROGRESS_HEIGHT)
-          .backgroundColor(TgUiTokens.DOCUMENT_ROW_PROGRESS_BG)
-          .borderRadius(TgUiTokens.DOCUMENT_ROW_PROGRESS_RADIUS)
-
-        Row()
-          .width(this.progressWidthLabel())
-          .height(TgUiTokens.DOCUMENT_ROW_PROGRESS_HEIGHT)
-          .backgroundColor(TgUiTokens.DOCUMENT_ROW_PROGRESS_FILL)
-          .borderRadius(TgUiTokens.DOCUMENT_ROW_PROGRESS_RADIUS)
-      }
-      .width('100%')
-      .margin({ top: TgUiTokens.DOCUMENT_ROW_PROGRESS_TOP_GAP })
-      .transition({ type: TransitionType.All, opacity: 0 })
-    }
-  }
-
-  @Builder
   private buildLeadingTile() {
     Stack({ alignContent: Alignment.BottomEnd }) {
       Row() {
@@ -330,8 +308,6 @@ export struct TgDocumentRow {
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .width('100%')
-
-        this.buildProgressBar()
       }
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Start)
@@ -370,8 +346,6 @@ export struct TgDocumentRow {
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .width('100%')
-
-        this.buildProgressBar()
       }
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Start)
