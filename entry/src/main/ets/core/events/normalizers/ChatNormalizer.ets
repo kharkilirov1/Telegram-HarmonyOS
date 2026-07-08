@@ -179,6 +179,7 @@ function handleChatReadOutbox(events: AnyAppEvent[], update: TdObject): void {
 function handleChatDraftMessage(events: AnyAppEvent[], update: TdObject): void {
   const chatId = tdGetNumber(update, 'chat_id');
   if (!chatId) return;
+  hilog.info(DOMAIN, TAG, 'draft update for chat %{public}d', chatId);
 
   const updates = new ChatUpdateDto();
 

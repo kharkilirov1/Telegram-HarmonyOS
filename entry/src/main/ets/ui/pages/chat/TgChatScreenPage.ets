@@ -59,7 +59,8 @@ import {
   createLoadChatHistoryUseCase
 } from '../../../domain/usecases/loadChatHistory';
 import { createMarkChatReadUseCase, MarkChatReadUseCase } from '../../../domain/usecases/markChatRead';
-import { createCloseChatCommand } from '../../../core/model/AppCommand';
+import { createCloseChatCommand, createSetChatDraftCommand } from '../../../core/model/AppCommand';
+import { TdObject } from '../../../models/TdTypes';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { localized } from '../../../core/utils/AppResource';
 import { MediaGalleryItem } from '../../../models/MediaGalleryItem';
@@ -558,6 +559,7 @@ export struct TgChatScreenPage {
       const prevChatId = this.lastOpenedChatId;
       this.lastOpenedChatId = this.activeChatId;
       if (prevChatId !== 0 && prevChatId !== this.activeChatId) {
+        this.persistDraft(prevChatId);
         try {
           getTdGatewayAdapter().send(createCloseChatCommand(prevChatId))
             .catch((_: Error) => {});
@@ -578,6 +580,7 @@ export struct TgChatScreenPage {
       this.isApplyingTimelineDiff = false;
       this.listInitialIndex = 0;
       this.composerDraftText = '';
+      this.restoreDraftFromChat();
       this.showComposerEmojiPanel = false;
       this.showComposerStickerPanel = false;
       this.clearPendingAttachment();
@@ -618,6 +621,7 @@ export struct TgChatScreenPage {
       this.pageLifecycleToken++;
       this.bindNavigationStack();
       this.syncOwnedChatContext();
+      this.restoreDraftFromChat();
       navigationUIState.chatScreenVisible = true;
       AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
       this.computeSafeInsets();
@@ -724,6 +728,7 @@ export struct TgChatScreenPage {
     const closingChatId = this.lastOpenedChatId;
     this.lastOpenedChatId = 0;
     if (closingChatId !== 0) {
+      this.persistDraft(closingChatId);
       try {
         getTdGatewayAdapter().send(createCloseChatCommand(closingChatId))
           .catch((_: Error) => {});
@@ -2264,6 +2269,47 @@ export struct TgChatScreenPage {
   private closeSearch(): void {
     this.clearSearchFlash();
     this.searchCtrl.closeSearch(this);
+  }
+
+  // Telegram drafts: the composer text survives leaving the chat. Skips the
+  // TDLib call when nothing changed vs the stored draft.
+  private persistDraft(chatId: number): void {
+    if (chatId === 0) {
+      return;
+    }
+    const text = this.composerDraftText.trim();
+    try {
+      const chat = getAppCoreRuntime().getStore().getState().chats.chats.get(chatId);
+      const storedDraft = chat ? chat.draftText.trim() : '';
+      if (text === storedDraft) {
+        return;
+      }
+      getTdGatewayAdapter().send(createSetChatDraftCommand(chatId, text, this.replyToMessageId))
+        .then((response: Object) => {
+          const obj = response as TdObject;
+          hilog.info(DOMAIN, TAG, 'Draft response: %{public}s', obj.getType());
+        })
+        .catch((error: Error) => {
+          hilog.warn(DOMAIN, TAG, 'Draft send failed: %{public}s', error.message);
+        });
+      hilog.info(DOMAIN, TAG, 'Draft %{public}s for chat %{public}d',
+        text.length > 0 ? 'saved' : 'cleared', chatId);
+    } catch (_e) {
+    }
+  }
+
+  private restoreDraftFromChat(): void {
+    if (this.activeChatId === 0 || this.composerDraftText.length > 0) {
+      return;
+    }
+    try {
+      const chat = getAppCoreRuntime().getStore().getState().chats.chats.get(this.activeChatId);
+      if (chat && chat.draftText.length > 0) {
+        this.composerDraftText = chat.draftText;
+        hilog.info(DOMAIN, TAG, 'Draft restored for chat %{public}d', this.activeChatId);
+      }
+    } catch (_e) {
+    }
   }
 
   // Search-mode replacement for the composer: up/down result navigation plus

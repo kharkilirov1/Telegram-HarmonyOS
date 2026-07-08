@@ -23,6 +23,7 @@ import {
   DeleteChatHistoryCommand,
   ToggleChatIsMarkedAsUnreadCommand,
   SearchChatMessagesCommand,
+  SetChatDraftCommand,
   ViewMessagesCommand,
   GetChatHistoryCommand,
   GetUserCommand,
@@ -73,6 +74,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('unpinChatMessage', serializeUnpinChatMessage
 COMMAND_SERIALIZATION_HANDLERS.set('deleteChatHistory', serializeDeleteChatHistory);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsMarkedAsUnread', serializeToggleChatIsMarkedAsUnread);
 COMMAND_SERIALIZATION_HANDLERS.set('searchChatMessages', serializeSearchChatMessages);
+COMMAND_SERIALIZATION_HANDLERS.set('setChatDraft', serializeSetChatDraft);
 COMMAND_SERIALIZATION_HANDLERS.set('viewMessages', serializeViewMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatHistory', serializeGetChatHistory);
 COMMAND_SERIALIZATION_HANDLERS.set('getUser', serializeGetUser);
@@ -251,6 +253,25 @@ function serializeToggleChatIsMarkedAsUnread(command: AnyAppCommand, result: Ser
   result.method = 'toggleChatIsMarkedAsUnread';
   result.params.setNumber('chat_id', cmd.payload.chatId);
   result.params.setBool('is_marked_as_unread', cmd.payload.isMarkedAsUnread);
+}
+
+function serializeSetChatDraft(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SetChatDraftCommand;
+  result.method = 'setChatDraftMessage';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  if (cmd.payload.text.trim().length === 0) {
+    // Clearing: draft_message must be an explicit null
+    result.params.setString('_draft_message_json', 'null');
+    return;
+  }
+  const text = escapeForJson(cmd.payload.text);
+  let draftJson = '{"@type":"draftMessage"';
+  if (cmd.payload.replyToMessageId !== '0') {
+    draftJson += ',"reply_to_message_id":' + cmd.payload.replyToMessageId;
+  }
+  draftJson += ',"input_message_text":{"@type":"inputMessageText","text":{"@type":"formattedText","text":"'
+    + text + '","entities":[]}}}';
+  result.params.setString('_draft_message_json', draftJson);
 }
 
 function serializeSearchChatMessages(command: AnyAppCommand, result: SerializedCommand): void {

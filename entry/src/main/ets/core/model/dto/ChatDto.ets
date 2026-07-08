@@ -122,6 +122,17 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
     chatDto.lastMessage = extractLastMessage(lastMsgObj);
   }
 
+  // Draft — the full chat object carries draft_message too, not only the
+  // updateChatDraftMessage stream (cold start would lose drafts otherwise)
+  const draftObj = tdGetObject(tdChat, 'draft_message');
+  if (tdHasKeys(draftObj)) {
+    const draftInput = tdGetObject(draftObj, 'input_message_text');
+    if (tdHasKeys(draftInput)) {
+      chatDto.draftText = tdGetString(tdGetObject(draftInput, 'text'), 'text');
+    }
+    chatDto.draftReplyToMessageId = tdGetInt64(draftObj, 'reply_to_message_id');
+  }
+
   // Photo if available
   const photoObj = tdGetObject(tdChat, 'photo');
   if (tdHasKeys(photoObj)) {

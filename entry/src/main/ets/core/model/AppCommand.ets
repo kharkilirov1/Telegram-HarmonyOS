@@ -314,6 +314,17 @@ export class SearchChatMessagesCommand extends AppCommand {
   payload: SearchChatMessagesPayload = new SearchChatMessagesPayload();
 }
 
+export class SetChatDraftPayload {
+  chatId: ChatId = 0;
+  text: string = '';
+  replyToMessageId: MessageId = '0';
+}
+
+export class SetChatDraftCommand extends AppCommand {
+  type: string = 'setChatDraft';
+  payload: SetChatDraftPayload = new SetChatDraftPayload();
+}
+
 export class DownloadFileCommand extends AppCommand {
   type: string = 'downloadFile';
   payload: DownloadFilePayload = new DownloadFilePayload();
@@ -389,6 +400,7 @@ export type AnyAppCommand =
   | DeleteChatHistoryCommand
   | ToggleChatIsMarkedAsUnreadCommand
   | SearchChatMessagesCommand
+  | SetChatDraftCommand
   | DownloadFileCommand
   | CancelDownloadFileCommand
   | GetRecentStickersCommand
@@ -637,6 +649,18 @@ export function createSearchChatMessagesCommand(
   cmd.payload.fromMessageId = fromMessageId;
   cmd.payload.offset = offset;
   cmd.payload.limit = limit;
+  return cmd;
+}
+
+export function createSetChatDraftCommand(
+  chatId: ChatId,
+  text: string,
+  replyToMessageId: MessageId = '0'
+): SetChatDraftCommand {
+  const cmd = new SetChatDraftCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.text = text;
+  cmd.payload.replyToMessageId = replyToMessageId;
   return cmd;
 }
 
