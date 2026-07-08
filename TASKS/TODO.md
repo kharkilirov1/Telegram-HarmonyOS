@@ -62,6 +62,12 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 
 ## ПЛАСТ-волна (мандат пользователя 2026-07-08: «бери пласты больше», цель — превью-качество)
 
+### Черновики (тик 47, `5683a89`)
+- [x] **Drafts E2E**: SetChatDraftCommand → setChatDraftMessage (persist на выходе из чата, skip при равенстве); chatFromTd теперь парсит chat.draft_message (дыра — сохранённый драфт не доходил до стора); restore в композер из aboutToAppear. Witness: «draft2» → выход → «Черновик: draft2» красным в чат-листе (после холодного рестарта) → вход → текст в композере
+- [ ] **onActiveChatChanged — МЁРТВЫЙ КОД** (ноль вызовов; страница пересоздаётся на вход): расследовать и удалить/оживить — внутри осталась моя draft-логика на случай оживления + куча сбросов, дублирующих aboutToAppear
+- [ ] routeChatId > 0 гвард в syncOwnedChatContext (урок 87, группы отрицательные — работает случайно через navigationUIState fallback)
+- [ ] Драфт-полиш: reply-привязка черновика (draftReplyToMessageId → восстановить reply-снипет), debounce-persist во время набора (Telegram шлёт с задержкой, не только на выходе)
+
 ### UI-волна по запросу пользователя (тик 44, `ceb46fc`)
 - [x] **Таб-бар**: плавающий HDS-остров → плоский полноширинный iOS-бар (48vp + системный inset, блюр COMPONENT_ULTRA_THICK, tab_bar_flat_bg); иконка Chats — чат-облачко ellipsis_message вместо домика; резерв контента в SafeAreaUtils пересчитан
 - [x] **Settings-иконки** приведены к iOS Telegram: закладка/колокольчик/замок/папка/translate (TgSettingsRow принял symbolRes поверх iconRes; имена символов валидирует компилятор, полный список — toolchains/id_defined.json)
