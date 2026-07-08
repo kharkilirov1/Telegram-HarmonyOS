@@ -1,6 +1,7 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgIcon } from './TgIcon';
 import { TgInlineVideoView } from './TgInlineVideoView';
+import { TgTgsPlayer } from './TgTgsPlayer';
 
 @ComponentV2
 export struct TgStickerView {
@@ -102,8 +103,15 @@ export struct TgStickerView {
       .width(this.computedStickerWidth())
       .height(this.computedStickerHeight())
     } else if (this.isAnimatedSticker) {
-      // tgs: no lottie engine — fall back to thumbnail; placeholder if no thumbnail
-      if (this.hasThumbnail()) {
+      // tgs: gzipped Lottie JSON — play via TgTgsPlayer when the file is local;
+      // fall back to thumbnail, then to the emoji placeholder
+      if (this.hasSticker()) {
+        TgTgsPlayer({
+          tgsPath: typeof this.stickerPath === 'string' ? this.stickerPath as string : '',
+          renderWidth: this.computedStickerWidth(),
+          renderHeight: this.computedStickerHeight()
+        })
+      } else if (this.hasThumbnail()) {
         Image(this.stickerThumbnailPath)
           .width(this.computedStickerWidth())
           .height(this.computedStickerHeight())
