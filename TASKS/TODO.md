@@ -240,6 +240,7 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 
 ### Technical debt (пост-R1)
 - [ ] Deeper integration tests for `AuthSideEffect` ready/warmup flow once TDLib/app-context test seam exists
+- [ ] **On-device unit runner висит (2026-07-10)**: `aa test -b com.telegram.harmonyos -m entry_test -s unittest /ets/testrunner/OpenHarmonyTestRunner` — TestAbility стартует («Executing test suite»), но ни один сьют не начинается за 10 мин (0 pass/fail в hilog, пустой stdout). Гипотеза: top-level импорты сьютов тянут AppCoreRuntime-синглтоны, которые ждут TDLib/контекст. Тест-HAP собирается и ставится нормально. Расследовать: минимальный сьют без импортов приложения → бинарный поиск виснущего импорта
 - [x] `services/` legacy cleanup check: only `ConfigLocal.ets` + example remain; no removable legacy service layer found
 - [x] Evaluated `LazyForEach` → `Repeat` / `@ReusableV2`: current live usages are `ChatListPage` and `TgChatScreenPage` with `reuseId`; keep as-is until a measured perf phase/device target exists
 - [ ] Signing config (`signingConfigs` в `build-profile.json5`) — теперь это R2 (релизная упаковка), не блокер текущей работы

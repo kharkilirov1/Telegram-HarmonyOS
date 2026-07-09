@@ -12,6 +12,7 @@ import {
   createSendMediaMessageCommand,
   createSendMessageCommand,
   createSearchCallMessagesCommand,
+  createSetChatDraftCommand,
   createSetChatMuteCommand,
   createToggleChatPinnedCommand,
   createToggleChatIsMarkedAsUnreadCommand,
@@ -58,6 +59,25 @@ export default function commandSerializerTest() {
         const unread = serializeCommand(createToggleChatIsMarkedAsUnreadCommand(100, true));
         expect(unread.method).assertEqual('toggleChatIsMarkedAsUnread');
         expect(unread.params.getBool('is_marked_as_unread')).assertTrue();
+      });
+
+      it('should serialize chat draft with reply_to object and explicit clear', 0, () => {
+        // draftMessage.reply_to is an InputMessageReplyTo OBJECT (td_api.tl 2997);
+        // the old flat reply_to_message_id field is silently dropped by TDLib
+        const withReply = serializeCommand(createSetChatDraftCommand(100, 'draft "text"', '555'));
+        expect(withReply.method).assertEqual('setChatDraftMessage');
+        expect(withReply.params.getNumber('chat_id')).assertEqual(100);
+        const draftJson = withReply.params.getString('_draft_message_json');
+        expect(draftJson.indexOf('"@type":"draftMessage"') >= 0).assertTrue();
+        expect(draftJson.indexOf('"reply_to":{"@type":"inputMessageReplyToMessage","message_id":555}') >= 0)
+          .assertTrue();
+        expect(draftJson.indexOf('draft \\"text\\"') >= 0).assertTrue();
+
+        const noReply = serializeCommand(createSetChatDraftCommand(100, 'plain', '0'));
+        expect(noReply.params.getString('_draft_message_json').indexOf('reply_to') < 0).assertTrue();
+
+        const cleared = serializeCommand(createSetChatDraftCommand(100, '   ', '555'));
+        expect(cleared.params.getString('_draft_message_json')).assertEqual('null');
       });
 
       it('should serialize message send with reply raw json', 0, () => {
