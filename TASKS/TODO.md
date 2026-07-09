@@ -70,13 +70,13 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 
 ### SDK 26.0.0 Beta1 (тик 50)
 - [x] Миграция сборки: clean+default+ohosTest+smoke зелёные на API 26 SDK без правок кода; рантайм жив, сессия цела; эмулятор поднят CLI (`Emulator.exe -start`, урок в LESSONS)
-- [ ] **Решение пользователя**: поднимать ли target/compatible до API 26 Beta1 (новые floating/glass API) — потребует созданиe 26-образа эмулятора (пустой слот Emulator26.0) и перелогин TDLib на нём
+- [x] **Решение пользователя ПРИНЯТО и исполнено** («подними апи», 2026-07-10): target 26.0.0 как у ArkGram (`2978ef9`); 26-образ и перелогин НЕ потребовались — compatible остался 23, работает на живом рантайме API 23
 - [ ] Typing-индикатор: код полный (топ-бар Activity + чат-лист, TTL 6s) — живой витнесс не добыт ночью (чаты молчат); поймать днём в активной группе
 
 ### Черновики (тик 47, `5683a89`)
 - [x] **Drafts E2E**: SetChatDraftCommand → setChatDraftMessage (persist на выходе из чата, skip при равенстве); chatFromTd теперь парсит chat.draft_message (дыра — сохранённый драфт не доходил до стора); restore в композер из aboutToAppear. Witness: «draft2» → выход → «Черновик: draft2» красным в чат-листе (после холодного рестарта) → вход → текст в композере
-- [ ] **onActiveChatChanged — МЁРТВЫЙ КОД** (ноль вызовов; страница пересоздаётся на вход): расследовать и удалить/оживить — внутри осталась моя draft-логика на случай оживления + куча сбросов, дублирующих aboutToAppear
-- [ ] routeChatId > 0 гвард в syncOwnedChatContext (урок 87, группы отрицательные — работает случайно через navigationUIState fallback)
+- [x] **onActiveChatChanged удалён** (2026-07-10): grep подтвердил ноль вызовов; выходной путь persistDraft+closeChat живёт отдельно (aboutToDisappear-путь, строки ~665-675); все сбросы дублировали дефолты нового инстанса; build+smoke зелёные
+- [x] routeChatId-гвард исправлен на `!== 0` в syncOwnedChatContext + resolveOwnedChatTitle (2026-07-10): группы (отрицательные id) теперь идут route-веткой, не fallback'ом; live-витнесс входа в группу отложен (стенд упал), логика покрыта чтением
 - [ ] Драфт-полиш: reply-привязка черновика (draftReplyToMessageId → восстановить reply-снипет), debounce-persist во время набора (Telegram шлёт с задержкой, не только на выходе)
 
 ### UI-волна по запросу пользователя (тик 44, `ceb46fc`)

@@ -553,68 +553,6 @@ export struct TgChatScreenPage {
     }
   }
 
-  private onActiveChatChanged(): void {
-    try {
-      // Send closeChat for previous chat before switching
-      const prevChatId = this.lastOpenedChatId;
-      this.lastOpenedChatId = this.activeChatId;
-      if (prevChatId !== 0 && prevChatId !== this.activeChatId) {
-        this.persistDraft(prevChatId);
-        try {
-          getTdGatewayAdapter().send(createCloseChatCommand(prevChatId))
-            .catch((_: Error) => {});
-        } catch (_) {}
-      }
-
-      this.saveScrollPosition();
-      this.needsScrollRestore = true;
-      this.lastVisibleStartIndex = -1;
-      this.lastVisibleEndIndex = -1;
-      this.previousDataCount = 0;
-      this.isLoadingOlder = false;
-      this.isLoadingNewer = false;
-      this.suppressLoadOlderUntil = 0;
-      this.unreadRestoreIndex = -1;
-      this.lastMarkReadRequestKey = '';
-      this.blockAutoPaginationUntilUserScroll = false;
-      this.isApplyingTimelineDiff = false;
-      this.listInitialIndex = 0;
-      this.composerDraftText = '';
-      this.restoreDraftFromChat();
-      this.showComposerEmojiPanel = false;
-      this.showComposerStickerPanel = false;
-      this.clearPendingAttachment();
-      if (this.isSearchMode) {
-        this.closeSearch();
-      }
-      this.pendingJumpMessageId = '';
-      this.pendingJumpAttempts = 0;
-
-      this.clearPendingMediaDownloads();
-      if (this.paginationRecheckTimerId >= 0) {
-        clearTimeout(this.paginationRecheckTimerId);
-        this.paginationRecheckTimerId = -1;
-      }
-      this.resetPaginationState();
-      this.teardownMediaPlaybackController();
-      if (this.activeChatId !== 0) {
-        this.setupMediaPlaybackController();
-      }
-      this.awaitingInitialTimeline = this.activeChatId !== 0;
-      this.currentScrollChatId = this.activeChatId;
-      const state = getAppCoreRuntime().getStore().getState();
-      // Capture lastReadInboxMessageId at chat entry — survives markChatRead
-      const entryChat = state.chats.chats.get(this.activeChatId);
-      this.stickyLastReadMessageId = (entryChat && entryChat.unreadCount > 0)
-        ? entryChat.lastReadInboxMessageId : '';
-      this.rebuildTimeline(state);
-      this.scheduleHistoryLoad(this.activeChatId, 0);
-      // Do NOT call maybeMarkChatRead here — openChat hasn't reached TDLib yet.
-      // The store subscription will call it after history loads.
-    } catch (_error) {
-    }
-  }
-
   aboutToAppear(): void {
     try {
       this.isClosing = false;
@@ -832,7 +770,8 @@ export struct TgChatScreenPage {
   }
 
   private syncOwnedChatContext(): void {
-    const ownedChatId = this.routeChatId > 0 ? this.routeChatId : navigationUIState.activeChatId;
+    // Group/channel chat ids are negative — the route param is "set" whenever non-zero
+    const ownedChatId = this.routeChatId !== 0 ? this.routeChatId : navigationUIState.activeChatId;
     const ownedChatTitle = this.resolveOwnedChatTitle();
 
     this.activeChatId = ownedChatId;
@@ -859,7 +798,7 @@ export struct TgChatScreenPage {
     if (this.routeChatTitle.length > 0) {
       return this.routeChatTitle;
     }
-    if (this.routeChatId > 0 && navigationUIState.activeChatId === this.routeChatId) {
+    if (this.routeChatId !== 0 && navigationUIState.activeChatId === this.routeChatId) {
       return navigationUIState.activeChatTitle;
     }
     if (this.routeChatId === 0) {

@@ -6,7 +6,8 @@ Snapshot date: 2026-07-10 (target API 26 как ArkGram; табы 1:1 подтв
 
 - **target API 26**: `build-profile.json5` → compatible `6.1.0(23)` + target `26.0.0` (формат без скобок для 26+). Манифест HAP байт-в-байт с ArkGram: minAPIVersion 60100023 / targetAPIVersion 260000026 / compileSdkVersion 26.0.0.23 / Beta1. Нативный рендер HdsTabs floating включается именно target-версией.
 - **Табы ArkGram 1:1**: подтверждены скринами в ОБЕИХ темах — остров, растворение списка в подложку barBackgroundStyle(110), бейдж bleed, unselected white/black по теме.
-- **Эмулятор живуч**: запуск ТОЛЬКО через Планировщик (`schtasks /run /tn HmEmuPura23`) — не умирает с моими сессиями. Тема эмулятора переключается через Settings UI (uitest), `persist.ace.darkmode` — no-op.
+- **Эмулятор живуч**: запуск ТОЛЬКО через Планировщик (`schtasks /run /tn HmEmuPura23`, теперь с `-bootMode coldboot`) — не умирает с моими сессиями. Тема эмулятора переключается через Settings UI (uitest), `persist.ace.darkmode` — no-op.
+- **СТЕНД УПАЛ (2026-07-10 ~03:00)**: hdc-мост умер у живого гостя, а CLI-рестарты убивает сторож CheckSnapshotBooting (см. LESSONS «Эмулятор-2»). Обход kill-циклом сторожа дал один Connect OK, затем VM ресетнулась. **Просьба к пользователю: один запуск «Pura 90 Pro Max» из DevEco Device Manager** — тогда сторож работает корректно. Ожидает установки: HAP с чисткой TgChatScreenPage (мёртвый onActiveChatChanged удалён, гвард групп `!== 0`).
 
 ## Current State
 
