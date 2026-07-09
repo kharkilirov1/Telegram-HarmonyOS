@@ -71,7 +71,7 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 ### SDK 26.0.0 Beta1 (тик 50)
 - [x] Миграция сборки: clean+default+ohosTest+smoke зелёные на API 26 SDK без правок кода; рантайм жив, сессия цела; эмулятор поднят CLI (`Emulator.exe -start`, урок в LESSONS)
 - [x] **Решение пользователя ПРИНЯТО и исполнено** («подними апи», 2026-07-10): target 26.0.0 как у ArkGram (`2978ef9`); 26-образ и перелогин НЕ потребовались — compatible остался 23, работает на живом рантайме API 23
-- [ ] Typing-индикатор: код полный (топ-бар Activity + чат-лист, TTL 6s) — живой витнесс не добыт ночью (чаты молчат); поймать днём в активной группе
+- [ ] Typing-индикатор: код полный (топ-бар Activity + чат-лист, TTL 6s) — три ночных попытки впустую (Fly Emirates/ФУТБОЛ — каналы, там typing не бывает; Rozetked 3.5 мин молчал — 5 утра МСК). Методика готова: открыть живую ГРУППУ днём + цикл `uitest dumpLayout` каждые 5с, грепать сабтайтл top<400 на typing/recording/sending — скрин по попаданию
 
 ### Черновики (тик 47, `5683a89`)
 - [x] **Drafts E2E**: SetChatDraftCommand → setChatDraftMessage (persist на выходе из чата, skip при равенстве); chatFromTd теперь парсит chat.draft_message (дыра — сохранённый драфт не доходил до стора); restore в композер из aboutToAppear. Witness: «draft2» → выход → «Черновик: draft2» красным в чат-листе (после холодного рестарта) → вход → текст в композере
