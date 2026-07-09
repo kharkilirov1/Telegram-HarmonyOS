@@ -16,9 +16,15 @@ import { common } from '@kit.AbilityKit';
 import { deviceInfo } from '@kit.BasicServicesKit';
 import { TELEGRAM_API_HASH, TELEGRAM_API_ID, USE_TEST_DC } from '../../services/ConfigLocal';
 import { createLoadChatsUseCase } from '../../domain/usecases/loadChats';
+import { createGetChatCommand, createOpenChatCommand } from '../model/AppCommand';
 
 const DOMAIN = 0x0004;
 const TAG = 'AuthSideEffect';
+// Telegram service notifications (login codes, security alerts) live in the
+// chat with user 777000. Once it goes idle it drops out of the top-N loadChats
+// window, TDLib stops pushing its updateNewMessage, and login codes never reach
+// the store — so a re-login on another device shows an empty code screen.
+const TELEGRAM_SERVICE_CHAT_ID: number = 777000;
 
 type AuthorizationState =
   | 'authorizationStateClosed'
@@ -157,6 +163,34 @@ class AuthSideEffect {
       return;
     }
     await this.warmChatsCache(token);
+    if (!this.isCurrentRun(token)) {
+      return;
+    }
+    await this.ensureServiceChatKnown(token);
+  }
+
+  // Subscribe to the Telegram service chat so its messages (login codes) are
+  // delivered as updateNewMessage even after it drops out of the loaded window.
+  private async ensureServiceChatKnown(token: number): Promise<void> {
+    if (!this.isCurrentRun(token)) {
+      return;
+    }
+    try {
+      const adapter = getTdGatewayAdapter();
+      // getChat makes the chat known to this client; openChat subscribes to its
+      // live message stream (TDLib only pushes updateNewMessage for open chats
+      // or chats inside a loaded list position).
+      await adapter.send(createGetChatCommand(TELEGRAM_SERVICE_CHAT_ID));
+      if (!this.isCurrentRun(token)) {
+        return;
+      }
+      await adapter.send(createOpenChatCommand(TELEGRAM_SERVICE_CHAT_ID));
+      hilog.info(DOMAIN, TAG, 'Service chat %{public}d subscribed for login-code delivery',
+        TELEGRAM_SERVICE_CHAT_ID);
+    } catch (error) {
+      const err = error as AppError;
+      hilog.warn(DOMAIN, TAG, 'ensureServiceChatKnown failed: %{public}s', err.message);
+    }
   }
 
   private async warmChatsCache(token: number): Promise<void> {
