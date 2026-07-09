@@ -130,7 +130,8 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
     if (tdHasKeys(draftInput)) {
       chatDto.draftText = tdGetString(tdGetObject(draftInput, 'text'), 'text');
     }
-    chatDto.draftReplyToMessageId = tdGetInt64(draftObj, 'reply_to_message_id');
+    // TDLib: draftMessage.reply_to is inputMessageReplyToMessage{message_id}
+    chatDto.draftReplyToMessageId = tdGetInt64(tdGetObject(draftObj, 'reply_to'), 'message_id');
   }
 
   // Photo if available

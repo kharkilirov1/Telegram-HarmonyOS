@@ -267,7 +267,9 @@ function serializeSetChatDraft(command: AnyAppCommand, result: SerializedCommand
   const text = escapeForJson(cmd.payload.text);
   let draftJson = '{"@type":"draftMessage"';
   if (cmd.payload.replyToMessageId !== '0') {
-    draftJson += ',"reply_to_message_id":' + cmd.payload.replyToMessageId;
+    // draftMessage.reply_to takes an InputMessageReplyTo object (td_api.tl 2997)
+    draftJson += ',"reply_to":{"@type":"inputMessageReplyToMessage","message_id":'
+      + cmd.payload.replyToMessageId + '}';
   }
   draftJson += ',"input_message_text":{"@type":"inputMessageText","text":{"@type":"formattedText","text":"'
     + text + '","entities":[]}}}';

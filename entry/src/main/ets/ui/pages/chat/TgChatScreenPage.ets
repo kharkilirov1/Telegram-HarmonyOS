@@ -15,7 +15,7 @@ import { TgComposerStickerPanel, StickerCellVO, StickerSetTabVO } from '../../tg
 import { TgChatTopBar, TgChatTopBarSubtitleMode } from '../../tg_ui/atoms/TgChatTopBar';
 import { ProfileRouteParams } from '../profile/TgProfilePage';
 import { ChatTimelineDataSource } from './ChatTimelineDataSource';
-import { ChatTimelineEntryVO, buildChatTimeline } from './ChatTimelineVO';
+import { ChatTimelineEntryVO, buildChatTimeline, resolveSenderName, resolveReplyPreview } from './ChatTimelineVO';
 import { MediaPlaybackController, MediaPlaybackSnapshot, MediaContentType } from './VoicePlaybackController';
 import { ChatMediaDownloadController } from './ChatMediaDownloadController';
 import {
@@ -154,6 +154,8 @@ export struct TgChatScreenPage {
   private pageLifecycleToken: number = 0;
   private isClosing: boolean = false;
   private transientTimerIds: Set<number> = new Set<number>();
+  // Telegram persists the draft while typing (not only on exit) — debounced
+  private draftDebounceTimerId: number = -1;
   private mainWindow?: window.Window;
   private sendUseCase?: SendMessageUseCase;
   private sendMediaUseCase?: SendMediaMessageUseCase;
@@ -665,6 +667,10 @@ export struct TgChatScreenPage {
     // Use lastOpenedChatId because activeChatId may already be zeroed by handleBackPress
     const closingChatId = this.lastOpenedChatId;
     this.lastOpenedChatId = 0;
+    if (this.draftDebounceTimerId >= 0) {
+      clearTimeout(this.draftDebounceTimerId);
+      this.draftDebounceTimerId = -1;
+    }
     if (closingChatId !== 0) {
       this.persistDraft(closingChatId);
       try {
@@ -2220,7 +2226,10 @@ export struct TgChatScreenPage {
     try {
       const chat = getAppCoreRuntime().getStore().getState().chats.chats.get(chatId);
       const storedDraft = chat ? chat.draftText.trim() : '';
-      if (text === storedDraft) {
+      const storedReply = chat ? chat.draftReplyToMessageId : '0';
+      // Empty text serializes as an explicit clear, so the reply id only
+      // matters for the skip-check when there is text to keep
+      if (text === storedDraft && (text.length === 0 || this.replyToMessageId === storedReply)) {
         return;
       }
       getTdGatewayAdapter().send(createSetChatDraftCommand(chatId, text, this.replyToMessageId))
@@ -2242,13 +2251,38 @@ export struct TgChatScreenPage {
       return;
     }
     try {
-      const chat = getAppCoreRuntime().getStore().getState().chats.chats.get(this.activeChatId);
+      const state = getAppCoreRuntime().getStore().getState();
+      const chat = state.chats.chats.get(this.activeChatId);
       if (chat && chat.draftText.length > 0) {
         this.composerDraftText = chat.draftText;
-        hilog.info(DOMAIN, TAG, 'Draft restored for chat %{public}d', this.activeChatId);
+        // Telegram restores the reply target together with the draft text
+        if (chat.draftReplyToMessageId !== '0' && this.replyToMessageId === '0') {
+          const chatMessages = state.messages.messages.get(this.activeChatId);
+          const target = chatMessages ? chatMessages.get(chat.draftReplyToMessageId) : undefined;
+          const author = target ? resolveSenderName(target, state) : '';
+          const preview = chatMessages
+            ? resolveReplyPreview(chatMessages, chat.draftReplyToMessageId) : '';
+          this.startReply(chat.draftReplyToMessageId, author, preview);
+        }
+        hilog.info(DOMAIN, TAG, 'Draft restored for chat %{public}d (reply %{public}s)',
+          this.activeChatId, chat.draftReplyToMessageId);
       }
     } catch (_e) {
     }
+  }
+
+  private scheduleDraftDebounce(): void {
+    if (this.draftDebounceTimerId >= 0) {
+      clearTimeout(this.draftDebounceTimerId);
+    }
+    const lifecycleToken = this.pageLifecycleToken;
+    this.draftDebounceTimerId = setTimeout(() => {
+      this.draftDebounceTimerId = -1;
+      if (lifecycleToken !== this.pageLifecycleToken) {
+        return;
+      }
+      this.persistDraft(this.activeChatId);
+    }, 1500);
   }
 
   // Search-mode replacement for the composer: up/down result navigation plus
@@ -2983,6 +3017,7 @@ export struct TgChatScreenPage {
                   attachmentPreview: this.pendingAttachmentPreview,
                   onTextChange: (value: string): void => {
                     this.composerDraftText = value;
+                    this.scheduleDraftDebounce();
                   },
                   onSendPress: (text: string): void => {
                     this.handleSendMessage(text);

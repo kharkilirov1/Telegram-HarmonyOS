@@ -8,6 +8,7 @@ Snapshot date: 2026-07-10 (target API 26 как ArkGram; табы 1:1 подтв
 - **Табы ArkGram 1:1**: подтверждены скринами в ОБЕИХ темах — остров, растворение списка в подложку barBackgroundStyle(110), бейдж bleed, unselected white/black по теме.
 - **Эмулятор живуч**: запуск ТОЛЬКО через Планировщик (`schtasks /run /tn HmEmuPura23`, теперь с `-bootMode coldboot`) — не умирает с моими сессиями. Тема эмулятора переключается через Settings UI (uitest), `persist.ace.darkmode` — no-op.
 - **Стенд реанимирован (03:25)**: воспроизводимый подъём = чистый isRunning=false → `schtasks /run` → kill-цикл сторожа каждые 3с до Connect OK (21с на отдохнувшем диске) + ещё ~2 мин подавления. HAP с чисткой установлен, гвард групп подтверждён live (группа «Huawei HarmonyOS»). Запуск из DevEco остаётся предпочтительным для долгой жизни стенда.
+- **Драфты доведены до Telegram-семантики**: reply-привязка сохраняется/восстанавливается (корень: draftMessage.reply_to — объект inputMessageReplyToMessage; плоское поле TDLib молча игнорировал; исправлены сериализатор + оба парсера), debounce-persist 1.5с при наборе. E2E-витнессы на живом стенде: «Draft saved» без выхода, «Draft restored (reply 36422287360)», скрин снипета «Kharki Lirov / Стикер». Тестовый драфт очищен.
 
 ## Current State
 

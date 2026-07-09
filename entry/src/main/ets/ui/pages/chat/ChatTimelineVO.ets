@@ -453,7 +453,7 @@ function resolvePrivateChatTitle(chat: Chat, state: AppState): string {
   return chat.title;
 }
 
-function resolveSenderName(message: Message, state: AppState): string {
+export function resolveSenderName(message: Message, state: AppState): string {
   if (message.senderId > 0) {
     const senderUser = state.users.users.get(message.senderId);
     return userDisplayName(senderUser);
@@ -467,7 +467,7 @@ function resolveSenderName(message: Message, state: AppState): string {
   return message.isOutgoing ? 'You' : 'Unknown';
 }
 
-function resolveReplyPreview(messageById: Map<string, Message>, replyToMessageId: string, replyQuoteText: string = ''): string {
+export function resolveReplyPreview(messageById: Map<string, Message>, replyToMessageId: string, replyQuoteText: string = ''): string {
   const trimmedQuote = replyQuoteText.trim();
   if (trimmedQuote.length > 0) {
     return trimmedQuote;
