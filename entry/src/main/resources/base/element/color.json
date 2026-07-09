@@ -403,6 +403,10 @@
     {
       "name": "tab_bar_mask",
       "value": "#CCF1F3F5"
+    },
+    {
+      "name": "tab_item_unselected",
+      "value": "#000000"
     }
   ]
 }

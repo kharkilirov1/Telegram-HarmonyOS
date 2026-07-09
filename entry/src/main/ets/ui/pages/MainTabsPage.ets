@@ -26,7 +26,9 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 const DOMAIN = 0x0020;
 const TAG = 'MainTabsPage';
 const TAB_BAR_FLOATING_VISIBLE_HEIGHT = 48;
-const TAB_BAR_FLOATING_BOTTOM_MARGIN = 28;
+// ArkGram: barBottomMargin 30, backplate mask height 110 (theme bg color)
+const TAB_BAR_FLOATING_BOTTOM_MARGIN = 30;
+const TAB_BAR_BACKPLATE_HEIGHT = 110;
 
 @ComponentV2
 export struct MainTabsPage {
@@ -95,8 +97,8 @@ export struct MainTabsPage {
           : $r('sys.symbol.ellipsis_message'))
           .fontSize(24)
           .fontColor([this.selectedIndex === 2
-            ? $r('sys.color.ohos_id_color_activated')
-            : $r('sys.color.ohos_id_color_bottom_tab_icon_off')])
+            ? TgUiTokens.COMPOSER_ACTION_ACTIVE
+            : TgUiTokens.TAB_ITEM_UNSELECTED])
         if (this.chatsState.totalUnreadCount > 0) {
           Text(this.tabBadgeText())
             .fontSize(TgUiTokens.TAB_BADGE_FONT_SIZE)
@@ -115,8 +117,8 @@ export struct MainTabsPage {
       Text('Chats')
         .fontSize(10)
         .fontColor(this.selectedIndex === 2
-          ? $r('sys.color.ohos_id_color_activated')
-          : $r('sys.color.ohos_id_color_bottom_tab_icon_off'))
+          ? TgUiTokens.COMPOSER_ACTION_ACTIVE
+          : TgUiTokens.TAB_ITEM_UNSELECTED)
         .margin({ top: 2 })
     }
     .justifyContent(FlexAlign.Center)
@@ -150,13 +152,19 @@ export struct MainTabsPage {
       }
       .tabBar(new BottomTabBarStyle(
         {
-          normal: new SymbolGlyphModifier($r('sys.symbol.person'))
-            .fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
+          normal: new SymbolGlyphModifier($r('sys.symbol.person')),
           selected: new SymbolGlyphModifier($r('sys.symbol.person_fill'))
-            .fontColor([$r('sys.color.ohos_id_color_activated')])
         },
         'Contacts'
-      ))
+      )
+        .iconStyle({
+          selectedColor: TgUiTokens.COMPOSER_ACTION_ACTIVE,
+          unselectedColor: TgUiTokens.TAB_ITEM_UNSELECTED
+        })
+        .labelStyle({
+          selectedColor: TgUiTokens.COMPOSER_ACTION_ACTIVE,
+          unselectedColor: TgUiTokens.TAB_ITEM_UNSELECTED
+        }))
 
       // Tab 1: Calls
       TabContent() {
@@ -171,13 +179,19 @@ export struct MainTabsPage {
       }
       .tabBar(new BottomTabBarStyle(
         {
-          normal: new SymbolGlyphModifier($r('sys.symbol.phone'))
-            .fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
+          normal: new SymbolGlyphModifier($r('sys.symbol.phone')),
           selected: new SymbolGlyphModifier($r('sys.symbol.phone'))
-            .fontColor([$r('sys.color.ohos_id_color_activated')])
         },
         'Calls'
-      ))
+      )
+        .iconStyle({
+          selectedColor: TgUiTokens.COMPOSER_ACTION_ACTIVE,
+          unselectedColor: TgUiTokens.TAB_ITEM_UNSELECTED
+        })
+        .labelStyle({
+          selectedColor: TgUiTokens.COMPOSER_ACTION_ACTIVE,
+          unselectedColor: TgUiTokens.TAB_ITEM_UNSELECTED
+        }))
 
       // Tab 2: Chats
       TabContent() {
@@ -206,13 +220,19 @@ export struct MainTabsPage {
       }
       .tabBar(new BottomTabBarStyle(
         {
-          normal: new SymbolGlyphModifier($r('sys.symbol.gearshape'))
-            .fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
+          normal: new SymbolGlyphModifier($r('sys.symbol.gearshape')),
           selected: new SymbolGlyphModifier($r('sys.symbol.gearshape'))
-            .fontColor([$r('sys.color.ohos_id_color_activated')])
         },
         'Settings'
-      ))
+      )
+        .iconStyle({
+          selectedColor: TgUiTokens.COMPOSER_ACTION_ACTIVE,
+          unselectedColor: TgUiTokens.TAB_ITEM_UNSELECTED
+        })
+        .labelStyle({
+          selectedColor: TgUiTokens.COMPOSER_ACTION_ACTIVE,
+          unselectedColor: TgUiTokens.TAB_ITEM_UNSELECTED
+        }))
     }
     .barOverlap(!this.isChatDetailVisible())
     .barPosition(BarPosition.End)
@@ -220,20 +240,22 @@ export struct MainTabsPage {
     .vertical(false)
     // Native HDS floating bar (API 23 immersive material) — matches the
     // iOS 26 Liquid Glass floating tab bar Telegram itself adopted
+    // ArkGram recipe (decompiled MainTabBar): floating island with a tall
+    // theme-background barBackgroundStyle mask instead of a gradientMask
     .barFloatingStyle({
       barBottomMargin: this.isChatDetailVisible() ? 0 : TAB_BAR_FLOATING_BOTTOM_MARGIN,
       barOpacity: this.isChatDetailVisible() ? 0 : 1,
-      // HDS docs: the floating island needs its gradient backplate, otherwise
-      // list content reads straight through the bar (seen on light theme)
-      gradientMask: {
-        maskColor: TgUiTokens.TAB_BAR_MASK_COLOR,
-        maskHeight: this.isChatDetailVisible() ? 0 : TgUiTokens.TAB_BAR_MASK_HEIGHT
-      },
       systemMaterialEffect: {
         materialType: hdsMaterial.MaterialType.ADAPTIVE,
         materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
       }
     })
+    .barBackgroundStyle({
+      maskColor: TgUiTokens.COLOR_BG_PRIMARY,
+      maskHeight: this.isChatDetailVisible() ? 0 : TAB_BAR_BACKPLATE_HEIGHT
+    })
+    .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
     .animationDuration(0)
     .scrollable(false)
     .onChange((index: number) => {

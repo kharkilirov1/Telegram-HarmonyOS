@@ -706,6 +706,8 @@ export class TgUiTokens {
   // height = bar height + 16vp) — without it list content reads through the island
   static readonly TAB_BAR_MASK_COLOR: Resource = $r('app.color.tab_bar_mask');
   static readonly TAB_BAR_MASK_HEIGHT: number = 64;
+  // ArkGram tab item colors: selected = accent, unselected = bw by theme
+  static readonly TAB_ITEM_UNSELECTED: Resource = $r('app.color.tab_item_unselected');
 
   // ── Tab bar capsule (iOS-aligned) ──
   static readonly TAB_BAR_ISLAND_HEIGHT: number = 57;
