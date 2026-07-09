@@ -12,6 +12,7 @@ import { StorageKeys } from '../../app/bridge/AppStoreBridge';
 import { navigationUIState, chatsUIState } from '../../core/model/UIStateModels';
 import { TgUiTokens } from '../tg_ui/tokens/TgUiTokens';
 import {
+  bleedIconStyle,
   hdsMaterial,
   HdsNavigation,
   HdsNavigationAttribute,
@@ -188,7 +189,9 @@ export struct MainTabsPage {
         .navDestination(this.chatPageMap)
         .mode(NavigationMode.Stack)
       }
-      .tabBar(this.buildChatsTabBar())
+      .tabBar(bleedIconStyle(() => {
+        this.buildChatsTabBar()
+      }))
 
       // Tab 3: Settings
       TabContent() {
@@ -220,6 +223,12 @@ export struct MainTabsPage {
     .barFloatingStyle({
       barBottomMargin: this.isChatDetailVisible() ? 0 : TAB_BAR_FLOATING_BOTTOM_MARGIN,
       barOpacity: this.isChatDetailVisible() ? 0 : 1,
+      // HDS docs: the floating island needs its gradient backplate, otherwise
+      // list content reads straight through the bar (seen on light theme)
+      gradientMask: {
+        maskColor: TgUiTokens.TAB_BAR_MASK_COLOR,
+        maskHeight: this.isChatDetailVisible() ? 0 : TgUiTokens.TAB_BAR_MASK_HEIGHT
+      },
       systemMaterialEffect: {
         materialType: hdsMaterial.MaterialType.ADAPTIVE,
         materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE

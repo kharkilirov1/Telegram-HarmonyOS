@@ -399,6 +399,10 @@
     {
       "name": "scroll_fab_bg",
       "value": "#F2FFFFFF"
+    },
+    {
+      "name": "tab_bar_mask",
+      "value": "#CCF1F3F5"
     }
   ]
 }

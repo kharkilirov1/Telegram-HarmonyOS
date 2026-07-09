@@ -702,6 +702,10 @@ export class TgUiTokens {
   // ── Tab bar, flat full-width (iOS pattern) ──
   static readonly TAB_BAR_FLAT_HEIGHT: number = 48;
   static readonly TAB_BAR_FLAT_BG: Resource = $r('app.color.tab_bar_flat_bg');
+  // Floating bar gradient mask (HDS docs: light #CCF1F3F5 / dark #99000000,
+  // height = bar height + 16vp) — without it list content reads through the island
+  static readonly TAB_BAR_MASK_COLOR: Resource = $r('app.color.tab_bar_mask');
+  static readonly TAB_BAR_MASK_HEIGHT: number = 64;
 
   // ── Tab bar capsule (iOS-aligned) ──
   static readonly TAB_BAR_ISLAND_HEIGHT: number = 57;
