@@ -89,6 +89,8 @@ export struct TgChatTopBar {
     // R1.5: плоский телеграмный топ-бар — без стеклянной капсулы
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
+    .accessibilityGroup(true)
+    .accessibilityDescription('Back')
     .clickEffect({ level: ClickEffectLevel.LIGHT })
     .onClick(() => {
       this.onBackPress();
@@ -137,6 +139,7 @@ export struct TgChatTopBar {
     // R1.5: тайтл без пилюли — чистый текст по центру
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
+    .accessibilityGroup(true)
     .clickEffect({ level: ClickEffectLevel.LIGHT })
     .onClick(() => {
       hilog.info(0x0021, 'TgChatTopBar', 'title tapped');
@@ -162,15 +165,23 @@ export struct TgChatTopBar {
           this.onSearchQueryChange(value);
         })
 
-      TgIcon({
-        src: $r('app.media.ic_close'),
-        iconSize: 18,
-        tintColor: TgUiTokens.COLOR_ICON_PRIMARY
-      })
-        .onClick(() => {
-          this.onSearchClose();
+      Row() {
+        TgIcon({
+          src: $r('app.media.ic_close'),
+          iconSize: 18,
+          tintColor: TgUiTokens.COLOR_ICON_PRIMARY
         })
-        .margin({ right: 4 })
+      }
+      .width(32)
+      .height(32)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(VerticalAlign.Center)
+      .margin({ right: 4 })
+      .accessibilityGroup(true)
+      .accessibilityDescription('Clear search')
+      .onClick(() => {
+        this.onSearchClose();
+      })
     }
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .layoutWeight(1)
@@ -206,6 +217,8 @@ export struct TgChatTopBar {
     // R1.5: аватар без капсулы
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
+    .accessibilityGroup(true)
+    .accessibilityDescription('Profile')
     .clickEffect({ level: ClickEffectLevel.LIGHT })
     .onClick(() => {
       hilog.info(0x0021, 'TgChatTopBar', 'avatar tapped');
@@ -247,14 +260,22 @@ export struct TgChatTopBar {
               right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP
             })
 
-            Image($r('app.media.ic_search'))
-              .width(22)
-              .height(22)
-              .fillColor(TgUiTokens.COLOR_ICON_PRIMARY)
-              .margin({ right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP })
-              .onClick(() => {
-                this.onSearchPress();
-              })
+            Row() {
+              Image($r('app.media.ic_search'))
+                .width(22)
+                .height(22)
+                .fillColor(TgUiTokens.COLOR_ICON_PRIMARY)
+            }
+            .width(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
+            .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
+            .justifyContent(FlexAlign.Center)
+            .alignItems(VerticalAlign.Center)
+            .margin({ right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP })
+            .accessibilityGroup(true)
+            .accessibilityDescription('Search')
+            .onClick(() => {
+              this.onSearchPress();
+            })
 
             this.buildAvatarCapsule()
           }
