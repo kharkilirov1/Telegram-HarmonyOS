@@ -62,6 +62,11 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 
 ## ПЛАСТ-волна (мандат пользователя 2026-07-08: «бери пласты больше», цель — превью-качество)
 
+### БАГ-ФИКС: login-код не доходил (тик 51, `0fb6422`)
+- [x] **Корень найден live-witness'ом**: login-code приходит сообщением в служебный чат 777000 (waitCode=otherSession), который выпадал из топ-N loadChats → TDLib не слал updateNewMessage → код терялся. Reducer исправен (доказано). Фикс: getChat+openChat(777000) в onAuthReady. Witness подписки: chatFromTd id=777000 «Telegram» + chatAddedToList
+- [ ] **E2E-доподтверждение** (ждёт добра на 1 новый запрос кода): текущий код отправлен ДО подписки (12:22 vs 12:27), resend невозможен (TDLib 400 antiflood). Нужен новый setAuthenticationPhoneNumber ПОСЛЕ подписки → код придёт в подписанный клиент → прочитать → ввести → логин. Флуд-лимит: запрашивать экономно
+- [ ] Полиш: показывать сам служебный login-code в UI баблом/уведомлением (сейчас читается только открытием чата); опц. авто-подстановка кода при otherSession
+
 ### SDK 26.0.0 Beta1 (тик 50)
 - [x] Миграция сборки: clean+default+ohosTest+smoke зелёные на API 26 SDK без правок кода; рантайм жив, сессия цела; эмулятор поднят CLI (`Emulator.exe -start`, урок в LESSONS)
 - [ ] **Решение пользователя**: поднимать ли target/compatible до API 26 Beta1 (новые floating/glass API) — потребует созданиe 26-образа эмулятора (пустой слот Emulator26.0) и перелогин TDLib на нём
