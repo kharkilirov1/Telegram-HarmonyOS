@@ -64,7 +64,8 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 
 ### БАГ-ФИКС: login-код не доходил (тик 51, `0fb6422`)
 - [x] **Корень найден live-witness'ом**: login-code приходит сообщением в служебный чат 777000 (waitCode=otherSession), который выпадал из топ-N loadChats → TDLib не слал updateNewMessage → код терялся. Reducer исправен (доказано). Фикс: getChat+openChat(777000) в onAuthReady. Witness подписки: chatFromTd id=777000 «Telegram» + chatAddedToList
-- [ ] **E2E-доподтверждение** (ждёт добра на 1 новый запрос кода): текущий код отправлен ДО подписки (12:22 vs 12:27), resend невозможен (TDLib 400 antiflood). Нужен новый setAuthenticationPhoneNumber ПОСЛЕ подписки → код придёт в подписанный клиент → прочитать → ввести → логин. Флуд-лимит: запрашивать экономно
+- [x] **Логин на новом эмуляторе ЗАКРЫТ через QR** (тик 52): официальный механизм «входа без кода» — requestQrCodeAuthentication → WaitOtherDeviceConfirmation → QR на экране → пользователь отсканировал с телефона → authorizationStateReady + getMe (userId=1796717332). Наша QR-ветка (QrLoginPage) оказалась полностью реализована и работает E2E
+- [x] **Фикс 777000 подтверждён на свежей сессии**: после QR-логина onAuthReady → chatFromTd id=777000 «Telegram» + chatAddedToList — служебный чат подписан, будущие login-коды будут доставляться
 - [ ] Полиш: показывать сам служебный login-code в UI баблом/уведомлением (сейчас читается только открытием чата); опц. авто-подстановка кода при otherSession
 
 ### SDK 26.0.0 Beta1 (тик 50)
