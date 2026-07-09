@@ -1,6 +1,12 @@
 # STATUS — Telegram-HarmonyOS
 
-Snapshot date: 2026-07-09 (ночь, после ~47 агент-тиков; большая волна фич и UI)
+Snapshot date: 2026-07-10 (target API 26 как ArkGram; табы 1:1 подтверждены light+dark витнессами)
+
+## Latest (2026-07-10)
+
+- **target API 26**: `build-profile.json5` → compatible `6.1.0(23)` + target `26.0.0` (формат без скобок для 26+). Манифест HAP байт-в-байт с ArkGram: minAPIVersion 60100023 / targetAPIVersion 260000026 / compileSdkVersion 26.0.0.23 / Beta1. Нативный рендер HdsTabs floating включается именно target-версией.
+- **Табы ArkGram 1:1**: подтверждены скринами в ОБЕИХ темах — остров, растворение списка в подложку barBackgroundStyle(110), бейдж bleed, unselected white/black по теме.
+- **Эмулятор живуч**: запуск ТОЛЬКО через Планировщик (`schtasks /run /tn HmEmuPura23`) — не умирает с моими сессиями. Тема эмулятора переключается через Settings UI (uitest), `persist.ace.darkmode` — no-op.
 
 ## Current State
 

@@ -5,8 +5,9 @@
       {
         "name": "default",
         "signingConfig": "default",
+        // ArkGram parity: min 23, target 26 Beta1 (native HdsTabs floating rendering)
         "compatibleSdkVersion": "6.1.0(23)",
-        "targetSdkVersion": "6.1.0(23)",
+        "targetSdkVersion": "26.0.0",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
           "nativeCompiler": "BiSheng"
