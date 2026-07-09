@@ -76,7 +76,7 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 ### Черновики (тик 47, `5683a89`)
 - [x] **Drafts E2E**: SetChatDraftCommand → setChatDraftMessage (persist на выходе из чата, skip при равенстве); chatFromTd теперь парсит chat.draft_message (дыра — сохранённый драфт не доходил до стора); restore в композер из aboutToAppear. Witness: «draft2» → выход → «Черновик: draft2» красным в чат-листе (после холодного рестарта) → вход → текст в композере
 - [x] **onActiveChatChanged удалён** (2026-07-10): grep подтвердил ноль вызовов; выходной путь persistDraft+closeChat живёт отдельно (aboutToDisappear-путь, строки ~665-675); все сбросы дублировали дефолты нового инстанса; build+smoke зелёные
-- [x] routeChatId-гвард исправлен на `!== 0` в syncOwnedChatContext + resolveOwnedChatTitle (2026-07-10): группы (отрицательные id) теперь идут route-веткой, не fallback'ом; live-витнесс входа в группу отложен (стенд упал), логика покрыта чтением
+- [x] routeChatId-гвард исправлен на `!== 0` в syncOwnedChatContext + resolveOwnedChatTitle (2026-07-10): группы (отрицательные id) теперь идут route-веткой, не fallback'ом; live-витнесс ДОБЫТ: вход в группу «Huawei HarmonyOS» (отрицательный id) — топ-бар group-заголовок, история, реплаи, стикер (grp.jpeg)
 - [ ] Драфт-полиш: reply-привязка черновика (draftReplyToMessageId → восстановить reply-снипет), debounce-persist во время набора (Telegram шлёт с задержкой, не только на выходе)
 
 ### UI-волна по запросу пользователя (тик 44, `ceb46fc`)
