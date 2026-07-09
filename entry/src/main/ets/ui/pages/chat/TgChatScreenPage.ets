@@ -365,6 +365,12 @@ export struct TgChatScreenPage {
     this.editingOriginalText = '';
     if (clearDraft) {
       this.composerDraftText = '';
+      // Kill any pending debounce so the programmatic text reset cannot
+      // fire a stray setChatDraftMessage clear after the edit submits
+      if (this.draftDebounceTimerId >= 0) {
+        clearTimeout(this.draftDebounceTimerId);
+        this.draftDebounceTimerId = -1;
+      }
     }
   }
 
@@ -1257,6 +1263,23 @@ export struct TgChatScreenPage {
     }
 
     this.fulfillPendingJump();
+    this.refreshRestoredReplySnippet(state);
+  }
+
+  // A draft reply restored before history loaded degrades to a generic
+  // "Message / Message" chip — re-resolve it once the target arrives
+  private refreshRestoredReplySnippet(state: AppState): void {
+    if (this.replyToMessageId === '0'
+      || this.replyToAuthor !== 'Message' || this.replyToPreview !== 'Message') {
+      return;
+    }
+    const chatMessages = state.messages.messages.get(this.activeChatId);
+    const target = chatMessages ? chatMessages.get(this.replyToMessageId) : undefined;
+    if (!chatMessages || !target) {
+      return;
+    }
+    this.replyToAuthor = resolveSenderName(target, state);
+    this.replyToPreview = resolveReplyPreview(chatMessages, this.replyToMessageId);
   }
 
   private computeInitialIndex(totalCount: number): void {
@@ -2219,7 +2242,9 @@ export struct TgChatScreenPage {
   // Telegram drafts: the composer text survives leaving the chat. Skips the
   // TDLib call when nothing changed vs the stored draft.
   private persistDraft(chatId: number): void {
-    if (chatId === 0) {
+    // Leaving the chat mid-edit must not overwrite the server draft with
+    // the edit buffer (same rule as scheduleDraftDebounce)
+    if (chatId === 0 || this.isEditingMessage) {
       return;
     }
     const text = this.composerDraftText.trim();
@@ -2272,6 +2297,11 @@ export struct TgChatScreenPage {
   }
 
   private scheduleDraftDebounce(): void {
+    // Edit mode reuses the composer for the message being edited — that text
+    // is NOT the chat draft and must never be persisted as one
+    if (this.isEditingMessage) {
+      return;
+    }
     if (this.draftDebounceTimerId >= 0) {
       clearTimeout(this.draftDebounceTimerId);
     }

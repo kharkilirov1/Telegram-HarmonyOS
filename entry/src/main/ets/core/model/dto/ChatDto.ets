@@ -130,8 +130,11 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
     if (tdHasKeys(draftInput)) {
       chatDto.draftText = tdGetString(tdGetObject(draftInput, 'text'), 'text');
     }
-    // TDLib: draftMessage.reply_to is inputMessageReplyToMessage{message_id}
-    chatDto.draftReplyToMessageId = tdGetInt64(tdGetObject(draftObj, 'reply_to'), 'message_id');
+    // TDLib: draftMessage.reply_to is InputMessageReplyTo — only the
+    // same-chat variant carries a message_id we can treat as local
+    const draftReplyObj = tdGetObject(draftObj, 'reply_to');
+    chatDto.draftReplyToMessageId = tdGetString(draftReplyObj, '@type') === 'inputMessageReplyToMessage'
+      ? tdGetInt64(draftReplyObj, 'message_id') : '0';
   }
 
   // Photo if available

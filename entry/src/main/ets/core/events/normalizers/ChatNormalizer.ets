@@ -190,8 +190,11 @@ function handleChatDraftMessage(events: AnyAppEvent[], update: TdObject): void {
       const textObj = tdGetObject(inputMsg, 'text');
       updates.draftText = tdGetString(textObj, 'text');
     }
-    // TDLib: draftMessage.reply_to is inputMessageReplyToMessage{message_id}
-    updates.draftReplyToMessageId = tdGetInt64(tdGetObject(draftObj, 'reply_to'), 'message_id');
+    // TDLib: draftMessage.reply_to is InputMessageReplyTo — only the
+    // same-chat variant carries a message_id we can treat as local
+    const draftReplyObj = tdGetObject(draftObj, 'reply_to');
+    updates.draftReplyToMessageId = tdGetString(draftReplyObj, '@type') === 'inputMessageReplyToMessage'
+      ? tdGetInt64(draftReplyObj, 'message_id') : '0';
   } else {
     updates.draftText = '';
     updates.draftReplyToMessageId = '0';
