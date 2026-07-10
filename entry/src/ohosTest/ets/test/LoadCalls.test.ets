@@ -169,6 +169,9 @@ export default function loadCallsTest() {
         state.chats.chats.set(10, makeChat(10, 2, 'Alice chat', '/chat/alice.jpg'));
         state.chats.chats.set(11, makeChat(11, 3, 'Carol chat'));
         state.users.users.set(2, makeUser(2, 'Alice', 'Smith', 'alice', '/user/alice.jpg'));
+        // User 3 present in store — otherwise the use case correctly issues an
+        // extra getUser enrichment command and the strict '1 command' assert fails
+        state.users.users.set(3, makeUser(3, 'Carol', '', 'carol'));
 
         const gateway = new FakeCallsGateway([
           TdObject.fromJSON(
@@ -215,7 +218,8 @@ export default function loadCallsTest() {
         expect(result.records[1].peerUserId).assertEqual(3);
         expect(result.records[1].direction).assertEqual('missed');
         expect(result.records[1].discardReasonType).assertEqual('callDiscardReasonMissed');
-        expect(result.records[1].fallbackTitle).assertEqual('Carol chat');
+        // With user 3 in store the use case prefers the user display name
+        expect(result.records[1].fallbackTitle).assertEqual('Carol');
       });
 
       it('should hydrate missing chat and user direct TDLib responses', 0, async () => {

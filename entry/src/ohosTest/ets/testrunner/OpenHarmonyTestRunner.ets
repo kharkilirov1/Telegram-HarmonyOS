@@ -1,6 +1,5 @@
 import { TestRunner, abilityDelegatorRegistry } from '@kit.TestKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import testsuite from '../test/List.test';
 
 const TAG = 'OpenHarmonyTestRunner';
 const DOMAIN = 0x0001;
@@ -44,7 +43,6 @@ export default class OpenHarmonyTestRunner implements TestRunner {
       hilog.info(DOMAIN, TAG, 'startAbility: err=%{public}s', JSON.stringify(err));
     });
 
-    hilog.info(DOMAIN, TAG, 'Executing test suite');
-    testsuite();
+    hilog.info(DOMAIN, TAG, 'TestAbility started, hypium runs in its onCreate');
   }
 }

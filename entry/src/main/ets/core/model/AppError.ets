@@ -134,8 +134,9 @@ export function classifyTdlibError(code: number, message: string): AppError {
     return new AppError(AppErrorKind.TDLIB_ERROR, 'Request failed.', message, code, false);
   }
 
-  // File errors (5xx in file context)
-  if (code >= 500) {
+  // File errors (5xx in file context) — bounded so unknown codes (e.g. 999)
+  // fall through to the UNKNOWN non-retryable fallback
+  if (code >= 500 && code < 600) {
     return new AppError(
       AppErrorKind.NETWORK,
       'Server error. Please try again later.',
