@@ -21,6 +21,7 @@ Snapshot date: 2026-07-10 (target API 26 как ArkGram; табы 1:1 подтв
 - **Автономные висяки:** typing-витнесс (методика готова, нужен дневной трафик живой группы), login-code бабл (без витнесса — флуд-лимит запрещает запрашивать код)
 - **Build:** `scripts/smoke-build.ps1` — green (2026-07-10, target 26.0.0)
 - **Smoke:** `scripts/smoke-ui-phase0.ps1` — green (2026-07-10)
+- **On-device unit tests: 413/413 GREEN (2026-07-10, впервые исполнены)** — hypium-бутстрап починен (см. LESSONS); прогон: ohosTest assembleHap → hdc install → `aa test -b com.telegram.harmonyos -m entry_test -s unittest /ets/testrunner/OpenHarmonyTestRunner -s timeout 30000`
 - **Emulator:** `127.0.0.1:5555` (Pura 90 Pro Max, API 23, тёмная тема), свежий HAP установлен, сессия залогинена. Подъём: `schtasks /run /tn HmEmuPura23` + kill-цикл сторожа (LESSONS «Эмулятор-2»). Образа API 26 для эмулятора НЕ существует (максимум 6.1.1(24), скачан; PuraAPI24 инстанс есть)
 - **Warnings:** unverified `libtdlib_napi.so`; signing config отсутствует (R2, нужен пользователь в DevEco)
 
