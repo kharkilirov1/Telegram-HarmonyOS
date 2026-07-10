@@ -294,6 +294,9 @@ function handleChatAction(events: AnyAppEvent[], update: TdObject): void {
     senderUserId = tdGetNumber(senderObj, 'user_id');
   }
 
+  hilog.debug(DOMAIN, TAG, 'chatAction %{public}s chat=%{public}d sender=%{public}d',
+    actionTypeStr, chatId, senderUserId);
+
   const event = new ChatActionEvent();
   event.chatId = chatId;
   event.senderUserId = senderUserId;
