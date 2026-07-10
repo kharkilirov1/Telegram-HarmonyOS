@@ -57,7 +57,7 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
   6. Документы: скачивание/открытие — прогнать
 - [ ] Полный проход оставшихся пунктов чеклиста: фото полноэкран, войсы, видео/док по тапу, стикеры/GIF, отправка (текст — с санкции пользователя), день догфуда
 - [ ] Re-run AppFreeze scenario после фикса P0 (замечание: fresh freeze детектился и на debug-провизии эмулятора, вопреки release-only оговорке в доках)
-- [ ] Add pure unit coverage for `DownloadMessageMediaUseCase` throttle/budget behavior (scheduleScan dedupe, budget cap + rescan chain, stop() timer cleanup) — рантайм-поведение подтверждено hilog: Enqueued 4→4→2 с шагом 600 мс
+- [x] Unit coverage `DownloadMessageMediaUseCase` — ЗАКРЫТ (2026-07-10): DownloadMessageMedia.test.ets покрывает всё запрошенное (caps+rescan chain, dedupe, stop() cancel, drain congestion×3, active-chat priority) и теперь РЕАЛЬНО ИСПОЛНЯЕТСЯ в составе 413/413 зелёных (после починки hypium-бутстрапа)
 - [ ] Propagate asynchronous TDLib transfer failures if a concrete `updateFile` failure shape is captured on emulator/device
 
 ## ПЛАСТ-волна (мандат пользователя 2026-07-08: «бери пласты больше», цель — превью-качество)
