@@ -13,6 +13,60 @@ const DEFAULT_COMPOSER_EMOJI: string[] = [
   '😅', '👌', '😭', '💯', '🤝', '✨'
 ];
 
+// Telegram-style category sets: 3 rows × 8 columns each (24 per category)
+class EmojiCategory {
+  id: string = '';
+  icon: string = '';
+  emojis: string[] = [];
+
+  constructor(id: string, icon: string, emojis: string[]) {
+    this.id = id;
+    this.icon = icon;
+    this.emojis = emojis;
+  }
+}
+
+const RECENT_CATEGORY_ID: string = 'recent';
+
+const EMOJI_CATEGORIES: EmojiCategory[] = [
+  new EmojiCategory(RECENT_CATEGORY_ID, '🕐', []),
+  new EmojiCategory('smileys', '😀', [
+    '😀', '😁', '😂', '🤣', '😊', '😇', '🙂', '😉',
+    '😍', '🥰', '😘', '😜', '🤪', '🤨', '😎', '🥸',
+    '😢', '😭', '😤', '😡', '🥶', '😱', '🤗', '🤔'
+  ]),
+  new EmojiCategory('animals', '🐻', [
+    '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼',
+    '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔',
+    '🐧', '🐦', '🦄', '🐝', '🦋', '🐢', '🐬', '🐳'
+  ]),
+  new EmojiCategory('food', '🍔', [
+    '🍏', '🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓',
+    '🍒', '🍑', '🥭', '🍍', '🥑', '🍕', '🍔', '🍟',
+    '🌭', '🍿', '🍩', '🍪', '🎂', '🍰', '☕', '🍺'
+  ]),
+  new EmojiCategory('activity', '⚽', [
+    '⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🎱', '🏓',
+    '🏸', '🥊', '🥋', '⛸️', '🎿', '🏂', '🏋️', '🚴',
+    '🏆', '🥇', '🥈', '🥉', '🎮', '🎲', '🎯', '🎸'
+  ]),
+  new EmojiCategory('travel', '🚗', [
+    '🚗', '🚕', '🚌', '🏎️', '🚓', '🚑', '🚒', '🚜',
+    '🛵', '🏍️', '🚲', '🚂', '✈️', '🚀', '🛸', '🚁',
+    '⛵', '🚢', '⚓', '🗽', '🗼', '🏰', '⛰️', '🏖️'
+  ]),
+  new EmojiCategory('objects', '💡', [
+    '⌚', '📱', '💻', '⌨️', '🖥️', '🖨️', '📷', '🎥',
+    '📺', '📻', '🎙️', '⏰', '💡', '🔦', '🔋', '🔌',
+    '💰', '💎', '🔧', '🔨', '🧲', '🔒', '🔑', '📦'
+  ]),
+  new EmojiCategory('symbols', '❤️', [
+    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍',
+    '💯', '💢', '💥', '💫', '⭐', '🌟', '✨', '⚡',
+    '✅', '❌', '❓', '❗', '♻️', '🔞', '🆗', '🆒'
+  ])
+];
+
 @ComponentV2
 export struct TgComposerEmojiPanel {
   @Param title: string = 'Recent';
@@ -23,8 +77,23 @@ export struct TgComposerEmojiPanel {
   @Event onEmojiSelected: (emoji: string) => void = (_: string) => {};
   @Event onStickerPress: () => void = () => {};
 
+  @Local private activeCategoryId: string = RECENT_CATEGORY_ID;
+
   private useBlur(): boolean {
     return TgGlassPolicy.shouldUseRealtimeBlurForMode(this.glassMode);
+  }
+
+  private activeCategory(): EmojiCategory {
+    for (const category of EMOJI_CATEGORIES) {
+      if (category.id === this.activeCategoryId) {
+        return category;
+      }
+    }
+    return EMOJI_CATEGORIES[0];
+  }
+
+  private headerTitle(): string {
+    return this.activeCategoryId === RECENT_CATEGORY_ID ? this.title : '';
   }
 
   private panelBg(): ResourceColor {
@@ -36,7 +105,10 @@ export struct TgComposerEmojiPanel {
   }
 
   private resolvedEmojis(): string[] {
-    return this.emojis.length > 0 ? this.emojis : DEFAULT_COMPOSER_EMOJI;
+    if (this.activeCategoryId === RECENT_CATEGORY_ID) {
+      return this.emojis.length > 0 ? this.emojis : DEFAULT_COMPOSER_EMOJI;
+    }
+    return this.activeCategory().emojis;
   }
 
   private rowIndexes(): number[] {
@@ -52,24 +124,35 @@ export struct TgComposerEmojiPanel {
   private emojiRow(rowIndex: number): string[] {
     const columns = TgUiTokens.COMPOSER_EMOJI_COLUMNS;
     const start = rowIndex * columns;
-    return this.resolvedEmojis().slice(start, start + columns);
+    const row = this.resolvedEmojis().slice(start, start + columns);
+    // Pad the trailing row so SpaceBetween keeps the grid columns aligned
+    while (row.length < columns) {
+      row.push('');
+    }
+    return row;
   }
 
   @Builder
   private buildEmojiCell(emoji: string, _index: number) {
-    Row() {
-      Text(emoji)
-        .fontSize(TgUiTokens.COMPOSER_EMOJI_TEXT_SIZE)
-        .textAlign(TextAlign.Center)
+    if (emoji === '') {
+      Row()
+        .width(TgUiTokens.COMPOSER_EMOJI_CELL_SIZE)
+        .height(TgUiTokens.COMPOSER_EMOJI_CELL_SIZE)
+    } else {
+      Row() {
+        Text(emoji)
+          .fontSize(TgUiTokens.COMPOSER_EMOJI_TEXT_SIZE)
+          .textAlign(TextAlign.Center)
+      }
+      .width(TgUiTokens.COMPOSER_EMOJI_CELL_SIZE)
+      .height(TgUiTokens.COMPOSER_EMOJI_CELL_SIZE)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(VerticalAlign.Center)
+      .borderRadius(TgUiTokens.COMPOSER_EMOJI_CELL_RADIUS)
+      .onClick(() => {
+        this.onEmojiSelected(emoji);
+      })
     }
-    .width(TgUiTokens.COMPOSER_EMOJI_CELL_SIZE)
-    .height(TgUiTokens.COMPOSER_EMOJI_CELL_SIZE)
-    .justifyContent(FlexAlign.Center)
-    .alignItems(VerticalAlign.Center)
-    .borderRadius(TgUiTokens.COMPOSER_EMOJI_CELL_RADIUS)
-    .onClick(() => {
-      this.onEmojiSelected(emoji);
-    })
   }
 
   @Builder
@@ -102,11 +185,36 @@ export struct TgComposerEmojiPanel {
     })
   }
 
+  @Builder
+  private buildCategoryBar() {
+    Row() {
+      ForEach(EMOJI_CATEGORIES, (category: EmojiCategory) => {
+        Row() {
+          Text(category.icon)
+            .fontSize(TgUiTokens.COMPOSER_EMOJI_HEADER_SIZE + 4)
+            .opacity(this.activeCategoryId === category.id ? 1 : 0.45)
+        }
+        .height(TgUiTokens.COMPOSER_EMOJI_PILL_HEIGHT)
+        .layoutWeight(1)
+        .justifyContent(FlexAlign.Center)
+        .alignItems(VerticalAlign.Center)
+        .borderRadius(TgUiTokens.COMPOSER_EMOJI_PILL_RADIUS)
+        .backgroundColor(this.activeCategoryId === category.id
+          ? TgUiTokens.COLOR_BG_SECONDARY : Color.Transparent)
+        .onClick(() => {
+          this.activeCategoryId = category.id;
+        })
+      }, (category: EmojiCategory) => `composer_emoji_cat_${category.id}`)
+    }
+    .width('100%')
+    .alignItems(VerticalAlign.Center)
+  }
+
   build() {
     Column() {
       Column({ space: TgUiTokens.COMPOSER_EMOJI_PANEL_ROW_GAP }) {
         Row() {
-          Text(this.title)
+          Text(this.headerTitle())
             .fontSize(TgUiTokens.COMPOSER_EMOJI_HEADER_SIZE)
             .fontWeight(FontWeight.Medium)
             .fontColor(TgUiTokens.COLOR_TEXT_META)
@@ -119,6 +227,8 @@ export struct TgComposerEmojiPanel {
         .width('100%')
         .height(TgUiTokens.COMPOSER_EMOJI_PANEL_HEADER_HEIGHT)
         .alignItems(VerticalAlign.Center)
+
+        this.buildCategoryBar()
 
         Column({ space: TgUiTokens.COMPOSER_EMOJI_CELL_GAP }) {
           ForEach(this.rowIndexes(), (rowIndex: number) => {
