@@ -238,6 +238,9 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 - [x] AppFreeze mitigation from emulator faultlogger: throttle/cap startup `DownloadMessageMediaUseCase` background scans and keep full photo/video/document/audio on explicit tap/download flow
 - Открытые пункты перенесены в `## R1 backlog` (см. выше)
 
+### UI-кандидаты (решение пользователя)
+- [ ] **Авто-скрытие плавающего таб-бара при скролле** (нативно): `HdsTabsController.bindScroller(value, scroller, parentScroller?)` + режимы «Visible/Hidden with Scrolling Motion» (RAG: UI Design Kit > HdsTabs part 3/16). Кандидат для чат-листа — остров прячется при скролле вниз, возвращается вверх. Поведенческое решение за пользователем
+
 ### Technical debt (пост-R1)
 - [ ] Deeper integration tests for `AuthSideEffect` ready/warmup flow once TDLib/app-context test seam exists
 - [ ] **On-device unit runner висит (2026-07-10)**: `aa test -b com.telegram.harmonyos -m entry_test -s unittest /ets/testrunner/OpenHarmonyTestRunner` — TestAbility стартует («Executing test suite»), но ни один сьют не начинается за 10 мин (0 pass/fail в hilog, пустой stdout). Гипотеза: top-level импорты сьютов тянут AppCoreRuntime-синглтоны, которые ждут TDLib/контекст. Тест-HAP собирается и ставится нормально. Расследовать: минимальный сьют без импортов приложения → бинарный поиск виснущего импорта
