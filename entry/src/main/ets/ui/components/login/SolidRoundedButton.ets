@@ -37,6 +37,11 @@ export struct SolidRoundedButton {
     .backgroundColor(this.isEnabled ? TgUiTokens.LOGIN_BUTTON_BG : TgUiTokens.LOGIN_BUTTON_DISABLED_BG)
     .enabled(this.isEnabled && this.buttonState === 'default')
     .stateEffect(true) // Встроенный press-эффект Button (замена кастомной spring-анимации)
+    .accessibilityDescription(
+      this.buttonState === 'progress' ? 'Loading' :
+      this.buttonState === 'success' ? 'Success' :
+      this.title
+    )
     .onClick(() => {
       this.onPress();
     })
