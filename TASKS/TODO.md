@@ -66,7 +66,7 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 - [x] **Корень найден live-witness'ом**: login-code приходит сообщением в служебный чат 777000 (waitCode=otherSession), который выпадал из топ-N loadChats → TDLib не слал updateNewMessage → код терялся. Reducer исправен (доказано). Фикс: getChat+openChat(777000) в onAuthReady. Witness подписки: chatFromTd id=777000 «Telegram» + chatAddedToList
 - [x] **Логин на новом эмуляторе ЗАКРЫТ через QR** (тик 52): официальный механизм «входа без кода» — requestQrCodeAuthentication → WaitOtherDeviceConfirmation → QR на экране → пользователь отсканировал с телефона → authorizationStateReady + getMe (userId=1796717332). Наша QR-ветка (QrLoginPage) оказалась полностью реализована и работает E2E
 - [x] **Фикс 777000 подтверждён на свежей сессии**: после QR-логина onAuthReady → chatFromTd id=777000 «Telegram» + chatAddedToList — служебный чат подписан, будущие login-коды будут доставляться
-- [ ] Полиш: показывать сам служебный login-code в UI баблом/уведомлением (сейчас читается только открытием чата); опц. авто-подстановка кода при otherSession
+- [ ] Полиш: показывать сам служебный login-code в UI баблом/уведомлением (сейчас читается только открытием чата); опц. авто-подстановка кода при otherSession. **Реализация найдена: нативный `HdsSnackBar` из UI Design Kit** — остаётся блокер витнесса (флуд-лимит на запрос кода)
 
 ### SDK 26.0.0 Beta1 (тик 50)
 - [x] Миграция сборки: clean+default+ohosTest+smoke зелёные на API 26 SDK без правок кода; рантайм жив, сессия цела; эмулятор поднят CLI (`Emulator.exe -start`, урок в LESSONS)
@@ -239,7 +239,8 @@ Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0
 - Открытые пункты перенесены в `## R1 backlog` (см. выше)
 
 ### UI-кандидаты (решение пользователя)
-- [ ] **Авто-скрытие плавающего таб-бара при скролле** (нативно): `HdsTabsController.bindScroller(value, scroller, parentScroller?)` + режимы «Visible/Hidden with Scrolling Motion» (RAG: UI Design Kit > HdsTabs part 3/16). Кандидат для чат-листа — остров прячется при скролле вниз, возвращается вверх. Поведенческое решение за пользователем
+- [ ] **Авто-скрытие плавающего таб-бара при скролле** (нативно): `HdsTabsController.bindScroller(value, scroller, parentScroller?)` + режимы «Visible/Hidden with Scrolling Motion» (RAG: UI Design Kit > HdsTabs part 3/16); в паре — `HdsTabsMiniBar` (мини-режим острова). Кандидат для чат-листа — остров прячется при скролле вниз, возвращается вверх. Поведенческое решение за пользователем
+- **Справка: каталог UI Design Kit** (из SDK `@kit.UIDesignKit.d.ts`, 2026-07-10): HdsTabs(+MiniBar/Floating/Background), HdsNavigation/HdsNavDestination (titleBar, badge, menu, divider), HdsActionBar, HdsListItem/HdsListItemCard, HdsSideBar/HdsSideMenu, **HdsSnackBar**, HdsSwipeActionOptions, HdsVisualComponent, HdsSceneController, hdsMaterial/hdsEffect/hdsDrawable. HDS-доки в RAG: kit «UI Design Kit» (искать точными идентификаторами)
 
 ### Technical debt (пост-R1)
 - [ ] Deeper integration tests for `AuthSideEffect` ready/warmup flow once TDLib/app-context test seam exists
