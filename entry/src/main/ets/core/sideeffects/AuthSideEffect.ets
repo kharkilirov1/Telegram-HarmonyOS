@@ -16,7 +16,7 @@ import { common } from '@kit.AbilityKit';
 import { deviceInfo } from '@kit.BasicServicesKit';
 import { TELEGRAM_API_HASH, TELEGRAM_API_ID, USE_TEST_DC } from '../../services/ConfigLocal';
 import { createLoadChatsUseCase } from '../../domain/usecases/loadChats';
-import { createGetChatCommand, createOpenChatCommand } from '../model/AppCommand';
+import { createGetChatCommand, createOpenChatCommand, createSetTdlibOnlineCommand } from '../model/AppCommand';
 
 const DOMAIN = 0x0004;
 const TAG = 'AuthSideEffect';
@@ -167,6 +167,23 @@ class AuthSideEffect {
       return;
     }
     await this.ensureServiceChatKnown(token);
+    await this.declareSessionOnline(token);
+  }
+
+  // Telegram delivers volatile updates (typing chat actions, live user
+  // statuses) only to sessions that set the TDLib 'online' option — without
+  // it the server treats this session as background and skips them entirely.
+  private async declareSessionOnline(token: number): Promise<void> {
+    if (!this.isCurrentRun(token)) {
+      return;
+    }
+    try {
+      await getTdGatewayAdapter().send(createSetTdlibOnlineCommand(true));
+      hilog.info(DOMAIN, TAG, 'TDLib option online=true acknowledged');
+    } catch (error) {
+      const err = error as AppError;
+      hilog.warn(DOMAIN, TAG, 'declareSessionOnline failed: %{public}s', err.message);
+    }
   }
 
   // Subscribe to the Telegram service chat so its messages (login codes) are

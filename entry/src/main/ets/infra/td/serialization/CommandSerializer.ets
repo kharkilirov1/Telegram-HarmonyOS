@@ -30,6 +30,7 @@ import {
   SearchCallMessagesCommand,
   GetChatCommand,
   CloseChatCommand,
+  SetTdlibOnlineCommand,
   GetUserFullInfoCommand,
   GetSupergroupFullInfoCommand,
   DownloadFileCommand,
@@ -81,6 +82,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('getUser', serializeGetUser);
 COMMAND_SERIALIZATION_HANDLERS.set('searchCallMessages', serializeSearchCallMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('getChat', serializeGetChat);
 COMMAND_SERIALIZATION_HANDLERS.set('closeChat', serializeCloseChat);
+COMMAND_SERIALIZATION_HANDLERS.set('setTdlibOnline', serializeSetTdlibOnline);
 COMMAND_SERIALIZATION_HANDLERS.set('getUserFullInfo', serializeGetUserFullInfo);
 COMMAND_SERIALIZATION_HANDLERS.set('getSupergroupFullInfo', serializeGetSupergroupFullInfo);
 COMMAND_SERIALIZATION_HANDLERS.set('downloadFile', serializeDownloadFile);
@@ -332,6 +334,14 @@ function serializeCloseChat(command: AnyAppCommand, result: SerializedCommand): 
   const cmd = command as CloseChatCommand;
   result.method = 'closeChat';
   result.params.setNumber('chat_id', cmd.payload.chatId);
+}
+
+function serializeSetTdlibOnline(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SetTdlibOnlineCommand;
+  result.method = 'setOption';
+  result.params.setString('name', 'online');
+  result.params.setString('_value_json',
+    '{"@type":"optionValueBoolean","value":' + (cmd.payload.online ? 'true' : 'false') + '}');
 }
 
 function serializeGetUserFullInfo(command: AnyAppCommand, result: SerializedCommand): void {

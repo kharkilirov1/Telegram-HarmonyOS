@@ -29,6 +29,10 @@ export class OpenChatPayload {
   chatId: ChatId = 0;
 }
 
+export class SetTdlibOnlinePayload {
+  online: boolean = true;
+}
+
 export class SendMessagePayload {
   chatId: ChatId = 0;
   text: string = '';
@@ -214,6 +218,13 @@ export class OpenChatCommand extends AppCommand {
   payload: OpenChatPayload = new OpenChatPayload();
 }
 
+// Telegram delivers volatile updates (typing actions, user statuses) only to
+// sessions that declared themselves online via the TDLib 'online' option
+export class SetTdlibOnlineCommand extends AppCommand {
+  type: string = 'setTdlibOnline';
+  payload: SetTdlibOnlinePayload = new SetTdlibOnlinePayload();
+}
+
 export class SendMessageCommand extends AppCommand {
   type: string = 'sendMessage';
   payload: SendMessagePayload = new SendMessagePayload();
@@ -380,6 +391,7 @@ export type AnyAppCommand =
   | ResendAuthCodeCommand
   | LoadChatsCommand
   | OpenChatCommand
+  | SetTdlibOnlineCommand
   | SendMessageCommand
   | SendMediaMessageCommand
   | ViewMessagesCommand
@@ -448,6 +460,12 @@ export function createLoadChatsCommand(limit: number = 20): LoadChatsCommand {
 export function createOpenChatCommand(chatId: ChatId): OpenChatCommand {
   const cmd = new OpenChatCommand();
   cmd.payload.chatId = chatId;
+  return cmd;
+}
+
+export function createSetTdlibOnlineCommand(online: boolean): SetTdlibOnlineCommand {
+  const cmd = new SetTdlibOnlineCommand();
+  cmd.payload.online = online;
   return cmd;
 }
 
