@@ -1,0 +1,3 @@
+## 2024-07-12 - ArkUI Touch Targets and Accessibility
+**Learning:** In HarmonyOS/ArkUI, small interactive icons (like TgIcon or Image) naturally have insufficient touch target sizes if `onClick` is applied directly. Furthermore, adding accessibility descriptions to them directly can cause screen reader issues if not grouped properly.
+**Action:** Always wrap interactive icon-only components in layout containers (like `Row`) sized to the minimum touch target (e.g., 44x44vp), move the `onClick` handler and margins to the wrapper, and apply `.accessibilityGroup(true)` and `.accessibilityDescription()` to the wrapper.
