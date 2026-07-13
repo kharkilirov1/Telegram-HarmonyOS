@@ -1,0 +1,3 @@
+## 2024-07-13 - [ChatTopBar Target Size & A11y]
+**Learning:** Interactive icon-only components in top bars must maintain an adequate minimum touch target size (44x44vp). Applying click handlers directly to small `Image` components shrinks the interactive area and degrades UX, while missing accessibility attributes hinder screen readers.
+**Action:** Wrap icon-only components in layout containers (like `Row` or `Column`), explicitly size the container, and move the `onClick` handler, margins, visual feedback (`.clickEffect`), and accessibility attributes (`.accessibilityGroup(true)`, `.accessibilityDescription()`) to the wrapper. Apply accessibility descriptors directly to existing capsule containers.
