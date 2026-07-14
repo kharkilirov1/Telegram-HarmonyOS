@@ -90,6 +90,8 @@ export struct TgChatTopBar {
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
     .clickEffect({ level: ClickEffectLevel.LIGHT })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Back')
     .onClick(() => {
       this.onBackPress();
     })
@@ -138,6 +140,8 @@ export struct TgChatTopBar {
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
     .clickEffect({ level: ClickEffectLevel.LIGHT })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Chat info')
     .onClick(() => {
       hilog.info(0x0021, 'TgChatTopBar', 'title tapped');
       this.onTitlePress();
@@ -207,6 +211,8 @@ export struct TgChatTopBar {
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
     .clickEffect({ level: ClickEffectLevel.LIGHT })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Profile')
     .onClick(() => {
       hilog.info(0x0021, 'TgChatTopBar', 'avatar tapped');
       this.onAvatarPress();
@@ -247,14 +253,23 @@ export struct TgChatTopBar {
               right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP
             })
 
-            Image($r('app.media.ic_search'))
-              .width(22)
-              .height(22)
-              .fillColor(TgUiTokens.COLOR_ICON_PRIMARY)
-              .margin({ right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP })
-              .onClick(() => {
-                this.onSearchPress();
-              })
+            Row() {
+              Image($r('app.media.ic_search'))
+                .width(22)
+                .height(22)
+                .fillColor(TgUiTokens.COLOR_ICON_PRIMARY)
+            }
+            .width(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
+            .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
+            .justifyContent(FlexAlign.Center)
+            .alignItems(VerticalAlign.Center)
+            .margin({ right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP })
+            .clickEffect({ level: ClickEffectLevel.LIGHT })
+            .accessibilityGroup(true)
+            .accessibilityDescription('Search')
+            .onClick(() => {
+              this.onSearchPress();
+            })
 
             this.buildAvatarCapsule()
           }
