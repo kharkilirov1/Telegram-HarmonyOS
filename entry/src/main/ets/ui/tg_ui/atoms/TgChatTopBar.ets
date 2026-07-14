@@ -89,6 +89,8 @@ export struct TgChatTopBar {
     // R1.5: плоский телеграмный топ-бар — без стеклянной капсулы
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
+    .accessibilityGroup(true)
+    .accessibilityDescription('Back')
     .clickEffect({ level: ClickEffectLevel.LIGHT })
     .onClick(() => {
       this.onBackPress();
@@ -167,6 +169,9 @@ export struct TgChatTopBar {
         iconSize: 18,
         tintColor: TgUiTokens.COLOR_ICON_PRIMARY
       })
+        .accessibilityGroup(true)
+        .accessibilityDescription('Clear search')
+        .clickEffect({ level: ClickEffectLevel.LIGHT })
         .onClick(() => {
           this.onSearchClose();
         })
@@ -206,6 +211,8 @@ export struct TgChatTopBar {
     // R1.5: аватар без капсулы
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
+    .accessibilityGroup(true)
+    .accessibilityDescription('Chat Profile')
     .clickEffect({ level: ClickEffectLevel.LIGHT })
     .onClick(() => {
       hilog.info(0x0021, 'TgChatTopBar', 'avatar tapped');
@@ -252,6 +259,9 @@ export struct TgChatTopBar {
               .height(22)
               .fillColor(TgUiTokens.COLOR_ICON_PRIMARY)
               .margin({ right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP })
+              .accessibilityGroup(true)
+              .accessibilityDescription('Search')
+              .clickEffect({ level: ClickEffectLevel.LIGHT })
               .onClick(() => {
                 this.onSearchPress();
               })
