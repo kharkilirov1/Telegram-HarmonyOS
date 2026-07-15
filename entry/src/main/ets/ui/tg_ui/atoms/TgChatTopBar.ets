@@ -90,6 +90,8 @@ export struct TgChatTopBar {
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
     .clickEffect({ level: ClickEffectLevel.LIGHT })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Back')
     .onClick(() => {
       this.onBackPress();
     })
@@ -138,6 +140,8 @@ export struct TgChatTopBar {
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
     .clickEffect({ level: ClickEffectLevel.LIGHT })
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.title + (this.subtitle ? ', ' + this.subtitle : ''))
     .onClick(() => {
       hilog.info(0x0021, 'TgChatTopBar', 'title tapped');
       this.onTitlePress();
@@ -207,6 +211,8 @@ export struct TgChatTopBar {
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
     .clickEffect({ level: ClickEffectLevel.LIGHT })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Profile')
     .onClick(() => {
       hilog.info(0x0021, 'TgChatTopBar', 'avatar tapped');
       this.onAvatarPress();
