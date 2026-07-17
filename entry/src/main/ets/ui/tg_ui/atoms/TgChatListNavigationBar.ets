@@ -40,6 +40,8 @@ export struct TgChatListNavigationBar {
       .height(TgUiTokens.TOP_BAR_ACTION_TOUCH)
       .justifyContent(FlexAlign.Start)
       .alignItems(VerticalAlign.Center)
+      .clickEffect({ level: ClickEffectLevel.LIGHT })
+      .accessibilityGroup(true)
       .onClick(() => {
         this.onEditPress();
       })
@@ -64,6 +66,9 @@ export struct TgChatListNavigationBar {
       .height(TgUiTokens.TOP_BAR_ACTION_TOUCH)
       .justifyContent(FlexAlign.End)
       .alignItems(VerticalAlign.Center)
+      .clickEffect({ level: ClickEffectLevel.LIGHT })
+      .accessibilityGroup(true)
+      .accessibilityDescription('Compose')
       .onClick(() => {
         this.onComposePress();
       })

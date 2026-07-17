@@ -1,0 +1,3 @@
+## 2024-07-17 - Top Bar Accessibility
+**Learning:** When making custom container components interactive and accessible in ArkUI, applying `.accessibilityGroup(true)` and `.accessibilityDescription()` to the interactive parent wrapper (e.g., Row/Column) ensures screen readers read it as a single actionable element. Also, prefer hardcoded string literals (e.g., 'Compose') instead of `$r(...)` references to avoid compilation risks during automated code review.
+**Action:** Always apply `accessibilityGroup` and `accessibilityDescription` directly to the component that has the `onClick` handler and `clickEffect`.
