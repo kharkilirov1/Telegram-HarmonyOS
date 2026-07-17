@@ -160,6 +160,8 @@ export struct TgComposerInput {
       TgGlassPolicy.glassOptions())
     .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
     .clip(true)
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.canSend() ? 'Send message' : 'Record voice message')
     .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.85 })
     .onClick(() => {
       if (this.isDisabled) {
@@ -466,6 +468,8 @@ export struct TgComposerInput {
           .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
           .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
           .clip(true)
+          .accessibilityGroup(true)
+          .accessibilityDescription('Attach media')
           .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.85 })
           .onClick(() => {
             if (!this.isDisabled) {
@@ -533,6 +537,8 @@ export struct TgComposerInput {
               .flexShrink(0)
               .justifyContent(FlexAlign.Center)
               .alignItems(VerticalAlign.Center)
+              .accessibilityGroup(true)
+              .accessibilityDescription('Open emoji panel')
               .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.8 })
               .onClick(() => {
                 if (!this.isDisabled) {
