@@ -90,6 +90,8 @@ export struct TgChatTopBar {
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
     .clickEffect({ level: ClickEffectLevel.LIGHT })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Back')
     .onClick(() => {
       this.onBackPress();
     })
@@ -162,15 +164,23 @@ export struct TgChatTopBar {
           this.onSearchQueryChange(value);
         })
 
-      TgIcon({
-        src: $r('app.media.ic_close'),
-        iconSize: 18,
-        tintColor: TgUiTokens.COLOR_ICON_PRIMARY
-      })
-        .onClick(() => {
-          this.onSearchClose();
+      Row() {
+        TgIcon({
+          src: $r('app.media.ic_close'),
+          iconSize: 18,
+          tintColor: TgUiTokens.COLOR_ICON_PRIMARY
         })
-        .margin({ right: 4 })
+      }
+      .width(26)
+      .height(26)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(VerticalAlign.Center)
+      .margin({ right: 4 })
+      .accessibilityGroup(true)
+      .accessibilityDescription('Close search')
+      .onClick(() => {
+        this.onSearchClose();
+      })
     }
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .layoutWeight(1)
@@ -207,6 +217,8 @@ export struct TgChatTopBar {
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
     .clickEffect({ level: ClickEffectLevel.LIGHT })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Profile')
     .onClick(() => {
       hilog.info(0x0021, 'TgChatTopBar', 'avatar tapped');
       this.onAvatarPress();
@@ -247,14 +259,23 @@ export struct TgChatTopBar {
               right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP
             })
 
-            Image($r('app.media.ic_search'))
-              .width(22)
-              .height(22)
-              .fillColor(TgUiTokens.COLOR_ICON_PRIMARY)
-              .margin({ right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP })
-              .onClick(() => {
-                this.onSearchPress();
-              })
+            Row() {
+              Image($r('app.media.ic_search'))
+                .width(22)
+                .height(22)
+                .fillColor(TgUiTokens.COLOR_ICON_PRIMARY)
+            }
+            .width(44)
+            .height(44)
+            .justifyContent(FlexAlign.Center)
+            .alignItems(VerticalAlign.Center)
+            .margin({ right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP })
+            .clickEffect({ level: ClickEffectLevel.LIGHT })
+            .accessibilityGroup(true)
+            .accessibilityDescription('Search')
+            .onClick(() => {
+              this.onSearchPress();
+            })
 
             this.buildAvatarCapsule()
           }
