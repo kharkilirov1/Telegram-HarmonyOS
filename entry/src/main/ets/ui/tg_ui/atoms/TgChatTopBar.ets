@@ -90,6 +90,8 @@ export struct TgChatTopBar {
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
     .clickEffect({ level: ClickEffectLevel.LIGHT })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Back')
     .onClick(() => {
       this.onBackPress();
     })
@@ -167,6 +169,8 @@ export struct TgChatTopBar {
         iconSize: 18,
         tintColor: TgUiTokens.COLOR_ICON_PRIMARY
       })
+        .accessibilityGroup(true)
+        .accessibilityDescription('Close search')
         .onClick(() => {
           this.onSearchClose();
         })
@@ -207,6 +211,8 @@ export struct TgChatTopBar {
     .backgroundColor(Color.Transparent)
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
     .clickEffect({ level: ClickEffectLevel.LIGHT })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Avatar profile')
     .onClick(() => {
       hilog.info(0x0021, 'TgChatTopBar', 'avatar tapped');
       this.onAvatarPress();
@@ -252,6 +258,8 @@ export struct TgChatTopBar {
               .height(22)
               .fillColor(TgUiTokens.COLOR_ICON_PRIMARY)
               .margin({ right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP })
+              .accessibilityGroup(true)
+              .accessibilityDescription('Search')
               .onClick(() => {
                 this.onSearchPress();
               })
