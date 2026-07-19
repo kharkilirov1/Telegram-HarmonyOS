@@ -1,0 +1,3 @@
+## 2024-05-19 - ArkUI Inline Action Touch Targets
+**Learning:** Inline interactive elements like close buttons or search icons often lack sufficient touch targets when `onClick` is directly attached to `TgIcon` or `Image` components. This also prevents proper unified accessibility announcements.
+**Action:** Always wrap small interactive icons in a layout container (e.g., `Row`) with a minimum width/height of 44vp (like `TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE`), move margins and `onClick` handlers to this wrapper, and apply `.accessibilityGroup(true)` and `.accessibilityDescription()` to the wrapper.
