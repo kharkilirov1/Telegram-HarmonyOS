@@ -79,6 +79,7 @@ export struct TgTopBar {
     .height(TgUiTokens.TOP_BAR_ACTION_TOUCH)
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
+    .clickEffect({ level: ClickEffectLevel.LIGHT })
     .onClick(() => {
       if (this.showBackAction) {
         this.onBackPress();
@@ -86,6 +87,8 @@ export struct TgTopBar {
         this.onLeftTextPress();
       }
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.showBackAction ? 'Back' : (this.showLeftText ? this.leftText : ''))
   }
 
   @Builder

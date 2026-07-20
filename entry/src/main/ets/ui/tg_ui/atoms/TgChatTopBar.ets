@@ -93,6 +93,8 @@ export struct TgChatTopBar {
     .onClick(() => {
       this.onBackPress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Back')
   }
 
   @Builder
@@ -211,6 +213,8 @@ export struct TgChatTopBar {
       hilog.info(0x0021, 'TgChatTopBar', 'avatar tapped');
       this.onAvatarPress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Profile')
   }
 
   build() {
@@ -247,14 +251,24 @@ export struct TgChatTopBar {
               right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP
             })
 
-            Image($r('app.media.ic_search'))
-              .width(22)
-              .height(22)
-              .fillColor(TgUiTokens.COLOR_ICON_PRIMARY)
-              .margin({ right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP })
-              .onClick(() => {
-                this.onSearchPress();
-              })
+            Row() {
+              Image($r('app.media.ic_search'))
+                .width(22)
+                .height(22)
+                .fillColor(TgUiTokens.COLOR_ICON_PRIMARY)
+            }
+            .width(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
+            .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
+            .justifyContent(FlexAlign.Center)
+            .alignItems(VerticalAlign.Center)
+            .margin({ right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP })
+            .borderRadius(TgUiTokens.CHAT_TOP_BAR_CAPSULE_RADIUS)
+            .clickEffect({ level: ClickEffectLevel.LIGHT })
+            .onClick(() => {
+              this.onSearchPress();
+            })
+            .accessibilityGroup(true)
+            .accessibilityDescription('Search')
 
             this.buildAvatarCapsule()
           }
