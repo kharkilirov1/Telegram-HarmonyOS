@@ -5,6 +5,69 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(NATIVERENDER_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
+set(RLOTTIE_ROOT ${NATIVERENDER_ROOT_PATH}/third_party/rlottie)
+set(RLOTTIE_SOURCES
+    ${RLOTTIE_ROOT}/src/lottie/lottieanimation.cpp
+    ${RLOTTIE_ROOT}/src/lottie/lottieitem.cpp
+    ${RLOTTIE_ROOT}/src/lottie/lottiekeypath.cpp
+    ${RLOTTIE_ROOT}/src/lottie/lottieloader.cpp
+    ${RLOTTIE_ROOT}/src/lottie/lottiemodel.cpp
+    ${RLOTTIE_ROOT}/src/lottie/lottieparser.cpp
+    ${RLOTTIE_ROOT}/src/lottie/lottieproxymodel.cpp
+    ${RLOTTIE_ROOT}/src/vector/freetype/v_ft_math.cpp
+    ${RLOTTIE_ROOT}/src/vector/freetype/v_ft_raster.cpp
+    ${RLOTTIE_ROOT}/src/vector/freetype/v_ft_stroker.cpp
+    ${RLOTTIE_ROOT}/src/vector/pixman/vregion.cpp
+    ${RLOTTIE_ROOT}/src/vector/stb/stb_image.cpp
+    ${RLOTTIE_ROOT}/src/vector/vbezier.cpp
+    ${RLOTTIE_ROOT}/src/vector/vbitmap.cpp
+    ${RLOTTIE_ROOT}/src/vector/vbrush.cpp
+    ${RLOTTIE_ROOT}/src/vector/vcompositionfunctions.cpp
+    ${RLOTTIE_ROOT}/src/vector/vdasher.cpp
+    ${RLOTTIE_ROOT}/src/vector/vdebug.cpp
+    ${RLOTTIE_ROOT}/src/vector/vdrawable.cpp
+    ${RLOTTIE_ROOT}/src/vector/vdrawhelper.cpp
+    ${RLOTTIE_ROOT}/src/vector/vdrawhelper_neon.cpp
+    ${RLOTTIE_ROOT}/src/vector/velapsedtimer.cpp
+    ${RLOTTIE_ROOT}/src/vector/vimageloader.cpp
+    ${RLOTTIE_ROOT}/src/vector/vinterpolator.cpp
+    ${RLOTTIE_ROOT}/src/vector/vmatrix.cpp
+    ${RLOTTIE_ROOT}/src/vector/vpainter.cpp
+    ${RLOTTIE_ROOT}/src/vector/vpath.cpp
+    ${RLOTTIE_ROOT}/src/vector/vpathmesure.cpp
+    ${RLOTTIE_ROOT}/src/vector/vraster.cpp
+    ${RLOTTIE_ROOT}/src/vector/vrect.cpp
+    ${RLOTTIE_ROOT}/src/vector/vrle.cpp
+)
+
+add_library(tg_rlottie SHARED
+    tg_rlottie_napi.cpp
+    ${RLOTTIE_SOURCES}
+)
+
+target_include_directories(tg_rlottie PRIVATE
+    ${NATIVERENDER_ROOT_PATH}
+    ${RLOTTIE_ROOT}/inc
+    ${RLOTTIE_ROOT}/src/vector
+    ${RLOTTIE_ROOT}/src/vector/freetype
+    ${RLOTTIE_ROOT}/src/vector/pixman
+    ${RLOTTIE_ROOT}/src/vector/stb
+)
+
+target_compile_definitions(tg_rlottie PRIVATE HAVE_PTHREAD NDEBUG)
+target_compile_options(tg_rlottie PRIVATE
+    -O3
+    -ffast-math
+    -fno-rtti
+    -fvisibility=hidden
+    -Wno-unused-parameter
+)
+target_link_libraries(tg_rlottie PUBLIC
+    libace_napi.z.so
+    libhilog_ndk.z.so
+    libdl.so
+)
+
 # Add NAPI sources
 add_library(tdlib_napi SHARED
     napi_init.cpp
