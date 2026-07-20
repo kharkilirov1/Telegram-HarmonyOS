@@ -6,6 +6,7 @@ import { TgTextLayout } from '../../text_engine/TgTextLayout'
 import { TextStyleKey } from '../../text_engine/TextTypes'
 import { TextBubbleLayout, BubbleLayoutInput } from './TgBubbleLayoutTypes'
 import { TgUiTokens } from '../tokens/TgUiTokens'
+import { composeMessageMetaText } from '../utils/TgMessageMetaText'
 
 // ── Style keys (cached) ──
 
@@ -234,11 +235,13 @@ function measureTextSegments(engine: TgTextLayout, input: BubbleLayoutInput, max
 
 // ── Meta width measurement ──
 
-export function measureMetaWidth(engine: TgTextLayout, timeText: string, hasStatus: boolean): number {
-  if (timeText.length === 0) return TgUiTokens.MSG_META_MIN_WIDTH
+export function measureMetaWidth(engine: TgTextLayout, timeText: string, hasStatus: boolean,
+  editedText: string = ''): number {
+  const metaText = composeMessageMetaText(editedText, timeText)
+  if (metaText.length === 0) return TgUiTokens.MSG_META_MIN_WIDTH
 
-  // Measure time text width
-  const timeLayout = engine.measureText(timeText, metaStyle(), 999)
+  // Measure the same localized edited + time string rendered by TgMessageMeta.
+  const timeLayout = engine.measureText(metaText, metaStyle(), 999)
   let width = timeLayout.maxLineWidth
 
   // Add status icon space for outgoing
@@ -372,14 +375,14 @@ export function computeTextBubbleLayout(engine: TgTextLayout, input: BubbleLayou
   }
 
   // Meta
-  const metaW = measureMetaWidth(engine, input.timeText, input.hasStatus)
+  const metaW = measureMetaWidth(engine, input.timeText, input.hasStatus, input.editedText ?? '')
 
   // ── Pass 2: Decide meta placement ──
 
   let metaInline: boolean
   let extraMetaH: number
 
-  if (input.text.length === 0) {
+  if (input.forceSeparateMeta || input.text.length === 0) {
     // Empty text — meta on its own line
     metaInline = false
     extraMetaH = TgUiTokens.MSG_META_ROW_HEIGHT
@@ -394,6 +397,10 @@ export function computeTextBubbleLayout(engine: TgTextLayout, input: BubbleLayou
   // ── Pass 3: Shrink-wrap width ──
 
   let contentW = textWidth
+
+  // Embedded content (for example a Telegram link preview) can establish a
+  // readable minimum without replacing the text engine's shrink-wrap logic.
+  contentW = Math.max(contentW, input.minimumContentWidth)
 
   // Sender name can force bubble wider
   contentW = Math.max(contentW, senderW)

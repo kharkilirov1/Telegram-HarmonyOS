@@ -6,7 +6,7 @@ Document the Telegram-style contact message bubble atom currently routed by `TgM
 Scope for this step is contract/passport only. No ArkTS behavior, router wiring, or demo code is changed here.
 
 ## Local references inspected
-- iOS visual/behavior source: `рефенсы/Telegram-iOS-master/submodules/TelegramUI/Components/Chat/ChatMessageContactBubbleContentNode/Sources/ChatMessageContactBubbleContentNode.swift`
+- iOS visual/behavior source: `C:\Refs\Telegram\Telegram-iOS-current\submodules\TelegramUI\Components\Chat\ChatMessageContactBubbleContentNode\Sources\ChatMessageContactBubbleContentNode.swift`
   - contact bubble owns avatar, title, phone/info text, `Message` and `Add Contact` attached action nodes, separators, and contact tap handling
   - title and phone/info are 14pt-class text; title is semibold, info is regular
   - action buttons are separate from regular bubble tap handling

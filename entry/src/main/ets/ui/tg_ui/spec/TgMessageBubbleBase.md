@@ -25,6 +25,7 @@ UI-only scope for this step: background, radius, paddings, max-width, alignment.
 - `containerWidth: number` (for width contract in demo/integration)
 - `forceBreakAll: boolean` (torture mode for long unbroken tokens)
 - `maxWidthRatio: number`
+- `editedText: string` (localized UI state projected from TDLib `message.edit_date` / `updateMessageEdited.edit_date`)
 
 ## State Coverage
 - incoming / outgoing
@@ -37,6 +38,8 @@ UI-only scope for this step: background, radius, paddings, max-width, alignment.
 ## Tokens (must use)
 - Layout:
   - `BUBBLE_MAX_WIDTH_RATIO`
+    - compact portrait: `0.85` (`freeMaximumFillFactor`)
+    - regular/master-detail: `0.65`
   - `BUBBLE_PADDING_H`
   - `BUBBLE_PADDING_V`
   - `BUBBLE_RADIUS_INCOMING`
@@ -65,6 +68,7 @@ UI-only scope for this step: background, radius, paddings, max-width, alignment.
    - torture fallback: `WordBreak.BREAK_ALL`
    - no clipping/overflow outside bubble bounds.
 5) Emoji-only mode changes font and line height only (no special hardcoded geometry).
+6) Edited-state text participates in the same date/status width pass as the time and send-status icon, so narrow lanes may place the complete meta on a dedicated trailing row without clipping.
 
 ## Acceptance Checklist
 - [ ] Incoming/outgoing alignment is stable
@@ -72,6 +76,13 @@ UI-only scope for this step: background, radius, paddings, max-width, alignment.
 - [ ] No overflow in long URL / unbroken string torture cases
 - [ ] Emoji-only baseline/padding visually stable (no vertical jump)
 - [ ] Tokens only (no magic visual constants in atom)
+
+## Dark runtime color calibration
+
+- The supplied current Telegram iOS runtime screenshot is the visual truth for the dark theme.
+- Dominant solid surfaces measured from that reference are approximately `#1E2E3D` incoming and `#406D97` outgoing.
+- HarmonyOS maps those values only through the qualified `dark/element/color.json` resources `chat_bubble_incoming` and `chat_bubble_outgoing`; bubble atoms and the router continue consuming semantic tokens.
+- Light resources remain independent and unchanged.
 
 ## Demo Requirements (`TgMessageBubbleDemo.ets`)
 Must show 10+ cases:

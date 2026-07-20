@@ -3,6 +3,7 @@ import { MediaGalleryItem } from '../../../models/MediaGalleryItem';
 export class MediaGalleryRefreshResult {
   items: MediaGalleryItem[] = [];
   currentIndex: number = 0;
+  sourceMessageId: string = '0';
   shouldClose: boolean = false;
 }
 
@@ -35,11 +36,13 @@ export function resolveRefreshedMediaGalleryState(previousItems: MediaGalleryIte
     for (let i = 0; i < nextItems.length; i++) {
       if (isSameGalleryItem(previousItem, nextItems[i])) {
         result.currentIndex = i;
+        result.sourceMessageId = nextItems[i].sourceMessageId;
         return result;
       }
     }
   }
 
   result.currentIndex = clampGalleryIndex(previousIndex, nextItems.length);
+  result.sourceMessageId = nextItems[result.currentIndex].sourceMessageId;
   return result;
 }

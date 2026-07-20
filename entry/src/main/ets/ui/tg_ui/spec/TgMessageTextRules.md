@@ -55,7 +55,7 @@ No business logic; UI-only.
 - MSG_LINK_OUTGOING
 
 ### Layout
-- BUBBLE_MAX_WIDTH_RATIO (0.80 in current token baseline)
+- `BUBBLE_MAX_WIDTH_RATIO` (`0.85` compact / `0.65` regular, matching current iOS `freeMaximumFillFactor`)
 - BUBBLE_PADDING_H
 - BUBBLE_PADDING_V
 - TEXT_MAX_LINES (optional; current baseline = unlimited)

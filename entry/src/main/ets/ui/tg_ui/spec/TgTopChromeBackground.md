@@ -6,10 +6,10 @@
 - Status: `done`
 
 ## 2) Reference grounding
-- `Telegram-iOS-master/submodules/TelegramUI/Components/ChatListHeaderComponent/Sources/ChatListNavigationBar.swift`
+- `C:\Refs\Telegram\Telegram-iOS-current\submodules\TelegramUI\Components\ChatListHeaderComponent\Sources\ChatListNavigationBar.swift`
   - shared upper blur/effect ownership
   - top edge emphasis via `EdgeEffectView`
-- `Telegram-iOS-master/submodules/TelegramUI/Components/ChatListHeaderComponent/Sources/ChatListHeaderComponent.swift`
+- `C:\Refs\Telegram\Telegram-iOS-current\submodules\TelegramUI\Components\ChatListHeaderComponent\Sources\ChatListHeaderComponent.swift`
   - content rendered above a separate upper background/effect surface
 - `docs/ai/UPPER_CHROME_V2_ARCHITECTURE.md`
   - repo-local target assembly contract

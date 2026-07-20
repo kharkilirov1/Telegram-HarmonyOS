@@ -70,6 +70,9 @@ UI-only scope:
 - `AUDIO_BUBBLE_ART_SIZE`, `AUDIO_BUBBLE_ART_RADIUS`, `AUDIO_BUBBLE_ART_ICON_SIZE`
 - `AUDIO_BUBBLE_ART_GRADIENT_START`, `AUDIO_BUBBLE_ART_GRADIENT_END`
 - `AUDIO_BUBBLE_ART_ICON` (white icon on gradient)
+- outgoing performer/duration/file-size copy uses
+  `DOCUMENT_ROW_META_OUTGOING -> app.color.message_meta_outgoing`, matching
+  Telegram iOS `message.outgoing.fileDescriptionColor/fileDurationColor`
 - `AUDIO_BUBBLE_SEEK_HEIGHT`, `AUDIO_BUBBLE_SEEK_RADIUS`, `AUDIO_BUBBLE_SEEK_TOP_GAP`
 - `AUDIO_BUBBLE_SEEK_BG`, `AUDIO_BUBBLE_SEEK_FILL`
 - `AUDIO_BUBBLE_TITLE_SIZE`, `AUDIO_BUBBLE_META_SIZE`, `AUDIO_BUBBLE_BOTTOM_META_SIZE`

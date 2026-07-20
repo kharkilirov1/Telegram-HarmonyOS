@@ -6,7 +6,7 @@ Document the Telegram-style poll message bubble atom currently routed by `TgMess
 Scope for this step is contract/passport only. No ArkTS behavior, router wiring, or demo code is changed here.
 
 ## Local references inspected
-- iOS visual/behavior source: `рефенсы/Telegram-iOS-master/submodules/TelegramUI/Components/Chat/ChatMessagePollBubbleContentNode/Sources/ChatMessagePollBubbleContentNode.swift`
+- iOS visual/behavior source: `C:\Refs\Telegram\Telegram-iOS-current\submodules\TelegramUI\Components\Chat\ChatMessagePollBubbleContentNode\Sources\ChatMessagePollBubbleContentNode.swift`
   - poll bubble owns the question text, poll type label, option rows, radio/check state, result percentages, result bars, voter count/footer, submit/view-results buttons, solution button, timer node, and selected/correct result icons
   - option rows use a leading radio/control area, multiline option text, optional percentage/result bar, separators, highlight feedback, and tap handling
   - iOS distinguishes unanswered polls, selected-but-not-submitted state, submitted/result state, closed polls, public result viewing, quiz solution/correct-answer affordances, and bot-chat footer hiding
@@ -34,11 +34,11 @@ Scope for this step is contract/passport only. No ArkTS behavior, router wiring,
 3. Unanswered open polls show leading radio circles and no percentages/bars.
 4. Result state hides radio circles, shows each option percentage, and renders a horizontal result bar.
 5. Chosen option bars use the current accent color; other bars use secondary preview color.
-6. Type badge text is currently hardcoded:
+6. Type badge text is localized:
    - `Closed` when `isClosed`;
    - `Anonymous Quiz` / `Quiz` for quiz polls;
    - `Anonymous Poll` / `Poll` for regular polls.
-7. Footer text is currently hardcoded as `No votes yet`, `1 vote`, or `<n> votes`.
+7. Footer text uses localized zero/one/few/many resources; the few/many split preserves Russian 2–4 vs 12–14 grammar without changing English/Chinese output.
 
 ## Current composition boundary
 `TgPollBubble` owns only the visible poll body:
@@ -51,7 +51,7 @@ Scope for this step is contract/passport only. No ArkTS behavior, router wiring,
 `TgMessageRouter` owns the surrounding message presentation:
 - incoming/outgoing alignment;
 - group/channel sender name;
-- bubble background, padding, radius, and max width;
+- bubble background, radius, bounded max width, and the independently inset meta row;
 - inline time/status meta below the poll body;
 - avatar slot outside the bubble.
 
@@ -77,14 +77,16 @@ Required demo/review states before accepting full coverage:
 5. Result option rows keep the percentage column right-aligned and keep the bar below the option text.
 6. Separators stay inside the poll body rhythm and should not look like router-owned bubble separators.
 7. Footer voter text stays secondary and below the options.
-8. Parent/router remains responsible for final bubble width, outer padding, background, and incoming/outgoing placement.
+8. Parent/router remains responsible for final bubble width, background, and incoming/outgoing placement. The atom owns its single set of inner content insets; the router must not add a second all-around padding layer.
+9. The preferred poll minimum follows current Telegram iOS: `min(280vp, available content width)`. Narrow group/avatar lanes therefore shrink instead of pushing the bubble past the left edge.
+10. Option controls start at 12vp and option text, separators, and result bars share the 50vp leading axis from `ChatMessagePollOptionNode`.
 
 ## Token mapping and current debt
 Current implementation uses shared tokens for text colors, separator color, bubble padding, and one accent color.
 
 Known debt before visual acceptance:
-- internal constants such as radio size `22`, row padding, font sizes `14`/`15`, percentage column width `42`, bar height `6`, and minimum width `240` are still hardcoded in the atom;
-- label/footer strings are hardcoded English and are not localization-backed;
+- poll geometry is tokenized; the remaining visual debt is runtime acceptance against populated open/result/quiz states and user-adjustable message font size;
+- label/footer strings are localization-backed for base, Russian, and Chinese resources;
 - `isOutgoing` currently does not change internal text/result visuals; router background/direction carries the visible direction difference;
 - quiz correctness, solution text/button, timer/deadline, public result avatars, `View Results`, submit button, and multiple-answer selected-before-submit state from iOS are not represented in the current atom contract;
 - result percentages are trusted from TDLib/model data and are not recomputed in the atom;
@@ -101,14 +103,14 @@ Before claiming behavior parity with iOS, add or explicitly assign ownership for
 - timer/deadline rendering if TDLib data is later surfaced.
 
 ## Demo coverage
-`entry/src/main/ets/ui/tg_ui/demos/TgPollBubbleDemo.ets` now provides static preview/state coverage for the nine required states above.
+`entry/src/main/ets/ui/tg_ui/demos/TgPollBubbleDemo.ets` provides static preview/state coverage for the nine semantic states above plus a 220vp narrow-lane regression case.
 
 The demo wraps the atom in a minimal parent-owned bubble shell to make the router boundary visible. It is not manual device/emulator acceptance and it does not claim poll vote, submit, view-results, quiz solution, timer/deadline, or public-result behavior parity.
 
 ## Acceptance checklist
 - [x] Passport exists and names iOS/Harmony/router/model sources.
 - [x] Demo covers representative poll states.
-- [ ] Long question/options and percentage alignment are visually accepted on device/emulator.
-- [ ] Router-owned sender/meta/background boundaries remain intact after review.
-- [ ] Behavior ownership for voting/view-results/quiz solution is explicit before behavior parity is claimed.
-- [x] No manual device/emulator verification is implied by this passport.
+- [x] Long question/options and percentage alignment are runtime-verified on API23 through the real router (`.codex/ui-audit/2026-07-15/poll-bounded-layout/02-localized-final.jpeg`).
+- [x] Router-owned sender/meta/background boundaries remain intact in the narrow incoming and outgoing-result bounds witness.
+- [x] Voting/view-results/quiz-solution behavior is explicitly outside the current static atom and is not claimed by the geometry witness.
+- [x] API23 geometry verification is explicit; static Preview coverage alone is not treated as runtime evidence.

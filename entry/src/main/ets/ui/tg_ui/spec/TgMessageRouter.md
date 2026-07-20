@@ -33,6 +33,7 @@ Drop-in replacement for direct `TgMessageBubbleBase` usage in chat timeline.
 ### Common (passed to all atoms)
 - `isOutgoing: boolean`
 - `containerWidth: number`
+- `isBroadcastChannel: boolean` — enables the Telegram iOS broadcast-post width policy
 - `groupingFlags: string` — `none | top | middle | bottom`; `both` remains a legacy alias for `middle`
 
 ### Text
@@ -95,7 +96,8 @@ Drop-in replacement for direct `TgMessageBubbleBase` usage in chat timeline.
 - [ ] Sticker renders without bubble background
 - [ ] Router remains orchestration-only for text + visual-media families
 - [ ] Shrink-wrapped bubble variants keep time/status anchored via explicit trailing alignment, not generic `width('100%')` footer rows
-- [ ] Text, visual-media, and non-visual media branches use the same grouped-corner semantics from timeline VO
+- [x] Text, visual-media, contact/location/poll, and non-visual media branches use the same grouped-corner semantics from timeline VO
+- [ ] Broadcast-channel posts use the full-width message lane without changing private/group geometry
 
 
 ## 2026-04-05 updates
@@ -109,3 +111,16 @@ Drop-in replacement for direct `TgMessageBubbleBase` usage in chat timeline.
 - Live chat rows now pass `groupingFlags` from `ChatTimelineVO` into `TgMessageRouter`.
 - Timeline grouping is derived from tight consecutive-message spacing: first connected message = `top`, middle connected message = `middle`, last connected message = `bottom`.
 - Router fallback/non-visual shells and `TgMediaBubbleShellV2` now match `TgTextBubbleV3` grouped-corner semantics instead of inverting `top`/`bottom`.
+
+## 2026-07-15 broadcast-channel width
+
+- Source: `TelegramUI/Components/Chat/ChatMessageBubbleItemNode/Sources/ChatMessageBubbleItemNode.swift`.
+- Telegram iOS sets `allowFullWidth` for broadcast channels instead of using the ordinary compact/regular fill policy.
+- Incoming channel posts keep a 45pt share-action lane; the no-share case keeps only the 3pt edge inset.
+- `TgChatScreenPage` derives the state from the real `Chat.type === 'channel'` value and passes `isBroadcastChannel` into the router. Private, secret, group and supergroup rows retain the existing width policy.
+
+## 2026-07-17 grouped special-message geometry
+
+- iOS `ChatMessageBubbleItemNode` owns the merged-neighbor background geometry; contact content explicitly uses `forceFullCorners: false`.
+- Contact, location and poll branches now reuse `bubbleRadius()` instead of forcing the standalone incoming radius, so `top` / `middle` / `bottom` grouping works across content-type boundaries.
+- The shared tail keeps `8vp x 14vp` geometry and now converts through instance-bound `UIContext.vp2px`, as required since the global API was deprecated in API 18.

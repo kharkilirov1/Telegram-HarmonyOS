@@ -111,19 +111,14 @@ export struct TgPollBubbleDemo {
             isClosed: isClosed,
             isAnonymous: isAnonymous,
             pollType: pollType,
-            isOutgoing: isOutgoing
+            isOutgoing: isOutgoing,
+            availableWidth: bubbleWidth
           })
             .width('100%')
         }
         .width(bubbleWidth)
         .backgroundColor(isOutgoing ? TgUiTokens.COLOR_MSG_BUBBLE_OUTGOING_BG : TgUiTokens.COLOR_MSG_BUBBLE_INCOMING_BG)
         .borderRadius(TgUiTokens.MSG_BUBBLE_RADIUS)
-        .padding({
-          left: TgUiTokens.BUBBLE_PADDING_H,
-          right: TgUiTokens.BUBBLE_PADDING_H,
-          top: TgUiTokens.BUBBLE_PADDING_V,
-          bottom: TgUiTokens.BUBBLE_PADDING_V
-        })
       }
       .width('100%')
       .justifyContent(isOutgoing ? FlexAlign.End : FlexAlign.Start)
@@ -181,6 +176,9 @@ export struct TgPollBubbleDemo {
           'Zero voter edge case?', this.zeroVoterOptions(), 0, true, true, 'regular', false)
         this.caseBlock('09 uneven percentage stress', 'Uneven percentages show the current minimum bar-width behavior for tiny options.',
           'How skewed are the results?', this.unevenOptions(), 100, false, true, 'regular', true)
+        this.caseBlock('10 narrow incoming width clamp', 'The iOS min(280, available width) rule must never push the bubble past the message lane.',
+          'Narrow group lane?', this.openAnonymousOptions(), 0, false, true, 'regular', false,
+          TgUiTokens.MSG_DEMO_NARROW_CONTAINER_WIDTH)
       }
       .width('100%')
       .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)

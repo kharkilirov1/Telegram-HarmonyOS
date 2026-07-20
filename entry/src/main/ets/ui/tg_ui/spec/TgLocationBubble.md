@@ -6,7 +6,7 @@ Document the Telegram-style location/venue message bubble atom currently routed 
 Scope for this step is contract/passport only. No ArkTS behavior, router wiring, or demo code is changed here.
 
 ## Local references inspected
-- iOS visual/behavior source: `рефенсы/Telegram-iOS-master/submodules/TelegramUI/Components/Chat/ChatMessageMapBubbleContentNode/Sources/ChatMessageMapBubbleContentNode.swift`
+- iOS visual/behavior source: `C:\Refs\Telegram\Telegram-iOS-current\submodules\TelegramUI\Components\Chat\ChatMessageMapBubbleContentNode\Sources\ChatMessageMapBubbleContentNode.swift`
   - map bubble owns map snapshot image, pin node, optional venue title/address text, and map tap/open-message handling
   - title text is 14pt-class medium; address text is 14pt-class regular
   - normal location uses a map image with a centered pin; venue/live-location variants add text below the map and keep the message status outside/over the map depending on variant

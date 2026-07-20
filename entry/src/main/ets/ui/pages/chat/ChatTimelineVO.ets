@@ -2,6 +2,7 @@ import { AppState, Chat, FileTransfer, Message, MessageQuoteEntity, TextEntity, 
 import { selectChatMessagesForChatView } from '../../../domain/selectors/messageSelectors';
 import { compareInt64 } from '../../../core/utils/tdAccessors';
 import { getString } from '../../../core/utils/AppResource';
+import { resolveReplyLookupKey } from '../../../core/utils/replyMessageKey';
 import { TgMessageSendStatus } from '../../tg_ui/atoms/TgMessageMeta';
 import { fileUri } from '@kit.CoreFileKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -101,10 +102,14 @@ export class PollOptionVO {
 
 export class ChatMessageRowVO {
   messageId: string = '0';
+  // All source ids represented by this row. Photo albums collapse several
+  // TDLib messages into one visual entry, but jump targets may reference any item.
+  sourceMessageIds: string[] = [];
   text: string = '';
   isOutgoing: boolean = false;
   isEmojiOnly: boolean = false;
   timeText: string = '';
+  editedText: string = '';
   sendStatus: TgMessageSendStatus = TgMessageSendStatus.None;
   forceBreakAll: boolean = false;
   quoteOffsets: number[] = [];
@@ -136,6 +141,23 @@ export class ChatMessageRowVO {
   // Rich text entities (bold, italic, code, links, mentions, etc.)
   textEntities: TextEntity[] = [];
   captionEntities: TextEntity[] = [];
+
+  // Link preview for messageText
+  linkPreviewUrl: string = '';
+  linkPreviewDisplayUrl: string = '';
+  linkPreviewSiteName: string = '';
+  linkPreviewTitle: string = '';
+  linkPreviewDescription: string = '';
+  linkPreviewAuthor: string = '';
+  linkPreviewPhotoPath: string = '';
+  linkPreviewPhotoMinithumb: string = '';
+  linkPreviewPhotoFileId: number = 0;
+  linkPreviewPhotoThumbFileId: number = 0;
+  linkPreviewPhotoWidth: number = 0;
+  linkPreviewPhotoHeight: number = 0;
+  linkPreviewShowLargeMedia: boolean = false;
+  linkPreviewShowMediaAboveDescription: boolean = false;
+  linkPreviewShowAboveText: boolean = false;
 
   // Photo
   photoPath: string = '';
@@ -252,6 +274,16 @@ export class ChatTimelineEntryVO {
   searchFlash: boolean = false;
 }
 
+export function timelineEntryContainsMessageId(entry: ChatTimelineEntryVO, messageId: string): boolean {
+  if (entry.kind !== 'message') {
+    return false;
+  }
+  if (entry.message.messageId === messageId) {
+    return true;
+  }
+  return entry.message.sourceMessageIds.indexOf(messageId) >= 0;
+}
+
 function localizedString(resourceId: number, fallback: string): string {
   const value = getString(resourceId);
   return value.length > 0 ? value : fallback;
@@ -281,9 +313,49 @@ function dayKey(timestampSec: number): string {
   return date.getFullYear().toString() + '-' + padTwo(date.getMonth() + 1) + '-' + padTwo(date.getDate());
 }
 
-function formatDateSeparatorLabel(timestampSec: number): string {
+export function composeChatDateSeparatorLabel(day: number, month: string, year: number, includeYear: boolean,
+  currentYearPattern: string, crossYearPattern: string): string {
+  const pattern = includeYear ? crossYearPattern : currentYearPattern;
+  return pattern
+    .replace('{day}', day.toString())
+    .replace('{month}', month)
+    .replace('{year}', year.toString());
+}
+
+function chatMonthLong(month: number): string {
+  switch (month) {
+    case 0:
+      return localizedString($r('app.string.chat_month_jan').id, 'January');
+    case 1:
+      return localizedString($r('app.string.chat_month_feb').id, 'February');
+    case 2:
+      return localizedString($r('app.string.chat_month_mar').id, 'March');
+    case 3:
+      return localizedString($r('app.string.chat_month_apr').id, 'April');
+    case 4:
+      return localizedString($r('app.string.chat_month_may').id, 'May');
+    case 5:
+      return localizedString($r('app.string.chat_month_jun').id, 'June');
+    case 6:
+      return localizedString($r('app.string.chat_month_jul').id, 'July');
+    case 7:
+      return localizedString($r('app.string.chat_month_aug').id, 'August');
+    case 8:
+      return localizedString($r('app.string.chat_month_sep').id, 'September');
+    case 9:
+      return localizedString($r('app.string.chat_month_oct').id, 'October');
+    case 10:
+      return localizedString($r('app.string.chat_month_nov').id, 'November');
+    case 11:
+      return localizedString($r('app.string.chat_month_dec').id, 'December');
+    default:
+      return localizedString($r('app.string.chat_month_jan').id, 'January');
+  }
+}
+
+export function formatChatDateSeparatorLabel(timestampSec: number, nowMs: number = Date.now()): string {
   const messageDate = new Date(timestampSec * 1000);
-  const now = new Date();
+  const now = new Date(nowMs);
 
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const messageDayStart = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate()).getTime();
@@ -292,67 +364,15 @@ function formatDateSeparatorLabel(timestampSec: number): string {
   if (dayDiff === 0) {
     return localizedString($r('app.string.today').id, 'Today');
   }
-  if (dayDiff === 1) {
-    return localizedString($r('app.string.yesterday').id, 'Yesterday');
-  }
 
-  if (dayDiff > 1 && dayDiff < 7) {
-    return weekdayShort(messageDate.getDay());
-  }
-
-  return padTwo(messageDate.getDate()) + ' ' + monthShort(messageDate.getMonth());
-}
-
-function weekdayShort(day: number): string {
-  switch (day) {
-    case 0:
-      return localizedString($r('app.string.weekday_sun').id, 'Sun');
-    case 1:
-      return localizedString($r('app.string.weekday_mon').id, 'Mon');
-    case 2:
-      return localizedString($r('app.string.weekday_tue').id, 'Tue');
-    case 3:
-      return localizedString($r('app.string.weekday_wed').id, 'Wed');
-    case 4:
-      return localizedString($r('app.string.weekday_thu').id, 'Thu');
-    case 5:
-      return localizedString($r('app.string.weekday_fri').id, 'Fri');
-    case 6:
-      return localizedString($r('app.string.weekday_sat').id, 'Sat');
-    default:
-      return localizedString($r('app.string.weekday_sun').id, 'Sun');
-  }
-}
-
-function monthShort(month: number): string {
-  switch (month) {
-    case 0:
-      return localizedString($r('app.string.month_jan').id, 'Jan');
-    case 1:
-      return localizedString($r('app.string.month_feb').id, 'Feb');
-    case 2:
-      return localizedString($r('app.string.month_mar').id, 'Mar');
-    case 3:
-      return localizedString($r('app.string.month_apr').id, 'Apr');
-    case 4:
-      return localizedString($r('app.string.month_may').id, 'May');
-    case 5:
-      return localizedString($r('app.string.month_jun').id, 'Jun');
-    case 6:
-      return localizedString($r('app.string.month_jul').id, 'Jul');
-    case 7:
-      return localizedString($r('app.string.month_aug').id, 'Aug');
-    case 8:
-      return localizedString($r('app.string.month_sep').id, 'Sep');
-    case 9:
-      return localizedString($r('app.string.month_oct').id, 'Oct');
-    case 10:
-      return localizedString($r('app.string.month_nov').id, 'Nov');
-    case 11:
-      return localizedString($r('app.string.month_dec').id, 'Dec');
-    default:
-      return localizedString($r('app.string.month_jan').id, 'Jan');
-  }
+  return composeChatDateSeparatorLabel(
+    messageDate.getDate(),
+    chatMonthLong(messageDate.getMonth()),
+    messageDate.getFullYear(),
+    messageDate.getFullYear() !== now.getFullYear(),
+    localizedString($r('app.string.chat_date_header').id, '{month} {day}'),
+    localizedString($r('app.string.chat_date_header_year').id, '{month} {day}, {year}')
+  );
 }
 
 function userDisplayName(user: User | undefined): string {
@@ -467,7 +487,29 @@ export function resolveSenderName(message: Message, state: AppState): string {
   return message.isOutgoing ? 'You' : 'Unknown';
 }
 
-export function resolveReplyPreview(messageById: Map<string, Message>, replyToMessageId: string, replyQuoteText: string = ''): string {
+function findReplyMessage(
+  messageById: Map<string, Message>,
+  contextChatId: number,
+  replyToChatId: number,
+  replyToMessageId: string
+): Message | undefined {
+  const targetChatId = replyToChatId !== 0 ? replyToChatId : contextChatId;
+  const associated = messageById.get(
+    resolveReplyLookupKey(contextChatId, targetChatId, replyToMessageId)
+  );
+  if (associated) {
+    return associated;
+  }
+  return targetChatId === contextChatId ? messageById.get(replyToMessageId) : undefined;
+}
+
+export function resolveReplyPreview(
+  messageById: Map<string, Message>,
+  replyToMessageId: string,
+  replyQuoteText: string = '',
+  contextChatId: number = 0,
+  replyToChatId: number = 0
+): string {
   const trimmedQuote = replyQuoteText.trim();
   if (trimmedQuote.length > 0) {
     return trimmedQuote;
@@ -475,7 +517,7 @@ export function resolveReplyPreview(messageById: Map<string, Message>, replyToMe
   if (replyToMessageId === '0') {
     return '';
   }
-  const replyMessage = messageById.get(replyToMessageId);
+  const replyMessage = findReplyMessage(messageById, contextChatId, replyToChatId, replyToMessageId);
   if (!replyMessage) {
     return localizedString($r('app.string.message_action').id, 'Message');
   }
@@ -516,11 +558,16 @@ export function resolveReplyPreview(messageById: Map<string, Message>, replyToMe
   }
 }
 
-function resolveReplyThumbnailSrc(messageById: Map<string, Message>, replyToMessageId: string): string {
+function resolveReplyThumbnailSrc(
+  messageById: Map<string, Message>,
+  replyToMessageId: string,
+  contextChatId: number,
+  replyToChatId: number
+): string {
   if (replyToMessageId === '0') {
     return '';
   }
-  const replyMessage = messageById.get(replyToMessageId);
+  const replyMessage = findReplyMessage(messageById, contextChatId, replyToChatId, replyToMessageId);
   if (!replyMessage) {
     return '';
   }
@@ -747,14 +794,12 @@ function resolveAlbumCaption(messages: Message[]): string {
 }
 
 function firstUnreadIncomingIndex(messages: Message[], chat: Chat, stickyLastReadId: string = ''): number {
-  // Use sticky ID if provided (survives markChatRead resetting unreadCount to 0).
-  // Fall back to live chat data only when no sticky ID is available.
-  const lastReadInbox = stickyLastReadId.length > 0 && stickyLastReadId !== '0'
-    ? stickyLastReadId
-    : chat.lastReadInboxMessageId;
-  const hasUnread = stickyLastReadId.length > 0 && stickyLastReadId !== '0'
-    ? true
-    : chat.unreadCount > 0;
+  // Any captured value proves that the chat had unread messages on entry.
+  // TDLib's "0" is a valid boundary (the first incoming message is unread),
+  // not an absent snapshot. This survives markChatRead resetting live fields.
+  const hasStickyUnreadBoundary = stickyLastReadId.length > 0;
+  const lastReadInbox = hasStickyUnreadBoundary ? stickyLastReadId : chat.lastReadInboxMessageId;
+  const hasUnread = hasStickyUnreadBoundary ? true : chat.unreadCount > 0;
 
   if (!hasUnread) {
     return -1;
@@ -818,8 +863,12 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   prevSenderId: number = -1): ChatTimelineEntryVO {
   const row = new ChatMessageRowVO();
   row.messageId = message.id;
+  row.sourceMessageIds = [message.id];
   row.isOutgoing = message.isOutgoing;
   row.timeText = formatMessageTime(message.timestamp);
+  row.editedText = message.editDate > 0
+    ? localizedString($r('app.string.message_edited').id, 'edited')
+    : '';
   row.sendStatus = resolveMessageSendStatus(message, chat);
 
   const content = message.content;
@@ -834,6 +883,32 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   }
   row.textEntities = content.textEntities;
   row.captionEntities = content.captionEntities;
+  row.linkPreviewUrl = content.linkPreviewUrl;
+  row.linkPreviewDisplayUrl = content.linkPreviewDisplayUrl;
+  row.linkPreviewSiteName = content.linkPreviewSiteName;
+  row.linkPreviewTitle = content.linkPreviewTitle;
+  row.linkPreviewDescription = content.linkPreviewDescription;
+  row.linkPreviewAuthor = content.linkPreviewAuthor;
+  const linkPreviewPhotoTransfer = resolveTransfer(content.linkPreviewPhotoThumbFileId, state);
+  const resolvedLinkPreviewFull = resolveContentPath(content.linkPreviewPhotoPath,
+    content.linkPreviewPhotoFileId, state, content.linkPreviewPhotoUniqueId);
+  const resolvedLinkPreviewThumb = resolveContentPath(content.linkPreviewPhotoThumbPath,
+    content.linkPreviewPhotoThumbFileId, state, content.linkPreviewPhotoThumbUniqueId);
+  const rawLinkPreviewPhoto = resolvedLinkPreviewFull.length > 0 ? resolvedLinkPreviewFull : resolvedLinkPreviewThumb;
+  row.linkPreviewPhotoPath = toFileUri(rawLinkPreviewPhoto);
+  row.linkPreviewPhotoMinithumb = content.linkPreviewPhotoMinithumb.length > 0
+    ? 'data:image/jpeg;base64,' + content.linkPreviewPhotoMinithumb : '';
+  row.linkPreviewPhotoFileId = content.linkPreviewPhotoFileId;
+  row.linkPreviewPhotoThumbFileId = content.linkPreviewPhotoThumbFileId;
+  row.linkPreviewPhotoWidth = content.linkPreviewPhotoWidth;
+  row.linkPreviewPhotoHeight = content.linkPreviewPhotoHeight;
+  row.linkPreviewShowLargeMedia = content.linkPreviewShowLargeMedia;
+  row.linkPreviewShowMediaAboveDescription = content.linkPreviewShowMediaAboveDescription;
+  row.linkPreviewShowAboveText = content.linkPreviewShowAboveText;
+  if (isTransferActive(linkPreviewPhotoTransfer) && row.linkPreviewPhotoPath.length === 0) {
+    // Keep the TDLib minithumbnail visible while the higher-quality poster is in flight.
+    row.linkPreviewPhotoPath = row.linkPreviewPhotoMinithumb;
+  }
   row.isEmojiOnly = content.type === 'text' && isEmojiOnlyText(row.text);
   row.forceBreakAll = content.type === 'text' && shouldForceBreakAll(row.text);
   if (content.type === 'text' && content.quoteEntities.length > 0) {
@@ -1015,10 +1090,26 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   if (message.replyToMessageId !== '0') {
     row.showReplySnippet = true;
     row.replyToMessageId = message.replyToMessageId;
-    row.replyPreview = resolveReplyPreview(messageById, message.replyToMessageId, message.replyQuoteText);
-    row.replyThumbnailSrc = resolveReplyThumbnailSrc(messageById, message.replyToMessageId);
+    row.replyPreview = resolveReplyPreview(
+      messageById,
+      message.replyToMessageId,
+      message.replyQuoteText,
+      message.chatId,
+      message.replyToChatId
+    );
+    row.replyThumbnailSrc = resolveReplyThumbnailSrc(
+      messageById,
+      message.replyToMessageId,
+      message.chatId,
+      message.replyToChatId
+    );
     row.replyHasThumbnail = row.replyThumbnailSrc.length > 0;
-    const replyMessage = messageById.get(message.replyToMessageId);
+    const replyMessage = findReplyMessage(
+      messageById,
+      message.chatId,
+      message.replyToChatId,
+      message.replyToMessageId
+    );
     if (replyMessage) {
       row.replyAuthor = resolveSenderName(replyMessage, state);
       row.replyAuthorColorHex = senderNameColor(replyMessage.senderId, state, replyMessage.senderChatId);
@@ -1040,6 +1131,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   // editDate in the key: an edited message must rebuild its row (lesson 84 —
   // text alone is not in the media stamp, so the key would not change)
   entry.key = entry.stableKey + '_s' + mediaRenderStamp(row).toString()
+    + '_r' + replyRenderStamp(row).toString()
     + '_e' + message.editDate.toString();
   entry.message = row;
   return entry;
@@ -1051,10 +1143,19 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
 // @ComponentV2 row (@Param values are frozen otherwise).
 function mediaRenderStamp(row: ChatMessageRowVO): number {
   let albumFilled = 0;
-  for (const p of row.albumPhotoPaths) {
-    if (p.length > 0) {
+  let albumStateStamp = 0;
+  for (let index = 0; index < row.albumPhotoPaths.length; index++) {
+    const path = row.albumPhotoPaths[index];
+    if (path.length > 0) {
       albumFilled++;
     }
+    albumStateStamp = ((albumStateStamp * 31) + stringRenderStamp(path)) | 0;
+    albumStateStamp = ((albumStateStamp * 31) +
+      (index < row.albumPhotoHasLocal.length && row.albumPhotoHasLocal[index] ? 1 : 0)) | 0;
+    albumStateStamp = ((albumStateStamp * 31) +
+      (index < row.albumPhotoDownloading.length && row.albumPhotoDownloading[index] ? 1 : 0)) | 0;
+    const progress = index < row.albumPhotoDownloadProgress.length ? row.albumPhotoDownloadProgress[index] : -1;
+    albumStateStamp = ((albumStateStamp * 31) + Math.max(0, Math.floor(progress * 10))) | 0;
   }
   const progressBuckets =
     Math.max(0, Math.floor(row.photoDownloadProgress * 10)) +
@@ -1062,7 +1163,7 @@ function mediaRenderStamp(row: ChatMessageRowVO): number {
     Math.max(0, Math.floor(row.documentDownloadProgress * 10)) +
     Math.max(0, Math.floor(row.audioDownloadProgress * 10)) +
     Math.max(0, Math.floor(row.voiceDownloadProgress * 10));
-  return (row.photoPath.length > 0 ? 1 : 0)
+  const baseStamp = (row.photoPath.length > 0 ? 1 : 0)
     + (row.videoPath.length > 0 ? 2 : 0)
     + (row.videoThumbPath.length > 0 ? 4 : 0)
     + (row.stickerPath.length > 0 ? 8 : 0)
@@ -1076,13 +1177,40 @@ function mediaRenderStamp(row: ChatMessageRowVO): number {
     + (row.isAudioDownloading ? 2048 : 0)
     + (row.isVoiceDownloading ? 4096 : 0)
     + albumFilled * 8192
+    + (row.linkPreviewPhotoPath.length > 0 ? 65536 : 0)
     + progressBuckets * 131072;
+  return ((baseStamp * 31) + albumStateStamp) | 0;
+}
+
+function stringRenderStamp(value: string): number {
+  let hash = 0;
+  for (let index = 0; index < value.length; index++) {
+    hash = ((hash * 31) + value.charCodeAt(index)) | 0;
+  }
+  return hash;
+}
+
+// @ComponentV2 @Param values inside a LazyForEach row are not refreshed by a
+// data notification alone on the current runtime. Reply hydration therefore
+// needs a compact key delta, just like media download state and edited text.
+function replyRenderStamp(row: ChatMessageRowVO): number {
+  if (!row.showReplySnippet) {
+    return 0;
+  }
+  let hash = stringRenderStamp(row.replyAuthor);
+  hash = ((hash * 31) + stringRenderStamp(row.replyPreview)) | 0;
+  hash = ((hash * 31) + stringRenderStamp(row.replyAuthorColorHex)) | 0;
+  hash = ((hash * 31) + (row.replyHasThumbnail ? 1 : 0)) | 0;
+  hash = ((hash * 31) + (row.replyIsOutgoing ? 1 : 0)) | 0;
+  hash = ((hash * 31) + (row.replyIsQuote ? 1 : 0)) | 0;
+  return hash;
 }
 
 function buildPhotoAlbumEntry(albumMessages: Message[], chat: Chat, state: AppState,
   messageById: Map<string, Message>, prevSenderId: number = -1): ChatTimelineEntryVO {
   const primaryMessage = albumMessages[0];
   const entry = buildMessageEntry(primaryMessage, chat, state, messageById, prevSenderId);
+  entry.message.sourceMessageIds = [];
   entry.message.contentType = 'photoAlbum';
   entry.message.caption = resolveAlbumCaption(albumMessages);
   entry.message.text = entry.message.caption.length > 0 ? entry.message.caption : '[Photo album]';
@@ -1099,6 +1227,7 @@ function buildPhotoAlbumEntry(albumMessages: Message[], chat: Chat, state: AppSt
   entry.message.albumPhotoHeights = [];
 
   for (const message of albumMessages) {
+    entry.message.sourceMessageIds.push(message.id);
     const content = message.content;
     const photoTransfer = resolveTransfer(content.photoFileId, state);
     const resolvedFull = resolveContentPath(content.photoPath, content.photoFileId, state, content.photoUniqueId);
@@ -1130,6 +1259,7 @@ function buildPhotoAlbumEntry(albumMessages: Message[], chat: Chat, state: AppSt
   // Album media fields were filled after buildMessageEntry computed the key —
   // recompute so the render stamp reflects the album paths/progress
   entry.key = entry.stableKey + '_s' + mediaRenderStamp(entry.message).toString()
+    + '_r' + replyRenderStamp(entry.message).toString()
     + '_e' + primaryMessage.editDate.toString();
 
   return entry;
@@ -1146,7 +1276,14 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
   result.chatTitle = (chat.type === 'private' || chat.type === 'secret') ? resolvePrivateChatTitle(chat, state) : chat.title;
 
   const messages = selectChatMessagesForChatView(chatId)(state);
-  const messageMap = state.messages.messages.get(chatId) || new Map<string, Message>();
+  const liveMessageMap = state.messages.messages.get(chatId) || new Map<string, Message>();
+  const associatedMessageMap = state.messages.associatedMessages.get(chatId);
+  const messageMap = associatedMessageMap
+    ? new Map<string, Message>(associatedMessageMap)
+    : new Map<string, Message>();
+  liveMessageMap.forEach((message: Message, messageId: string): void => {
+    messageMap.set(messageId, message);
+  });
   const unreadStartIndex = firstUnreadIncomingIndex(messages, chat, stickyLastReadMessageId);
   if (unreadStartIndex < 0 && (stickyLastReadMessageId.length > 0 || chat.unreadCount > 0) && messages.length > 0) {
     hilog.debug(DOMAIN, TAG,
@@ -1178,7 +1315,7 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
       dateEntry.kind = 'date';
       dateEntry.key = 'date_' + currentDay;
       dateEntry.stableKey = dateEntry.key;
-      dateEntry.dateText = formatDateSeparatorLabel(message.timestamp);
+      dateEntry.dateText = formatChatDateSeparatorLabel(message.timestamp);
       result.entries.push(dateEntry);
     }
 

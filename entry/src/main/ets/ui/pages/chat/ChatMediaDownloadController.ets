@@ -27,16 +27,16 @@ export class ChatMediaDownloadController {
   private pendingFileIds: Set<number> = new Set<number>();
   private failedFileMessages: Map<number, string> = new Map<number, string>();
   private version: number = 0;
-  private changeListener?: (version: number) => void;
+  private changeListener?: (version: number, fileId: number) => void;
 
-  setChangeListener(listener?: (version: number) => void): void {
+  setChangeListener(listener?: (version: number, fileId: number) => void): void {
     this.changeListener = listener;
   }
 
-  private bumpVersion(): void {
+  private bumpVersion(fileId: number = 0): void {
     this.version++;
     if (this.changeListener) {
-      this.changeListener(this.version);
+      this.changeListener(this.version, fileId);
     }
   }
 
@@ -51,10 +51,10 @@ export class ChatMediaDownloadController {
       return;
     }
     if (this.failedFileMessages.delete(fileId)) {
-      this.bumpVersion();
+      this.bumpVersion(fileId);
     }
     this.pendingFileIds.add(fileId);
-    this.bumpVersion();
+    this.bumpVersion(fileId);
     hilog.info(DOMAIN, TAG, 'On-demand media download requested: fileId=%{public}d', fileId);
     const token = lifecycleToken;
     const capturedFileId = fileId;
@@ -78,10 +78,10 @@ export class ChatMediaDownloadController {
             event.timestamp = Date.now();
             getAppCoreRuntime().getStore().dispatch(event);
             if (this.pendingFileIds.delete(capturedFileId)) {
-              this.bumpVersion();
+              this.bumpVersion(capturedFileId);
             }
             if (this.failedFileMessages.delete(capturedFileId)) {
-              this.bumpVersion();
+              this.bumpVersion(capturedFileId);
             }
           }
         } catch (error) {
@@ -103,7 +103,7 @@ export class ChatMediaDownloadController {
     const wasPending = this.pendingFileIds.delete(fileId);
     const wasFailed = this.failedFileMessages.delete(fileId);
     if (wasPending || wasFailed) {
-      this.bumpVersion();
+      this.bumpVersion(fileId);
     }
     const event = new FileTransferUpdatedEvent();
     event.fileId = fileId;
@@ -174,7 +174,7 @@ export class ChatMediaDownloadController {
     const previousMessage = this.failedFileMessages.get(fileId) || '';
     this.failedFileMessages.set(fileId, normalizedMessage);
     if (wasPending || previousMessage !== normalizedMessage) {
-      this.bumpVersion();
+      this.bumpVersion(fileId);
     }
   }
 

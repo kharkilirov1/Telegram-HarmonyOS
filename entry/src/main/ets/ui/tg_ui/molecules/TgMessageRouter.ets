@@ -25,7 +25,9 @@ import { TextBubbleLayout, BubbleLayoutInput } from '../layout/TgBubbleLayoutTyp
 import { TgContactBubble } from '../atoms/TgContactBubble';
 import { TgLocationBubble } from '../atoms/TgLocationBubble';
 import { TgPollBubble, TgPollOptionVO } from '../atoms/TgPollBubble';
+import { TgChannelShareButton } from '../atoms/TgChannelShareButton';
 import { TextEntity } from '../../../core/model/AppState';
+import { composeMessageMetaText } from '../utils/TgMessageMetaText';
 
 const DOMAIN = 0x0021;
 const TAG = 'TgMessageRouter';
@@ -37,8 +39,10 @@ export struct TgMessageRouter {
 
   // ── Common ──
   @Param messageId: string = '0';
+  @Param hiddenMediaMessageId: string = '0';
   @Param isOutgoing: boolean = false;
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
+  @Param isBroadcastChannel: boolean = false;
   @Param groupingFlags: string = 'none'; // none, top, middle/both, bottom
 
   // ── Text / fallback ──
@@ -49,6 +53,19 @@ export struct TgMessageRouter {
   @Param quoteLengths: number[] = [];
   @Param quoteCollapsedFlags: boolean[] = [];
   @Param textEntities: TextEntity[] = [];
+
+  // ── Link preview ──
+  @Param linkPreviewUrl: string = '';
+  @Param linkPreviewDisplayUrl: string = '';
+  @Param linkPreviewSiteName: string = '';
+  @Param linkPreviewTitle: string = '';
+  @Param linkPreviewDescription: string = '';
+  @Param linkPreviewAuthor: string = '';
+  @Param linkPreviewPhotoPath: string = '';
+  @Param linkPreviewPhotoMinithumb: string = '';
+  @Param linkPreviewShowLargeMedia: boolean = false;
+  @Param linkPreviewShowMediaAboveDescription: boolean = false;
+  @Param linkPreviewShowAboveText: boolean = false;
 
   // ── Caption (photo, video) ──
   @Param caption: string = '';
@@ -70,6 +87,12 @@ export struct TgMessageRouter {
   @Param photoHeight: number = 0;
   @Param albumPhotoPaths: string[] = [];
   @Param albumPhotoMinithumbs: string[] = [];
+  @Param albumPhotoMessageIds: string[] = [];
+  @Param albumPhotoFileIds: number[] = [];
+  @Param albumPhotoHasLocal: boolean[] = [];
+  @Param albumPhotoDownloading: boolean[] = [];
+  @Param albumPhotoDownloadFailed: boolean[] = [];
+  @Param albumPhotoDownloadProgress: number[] = [];
   @Param albumPhotoWidths: number[] = [];
   @Param albumPhotoHeights: number[] = [];
 
@@ -112,7 +135,7 @@ export struct TgMessageRouter {
   // ── Media viewer callbacks ──
   @Event onMediaGalleryOpen: (messageId: string) => void = (_: string) => {};
   @Event onPhotoTap: () => void = () => {};
-  @Event onAlbumPhotoTap: (photoPath: string, caption: string) => void = (_: string, __: string) => {};
+  @Event onAlbumPhotoTap: (albumIndex: number) => void = (_: number) => {};
   @Event onVideoTap: () => void = () => {};
   @Event onDocumentTap: (documentPath: string, documentFileId: number, mimeType: string) => void =
     (_: string, __: number, ___: string) => {};
@@ -120,6 +143,7 @@ export struct TgMessageRouter {
     (_: string, __: number, ___: string) => {};
   // Tap on the reply snippet — the page jumps to the original message
   @Event onReplyPress: () => void = () => {};
+  @Event onChannelSharePress: () => void = () => {};
 
   // ── Voice ──
   @Param voicePath: string = '';
@@ -198,6 +222,7 @@ export struct TgMessageRouter {
 
   // ── Meta (time + send status) ──
   @Param timeText: string = '';
+  @Param editedText: string = '';
   @Param sendStatus: TgMessageSendStatus = TgMessageSendStatus.None;
 
   private isSticker(): boolean {
@@ -309,7 +334,57 @@ export struct TgMessageRouter {
 
   private maxBubbleWidth(): number {
     const effectiveContainer = this.containerWidth - this.avatarInset();
+    if (this.isBroadcastChannel) {
+      return TgUiTokens.resolveChannelBubbleMaxWidth(effectiveContainer, !this.isOutgoing);
+    }
     return TgUiTokens.resolveBubbleMaxWidth(effectiveContainer, TgUiTokens.BUBBLE_MAX_WIDTH_RATIO);
+  }
+
+  private albumFileId(index: number): number {
+    return index >= 0 && index < this.albumPhotoFileIds.length ? this.albumPhotoFileIds[index] : 0;
+  }
+
+  private albumHasLocal(index: number): boolean {
+    return index >= 0 && index < this.albumPhotoHasLocal.length ? this.albumPhotoHasLocal[index] : false;
+  }
+
+  private albumDownloading(index: number): boolean {
+    return index >= 0 && index < this.albumPhotoDownloading.length ? this.albumPhotoDownloading[index] : false;
+  }
+
+  private handleAlbumDownloadToggle(index: number): void {
+    const fileId = this.albumFileId(index);
+    if (fileId <= 0) {
+      return;
+    }
+    if (this.albumDownloading(index)) {
+      this.onMediaDownloadCancel(fileId);
+    } else if (!this.albumHasLocal(index)) {
+      this.onMediaDownloadRequest(fileId);
+    }
+  }
+
+  private shouldShowChannelShareButton(): boolean {
+    return this.isBroadcastChannel && !this.isOutgoing;
+  }
+
+  @Builder
+  private buildChannelShareButton() {
+    if (this.shouldShowChannelShareButton()) {
+      TgChannelShareButton({
+        onPress: (): void => {
+          this.onChannelSharePress();
+        }
+      })
+        .margin({
+          left: TgUiTokens.CHANNEL_SHARE_BUTTON_GAP,
+          bottom: TgUiTokens.CHANNEL_SHARE_BUTTON_BOTTOM_INSET
+        })
+    }
+  }
+
+  private pollContentWidth(): number {
+    return Math.max(1, this.maxBubbleWidth());
   }
 
   private hasDocumentTransferProgress(): boolean {
@@ -350,9 +425,12 @@ export struct TgMessageRouter {
         replyPreview: this.showReplySnippet ? this.replyPreview : '',
         replyHasThumbnail: this.showReplySnippet ? this.replyHasThumbnail : false,
         timeText: this.timeText,
+        editedText: this.editedText,
         hasStatus: this.isOutgoing && this.sendStatus !== TgMessageSendStatus.None,
         isEmojiOnly: this.isEmojiOnly,
         forceBreakAll: this.forceBreakAll,
+        minimumContentWidth: this.hasLinkPreview() ? TgUiTokens.LINK_PREVIEW_MIN_WIDTH : 0,
+        forceSeparateMeta: this.hasLinkPreview(),
         quoteOffsets: this.quoteOffsets,
         quoteLengths: this.quoteLengths,
         quoteCollapsedFlags: this.quoteCollapsedFlags,
@@ -361,6 +439,14 @@ export struct TgMessageRouter {
     } catch (_e) {
       return null // fallback: V3 renders without explicit layout
     }
+  }
+
+  private hasLinkPreview(): boolean {
+    return this.linkPreviewUrl.trim().length > 0
+      || this.linkPreviewDisplayUrl.trim().length > 0
+      || this.linkPreviewSiteName.trim().length > 0
+      || this.linkPreviewTitle.trim().length > 0
+      || this.linkPreviewDescription.trim().length > 0;
   }
 
   private usesRegularBubbleLayout(): boolean {
@@ -472,9 +558,10 @@ export struct TgMessageRouter {
   // so text wraps around it naturally (iOS trailingLineWidth / Android timeWidth pattern).
   private buildMetaReserve(): string {
     let reserve = '\u00A0\u00A0'; // leading gap (2 NBSP)
-    // Mirror the actual time text width
-    if (this.timeText.length > 0) {
-      reserve += this.timeText;
+    // Mirror the actual localized edited + time text width.
+    const metaText = composeMessageMetaText(this.editedText, this.timeText);
+    if (metaText.length > 0) {
+      reserve += metaText;
     } else {
       reserve += '\u00A0\u00A0\u00A0\u00A0\u00A0'; // fallback ~5 chars
     }
@@ -495,6 +582,7 @@ export struct TgMessageRouter {
   private buildInlineMeta(overlayMode: boolean = false) {
     TgMessageMeta({
       timeText: this.timeText,
+      editedText: this.editedText,
       sendStatus: this.sendStatus,
       isOutgoing: this.isOutgoing,
       minWidth: 0,
@@ -505,7 +593,7 @@ export struct TgMessageRouter {
   }
 
   @Builder
-  private buildOverlayMetaPill() {
+  private buildOverlayMetaPill(isStandaloneSticker: boolean) {
     Row() {
       this.buildInlineMeta(true)
     }
@@ -515,7 +603,8 @@ export struct TgMessageRouter {
       top: TgUiTokens.MSG_MEDIA_META_OVERLAY_PADDING_V,
       bottom: TgUiTokens.MSG_MEDIA_META_OVERLAY_PADDING_V
     })
-    .backgroundColor(TgUiTokens.MSG_MEDIA_META_OVERLAY_BG)
+    .backgroundColor(isStandaloneSticker ?
+      TgUiTokens.MSG_STICKER_META_OVERLAY_BG : TgUiTokens.MSG_MEDIA_META_OVERLAY_BG)
     .borderRadius(TgUiTokens.MSG_MEDIA_META_OVERLAY_RADIUS)
     .margin({
       right: TgUiTokens.MSG_MEDIA_META_OVERLAY_MARGIN,
@@ -592,14 +681,22 @@ export struct TgMessageRouter {
       TgGroupedPhotoBubble({
         photoPaths: this.albumPhotoPaths,
         photoMinithumbs: this.albumPhotoMinithumbs,
+        photoFileIds: this.albumPhotoFileIds,
+        photoHasLocal: this.albumPhotoHasLocal,
+        photoDownloading: this.albumPhotoDownloading,
+        photoDownloadFailed: this.albumPhotoDownloadFailed,
+        photoDownloadProgress: this.albumPhotoDownloadProgress,
         photoWidths: this.albumPhotoWidths,
         photoHeights: this.albumPhotoHeights,
         isOutgoing: this.isOutgoing,
         containerWidth: this.maxBubbleWidth(),
         maxWidthRatio: 1.0,
         noBubbleWrap: true,
-        onPhotoTap: (photoPath: string) => {
-          this.onAlbumPhotoTap(photoPath, this.caption);
+        onPhotoTap: (albumIndex: number) => {
+          this.onAlbumPhotoTap(albumIndex);
+        },
+        onDownloadToggle: (albumIndex: number) => {
+          this.handleAlbumDownloadToggle(albumIndex);
         }
       })
     } else if (this.contentType === 'videoNote') {
@@ -789,6 +886,83 @@ export struct TgMessageRouter {
     }
   }
 
+  @Builder
+  private buildVisualMediaBubbleShell() {
+    TgMediaBubbleShellV2({
+      mediaKind: this.contentType,
+      messageId: this.messageId,
+      hideMediaForTransition: this.hiddenMediaMessageId === this.messageId,
+      hiddenMediaMessageId: this.hiddenMediaMessageId,
+      isOutgoing: this.isOutgoing,
+      containerWidth: this.maxBubbleWidth(),
+      maxWidthRatio: 1.0,
+      groupingFlags: this.groupingFlags,
+      caption: this.caption,
+      captionQuoteOffsets: this.captionQuoteOffsets,
+      captionQuoteLengths: this.captionQuoteLengths,
+      captionQuoteCollapsedFlags: this.captionQuoteCollapsedFlags,
+      photoPath: this.photoPath,
+      photoMinithumb: this.photoMinithumb,
+      photoFileId: this.photoFileId,
+      hasLocalPhoto: this.hasLocalPhoto,
+      isPhotoDownloading: this.isPhotoDownloading,
+      isPhotoDownloadFailed: this.isPhotoDownloadFailed,
+      photoDownloadProgress: this.photoDownloadProgress,
+      photoWidth: this.photoWidth,
+      photoHeight: this.photoHeight,
+      albumPhotoPaths: this.albumPhotoPaths,
+      albumPhotoMinithumbs: this.albumPhotoMinithumbs,
+      albumPhotoMessageIds: this.albumPhotoMessageIds,
+      albumPhotoFileIds: this.albumPhotoFileIds,
+      albumPhotoHasLocal: this.albumPhotoHasLocal,
+      albumPhotoDownloading: this.albumPhotoDownloading,
+      albumPhotoDownloadFailed: this.albumPhotoDownloadFailed,
+      albumPhotoDownloadProgress: this.albumPhotoDownloadProgress,
+      albumPhotoWidths: this.albumPhotoWidths,
+      albumPhotoHeights: this.albumPhotoHeights,
+      videoThumbPath: this.videoThumbPath,
+      videoMinithumb: this.videoMinithumb,
+      videoPath: this.videoPath,
+      videoFileId: this.videoFileId,
+      isShortVideo: this.isShortVideo,
+      isVideoDownloading: this.isVideoDownloading,
+      isVideoDownloadFailed: this.isVideoDownloadFailed,
+      videoDownloadProgress: this.videoDownloadProgress,
+      videoDuration: this.videoDuration,
+      videoWidth: this.videoWidth,
+      videoHeight: this.videoHeight,
+      showSenderName: this.showSenderName,
+      senderName: this.senderName,
+      senderColorHex: this.senderColorHex,
+      showReplySnippet: this.showReplySnippet,
+      replyAuthor: this.replyAuthor,
+      replyAuthorColorHex: this.replyAuthorColorHex,
+      replyPreview: this.replyPreview,
+      replyIsOutgoing: this.replyIsOutgoing,
+      replyIsQuote: this.replyIsQuote,
+      replyHasThumbnail: this.replyHasThumbnail,
+      replyThumbnailSrc: this.replyThumbnailSrc,
+      timeText: this.timeText,
+      sendStatus: this.sendStatus,
+      onMediaDownloadRequest: (fileId: number) => {
+        this.onMediaDownloadRequest(fileId);
+      },
+      onMediaDownloadCancel: (fileId: number) => {
+        this.onMediaDownloadCancel(fileId);
+      },
+      onPhotoTap: () => {
+        this.onPhotoTap();
+      },
+      onAlbumPhotoTap: (albumIndex: number) => {
+        this.onAlbumPhotoTap(albumIndex);
+      },
+      onMediaGalleryOpen: (messageId: string) => {
+        this.onMediaGalleryOpen(messageId);
+      }
+    })
+      .width(this.visualMediaBubbleWidth())
+  }
+
   build() {
     if (this.isSticker()) {
       // ── Sticker: no bubble background ──
@@ -820,12 +994,14 @@ export struct TgMessageRouter {
               containerWidth: this.stickerRenderWidth()
             })
 
-            this.buildOverlayMetaPill()
+            this.buildOverlayMetaPill(true)
           }
           .width(this.stickerRenderWidth())
           .height(this.stickerRenderHeight())
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
+
+        this.buildChannelShareButton()
       }
       .width('100%')
       .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
@@ -851,6 +1027,17 @@ export struct TgMessageRouter {
           quoteLengths: this.quoteLengths,
           quoteCollapsedFlags: this.quoteCollapsedFlags,
           textEntities: this.textEntities,
+          linkPreviewUrl: this.linkPreviewUrl,
+          linkPreviewDisplayUrl: this.linkPreviewDisplayUrl,
+          linkPreviewSiteName: this.linkPreviewSiteName,
+          linkPreviewTitle: this.linkPreviewTitle,
+          linkPreviewDescription: this.linkPreviewDescription,
+          linkPreviewAuthor: this.linkPreviewAuthor,
+          linkPreviewPhotoPath: this.linkPreviewPhotoPath,
+          linkPreviewPhotoMinithumb: this.linkPreviewPhotoMinithumb,
+          linkPreviewShowLargeMedia: this.linkPreviewShowLargeMedia,
+          linkPreviewShowMediaAboveDescription: this.linkPreviewShowMediaAboveDescription,
+          linkPreviewShowAboveText: this.linkPreviewShowAboveText,
           quoteAccentHex: this.senderColorHex,
           containerWidth: this.maxBubbleWidth(),
           maxWidthRatio: 1.0,
@@ -867,11 +1054,14 @@ export struct TgMessageRouter {
           replyHasThumbnail: this.replyHasThumbnail,
           replyThumbnailSrc: this.replyThumbnailSrc,
           timeText: this.timeText,
+          editedText: this.editedText,
           sendStatus: this.sendStatus,
           onReplyTap: (): void => {
             this.onReplyPress();
           }
         })
+
+        this.buildChannelShareButton()
 
         if (this.isOutgoing && this.showBubbleTail()) {
           TgBubbleTail({ isOutgoing: true })
@@ -969,6 +1159,8 @@ export struct TgMessageRouter {
           }
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
+
+        this.buildChannelShareButton()
       }
       .width('100%')
       .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
@@ -1005,11 +1197,12 @@ export struct TgMessageRouter {
           }
           .constraintSize({ maxWidth: this.maxBubbleWidth() })
           .backgroundColor(this.isOutgoing ? TgUiTokens.COLOR_MSG_BUBBLE_OUTGOING_BG : TgUiTokens.COLOR_MSG_BUBBLE_INCOMING_BG)
-          .borderRadius(TgUiTokens.BUBBLE_RADIUS_INCOMING)
+          .borderRadius(this.bubbleRadius())
           .padding({ left: TgUiTokens.BUBBLE_PADDING_H, right: TgUiTokens.BUBBLE_PADDING_H, top: TgUiTokens.BUBBLE_PADDING_V, bottom: TgUiTokens.BUBBLE_PADDING_V })
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
 
+        this.buildChannelShareButton()
         this.buildOutgoingTail()
       }
       .width('100%')
@@ -1042,7 +1235,7 @@ export struct TgMessageRouter {
                   isOutgoing: this.isOutgoing
                 })
 
-                this.buildOverlayMetaPill()
+                this.buildOverlayMetaPill(false)
               }
               .width(this.maxBubbleWidth())
             } else {
@@ -1063,11 +1256,12 @@ export struct TgMessageRouter {
           }
           .constraintSize({ maxWidth: this.maxBubbleWidth() })
           .backgroundColor(this.isOutgoing ? TgUiTokens.COLOR_MSG_BUBBLE_OUTGOING_BG : TgUiTokens.COLOR_MSG_BUBBLE_INCOMING_BG)
-          .borderRadius(TgUiTokens.BUBBLE_RADIUS_INCOMING)
+          .borderRadius(this.bubbleRadius())
           .padding({ left: TgUiTokens.BUBBLE_PADDING_H, right: TgUiTokens.BUBBLE_PADDING_H, top: TgUiTokens.BUBBLE_PADDING_V, bottom: TgUiTokens.BUBBLE_PADDING_V })
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
 
+        this.buildChannelShareButton()
         this.buildOutgoingTail()
       }
       .width('100%')
@@ -1097,21 +1291,26 @@ export struct TgMessageRouter {
               isClosed: this.pollIsClosed,
               isAnonymous: this.pollIsAnonymous,
               pollType: this.pollType,
-              isOutgoing: this.isOutgoing
+              isOutgoing: this.isOutgoing,
+              availableWidth: this.pollContentWidth()
             })
             Row() {
               this.buildInlineMeta(false)
             }
             .alignSelf(ItemAlign.End)
-            .margin({ top: TgUiTokens.SPACE_2 })
+            .padding({ left: TgUiTokens.BUBBLE_PADDING_H, right: TgUiTokens.BUBBLE_PADDING_H,
+              top: TgUiTokens.SPACE_2, bottom: TgUiTokens.BUBBLE_PADDING_V })
           }
-          .constraintSize({ maxWidth: this.maxBubbleWidth() })
+          .constraintSize({
+            minWidth: TgUiTokens.resolvePollBubbleMinWidth(this.pollContentWidth()),
+            maxWidth: this.pollContentWidth()
+          })
           .backgroundColor(this.isOutgoing ? TgUiTokens.COLOR_MSG_BUBBLE_OUTGOING_BG : TgUiTokens.COLOR_MSG_BUBBLE_INCOMING_BG)
-          .borderRadius(TgUiTokens.BUBBLE_RADIUS_INCOMING)
-          .padding({ left: TgUiTokens.BUBBLE_PADDING_H, right: TgUiTokens.BUBBLE_PADDING_H, top: TgUiTokens.BUBBLE_PADDING_V, bottom: TgUiTokens.BUBBLE_PADDING_V })
+          .borderRadius(this.bubbleRadius())
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
 
+        this.buildChannelShareButton()
         this.buildOutgoingTail()
       }
       .width('100%')
@@ -1123,67 +1322,9 @@ export struct TgMessageRouter {
       Row() {
         this.buildAvatarSlot()
 
-        TgMediaBubbleShellV2({
-          mediaKind: this.contentType,
-          messageId: this.messageId,
-          isOutgoing: this.isOutgoing,
-          containerWidth: this.maxBubbleWidth(),
-          maxWidthRatio: 1.0,
-          groupingFlags: this.groupingFlags,
-          caption: this.caption,
-          captionQuoteOffsets: this.captionQuoteOffsets,
-          captionQuoteLengths: this.captionQuoteLengths,
-          captionQuoteCollapsedFlags: this.captionQuoteCollapsedFlags,
-          photoPath: this.photoPath,
-          photoMinithumb: this.photoMinithumb,
-          photoFileId: this.photoFileId,
-          hasLocalPhoto: this.hasLocalPhoto,
-          isPhotoDownloading: this.isPhotoDownloading,
-          isPhotoDownloadFailed: this.isPhotoDownloadFailed,
-          photoDownloadProgress: this.photoDownloadProgress,
-          photoWidth: this.photoWidth,
-          photoHeight: this.photoHeight,
-          albumPhotoPaths: this.albumPhotoPaths,
-          albumPhotoMinithumbs: this.albumPhotoMinithumbs,
-          albumPhotoWidths: this.albumPhotoWidths,
-          albumPhotoHeights: this.albumPhotoHeights,
-          videoThumbPath: this.videoThumbPath,
-          videoMinithumb: this.videoMinithumb,
-          videoPath: this.videoPath,
-          videoFileId: this.videoFileId,
-          isShortVideo: this.isShortVideo,
-          isVideoDownloading: this.isVideoDownloading,
-          isVideoDownloadFailed: this.isVideoDownloadFailed,
-          videoDownloadProgress: this.videoDownloadProgress,
-          videoDuration: this.videoDuration,
-          videoWidth: this.videoWidth,
-          videoHeight: this.videoHeight,
-          showSenderName: this.showSenderName,
-          senderName: this.senderName,
-          senderColorHex: this.senderColorHex,
-          showReplySnippet: this.showReplySnippet,
-          replyAuthor: this.replyAuthor,
-          replyAuthorColorHex: this.replyAuthorColorHex,
-          replyPreview: this.replyPreview,
-          replyIsOutgoing: this.replyIsOutgoing,
-          replyIsQuote: this.replyIsQuote,
-          replyHasThumbnail: this.replyHasThumbnail,
-          replyThumbnailSrc: this.replyThumbnailSrc,
-          timeText: this.timeText,
-          sendStatus: this.sendStatus,
-          onMediaDownloadRequest: (fileId: number) => {
-            this.onMediaDownloadRequest(fileId);
-          },
-          onPhotoTap: () => {
-            this.onPhotoTap();
-          },
-          onAlbumPhotoTap: (photoPath: string, caption: string) => {
-            this.onAlbumPhotoTap(photoPath, caption);
-          },
-          onMediaGalleryOpen: (messageId: string) => {
-            this.onMediaGalleryOpen(messageId);
-          }
-        })
+        this.buildVisualMediaBubbleShell()
+
+        this.buildChannelShareButton()
       }
       .width('100%')
       .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
@@ -1247,8 +1388,8 @@ export struct TgMessageRouter {
               .margin({
                 left: TgUiTokens.BUBBLE_PADDING_H,
                 right: TgUiTokens.BUBBLE_PADDING_H,
-                top: TgUiTokens.SPACE_2,
-                bottom: TgUiTokens.BUBBLE_PADDING_V
+                top: -TgUiTokens.VOICE_BUBBLE_STATUS_OVERLAP,
+                bottom: TgUiTokens.VOICE_BUBBLE_STATUS_BOTTOM_INSET
               })
             }
             .width(this.voiceBubbleWidth())
@@ -1289,6 +1430,7 @@ export struct TgMessageRouter {
         .backgroundColor(this.bubbleColor())
         .borderRadius(this.bubbleRadius())
 
+        this.buildChannelShareButton()
         this.buildOutgoingTail()
       }
       .width('100%')

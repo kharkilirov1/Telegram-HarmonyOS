@@ -87,18 +87,36 @@ export struct TgDateSeparatorDemo {
           })
 
         this.separatorCase('01 date: Today', 'Today')
-        this.separatorCase('02 date: Yesterday', 'Yesterday')
+        this.separatorCase('02 date: localized month/day', '14 July')
         this.separatorCase('03 date: explicit short', '25 Feb')
         this.separatorCase('04 date: explicit long', this.longDateText)
         this.separatorCase('05 date: narrow container', this.longDateText, TgUiTokens.MSG_DEMO_NARROW_CONTAINER_WIDTH)
         this.separatorCase('06 date: wide container', this.longDateText, TgUiTokens.MSG_DEMO_WIDE_CONTAINER_WIDTH)
 
-        this.unreadCase('07 unread: default', 'Unread messages')
-        this.unreadCase('08 unread: long text', this.unreadLongText)
-        this.unreadCase('09 unread: narrow container', this.unreadLongText, TgUiTokens.MSG_DEMO_NARROW_CONTAINER_WIDTH)
-        this.unreadCase('10 unread: wide container', this.unreadLongText, TgUiTokens.MSG_DEMO_WIDE_CONTAINER_WIDTH)
+        Text('07 service capsule: multi-line geometry remains independent')
+          .fontSize(TgUiTokens.FONT_META_SIZE)
+          .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+          .width('100%')
+          .padding({
+            left: TgUiTokens.SPACE_16,
+            right: TgUiTokens.SPACE_16,
+            top: TgUiTokens.SPACE_8,
+            bottom: TgUiTokens.SPACE_6
+          })
+        TgDateSeparator({
+          text: 'Alice joined the group\nInvite approved by an administrator',
+          containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH,
+          maxLines: 3,
+          isService: true
+        })
+          .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16 })
 
-        Text('11 sequence probe: date → unread → date')
+        this.unreadCase('08 unread: default', 'Unread messages')
+        this.unreadCase('09 unread: long text', this.unreadLongText)
+        this.unreadCase('10 unread: narrow container', this.unreadLongText, TgUiTokens.MSG_DEMO_NARROW_CONTAINER_WIDTH)
+        this.unreadCase('11 unread: wide container', this.unreadLongText, TgUiTokens.MSG_DEMO_WIDE_CONTAINER_WIDTH)
+
+        Text('12 sequence probe: date → unread → date')
           .fontSize(TgUiTokens.FONT_META_SIZE)
           .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
           .width('100%')
@@ -113,7 +131,7 @@ export struct TgDateSeparatorDemo {
           .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16 })
         TgUnreadMarker({ text: 'Unread messages', containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH })
           .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16, top: TgUiTokens.SPACE_8, bottom: TgUiTokens.SPACE_8 })
-        TgDateSeparator({ text: 'Yesterday', containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH })
+        TgDateSeparator({ text: '14 July', containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH })
           .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16, bottom: TgUiTokens.SPACE_16 })
       }
       .width('100%')

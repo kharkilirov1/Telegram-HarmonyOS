@@ -8,6 +8,7 @@ import { TextEntity } from '../../../core/model/AppState'
 import { TgTextBodyV3 } from './TgTextBodyV3'
 import { TgReplySnippet } from './TgReplySnippet'
 import { TgMessageMeta, TgMessageSendStatus } from './TgMessageMeta'
+import { TgLinkPreviewBubble } from './TgLinkPreviewBubble'
 
 @ComponentV2
 export struct TgTextBubbleV3 {
@@ -19,6 +20,19 @@ export struct TgTextBubbleV3 {
   @Param isOutgoing: boolean = false
   @Param isEmojiOnly: boolean = false
   @Param forceBreakAll: boolean = false
+
+  // ── Link preview ──
+  @Param linkPreviewUrl: string = ''
+  @Param linkPreviewDisplayUrl: string = ''
+  @Param linkPreviewSiteName: string = ''
+  @Param linkPreviewTitle: string = ''
+  @Param linkPreviewDescription: string = ''
+  @Param linkPreviewAuthor: string = ''
+  @Param linkPreviewPhotoPath: Resource | string = ''
+  @Param linkPreviewPhotoMinithumb: Resource | string = ''
+  @Param linkPreviewShowLargeMedia: boolean = false
+  @Param linkPreviewShowMediaAboveDescription: boolean = false
+  @Param linkPreviewShowAboveText: boolean = false
 
   // ── Sender ──
   @Param showSenderName: boolean = false
@@ -44,6 +58,7 @@ export struct TgTextBubbleV3 {
 
   // ── Meta ──
   @Param timeText: string = ''
+  @Param editedText: string = ''
   @Param sendStatus: TgMessageSendStatus = TgMessageSendStatus.None
 
   // ── Visual ──
@@ -90,6 +105,14 @@ export struct TgTextBubbleV3 {
 
   private senderColor(): ResourceColor {
     return this.senderColorHex.length > 0 ? this.senderColorHex : TgUiTokens.COLOR_TEXT_TITLE
+  }
+
+  private hasLinkPreview(): boolean {
+    return this.linkPreviewUrl.trim().length > 0
+      || this.linkPreviewDisplayUrl.trim().length > 0
+      || this.linkPreviewSiteName.trim().length > 0
+      || this.linkPreviewTitle.trim().length > 0
+      || this.linkPreviewDescription.trim().length > 0
   }
 
   @Builder
@@ -149,9 +172,34 @@ export struct TgTextBubbleV3 {
   }
 
   @Builder
+  buildLinkPreview() {
+    if (this.hasLinkPreview()) {
+      TgLinkPreviewBubble({
+        url: this.linkPreviewUrl,
+        displayUrl: this.linkPreviewDisplayUrl,
+        siteName: this.linkPreviewSiteName,
+        title: this.linkPreviewTitle,
+        description: this.linkPreviewDescription,
+        author: this.linkPreviewAuthor,
+        photoPath: this.linkPreviewPhotoPath,
+        photoMinithumb: this.linkPreviewPhotoMinithumb,
+        showLargeMedia: this.linkPreviewShowLargeMedia,
+        showMediaAboveDescription: this.linkPreviewShowMediaAboveDescription,
+        isOutgoing: this.isOutgoing,
+        availableWidth: this.layout?.contentWidth ?? TgUiTokens.LINK_PREVIEW_MIN_WIDTH,
+      })
+        .margin({
+          top: !this.linkPreviewShowAboveText && this.text.length > 0 ? TgUiTokens.SPACE_6 : 0,
+          bottom: this.linkPreviewShowAboveText && this.text.length > 0 ? TgUiTokens.SPACE_6 : 0,
+        })
+    }
+  }
+
+  @Builder
   buildMeta() {
     TgMessageMeta({
       timeText: this.timeText,
+      editedText: this.editedText,
       sendStatus: this.sendStatus,
       isOutgoing: this.isOutgoing,
     })
@@ -165,7 +213,13 @@ export struct TgTextBubbleV3 {
         Column() {
           this.buildSenderName()
           this.buildReplySnippet()
+          if (this.linkPreviewShowAboveText) {
+            this.buildLinkPreview()
+          }
           this.buildTextContent()
+          if (!this.linkPreviewShowAboveText) {
+            this.buildLinkPreview()
+          }
 
           // Separate meta row when not inline
           if (this.layout !== null && !this.layout.metaInline) {

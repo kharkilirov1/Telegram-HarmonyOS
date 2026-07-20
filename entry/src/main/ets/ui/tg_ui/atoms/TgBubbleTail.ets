@@ -16,8 +16,8 @@ export struct TgBubbleTail {
   }
 
   private tailCommands(): string {
-    const w = vp2px(TgUiTokens.BUBBLE_TAIL_WIDTH);
-    const h = vp2px(TgUiTokens.BUBBLE_TAIL_HEIGHT);
+    const w = this.getUIContext().vp2px(TgUiTokens.BUBBLE_TAIL_WIDTH);
+    const h = this.getUIContext().vp2px(TgUiTokens.BUBBLE_TAIL_HEIGHT);
     if (this.isOutgoing) {
       // Flat LEFT edge flush against the bubble, tip pointing bottom-right
       return `M0 0 L0 ${h} L${w} ${h} Q${w * 0.25} ${h * 0.9} 0 ${h * 0.35} Z`;

@@ -1,6 +1,7 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgIcon } from './TgIcon';
 import { TgInlineVideoView } from './TgInlineVideoView';
+import { resolveVisualMediaTapMode, TgVisualMediaTapMode } from '../utils/TgMediaGalleryPolicy';
 
 @ComponentV2
 export struct TgVideoBubble {
@@ -286,7 +287,7 @@ export struct TgVideoBubble {
       if (this.isDownloadPending) {
         this.buildDownloadingStatusButton()
       } else if (!this.hasLocalVideo() || this.isDownloadFailed) {
-        this.buildIdleStatusButton(TgUiTokens.ICON_RES_DOWNLOAD, () => this.onDownloadToggle())
+        this.buildIdleStatusButton(TgUiTokens.ICON_RES_DOWNLOAD, () => this.handleSurfaceTap())
       } else if (this.shouldShowPlayOverlay()) {
         this.buildIdleStatusButton(TgUiTokens.ICON_RES_PLAY, () => this.onVideoPlayTap())
       }
@@ -300,15 +301,12 @@ export struct TgVideoBubble {
   }
 
   private handleSurfaceTap(): void {
-    if (this.isDownloadPending) {
-      // Already downloading — no-op (cancel handled by overlay button)
-      return;
-    }
-    if (this.hasLocalVideo()) {
-      this.onVideoPlayTap();
-    } else {
+    const tapMode: TgVisualMediaTapMode =
+      resolveVisualMediaTapMode(this.hasLocalVideo(), this.isDownloadPending);
+    if (tapMode === 'downloadAndOpen') {
       this.onDownloadToggle();
     }
+    this.onVideoPlayTap();
   }
 
   @Builder

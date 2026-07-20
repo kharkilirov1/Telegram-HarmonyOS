@@ -2,11 +2,23 @@ import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgInlineVideoView } from './TgInlineVideoView';
 import { TgIcon } from './TgIcon';
 import { MediaGalleryItem } from '../../../models/MediaGalleryItem';
+import { mediaGeometryTransitionId } from '../utils/TgMediaGeometryTransition';
+import {
+  resolveGalleryDoubleTapTransform,
+  resolveGalleryPhotoOffset,
+  resolveGalleryPinchTransform,
+  resolveGalleryPreviewKind,
+  resolveGalleryTransferActive,
+  TgGalleryPhotoOffset,
+  TgGalleryPhotoTransform,
+  TgGalleryPreviewKind
+} from '../utils/TgMediaGalleryPolicy';
 
 @ComponentV2
 export struct TgMediaGalleryPage {
   @Param mediaItems: MediaGalleryItem[] = [];
   @Param initialIndex: number = 0;
+  @Param downloadStateVersion: number = 0;
   @Param statusBarHeight: number = 0;
   @Event onDismiss: () => void = () => {};
   @Event onIndexChange: (index: number) => void = (_: number) => {};
@@ -19,6 +31,10 @@ export struct TgMediaGalleryPage {
   @Local private photoOffsetX: number = 0;
   @Local private photoOffsetY: number = 0;
   @Local private pinchStartScale: number = 1.0;
+  @Local private pinchStartOffsetX: number = 0;
+  @Local private pinchStartOffsetY: number = 0;
+  @Local private pinchStartCenterX: number = 0;
+  @Local private pinchStartCenterY: number = 0;
   @Local private panStartX: number = 0;
   @Local private panStartY: number = 0;
   @Local private dismissOffsetY: number = 0;
@@ -26,6 +42,8 @@ export struct TgMediaGalleryPage {
   @Local private activeVideoCommand: string = 'none';
   @Local private prevVideoCommand: string = 'none';
   @Local private localDownloadVersion: number = 0;
+  @Local private galleryViewportWidth: number = 0;
+  @Local private galleryViewportHeight: number = 0;
 
   private swiperController: SwiperController = new SwiperController();
   private videoControllers: Map<number, string> = new Map();
@@ -35,7 +53,7 @@ export struct TgMediaGalleryPage {
     this.currentIndex = this.clampedIndex(this.initialIndex);
   }
 
-  @Monitor('mediaItems', 'initialIndex')
+  @Monitor('mediaItems', 'initialIndex', 'downloadStateVersion')
   onExternalGalleryStateChanged(): void {
     const nextIndex = this.clampedIndex(this.initialIndex);
     if (this.currentIndex !== nextIndex) {
@@ -87,7 +105,8 @@ export struct TgMediaGalleryPage {
     let changed = false;
     for (let i = 0; i < this.mediaItems.length; i++) {
       const item = this.mediaItems[i];
-      if (item.fileId > 0 && this.hasFile(item.path) && this.localDownloadFileIds.has(item.fileId)) {
+      if (item.fileId > 0 && (this.hasFile(item.path) || item.isDownloadFailed) &&
+        this.localDownloadFileIds.has(item.fileId)) {
         this.localDownloadFileIds.delete(item.fileId);
         changed = true;
       }
@@ -98,7 +117,16 @@ export struct TgMediaGalleryPage {
   }
 
   private isTransferActive(item: MediaGalleryItem): boolean {
-    return item.isDownloading || this.hasDownloadProgress(item) || this.isLocalDownloadPending(item.fileId);
+    return resolveGalleryTransferActive(
+      item.isDownloading,
+      item.downloadProgress,
+      this.isLocalDownloadPending(item.fileId),
+      item.isDownloadFailed
+    );
+  }
+
+  private galleryPreviewKind(item: MediaGalleryItem): TgGalleryPreviewKind {
+    return resolveGalleryPreviewKind(item.thumbnailPath, item.minithumb);
   }
 
   private handleDownloadToggle(item: MediaGalleryItem): void {
@@ -126,12 +154,40 @@ export struct TgMediaGalleryPage {
     this.photoOffsetY = 0;
   }
 
-  private handleDoubleTap(): void {
-    if (this.photoScale > 1.5) {
-      this.resetZoom();
-    } else {
-      this.photoScale = 2.0;
+  private applyPhotoOffset(offset: TgGalleryPhotoOffset): void {
+    this.photoOffsetX = offset.offsetX;
+    this.photoOffsetY = offset.offsetY;
+  }
+
+  private handleDoubleTap(event: GestureEvent, item: MediaGalleryItem): void {
+    if (!this.hasFile(item.path)) {
+      return;
     }
+    let tapX = this.galleryViewportWidth / 2;
+    let tapY = this.galleryViewportHeight / 2;
+    if (event.fingerList.length > 0 && event.fingerList[0] !== undefined) {
+      tapX = event.fingerList[0].localX;
+      tapY = event.fingerList[0].localY;
+    }
+    const transform: TgGalleryPhotoTransform = resolveGalleryDoubleTapTransform(
+      this.photoScale,
+      tapX,
+      tapY,
+      this.galleryViewportWidth,
+      this.galleryViewportHeight,
+      item.width,
+      item.height,
+      TgUiTokens.MEDIA_GALLERY_PHOTO_DOUBLE_TAP_SCALE,
+      TgUiTokens.MEDIA_GALLERY_PHOTO_MIN_SCALE,
+      TgUiTokens.MEDIA_GALLERY_PHOTO_MAX_SCALE
+    );
+    this.getUIContext().animateTo({
+      duration: TgUiTokens.MEDIA_GALLERY_PHOTO_ZOOM_ANIM_DURATION,
+      curve: Curve.Friction
+    }, () => {
+      this.photoScale = transform.scale;
+      this.applyPhotoOffset(transform);
+    });
   }
 
   private handleSwiperChange(index: number): void {
@@ -224,8 +280,8 @@ export struct TgMediaGalleryPage {
 
   @Builder
   private buildPhotoItem(item: MediaGalleryItem) {
-    Stack({ alignContent: Alignment.Center }) {
-      if (this.hasFile(item.path)) {
+    if (this.hasFile(item.path)) {
+      Stack({ alignContent: Alignment.Center }) {
         Image(item.path)
           .objectFit(ImageFit.Contain)
           .width('100%')
@@ -235,52 +291,102 @@ export struct TgMediaGalleryPage {
           .gesture(
             GestureGroup(GestureMode.Parallel,
               PinchGesture({ fingers: 2 })
-                .onActionStart(() => {
+                .onActionStart((event: GestureEvent) => {
                   this.pinchStartScale = this.photoScale;
+                  this.pinchStartOffsetX = this.photoOffsetX;
+                  this.pinchStartOffsetY = this.photoOffsetY;
+                  this.pinchStartCenterX = event.pinchCenterX;
+                  this.pinchStartCenterY = event.pinchCenterY;
                 })
                 .onActionUpdate((event: GestureEvent) => {
-                  const newScale = this.pinchStartScale * event.scale;
-                  this.photoScale = Math.max(1.0, Math.min(4.0, newScale));
+                  const transform = resolveGalleryPinchTransform(
+                    this.pinchStartScale,
+                    this.pinchStartOffsetX,
+                    this.pinchStartOffsetY,
+                    this.pinchStartScale * event.scale,
+                    this.pinchStartCenterX,
+                    this.pinchStartCenterY,
+                    event.pinchCenterX,
+                    event.pinchCenterY,
+                    this.galleryViewportWidth,
+                    this.galleryViewportHeight,
+                    item.width,
+                    item.height,
+                    TgUiTokens.MEDIA_GALLERY_PHOTO_MIN_SCALE,
+                    TgUiTokens.MEDIA_GALLERY_PHOTO_MAX_SCALE
+                  );
+                  this.photoScale = transform.scale;
+                  this.applyPhotoOffset(transform);
                 })
                 .onActionEnd(() => {
-                  if (this.photoScale < 1.1) {
+                  if (this.photoScale < TgUiTokens.MEDIA_GALLERY_PHOTO_RESET_THRESHOLD) {
                     this.resetZoom();
                   }
                 }),
-              PanGesture({ fingers: 1 })
+              PanGesture({ fingers: 1, direction: PanDirection.Vertical })
+                .tag('gallery_photo_dismiss_pan')
+                .onActionUpdate((event: GestureEvent) => {
+                  this.dismissOffsetY = event.offsetY;
+                  this.dismissOpacity = Math.max(
+                    TgUiTokens.MEDIA_GALLERY_DISMISS_MIN_OPACITY,
+                    1 - Math.abs(event.offsetY) / TgUiTokens.MEDIA_GALLERY_DISMISS_FADE_DISTANCE
+                  );
+                })
+                .onActionEnd(() => this.handleDismissGesture()),
+              PanGesture({ fingers: 1, direction: PanDirection.All })
+                .tag('gallery_photo_zoom_pan')
                 .onActionStart(() => {
                   this.panStartX = this.photoOffsetX;
                   this.panStartY = this.photoOffsetY;
                 })
                 .onActionUpdate((event: GestureEvent) => {
-                  if (this.photoScale > 1.0) {
-                    this.photoOffsetX = this.panStartX + event.offsetX;
-                    this.photoOffsetY = this.panStartY + event.offsetY;
-                  } else {
-                    // Dismiss gesture when not zoomed
-                    this.dismissOffsetY = event.offsetY;
-                    this.dismissOpacity = Math.max(0.3, 1 - Math.abs(event.offsetY) / 400);
-                  }
-                })
-                .onActionEnd(() => {
-                  if (this.photoScale <= 1.0) {
-                    this.handleDismissGesture();
-                  }
+                  this.applyPhotoOffset(resolveGalleryPhotoOffset(
+                    this.panStartX + event.offsetX,
+                    this.panStartY + event.offsetY,
+                    this.photoScale,
+                    this.galleryViewportWidth,
+                    this.galleryViewportHeight,
+                    item.width,
+                    item.height
+                  ));
                 })
             )
           )
-      } else {
-        // Not downloaded — thumbnail + download button
+          .onGestureRecognizerJudgeBegin((_event: BaseGestureEvent, current: GestureRecognizer,
+            _others: Array<GestureRecognizer>): GestureJudgeResult => {
+            const isZoomed = this.photoScale > TgUiTokens.MEDIA_GALLERY_PHOTO_MIN_SCALE;
+            if (current.getTag() === 'gallery_photo_zoom_pan') {
+              return isZoomed ? GestureJudgeResult.CONTINUE : GestureJudgeResult.REJECT;
+            }
+            if (current.getTag() === 'gallery_photo_dismiss_pan') {
+              return isZoomed ? GestureJudgeResult.REJECT : GestureJudgeResult.CONTINUE;
+            }
+            return GestureJudgeResult.CONTINUE;
+          })
+      }
+      .width('100%')
+      .height('100%')
+      .gesture(
+        GestureGroup(GestureMode.Exclusive,
+          TapGesture({ count: 2 })
+            .onAction((event: GestureEvent) => this.handleDoubleTap(event, item)),
+          TapGesture({ count: 1 })
+            .onAction(() => this.toggleOverlay())
+        )
+      )
+      .onAreaChange((_oldArea: Area, newArea: Area) => {
+        this.galleryViewportWidth = Number(newArea.width);
+        this.galleryViewportHeight = Number(newArea.height);
+      })
+    } else {
+      // Keep the remote-state download control outside the exclusive tap recognizer.
+      Stack({ alignContent: Alignment.Center }) {
         this.buildNotDownloaded(item)
       }
+      .width('100%')
+      .height('100%')
+      .onClick(() => this.toggleOverlay())
     }
-    .width('100%')
-    .height('100%')
-    .onClick(() => this.toggleOverlay())
-    .gesture(
-      TapGesture({ count: 2 })
-        .onAction(() => this.handleDoubleTap())
-    )
   }
 
   @Builder
@@ -323,12 +429,18 @@ export struct TgMediaGalleryPage {
   @Builder
   private buildNotDownloaded(item: MediaGalleryItem) {
     Stack({ alignContent: Alignment.Center }) {
-      if (this.hasFile(item.thumbnailPath)) {
+      if (this.galleryPreviewKind(item) === 'thumbnail') {
         Image(item.thumbnailPath)
           .objectFit(ImageFit.Contain)
           .width('100%')
           .height('100%')
           .opacity(0.72)
+      } else if (this.galleryPreviewKind(item) === 'minithumb') {
+        Image(item.minithumb)
+          .objectFit(ImageFit.Contain)
+          .width('100%')
+          .height('100%')
+          .blur(TgUiTokens.PHOTO_BUBBLE_MINITHUMB_BLUR)
       }
       Column({ space: 10 }) {
         Column({ space: 8 }) {
@@ -392,11 +504,26 @@ export struct TgMediaGalleryPage {
   }
 
   @Builder
-  private buildGalleryItem(item: MediaGalleryItem, index: number) {
+  private buildGalleryItemContent(item: MediaGalleryItem, index: number) {
     if (item.type === 'photo') {
       this.buildPhotoItem(item)
     } else {
       this.buildVideoItem(item, index)
+    }
+  }
+
+  @Builder
+  private buildGalleryItem(item: MediaGalleryItem, index: number) {
+    if (index === this.currentIndex && item.sourceMessageId.trim().length > 0) {
+      Stack({ alignContent: Alignment.Center }) {
+        this.buildGalleryItemContent(item, index)
+      }
+      .width('100%')
+      .height('100%')
+      .geometryTransition(mediaGeometryTransitionId(item.sourceMessageId))
+      .transition(TransitionEffect.OPACITY)
+    } else {
+      this.buildGalleryItemContent(item, index)
     }
   }
 
@@ -432,6 +559,7 @@ export struct TgMediaGalleryPage {
         .height('100%')
         .backgroundColor('#000000')
         .opacity(this.dismissOpacity)
+        .transition({ type: TransitionType.All, opacity: 0 })
 
       // Swiper content
       Column() {

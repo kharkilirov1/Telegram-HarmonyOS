@@ -7,6 +7,7 @@ export struct TgDateSeparator {
   @Param maxWidthRatio: number = TgUiTokens.DATE_SEPARATOR_MAX_WIDTH_RATIO;
   // Service (chat-event) lines reuse this capsule with multi-line text
   @Param maxLines: number = 1;
+  @Param isService: boolean = false;
 
   private safeText(): string {
     return this.text.length > 0 ? this.text : ' ';
@@ -14,6 +15,18 @@ export struct TgDateSeparator {
 
   private maxCapsuleWidth(): number {
     return Math.max(1, Math.floor(this.containerWidth * this.maxWidthRatio));
+  }
+
+  private verticalPadding(): number {
+    return this.isService ? TgUiTokens.SERVICE_SEPARATOR_PADDING_V : TgUiTokens.DATE_SEPARATOR_PADDING_V;
+  }
+
+  private minimumHeight(): number {
+    return this.isService ? TgUiTokens.SERVICE_SEPARATOR_MIN_HEIGHT : TgUiTokens.DATE_SEPARATOR_MIN_HEIGHT;
+  }
+
+  private cornerRadius(): number {
+    return this.isService ? TgUiTokens.SERVICE_SEPARATOR_RADIUS : TgUiTokens.DATE_SEPARATOR_RADIUS;
   }
 
   build() {
@@ -31,15 +44,15 @@ export struct TgDateSeparator {
       .padding({
         left: TgUiTokens.DATE_SEPARATOR_PADDING_H,
         right: TgUiTokens.DATE_SEPARATOR_PADDING_H,
-        top: TgUiTokens.DATE_SEPARATOR_PADDING_V,
-        bottom: TgUiTokens.DATE_SEPARATOR_PADDING_V
+        top: this.verticalPadding(),
+        bottom: this.verticalPadding()
       })
       .constraintSize({
-        minHeight: TgUiTokens.DATE_SEPARATOR_MIN_HEIGHT,
+        minHeight: this.minimumHeight(),
         maxWidth: this.maxCapsuleWidth()
       })
       .backgroundColor(TgUiTokens.DATE_SEPARATOR_BG)
-      .borderRadius(TgUiTokens.DATE_SEPARATOR_RADIUS)
+      .borderRadius(this.cornerRadius())
     }
     .width('100%')
     .justifyContent(FlexAlign.Center)

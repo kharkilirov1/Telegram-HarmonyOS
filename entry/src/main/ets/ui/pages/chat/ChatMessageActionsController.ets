@@ -1,5 +1,5 @@
-// ChatMessageActionsController — message action sheet and action-mode orchestration.
-// Keeps promptAction/pasteboard/use-case logic out of TgChatScreenPage.
+// ChatMessageActionsController — message action model and action-mode orchestration.
+// The page owns the glass popup presentation; this controller owns available actions and behavior.
 
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { navigationUIState } from '../../../core/model/UIStateModels';
@@ -9,13 +9,11 @@ import { EditMessageParams, EditMessageUseCase } from '../../../domain/usecases/
 import { ForwardMessagesParams, ForwardMessagesUseCase } from '../../../domain/usecases/forwardMessages';
 import { PinChatMessageUseCase } from '../../../domain/usecases/pinChatMessage';
 import { SendMessageParams, SendMessageUseCase } from '../../../domain/usecases/sendMessage';
-import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { ForwardTargetPickerResult, ForwardTargetPickerRouteParams } from '../forward/TgForwardTargetPickerPage';
 import { ChatTimelineEntryVO } from './ChatTimelineVO';
 import { ChatScreenRouteParams } from './ChatScreenRouteParams';
 import { pendingForwardTransfer } from './PendingForwardTransfer';
 import { pasteboard } from '@kit.BasicServicesKit';
-import { promptAction } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN = 0x0021;
@@ -29,6 +27,18 @@ export class ChatForwardModeState {
   preview: string = '';
 }
 
+export class ChatMessageActionItem {
+  id: string;
+  title: string;
+  destructive: boolean;
+
+  constructor(id: string, title: string, destructive: boolean = false) {
+    this.id = id;
+    this.title = title;
+    this.destructive = destructive;
+  }
+}
+
 export interface ChatMessageActionsHost {
   getActiveChatId(): number;
   getLifecycleToken(): number;
@@ -40,6 +50,7 @@ export interface ChatMessageActionsHost {
   getDeleteUseCase(): DeleteMessagesUseCase | undefined;
   getForwardUseCase(): ForwardMessagesUseCase | undefined;
   getPinUseCase(): PinChatMessageUseCase | undefined;
+  onPinnedMessageChanged(): void;
   isSendingMessage(): boolean;
   setSendingMessage(value: boolean): void;
   getDraftText(): string;
@@ -177,6 +188,13 @@ export class ChatMessageActionsController {
     }
   }
 
+  openForwardTargetPickerForEntry(entry: ChatTimelineEntryVO, host: ChatMessageActionsHost): void {
+    const author = entry.message.isOutgoing ? 'You' :
+      (entry.message.senderName.length > 0 ? entry.message.senderName : 'Message');
+    const preview = this.resolveReplyPreviewForEntry(entry);
+    this.openForwardTargetPicker([entry.message.messageId], author, preview, host);
+  }
+
   copyMessageText(text: string, host: ChatMessageActionsHost): void {
     if (text.trim().length === 0) {
       return;
@@ -193,95 +211,67 @@ export class ChatMessageActionsController {
     }
   }
 
-  showMessageActions(entry: ChatTimelineEntryVO, host: ChatMessageActionsHost): void {
+  buildMessageActionItems(entry: ChatTimelineEntryVO): ChatMessageActionItem[] {
     const messageText = entry.message.text.length > 0 ? entry.message.text :
       (entry.message.caption.length > 0 ? entry.message.caption : '');
     const hasText = messageText.trim().length > 0;
+    const nonEditableTypes: string[] = ['sticker', 'videoNote', 'contact', 'poll', 'location', 'game'];
+    const canEdit = entry.message.isOutgoing && hasText &&
+      !nonEditableTypes.includes(entry.message.contentType);
+
+    const items: ChatMessageActionItem[] = [
+      new ChatMessageActionItem('reply', localized($r('app.string.action_reply').id, 'Reply'))
+    ];
+
+    if (canEdit) {
+      items.push(new ChatMessageActionItem('edit', localized($r('app.string.action_edit').id, 'Edit')));
+    }
+
+    if (hasText) {
+      items.push(new ChatMessageActionItem('copy', localized($r('app.string.action_copy').id, 'Copy')));
+    }
+
+    items.push(new ChatMessageActionItem('forward', localized($r('app.string.action_forward').id, 'Forward')));
+    items.push(new ChatMessageActionItem('pin', localized($r('app.string.action_pin').id, 'Pin')));
+    items.push(new ChatMessageActionItem('delete', localized($r('app.string.action_delete').id, 'Delete'), true));
+    return items;
+  }
+
+  handleMessageActionPress(index: number, entry: ChatTimelineEntryVO, host: ChatMessageActionsHost): void {
+    const items = this.buildMessageActionItems(entry);
+    if (index < 0 || index >= items.length) {
+      return;
+    }
+
+    const messageText = entry.message.text.length > 0 ? entry.message.text :
+      (entry.message.caption.length > 0 ? entry.message.caption : '');
     const author = entry.message.isOutgoing ? 'You' :
       (entry.message.senderName.length > 0 ? entry.message.senderName : 'Message');
     const preview = this.resolveReplyPreviewForEntry(entry);
     const messageId = entry.message.messageId;
 
-    const replyBtn: promptAction.Button = {
-      text: localized($r('app.string.action_reply').id, 'Reply'),
-      color: TgUiTokens.COLOR_ICON_PRIMARY
-    };
-    const copyBtn: promptAction.Button = {
-      text: localized($r('app.string.action_copy').id, 'Copy'),
-      color: TgUiTokens.COLOR_TEXT_TITLE
-    };
-    const deleteBtn: promptAction.Button = {
-      text: localized($r('app.string.action_delete').id, 'Delete'),
-      color: TgUiTokens.COLOR_TEXT_ERROR
-    };
-    const forwardBtn: promptAction.Button = {
-      text: localized($r('app.string.action_forward').id, 'Forward'),
-      color: TgUiTokens.COLOR_TEXT_TITLE
-    };
-
-    const nonEditableTypes: string[] = ['sticker', 'videoNote', 'contact', 'poll', 'location', 'game'];
-    const canEdit = entry.message.isOutgoing && hasText &&
-      !nonEditableTypes.includes(entry.message.contentType);
-
-    const buttons: promptAction.Button[] = [];
-    const actions: (() => void)[] = [];
-
-    buttons.push(replyBtn);
-    actions.push(() => {
-      this.startReply(messageId, author, preview, entry.message.replyIsQuote, host);
-    });
-
-    if (canEdit) {
-      buttons.push({
-        text: localized($r('app.string.action_edit').id, 'Edit'),
-        color: TgUiTokens.COLOR_ICON_PRIMARY
-      });
-      actions.push(() => {
+    switch (items[index].id) {
+      case 'reply':
+        this.startReply(messageId, author, preview, entry.message.replyIsQuote, host);
+        break;
+      case 'edit':
         this.startEditMessage(messageId, messageText, host);
-      });
-    }
-
-    if (hasText) {
-      buttons.push(copyBtn);
-      actions.push(() => {
+        break;
+      case 'copy':
         this.copyMessageText(messageText, host);
-      });
+        break;
+      case 'forward':
+        this.openForwardTargetPicker([messageId], author, preview, host);
+        break;
+      case 'pin':
+        this.handlePinMessage(messageId, host);
+        break;
+      case 'delete':
+        this.handleDeleteMessage(messageId, host);
+        break;
+      default:
+        break;
     }
-
-    buttons.push(forwardBtn);
-    actions.push(() => {
-      this.openForwardTargetPicker([messageId], author, preview, host);
-    });
-
-    buttons.push({
-      text: localized($r('app.string.action_pin').id, 'Pin'),
-      color: TgUiTokens.COLOR_TEXT_TITLE
-    });
-    actions.push(() => {
-      this.handlePinMessage(messageId, host);
-    });
-
-    buttons.push(deleteBtn);
-    actions.push(() => {
-      this.handleDeleteMessage(messageId, host);
-    });
-
-    const lifecycleToken: number = host.getLifecycleToken();
-    const chatId: number = host.getActiveChatId();
-    host.getChatUIContext().getPromptAction().showActionMenu({
-      title: '',
-      buttons: buttons as [promptAction.Button, promptAction.Button?, promptAction.Button?,
-        promptAction.Button?, promptAction.Button?, promptAction.Button?]
-    }).then((result: promptAction.ActionMenuSuccessResponse) => {
-      if (lifecycleToken !== host.getLifecycleToken() || host.getActiveChatId() !== chatId) {
-        return;
-      }
-      if (result.index >= 0 && result.index < actions.length) {
-        actions[result.index]();
-      }
-    }).catch((_: Error) => {
-      // User dismissed — no action needed.
-    });
   }
 
   startEditMessage(messageId: string, originalText: string, host: ChatMessageActionsHost): void {
@@ -425,6 +415,7 @@ export class ChatMessageActionsController {
           return;
         }
         hilog.info(DOMAIN, TAG, 'Message %{public}s pinned', messageId);
+        host.onPinnedMessageChanged();
       })
       .catch((err: Error) => {
         if (!this.isPinContextActive(host, lifecycleToken, useCase, chatId)) {

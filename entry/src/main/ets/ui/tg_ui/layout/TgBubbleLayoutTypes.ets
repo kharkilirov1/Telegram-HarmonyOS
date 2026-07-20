@@ -57,11 +57,14 @@ export interface BubbleLayoutInput {
 
   // Meta
   timeText: string
+  editedText?: string
   hasStatus: boolean
 
   // Content flags
   isEmojiOnly: boolean
   forceBreakAll: boolean
+  minimumContentWidth: number
+  forceSeparateMeta: boolean
 
   // Quotes
   quoteOffsets: number[]
@@ -84,9 +87,12 @@ export function defaultBubbleLayoutInput(): BubbleLayoutInput {
     replyPreview: '',
     replyHasThumbnail: false,
     timeText: '',
+    editedText: '',
     hasStatus: false,
     isEmojiOnly: false,
     forceBreakAll: false,
+    minimumContentWidth: 0,
+    forceSeparateMeta: false,
     quoteOffsets: [],
     quoteLengths: [],
     quoteCollapsedFlags: [],

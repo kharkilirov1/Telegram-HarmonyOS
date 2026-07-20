@@ -46,6 +46,9 @@ UI-only in this step. No reply markers, reactions, edits, views, or business log
   - `MSG_META_STATUS_SENT`
   - `MSG_META_STATUS_READ`
   - `MSG_META_STATUS_FAILED`
+  - outgoing time, sent and read checks share the semantic
+    `app.color.message_meta_outgoing`; it is intentionally independent from
+    global `text_secondary` and the saturated Telegram accent
 - Layout/anti-jump:
   - `MSG_META_ROW_HEIGHT`
   - `MSG_META_MIN_WIDTH`
@@ -58,6 +61,11 @@ UI-only in this step. No reply markers, reactions, edits, views, or business log
   - `ICON_RES_CHECK_SINGLE`
   - `ICON_RES_CHECK_DOUBLE`
   - `ICON_RES_FAILED`
+- Overlay surfaces:
+  - media/location uses `MSG_MEDIA_META_OVERLAY_BG`
+  - standalone sticker status uses `MSG_STICKER_META_OVERLAY_BG`, matching
+    Telegram iOS `FreeIncoming` / `FreeOutgoing` service-date fill rather than
+    the stronger image-media overlay
 
 ## Layout Rules (contract)
 1) Right-aligned cluster uses:
@@ -69,6 +77,12 @@ UI-only in this step. No reply markers, reactions, edits, views, or business log
    - if `reserveTimeSlot=true` and `timeText` empty, render invisible time placeholder width
    - if `reserveStatusSlot=true` and status hidden, render invisible icon placeholder width
 4) Gap between time and icon is tokenized and stable.
+5) Incoming meta keeps the global secondary foreground. Outgoing time and
+   delivered/read checks use the bubble-aware outgoing secondary foreground,
+   matching the iOS `theme.message.outgoing.secondaryTextColor` contract.
+6) Overlay text/check geometry is shared, but standalone sticker status and
+   image-media status keep separate background semantics. In the default dark
+   iOS theme the free-date fill is black at 20% alpha.
 
 ## Acceptance Checklist
 - [ ] Meta cluster width is stable when status toggles (`none↔sending↔sent↔read↔failed`)
@@ -92,4 +106,6 @@ At least 10 cases including:
 
 ## Known Risks
 - Real localized time labels can exceed placeholder width; may need token tuning in calibration pass.
-- Final color parity for checks may be adjusted after integration into bubble backgrounds.
+- Dark outgoing meta is calibrated against the current shipped iOS runtime on
+  the `#406D97` outgoing bubble; recalibrate only the dedicated semantic resource,
+  not the global secondary or Telegram accent.

@@ -1,3 +1,4 @@
+import { common } from '@kit.AbilityKit';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgIcon } from './TgIcon';
 
@@ -50,6 +51,16 @@ export struct TgVoiceBubble {
 
   private bubbleColor(): ResourceColor {
     return this.isOutgoing ? TgUiTokens.COLOR_MSG_BUBBLE_OUTGOING_BG : TgUiTokens.COLOR_MSG_BUBBLE_INCOMING_BG;
+  }
+
+  private buttonBackgroundColor(): ResourceColor {
+    return this.isOutgoing ?
+      TgUiTokens.VOICE_BUBBLE_BUTTON_BG_OUTGOING : TgUiTokens.VOICE_BUBBLE_BUTTON_BG_INCOMING;
+  }
+
+  private buttonForegroundColor(): ResourceColor {
+    return this.isOutgoing ?
+      TgUiTokens.VOICE_BUBBLE_BUTTON_ICON_OUTGOING : TgUiTokens.VOICE_BUBBLE_BUTTON_ICON_INCOMING;
   }
 
   private computedBubbleWidth(): number {
@@ -208,8 +219,16 @@ export struct TgVoiceBubble {
     return bars;
   }
 
-  private inactiveColorHex(): string {
-    return this.isOutgoing ? TgUiTokens.VOICE_WAVE_INACTIVE_OUTGOING : TgUiTokens.VOICE_WAVE_INACTIVE_INCOMING;
+  private inactiveWaveColor(): string | number {
+    if (!this.isOutgoing) {
+      return TgUiTokens.VOICE_WAVE_INACTIVE_INCOMING;
+    }
+    try {
+      const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      return context.resourceManager.getColorSync(TgUiTokens.VOICE_WAVE_INACTIVE_OUTGOING.id);
+    } catch (_) {
+      return TgUiTokens.VOICE_WAVE_INACTIVE_OUTGOING_FALLBACK;
+    }
   }
 
   private activeColorHex(): string {
@@ -242,7 +261,7 @@ export struct TgVoiceBubble {
     context.lineWidth = barWidth;
 
     // Inactive bars
-    context.strokeStyle = this.inactiveColorHex();
+    context.strokeStyle = this.inactiveWaveColor();
     context.beginPath();
     for (let i = 0; i < bars.length; i++) {
       const h = Math.max(barWidth, bars[i]);
@@ -300,19 +319,19 @@ export struct TgVoiceBubble {
               })
                 .width(TgUiTokens.VOICE_BUBBLE_BUTTON_SIZE)
                 .height(TgUiTokens.VOICE_BUBBLE_BUTTON_SIZE)
-                .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
+                .color(this.buttonForegroundColor())
                 .backgroundColor(Color.Transparent)
                 .style({ strokeWidth: TgUiTokens.MEDIA_PROGRESS_STROKE })
             } else {
               LoadingProgress()
                 .width(TgUiTokens.VOICE_BUBBLE_BUTTON_ICON_SIZE)
                 .height(TgUiTokens.VOICE_BUBBLE_BUTTON_ICON_SIZE)
-                .color(TgUiTokens.MEDIA_PROGRESS_COLOR)
+                .color(this.buttonForegroundColor())
             }
             TgIcon({
               src: TgUiTokens.ICON_RES_CLOSE,
               iconSize: TgUiTokens.MEDIA_CANCEL_ICON_SIZE,
-              tintColor: TgUiTokens.MEDIA_PROGRESS_COLOR
+              tintColor: this.buttonForegroundColor()
             })
           }
           .width(TgUiTokens.VOICE_BUBBLE_BUTTON_SIZE)
@@ -321,7 +340,7 @@ export struct TgVoiceBubble {
           TgIcon({
             src: this.buttonIconResource(),
             iconSize: TgUiTokens.VOICE_BUBBLE_BUTTON_ICON_SIZE,
-            tintColor: TgUiTokens.VOICE_BUBBLE_BUTTON_ICON
+            tintColor: this.buttonForegroundColor()
           })
         }
       }
@@ -329,7 +348,7 @@ export struct TgVoiceBubble {
       .height(TgUiTokens.VOICE_BUBBLE_BUTTON_SIZE)
       .justifyContent(FlexAlign.Center)
       .alignItems(VerticalAlign.Center)
-      .backgroundColor(TgUiTokens.VOICE_BUBBLE_BUTTON_BG)
+      .backgroundColor(this.buttonBackgroundColor())
       .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
       .onClick((event: ClickEvent) => {
         this.onPlayToggle();
@@ -344,33 +363,39 @@ export struct TgVoiceBubble {
       .scale({ x: this.buttonScale, y: this.buttonScale })
       .animation({ duration: 200, curve: Curve.EaseOut })
 
-      Row() {
-        this.buildWaveform()
+      Column({ space: TgUiTokens.VOICE_BUBBLE_WAVE_DURATION_GAP }) {
+        Row() {
+          this.buildWaveform()
+        }
+        .width('100%')
+        .height(TgUiTokens.VOICE_BUBBLE_WAVE_AREA_HEIGHT)
+        .alignItems(VerticalAlign.Center)
+        .onClick(() => {})
+        .gesture(
+          PanGesture({ direction: PanDirection.Horizontal })
+            .onActionUpdate((event: GestureEvent) => {
+              const width = Math.max(1, TgUiTokens.VOICE_BUBBLE_WAVE_BARS_COUNT * (TgUiTokens.VOICE_BUBBLE_WAVE_BAR_WIDTH + TgUiTokens.VOICE_BUBBLE_WAVE_BAR_GAP));
+              const progress = Math.max(0, Math.min(1, event.offsetX / width));
+              this.onSeek(progress);
+            })
+        )
+
+        Text(this.trailingLabel())
+          .width('100%')
+          .fontSize(TgUiTokens.VOICE_BUBBLE_DURATION_SIZE)
+          .lineHeight(TgUiTokens.VOICE_BUBBLE_DURATION_LINE_HEIGHT)
+          .fontColor(this.durationColor())
+          .fontWeight(FontWeight.Regular)
+          .maxLines(1)
+          .constraintSize({ minWidth: TgUiTokens.VOICE_BUBBLE_DURATION_MIN_WIDTH })
+          .textAlign(TextAlign.Start)
+          .onClick(() => {
+            this.onTap();
+          })
       }
       .layoutWeight(1)
-      .alignItems(VerticalAlign.Center)
+      .alignItems(HorizontalAlign.Start)
       .constraintSize({ minWidth: TgUiTokens.VOICE_BUBBLE_MIN_WAVEFORM_WIDTH })
-      .onClick(() => {})
-      .gesture(
-        PanGesture({ direction: PanDirection.Horizontal })
-          .onActionUpdate((event: GestureEvent) => {
-            const width = Math.max(1, TgUiTokens.VOICE_BUBBLE_WAVE_BARS_COUNT * (TgUiTokens.VOICE_BUBBLE_WAVE_BAR_WIDTH + TgUiTokens.VOICE_BUBBLE_WAVE_BAR_GAP));
-            const progress = Math.max(0, Math.min(1, event.offsetX / width));
-            this.onSeek(progress);
-          })
-      )
-
-      Text(this.trailingLabel())
-        .fontSize(TgUiTokens.VOICE_BUBBLE_DURATION_SIZE)
-        .lineHeight(TgUiTokens.VOICE_BUBBLE_DURATION_LINE_HEIGHT)
-        .fontColor(this.durationColor())
-        .fontWeight(FontWeight.Regular)
-        .maxLines(1)
-        .constraintSize({ minWidth: TgUiTokens.VOICE_BUBBLE_DURATION_MIN_WIDTH })
-        .textAlign(TextAlign.End)
-        .onClick(() => {
-          this.onTap();
-        })
     }
     .width(this.computedBubbleWidth())
     .padding({

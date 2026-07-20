@@ -13,12 +13,14 @@ export struct TgMediaGalleryPageDemo {
   private makeItem(type: string, messageId: string, path: string, thumbnailPath: string,
     caption: string, senderName: string, timestamp: string, width: number, height: number,
     durationSec: number = 0, fileId: number = 0, isDownloading: boolean = false,
-    downloadProgress: number = -1): MediaGalleryItem {
+    downloadProgress: number = -1, minithumb: string = ''): MediaGalleryItem {
     const item = new MediaGalleryItem();
     item.type = type;
     item.messageId = messageId;
+    item.sourceMessageId = messageId;
     item.path = path;
     item.thumbnailPath = thumbnailPath;
+    item.minithumb = minithumb;
     item.caption = caption;
     item.senderName = senderName;
     item.timestamp = timestamp;
@@ -68,7 +70,10 @@ export struct TgMediaGalleryPageDemo {
       this.makeItem('photo', 'missing_photo', '', '/demo/gallery/missing_photo_thumb.jpg',
         'Not-downloaded photo with thumbnail', 'Cloud', '13:01', 1280, 960, 0, 501),
       this.makeItem('video', 'missing_video', '', '/demo/gallery/missing_video_thumb.jpg',
-        'Not-downloaded video with thumbnail', 'Cloud', '13:02', 720, 1280, 44, 502)
+        'Not-downloaded video with thumbnail', 'Cloud', '13:02', 720, 1280, 44, 502),
+      this.makeItem('video', 'minithumb_video', '', '',
+        'Remote video with TDLib minithumbnail fallback', 'Cloud', '13:03', 720, 1280, 26, 505, false, -1,
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2SdcAAAAASUVORK5CYII=')
     ];
   }
 
@@ -158,7 +163,8 @@ export struct TgMediaGalleryPageDemo {
           this.videoItems())
         this.galleryCase('04 animation/GIF item', 'Animation item loops muted and hides normal video controls.',
           this.animationItems())
-        this.galleryCase('05 not-downloaded media', 'Missing full path delegates download through centered affordance.',
+        this.galleryCase('05 not-downloaded media',
+          'Missing full path opens a transfer surface; local thumbnail wins and TDLib minithumb is the fallback.',
           this.notDownloadedItems())
         this.galleryCase('06 downloading media', 'Progress/spinner states render in the gallery and tap cancels via parent.',
           this.downloadingItems())

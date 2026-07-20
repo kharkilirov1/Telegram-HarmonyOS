@@ -5,7 +5,9 @@ import {
   ChatMessageRowVO,
   ChatTimelineEntryVO,
   ChatTimelineBuildResult,
-  buildChatTimeline
+  buildChatTimeline,
+  composeChatDateSeparatorLabel,
+  timelineEntryContainsMessageId
 } from '../../../main/ets/ui/pages/chat/ChatTimelineVO';
 import {
   PendingMediaOpenIntent,
@@ -13,8 +15,13 @@ import {
 } from '../../../main/ets/ui/pages/chat/PendingMediaOpenIntent';
 import { resolveRefreshedMediaGalleryState } from '../../../main/ets/ui/pages/chat/MediaGalleryState';
 import { MediaGalleryItem } from '../../../main/ets/models/MediaGalleryItem';
-import { AppState, Chat, User, UsersState, ChatsState } from '../../../main/ets/core/model/AppState';
+import { AppState, Chat, Message, User, UsersState, ChatsState } from '../../../main/ets/core/model/AppState';
+import { createAssociatedMessageKey } from '../../../main/ets/core/utils/replyMessageKey';
 import { TgMessageSendStatus } from '../../../main/ets/ui/tg_ui/atoms/TgMessageMeta';
+import {
+  ChatUnreadEntrySnapshot,
+  PendingChatUnreadSnapshot
+} from '../../../main/ets/ui/pages/chat/PendingChatUnreadSnapshot';
 
 /**
  * Unit tests for ChatTimelineVO — view model building for chat timeline.
@@ -157,6 +164,195 @@ export default function chatTimelineVOTest() {
         expect(result.chatTitle).assertEqual('Test Chat');
         expect(result.entries.length).assertEqual(0);
       });
+
+      it('should preserve a zero sticky unread boundary after live read fields reset', 0, () => {
+        const state = makeMinimalState();
+        const chat = new Chat();
+        chat.id = 104;
+        chat.title = 'Unread boundary';
+        chat.type = 'group';
+        chat.unreadCount = 0;
+        chat.lastReadInboxMessageId = '1002';
+        state.chats.chats.set(chat.id, chat);
+
+        const first = new Message();
+        first.id = '1001';
+        first.chatId = chat.id;
+        first.timestamp = 1000;
+        first.content.text = 'first unread';
+        const second = new Message();
+        second.id = '1002';
+        second.chatId = chat.id;
+        second.timestamp = 1001;
+        second.content.text = 'second unread';
+        const messages = new Map<string, Message>();
+        messages.set(first.id, first);
+        messages.set(second.id, second);
+        state.messages.messages.set(chat.id, messages);
+
+        const result = buildChatTimeline(chat.id, state, '0');
+        expect(result.unreadEntryIndex >= 0).assertTrue();
+        expect(result.entries[result.unreadEntryIndex].kind).assertEqual('unread');
+        expect(result.entries[result.unreadEntryIndex + 1].message.messageId).assertEqual('1001');
+      });
+
+      it('should not insert an unread marker without a sticky or live unread boundary', 0, () => {
+        const state = makeMinimalState();
+        const chat = new Chat();
+        chat.id = 105;
+        chat.title = 'Read chat';
+        chat.type = 'group';
+        chat.unreadCount = 0;
+        chat.lastReadInboxMessageId = '1001';
+        state.chats.chats.set(chat.id, chat);
+
+        const message = new Message();
+        message.id = '1001';
+        message.chatId = chat.id;
+        message.timestamp = 1000;
+        message.content.text = 'already read';
+        const messages = new Map<string, Message>();
+        messages.set(message.id, message);
+        state.messages.messages.set(chat.id, messages);
+
+        const result = buildChatTimeline(chat.id, state);
+        expect(result.unreadEntryIndex).assertEqual(-1);
+      });
+
+      it('should project link preview fields into the rendered message row', 0, () => {
+        const state = makeMinimalState();
+        const chat = new Chat();
+        chat.id = 101;
+        chat.title = 'Preview chat';
+        chat.type = 'group';
+        state.chats.chats.set(101, chat);
+
+        const message = new Message();
+        message.id = '1001';
+        message.chatId = 101;
+        message.timestamp = 1000;
+        message.content.text = 'https://telegram.org';
+        message.content.linkPreviewUrl = 'https://telegram.org/blog/example';
+        message.content.linkPreviewSiteName = 'Telegram';
+        message.content.linkPreviewTitle = 'Preview title';
+        message.content.linkPreviewDescription = 'Preview description';
+        message.content.linkPreviewPhotoThumbPath = '/data/files/preview.jpg';
+        message.content.linkPreviewPhotoThumbFileId = 91;
+        message.content.linkPreviewShowLargeMedia = true;
+        const chatMessages = new Map<string, Message>();
+        chatMessages.set(message.id, message);
+        state.messages.messages.set(101, chatMessages);
+
+        const result = buildChatTimeline(101, state);
+        let row = new ChatMessageRowVO();
+        for (const entry of result.entries) {
+          if (entry.kind === 'message') {
+            row = entry.message;
+          }
+        }
+        expect(row.linkPreviewUrl).assertEqual('https://telegram.org/blog/example');
+        expect(row.linkPreviewSiteName).assertEqual('Telegram');
+        expect(row.linkPreviewDescription).assertEqual('Preview description');
+        expect(row.linkPreviewPhotoPath).assertEqual('file:///data/files/preview.jpg');
+        expect(row.linkPreviewPhotoThumbFileId).assertEqual(91);
+        expect(row.linkPreviewShowLargeMedia).assertTrue();
+      });
+
+      it('should project TDLib editDate into localized message meta text', 0, () => {
+        const state = makeMinimalState();
+        const chat = new Chat();
+        chat.id = 103;
+        chat.title = 'Edited message';
+        state.chats.chats.set(103, chat);
+
+        const message = new Message();
+        message.id = '1003';
+        message.chatId = 103;
+        message.timestamp = 1000;
+        message.editDate = 1001;
+        message.content.text = 'edited body';
+        const chatMessages = new Map<string, Message>();
+        chatMessages.set(message.id, message);
+        state.messages.messages.set(103, chatMessages);
+
+        const result = buildChatTimeline(103, state);
+        let editedText = '';
+        for (const entry of result.entries) {
+          if (entry.kind === 'message') {
+            editedText = entry.message.editedText;
+          }
+        }
+        expect(editedText.length > 0).assertTrue();
+      });
+
+      it('should resolve a cross-chat reply from context-scoped associated storage', 0, () => {
+        const state = makeMinimalState();
+        const chat = new Chat();
+        chat.id = 102;
+        chat.title = 'Replies';
+        chat.type = 'group';
+        state.chats.chats.set(102, chat);
+
+        const reply = new Message();
+        reply.id = '1002';
+        reply.chatId = 102;
+        reply.timestamp = 1000;
+        reply.replyToChatId = 102;
+        reply.replyToMessageId = '42';
+        reply.content.text = 'Reply body';
+        const liveMessages = new Map<string, Message>();
+        liveMessages.set('1002', reply);
+        state.messages.messages.set(102, liveMessages);
+
+        const placeholderResult = buildChatTimeline(102, state);
+        let placeholderKey = '';
+        for (const entry of placeholderResult.entries) {
+          if (entry.kind === 'message') {
+            placeholderKey = entry.key;
+          }
+        }
+
+        const original = new Message();
+        original.id = '42';
+        original.chatId = 200;
+        original.timestamp = 900;
+        original.content.text = 'Hydrated original';
+        const associated = new Map<string, Message>();
+        associated.set(createAssociatedMessageKey(102, '42'), original);
+        state.messages.associatedMessages.set(102, associated);
+
+        const result = buildChatTimeline(102, state);
+        let row = new ChatMessageRowVO();
+        let hydratedKey = '';
+        for (const entry of result.entries) {
+          if (entry.kind === 'message') {
+            row = entry.message;
+            hydratedKey = entry.key;
+          }
+        }
+        expect(row.replyPreview).assertEqual('Hydrated original');
+        expect(hydratedKey === placeholderKey).assertFalse();
+      });
+    });
+
+    describe('PendingChatUnreadSnapshot', () => {
+      it('should preserve TDLib zero as a valid one-shot unread boundary', 0, () => {
+        PendingChatUnreadSnapshot.set(104, '0', 12);
+        const snapshot: ChatUnreadEntrySnapshot | undefined = PendingChatUnreadSnapshot.consume(104);
+        expect(snapshot !== undefined).assertTrue();
+        if (snapshot) {
+          expect(snapshot.lastReadInboxMessageId).assertEqual('0');
+          expect(snapshot.unreadCount).assertEqual(12);
+        }
+        expect(PendingChatUnreadSnapshot.consume(104) === undefined).assertTrue();
+      });
+
+      it('should not consume another chat unread snapshot', 0, () => {
+        PendingChatUnreadSnapshot.set(105, '1001', 3);
+        expect(PendingChatUnreadSnapshot.consume(106) === undefined).assertTrue();
+        const snapshot: ChatUnreadEntrySnapshot | undefined = PendingChatUnreadSnapshot.consume(105);
+        expect(snapshot !== undefined).assertTrue();
+      });
     });
 
     // -----------------------------------------------------------------------
@@ -187,6 +383,11 @@ export default function chatTimelineVOTest() {
       it('should default sendStatus to None', 0, () => {
         const vo = new ChatMessageRowVO();
         expect(vo.sendStatus).assertEqual(TgMessageSendStatus.None);
+      });
+
+      it('should default editedText to empty', 0, () => {
+        const vo = new ChatMessageRowVO();
+        expect(vo.editedText).assertEqual('');
       });
 
       it('should default contentType to text', 0, () => {
@@ -307,6 +508,39 @@ export default function chatTimelineVOTest() {
         const entry = new ChatTimelineEntryVO();
         expect(entry.message.messageId).assertEqual('0');
         expect(entry.message.contentType).assertEqual('text');
+      });
+
+      it('should match every source message collapsed into an album row', 0, () => {
+        const entry = new ChatTimelineEntryVO();
+        entry.kind = 'message';
+        entry.message.messageId = '100';
+        entry.message.sourceMessageIds = ['100', '101', '102'];
+        expect(timelineEntryContainsMessageId(entry, '101')).assertTrue();
+        expect(timelineEntryContainsMessageId(entry, '999')).assertFalse();
+      });
+    });
+
+    // -----------------------------------------------------------------------
+    // Chat date separator labels
+    // -----------------------------------------------------------------------
+    describe('formatChatDateSeparatorLabel', () => {
+
+      it('should use localized month and day instead of a weekday for recent dates', 0, () => {
+        const label = composeChatDateSeparatorLabel(
+          14, 'July', 2026, false, '{month} {day}', '{month} {day}, {year}');
+        expect(label).assertEqual('July 14');
+      });
+
+      it('should include the year only when the message is from another year', 0, () => {
+        const label = composeChatDateSeparatorLabel(
+          14, 'July', 2025, true, '{month} {day}', '{month} {day}, {year}');
+        expect(label).assertEqual('July 14, 2025');
+      });
+
+      it('should respect app-language word order and genitive month forms', 0, () => {
+        const label = composeChatDateSeparatorLabel(
+          14, 'июля', 2026, false, '{day} {month}', '{day} {month} {year}');
+        expect(label).assertEqual('14 июля');
       });
     });
 
@@ -438,6 +672,7 @@ export default function chatTimelineVOTest() {
 
         expect(result.shouldClose).assertFalse();
         expect(result.currentIndex).assertEqual(1);
+        expect(result.sourceMessageId).assertEqual('video-1');
         expect(result.items[1].path).assertEqual('/data/video.mp4');
       });
 
@@ -454,6 +689,7 @@ export default function chatTimelineVOTest() {
 
         expect(result.shouldClose).assertFalse();
         expect(result.currentIndex).assertEqual(0);
+        expect(result.sourceMessageId).assertEqual('photo-1');
       });
 
       it('should request gallery close when refreshed media list is empty', 0, () => {
@@ -461,6 +697,7 @@ export default function chatTimelineVOTest() {
 
         expect(result.shouldClose).assertTrue();
         expect(result.currentIndex).assertEqual(0);
+        expect(result.sourceMessageId).assertEqual('0');
         expect(result.items.length).assertEqual(0);
       });
     });

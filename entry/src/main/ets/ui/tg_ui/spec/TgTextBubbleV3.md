@@ -15,6 +15,8 @@ Engine-driven text bubble for the live router path:
   - ArkUI `textOverflow` / `maxLines`
   - ArkUI `MeasureUtils.measureText` / `measureTextSize`
 
+Dark surface colors are runtime-calibrated from the supplied current iPhone reference through qualified semantic resources (`incoming #1E2E3D`, `outgoing #406D97`), not hardcoded in this atom.
+
 ## Inputs
 ### Layout
 - `layout: TextBubbleLayout | null`
@@ -48,6 +50,7 @@ Engine-driven text bubble for the live router path:
 
 ### Meta
 - `timeText: string`
+- `editedText: string` (localized label derived from TDLib `edit_date`; empty for unedited messages)
 - `sendStatus: TgMessageSendStatus`
 
 ### Visual
@@ -58,11 +61,13 @@ Engine-driven text bubble for the live router path:
 ## Contract
 1. Width/height ownership lives in `TextBubbleLayout`, computed before render.
 2. Bubble width must shrink-wrap to text/reply/meta content, bounded by Telegram max-width tokens.
+   Compact portrait lanes use the iOS `0.85` maximum fill so a short final line may widen enough to keep time/status inline instead of forcing an avoidable meta row.
 3. Hard line breaks in message text must stay visible.
 4. Failed outgoing messages must reserve meta width exactly like sent/read states.
 5. Quote blocks must contribute to bubble height/width in the layout pass.
 6. `metaInline=false` means a dedicated trailing meta row; `metaInline=true` means overlay in the bottom-right lane.
 7. Bubble grouping flags use `none | top | middle | bottom` (`both` is accepted only as legacy alias for `middle`): `top` shrinks the lower tail-side corner, `middle` shrinks both tail-side corners, and `bottom` shrinks the upper tail-side corner.
+8. The same composed localized `editedText + timeText` string must be used for both meta measurement and rendering; never infer edit state from message text.
 
 ## Current composition
 - bubble shell: `TgTextBubbleV3`

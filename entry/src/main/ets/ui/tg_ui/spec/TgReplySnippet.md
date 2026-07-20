@@ -7,7 +7,8 @@ Implement Telegram-like reply snippet block used above message text:
 - reply preview text
 - optional media thumbnail
 
-UI-only scope for this step. No tap actions, no media loading logic, no entity interactions.
+The visual atom stays UI-only. Live integration additionally hydrates missing
+reply originals so the atom receives real author/preview/thumbnail data.
 
 ## iOS References
 - `submodules/TelegramUI/Components/Chat/ChatMessageReplyInfoNode/Sources/ChatMessageReplyInfoNode.swift`
@@ -18,6 +19,38 @@ UI-only scope for this step. No tap actions, no media loading logic, no entity i
   - integration placement inside bubble content stack
 - `submodules/TelegramUI/Components/Chat/ChatMessageTextBubbleContentNode/Sources/ChatMessageTextBubbleContentNode.swift`
   - trailing/meta coexistence constraints with message body
+- `submodules/TelegramCore/Sources/Account/AccountIntermediateState.swift:800-814`
+  - records `ReplyMessageAttribute.messageId` as an associated-message dependency
+
+## Behavior References
+- TDLib: `tdlib/td/generate/scheme/td_api.tl:10295-10304`
+  - `getRepliedMessage(chat_id, message_id)` receives the **replying message id**
+  - returns the original non-bundled message or an error when unavailable
+- Telegram Android:
+  `TMessagesProj/src/main/java/org/telegram/messenger/MediaDataController.java:6252-6285`
+  - resolves replies already present in the loaded batch first
+  - gathers missing originals afterward and updates the same message row
+
+## Live Hydration Contract
+1) `ChatTimelineVO` remains a pure projection and may temporarily emit the
+   localized generic fallback while the original is absent.
+2) `ReplyHydrationCoordinator` scans the loaded chat window newest-first,
+   collapses duplicate targets, and caps work to 8 requests per pass / 32 per
+   page session.
+3) `getRepliedMessage` is sent with the replying row's id, never the missing
+   target id.
+4) A valid returned `message` is stored in a context-scoped associated-message
+   map under `<reply_to.chat_id>:<message_id>`, not inserted into normal chat
+   history. TDLib may return an original whose actual `chat_id` differs from
+   the relationship chat id, so those two identities must remain separate.
+5) The existing timeline rebuild and `ChatTimelineDataSource.sameMessage`
+   reply-field diff replace the placeholder in-place. The `LazyForEach` item
+   key carries a compact reply render stamp because `@ComponentV2` `@Param`
+   values remain frozen when only `onDataChange` fires on the current runtime.
+   Only loaded chat rows are scanned for new work; associated originals are
+   lookup data, not a recursive hydration queue.
+6) Failed or deleted originals are attempted once per page session, avoiding a
+   rebuild/request loop. Re-entering the chat permits a fresh attempt.
 
 ## Props / Inputs
 - `author: string`
@@ -70,6 +103,7 @@ UI-only scope for this step. No tap actions, no media loading logic, no entity i
 - [ ] Thumbnail does not shift text block unexpectedly
 - [ ] Narrow and wide container behavior remains stable
 - [ ] Tokens-only implementation (no magic visual constants)
+- [ ] Missing original is hydrated in-place without duplicate request storms
 
 ## Demo Requirements (`TgReplySnippetDemo.ets`)
 At least 10 cases:

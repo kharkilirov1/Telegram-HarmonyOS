@@ -23,6 +23,14 @@ export struct TgMessageRouterDemo {
           containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH
         })
 
+        this.buildSection('broadcast channel: full-width text lane')
+        TgMessageRouter({
+          contentType: 'text',
+          text: 'A long broadcast post uses the iOS full-width lane while preserving space for the trailing share action.',
+          isBroadcastChannel: true,
+          containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH
+        })
+
         this.buildSection('photo')
         TgMessageRouter({
           contentType: 'photo',

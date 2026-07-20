@@ -1,5 +1,6 @@
 import { TgIcon } from './TgIcon';
 import { TgUiTokens } from '../tokens/TgUiTokens';
+import { composeMessageMetaText } from '../utils/TgMessageMetaText';
 
 export enum TgMessageSendStatus {
   None = 0,
@@ -12,6 +13,7 @@ export enum TgMessageSendStatus {
 @ComponentV2
 export struct TgMessageMeta {
   @Param timeText: string = '';
+  @Param editedText: string = '';
   @Param sendStatus: TgMessageSendStatus = TgMessageSendStatus.None;
   @Param isOutgoing: boolean = true;
 
@@ -22,7 +24,11 @@ export struct TgMessageMeta {
   @Param overlayMode: boolean = false; // white text on dark overlay (for media)
 
   private hasTimeText(): boolean {
-    return this.timeText.trim().length > 0;
+    return this.metaText().length > 0;
+  }
+
+  private metaText(): string {
+    return composeMessageMetaText(this.editedText, this.timeText);
   }
 
   private hasStatusIcon(): boolean {
@@ -70,7 +76,7 @@ export struct TgMessageMeta {
   @Builder
   private buildTimeSlot() {
     if (this.hasTimeText()) {
-      Text(this.timeText)
+      Text(this.metaText())
         .fontSize(TgUiTokens.MSG_META_SIZE)
         .fontColor(this.timeColor())
         .maxLines(1)

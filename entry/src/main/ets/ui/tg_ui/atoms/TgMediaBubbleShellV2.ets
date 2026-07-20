@@ -6,11 +6,14 @@ import { TgAnimationBubble } from './TgAnimationBubble';
 import { TgReplySnippet } from './TgReplySnippet';
 import { TgTextBodyV3 } from './TgTextBodyV3';
 import { TgMessageMeta, TgMessageSendStatus } from './TgMessageMeta';
+import { mediaGeometryTransitionId } from '../utils/TgMediaGeometryTransition';
 
 @ComponentV2
 export struct TgMediaBubbleShellV2 {
   @Param mediaKind: string = 'photo'; // photo | photoAlbum | video | animation
   @Param messageId: string = '0';
+  @Param hideMediaForTransition: boolean = false;
+  @Param hiddenMediaMessageId: string = '0';
   @Param isOutgoing: boolean = false;
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
   @Param maxWidthRatio: number = TgUiTokens.BUBBLE_MAX_WIDTH_RATIO;
@@ -33,6 +36,12 @@ export struct TgMediaBubbleShellV2 {
   @Param photoHeight: number = 0;
   @Param albumPhotoPaths: string[] = [];
   @Param albumPhotoMinithumbs: string[] = [];
+  @Param albumPhotoMessageIds: string[] = [];
+  @Param albumPhotoFileIds: number[] = [];
+  @Param albumPhotoHasLocal: boolean[] = [];
+  @Param albumPhotoDownloading: boolean[] = [];
+  @Param albumPhotoDownloadFailed: boolean[] = [];
+  @Param albumPhotoDownloadProgress: number[] = [];
   @Param albumPhotoWidths: number[] = [];
   @Param albumPhotoHeights: number[] = [];
 
@@ -64,8 +73,9 @@ export struct TgMediaBubbleShellV2 {
   @Param sendStatus: TgMessageSendStatus = TgMessageSendStatus.None;
 
   @Event onMediaDownloadRequest: (fileId: number) => void = (_: number) => {};
+  @Event onMediaDownloadCancel: (fileId: number) => void = (_: number) => {};
   @Event onPhotoTap: () => void = () => {};
-  @Event onAlbumPhotoTap: (photoPath: string, caption: string) => void = (_: string, __: string) => {};
+  @Event onAlbumPhotoTap: (albumIndex: number) => void = (_: number) => {};
   @Event onMediaGalleryOpen: (messageId: string) => void = (_: string) => {};
 
   private bubbleColor(): ResourceColor {
@@ -129,6 +139,30 @@ export struct TgMediaBubbleShellV2 {
 
   private maxBubbleWidth(): number {
     return TgUiTokens.resolveBubbleMaxWidth(this.containerWidth, this.maxWidthRatio);
+  }
+
+  private albumFileId(index: number): number {
+    return index >= 0 && index < this.albumPhotoFileIds.length ? this.albumPhotoFileIds[index] : 0;
+  }
+
+  private albumHasLocal(index: number): boolean {
+    return index >= 0 && index < this.albumPhotoHasLocal.length ? this.albumPhotoHasLocal[index] : false;
+  }
+
+  private albumDownloading(index: number): boolean {
+    return index >= 0 && index < this.albumPhotoDownloading.length ? this.albumPhotoDownloading[index] : false;
+  }
+
+  private handleAlbumDownloadToggle(index: number): void {
+    const fileId = this.albumFileId(index);
+    if (fileId <= 0) {
+      return;
+    }
+    if (this.albumDownloading(index)) {
+      this.onMediaDownloadCancel(fileId);
+    } else if (!this.albumHasLocal(index)) {
+      this.onMediaDownloadRequest(fileId);
+    }
   }
 
   private photoVisualBubbleWidth(): number {
@@ -230,23 +264,36 @@ export struct TgMediaBubbleShellV2 {
         useRegularMaxDimensions: this.usesRegularBubbleLayout(),
         onPhotoTap: () => { this.onPhotoTap(); },
         onDownloadToggle: () => {
-          if (!this.hasLocalPhoto && !this.isPhotoDownloading && this.photoFileId > 0) {
+          if (this.isPhotoDownloading && this.photoFileId > 0) {
+            this.onMediaDownloadCancel(this.photoFileId);
+          } else if (!this.hasLocalPhoto && this.photoFileId > 0) {
             this.onMediaDownloadRequest(this.photoFileId);
           }
         }
       })
     } else if (this.mediaKind === 'photoAlbum') {
       TgGroupedPhotoBubble({
+        messageId: this.messageId,
         photoPaths: this.albumPhotoPaths,
         photoMinithumbs: this.albumPhotoMinithumbs,
+        photoMessageIds: this.albumPhotoMessageIds,
+        photoFileIds: this.albumPhotoFileIds,
+        photoHasLocal: this.albumPhotoHasLocal,
+        photoDownloading: this.albumPhotoDownloading,
+        photoDownloadFailed: this.albumPhotoDownloadFailed,
+        photoDownloadProgress: this.albumPhotoDownloadProgress,
         photoWidths: this.albumPhotoWidths,
         photoHeights: this.albumPhotoHeights,
         isOutgoing: this.isOutgoing,
         containerWidth: this.maxBubbleWidth(),
         maxWidthRatio: 1.0,
         noBubbleWrap: true,
-        onPhotoTap: (photoPath: string) => {
-          this.onAlbumPhotoTap(photoPath, this.caption);
+        hiddenPhotoMessageId: this.hiddenMediaMessageId,
+        onPhotoTap: (albumIndex: number) => {
+          this.onAlbumPhotoTap(albumIndex);
+        },
+        onDownloadToggle: (albumIndex: number) => {
+          this.handleAlbumDownloadToggle(albumIndex);
         }
       })
     } else if (this.mediaKind === 'animation') {
@@ -300,6 +347,26 @@ export struct TgMediaBubbleShellV2 {
     }
   }
 
+  @Builder
+  private buildTransitionedMediaNode() {
+    if (this.mediaKind === 'photoAlbum') {
+      this.buildMediaNode()
+    } else if (this.hideMediaForTransition) {
+      Stack({ alignContent: Alignment.Center }) {
+        this.buildMediaNode()
+      }
+      .width(this.visualMediaBubbleWidth())
+      .visibility(Visibility.Hidden)
+    } else {
+      Stack({ alignContent: Alignment.Center }) {
+        this.buildMediaNode()
+      }
+      .width(this.visualMediaBubbleWidth())
+      .geometryTransition(mediaGeometryTransitionId(this.messageId))
+      .transition(TransitionEffect.OPACITY)
+    }
+  }
+
   build() {
     Row() {
       Column() {
@@ -341,7 +408,7 @@ export struct TgMediaBubbleShellV2 {
 
         if (!this.hasCaption()) {
           Stack({ alignContent: Alignment.BottomEnd }) {
-            this.buildMediaNode()
+            this.buildTransitionedMediaNode()
 
             Row() {
               this.buildInlineMeta(true)
@@ -361,7 +428,7 @@ export struct TgMediaBubbleShellV2 {
           }
           .width(this.visualMediaBubbleWidth())
         } else {
-          this.buildMediaNode()
+          this.buildTransitionedMediaNode()
 
           if (this.hasCaptionQuoteBlocks()) {
             Stack({ alignContent: Alignment.BottomEnd }) {

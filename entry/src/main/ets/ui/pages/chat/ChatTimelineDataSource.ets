@@ -152,6 +152,21 @@ export class ChatTimelineDataSource implements IDataSource {
       this.sameNumberArray(prev.captionQuoteOffsets, next.captionQuoteOffsets) &&
       this.sameNumberArray(prev.captionQuoteLengths, next.captionQuoteLengths) &&
       this.sameBoolArray(prev.captionQuoteCollapsedFlags, next.captionQuoteCollapsedFlags) &&
+      prev.linkPreviewUrl === next.linkPreviewUrl &&
+      prev.linkPreviewDisplayUrl === next.linkPreviewDisplayUrl &&
+      prev.linkPreviewSiteName === next.linkPreviewSiteName &&
+      prev.linkPreviewTitle === next.linkPreviewTitle &&
+      prev.linkPreviewDescription === next.linkPreviewDescription &&
+      prev.linkPreviewAuthor === next.linkPreviewAuthor &&
+      prev.linkPreviewPhotoPath === next.linkPreviewPhotoPath &&
+      prev.linkPreviewPhotoMinithumb === next.linkPreviewPhotoMinithumb &&
+      prev.linkPreviewPhotoFileId === next.linkPreviewPhotoFileId &&
+      prev.linkPreviewPhotoThumbFileId === next.linkPreviewPhotoThumbFileId &&
+      prev.linkPreviewPhotoWidth === next.linkPreviewPhotoWidth &&
+      prev.linkPreviewPhotoHeight === next.linkPreviewPhotoHeight &&
+      prev.linkPreviewShowLargeMedia === next.linkPreviewShowLargeMedia &&
+      prev.linkPreviewShowMediaAboveDescription === next.linkPreviewShowMediaAboveDescription &&
+      prev.linkPreviewShowAboveText === next.linkPreviewShowAboveText &&
       prev.photoPath === next.photoPath &&
       prev.photoMinithumb === next.photoMinithumb &&
       prev.photoFileId === next.photoFileId &&

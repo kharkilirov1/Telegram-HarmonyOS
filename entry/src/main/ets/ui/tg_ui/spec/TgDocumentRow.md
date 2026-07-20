@@ -63,6 +63,8 @@ UI atom scope for this step. Runtime download/cancel/open ownership stays in `Tg
   - `DOCUMENT_ROW_ICON_BG`, `DOCUMENT_ROW_ICON_TINT`
   - `DOCUMENT_ROW_ACTION_BG`, `DOCUMENT_ROW_ACTION_ICON`
 - `DOCUMENT_ROW_TITLE_INCOMING/OUTGOING`
+- `DOCUMENT_ROW_META_INCOMING/OUTGOING`; outgoing metadata is bubble-aware
+  secondary text and intentionally does not reuse global `text_secondary`
 - `DOCUMENT_ROW_META_INCOMING/OUTGOING`
 - `DOCUMENT_ROW_PROGRESS_BG/FILL`
 - `MEDIA_OVERLAY_DARK`, `MEDIA_PROGRESS_COLOR`

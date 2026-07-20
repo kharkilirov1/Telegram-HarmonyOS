@@ -88,17 +88,18 @@ export struct TgMessageTimeContractDemo {
           })
         })
 
-        this.caseBlock('03 location without venue — overlay meta on map', () => {
+        this.caseBlock('03 grouped top — location without venue', () => {
           TgMessageRouter({
             contentType: 'location',
             locationLatitude: 43.2389,
             locationLongitude: 76.8897,
             timeText: '09:48',
+            groupingFlags: 'top',
             containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH
           })
         })
 
-        this.caseBlock('04 venue card — footer meta inside bubble', () => {
+        this.caseBlock('04 grouped middle — venue card', () => {
           TgMessageRouter({
             contentType: 'location',
             locationLatitude: 43.2389,
@@ -108,17 +109,19 @@ export struct TgMessageTimeContractDemo {
             timeText: '09:52',
             isOutgoing: true,
             sendStatus: TgMessageSendStatus.Sent,
+            groupingFlags: 'middle',
             containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH
           })
         })
 
-        this.caseBlock('05 contact — trailing footer meta', () => {
+        this.caseBlock('05 grouped bottom — contact', () => {
           TgMessageRouter({
             contentType: 'contact',
             contactFirstName: 'Alex',
             contactLastName: 'Johnson',
             contactPhoneNumber: '+1 202 555 0188',
             timeText: '10:01',
+            groupingFlags: 'bottom',
             containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH
           })
         })
