@@ -4,6 +4,7 @@
 import {
   AnyAppEvent,
   ChatActionEvent,
+  ChatListUnreadMessageCountChangedEvent,
   ChatReadInboxEvent,
   ChatReadOutboxEvent,
   createNewChatEvent,
@@ -15,8 +16,9 @@ import {
   ChatLastMessage,
   ChatPhoto,
   extractLastMessage,
-  extractMainListPosition,
-  extractChatPhoto
+  extractChatListPosition,
+  extractChatPhoto,
+  extractCustomEmojiTextEntities
 } from '../../model/dto/ChatDto';
 import { TdObject } from '../../../models/TdTypes';
 import {
@@ -27,6 +29,27 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN = 0x0003;
 const TAG = 'ChatNormalizer';
+
+function applyChatListPosition(updates: ChatUpdateDto, position: TdObject): boolean {
+  const posInfo = extractChatListPosition(position);
+  if (posInfo === undefined) {
+    return false;
+  }
+  if (posInfo.listType === 'chatListMain') {
+    updates.isPinned = posInfo.isPinned;
+    updates.order = posInfo.order;
+  } else if (posInfo.listType === 'chatListArchive') {
+    updates.isArchivePinned = posInfo.isPinned;
+    updates.archiveOrder = posInfo.order;
+  }
+  return true;
+}
+
+function applyChatListPositions(updates: ChatUpdateDto, positions: TdObject[]): void {
+  for (const position of positions) {
+    applyChatListPosition(updates, position);
+  }
+}
 
 function handleNewChat(events: AnyAppEvent[], update: TdObject): void {
   const chat = tdGetObject(update, 'chat');
@@ -98,16 +121,7 @@ function handleChatLastMessage(events: AnyAppEvent[], update: TdObject): void {
     updates.lastMessage = emptyLastMessage;
   }
 
-  // Extract pinned state and order from positions if present
-  const positions = tdGetArray(update, 'positions');
-  for (const pos of positions) {
-    const posInfo = extractMainListPosition(pos);
-    if (posInfo !== undefined) {
-      updates.isPinned = posInfo.isPinned;
-      updates.order = posInfo.order;
-      break;
-    }
-  }
+  applyChatListPositions(updates, tdGetArray(update, 'positions'));
 
   const lastReadOutboxMessageId = tdGetInt64(update, 'last_read_outbox_message_id');
   if (lastReadOutboxMessageId !== '0') {
@@ -128,12 +142,16 @@ function handleChatAddedToList(events: AnyAppEvent[], update: TdObject): void {
 
   const listObj = tdGetObject(update, 'chat_list');
   const listType = tdGetString(listObj, '@type');
-  if (listType !== 'chatListMain') return;
-
-  hilog.info(DOMAIN, TAG, 'chatAddedToList chatId=%{public}d (main list)', chatId);
   const updates = new ChatUpdateDto();
   const fallbackOrder = (Math.floor(Date.now() / 1000)).toString();
-  updates.order = fallbackOrder;
+  if (listType === 'chatListMain') {
+    updates.order = fallbackOrder;
+  } else if (listType === 'chatListArchive') {
+    updates.archiveOrder = fallbackOrder;
+  } else {
+    return;
+  }
+  hilog.info(DOMAIN, TAG, 'chatAddedToList chatId=%{public}d list=%{public}s', chatId, listType);
   events.push(createChatUpdatedEvent(chatId, updates));
 }
 
@@ -144,12 +162,8 @@ function handleChatPosition(events: AnyAppEvent[], update: TdObject): void {
   const position = tdGetObject(update, 'position');
   if (!tdHasKeys(position)) return;
 
-  const posInfo = extractMainListPosition(position);
-  if (posInfo === undefined) return; // Not chatListMain — ignore
-
   const updates = new ChatUpdateDto();
-  updates.isPinned = posInfo.isPinned;
-  updates.order = posInfo.order;
+  if (!applyChatListPosition(updates, position)) return;
   events.push(createChatUpdatedEvent(chatId, updates));
 }
 
@@ -176,6 +190,20 @@ function handleChatReadOutbox(events: AnyAppEvent[], update: TdObject): void {
   events.push(event);
 }
 
+function handleUnreadMessageCount(events: AnyAppEvent[], update: TdObject): void {
+  const listType = tdGetString(tdGetObject(update, 'chat_list'), '@type');
+  if (listType !== 'chatListMain' && listType !== 'chatListArchive') {
+    return;
+  }
+
+  const event = new ChatListUnreadMessageCountChangedEvent();
+  event.chatListType = listType === 'chatListArchive' ? 'archive' : 'main';
+  event.unreadCount = Math.max(0, tdGetNumber(update, 'unread_count'));
+  event.unreadUnmutedCount = Math.max(0, tdGetNumber(update, 'unread_unmuted_count'));
+  event.timestamp = Date.now();
+  events.push(event);
+}
+
 function handleChatDraftMessage(events: AnyAppEvent[], update: TdObject): void {
   const chatId = tdGetNumber(update, 'chat_id');
   if (!chatId) return;
@@ -189,6 +217,7 @@ function handleChatDraftMessage(events: AnyAppEvent[], update: TdObject): void {
     if (tdHasKeys(inputMsg)) {
       const textObj = tdGetObject(inputMsg, 'text');
       updates.draftText = tdGetString(textObj, 'text');
+      updates.draftCustomEmojiEntities = extractCustomEmojiTextEntities(textObj);
     }
     // TDLib: draftMessage.reply_to is InputMessageReplyTo — only the
     // same-chat variant carries a message_id we can treat as local
@@ -197,18 +226,11 @@ function handleChatDraftMessage(events: AnyAppEvent[], update: TdObject): void {
       ? tdGetInt64(draftReplyObj, 'message_id') : '0';
   } else {
     updates.draftText = '';
+    updates.draftCustomEmojiEntities = [];
     updates.draftReplyToMessageId = '0';
   }
 
-  // Also extract positions if present
-  const positions = tdGetArray(update, 'positions');
-  for (const pos of positions) {
-    const posInfo = extractMainListPosition(pos);
-    if (posInfo !== undefined) {
-      updates.order = posInfo.order;
-      break;
-    }
-  }
+  applyChatListPositions(updates, tdGetArray(update, 'positions'));
 
   events.push(createChatUpdatedEvent(chatId, updates));
 }
@@ -319,6 +341,7 @@ export function registerChatHandlers(
   handlers.set('updateChatPosition', handleChatPosition);
   handlers.set('updateChatReadInbox', handleChatReadInbox);
   handlers.set('updateChatReadOutbox', handleChatReadOutbox);
+  handlers.set('updateUnreadMessageCount', handleUnreadMessageCount);
   handlers.set('updateChatDraftMessage', handleChatDraftMessage);
   handlers.set('updateChatUnreadMentionCount', handleChatUnreadMentionCount);
   handlers.set('updateChatNotificationSettings', handleChatNotificationSettings);

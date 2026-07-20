@@ -6,6 +6,7 @@ import { ChatDto, ChatUpdateDto } from './dto/ChatDto';
 import { AccentColorDto } from './dto/AccentColorDto';
 import { MessageDto, MessageUpdateDto, MessageContentDto } from './dto/MessageDto';
 import { UserDto, UserUpdateDto } from './dto/UserDto';
+import { ChatActiveStoriesDto } from './dto/StoryDto';
 
 // Base event class
 export class AppEvent {
@@ -73,6 +74,13 @@ export class ChatReadOutboxEvent extends AppEvent {
   lastReadOutboxMessageId: MessageId = '0';
 }
 
+export class ChatListUnreadMessageCountChangedEvent extends AppEvent {
+  type: string = 'chatListUnreadMessageCountChanged';
+  chatListType: string = 'main';
+  unreadCount: number = 0;
+  unreadUnmutedCount: number = 0;
+}
+
 export class ChatsLoadStateChangedEvent extends AppEvent {
   type: string = 'chatsLoadStateChanged';
   isLoading: boolean = false;
@@ -85,6 +93,19 @@ export class ChatsLoadStateChangedEvent extends AppEvent {
 export class NewMessageEvent extends AppEvent {
   type: string = 'newMessage';
   chatId: ChatId = 0;
+  messageId: MessageId = '0';
+  messageData: MessageDto = new MessageDto();
+}
+
+export class ChatActiveStoriesUpdatedEvent extends AppEvent {
+  type: string = 'chatActiveStoriesUpdated';
+  activeStories: ChatActiveStoriesDto = new ChatActiveStoriesDto();
+}
+
+export class ReplyMessageHydratedEvent extends AppEvent {
+  type: string = 'replyMessageHydrated';
+  contextChatId: ChatId = 0;
+  targetChatId: ChatId = 0;
   messageId: MessageId = '0';
   messageData: MessageDto = new MessageDto();
 }
@@ -151,6 +172,7 @@ export interface UserUpdateFields {
   isScam?: boolean;
   isFake?: boolean;
   isPremium?: boolean;
+  isBot?: boolean;
 }
 
 export interface UserPhotoFields {
@@ -241,8 +263,11 @@ export type AnyAppEvent =
   | ChatUpdatedEvent
   | ChatReadInboxEvent
   | ChatReadOutboxEvent
+  | ChatListUnreadMessageCountChangedEvent
   | ChatsLoadStateChangedEvent
+  | ChatActiveStoriesUpdatedEvent
   | NewMessageEvent
+  | ReplyMessageHydratedEvent
   | MessageUpdatedEvent
   | MessageContentUpdatedEvent
   | MessageSendSucceededEvent
@@ -291,6 +316,21 @@ export function createNewMessageEvent(
   return event;
 }
 
+export function createReplyMessageHydratedEvent(
+  contextChatId: ChatId,
+  targetChatId: ChatId,
+  messageId: MessageId,
+  messageData: MessageDto
+): ReplyMessageHydratedEvent {
+  const event = new ReplyMessageHydratedEvent();
+  event.contextChatId = contextChatId;
+  event.targetChatId = targetChatId;
+  event.messageId = messageId;
+  event.messageData = messageData;
+  event.timestamp = Date.now();
+  return event;
+}
+
 export function createNewChatEvent(
   chatId: ChatId,
   chatData: ChatDto
@@ -309,6 +349,15 @@ export function createChatUpdatedEvent(
   const event = new ChatUpdatedEvent();
   event.chatId = chatId;
   event.updates = updates;
+  event.timestamp = Date.now();
+  return event;
+}
+
+export function createChatActiveStoriesUpdatedEvent(
+  activeStories: ChatActiveStoriesDto
+): ChatActiveStoriesUpdatedEvent {
+  const event = new ChatActiveStoriesUpdatedEvent();
+  event.activeStories = activeStories;
   event.timestamp = Date.now();
   return event;
 }

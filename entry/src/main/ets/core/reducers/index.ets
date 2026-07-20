@@ -25,12 +25,13 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
   if (action.type === 'newChat' || action.type === 'chatUpdated' ||
     action.type === 'chatReadInbox' || action.type === 'chatReadOutbox' ||
     action.type === 'chatsLoadStateChanged' || action.type === 'chatAction' ||
-    action.type === 'chatFullInfo') {
+    action.type === 'chatFullInfo' || action.type === 'chatActiveStoriesUpdated') {
     return chatsReducer(state, action);
   }
 
   // Messages
-  if (action.type === 'newMessage' || action.type === 'messageUpdated' ||
+  if (action.type === 'newMessage' || action.type === 'replyMessageHydrated' ||
+    action.type === 'messageUpdated' ||
     action.type === 'messageContentUpdated' || action.type === 'messageSendSucceeded' ||
     action.type === 'messageSendFailed' || action.type === 'messagesDeleted') {
     return messagesReducer(state, action);

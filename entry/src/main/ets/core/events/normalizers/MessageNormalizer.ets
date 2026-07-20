@@ -3,6 +3,7 @@
 
 import {
   AnyAppEvent,
+  MessageUpdatedEvent,
   MessageContentUpdatedEvent,
   MessageSendSucceededEvent,
   MessageSendFailedEvent,
@@ -46,6 +47,19 @@ function handleMessageContent(events: AnyAppEvent[], update: TdObject): void {
   event.chatId = chatId;
   event.messageId = messageId;
   event.newContent = contentDto;
+  event.timestamp = Date.now();
+  events.push(event);
+}
+
+function handleMessageEdited(events: AnyAppEvent[], update: TdObject): void {
+  const chatId = tdGetNumber(update, 'chat_id');
+  const messageId = tdGetInt64(update, 'message_id');
+  if (!chatId || messageId === '0') return;
+
+  const event = new MessageUpdatedEvent();
+  event.chatId = chatId;
+  event.messageId = messageId;
+  event.updates.editDate = tdGetNumber(update, 'edit_date');
   event.timestamp = Date.now();
   events.push(event);
 }
@@ -133,6 +147,7 @@ export function registerMessageHandlers(
 ): void {
   handlers.set('updateNewMessage', handleNewMessage);
   handlers.set('updateMessageContent', handleMessageContent);
+  handlers.set('updateMessageEdited', handleMessageEdited);
   handlers.set('updateMessageSendSucceeded', handleMessageSendSucceeded);
   handlers.set('updateMessageSendFailed', handleMessageSendFailed);
   handlers.set('updateDeleteMessages', handleDeleteMessages);

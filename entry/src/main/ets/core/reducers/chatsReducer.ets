@@ -9,10 +9,13 @@ import {
   ChatUpdatedEvent,
   ChatReadInboxEvent,
   ChatReadOutboxEvent,
+  ChatListUnreadMessageCountChangedEvent,
   ChatsLoadStateChangedEvent,
+  ChatActiveStoriesUpdatedEvent,
   ChatActionEvent,
   ChatFullInfoEvent
 } from '../model/AppEvent';
+import { ChatActiveStoriesDto } from '../model/dto/StoryDto';
 import { ChatDto, ChatType as DtoChatType } from '../model/dto/ChatDto';
 import { compareInt64 } from '../utils/tdAccessors';
 import { cloneStateForChats, cloneChat } from '../utils/stateClone';
@@ -21,7 +24,9 @@ import { cloneStateForChats, cloneChat } from '../utils/stateClone';
 function isChatEvent(type: string): boolean {
   return type === 'newChat' || type === 'chatUpdated' ||
     type === 'chatReadInbox' || type === 'chatReadOutbox' ||
-    type === 'chatsLoadStateChanged' || type === 'chatAction' || type === 'chatFullInfo';
+    type === 'chatListUnreadMessageCountChanged' ||
+    type === 'chatsLoadStateChanged' || type === 'chatActiveStoriesUpdated' ||
+    type === 'chatAction' || type === 'chatFullInfo';
 }
 
 // Map DTO ChatType enum to AppState ChatType string
@@ -50,9 +55,12 @@ function chatFromDto(dto: ChatDto): Chat {
   chat.lastReadOutboxMessageId = dto.lastReadOutboxMessageId;
   chat.lastReadInboxMessageId = dto.lastReadInboxMessageId;
   chat.draftText = dto.draftText;
+  chat.draftCustomEmojiEntities = dto.draftCustomEmojiEntities.slice();
   chat.draftReplyToMessageId = dto.draftReplyToMessageId;
   chat.isPinned = dto.isPinned;
+  chat.isArchivePinned = dto.isArchivePinned;
   chat.order = dto.order;
+  chat.archiveOrder = dto.archiveOrder;
   chat.supergroupId = dto.supergroupId;
 
   if (dto.photo) {
@@ -72,14 +80,15 @@ function chatFromDto(dto: ChatDto): Chat {
 }
 
 // Rebuild orderedChatIds from chats map, sorted by order descending.
-// Chats with real order sort first; chats with order='0' (position unknown) go to the end.
+// Chats with real order sort first; unknown placeholders stay at the end unless
+// TDLib already identifies them as archive-only.
 function rebuildOrderedChatIds(chats: Map<number, Chat>): number[] {
   const withOrder: Chat[] = [];
   const noOrder: Chat[] = [];
   chats.forEach((chat: Chat) => {
     if (chat.order !== '0') {
       withOrder.push(chat);
-    } else {
+    } else if (chat.archiveOrder === '0') {
       noOrder.push(chat);
     }
   });
@@ -104,6 +113,39 @@ function rebuildOrderedChatIds(chats: Map<number, Chat>): number[] {
     result.push(chat.id);
   }
   return result;
+}
+
+function rebuildArchivedChatIds(chats: Map<number, Chat>): number[] {
+  const archived: Chat[] = [];
+  chats.forEach((chat: Chat) => {
+    if (chat.archiveOrder !== '0') {
+      archived.push(chat);
+    }
+  });
+  archived.sort((a: Chat, b: Chat): number => {
+    const cmp = compareInt64(b.archiveOrder, a.archiveOrder);
+    if (cmp !== 0) return cmp;
+    return b.id > a.id ? 1 : (b.id < a.id ? -1 : 0);
+  });
+  return archived.map((chat: Chat): number => chat.id);
+}
+
+function rebuildOrderedStoryChatIds(
+  activeStoriesByChatId: Map<number, ChatActiveStoriesDto>
+): number[] {
+  const activeStories: ChatActiveStoriesDto[] = [];
+  activeStoriesByChatId.forEach((value: ChatActiveStoriesDto) => {
+    if (value.listType === 'main' && value.order > 0 && value.stories.length > 0) {
+      activeStories.push(value);
+    }
+  });
+  activeStories.sort((a: ChatActiveStoriesDto, b: ChatActiveStoriesDto): number => {
+    if (a.order !== b.order) {
+      return b.order - a.order;
+    }
+    return b.chatId > a.chatId ? 1 : (b.chatId < a.chatId ? -1 : 0);
+  });
+  return activeStories.map((value: ChatActiveStoriesDto): number => value.chatId);
 }
 
 export function chatsReducer(state: AppState, action: ReducerAction): AppState {
@@ -151,6 +193,7 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         }
         if (chat.draftText.length === 0 && existing.draftText.length > 0) {
           chat.draftText = existing.draftText;
+          chat.draftCustomEmojiEntities = existing.draftCustomEmojiEntities.slice();
         }
         if (chat.draftReplyToMessageId === '0' && existing.draftReplyToMessageId !== '0') {
           chat.draftReplyToMessageId = existing.draftReplyToMessageId;
@@ -158,8 +201,14 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         if (chat.order === '0' && existing.order !== '0') {
           chat.order = existing.order;
         }
+        if (chat.archiveOrder === '0' && existing.archiveOrder !== '0') {
+          chat.archiveOrder = existing.archiveOrder;
+        }
         if (!chat.isPinned && existing.isPinned) {
           chat.isPinned = existing.isPinned;
+        }
+        if (!chat.isArchivePinned && existing.isArchivePinned) {
+          chat.isArchivePinned = existing.isArchivePinned;
         }
       }
 
@@ -186,11 +235,20 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         if (event.updates.order !== undefined) {
           placeholder.order = event.updates.order;
         }
+        if (event.updates.archiveOrder !== undefined) {
+          placeholder.archiveOrder = event.updates.archiveOrder;
+        }
         if (event.updates.isPinned !== undefined) {
           placeholder.isPinned = event.updates.isPinned;
         }
+        if (event.updates.isArchivePinned !== undefined) {
+          placeholder.isArchivePinned = event.updates.isArchivePinned;
+        }
         if (event.updates.draftText !== undefined) {
           placeholder.draftText = event.updates.draftText;
+        }
+        if (event.updates.draftCustomEmojiEntities !== undefined) {
+          placeholder.draftCustomEmojiEntities = event.updates.draftCustomEmojiEntities.slice();
         }
         if (event.updates.draftReplyToMessageId !== undefined) {
           placeholder.draftReplyToMessageId = event.updates.draftReplyToMessageId;
@@ -233,11 +291,17 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
       if (event.updates.draftText !== undefined) {
         updatedChat.draftText = event.updates.draftText;
       }
+      if (event.updates.draftCustomEmojiEntities !== undefined) {
+        updatedChat.draftCustomEmojiEntities = event.updates.draftCustomEmojiEntities.slice();
+      }
       if (event.updates.draftReplyToMessageId !== undefined) {
         updatedChat.draftReplyToMessageId = event.updates.draftReplyToMessageId;
       }
       if (event.updates.isPinned !== undefined) {
         updatedChat.isPinned = event.updates.isPinned;
+      }
+      if (event.updates.isArchivePinned !== undefined) {
+        updatedChat.isArchivePinned = event.updates.isArchivePinned;
       }
       if (event.updates.photo !== undefined) {
         updatedChat.photoSmall = event.updates.photo.small;
@@ -253,6 +317,10 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
       if (event.updates.order !== undefined) {
         orderChanged = existingChat.order !== event.updates.order;
         updatedChat.order = event.updates.order;
+      }
+      if (event.updates.archiveOrder !== undefined) {
+        orderChanged = orderChanged || existingChat.archiveOrder !== event.updates.archiveOrder;
+        updatedChat.archiveOrder = event.updates.archiveOrder;
       }
 
       newState.chats.chats.set(event.chatId, updatedChat);
@@ -284,6 +352,18 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
       break;
     }
 
+    case 'chatListUnreadMessageCountChanged': {
+      const event = action as ChatListUnreadMessageCountChangedEvent;
+      if (event.chatListType === 'archive') {
+        newState.chats.archiveUnreadMessageCount = event.unreadCount;
+        newState.chats.archiveUnreadUnmutedMessageCount = event.unreadUnmutedCount;
+      } else {
+        newState.chats.mainUnreadMessageCount = event.unreadCount;
+        newState.chats.mainUnreadUnmutedMessageCount = event.unreadUnmutedCount;
+      }
+      break;
+    }
+
     case 'chatsLoadStateChanged': {
       const event = action as ChatsLoadStateChangedEvent;
       newState.chats.isLoading = event.isLoading;
@@ -293,6 +373,20 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
       } else {
         newState.chats.loadPhase = 'idle';
       }
+      break;
+    }
+
+    case 'chatActiveStoriesUpdated': {
+      const event = action as ChatActiveStoriesUpdatedEvent;
+      const activeStories = event.activeStories;
+      if (activeStories.listType === 'main' && activeStories.order > 0 && activeStories.stories.length > 0) {
+        newState.chats.activeStoriesByChatId.set(activeStories.chatId, activeStories);
+      } else {
+        newState.chats.activeStoriesByChatId.delete(activeStories.chatId);
+      }
+      newState.chats.orderedStoryChatIds = rebuildOrderedStoryChatIds(
+        newState.chats.activeStoriesByChatId
+      );
       break;
     }
 
@@ -333,6 +427,7 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
   // Rebuild sorted order only when order actually changed
   if (orderChanged) {
     newState.chats.orderedChatIds = rebuildOrderedChatIds(newState.chats.chats);
+    newState.chats.archivedChatIds = rebuildArchivedChatIds(newState.chats.chats);
   }
 
   newState.version = state.version + 1;

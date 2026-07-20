@@ -149,6 +149,32 @@ export default function filePipelineTest() {
         expect(updated.files.transfers.get(77)!.isDownloadingActive).assertFalse();
       });
 
+      it('should resolve a link preview thumbnail without dropping preview identity', 0, () => {
+        const state = createInitialAppState();
+        const message = new Message();
+        message.id = 'preview';
+        message.chatId = 100;
+        message.content.text = 'https://telegram.org';
+        message.content.linkPreviewSiteName = 'Telegram';
+        message.content.linkPreviewTitle = 'Preview title';
+        message.content.linkPreviewPhotoThumbFileId = 78;
+        const chatMessages = new Map<string, Message>();
+        chatMessages.set(message.id, message);
+        state.messages.messages.set(100, chatMessages);
+
+        const event = new FileDownloadedEvent();
+        event.fileId = 78;
+        event.localPath = '/data/files/link-preview-thumb.jpg';
+        event.isComplete = true;
+
+        const updated = filesReducer(state, event);
+        const content = updated.messages.messages.get(100)!.get('preview')!.content;
+        expect(content.linkPreviewPhotoThumbPath).assertEqual('/data/files/link-preview-thumb.jpg');
+        expect(content.linkPreviewSiteName).assertEqual('Telegram');
+        expect(content.linkPreviewTitle).assertEqual('Preview title');
+        expect(content.text).assertEqual('https://telegram.org');
+      });
+
       it('should not clone state when completed file has no matching owner', 0, () => {
         const state: AppState = createInitialAppState();
         const event = new FileDownloadedEvent();
@@ -213,6 +239,10 @@ export default function filePipelineTest() {
       it('should expose failed download status for retry-capable bubbles', 0, () => {
         const controller = new ChatMediaDownloadController();
         const initialVersion = controller.getVersion();
+        let changedFileId = 0;
+        controller.setChangeListener((_version: number, fileId: number): void => {
+          changedFileId = fileId;
+        });
 
         controller.recordDownloadFailure(77, ' network failed ');
 
@@ -225,6 +255,7 @@ export default function filePipelineTest() {
         expect(status.isPending).assertFalse();
         expect(status.isFailed).assertTrue();
         expect(status.errorMessage).assertEqual('network failed');
+        expect(changedFileId).assertEqual(77);
       });
 
       it('should clear failed status when the file is resolved in the timeline', 0, () => {

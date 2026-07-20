@@ -101,13 +101,20 @@ let unreadCountMemoSource: Map<ChatId, Chat> | undefined = undefined;
 let unreadCountMemoResult: number = -1;
 
 export const selectTotalUnreadCount = (state: AppState): number => {
+  if (state.chats.mainUnreadMessageCount >= 0) {
+    return state.chats.mainUnreadMessageCount;
+  }
+
   const chats = state.chats.chats;
   if (unreadCountMemoSource === chats && unreadCountMemoResult >= 0) {
     return unreadCountMemoResult;
   }
   let total = 0;
-  for (const chat of chats.values()) {
-    total += chat.unreadCount;
+  for (const chatId of state.chats.orderedChatIds) {
+    const chat = chats.get(chatId);
+    if (chat !== undefined) {
+      total += chat.unreadCount;
+    }
   }
   unreadCountMemoSource = chats;
   unreadCountMemoResult = total;

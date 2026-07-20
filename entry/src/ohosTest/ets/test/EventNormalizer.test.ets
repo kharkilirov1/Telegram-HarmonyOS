@@ -6,6 +6,11 @@ import {
   getEventNormalizer
 } from '../../../main/ets/core/events/EventNormalizer';
 import { TdObject } from '../../../main/ets/models/TdTypes';
+import {
+  ChatActiveStoriesUpdatedEvent,
+  ChatUpdatedEvent,
+  MessageUpdatedEvent
+} from '../../../main/ets/core/model/AppEvent';
 
 /**
  * Tests for EventNormalizer — handler registration, normalization dispatch, and stats.
@@ -84,6 +89,57 @@ export default function eventNormalizerTest() {
         );
         const result = normalizer.normalize(update);
         expect(result.length > 0).assertTrue();
+      });
+
+      it('should project updateMessageEdited into a message editDate update', 0, () => {
+        const normalizer = new EventNormalizerImpl();
+        const update = TdObject.fromJSON(
+          '{"@type":"updateMessageEdited","chat_id":100,"message_id":42,"edit_date":1700000000}'
+        );
+        const result = normalizer.normalize(update);
+        const event = result[0] as MessageUpdatedEvent;
+
+        expect(result.length).assertEqual(1);
+        expect(event.chatId).assertEqual(100);
+        expect(event.messageId).assertEqual('42');
+        expect(event.updates.editDate).assertEqual(1700000000);
+      });
+
+      it('should preserve active story order and unread metadata', 0, () => {
+        const normalizer = new EventNormalizerImpl();
+        const update = TdObject.fromJSON(
+          '{"@type":"updateChatActiveStories","active_stories":{' +
+          '"@type":"chatActiveStories","chat_id":100,"list":{"@type":"storyListMain"},' +
+          '"order":900,"can_be_archived":true,"max_read_story_id":4,' +
+          '"stories":[{"@type":"storyInfo","story_id":5,"date":1700000000,' +
+          '"is_for_close_friends":true,"is_live":false}]}}'
+        );
+        const result = normalizer.normalize(update);
+        const event = result[0] as ChatActiveStoriesUpdatedEvent;
+
+        expect(result.length).assertEqual(1);
+        expect(event.activeStories.chatId).assertEqual(100);
+        expect(event.activeStories.listType).assertEqual('main');
+        expect(event.activeStories.order).assertEqual(900);
+        expect(event.activeStories.maxReadStoryId).assertEqual(4);
+        expect(event.activeStories.stories.length).assertEqual(1);
+        expect(event.activeStories.stories[0].isForCloseFriends).assertTrue();
+      });
+
+      it('should preserve custom emoji entities from updateChatDraftMessage', 0, () => {
+        const normalizer = new EventNormalizerImpl();
+        const update = TdObject.fromJSON('{"@type":"updateChatDraftMessage","chat_id":100,' +
+          '"draft_message":{"@type":"draftMessage","input_message_text":' +
+          '{"@type":"inputMessageText","text":{"@type":"formattedText","text":"😀",' +
+          '"entities":[{"@type":"textEntity","offset":0,"length":2,' +
+          '"type":{"@type":"textEntityTypeCustomEmoji","custom_emoji_id":9001}}]}}},' +
+          '"positions":[]}');
+        const result = normalizer.normalize(update);
+        const event = result[0] as ChatUpdatedEvent;
+
+        expect(result.length).assertEqual(1);
+        expect(event.updates.draftCustomEmojiEntities?.length).assertEqual(1);
+        expect(event.updates.draftCustomEmojiEntities![0].customEmojiId).assertEqual('9001');
       });
 
       it('should dispatch updateAuthorizationState', 0, () => {

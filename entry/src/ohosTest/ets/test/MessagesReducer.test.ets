@@ -1,5 +1,6 @@
 import { describe, it, expect } from '@ohos/hypium';
 import { messagesReducer } from '../../../main/ets/core/reducers/messagesReducer';
+import { appReducer } from '../../../main/ets/core/reducers';
 import {
   AppState,
   Message,
@@ -10,6 +11,7 @@ import {
 } from '../../../main/ets/core/model/AppState';
 import {
   NewMessageEvent,
+  ReplyMessageHydratedEvent,
   ChatUpdatedEvent,
   MessageContentUpdatedEvent,
   MessageSendSucceededEvent,
@@ -25,6 +27,7 @@ import {
   MessageQuoteEntityDto,
   PollOptionDto
 } from '../../../main/ets/core/model/dto/MessageDto';
+import { createAssociatedMessageKey } from '../../../main/ets/core/utils/replyMessageKey';
 
 /**
  * Unit tests for messagesReducer — validates event-driven state transitions
@@ -107,6 +110,53 @@ export default function messagesReducerTest() {
         expect(msg.content.photoFileId).assertEqual(42);
         expect(msg.content.photoWidth).assertEqual(1920);
         expect(msg.content.photoHeight).assertEqual(1080);
+      });
+
+      it('should carry link preview identity, flags and thumbnail ids into AppState', 0, () => {
+        const state = createEmptyState();
+        const dto = makeMessageDto('201', 2, 'https://telegram.org');
+        dto.content.linkPreviewUrl = 'https://telegram.org/blog/example';
+        dto.content.linkPreviewSiteName = 'Telegram';
+        dto.content.linkPreviewTitle = 'Preview title';
+        dto.content.linkPreviewDescription = 'Preview description';
+        dto.content.linkPreviewPhotoFileId = 80;
+        dto.content.linkPreviewPhotoThumbFileId = 79;
+        dto.content.linkPreviewShowLargeMedia = true;
+        dto.content.linkPreviewShowAboveText = true;
+
+        const event = new NewMessageEvent();
+        event.chatId = 2;
+        event.messageId = '201';
+        event.messageData = dto;
+
+        const newState = messagesReducer(state, event);
+        const content = newState.messages.messages.get(2)!.get('201')!.content;
+        expect(content.linkPreviewUrl).assertEqual('https://telegram.org/blog/example');
+        expect(content.linkPreviewSiteName).assertEqual('Telegram');
+        expect(content.linkPreviewDescription).assertEqual('Preview description');
+        expect(content.linkPreviewPhotoFileId).assertEqual(80);
+        expect(content.linkPreviewPhotoThumbFileId).assertEqual(79);
+        expect(content.linkPreviewShowLargeMedia).assertTrue();
+        expect(content.linkPreviewShowAboveText).assertTrue();
+      });
+    });
+
+    describe('replyMessageHydrated — associated storage', () => {
+      it('stores a cross-chat original outside regular history', 0, () => {
+        const state = createEmptyState();
+        const msgDto = makeMessageDto('42', 200, 'Cross-chat original');
+        const event = new ReplyMessageHydratedEvent();
+        event.contextChatId = 100;
+        event.targetChatId = 100;
+        event.messageId = '42';
+        event.messageData = msgDto;
+
+        const newState = appReducer(state, event);
+        expect(newState.messages.messages.get(100) === undefined).assertTrue();
+        const associated = newState.messages.associatedMessages.get(100);
+        const key = createAssociatedMessageKey(100, '42');
+        expect(associated?.get(key)?.chatId).assertEqual(200);
+        expect(associated?.get(key)?.content.text).assertEqual('Cross-chat original');
       });
     });
 

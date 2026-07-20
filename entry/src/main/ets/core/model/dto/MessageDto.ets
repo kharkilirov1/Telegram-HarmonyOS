@@ -44,6 +44,27 @@ export class MessageContentDto {
   textEntities: TextEntityDto[] = [];
   captionEntities: TextEntityDto[] = [];
 
+  // TDLib messageText.link_preview (legacy fallback: messageText.web_page)
+  linkPreviewUrl: string = '';
+  linkPreviewDisplayUrl: string = '';
+  linkPreviewSiteName: string = '';
+  linkPreviewTitle: string = '';
+  linkPreviewDescription: string = '';
+  linkPreviewAuthor: string = '';
+  linkPreviewType: string = '';
+  linkPreviewShowLargeMedia: boolean = false;
+  linkPreviewShowMediaAboveDescription: boolean = false;
+  linkPreviewShowAboveText: boolean = false;
+  linkPreviewPhotoPath: string = '';
+  linkPreviewPhotoThumbPath: string = '';
+  linkPreviewPhotoFileId: number = 0;
+  linkPreviewPhotoThumbFileId: number = 0;
+  linkPreviewPhotoWidth: number = 0;
+  linkPreviewPhotoHeight: number = 0;
+  linkPreviewPhotoMinithumb: string = '';
+  linkPreviewPhotoUniqueId: string = '';
+  linkPreviewPhotoThumbUniqueId: string = '';
+
   // Service messages (chat events): raw TDLib @type + payload for VO-side text resolve
   serviceType: string = '';
   serviceUserIds: number[] = [];
@@ -156,6 +177,7 @@ export class MessageDto {
   isRead: boolean = false;
   isPending: boolean = false;
   editDate: number = 0;
+  replyToChatId: ChatId = 0;
   replyToMessageId: MessageId = '0';
   replyIsQuote: boolean = false;
   replyQuoteText: string = '';
@@ -375,6 +397,59 @@ function extractPhotoDimensions(photoObj: TdObject): PhotoDimensions {
   return result;
 }
 
+function extractLinkPreview(contentObj: TdObject): TdObject {
+  const current = tdGetObject(contentObj, 'link_preview');
+  if (tdHasKeys(current)) {
+    return current;
+  }
+  // Compatibility with the older model surface still present under models/td.
+  return tdGetObject(contentObj, 'web_page');
+}
+
+function extractLinkPreviewPhoto(linkPreviewObj: TdObject): TdObject {
+  const typeObj = tdGetObject(linkPreviewObj, 'type');
+  const photoObj = tdGetObject(typeObj, 'photo');
+  if (tdHasKeys(photoObj)) {
+    return photoObj;
+  }
+  // Embedded player link-preview types expose their poster as a photo thumbnail.
+  return tdGetObject(typeObj, 'thumbnail');
+}
+
+function applyLinkPreview(contentDto: MessageContentDto, contentObj: TdObject): void {
+  const linkPreviewObj = extractLinkPreview(contentObj);
+  if (!tdHasKeys(linkPreviewObj)) {
+    return;
+  }
+
+  const typeObj = tdGetObject(linkPreviewObj, 'type');
+  const descriptionObj = tdGetObject(linkPreviewObj, 'description');
+  const photoObj = extractLinkPreviewPhoto(linkPreviewObj);
+  const photoMain = extractPhotoMain(photoObj);
+  const photoThumb = extractPhotoThumb(photoObj);
+  const dimensions = extractPhotoDimensions(photoObj);
+
+  contentDto.linkPreviewUrl = tdGetString(linkPreviewObj, 'url');
+  contentDto.linkPreviewDisplayUrl = tdGetString(linkPreviewObj, 'display_url');
+  contentDto.linkPreviewSiteName = tdGetString(linkPreviewObj, 'site_name');
+  contentDto.linkPreviewTitle = tdGetString(linkPreviewObj, 'title');
+  contentDto.linkPreviewDescription = tdGetString(descriptionObj, 'text');
+  contentDto.linkPreviewAuthor = tdGetString(linkPreviewObj, 'author');
+  contentDto.linkPreviewType = tdGetString(typeObj, '@type');
+  contentDto.linkPreviewShowLargeMedia = tdGetBoolean(linkPreviewObj, 'show_large_media');
+  contentDto.linkPreviewShowMediaAboveDescription = tdGetBoolean(linkPreviewObj, 'show_media_above_description');
+  contentDto.linkPreviewShowAboveText = tdGetBoolean(linkPreviewObj, 'show_above_text');
+  contentDto.linkPreviewPhotoPath = photoMain.path;
+  contentDto.linkPreviewPhotoThumbPath = photoThumb.path;
+  contentDto.linkPreviewPhotoFileId = photoMain.fileId;
+  contentDto.linkPreviewPhotoThumbFileId = photoThumb.fileId;
+  contentDto.linkPreviewPhotoWidth = dimensions.width;
+  contentDto.linkPreviewPhotoHeight = dimensions.height;
+  contentDto.linkPreviewPhotoMinithumb = tdGetString(tdGetObject(photoObj, 'minithumbnail'), 'data');
+  contentDto.linkPreviewPhotoUniqueId = photoMain.uniqueId;
+  contentDto.linkPreviewPhotoThumbUniqueId = photoThumb.uniqueId;
+}
+
 // Helper to create DTO from raw TDLib message object
 export function createMessageDtoFromTd(tdMessage: TdObject): MessageDto {
   const content = tdGetObject(tdMessage, 'content');
@@ -403,11 +478,16 @@ export function createMessageDtoFromTd(tdMessage: TdObject): MessageDto {
   messageDto.timestamp = tdDate > 0 ? tdDate : Math.floor(Date.now() / 1000);
   messageDto.isOutgoing = tdGetBoolean(tdMessage, 'is_outgoing');
   messageDto.isRead = tdGetBoolean(tdMessage, 'is_read');
+  messageDto.editDate = tdGetNumber(tdMessage, 'edit_date');
 
   const replyTo = tdGetObject(tdMessage, 'reply_to');
   const nestedReplyMessageId = tdGetInt64(replyTo, 'message_id');
   const directReplyMessageId = tdGetInt64(tdMessage, 'reply_to_message_id');
   messageDto.replyToMessageId = nestedReplyMessageId !== '0' ? nestedReplyMessageId : directReplyMessageId;
+  if (messageDto.replyToMessageId !== '0') {
+    const nestedReplyChatId = tdGetNumber(replyTo, 'chat_id');
+    messageDto.replyToChatId = nestedReplyChatId !== 0 ? nestedReplyChatId : messageDto.chatId;
+  }
 
   const quoteObj = tdGetObject(replyTo, 'quote');
   const quoteObjText = tdGetString(quoteObj, 'text');
@@ -439,6 +519,7 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.caption = '';
       contentDto.quoteEntities = extractQuoteEntities(textObj);
       contentDto.textEntities = extractTextEntities(textObj);
+      applyLinkPreview(contentDto, contentObj);
       break;
     }
     case 'messagePhoto': {
@@ -724,6 +805,7 @@ export function applyMessageUpdate(message: MessageDto, update: MessageUpdateDto
   updatedMessage.isRead = message.isRead;
   updatedMessage.isPending = message.isPending;
   updatedMessage.editDate = message.editDate;
+  updatedMessage.replyToChatId = message.replyToChatId;
   updatedMessage.replyToMessageId = message.replyToMessageId;
   updatedMessage.replyIsQuote = message.replyIsQuote;
   updatedMessage.replyQuoteText = message.replyQuoteText;

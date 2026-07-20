@@ -25,6 +25,7 @@ import {
   PendingMessage,
   FileTransfer
 } from '../../../main/ets/core/model/AppState';
+import { CustomEmojiTextEntity } from '../../../main/ets/core/model/AppCommand';
 
 /**
  * Unit tests for stateClone utilities — validates immutable cloning
@@ -52,6 +53,7 @@ export default function stateCloneTest() {
         chat.lastReadOutboxMessageId = '500';
         chat.lastReadInboxMessageId = '499';
         chat.draftText = 'Draft message';
+        chat.draftCustomEmojiEntities = [new CustomEmojiTextEntity(0, 5, '123456789')];
         chat.draftReplyToMessageId = '450';
         chat.isPinned = true;
         chat.photoSmall = '/path/to/photo.jpg';
@@ -82,6 +84,9 @@ export default function stateCloneTest() {
         expect(cloned.lastReadOutboxMessageId).assertEqual('500');
         expect(cloned.lastReadInboxMessageId).assertEqual('499');
         expect(cloned.draftText).assertEqual('Draft message');
+        expect(cloned.draftCustomEmojiEntities.length).assertEqual(1);
+        expect(cloned.draftCustomEmojiEntities[0].customEmojiId).assertEqual('123456789');
+        expect(cloned.draftCustomEmojiEntities === chat.draftCustomEmojiEntities).assertFalse();
         expect(cloned.draftReplyToMessageId).assertEqual('450');
         expect(cloned.isPinned).assertTrue();
         expect(cloned.photoSmall).assertEqual('/path/to/photo.jpg');

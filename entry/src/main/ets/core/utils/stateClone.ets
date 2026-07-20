@@ -19,6 +19,8 @@ import {
   User,
   FileTransfer
 } from '../model/AppState';
+import { CustomEmojiTextEntity } from '../model/AppCommand';
+import { ChatActiveStoriesDto } from '../model/dto/StoryDto';
 
 /**
  * Clone AuthState immutably
@@ -59,6 +61,13 @@ export function cloneChatsState(chats: ChatsState): ChatsState {
     newChats.chats.set(chatId, chat);
   });
   newChats.orderedChatIds = chats.orderedChatIds.slice();
+  newChats.archivedChatIds = chats.archivedChatIds.slice();
+  newChats.activeStoriesByChatId = new Map<number, ChatActiveStoriesDto>(chats.activeStoriesByChatId);
+  newChats.orderedStoryChatIds = chats.orderedStoryChatIds.slice();
+  newChats.mainUnreadMessageCount = chats.mainUnreadMessageCount;
+  newChats.mainUnreadUnmutedMessageCount = chats.mainUnreadUnmutedMessageCount;
+  newChats.archiveUnreadMessageCount = chats.archiveUnreadMessageCount;
+  newChats.archiveUnreadUnmutedMessageCount = chats.archiveUnreadUnmutedMessageCount;
   newChats.typingActions = chats.typingActions; // shallow share — cloned in reducer when modified
   newChats.isLoading = chats.isLoading;
   newChats.hasMore = chats.hasMore;
@@ -75,6 +84,7 @@ export function cloneMessagesState(messages: MessagesState): MessagesState {
   // Share inner maps by reference — reducer creates new Map only for the modified chat.
   // This preserves reference identity for unchanged chats, enabling selector memoization.
   newMessages.messages = new Map<number, Map<string, Message>>(messages.messages);
+  newMessages.associatedMessages = new Map<number, Map<string, Message>>(messages.associatedMessages);
   newMessages.pendingMessages = new Map<string, PendingMessage>(messages.pendingMessages);
   return newMessages;
 }
@@ -130,11 +140,16 @@ export function cloneChat(chat: Chat): Chat {
   newChat.lastReadOutboxMessageId = chat.lastReadOutboxMessageId;
   newChat.lastReadInboxMessageId = chat.lastReadInboxMessageId;
   newChat.draftText = chat.draftText;
+  newChat.draftCustomEmojiEntities = chat.draftCustomEmojiEntities.map((entity) => {
+    return new CustomEmojiTextEntity(entity.offset, entity.length, entity.customEmojiId);
+  });
   newChat.draftReplyToMessageId = chat.draftReplyToMessageId;
   newChat.isPinned = chat.isPinned;
+  newChat.isArchivePinned = chat.isArchivePinned;
   newChat.photoSmall = chat.photoSmall;
   newChat.photoSmallFileId = chat.photoSmallFileId;
   newChat.order = chat.order;
+  newChat.archiveOrder = chat.archiveOrder;
   newChat.memberCount = chat.memberCount;
   newChat.description = chat.description;
   newChat.supergroupId = chat.supergroupId;
@@ -170,6 +185,7 @@ export function cloneUser(user: User): User {
   newUser.isScam = user.isScam;
   newUser.isFake = user.isFake;
   newUser.isPremium = user.isPremium;
+  newUser.isBot = user.isBot;
   newUser.bio = user.bio;
   return newUser;
 }

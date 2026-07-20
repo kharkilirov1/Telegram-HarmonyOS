@@ -4,6 +4,7 @@
 import { ChatId } from '../EntityId';
 import { TdObject, tdGetString, tdGetNumber, tdGetBoolean, tdGetInt64, tdGetObject, tdGetArray, tdHasKeys } from '../../utils/tdAccessors';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { CustomEmojiTextEntity } from '../AppCommand';
 
 const DTO_DOMAIN = 0x0003;
 const DTO_TAG = 'ChatDto';
@@ -42,11 +43,35 @@ export class ChatDto {
   lastReadInboxMessageId: string = '0';
   lastMessage?: ChatLastMessage;
   isPinned: boolean = false;
+  isArchivePinned: boolean = false;
   photo?: ChatPhoto;
   order: string = '0';
+  archiveOrder: string = '0';
   draftText: string = '';
+  draftCustomEmojiEntities: CustomEmojiTextEntity[] = [];
   draftReplyToMessageId: string = '0';
   supergroupId: number = 0;
+}
+
+export function extractCustomEmojiTextEntities(formattedText: TdObject): CustomEmojiTextEntity[] {
+  const textLength = tdGetString(formattedText, 'text').length;
+  const result: CustomEmojiTextEntity[] = [];
+  for (const entity of tdGetArray(formattedText, 'entities')) {
+    const type = tdGetObject(entity, 'type');
+    if (type.getType() !== 'textEntityTypeCustomEmoji') {
+      continue;
+    }
+    const offset = entity.getTopLevelNumber('offset');
+    const length = entity.getTopLevelNumber('length');
+    const customEmojiId = type.getTopLevelInt64String('custom_emoji_id');
+    if (offset < 0 || length <= 0 || offset + length > textLength ||
+      customEmojiId === '0' || !/^[0-9]+$/.test(customEmojiId)) {
+      continue;
+    }
+    result.push(new CustomEmojiTextEntity(offset, length, customEmojiId));
+  }
+  result.sort((left: CustomEmojiTextEntity, right: CustomEmojiTextEntity): number => left.offset - right.offset);
+  return result;
 }
 
 function extractOptionalAccentColorId(tdObject: TdObject): number {
@@ -104,7 +129,9 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   hilog.info(DTO_DOMAIN, DTO_TAG, 'chatFromTd id=%{public}d title="%{public}s" type=%{public}s',
     chatDto.id, chatDto.title || '(empty)', tdGetString(tdGetObject(tdChat, 'type'), '@type'));
 
-  // Extract isPinned and order from positions
+  // Preserve independent main/archive positions. A chat can move between lists
+  // through two separate updateChatPosition events, so neither position may
+  // overwrite the other.
   const positions = tdGetArray(tdChat, 'positions');
   for (const position of positions) {
     const listObj = tdGetObject(position, 'list');
@@ -112,7 +139,9 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
     if (listType === 'chatListMain') {
       chatDto.isPinned = tdGetBoolean(position, 'is_pinned');
       chatDto.order = tdGetInt64(position, 'order');
-      break;
+    } else if (listType === 'chatListArchive') {
+      chatDto.isArchivePinned = tdGetBoolean(position, 'is_pinned');
+      chatDto.archiveOrder = tdGetInt64(position, 'order');
     }
   }
 
@@ -128,7 +157,9 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   if (tdHasKeys(draftObj)) {
     const draftInput = tdGetObject(draftObj, 'input_message_text');
     if (tdHasKeys(draftInput)) {
-      chatDto.draftText = tdGetString(tdGetObject(draftInput, 'text'), 'text');
+      const draftText = tdGetObject(draftInput, 'text');
+      chatDto.draftText = tdGetString(draftText, 'text');
+      chatDto.draftCustomEmojiEntities = extractCustomEmojiTextEntities(draftText);
     }
     // TDLib: draftMessage.reply_to is InputMessageReplyTo — only the
     // same-chat variant carries a message_id we can treat as local
@@ -190,21 +221,29 @@ export function extractChatPhoto(photoObj: TdObject): ChatPhoto {
 
 // Full position data from chatListMain
 export class ChatPositionInfo {
+  listType: string = '';
   isPinned: boolean = false;
   order: string = '0';
 }
 
-// Extract isPinned + order from a single TDLib position object
-export function extractMainListPosition(tdPosition: TdObject): ChatPositionInfo | undefined {
+// Extract isPinned + order from a supported TDLib chat-list position object.
+export function extractChatListPosition(tdPosition: TdObject): ChatPositionInfo | undefined {
   const listObj = tdGetObject(tdPosition, 'list');
   const listType = tdGetString(listObj, '@type');
-  if (listType === 'chatListMain') {
+  if (listType === 'chatListMain' || listType === 'chatListArchive') {
     const info = new ChatPositionInfo();
+    info.listType = listType;
     info.isPinned = tdGetBoolean(tdPosition, 'is_pinned');
     info.order = tdGetInt64(tdPosition, 'order');
     return info;
   }
   return undefined;
+}
+
+// Compatibility helper for callers that only need chatListMain.
+export function extractMainListPosition(tdPosition: TdObject): ChatPositionInfo | undefined {
+  const info = extractChatListPosition(tdPosition);
+  return info !== undefined && info.listType === 'chatListMain' ? info : undefined;
 }
 
 // Helper for partial updates (chatUpdated event)
@@ -220,8 +259,11 @@ export class ChatUpdateDto {
   lastMessage?: ChatLastMessage;
   photo?: ChatPhoto;
   isPinned?: boolean;
+  isArchivePinned?: boolean;
   order?: string;
+  archiveOrder?: string;
   draftText?: string;
+  draftCustomEmojiEntities?: CustomEmojiTextEntity[];
   draftReplyToMessageId?: string;
 }
 
@@ -240,10 +282,13 @@ export function applyChatUpdate(chat: ChatDto, update: ChatUpdateDto): ChatDto {
   updatedChat.lastReadOutboxMessageId = chat.lastReadOutboxMessageId;
   updatedChat.lastReadInboxMessageId = chat.lastReadInboxMessageId;
   updatedChat.isPinned = chat.isPinned;
+  updatedChat.isArchivePinned = chat.isArchivePinned;
   updatedChat.lastMessage = chat.lastMessage;
   updatedChat.photo = chat.photo;
   updatedChat.order = chat.order;
+  updatedChat.archiveOrder = chat.archiveOrder;
   updatedChat.draftText = chat.draftText;
+  updatedChat.draftCustomEmojiEntities = chat.draftCustomEmojiEntities.slice();
   updatedChat.draftReplyToMessageId = chat.draftReplyToMessageId;
 
   // Apply updates
@@ -274,6 +319,9 @@ export function applyChatUpdate(chat: ChatDto, update: ChatUpdateDto): ChatDto {
   if (update.isPinned !== undefined) {
     updatedChat.isPinned = update.isPinned;
   }
+  if (update.isArchivePinned !== undefined) {
+    updatedChat.isArchivePinned = update.isArchivePinned;
+  }
   if (update.lastMessage !== undefined) {
     updatedChat.lastMessage = update.lastMessage;
   }
@@ -283,8 +331,14 @@ export function applyChatUpdate(chat: ChatDto, update: ChatUpdateDto): ChatDto {
   if (update.order !== undefined) {
     updatedChat.order = update.order;
   }
+  if (update.archiveOrder !== undefined) {
+    updatedChat.archiveOrder = update.archiveOrder;
+  }
   if (update.draftText !== undefined) {
     updatedChat.draftText = update.draftText;
+  }
+  if (update.draftCustomEmojiEntities !== undefined) {
+    updatedChat.draftCustomEmojiEntities = update.draftCustomEmojiEntities.slice();
   }
   if (update.draftReplyToMessageId !== undefined) {
     updatedChat.draftReplyToMessageId = update.draftReplyToMessageId;

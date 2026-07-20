@@ -1,6 +1,7 @@
 import { describe, it, expect } from '@ohos/hypium';
 import {
   createLoadChatsCommand,
+  createAddChatToListCommand,
   createOpenChatCommand,
   createCloseChatCommand,
   createSetChatMuteCommand,
@@ -26,6 +27,18 @@ export default function chatCommandsTest() {
         const command = createLoadChatsCommand(35);
         expect(command.type).assertEqual('loadChats');
         expect(command.payload.limit).assertEqual(35);
+        expect(command.payload.chatList).assertEqual('main');
+
+        const archiveCommand = createLoadChatsCommand(50, 'archive');
+        expect(archiveCommand.payload.limit).assertEqual(50);
+        expect(archiveCommand.payload.chatList).assertEqual('archive');
+
+        const unarchiveCommand = createAddChatToListCommand(123, 'main');
+        const archiveListCommand = createAddChatToListCommand(456, 'archive');
+        expect(unarchiveCommand.type).assertEqual('addChatToList');
+        expect(unarchiveCommand.payload.chatId).assertEqual(123);
+        expect(unarchiveCommand.payload.chatList).assertEqual('main');
+        expect(archiveListCommand.payload.chatList).assertEqual('archive');
       });
 
       it('should create open and close chat commands', 0, () => {

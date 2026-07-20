@@ -41,6 +41,7 @@ export function usersReducer(state: AppState, action: ReducerAction): AppState {
         user.isScam = event.userData.isScam;
         user.isFake = event.userData.isFake;
         user.isPremium = event.userData.isPremium;
+        user.isBot = event.userData.isBot;
         
         newState.users.users.set(event.userId, user);
       } else if (event.updates) {
@@ -68,6 +69,7 @@ export function usersReducer(state: AppState, action: ReducerAction): AppState {
         if (event.updates.isScam !== undefined) { updatedUser.isScam = event.updates.isScam; }
         if (event.updates.isFake !== undefined) { updatedUser.isFake = event.updates.isFake; }
         if (event.updates.isPremium !== undefined) { updatedUser.isPremium = event.updates.isPremium; }
+        if (event.updates.isBot !== undefined) { updatedUser.isBot = event.updates.isBot; }
         
         newState.users.users.set(event.userId, updatedUser);
       }

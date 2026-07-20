@@ -63,6 +63,18 @@ export default function userDtoTest() {
         expect(dto.username).assertEqual('bob_username');
       });
 
+      it('should identify bots from the TDLib user type', 0, () => {
+        const bot = createUserDtoFromTd(TdObject.fromJSON(
+          '{"@type":"user","id":7,"type":{"@type":"userTypeBot"}}'
+        ));
+        const regular = createUserDtoFromTd(TdObject.fromJSON(
+          '{"@type":"user","id":8,"type":{"@type":"userTypeRegular"}}'
+        ));
+
+        expect(bot.isBot).assertTrue();
+        expect(regular.isBot).assertFalse();
+      });
+
       it('should extract profile photo paths and top-level file ids', 0, () => {
         const tdUser = TdObject.fromJSON(
           '{"@type":"user","id":4,"profile_photo":{"@type":"profilePhoto",' +
@@ -93,6 +105,7 @@ export default function userDtoTest() {
         expect(dto.isScam).assertFalse();
         expect(dto.isFake).assertFalse();
         expect(dto.isPremium).assertFalse();
+        expect(dto.isBot).assertFalse();
         expect(dto.status).assertEqual('longTimeAgo');
         expect(dto.photo === undefined).assertTrue();
       });

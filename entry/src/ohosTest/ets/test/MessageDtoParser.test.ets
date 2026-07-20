@@ -8,6 +8,7 @@ import {
   PollOptionDto,
   MessageUpdateDto,
   applyMessageUpdate,
+  createMessageDtoFromTd,
   parseMessageContent
 } from '../../../main/ets/core/model/dto/MessageDto';
 import { TdObject } from '../../../main/ets/core/utils/tdAccessors';
@@ -63,6 +64,53 @@ export default function messageDtoParserTest() {
         ));
         expect(dto.type).assertEqual(MessageContentType.UNKNOWN);
         expect(dto.text).assertEqual('[messageGiveawayCreated]');
+      });
+    });
+
+    describe('parseMessageContent link preview', () => {
+      it('parses current TDLib messageText.link_preview including article photo', 0, () => {
+        const dto = parseMessageContent(TdObject.fromJSON(
+          '{"@type":"messageText","text":{"@type":"formattedText","text":"https://telegram.org","entities":[]},' +
+          '"link_preview":{"@type":"linkPreview","url":"https://telegram.org/blog/example",' +
+          '"display_url":"telegram.org/blog/example","site_name":"Telegram","title":"Preview title",' +
+          '"description":{"@type":"formattedText","text":"Preview description","entities":[]},' +
+          '"author":"Telegram Team","type":{"@type":"linkPreviewTypeArticle","photo":{' +
+          '"@type":"photo","minithumbnail":{"@type":"minithumbnail","width":16,"height":9,"data":"abc"},' +
+          '"sizes":[{"@type":"photoSize","type":"i","photo":{"@type":"file","id":7,"size":0,' +
+          '"expected_size":0,"local":{"@type":"localFile","path":"thumb.jpg","is_downloading_completed":true},' +
+          '"remote":{"@type":"remoteFile","id":"r7","unique_id":"u7","is_uploading_active":false,' +
+          '"is_uploading_completed":true}},"width":90,"height":90},{"@type":"photoSize","type":"x",' +
+          '"photo":{"@type":"file","id":8,"size":0,"expected_size":0,"local":{"@type":"localFile",' +
+          '"path":"full.jpg","is_downloading_completed":true},"remote":{"@type":"remoteFile","id":"r8",' +
+          '"unique_id":"u8","is_uploading_active":false,"is_uploading_completed":true}},' +
+          '"width":1280,"height":720}]}},"has_large_media":true,"show_large_media":true,' +
+          '"show_media_above_description":true,"show_above_text":false}}'
+        ));
+
+        expect(dto.type).assertEqual(MessageContentType.TEXT);
+        expect(dto.linkPreviewSiteName).assertEqual('Telegram');
+        expect(dto.linkPreviewTitle).assertEqual('Preview title');
+        expect(dto.linkPreviewDescription).assertEqual('Preview description');
+        expect(dto.linkPreviewType).assertEqual('linkPreviewTypeArticle');
+        expect(dto.linkPreviewPhotoFileId).assertEqual(8);
+        expect(dto.linkPreviewPhotoThumbFileId).assertEqual(7);
+        expect(dto.linkPreviewPhotoWidth).assertEqual(1280);
+        expect(dto.linkPreviewPhotoHeight).assertEqual(720);
+        expect(dto.linkPreviewShowLargeMedia).assertTrue();
+        expect(dto.linkPreviewShowMediaAboveDescription).assertTrue();
+        expect(dto.linkPreviewShowAboveText).assertFalse();
+      });
+
+      it('accepts legacy messageText.web_page as compatibility input', 0, () => {
+        const dto = parseMessageContent(TdObject.fromJSON(
+          '{"@type":"messageText","text":{"@type":"formattedText","text":"legacy","entities":[]},' +
+          '"web_page":{"url":"https://example.com","display_url":"example.com",' +
+          '"site_name":"Example","title":"Legacy preview",' +
+          '"description":{"@type":"formattedText","text":"Fallback","entities":[]}}}'
+        ));
+        expect(dto.linkPreviewUrl).assertEqual('https://example.com');
+        expect(dto.linkPreviewSiteName).assertEqual('Example');
+        expect(dto.linkPreviewDescription).assertEqual('Fallback');
       });
     });
 
@@ -228,10 +276,35 @@ export default function messageDtoParserTest() {
         expect(dto.isRead).assertFalse();
         expect(dto.isPending).assertFalse();
         expect(dto.editDate).assertEqual(0);
+        expect(dto.replyToChatId).assertEqual(0);
         expect(dto.replyToMessageId).assertEqual('0');
         expect(dto.replyIsQuote).assertFalse();
         expect(dto.replyQuoteText).assertEqual('');
         expect(dto.replyQuoteOffset).assertEqual(-1);
+      });
+    });
+
+    describe('MessageDto reply target', () => {
+      it('preserves edit_date from a full TDLib message', 0, () => {
+        const dto = createMessageDtoFromTd(TdObject.fromJSON(
+          '{"@type":"message","id":99,"chat_id":10,"date":1,"edit_date":1700000000,' +
+            '"content":{"@type":"messageText","text":{"@type":"formattedText",' +
+            '"text":"Edited","entities":[]}}}'
+        ));
+
+        expect(dto.editDate).assertEqual(1700000000);
+      });
+
+      it('preserves relation chat id independently from the returned original chat', 0, () => {
+        const dto = createMessageDtoFromTd(TdObject.fromJSON(
+          '{"@type":"message","id":100,"chat_id":10,"date":1,' +
+            '"reply_to":{"@type":"messageReplyToMessage","chat_id":20,"message_id":42},' +
+            '"content":{"@type":"messageText","text":{"@type":"formattedText",' +
+            '"text":"Reply","entities":[]}}}'
+        ));
+
+        expect(dto.replyToChatId).assertEqual(20);
+        expect(dto.replyToMessageId).assertEqual('42');
       });
     });
 
@@ -314,6 +387,7 @@ export default function messageDtoParserTest() {
         original.isRead = true;
         original.isPending = false;
         original.editDate = 100;
+        original.replyToChatId = 9;
         original.replyToMessageId = '50';
         original.replyIsQuote = true;
         original.replyQuoteText = 'Quote';
@@ -333,6 +407,7 @@ export default function messageDtoParserTest() {
         expect(result.isRead).assertTrue();
         expect(result.isPending).assertFalse();
         expect(result.editDate).assertEqual(100);
+        expect(result.replyToChatId).assertEqual(9);
         expect(result.replyToMessageId).assertEqual('50');
         expect(result.replyIsQuote).assertTrue();
         expect(result.replyQuoteText).assertEqual('Quote');

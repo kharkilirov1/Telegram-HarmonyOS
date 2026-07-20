@@ -13,6 +13,8 @@ const TAG = 'FilesReducer';
 function contentMatchesFileId(content: MessageContent, fileId: number): boolean {
   return content.photoFileId === fileId ||
     content.photoThumbFileId === fileId ||
+    content.linkPreviewPhotoFileId === fileId ||
+    content.linkPreviewPhotoThumbFileId === fileId ||
     content.videoFileId === fileId ||
     content.videoThumbFileId === fileId ||
     content.documentFileId === fileId ||
@@ -34,6 +36,8 @@ function contentMatchesUniqueId(content: MessageContent, uniqueId: string): bool
   }
   return content.photoUniqueId === uniqueId ||
     content.photoThumbUniqueId === uniqueId ||
+    content.linkPreviewPhotoUniqueId === uniqueId ||
+    content.linkPreviewPhotoThumbUniqueId === uniqueId ||
     content.videoUniqueId === uniqueId ||
     content.videoThumbUniqueId === uniqueId ||
     content.documentUniqueId === uniqueId ||
@@ -51,6 +55,8 @@ function applyFilePathToContent(content: MessageContent, fileId: number, localPa
   c.type = content.type;
   c.text = content.text;
   c.caption = content.caption;
+  c.textEntities = content.textEntities.slice();
+  c.captionEntities = content.captionEntities.slice();
   c.quoteEntities = content.quoteEntities.map((entity) => {
     const cloneEntity = new MessageQuoteEntity();
     cloneEntity.offset = entity.offset;
@@ -66,6 +72,25 @@ function applyFilePathToContent(content: MessageContent, fileId: number, localPa
   c.photoWidth = content.photoWidth;
   c.photoHeight = content.photoHeight;
   c.photoMinithumb = content.photoMinithumb;
+
+  c.linkPreviewUrl = content.linkPreviewUrl;
+  c.linkPreviewDisplayUrl = content.linkPreviewDisplayUrl;
+  c.linkPreviewSiteName = content.linkPreviewSiteName;
+  c.linkPreviewTitle = content.linkPreviewTitle;
+  c.linkPreviewDescription = content.linkPreviewDescription;
+  c.linkPreviewAuthor = content.linkPreviewAuthor;
+  c.linkPreviewType = content.linkPreviewType;
+  c.linkPreviewShowLargeMedia = content.linkPreviewShowLargeMedia;
+  c.linkPreviewShowMediaAboveDescription = content.linkPreviewShowMediaAboveDescription;
+  c.linkPreviewShowAboveText = content.linkPreviewShowAboveText;
+  c.linkPreviewPhotoPath = content.linkPreviewPhotoFileId === fileId ? localPath : content.linkPreviewPhotoPath;
+  c.linkPreviewPhotoThumbPath = content.linkPreviewPhotoThumbFileId === fileId
+    ? localPath : content.linkPreviewPhotoThumbPath;
+  c.linkPreviewPhotoFileId = content.linkPreviewPhotoFileId;
+  c.linkPreviewPhotoThumbFileId = content.linkPreviewPhotoThumbFileId;
+  c.linkPreviewPhotoWidth = content.linkPreviewPhotoWidth;
+  c.linkPreviewPhotoHeight = content.linkPreviewPhotoHeight;
+  c.linkPreviewPhotoMinithumb = content.linkPreviewPhotoMinithumb;
 
   c.videoPath = content.videoFileId === fileId ? localPath : content.videoPath;
   c.videoThumbPath = content.videoThumbFileId === fileId ? localPath : content.videoThumbPath;
@@ -119,6 +144,8 @@ function applyFilePathToContent(content: MessageContent, fileId: number, localPa
   // any later renumbered download of the same message (runtime saw uid=0)
   c.photoUniqueId = content.photoUniqueId;
   c.photoThumbUniqueId = content.photoThumbUniqueId;
+  c.linkPreviewPhotoUniqueId = content.linkPreviewPhotoUniqueId;
+  c.linkPreviewPhotoThumbUniqueId = content.linkPreviewPhotoThumbUniqueId;
   c.videoUniqueId = content.videoUniqueId;
   c.videoThumbUniqueId = content.videoThumbUniqueId;
   c.documentUniqueId = content.documentUniqueId;

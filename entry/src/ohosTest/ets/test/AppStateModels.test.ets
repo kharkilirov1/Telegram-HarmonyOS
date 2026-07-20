@@ -309,6 +309,11 @@ export default function appStateModelsTest() {
         expect(m.replyToMessageId).assertEqual('0');
       });
 
+      it('should default replyToChatId to 0', 0, () => {
+        const m = new Message();
+        expect(m.replyToChatId).assertEqual(0);
+      });
+
       it('should default replyIsQuote to false', 0, () => {
         const m = new Message();
         expect(m.replyIsQuote).assertFalse();
@@ -429,6 +434,11 @@ export default function appStateModelsTest() {
       it('should default draftText to empty string', 0, () => {
         const c = new Chat();
         expect(c.draftText).assertEqual('');
+      });
+
+      it('should default draftCustomEmojiEntities to empty', 0, () => {
+        const c = new Chat();
+        expect(c.draftCustomEmojiEntities.length).assertEqual(0);
       });
 
       it('should default draftReplyToMessageId to "0"', 0, () => {

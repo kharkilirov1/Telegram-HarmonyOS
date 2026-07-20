@@ -3,6 +3,8 @@
 
 import { ChatId, UserId, MessageId } from './EntityId';
 import { AnyAppEvent } from './AppEvent';
+import { CustomEmojiTextEntity } from './AppCommand';
+import { ChatActiveStoriesDto } from './dto/StoryDto';
 
 // Type definitions
 export type AuthStatus = 'notInitialized' | 'waitTdlibParameters' | 'waitPhoneNumber' | 'waitCode' | 'waitPassword' | 'waitRegistration' | 'waitQrCode' | 'ready' | 'loggingOut' | 'closing' | 'closed';
@@ -54,11 +56,14 @@ export class Chat {
   lastReadInboxMessageId: MessageId = '0';
   lastMessage?: ChatLastMessage;
   draftText: string = '';
+  draftCustomEmojiEntities: CustomEmojiTextEntity[] = [];
   draftReplyToMessageId: MessageId = '0';
   isPinned: boolean = false;
+  isArchivePinned: boolean = false;
   photoSmall: string = '';
   photoSmallFileId: number = 0;
   order: string = '0'; // TDLib int64 sort key as string; '0' = not in chatListMain
+  archiveOrder: string = '0'; // TDLib int64 sort key as string; '0' = not in chatListArchive
   memberCount: number = 0;
   description: string = '';
   supergroupId: number = 0; // TDLib supergroup_id for fetching full info
@@ -76,6 +81,15 @@ export class ChatTypingInfo {
 export class ChatsState {
   chats: Map<ChatId, Chat> = new Map<ChatId, Chat>();
   orderedChatIds: ChatId[] = [];
+  archivedChatIds: ChatId[] = [];
+  activeStoriesByChatId: Map<ChatId, ChatActiveStoriesDto> = new Map<ChatId, ChatActiveStoriesDto>();
+  orderedStoryChatIds: ChatId[] = [];
+  // TDLib updateUnreadMessageCount aggregates. -1 means that the first
+  // authoritative update has not arrived yet and selectors must use fallback data.
+  mainUnreadMessageCount: number = -1;
+  mainUnreadUnmutedMessageCount: number = -1;
+  archiveUnreadMessageCount: number = -1;
+  archiveUnreadUnmutedMessageCount: number = -1;
   typingActions: Map<ChatId, ChatTypingInfo> = new Map<ChatId, ChatTypingInfo>();
   isLoading: boolean = false;
   hasMore: boolean = true;
@@ -106,6 +120,27 @@ export class MessageContent {
   quoteEntities: MessageQuoteEntity[] = [];
   textEntities: TextEntity[] = [];
   captionEntities: TextEntity[] = [];
+
+  // TDLib messageText.link_preview
+  linkPreviewUrl: string = '';
+  linkPreviewDisplayUrl: string = '';
+  linkPreviewSiteName: string = '';
+  linkPreviewTitle: string = '';
+  linkPreviewDescription: string = '';
+  linkPreviewAuthor: string = '';
+  linkPreviewType: string = '';
+  linkPreviewShowLargeMedia: boolean = false;
+  linkPreviewShowMediaAboveDescription: boolean = false;
+  linkPreviewShowAboveText: boolean = false;
+  linkPreviewPhotoPath: string = '';
+  linkPreviewPhotoThumbPath: string = '';
+  linkPreviewPhotoFileId: number = 0;
+  linkPreviewPhotoThumbFileId: number = 0;
+  linkPreviewPhotoWidth: number = 0;
+  linkPreviewPhotoHeight: number = 0;
+  linkPreviewPhotoMinithumb: string = '';
+  linkPreviewPhotoUniqueId: string = '';
+  linkPreviewPhotoThumbUniqueId: string = '';
 
   // Service messages (chat events)
   serviceType: string = '';
@@ -228,6 +263,7 @@ export class Message {
   isRead: boolean = false;
   isPending: boolean = false;
   editDate: number = 0;
+  replyToChatId: ChatId = 0;
   replyToMessageId: MessageId = '0';
   replyIsQuote: boolean = false;
   replyQuoteText: string = '';
@@ -247,6 +283,9 @@ export class PendingMessage {
 // Messages state - uses string keys for MessageId (int64)
 export class MessagesState {
   messages: Map<ChatId, Map<MessageId, Message>> = new Map<ChatId, Map<MessageId, Message>>();
+  // Reply originals can belong to another chat. Keep them in a context-scoped
+  // associated bucket instead of polluting the live history of either chat.
+  associatedMessages: Map<ChatId, Map<MessageId, Message>> = new Map<ChatId, Map<MessageId, Message>>();
   pendingMessages: Map<string, PendingMessage> = new Map<string, PendingMessage>();
 }
 
@@ -301,6 +340,7 @@ export class User {
   isScam: boolean = false;
   isFake: boolean = false;
   isPremium: boolean = false;
+  isBot: boolean = false;
   bio: string = '';
 }
 

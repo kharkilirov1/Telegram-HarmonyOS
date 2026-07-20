@@ -32,6 +32,7 @@ export class UserDto {
   isScam: boolean = false;
   isFake: boolean = false;
   isPremium: boolean = false;
+  isBot: boolean = false;
   status: UserStatus = 'offline';
 }
 
@@ -104,6 +105,7 @@ export function createUserDtoFromTd(tdUser: TdObject): UserDto {
   userDto.isScam = tdGetBoolean(tdUser, 'is_scam');
   userDto.isFake = tdGetBoolean(tdUser, 'is_fake');
   userDto.isPremium = tdGetBoolean(tdUser, 'is_premium');
+  userDto.isBot = tdGetString(tdGetObject(tdUser, 'type'), '@type') === 'userTypeBot';
   userDto.status = status;
 
   // Username: TDLib can have either 'username' or 'usernames.editable_username'
@@ -138,6 +140,7 @@ export class UserUpdateDto {
   isScam?: boolean;
   isFake?: boolean;
   isPremium?: boolean;
+  isBot?: boolean;
 }
 
 export function applyUserUpdate(user: UserDto, update: UserUpdateDto): UserDto {
@@ -155,6 +158,7 @@ export function applyUserUpdate(user: UserDto, update: UserUpdateDto): UserDto {
   updatedUser.isScam = user.isScam;
   updatedUser.isFake = user.isFake;
   updatedUser.isPremium = user.isPremium;
+  updatedUser.isBot = user.isBot;
   updatedUser.status = user.status;
 
   if (update.firstName !== undefined) { updatedUser.firstName = update.firstName; }
@@ -169,6 +173,7 @@ export function applyUserUpdate(user: UserDto, update: UserUpdateDto): UserDto {
   if (update.isScam !== undefined) { updatedUser.isScam = update.isScam; }
   if (update.isFake !== undefined) { updatedUser.isFake = update.isFake; }
   if (update.isPremium !== undefined) { updatedUser.isPremium = update.isPremium; }
+  if (update.isBot !== undefined) { updatedUser.isBot = update.isBot; }
 
   return updatedUser;
 }

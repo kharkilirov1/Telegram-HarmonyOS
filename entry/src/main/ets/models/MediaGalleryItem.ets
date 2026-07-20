@@ -2,6 +2,7 @@ export class MediaGalleryItem {
   type: string = 'photo'; // 'photo' | 'video' | 'animation' | 'videoNote'
   path: string = '';
   thumbnailPath: string = '';
+  minithumb: string = '';
   caption: string = '';
   senderName: string = '';
   timestamp: string = '';
@@ -10,6 +11,7 @@ export class MediaGalleryItem {
   durationSec: number = 0;
   fileId: number = 0;
   messageId: string = '';
+  sourceMessageId: string = '';
   isDownloading: boolean = false;
   isDownloadFailed: boolean = false;
   downloadProgress: number = -1;

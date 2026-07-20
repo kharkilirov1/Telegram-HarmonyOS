@@ -12,8 +12,9 @@
 // - @StorageProp для односторонней связи в UI
 
 import { AppStore } from '../../core/store/AppStore';
-import { AppState, AuthStatus, ConnectionStatus, Chat } from '../../core/model/AppState';
+import { AppState, AuthStatus, ConnectionStatus } from '../../core/model/AppState';
 import { authUIState, chatsUIState, navigationUIState } from '../../core/model/UIStateModels';
+import { selectTotalUnreadCount } from '../../domain/selectors/chatSelectors';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const TAG = 'AppStoreBridge';
@@ -208,13 +209,10 @@ export class AppStoreBridge {
     chatsUIState.chatsHasMore = state.chats.hasMore;
     chatsUIState.chatsLoadPhase = state.chats.loadPhase;
 
-    // Number of chats with unread messages (iOS-style: count of chats, not total messages)
-    let totalUnread = 0;
-    state.chats.chats.forEach((chat: Chat) => {
-      if (chat.unreadCount > 0) {
-        totalUnread++;
-      }
-    });
+    // Telegram iOS root badge uses renderedTotalUnreadCount (messages, not chats).
+    // Prefer TDLib's complete aggregate and fall back to loaded main-list rows
+    // only until updateUnreadMessageCount arrives.
+    const totalUnread = selectTotalUnreadCount(state);
     AppStorage.set<number>(StorageKeys.TOTAL_UNREAD_COUNT, totalUnread);
 
     // ── Sync @ObservedV2 models (для V2-компонентов) ──

@@ -19,6 +19,7 @@ import {
 } from '../../../main/ets/ui/text_engine/Segmenter';
 import { layoutLines, measureHeight, getLastLineWidth } from '../../../main/ets/ui/text_engine/LineBreaker';
 import { PreparedText, HardBreakChunk, SegmentBreakKind } from '../../../main/ets/ui/text_engine/TextTypes';
+import { composeMessageMetaText } from '../../../main/ets/ui/tg_ui/utils/TgMessageMetaText';
 
 /**
  * Unit tests for text engine components — CJK detection, segmentation, line breaking.
@@ -54,6 +55,20 @@ function makePreparedText(
 
 export default function textEngineTest() {
   describe('TextEngine', () => {
+
+    describe('composeMessageMetaText', () => {
+      it('should join localized edited text and time with one space', 0, () => {
+        expect(composeMessageMetaText('изменено', '07:42')).assertEqual('изменено 07:42');
+      });
+
+      it('should keep ordinary time unchanged', 0, () => {
+        expect(composeMessageMetaText('', '07:42')).assertEqual('07:42');
+      });
+
+      it('should trim resource and time inputs', 0, () => {
+        expect(composeMessageMetaText(' edited ', ' 09:41 ')).assertEqual('edited 09:41');
+      });
+    });
 
     // -----------------------------------------------------------------------
     // CjkDetector — isCJKCodePoint

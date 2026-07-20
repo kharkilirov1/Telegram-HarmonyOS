@@ -5,6 +5,7 @@
 import { AppState, Message, MessageContent, MessageQuoteEntity, TextEntity, MessageSendStatus, PollOption, ReducerAction } from '../model/AppState';
 import {
   NewMessageEvent,
+  ReplyMessageHydratedEvent,
   MessageUpdatedEvent,
   MessageContentUpdatedEvent,
   MessageSendSucceededEvent,
@@ -14,10 +15,11 @@ import {
 } from '../model/AppEvent';
 import { MessageDto, MessageContentDto } from '../model/dto/MessageDto';
 import { cloneStateForMessages } from '../utils/stateClone';
+import { createAssociatedMessageKey } from '../utils/replyMessageKey';
 
 // Events this reducer handles
 function isMessageEvent(type: string): boolean {
-  return type === 'newMessage' || type === 'messageUpdated' ||
+  return type === 'newMessage' || type === 'replyMessageHydrated' || type === 'messageUpdated' ||
     type === 'messageContentUpdated' || type === 'messageSendSucceeded' ||
     type === 'messageSendFailed' || type === 'messagesDeleted' ||
     type === 'chatMessagesReset';
@@ -58,6 +60,26 @@ function contentFromDto(dto: MessageContentDto): MessageContent {
     clone.language = e.language;
     return clone;
   });
+
+  content.linkPreviewUrl = dto.linkPreviewUrl;
+  content.linkPreviewDisplayUrl = dto.linkPreviewDisplayUrl;
+  content.linkPreviewSiteName = dto.linkPreviewSiteName;
+  content.linkPreviewTitle = dto.linkPreviewTitle;
+  content.linkPreviewDescription = dto.linkPreviewDescription;
+  content.linkPreviewAuthor = dto.linkPreviewAuthor;
+  content.linkPreviewType = dto.linkPreviewType;
+  content.linkPreviewShowLargeMedia = dto.linkPreviewShowLargeMedia;
+  content.linkPreviewShowMediaAboveDescription = dto.linkPreviewShowMediaAboveDescription;
+  content.linkPreviewShowAboveText = dto.linkPreviewShowAboveText;
+  content.linkPreviewPhotoPath = dto.linkPreviewPhotoPath;
+  content.linkPreviewPhotoThumbPath = dto.linkPreviewPhotoThumbPath;
+  content.linkPreviewPhotoFileId = dto.linkPreviewPhotoFileId;
+  content.linkPreviewPhotoThumbFileId = dto.linkPreviewPhotoThumbFileId;
+  content.linkPreviewPhotoWidth = dto.linkPreviewPhotoWidth;
+  content.linkPreviewPhotoHeight = dto.linkPreviewPhotoHeight;
+  content.linkPreviewPhotoMinithumb = dto.linkPreviewPhotoMinithumb;
+  content.linkPreviewPhotoUniqueId = dto.linkPreviewPhotoUniqueId;
+  content.linkPreviewPhotoThumbUniqueId = dto.linkPreviewPhotoThumbUniqueId;
 
   content.serviceType = dto.serviceType;
   content.serviceUserIds = dto.serviceUserIds.slice();
@@ -170,6 +192,7 @@ function messageFromDto(dto: MessageDto): Message {
   message.isRead = dto.isRead;
   message.isPending = dto.isPending;
   message.editDate = dto.editDate;
+  message.replyToChatId = dto.replyToChatId;
   message.replyToMessageId = dto.replyToMessageId;
   message.replyIsQuote = dto.replyIsQuote;
   message.replyQuoteText = dto.replyQuoteText;
@@ -209,6 +232,25 @@ function cloneMessage(msg: Message): Message {
     ce.url = e.url; ce.userId = e.userId; ce.language = e.language;
     return ce;
   });
+  clonedContent.linkPreviewUrl = msg.content.linkPreviewUrl;
+  clonedContent.linkPreviewDisplayUrl = msg.content.linkPreviewDisplayUrl;
+  clonedContent.linkPreviewSiteName = msg.content.linkPreviewSiteName;
+  clonedContent.linkPreviewTitle = msg.content.linkPreviewTitle;
+  clonedContent.linkPreviewDescription = msg.content.linkPreviewDescription;
+  clonedContent.linkPreviewAuthor = msg.content.linkPreviewAuthor;
+  clonedContent.linkPreviewType = msg.content.linkPreviewType;
+  clonedContent.linkPreviewShowLargeMedia = msg.content.linkPreviewShowLargeMedia;
+  clonedContent.linkPreviewShowMediaAboveDescription = msg.content.linkPreviewShowMediaAboveDescription;
+  clonedContent.linkPreviewShowAboveText = msg.content.linkPreviewShowAboveText;
+  clonedContent.linkPreviewPhotoPath = msg.content.linkPreviewPhotoPath;
+  clonedContent.linkPreviewPhotoThumbPath = msg.content.linkPreviewPhotoThumbPath;
+  clonedContent.linkPreviewPhotoFileId = msg.content.linkPreviewPhotoFileId;
+  clonedContent.linkPreviewPhotoThumbFileId = msg.content.linkPreviewPhotoThumbFileId;
+  clonedContent.linkPreviewPhotoWidth = msg.content.linkPreviewPhotoWidth;
+  clonedContent.linkPreviewPhotoHeight = msg.content.linkPreviewPhotoHeight;
+  clonedContent.linkPreviewPhotoMinithumb = msg.content.linkPreviewPhotoMinithumb;
+  clonedContent.linkPreviewPhotoUniqueId = msg.content.linkPreviewPhotoUniqueId;
+  clonedContent.linkPreviewPhotoThumbUniqueId = msg.content.linkPreviewPhotoThumbUniqueId;
   clonedContent.serviceType = msg.content.serviceType;
   clonedContent.serviceUserIds = msg.content.serviceUserIds.slice();
   clonedContent.serviceTitle = msg.content.serviceTitle;
@@ -291,6 +333,7 @@ function cloneMessage(msg: Message): Message {
   clone.isRead = msg.isRead;
   clone.isPending = msg.isPending;
   clone.editDate = msg.editDate;
+  clone.replyToChatId = msg.replyToChatId;
   clone.replyToMessageId = msg.replyToMessageId;
   clone.replyIsQuote = msg.replyIsQuote;
   clone.replyQuoteText = msg.replyQuoteText;
@@ -304,6 +347,14 @@ function cloneMessage(msg: Message): Message {
 // Get or create chat messages map
 function getChatMessages(state: AppState, chatId: number): Map<string, Message> {
   const existing = state.messages.messages.get(chatId);
+  if (existing) {
+    return new Map<string, Message>(existing);
+  }
+  return new Map<string, Message>();
+}
+
+function getAssociatedMessages(state: AppState, contextChatId: number): Map<string, Message> {
+  const existing = state.messages.associatedMessages.get(contextChatId);
   if (existing) {
     return new Map<string, Message>(existing);
   }
@@ -327,6 +378,15 @@ export function messagesReducer(state: AppState, action: ReducerAction): AppStat
       const chatMessages = getChatMessages(newState, event.chatId);
       chatMessages.set(event.messageId, message);
       newState.messages.messages.set(event.chatId, chatMessages);
+      break;
+    }
+
+    case 'replyMessageHydrated': {
+      const event = action as ReplyMessageHydratedEvent;
+      const message = messageFromDto(event.messageData);
+      const associatedMessages = getAssociatedMessages(newState, event.contextChatId);
+      associatedMessages.set(createAssociatedMessageKey(event.targetChatId, event.messageId), message);
+      newState.messages.associatedMessages.set(event.contextChatId, associatedMessages);
       break;
     }
 
