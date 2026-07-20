@@ -16,9 +16,39 @@
       "buildFunction": "TgForwardTargetPickerPageBuilder"
     },
     {
+      "name": "TgComposePage",
+      "pageSourceFile": "src/main/ets/ui/pages/compose/TgComposePage.ets",
+      "buildFunction": "TgComposePageBuilder"
+    },
+    {
+      "name": "TgNewContactPage",
+      "pageSourceFile": "src/main/ets/ui/pages/compose/TgNewContactPage.ets",
+      "buildFunction": "TgNewContactPageBuilder"
+    },
+    {
+      "name": "TgNewGroupMembersPage",
+      "pageSourceFile": "src/main/ets/ui/pages/compose/TgNewGroupMembersPage.ets",
+      "buildFunction": "TgNewGroupMembersPageBuilder"
+    },
+    {
+      "name": "TgNewGroupInfoPage",
+      "pageSourceFile": "src/main/ets/ui/pages/compose/TgNewGroupInfoPage.ets",
+      "buildFunction": "TgNewGroupInfoPageBuilder"
+    },
+    {
+      "name": "TgNewChannelPage",
+      "pageSourceFile": "src/main/ets/ui/pages/compose/TgNewChannelPage.ets",
+      "buildFunction": "TgNewChannelPageBuilder"
+    },
+    {
       "name": "TgSharedMediaPage",
       "pageSourceFile": "src/main/ets/ui/pages/profile/TgSharedMediaPage.ets",
       "buildFunction": "TgSharedMediaPageBuilder"
+    },
+    {
+      "name": "TgProfileMembersPage",
+      "pageSourceFile": "src/main/ets/ui/pages/profile/TgProfileMembersPage.ets",
+      "buildFunction": "TgProfileMembersPageBuilder"
     }
   ]
 }

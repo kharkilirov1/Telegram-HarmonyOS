@@ -45,6 +45,22 @@
       "value": "搜索"
     },
     {
+      "name": "chat_list_edit_compact",
+      "value": "编辑"
+    },
+    {
+      "name": "chat_filter_all",
+      "value": "全部"
+    },
+    {
+      "name": "chat_filter_unread",
+      "value": "未读"
+    },
+    {
+      "name": "chat_filter_personal",
+      "value": "个人"
+    },
+    {
       "name": "enter_code_title",
       "value": "输入验证码"
     },
@@ -79,6 +95,10 @@
     {
       "name": "message_placeholder",
       "value": "消息"
+    },
+    {
+      "name": "chat_split_start_messaging",
+      "value": "开始聊天"
     },
     {
       "name": "slide_to_cancel",
@@ -201,6 +221,82 @@
       "value": "不支持的消息"
     },
     {
+      "name": "chat_preview_album",
+      "value": "相册"
+    },
+    {
+      "name": "chat_preview_audio",
+      "value": "音频"
+    },
+    {
+      "name": "chat_preview_joined_group",
+      "value": "加入了群组"
+    },
+    {
+      "name": "chat_preview_left_group",
+      "value": "退出了群组"
+    },
+    {
+      "name": "chat_preview_chat_updated",
+      "value": "群组信息已更新"
+    },
+    {
+      "name": "chat_preview_joined_telegram",
+      "value": "加入了 Telegram"
+    },
+    {
+      "name": "chat_preview_service_message",
+      "value": "服务消息"
+    },
+    {
+      "name": "chat_preview_recording_video",
+      "value": "正在录制视频..."
+    },
+    {
+      "name": "chat_preview_sending_video",
+      "value": "正在发送视频..."
+    },
+    {
+      "name": "chat_preview_recording_voice",
+      "value": "正在录制语音消息..."
+    },
+    {
+      "name": "chat_preview_sending_voice",
+      "value": "正在发送语音消息..."
+    },
+    {
+      "name": "chat_preview_sending_photo",
+      "value": "正在发送照片..."
+    },
+    {
+      "name": "chat_preview_sending_file",
+      "value": "正在发送文件..."
+    },
+    {
+      "name": "chat_preview_choosing_sticker",
+      "value": "正在选择贴纸..."
+    },
+    {
+      "name": "chat_preview_choosing_location",
+      "value": "正在选择位置..."
+    },
+    {
+      "name": "chat_preview_choosing_contact",
+      "value": "正在选择联系人..."
+    },
+    {
+      "name": "chat_preview_playing_game",
+      "value": "正在玩游戏..."
+    },
+    {
+      "name": "chat_preview_recording_video_note",
+      "value": "正在录制视频消息..."
+    },
+    {
+      "name": "chat_preview_sending_video_note",
+      "value": "正在发送视频消息..."
+    },
+    {
       "name": "pin",
       "value": "置顶"
     },
@@ -313,8 +409,28 @@
       "value": "新建群组"
     },
     {
+      "name": "new_contact",
+      "value": "新建联系人"
+    },
+    {
       "name": "new_channel",
       "value": "新建频道"
+    },
+    {
+      "name": "contact_added_not_registered",
+      "value": "联系人已添加。该号码尚未注册 Telegram。"
+    },
+    {
+      "name": "channel_intro_title",
+      "value": "什么是频道？"
+    },
+    {
+      "name": "channel_intro_text",
+      "value": "频道可用于向大量受众广播消息。"
+    },
+    {
+      "name": "channel_intro_create",
+      "value": "创建频道"
     },
     {
       "name": "secret_chat",
@@ -541,6 +657,10 @@
       "value": "Telegram 常见问题"
     },
     {
+      "name": "settings_tips",
+      "value": "Telegram 使用技巧"
+    },
+    {
       "name": "settings_telegram_features",
       "value": "Telegram 功能介绍"
     },
@@ -607,6 +727,14 @@
     {
       "name": "search_no_results",
       "value": "未找到结果"
+    },
+    {
+      "name": "search_searching",
+      "value": "正在搜索..."
+    },
+    {
+      "name": "search_failed",
+      "value": "搜索失败"
     },
     {
       "name": "attach_camera",
@@ -753,6 +881,14 @@
       "value": "置顶消息"
     },
     {
+      "name": "previous_pinned_message",
+      "value": "上一条置顶消息"
+    },
+    {
+      "name": "no_pinned_messages",
+      "value": "暂无置顶消息"
+    },
+    {
       "name": "block_user",
       "value": "屏蔽用户"
     },
@@ -811,6 +947,14 @@
     {
       "name": "archive",
       "value": "归档"
+    },
+    {
+      "name": "archived_chats",
+      "value": "已归档聊天"
+    },
+    {
+      "name": "unarchive",
+      "value": "取消归档"
     },
     {
       "name": "chat_background",
@@ -937,6 +1081,10 @@
       "value": "搜索"
     },
     {
+      "name": "accessibility_close_search",
+      "value": "关闭搜索"
+    },
+    {
       "name": "accessibility_compose",
       "value": "撰写新消息"
     },
@@ -1045,6 +1193,10 @@
       "value": "联系人"
     },
     {
+      "name": "search_global_section",
+      "value": "全局搜索"
+    },
+    {
       "name": "search_chats_section",
       "value": "聊天"
     },
@@ -1071,6 +1223,14 @@
     {
       "name": "calls_missed_label",
       "value": "未接"
+    },
+    {
+      "name": "calls_incoming_label",
+      "value": "来电"
+    },
+    {
+      "name": "calls_outgoing_label",
+      "value": "拨出"
     },
     {
       "name": "message_call_missed_voice",
@@ -1179,6 +1339,18 @@
     {
       "name": "administrators_label",
       "value": "管理员"
+    },
+    {
+      "name": "members_label",
+      "value": "成员"
+    },
+    {
+      "name": "member_role_bot",
+      "value": "机器人"
+    },
+    {
+      "name": "members_unavailable",
+      "value": "成员列表不可用"
     },
     {
       "name": "banned_users_label",
@@ -1351,6 +1523,18 @@
     {
       "name": "one_vote",
       "value": "1票"
+    },
+    {
+      "name": "few_votes",
+      "value": "{count}票"
+    },
+    {
+      "name": "many_votes",
+      "value": "{count}票"
+    },
+    {
+      "name": "anonymous_quiz",
+      "value": "匿名测验"
     },
     {
       "name": "closed_label",
@@ -1625,6 +1809,10 @@
       "value": "English"
     },
     {
+      "name": "language_current",
+      "value": "简体中文"
+    },
+    {
       "name": "accessibility_fullscreen",
       "value": "切换全屏"
     },
@@ -1667,6 +1855,18 @@
     {
       "name": "group_members_count",
       "value": "%s 位成员"
+    },
+    {
+      "name": "subscribers_count",
+      "value": "%s 位订阅者"
+    },
+    {
+      "name": "channel_label",
+      "value": "频道"
+    },
+    {
+      "name": "group_label",
+      "value": "群组"
     },
     {
       "name": "sticker_pack_count_format",
@@ -1713,8 +1913,24 @@
       "value": "最近"
     },
     {
+      "name": "sticker_packs_favorites",
+      "value": "收藏"
+    },
+    {
+      "name": "sticker_packs_popular_premium",
+      "value": "热门高级贴纸"
+    },
+    {
       "name": "sticker_packs_trending",
       "value": "热门"
+    },
+    {
+      "name": "sticker_packs_installed",
+      "value": "已安装的贴纸包"
+    },
+    {
+      "name": "sticker_packs_empty",
+      "value": "没有已安装的贴纸包"
     },
     {
       "name": "sticker_packs_add",
@@ -2365,6 +2581,62 @@
       "value": "12月"
     },
     {
+      "name": "chat_date_header",
+      "value": "{month}{day}日"
+    },
+    {
+      "name": "chat_date_header_year",
+      "value": "{year}年{month}{day}日"
+    },
+    {
+      "name": "chat_month_jan",
+      "value": "1月"
+    },
+    {
+      "name": "chat_month_feb",
+      "value": "2月"
+    },
+    {
+      "name": "chat_month_mar",
+      "value": "3月"
+    },
+    {
+      "name": "chat_month_apr",
+      "value": "4月"
+    },
+    {
+      "name": "chat_month_may",
+      "value": "5月"
+    },
+    {
+      "name": "chat_month_jun",
+      "value": "6月"
+    },
+    {
+      "name": "chat_month_jul",
+      "value": "7月"
+    },
+    {
+      "name": "chat_month_aug",
+      "value": "8月"
+    },
+    {
+      "name": "chat_month_sep",
+      "value": "9月"
+    },
+    {
+      "name": "chat_month_oct",
+      "value": "10月"
+    },
+    {
+      "name": "chat_month_nov",
+      "value": "11月"
+    },
+    {
+      "name": "chat_month_dec",
+      "value": "12月"
+    },
+    {
       "name": "login_call_sent",
       "value": "We're calling %s with a code"
     },
@@ -2475,6 +2747,94 @@
     {
       "name": "deleted_account",
       "value": "已注销账户"
+    },
+    {
+      "name": "composer_voice_slide_cancel",
+      "value": "滑动取消"
+    },
+    {
+      "name": "composer_voice_locked",
+      "value": "正在录音"
+    },
+    {
+      "name": "composer_voice_preparing",
+      "value": "正在启动..."
+    },
+    {
+      "name": "composer_voice_sending",
+      "value": "正在发送..."
+    },
+    {
+      "name": "composer_voice_permission_denied",
+      "value": "语音消息需要麦克风权限"
+    },
+    {
+      "name": "composer_voice_too_short",
+      "value": "录音时间太短"
+    },
+    {
+      "name": "composer_voice_record_failed",
+      "value": "无法开始录音"
+    },
+    {
+      "name": "composer_voice_send_failed",
+      "value": "无法发送语音消息"
+    },
+    {
+      "name": "composer_bot_menu",
+      "value": "菜单"
+    },
+    {
+      "name": "action_forward",
+      "value": "转发"
+    },
+    {
+      "name": "emoji_category_smileys",
+      "value": "表情与情感"
+    },
+    {
+      "name": "emoji_category_people",
+      "value": "人物与身体"
+    },
+    {
+      "name": "emoji_category_animals",
+      "value": "动物与自然"
+    },
+    {
+      "name": "emoji_category_food",
+      "value": "食物与饮料"
+    },
+    {
+      "name": "emoji_category_travel",
+      "value": "旅行与地点"
+    },
+    {
+      "name": "emoji_category_activity",
+      "value": "活动"
+    },
+    {
+      "name": "emoji_category_objects",
+      "value": "物品"
+    },
+    {
+      "name": "emoji_category_symbols",
+      "value": "符号"
+    },
+    {
+      "name": "emoji_category_flags",
+      "value": "旗帜"
+    },
+    {
+      "name": "message_edited",
+      "value": "已编辑"
+    },
+    {
+      "name": "group_member_limit_reached",
+      "value": "最多可选择 %d 位成员。"
+    },
+    {
+      "name": "group_members_not_added",
+      "value": "有 %d 位成员未能添加，可通过邀请链接邀请。"
     }
   ]
 }

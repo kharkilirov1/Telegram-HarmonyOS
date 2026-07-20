@@ -45,6 +45,22 @@
       "value": "Search"
     },
     {
+      "name": "chat_list_edit_compact",
+      "value": "Edit"
+    },
+    {
+      "name": "chat_filter_all",
+      "value": "All"
+    },
+    {
+      "name": "chat_filter_unread",
+      "value": "Unread"
+    },
+    {
+      "name": "chat_filter_personal",
+      "value": "Personal"
+    },
+    {
       "name": "enter_code_title",
       "value": "Enter Code"
     },
@@ -79,6 +95,10 @@
     {
       "name": "message_placeholder",
       "value": "Message"
+    },
+    {
+      "name": "chat_split_start_messaging",
+      "value": "Start Messaging"
     },
     {
       "name": "slide_to_cancel",
@@ -201,6 +221,82 @@
       "value": "Unsupported message"
     },
     {
+      "name": "chat_preview_album",
+      "value": "Album"
+    },
+    {
+      "name": "chat_preview_audio",
+      "value": "Audio"
+    },
+    {
+      "name": "chat_preview_joined_group",
+      "value": "Joined the group"
+    },
+    {
+      "name": "chat_preview_left_group",
+      "value": "Left the group"
+    },
+    {
+      "name": "chat_preview_chat_updated",
+      "value": "Chat updated"
+    },
+    {
+      "name": "chat_preview_joined_telegram",
+      "value": "Joined Telegram"
+    },
+    {
+      "name": "chat_preview_service_message",
+      "value": "Service message"
+    },
+    {
+      "name": "chat_preview_recording_video",
+      "value": "recording video..."
+    },
+    {
+      "name": "chat_preview_sending_video",
+      "value": "sending video..."
+    },
+    {
+      "name": "chat_preview_recording_voice",
+      "value": "recording voice..."
+    },
+    {
+      "name": "chat_preview_sending_voice",
+      "value": "sending voice..."
+    },
+    {
+      "name": "chat_preview_sending_photo",
+      "value": "sending photo..."
+    },
+    {
+      "name": "chat_preview_sending_file",
+      "value": "sending file..."
+    },
+    {
+      "name": "chat_preview_choosing_sticker",
+      "value": "choosing sticker..."
+    },
+    {
+      "name": "chat_preview_choosing_location",
+      "value": "choosing location..."
+    },
+    {
+      "name": "chat_preview_choosing_contact",
+      "value": "choosing contact..."
+    },
+    {
+      "name": "chat_preview_playing_game",
+      "value": "playing game..."
+    },
+    {
+      "name": "chat_preview_recording_video_note",
+      "value": "recording video message..."
+    },
+    {
+      "name": "chat_preview_sending_video_note",
+      "value": "sending video message..."
+    },
+    {
       "name": "pin",
       "value": "Pin"
     },
@@ -313,8 +409,28 @@
       "value": "New Group"
     },
     {
+      "name": "new_contact",
+      "value": "New Contact"
+    },
+    {
       "name": "new_channel",
       "value": "New Channel"
+    },
+    {
+      "name": "contact_added_not_registered",
+      "value": "Contact added. This phone number is not registered on Telegram yet."
+    },
+    {
+      "name": "channel_intro_title",
+      "value": "What is a Channel?"
+    },
+    {
+      "name": "channel_intro_text",
+      "value": "Channels let you broadcast messages to a large audience."
+    },
+    {
+      "name": "channel_intro_create",
+      "value": "Create Channel"
     },
     {
       "name": "secret_chat",
@@ -541,6 +657,10 @@
       "value": "Telegram FAQ"
     },
     {
+      "name": "settings_tips",
+      "value": "Telegram Tips"
+    },
+    {
       "name": "settings_telegram_features",
       "value": "Telegram Features"
     },
@@ -607,6 +727,14 @@
     {
       "name": "search_no_results",
       "value": "No results found"
+    },
+    {
+      "name": "search_searching",
+      "value": "Searching..."
+    },
+    {
+      "name": "search_failed",
+      "value": "Search failed"
     },
     {
       "name": "attach_camera",
@@ -753,6 +881,14 @@
       "value": "Pinned Message"
     },
     {
+      "name": "previous_pinned_message",
+      "value": "Previous Pinned Message"
+    },
+    {
+      "name": "no_pinned_messages",
+      "value": "No pinned messages"
+    },
+    {
       "name": "block_user",
       "value": "Block User"
     },
@@ -811,6 +947,14 @@
     {
       "name": "archive",
       "value": "Archive"
+    },
+    {
+      "name": "archived_chats",
+      "value": "Archived Chats"
+    },
+    {
+      "name": "unarchive",
+      "value": "Unarchive"
     },
     {
       "name": "chat_background",
@@ -937,6 +1081,10 @@
       "value": "Search"
     },
     {
+      "name": "accessibility_close_search",
+      "value": "Close search"
+    },
+    {
       "name": "accessibility_compose",
       "value": "Compose new message"
     },
@@ -990,7 +1138,43 @@
     },
     {
       "name": "composer_voice_unavailable",
-      "value": "Voice recording is not available yet"
+      "value": "Hold the microphone to record"
+    },
+    {
+      "name": "composer_voice_slide_cancel",
+      "value": "Slide to cancel"
+    },
+    {
+      "name": "composer_voice_locked",
+      "value": "Recording"
+    },
+    {
+      "name": "composer_voice_preparing",
+      "value": "Starting..."
+    },
+    {
+      "name": "composer_voice_sending",
+      "value": "Sending..."
+    },
+    {
+      "name": "composer_voice_permission_denied",
+      "value": "Microphone access is required for voice messages"
+    },
+    {
+      "name": "composer_voice_too_short",
+      "value": "Recording is too short"
+    },
+    {
+      "name": "composer_voice_record_failed",
+      "value": "Could not start voice recording"
+    },
+    {
+      "name": "composer_voice_send_failed",
+      "value": "Could not send voice message"
+    },
+    {
+      "name": "composer_bot_menu",
+      "value": "Menu"
     },
     {
       "name": "accessibility_scroll_bottom",
@@ -1069,6 +1253,10 @@
       "value": "Contacts"
     },
     {
+      "name": "search_global_section",
+      "value": "Global Search"
+    },
+    {
       "name": "search_chats_section",
       "value": "Chats"
     },
@@ -1095,6 +1283,14 @@
     {
       "name": "calls_missed_label",
       "value": "Missed"
+    },
+    {
+      "name": "calls_incoming_label",
+      "value": "Incoming"
+    },
+    {
+      "name": "calls_outgoing_label",
+      "value": "Outgoing"
     },
     {
       "name": "message_call_missed_voice",
@@ -1203,6 +1399,18 @@
     {
       "name": "administrators_label",
       "value": "Administrators"
+    },
+    {
+      "name": "members_label",
+      "value": "Members"
+    },
+    {
+      "name": "member_role_bot",
+      "value": "bot"
+    },
+    {
+      "name": "members_unavailable",
+      "value": "Members are unavailable"
     },
     {
       "name": "banned_users_label",
@@ -1379,6 +1587,18 @@
     {
       "name": "one_vote",
       "value": "1 vote"
+    },
+    {
+      "name": "few_votes",
+      "value": "{count} votes"
+    },
+    {
+      "name": "many_votes",
+      "value": "{count} votes"
+    },
+    {
+      "name": "anonymous_quiz",
+      "value": "Anonymous quiz"
     },
     {
       "name": "closed_label",
@@ -1653,6 +1873,10 @@
       "value": "English"
     },
     {
+      "name": "language_current",
+      "value": "English"
+    },
+    {
       "name": "accessibility_fullscreen",
       "value": "Toggle fullscreen"
     },
@@ -1741,8 +1965,24 @@
       "value": "Recent"
     },
     {
+      "name": "sticker_packs_favorites",
+      "value": "Favorites"
+    },
+    {
+      "name": "sticker_packs_popular_premium",
+      "value": "Popular Premium Stickers"
+    },
+    {
       "name": "sticker_packs_trending",
       "value": "Trending"
+    },
+    {
+      "name": "sticker_packs_installed",
+      "value": "Installed Sticker Packs"
+    },
+    {
+      "name": "sticker_packs_empty",
+      "value": "No installed sticker packs"
     },
     {
       "name": "sticker_packs_add",
@@ -2485,6 +2725,62 @@
       "value": "Dec"
     },
     {
+      "name": "chat_date_header",
+      "value": "{month} {day}"
+    },
+    {
+      "name": "chat_date_header_year",
+      "value": "{month} {day}, {year}"
+    },
+    {
+      "name": "chat_month_jan",
+      "value": "January"
+    },
+    {
+      "name": "chat_month_feb",
+      "value": "February"
+    },
+    {
+      "name": "chat_month_mar",
+      "value": "March"
+    },
+    {
+      "name": "chat_month_apr",
+      "value": "April"
+    },
+    {
+      "name": "chat_month_may",
+      "value": "May"
+    },
+    {
+      "name": "chat_month_jun",
+      "value": "June"
+    },
+    {
+      "name": "chat_month_jul",
+      "value": "July"
+    },
+    {
+      "name": "chat_month_aug",
+      "value": "August"
+    },
+    {
+      "name": "chat_month_sep",
+      "value": "September"
+    },
+    {
+      "name": "chat_month_oct",
+      "value": "October"
+    },
+    {
+      "name": "chat_month_nov",
+      "value": "November"
+    },
+    {
+      "name": "chat_month_dec",
+      "value": "December"
+    },
+    {
       "name": "code_input_enter_word",
       "value": "Enter word"
     },
@@ -2535,6 +2831,54 @@
     {
       "name": "deleted_account",
       "value": "Deleted Account"
+    },
+    {
+      "name": "emoji_category_smileys",
+      "value": "Smileys & Emotion"
+    },
+    {
+      "name": "emoji_category_people",
+      "value": "People & Body"
+    },
+    {
+      "name": "emoji_category_animals",
+      "value": "Animals & Nature"
+    },
+    {
+      "name": "emoji_category_food",
+      "value": "Food & Drink"
+    },
+    {
+      "name": "emoji_category_travel",
+      "value": "Travel & Places"
+    },
+    {
+      "name": "emoji_category_activity",
+      "value": "Activities"
+    },
+    {
+      "name": "emoji_category_objects",
+      "value": "Objects"
+    },
+    {
+      "name": "emoji_category_symbols",
+      "value": "Symbols"
+    },
+    {
+      "name": "emoji_category_flags",
+      "value": "Flags"
+    },
+    {
+      "name": "message_edited",
+      "value": "edited"
+    },
+    {
+      "name": "group_member_limit_reached",
+      "value": "You can select up to %d members."
+    },
+    {
+      "name": "group_members_not_added",
+      "value": "%d members could not be added. You can invite them with a link."
     }
   ]
 }

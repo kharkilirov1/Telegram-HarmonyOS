@@ -29,6 +29,10 @@
       "value": "#8E8E93"
     },
     {
+      "name": "message_meta_outgoing",
+      "value": "#8E8E93"
+    },
+    {
       "name": "separator",
       "value": "#E5E5EA"
     },
@@ -37,8 +41,36 @@
       "value": "#FFFFFF"
     },
     {
+      "name": "chat_list_surface_bg",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "chat_list_pinned_surface_bg",
+      "value": "#F9F9F9"
+    },
+    {
+      "name": "chat_list_search_surface_bg",
+      "value": "#F0F0F0"
+    },
+    {
+      "name": "chat_list_separator",
+      "value": "#E5E5EA"
+    },
+    {
       "name": "background_secondary",
       "value": "#F2F2F7"
+    },
+    {
+      "name": "attachment_sheet_bg",
+      "value": "#F2FFFFFF"
+    },
+    {
+      "name": "attachment_sheet_active_bg",
+      "value": "#26007AFF"
+    },
+    {
+      "name": "chat_wallpaper_base",
+      "value": "#E9EFF2"
     },
     {
       "name": "online_indicator",
@@ -163,6 +195,10 @@
     {
       "name": "glass_nav_bg",
       "value": "#03F2F2F7"
+    },
+    {
+      "name": "chat_top_bar_scroll_capsule_bg",
+      "value": "#BFFFFFFF"
     },
     {
       "name": "glass_tab_bg",

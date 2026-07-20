@@ -14,11 +14,11 @@
     },
     {
       "name": "chat_bubble_outgoing",
-      "value": "#2B5278"
+      "value": "#406D97"
     },
     {
       "name": "chat_bubble_incoming",
-      "value": "#182533"
+      "value": "#1E2E3D"
     },
     {
       "name": "text_primary",
@@ -29,6 +29,10 @@
       "value": "#8B8D93"
     },
     {
+      "name": "message_meta_outgoing",
+      "value": "#9BBDE0"
+    },
+    {
       "name": "separator",
       "value": "#2C2C2E"
     },
@@ -37,8 +41,36 @@
       "value": "#1C1C1E"
     },
     {
+      "name": "chat_list_surface_bg",
+      "value": "#18212D"
+    },
+    {
+      "name": "chat_list_pinned_surface_bg",
+      "value": "#203040"
+    },
+    {
+      "name": "chat_list_search_surface_bg",
+      "value": "#344454"
+    },
+    {
+      "name": "chat_list_separator",
+      "value": "#2A3A49"
+    },
+    {
       "name": "background_secondary",
       "value": "#2C2C2E"
+    },
+    {
+      "name": "attachment_sheet_bg",
+      "value": "#F2203040"
+    },
+    {
+      "name": "attachment_sheet_active_bg",
+      "value": "#4034678F"
+    },
+    {
+      "name": "chat_wallpaper_base",
+      "value": "#0F2837"
     },
     {
       "name": "online_indicator",
@@ -163,6 +195,10 @@
     {
       "name": "glass_nav_bg",
       "value": "#032C2C2E"
+    },
+    {
+      "name": "chat_top_bar_scroll_capsule_bg",
+      "value": "#B32C2C2E"
     },
     {
       "name": "glass_tab_bg",

@@ -45,6 +45,22 @@
       "value": "Поиск"
     },
     {
+      "name": "chat_list_edit_compact",
+      "value": "Изм."
+    },
+    {
+      "name": "chat_filter_all",
+      "value": "Все"
+    },
+    {
+      "name": "chat_filter_unread",
+      "value": "Новые"
+    },
+    {
+      "name": "chat_filter_personal",
+      "value": "Личные"
+    },
+    {
       "name": "enter_code_title",
       "value": "Введите код"
     },
@@ -79,6 +95,10 @@
     {
       "name": "message_placeholder",
       "value": "Сообщение"
+    },
+    {
+      "name": "chat_split_start_messaging",
+      "value": "Начните общение"
     },
     {
       "name": "slide_to_cancel",
@@ -201,6 +221,82 @@
       "value": "Неподдерживаемое сообщение"
     },
     {
+      "name": "chat_preview_album",
+      "value": "Альбом"
+    },
+    {
+      "name": "chat_preview_audio",
+      "value": "Аудио"
+    },
+    {
+      "name": "chat_preview_joined_group",
+      "value": "вступил(а) в группу"
+    },
+    {
+      "name": "chat_preview_left_group",
+      "value": "покинул(а) группу"
+    },
+    {
+      "name": "chat_preview_chat_updated",
+      "value": "Чат обновлён"
+    },
+    {
+      "name": "chat_preview_joined_telegram",
+      "value": "присоединился(-ась) к Telegram"
+    },
+    {
+      "name": "chat_preview_service_message",
+      "value": "Служебное сообщение"
+    },
+    {
+      "name": "chat_preview_recording_video",
+      "value": "записывает видео..."
+    },
+    {
+      "name": "chat_preview_sending_video",
+      "value": "отправляет видео..."
+    },
+    {
+      "name": "chat_preview_recording_voice",
+      "value": "записывает голосовое сообщение..."
+    },
+    {
+      "name": "chat_preview_sending_voice",
+      "value": "отправляет голосовое сообщение..."
+    },
+    {
+      "name": "chat_preview_sending_photo",
+      "value": "отправляет фото..."
+    },
+    {
+      "name": "chat_preview_sending_file",
+      "value": "отправляет файл..."
+    },
+    {
+      "name": "chat_preview_choosing_sticker",
+      "value": "выбирает стикер..."
+    },
+    {
+      "name": "chat_preview_choosing_location",
+      "value": "выбирает геопозицию..."
+    },
+    {
+      "name": "chat_preview_choosing_contact",
+      "value": "выбирает контакт..."
+    },
+    {
+      "name": "chat_preview_playing_game",
+      "value": "играет..."
+    },
+    {
+      "name": "chat_preview_recording_video_note",
+      "value": "записывает видеосообщение..."
+    },
+    {
+      "name": "chat_preview_sending_video_note",
+      "value": "отправляет видеосообщение..."
+    },
+    {
       "name": "pin",
       "value": "Закрепить"
     },
@@ -313,8 +409,28 @@
       "value": "Новая группа"
     },
     {
+      "name": "new_contact",
+      "value": "Новый контакт"
+    },
+    {
       "name": "new_channel",
       "value": "Новый канал"
+    },
+    {
+      "name": "contact_added_not_registered",
+      "value": "Контакт добавлен. Этот номер пока не зарегистрирован в Telegram."
+    },
+    {
+      "name": "channel_intro_title",
+      "value": "Что такое канал?"
+    },
+    {
+      "name": "channel_intro_text",
+      "value": "Каналы позволяют отправлять сообщения большой аудитории."
+    },
+    {
+      "name": "channel_intro_create",
+      "value": "Создать канал"
     },
     {
       "name": "secret_chat",
@@ -541,6 +657,10 @@
       "value": "Вопросы и ответы"
     },
     {
+      "name": "settings_tips",
+      "value": "Советы Telegram"
+    },
+    {
       "name": "settings_telegram_features",
       "value": "Возможности Telegram"
     },
@@ -607,6 +727,14 @@
     {
       "name": "search_no_results",
       "value": "Ничего не найдено"
+    },
+    {
+      "name": "search_searching",
+      "value": "Ищем..."
+    },
+    {
+      "name": "search_failed",
+      "value": "Не удалось выполнить поиск"
     },
     {
       "name": "attach_camera",
@@ -753,6 +881,14 @@
       "value": "Закреплённое сообщение"
     },
     {
+      "name": "previous_pinned_message",
+      "value": "Предыдущее закреплённое"
+    },
+    {
+      "name": "no_pinned_messages",
+      "value": "Нет закреплённых сообщений"
+    },
+    {
       "name": "block_user",
       "value": "Заблокировать"
     },
@@ -811,6 +947,14 @@
     {
       "name": "archive",
       "value": "Архив"
+    },
+    {
+      "name": "archived_chats",
+      "value": "Архив чатов"
+    },
+    {
+      "name": "unarchive",
+      "value": "Вернуть"
     },
     {
       "name": "chat_background",
@@ -937,6 +1081,10 @@
       "value": "Поиск"
     },
     {
+      "name": "accessibility_close_search",
+      "value": "Закрыть поиск"
+    },
+    {
       "name": "accessibility_compose",
       "value": "Написать сообщение"
     },
@@ -1045,6 +1193,10 @@
       "value": "Контакты"
     },
     {
+      "name": "search_global_section",
+      "value": "Глобальный поиск"
+    },
+    {
       "name": "search_chats_section",
       "value": "Чаты"
     },
@@ -1071,6 +1223,14 @@
     {
       "name": "calls_missed_label",
       "value": "Пропущен"
+    },
+    {
+      "name": "calls_incoming_label",
+      "value": "Входящий"
+    },
+    {
+      "name": "calls_outgoing_label",
+      "value": "Исходящий"
     },
     {
       "name": "message_call_missed_voice",
@@ -1179,6 +1339,18 @@
     {
       "name": "administrators_label",
       "value": "Администраторы"
+    },
+    {
+      "name": "members_label",
+      "value": "Участники"
+    },
+    {
+      "name": "member_role_bot",
+      "value": "бот"
+    },
+    {
+      "name": "members_unavailable",
+      "value": "Список участников недоступен"
     },
     {
       "name": "banned_users_label",
@@ -1351,6 +1523,18 @@
     {
       "name": "one_vote",
       "value": "1 голос"
+    },
+    {
+      "name": "few_votes",
+      "value": "{count} голоса"
+    },
+    {
+      "name": "many_votes",
+      "value": "{count} голосов"
+    },
+    {
+      "name": "anonymous_quiz",
+      "value": "Анонимная викторина"
     },
     {
       "name": "closed_label",
@@ -1625,6 +1809,10 @@
       "value": "English"
     },
     {
+      "name": "language_current",
+      "value": "Русский"
+    },
+    {
       "name": "accessibility_fullscreen",
       "value": "Полноэкранный режим"
     },
@@ -1667,6 +1855,18 @@
     {
       "name": "group_members_count",
       "value": "%s участников"
+    },
+    {
+      "name": "subscribers_count",
+      "value": "%s подписчиков"
+    },
+    {
+      "name": "channel_label",
+      "value": "канал"
+    },
+    {
+      "name": "group_label",
+      "value": "группа"
     },
     {
       "name": "sticker_pack_count_format",
@@ -1713,8 +1913,24 @@
       "value": "Недавние"
     },
     {
+      "name": "sticker_packs_favorites",
+      "value": "Избранные"
+    },
+    {
+      "name": "sticker_packs_popular_premium",
+      "value": "Популярные Premium-стикеры"
+    },
+    {
       "name": "sticker_packs_trending",
       "value": "Популярные"
+    },
+    {
+      "name": "sticker_packs_installed",
+      "value": "Установленные стикерпаки"
+    },
+    {
+      "name": "sticker_packs_empty",
+      "value": "Нет установленных стикерпаков"
     },
     {
       "name": "sticker_packs_add",
@@ -2461,6 +2677,62 @@
       "value": "дек"
     },
     {
+      "name": "chat_date_header",
+      "value": "{day} {month}"
+    },
+    {
+      "name": "chat_date_header_year",
+      "value": "{day} {month} {year}"
+    },
+    {
+      "name": "chat_month_jan",
+      "value": "января"
+    },
+    {
+      "name": "chat_month_feb",
+      "value": "февраля"
+    },
+    {
+      "name": "chat_month_mar",
+      "value": "марта"
+    },
+    {
+      "name": "chat_month_apr",
+      "value": "апреля"
+    },
+    {
+      "name": "chat_month_may",
+      "value": "мая"
+    },
+    {
+      "name": "chat_month_jun",
+      "value": "июня"
+    },
+    {
+      "name": "chat_month_jul",
+      "value": "июля"
+    },
+    {
+      "name": "chat_month_aug",
+      "value": "августа"
+    },
+    {
+      "name": "chat_month_sep",
+      "value": "сентября"
+    },
+    {
+      "name": "chat_month_oct",
+      "value": "октября"
+    },
+    {
+      "name": "chat_month_nov",
+      "value": "ноября"
+    },
+    {
+      "name": "chat_month_dec",
+      "value": "декабря"
+    },
+    {
       "name": "code_input_enter_word",
       "value": "Введите слово"
     },
@@ -2475,6 +2747,94 @@
     {
       "name": "deleted_account",
       "value": "Удалённый аккаунт"
+    },
+    {
+      "name": "composer_voice_slide_cancel",
+      "value": "Сдвиньте для отмены"
+    },
+    {
+      "name": "composer_voice_locked",
+      "value": "Запись"
+    },
+    {
+      "name": "composer_voice_preparing",
+      "value": "Запуск..."
+    },
+    {
+      "name": "composer_voice_sending",
+      "value": "Отправка..."
+    },
+    {
+      "name": "composer_voice_permission_denied",
+      "value": "Для голосовых сообщений нужен доступ к микрофону"
+    },
+    {
+      "name": "composer_voice_too_short",
+      "value": "Слишком короткая запись"
+    },
+    {
+      "name": "composer_voice_record_failed",
+      "value": "Не удалось начать запись"
+    },
+    {
+      "name": "composer_voice_send_failed",
+      "value": "Не удалось отправить голосовое сообщение"
+    },
+    {
+      "name": "composer_bot_menu",
+      "value": "Меню"
+    },
+    {
+      "name": "action_forward",
+      "value": "Переслать"
+    },
+    {
+      "name": "emoji_category_smileys",
+      "value": "Смайлы и эмоции"
+    },
+    {
+      "name": "emoji_category_people",
+      "value": "Люди и жесты"
+    },
+    {
+      "name": "emoji_category_animals",
+      "value": "Животные и природа"
+    },
+    {
+      "name": "emoji_category_food",
+      "value": "Еда и напитки"
+    },
+    {
+      "name": "emoji_category_travel",
+      "value": "Путешествия и места"
+    },
+    {
+      "name": "emoji_category_activity",
+      "value": "Занятия"
+    },
+    {
+      "name": "emoji_category_objects",
+      "value": "Предметы"
+    },
+    {
+      "name": "emoji_category_symbols",
+      "value": "Символы"
+    },
+    {
+      "name": "emoji_category_flags",
+      "value": "Флаги"
+    },
+    {
+      "name": "message_edited",
+      "value": "изменено"
+    },
+    {
+      "name": "group_member_limit_reached",
+      "value": "Можно выбрать не более %d участников."
+    },
+    {
+      "name": "group_members_not_added",
+      "value": "Не удалось добавить участников: %d. Их можно пригласить по ссылке."
     }
   ]
 }
