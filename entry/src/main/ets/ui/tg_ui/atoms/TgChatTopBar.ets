@@ -93,6 +93,8 @@ export struct TgChatTopBar {
     .onClick(() => {
       this.onBackPress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Back')
   }
 
   @Builder
@@ -162,15 +164,24 @@ export struct TgChatTopBar {
           this.onSearchQueryChange(value);
         })
 
-      TgIcon({
-        src: $r('app.media.ic_close'),
-        iconSize: 18,
-        tintColor: TgUiTokens.COLOR_ICON_PRIMARY
-      })
-        .onClick(() => {
-          this.onSearchClose();
+      Row() {
+        TgIcon({
+          src: $r('app.media.ic_close'),
+          iconSize: 18,
+          tintColor: TgUiTokens.COLOR_ICON_PRIMARY
         })
-        .margin({ right: 4 })
+      }
+      .width(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
+      .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(VerticalAlign.Center)
+      .margin({ right: 4 })
+      .clickEffect({ level: ClickEffectLevel.LIGHT })
+      .onClick(() => {
+        this.onSearchClose();
+      })
+      .accessibilityGroup(true)
+      .accessibilityDescription('Clear search')
     }
     .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
     .layoutWeight(1)
@@ -211,6 +222,8 @@ export struct TgChatTopBar {
       hilog.info(0x0021, 'TgChatTopBar', 'avatar tapped');
       this.onAvatarPress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Chat info')
   }
 
   build() {
@@ -247,14 +260,23 @@ export struct TgChatTopBar {
               right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP
             })
 
-            Image($r('app.media.ic_search'))
-              .width(22)
-              .height(22)
-              .fillColor(TgUiTokens.COLOR_ICON_PRIMARY)
-              .margin({ right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP })
-              .onClick(() => {
-                this.onSearchPress();
-              })
+            Row() {
+              Image($r('app.media.ic_search'))
+                .width(22)
+                .height(22)
+                .fillColor(TgUiTokens.COLOR_ICON_PRIMARY)
+            }
+            .width(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
+            .height(TgUiTokens.CHAT_TOP_BAR_CAPSULE_SIZE)
+            .justifyContent(FlexAlign.Center)
+            .alignItems(VerticalAlign.Center)
+            .margin({ right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP })
+            .clickEffect({ level: ClickEffectLevel.LIGHT })
+            .onClick(() => {
+              this.onSearchPress();
+            })
+            .accessibilityGroup(true)
+            .accessibilityDescription('Search')
 
             this.buildAvatarCapsule()
           }
