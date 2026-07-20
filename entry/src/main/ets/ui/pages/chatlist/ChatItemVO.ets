@@ -17,22 +17,6 @@ function toFileUri(path: string): string {
   }
 }
 
-function typingActionLabel(actionType: string): string {
-  switch (actionType) {
-    case 'typing': return 'typing...';
-    case 'recordingVideo': return 'recording video...';
-    case 'uploadingVideo': return 'sending video...';
-    case 'recordingVoice': return 'recording voice...';
-    case 'uploadingVoice': return 'sending voice...';
-    case 'uploadingPhoto': return 'sending photo...';
-    case 'uploadingDocument': return 'sending file...';
-    case 'choosingSticker': return 'choosing sticker...';
-    case 'recordingVideoNote': return 'recording video message...';
-    case 'uploadingVideoNote': return 'sending video message...';
-    default: return 'typing...';
-  }
-}
-
 const AVATAR_COLORS: Resource[] = [
   TgUiTokens.AVATAR_COLOR_1,
   TgUiTokens.AVATAR_COLOR_2,
@@ -69,6 +53,10 @@ export class ChatItemVO {
   isSecret: boolean = false;
   previewPrefix: string = '';
   previewPrefixStyle: 'none' | 'draft' | 'author' = 'none';
+}
+
+export function shouldShowAvatarOnline(status: string, isBot: boolean): boolean {
+  return status === 'online' && !isBot;
 }
 
 function resolvePrivateTitle(firstName: string, lastName: string, username: string, phoneNumber: string): string {
@@ -110,6 +98,99 @@ function padTwo(n: number): string {
 function localizedString(resourceId: number, fallback: string): string {
   const localized = getString(resourceId);
   return localized.length > 0 ? localized : fallback;
+}
+
+export type ChatPreviewKind = 'photo' | 'album' | 'video' | 'gif' | 'videoNote' | 'voice' | 'file' | 'audio' |
+  'sticker' | 'location' | 'contact' | 'poll' | 'unsupported' | 'message' | 'joinedGroup' | 'leftGroup' |
+  'pinnedMessage' | 'chatUpdated' | 'joinedTelegram' | 'serviceMessage' | 'typing' | 'recordingVideo' |
+  'sendingVideo' | 'recordingVoice' | 'sendingVoice' | 'sendingPhoto' | 'sendingFile' | 'choosingSticker' |
+  'recordingVideoNote' | 'sendingVideoNote';
+
+function localizedPreviewKind(kind: ChatPreviewKind): string {
+  switch (kind) {
+    case 'photo':
+      return '📷 ' + localizedString($r('app.string.photo').id, 'Photo');
+    case 'album':
+      return '📷 ' + localizedString($r('app.string.chat_preview_album').id, 'Album');
+    case 'video':
+      return '📹 ' + localizedString($r('app.string.video').id, 'Video');
+    case 'gif':
+      return '🎬 ' + localizedString($r('app.string.gif').id, 'GIF');
+    case 'videoNote':
+      return '📹 ' + localizedString($r('app.string.video_note').id, 'Video message');
+    case 'voice':
+      return '🎤 ' + localizedString($r('app.string.voice_message').id, 'Voice message');
+    case 'file':
+      return '📎 ' + localizedString($r('app.string.file_label').id, 'File');
+    case 'audio':
+      return '🎵 ' + localizedString($r('app.string.chat_preview_audio').id, 'Audio');
+    case 'sticker':
+      return '🧩 ' + localizedString($r('app.string.sticker').id, 'Sticker');
+    case 'location':
+      return '📍 ' + localizedString($r('app.string.location_label').id, 'Location');
+    case 'contact':
+      return '👤 ' + localizedString($r('app.string.contact_label').id, 'Contact');
+    case 'poll':
+      return '📊 ' + localizedString($r('app.string.poll').id, 'Poll');
+    case 'unsupported':
+      return localizedString($r('app.string.service_unsupported').id, 'Unsupported message');
+    case 'joinedGroup':
+      return localizedString($r('app.string.chat_preview_joined_group').id, 'Joined the group');
+    case 'leftGroup':
+      return localizedString($r('app.string.chat_preview_left_group').id, 'Left the group');
+    case 'pinnedMessage':
+      return '📌 ' + localizedString($r('app.string.pinned_message').id, 'Pinned message');
+    case 'chatUpdated':
+      return localizedString($r('app.string.chat_preview_chat_updated').id, 'Chat updated');
+    case 'joinedTelegram':
+      return localizedString($r('app.string.chat_preview_joined_telegram').id, 'Joined Telegram');
+    case 'serviceMessage':
+      return localizedString($r('app.string.chat_preview_service_message').id, 'Service message');
+    case 'recordingVideo':
+      return localizedString($r('app.string.chat_preview_recording_video').id, 'recording video...');
+    case 'sendingVideo':
+      return localizedString($r('app.string.chat_preview_sending_video').id, 'sending video...');
+    case 'recordingVoice':
+      return localizedString($r('app.string.chat_preview_recording_voice').id, 'recording voice...');
+    case 'sendingVoice':
+      return localizedString($r('app.string.chat_preview_sending_voice').id, 'sending voice...');
+    case 'sendingPhoto':
+      return localizedString($r('app.string.chat_preview_sending_photo').id, 'sending photo...');
+    case 'sendingFile':
+      return localizedString($r('app.string.chat_preview_sending_file').id, 'sending file...');
+    case 'choosingSticker':
+      return localizedString($r('app.string.chat_preview_choosing_sticker').id, 'choosing sticker...');
+    case 'recordingVideoNote':
+      return localizedString($r('app.string.chat_preview_recording_video_note').id, 'recording video message...');
+    case 'sendingVideoNote':
+      return localizedString($r('app.string.chat_preview_sending_video_note').id, 'sending video message...');
+    case 'typing':
+      return localizedString($r('app.string.typing').id, 'typing') + '...';
+    case 'message':
+    default:
+      return localizedString($r('app.string.message_placeholder').id, 'Message');
+  }
+}
+
+export function chatPreviewKindFromTypingAction(actionType: string): ChatPreviewKind {
+  switch (actionType) {
+    case 'recordingVideo': return 'recordingVideo';
+    case 'uploadingVideo': return 'sendingVideo';
+    case 'recordingVoice': return 'recordingVoice';
+    case 'uploadingVoice': return 'sendingVoice';
+    case 'uploadingPhoto': return 'sendingPhoto';
+    case 'uploadingDocument': return 'sendingFile';
+    case 'choosingSticker': return 'choosingSticker';
+    case 'recordingVideoNote': return 'recordingVideoNote';
+    case 'uploadingVideoNote': return 'sendingVideoNote';
+    case 'typing':
+    default:
+      return 'typing';
+  }
+}
+
+function typingActionLabel(actionType: string): string {
+  return localizedPreviewKind(chatPreviewKindFromTypingAction(actionType));
 }
 
 function weekdayShort(day: number): string {
@@ -188,108 +269,88 @@ function isSameMessageSnapshot(lhs: LastMessageSnapshot, rhs: LastMessageSnapsho
   return lhs.timestamp === rhs.timestamp && lhs.id === rhs.id;
 }
 
-function fallbackMessageTextForType(contentType: string): string {
+export function chatPreviewKindFromContentType(contentType: string): ChatPreviewKind {
   switch (contentType) {
-    case 'photo':
-      return '📷 Photo';
-    case 'video':
-      return '📹 Video';
-    case 'document':
-      return '📎 File';
-    case 'audio':
-      return '🎵 Audio';
-    case 'voice':
-      return '🎤 Voice message';
-    case 'sticker':
-      return 'Sticker';
-    case 'animation':
-      return 'GIF';
-    case 'videoNote':
-      return '📹 Video message';
-    case 'location':
-      return '📍 Location';
-    case 'contact':
-      return '👤 Contact';
-    case 'poll':
-      return '📊 Poll';
-    case 'unsupported':
-      return 'Unsupported message';
+    case 'photo': return 'photo';
+    case 'video': return 'video';
+    case 'document': return 'file';
+    case 'audio': return 'audio';
+    case 'voice': return 'voice';
+    case 'sticker': return 'sticker';
+    case 'animation': return 'gif';
+    case 'videoNote': return 'videoNote';
+    case 'location': return 'location';
+    case 'contact': return 'contact';
+    case 'poll': return 'poll';
+    case 'unsupported': return 'unsupported';
     default:
-      return 'Message';
+      return 'message';
   }
+}
+
+function fallbackMessageTextForType(contentType: string): string {
+  return localizedPreviewKind(chatPreviewKindFromContentType(contentType));
 }
 
 // ChatDto builds last-message previews as '[X]' (contentType minus the 'message'
 // prefix) — map the known service/unsupported placeholders to human text here,
 // on the UI layer, keeping the DTO locale-free.
 // Telegram-style media previews ('[Photo]' → '📷 Photo')
-function mediaBracketPreview(inner: string): string {
+export function chatPreviewKindFromBracket(text: string): ChatPreviewKind | '' {
+  if (!text.startsWith('[') || !text.endsWith(']')) {
+    return '';
+  }
+  const inner = text.substring(1, text.length - 1);
   switch (inner) {
-    case 'Photo':
-      return '📷 Photo';
-    case 'Photo album':
-      return '📷 Album';
-    case 'Video':
-      return '📹 Video';
-    case 'GIF':
-      return '🎬 GIF';
-    case 'Video message':
-      return '📹 Video message';
-    case 'Voice message':
-      return '🎤 Voice message';
-    case 'File':
-      return '📎 File';
-    case 'Audio':
-      return '🎵 Audio';
-    case 'Sticker':
-      return '🧩 Sticker';
+    case 'Photo': return 'photo';
+    case 'Photo album': return 'album';
+    case 'Video': return 'video';
+    case 'GIF': return 'gif';
+    case 'Video message': return 'videoNote';
+    case 'Voice message': return 'voice';
+    case 'File': return 'file';
+    case 'Audio': return 'audio';
+    case 'Sticker': return 'sticker';
     case 'Location':
     case 'Venue':
-      return '📍 Location';
-    case 'Poll':
-      return '📊 Poll';
+      return 'location';
+    case 'Poll': return 'poll';
+    case 'Unsupported': return 'unsupported';
+    default:
+      return chatPreviewKindFromServiceType('message' + inner);
+  }
+}
+
+export function humanizeBracketPreview(text: string): string {
+  const kind = chatPreviewKindFromBracket(text);
+  return kind.length > 0 ? localizedPreviewKind(kind as ChatPreviewKind) : text;
+}
+
+// Human preview for chat-event messages instead of the raw [messageX] placeholder
+export function chatPreviewKindFromServiceType(serviceType: string): ChatPreviewKind | '' {
+  switch (serviceType) {
+    case 'messageChatAddMembers':
+    case 'messageChatJoinByLink':
+    case 'messageChatJoinByRequest':
+      return 'joinedGroup';
+    case 'messageChatDeleteMember':
+      return 'leftGroup';
+    case 'messagePinMessage':
+      return 'pinnedMessage';
+    case 'messageChatChangeTitle':
+    case 'messageChatChangePhoto':
+    case 'messageChatDeletePhoto':
+      return 'chatUpdated';
+    case 'messageContactRegistered':
+      return 'joinedTelegram';
     default:
       return '';
   }
 }
 
-function humanizeBracketPreview(text: string): string {
-  if (!text.startsWith('[') || !text.endsWith(']')) {
-    return text;
-  }
-  const inner = text.substring(1, text.length - 1);
-  if (inner === 'Unsupported') {
-    return fallbackMessageTextForType('unsupported');
-  }
-  const media = mediaBracketPreview(inner);
-  if (media.length > 0) {
-    return media;
-  }
-  const asServiceType = 'message' + inner;
-  const preview = serviceMessagePreview(asServiceType);
-  return preview === 'Service message' ? text : preview;
-}
-
-// Human preview for chat-event messages instead of the raw [messageX] placeholder
 function serviceMessagePreview(serviceType: string): string {
-  switch (serviceType) {
-    case 'messageChatAddMembers':
-    case 'messageChatJoinByLink':
-    case 'messageChatJoinByRequest':
-      return 'Joined the group';
-    case 'messageChatDeleteMember':
-      return 'Left the group';
-    case 'messagePinMessage':
-      return '📌 Pinned message';
-    case 'messageChatChangeTitle':
-    case 'messageChatChangePhoto':
-    case 'messageChatDeletePhoto':
-      return 'Chat updated';
-    case 'messageContactRegistered':
-      return 'Joined Telegram';
-    default:
-      return 'Service message';
-  }
+  const kind = chatPreviewKindFromServiceType(serviceType);
+  return localizedPreviewKind(kind.length > 0 ? kind as ChatPreviewKind : 'serviceMessage');
 }
 
 function snapshotFromMessage(message: Message): LastMessageSnapshot {
@@ -432,7 +493,7 @@ export function buildChatItemVO(chat: Chat, state: AppState): ChatItemVO {
       if (privateTitle.length > 0) {
         vo.title = privateTitle;
       }
-      vo.avatarOnline = user.status === 'online';
+      vo.avatarOnline = shouldShowAvatarOnline(user.status, user.isBot);
       vo.isVerified = user.isVerified;
       vo.isScam = user.isScam;
       vo.isFake = user.isFake;

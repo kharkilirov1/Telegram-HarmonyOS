@@ -1,5 +1,5 @@
 import { TgAvatar } from './TgAvatar';
-import { TgChatMeta, TgChatSendStatus } from './TgChatMeta';
+import { TgChatMetaBottom, TgChatMetaTop, TgChatSendStatus } from './TgChatMeta';
 import { TgIcon } from './TgIcon';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 
@@ -55,6 +55,9 @@ export struct TgChatRow {
   @Param avatarBackgroundColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG;
   @Param avatarTextColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT;
   @Param showSeparator: boolean = true;
+  @Param surfaceColor: ResourceColor = TgUiTokens.COLOR_BG_PRIMARY;
+  @Param pinnedSurfaceColor: ResourceColor = TgUiTokens.COLOR_CHAT_ROW_PINNED_BG;
+  @Param separatorColor: ResourceColor = TgUiTokens.COLOR_SEPARATOR;
   @Param isTyping: boolean = false;
   @Param isDraft: boolean = false;
   @Param hasMention: boolean = false;
@@ -96,6 +99,14 @@ export struct TgChatRow {
     return TgUiTokens.COLOR_TEXT_ERROR;
   }
 
+  private hasTopMeta(): boolean {
+    return this.timeText.trim().length > 0 || this.sendStatus !== TgChatSendStatus.None;
+  }
+
+  private hasBottomMeta(): boolean {
+    return this.unreadCount > 0 || this.hasMention || this.isPinned;
+  }
+
   @Builder
   private buildVerifiedBadge() {
     Row() {
@@ -135,23 +146,90 @@ export struct TgChatRow {
   @Builder
   private buildPreviewLine() {
     Row() {
-      if (this.previewPrefixText().length > 0) {
-        Text(this.previewPrefixText())
-          .fontSize(TgUiTokens.CHAT_ROW_PREVIEW_FONT_SIZE)
-          .fontWeight(FontWeight.Medium)
-          .fontColor(this.previewPrefixColor())
-          .margin({ right: TgUiTokens.CHAT_ROW_PREVIEW_PREFIX_GAP })
-      }
+      Row() {
+        if (this.previewPrefixText().length > 0) {
+          Text(this.previewPrefixText())
+            .fontSize(TgUiTokens.CHAT_ROW_PREVIEW_FONT_SIZE)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(this.previewPrefixColor())
+            .margin({ right: TgUiTokens.CHAT_ROW_PREVIEW_PREFIX_GAP })
+        }
 
-      Text(this.previewText())
-        .fontSize(TgUiTokens.CHAT_ROW_PREVIEW_FONT_SIZE)
-        .fontColor(this.previewBodyColor())
-        .fontWeight(FontWeight.Regular)
-        .maxLines(TgUiTokens.CHAT_ROW_PREVIEW_MAX_LINES)
-        .textOverflow({ overflow: TextOverflow.Ellipsis })
-        .layoutWeight(1)
+        Text(this.previewText())
+          .fontSize(TgUiTokens.CHAT_ROW_PREVIEW_FONT_SIZE)
+          .fontColor(this.previewBodyColor())
+          .fontWeight(FontWeight.Regular)
+          .maxLines(TgUiTokens.CHAT_ROW_PREVIEW_MAX_LINES)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .layoutWeight(1)
+      }
+      .layoutWeight(1)
+      .alignItems(VerticalAlign.Center)
+
+      if (this.hasBottomMeta()) {
+        TgChatMetaBottom({
+          unreadCount: this.unreadCount,
+          isMuted: this.isMuted,
+          isPinned: this.isPinned,
+          hasMention: this.hasMention
+        })
+          .margin({ left: TgUiTokens.CHAT_ROW_TEXT_META_GAP })
+      }
     }
     .width('100%')
+    .height(TgUiTokens.CHAT_META_BOTTOM_ROW_HEIGHT)
+    .alignItems(VerticalAlign.Center)
+  }
+
+  @Builder
+  private buildTitleLine() {
+    Row() {
+      Row() {
+        if (this.isSecret) {
+          TgIcon({
+            src: TgUiTokens.ICON_RES_LOCK,
+            iconSize: TgUiTokens.CHAT_ROW_SECRET_ICON_SIZE,
+            tintColor: TgUiTokens.COLOR_SECRET_CHAT
+          })
+            .margin({ right: TgUiTokens.CHAT_ROW_TITLE_MUTE_GAP })
+        }
+
+        Text(this.titleText())
+          .fontSize(TgUiTokens.CHAT_ROW_TITLE_FONT_SIZE)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(this.isSecret ? TgUiTokens.COLOR_SECRET_CHAT : TgUiTokens.COLOR_TEXT_TITLE)
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .flexShrink(1)
+
+        if (this.isScam || this.isFake) {
+          this.buildScamFakeBadge()
+        } else if (this.isVerified) {
+          this.buildVerifiedBadge()
+        }
+
+        if (this.isMuted) {
+          TgIcon({
+            src: TgUiTokens.ICON_RES_MUTE,
+            iconSize: TgUiTokens.CHAT_ROW_MUTE_ICON_SIZE,
+            tintColor: TgUiTokens.COLOR_ICON_MUTED
+          })
+            .margin({ left: TgUiTokens.CHAT_ROW_TITLE_MUTE_GAP })
+        }
+      }
+      .layoutWeight(1)
+      .alignItems(VerticalAlign.Center)
+
+      if (this.hasTopMeta()) {
+        TgChatMetaTop({
+          timeText: this.timeText,
+          sendStatus: this.sendStatus
+        })
+          .margin({ left: TgUiTokens.CHAT_ROW_TEXT_META_GAP })
+      }
+    }
+    .width('100%')
+    .height(TgUiTokens.CHAT_META_TOP_ROW_HEIGHT)
     .alignItems(VerticalAlign.Center)
   }
 
@@ -168,64 +246,13 @@ export struct TgChatRow {
           textColor: this.avatarTextColor
         })
 
-        Row() {
-          Column({ space: TgUiTokens.CHAT_ROW_TITLE_PREVIEW_GAP }) {
-            Row() {
-              if (this.isSecret) {
-                TgIcon({
-                  src: TgUiTokens.ICON_RES_LOCK,
-                  iconSize: TgUiTokens.CHAT_ROW_SECRET_ICON_SIZE,
-                  tintColor: TgUiTokens.COLOR_SECRET_CHAT
-                })
-                  .margin({ right: 4 })
-              }
-
-              Text(this.titleText())
-                .fontSize(TgUiTokens.CHAT_ROW_TITLE_FONT_SIZE)
-                .fontWeight(FontWeight.Medium)
-                .fontColor(this.isSecret ? TgUiTokens.COLOR_SECRET_CHAT : TgUiTokens.COLOR_TEXT_TITLE)
-                .maxLines(1)
-                .textOverflow({ overflow: TextOverflow.Ellipsis })
-                .layoutWeight(1)
-
-              if (this.isScam || this.isFake) {
-                this.buildScamFakeBadge()
-              } else if (this.isVerified) {
-                this.buildVerifiedBadge()
-              }
-
-              if (this.isMuted) {
-                TgIcon({
-                  src: TgUiTokens.ICON_RES_MUTE,
-                  iconSize: TgUiTokens.CHAT_ROW_MUTE_ICON_SIZE,
-                  tintColor: TgUiTokens.COLOR_ICON_MUTED
-                })
-                  .margin({ left: TgUiTokens.CHAT_ROW_TITLE_MUTE_GAP })
-              }
-            }
-            .width('100%')
-            .alignItems(VerticalAlign.Center)
-
-            this.buildPreviewLine()
-          }
-          .layoutWeight(1)
-          .padding({ right: TgUiTokens.CHAT_ROW_TEXT_META_GAP })
-          .justifyContent(FlexAlign.Center)
-
-          TgChatMeta({
-            timeText: this.timeText,
-            sendStatus: this.sendStatus,
-            unreadCount: this.unreadCount,
-            isMuted: this.isMuted,
-            isPinned: this.isPinned,
-            hasMention: this.hasMention,
-            minWidth: TgUiTokens.CHAT_ROW_META_FIXED_WIDTH
-          })
-            .width(TgUiTokens.CHAT_ROW_META_FIXED_WIDTH)
+        Column({ space: TgUiTokens.CHAT_ROW_TITLE_PREVIEW_GAP }) {
+          this.buildTitleLine()
+          this.buildPreviewLine()
         }
         .layoutWeight(1)
         .margin({ left: TgUiTokens.CHAT_ROW_AVATAR_TEXT_GAP })
-        .alignItems(VerticalAlign.Center)
+        .justifyContent(FlexAlign.Center)
       }
       .width('100%')
       .height(TgUiTokens.CHAT_ROW_HEIGHT)
@@ -234,12 +261,12 @@ export struct TgChatRow {
         right: TgUiTokens.CHAT_ROW_SIDE_INSET
       })
       .alignItems(VerticalAlign.Center)
-      .backgroundColor(this.isPinned ? TgUiTokens.COLOR_CHAT_ROW_PINNED_BG : TgUiTokens.COLOR_BG_PRIMARY)
+      .backgroundColor(this.isPinned ? this.pinnedSurfaceColor : this.surfaceColor)
 
       if (this.showSeparator) {
         Divider()
           .strokeWidth(TgUiTokens.CHAT_ROW_SEPARATOR_STROKE)
-          .color(TgUiTokens.COLOR_SEPARATOR)
+          .color(this.separatorColor)
           .width('100%')
           .margin({
             left: TgUiTokens.CHAT_ROW_SEPARATOR_INSET,

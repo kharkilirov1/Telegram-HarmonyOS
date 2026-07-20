@@ -12,23 +12,45 @@ import { ChatItemVO, buildChatItemVO } from './ChatItemVO';
 import { ChatListDataSource } from './ChatListDataSource';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { TgUiFeatureFlags } from '../../tg_ui/TgUiFeatureFlags';
+import { TgArchivedChatsRow } from '../../tg_ui/atoms/TgArchivedChatsRow';
 import { TgChatRow } from '../../tg_ui/atoms/TgChatRow';
 import { TgChatSendStatus } from '../../tg_ui/atoms/TgChatMeta';
-import { TgChatListNavigationBar } from '../../tg_ui/atoms/TgChatListNavigationBar';
+import {
+  TgChatListNavigationBar,
+  TgChatListStoryPreview
+} from '../../tg_ui/atoms/TgChatListNavigationBar';
+import { TgChatListFilter } from '../../tg_ui/atoms/TgChatListFilterBar';
 import { localized } from '../../../core/utils/AppResource';
 import {
-  computeChatListTopBarHeight,
   computeTabBottomInset,
   getMainWindow,
   removeWindowSizeListener
 } from '../../utils/SafeAreaUtils';
+import { ROOT_TAB_BAR_FALLBACK_CONTENT_INSET } from '../../utils/RootTabBarGeometry';
+import { resolveChatHostTopInset } from '../../utils/ChatSplitGeometry';
+import { PendingChatUnreadSnapshot } from '../chat/PendingChatUnreadSnapshot';
+import { ComposeResult, ComposeRouteParams } from '../compose/TgComposePage';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { createLoadChatsUseCase, LoadChatsUseCase } from '../../../domain/usecases/loadChats';
+import {
+  createLoadArchiveChatsUseCase,
+  LoadArchiveChatsUseCase
+} from '../../../domain/usecases/loadArchiveChats';
 import { createOpenChatUseCase, OpenChatUseCase, OpenChatParams } from '../../../domain/usecases/openChat';
 import { createSetChatMuteUseCase, SetChatMuteUseCase, MUTE_FOREVER } from '../../../domain/usecases/setChatMute';
 import { createDeleteChatHistoryUseCase, DeleteChatHistoryUseCase } from '../../../domain/usecases/deleteChatHistory';
 import { createToggleChatUnreadUseCase, ToggleChatUnreadUseCase } from '../../../domain/usecases/toggleChatUnread';
 import { createToggleChatPinnedUseCase, ToggleChatPinnedUseCase } from '../../../domain/usecases/toggleChatPinned';
+import { createMoveChatToListUseCase, MoveChatToListUseCase } from '../../../domain/usecases/moveChatToList';
+import {
+  createLoadActiveStoriesUseCase,
+  LoadActiveStoriesUseCase
+} from '../../../domain/usecases/loadActiveStories';
+import {
+  hasUnreadActiveStories,
+  hasUnreadCloseFriendsStories,
+  latestActiveStoryId
+} from '../../../core/model/dto/StoryDto';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { uiObserver, window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
@@ -36,6 +58,7 @@ import { common } from '@kit.AbilityKit';
 const DOMAIN = 0x0012;
 const TAG = 'ChatListPage';
 const CHAT_NAV_TRANSITION_LOCK_MS = 760;
+let lastPortraitChatTopInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
 
 class ChatRouteParams {
   chatId: number = 0;
@@ -61,35 +84,67 @@ class OpenChatRequest implements OpenChatParams {
 export struct ChatListPage {
   @Local pageStack: NavPathStack = new NavPathStack();
 
+  @Param chatDetailStack: NavPathStack = new NavPathStack();
+
+  @Event onKeyboardVisibilityChange: (visible: boolean) => void = (_: boolean): void => {};
+  @Param searchQuery: string = '';
+  @Event onSearchQueryChange: (value: string) => void = (_: string): void => {};
+  @Event onSearchDeactivate: () => void = (): void => {};
+  @Event onHeaderSearchWillFocus: () => void = (): void => {};
+
   // Reactive state from @ObservedV2 model (replaces @StorageLink)
   private chatsState = chatsUIState;
   private navState = navigationUIState;
 
-  @Local private topBarTotalHeight: number = TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT;
-  @Local private listBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
-  @Local private searchQuery: string = '';
+  @Local private listBottomInset: number = ROOT_TAB_BAR_FALLBACK_CONTENT_INSET;
+  @Local private chatTopInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
+  @Local private selectedFilterIndex: number = TgChatListFilter.All;
+  @Local private unreadFilterCount: number = 0;
+  @Local private searchCollapseProgress: number = 0;
   @Local private filteredChatsCount: number = 0;
+  @Local private archivedChatsCount: number = 0;
+  @Local private archivedUnreadCount: number = 0;
+  @Local private archivedPreview: string = '';
   @Local private isRetryingLoad: boolean = false;
   @Local private isRefreshing: boolean = false;
+  @Local private storyPreviews: TgChatListStoryPreview[] = [];
 
   private dataSource: ChatListDataSource = new ChatListDataSource();
+  private chatListScroller: Scroller = new Scroller();
+  private headerCollapseOffset: number = 0;
   private lastVisibleListEndIndex: number = -1;
   private unsubscribe?: () => void;
   private rebuildScheduled: boolean = false;
   private rebuildTimerId: number = -1;
   private pageLifecycleToken: number = 0;
   private autoInitialLoadRequested: boolean = false;
+  private archiveInitialLoadRequested: boolean = false;
+  private storyInitialLoadRequested: boolean = false;
   private mainWindow?: window.Window;
   private loadChatsUseCase?: LoadChatsUseCase;
+  private loadArchiveChatsUseCase?: LoadArchiveChatsUseCase;
+  private loadActiveStoriesUseCase?: LoadActiveStoriesUseCase;
   private openChatUseCase?: OpenChatUseCase;
   private muteUseCase?: SetChatMuteUseCase;
   private pinUseCase?: ToggleChatPinnedUseCase;
+  private moveChatToListUseCase?: MoveChatToListUseCase;
   private deleteChatUseCase?: DeleteChatHistoryUseCase;
   private toggleUnreadUseCase?: ToggleChatUnreadUseCase;
   private isOpeningChat: boolean = false;
+  private isComposePickerOpen: boolean = false;
   private deferredOpenTimerId: number = -1;
   private deferredOpenChatId: number = 0;
   private deferredOpenChatTitle: string = '';
+
+  @Monitor('searchQuery')
+  private onSearchQueryChanged(_monitor: IMonitor): void {
+    this.updateSearchCollapseProgress(0);
+    try {
+      this.rebuildList(getAppCoreRuntime().getStore().getState());
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, 'Search rebuild failed: %{public}s', String(error));
+    }
+  }
 
   private clearDeferredOpen(): void {
     if (this.deferredOpenTimerId !== -1) {
@@ -185,6 +240,10 @@ export struct ChatListPage {
   onPageShow(): void {
     this.clearDeferredOpen();
     this.isOpeningChat = false;
+    // A system/back pop can restore ChatList before the NavPathStack result
+    // callback is dispatched. The visible page must never retain a stale
+    // Compose duplicate guard.
+    this.isComposePickerOpen = false;
     // Always clear nav lock — ChatListPage is visible, transition is complete
     navigationUIState.chatNavLockUntil = 0;
     AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, 0);
@@ -200,6 +259,8 @@ export struct ChatListPage {
     this.clearActiveChatContext();
     this.isOpeningChat = false;
     this.autoInitialLoadRequested = false;
+    this.archiveInitialLoadRequested = false;
+    this.storyInitialLoadRequested = false;
     this.bindNavigationStack();
     this.computeSafeInsets();
     this.bindWindowSizeListener();
@@ -213,13 +274,18 @@ export struct ChatListPage {
       const runtime = getAppCoreRuntime();
       const store = runtime.getStore();
       this.loadChatsUseCase = createLoadChatsUseCase(store, getTdGatewayAdapter());
+      this.loadArchiveChatsUseCase = createLoadArchiveChatsUseCase(store, getTdGatewayAdapter());
+      this.loadActiveStoriesUseCase = createLoadActiveStoriesUseCase(store, getTdGatewayAdapter());
       this.openChatUseCase = createOpenChatUseCase(store, getTdGatewayAdapter());
       this.muteUseCase = createSetChatMuteUseCase(getTdGatewayAdapter());
       this.pinUseCase = createToggleChatPinnedUseCase(getTdGatewayAdapter());
+      this.moveChatToListUseCase = createMoveChatToListUseCase(getTdGatewayAdapter());
       this.deleteChatUseCase = createDeleteChatHistoryUseCase(getTdGatewayAdapter());
       this.toggleUnreadUseCase = createToggleChatUnreadUseCase(getTdGatewayAdapter());
       this.rebuildList(store.getState());
       this.maybeLoadInitialChats(store.getState());
+      this.maybeLoadInitialArchive(store.getState());
+      this.maybeLoadInitialStories(store.getState());
 
       const subscriptionToken: number = this.pageLifecycleToken;
       let activeUnsubscribe: (() => void) | undefined = undefined;
@@ -228,6 +294,8 @@ export struct ChatListPage {
           return;
         }
         this.maybeLoadInitialChats(newState);
+        this.maybeLoadInitialArchive(newState);
+        this.maybeLoadInitialStories(newState);
         if (!this.shouldScheduleListRebuild(newState, prevState)) {
           return;
         }
@@ -247,6 +315,8 @@ export struct ChatListPage {
               const currentState = getAppCoreRuntime().getStore().getState();
               this.rebuildList(currentState);
               this.maybeLoadInitialChats(currentState);
+              this.maybeLoadInitialArchive(currentState);
+              this.maybeLoadInitialStories(currentState);
             } catch (e) {
               hilog.error(DOMAIN, TAG, 'Rebuild failed: %{public}s', String(e));
             }
@@ -263,11 +333,14 @@ export struct ChatListPage {
   }
 
   aboutToDisappear(): void {
+    this.onKeyboardVisibilityChange(false);
     this.pageLifecycleToken += 1;
     this.clearRebuildTimer();
     this.clearDeferredOpen();
     this.isOpeningChat = false;
     this.autoInitialLoadRequested = false;
+    this.archiveInitialLoadRequested = false;
+    this.storyInitialLoadRequested = false;
     this.isRefreshing = false;
     this.isRetryingLoad = false;
     if (this.unsubscribe !== undefined) {
@@ -275,8 +348,12 @@ export struct ChatListPage {
       this.unsubscribe = undefined;
     }
     this.loadChatsUseCase = undefined;
+    this.loadArchiveChatsUseCase = undefined;
+    this.loadActiveStoriesUseCase = undefined;
     this.openChatUseCase = undefined;
     this.muteUseCase = undefined;
+    this.pinUseCase = undefined;
+    this.moveChatToListUseCase = undefined;
     this.deleteChatUseCase = undefined;
     this.toggleUnreadUseCase = undefined;
     removeWindowSizeListener(this.mainWindow);
@@ -292,17 +369,20 @@ export struct ChatListPage {
       if (this.mainWindow !== undefined) {
         const lifecycleToken: number = this.pageLifecycleToken;
         const boundWindow: window.Window = this.mainWindow;
-        this.mainWindow.on('windowSizeChange', (_size: window.Size) => {
+        this.computeSafeInsets();
+        this.mainWindow.on('windowSizeChange', (size: window.Size) => {
           if (lifecycleToken !== this.pageLifecycleToken || this.mainWindow !== boundWindow) {
             return;
           }
-          this.computeSafeInsets();
+          this.computeSafeInsets(size);
         });
         this.mainWindow.on('avoidAreaChange', (data: window.AvoidAreaOptions) => {
           if (lifecycleToken !== this.pageLifecycleToken || this.mainWindow !== boundWindow) {
             return;
           }
-          if (data.type === window.AvoidAreaType.TYPE_SYSTEM) {
+          if (data.type === window.AvoidAreaType.TYPE_KEYBOARD) {
+            this.onKeyboardVisibilityChange(data.area.bottomRect.height > 0);
+          } else if (data.type === window.AvoidAreaType.TYPE_SYSTEM) {
             this.computeSafeInsets();
           }
         });
@@ -313,17 +393,70 @@ export struct ChatListPage {
   }
 
   private chatListTopInset(): number {
-    return Math.max(0, this.topBarTotalHeight - TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT);
+    return this.chatTopInset;
   }
 
-  private computeSafeInsets(): void {
+  private chatListTopBarTotalHeight(): number {
+    return TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT + this.chatListTopInset();
+  }
+
+  private restoreChatListStartAfterInsetChange(previousTopInset: number, nextTopInset: number): void {
+    if (Math.abs(previousTopInset - nextTopInset) < 0.5 ||
+      this.headerCollapseOffset > 0 || this.searchCollapseProgress > 0.001) {
+      return;
+    }
+    const lifecycleToken = this.pageLifecycleToken;
+    setTimeout(() => {
+      if (lifecycleToken !== this.pageLifecycleToken) {
+        return;
+      }
+      try {
+        this.chatListScroller.scrollToIndex(0, false, ScrollAlign.START);
+      } catch (_error) {
+      }
+    }, 32);
+  }
+
+  private computeSafeInsets(size?: window.Size): void {
     try {
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      this.topBarTotalHeight = computeChatListTopBarHeight(context);
+      const mainWindow = this.mainWindow ?? getMainWindow(context);
+      let widthPx: number = 0;
+      let heightPx: number = 0;
+      if (size !== undefined) {
+        widthPx = size.width;
+        heightPx = size.height;
+      } else if (mainWindow !== undefined) {
+        const rect = mainWindow.getWindowProperties().windowRect;
+        widthPx = rect.width;
+        heightPx = rect.height;
+      }
+      let measuredTopInset: number = 0;
+      if (mainWindow !== undefined) {
+        const systemAvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+        measuredTopInset = this.getUIContext().px2vp(systemAvoidArea.topRect.height);
+      }
+      if (measuredTopInset > 0 && heightPx >= widthPx) {
+        lastPortraitChatTopInset = measuredTopInset;
+      }
+      const previousTopInset = this.chatTopInset;
+      const nextTopInset = resolveChatHostTopInset(
+        measuredTopInset,
+        widthPx,
+        heightPx,
+        lastPortraitChatTopInset
+      );
+      this.chatTopInset = nextTopInset;
+      this.restoreChatListStartAfterInsetChange(previousTopInset, nextTopInset);
       this.listBottomInset = computeTabBottomInset(context);
     } catch (_error) {
-      this.topBarTotalHeight = TgUiTokens.STATUS_BAR_FALLBACK_INSET + TgUiTokens.CHAT_LIST_NAV_TOTAL_HEIGHT;
-      this.listBottomInset = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
+      this.chatTopInset = resolveChatHostTopInset(
+        0,
+        0,
+        0,
+        lastPortraitChatTopInset
+      );
+      this.listBottomInset = ROOT_TAB_BAR_FALLBACK_CONTENT_INSET;
     }
   }
 
@@ -375,6 +508,87 @@ export struct ChatListPage {
       });
   }
 
+  private maybeLoadInitialArchive(state: AppState): void {
+    const useCase = this.loadArchiveChatsUseCase;
+    if (!useCase || this.archiveInitialLoadRequested || state.connection.status !== 'ready') {
+      return;
+    }
+    this.archiveInitialLoadRequested = true;
+    const lifecycleToken = this.pageLifecycleToken;
+    useCase.execute(100)
+      .catch((error: Object) => {
+        if (lifecycleToken !== this.pageLifecycleToken || this.loadArchiveChatsUseCase !== useCase) {
+          return;
+        }
+        hilog.info(DOMAIN, TAG, 'Archive bootstrap completed without more chats: %{public}s', String(error));
+      });
+  }
+
+  private maybeLoadInitialStories(state: AppState): void {
+    const useCase = this.loadActiveStoriesUseCase;
+    if (!useCase || this.storyInitialLoadRequested || state.connection.status !== 'ready') {
+      return;
+    }
+    if (state.chats.orderedStoryChatIds.length > 0 || useCase.isLoadingInProgress()) {
+      return;
+    }
+
+    this.storyInitialLoadRequested = true;
+    const lifecycleToken = this.pageLifecycleToken;
+    useCase.execute()
+      .catch((error: Object) => {
+        if (lifecycleToken !== this.pageLifecycleToken || this.loadActiveStoriesUseCase !== useCase) {
+          return;
+        }
+        // TDLib returns 404 when the story list is exhausted; the adapter maps it
+        // to a gateway error, so absence of previews remains a valid empty state.
+        hilog.info(DOMAIN, TAG, 'Active stories bootstrap settled without more peers: %{public}s', String(error));
+      });
+  }
+
+  private rebuildStoryPreviews(state: AppState): void {
+    const previews: TgChatListStoryPreview[] = [];
+    const missingChatIds: number[] = [];
+    const storyChatIds = state.chats.orderedStoryChatIds.slice(0, 3);
+    for (const chatId of storyChatIds) {
+      const activeStories = state.chats.activeStoriesByChatId.get(chatId);
+      const chat = state.chats.chats.get(chatId);
+      if (!activeStories) {
+        continue;
+      }
+      if (!chat) {
+        missingChatIds.push(chatId);
+        continue;
+      }
+
+      const chatItem = buildChatItemVO(chat, state);
+      const preview = new TgChatListStoryPreview();
+      preview.chatId = chatId;
+      preview.storyId = latestActiveStoryId(activeStories);
+      preview.initials = chatItem.initials;
+      preview.backgroundColor = chatItem.avatarColor;
+      preview.hasUnread = hasUnreadActiveStories(activeStories);
+      preview.isCloseFriends = hasUnreadCloseFriendsStories(activeStories);
+      if (chatItem.avatarImagePath.length > 0) {
+        preview.imageSrc = chatItem.avatarImagePath;
+        preview.useImage = true;
+      }
+      previews.push(preview);
+    }
+    this.storyPreviews = previews;
+
+    const useCase = this.loadActiveStoriesUseCase;
+    if (useCase && missingChatIds.length > 0) {
+      const lifecycleToken = this.pageLifecycleToken;
+      useCase.hydrateChatsIfMissing(missingChatIds)
+        .catch((error: Object) => {
+          if (lifecycleToken === this.pageLifecycleToken && this.loadActiveStoriesUseCase === useCase) {
+            hilog.info(DOMAIN, TAG, 'Story chat hydration settled: %{public}s', String(error));
+          }
+        });
+    }
+  }
+
   private maybeLoadMoreChats(endIndex: number): void {
     this.lastVisibleListEndIndex = endIndex;
     const loadChatsUseCase = this.loadChatsUseCase;
@@ -407,9 +621,31 @@ export struct ChatListPage {
   }
 
   private rebuildList(state: AppState): void {
+    this.rebuildStoryPreviews(state);
     const items: ChatItemVO[] = [];
     const seenChatIds: Set<number> = new Set<number>();
     const normalizedQuery = this.searchQuery.trim().toLowerCase();
+    const archivePreviewTitles: string[] = [];
+    let archiveUnreadCount = 0;
+    let unreadDialogsCount = 0;
+
+    for (const archivedChatId of state.chats.archivedChatIds) {
+      const archivedChat = state.chats.chats.get(archivedChatId);
+      if (!archivedChat || archivedChat.archiveOrder === '0') {
+        continue;
+      }
+      if (archivePreviewTitles.length < 3 && archivedChat.title.trim().length > 0) {
+        archivePreviewTitles.push(archivedChat.title.trim());
+      }
+      // Telegram's archive badge represents unread dialogs, not the sum of
+      // every unread message (the latter quickly becomes an unusable 9.6K).
+      if (archivedChat.unreadCount > 0) {
+        archiveUnreadCount += 1;
+      }
+    }
+    this.archivedChatsCount = state.chats.archivedChatIds.length;
+    this.archivedUnreadCount = archiveUnreadCount;
+    this.archivedPreview = archivePreviewTitles.join(', ');
 
     for (const chatId of state.chats.orderedChatIds) {
       if (seenChatIds.has(chatId)) {
@@ -419,7 +655,11 @@ export struct ChatListPage {
       const chat = state.chats.chats.get(chatId);
       if (chat) {
         const item = buildChatItemVO(chat, state);
-        if (normalizedQuery.length === 0 || this.matchesSearch(item, normalizedQuery)) {
+        if (item.unreadCount > 0) {
+          unreadDialogsCount++;
+        }
+        if (this.matchesSelectedFilter(item) &&
+          (normalizedQuery.length === 0 || this.matchesSearch(item, normalizedQuery))) {
           items.push(item);
         }
       }
@@ -443,6 +683,50 @@ export struct ChatListPage {
 
     this.dataSource.applyDiff(items);
     this.filteredChatsCount = items.length;
+    this.unreadFilterCount = unreadDialogsCount;
+  }
+
+  private matchesSelectedFilter(item: ChatItemVO): boolean {
+    if (this.selectedFilterIndex === TgChatListFilter.Unread) {
+      return item.unreadCount > 0;
+    }
+    if (this.selectedFilterIndex === TgChatListFilter.Personal) {
+      return !item.isGroup;
+    }
+    return true;
+  }
+
+  private selectFilter(index: number): void {
+    if (index < TgChatListFilter.All || index > TgChatListFilter.Personal ||
+      index === this.selectedFilterIndex) {
+      return;
+    }
+    this.selectedFilterIndex = index;
+    try {
+      this.rebuildList(getAppCoreRuntime().getStore().getState());
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, 'Filter rebuild failed: %{public}s', String(error));
+    }
+  }
+
+  private updateSearchCollapseProgress(frameOffset: number): void {
+    if (this.hasActiveSearch()) {
+      this.headerCollapseOffset = 0;
+      if (this.searchCollapseProgress !== 0) {
+        this.searchCollapseProgress = 0;
+      }
+      return;
+    }
+
+    // List.currentOffset() includes contentStartOffset and therefore remains
+    // negative while the first 54vp are consumed. Accumulate the per-frame
+    // delta directly, exactly like iOS clips its search scroll offset.
+    this.headerCollapseOffset = Math.max(0, this.headerCollapseOffset + frameOffset);
+    const nextProgress = Math.max(0, Math.min(1,
+      this.headerCollapseOffset / TgUiTokens.CHAT_LIST_NAV_SEARCH_AREA_HEIGHT));
+    if (Math.abs(nextProgress - this.searchCollapseProgress) >= 0.005) {
+      this.searchCollapseProgress = nextProgress;
+    }
   }
 
   private matchesSearch(item: ChatItemVO, normalizedQuery: string): boolean {
@@ -459,6 +743,94 @@ export struct ChatListPage {
 
   private hasActiveSearch(): boolean {
     return this.searchQuery.trim().length > 0;
+  }
+
+  private shouldShowArchiveRow(): boolean {
+    return !this.hasActiveSearch() &&
+      this.selectedFilterIndex === TgChatListFilter.All &&
+      this.archivedChatsCount > 0;
+  }
+
+  private openArchive(): void {
+    const navStack = this.bindNavigationStack();
+    if (navStack === undefined) {
+      hilog.error(DOMAIN, TAG, 'Navigation stack unavailable for archive');
+      return;
+    }
+    this.onSearchDeactivate();
+    try {
+      navStack.pushPathByName('TgArchivedChatsPage', undefined);
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, 'Failed to open archive: %{public}s', String(error));
+    }
+  }
+
+  private setChatDestinationVisible(visible: boolean): void {
+    navigationUIState.chatScreenVisible = visible;
+    AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, visible);
+  }
+
+  private openComposePicker(): void {
+    if (this.isComposePickerOpen) {
+      hilog.info(DOMAIN, TAG, 'Ignoring duplicate Compose activation');
+      return;
+    }
+
+    this.onSearchDeactivate();
+    const previousVisible: boolean = navigationUIState.chatScreenVisible;
+    this.isComposePickerOpen = true;
+    this.setChatDestinationVisible(true);
+
+    try {
+      this.chatDetailStack.pushPathByName(
+        'TgComposePage',
+        new ComposeRouteParams(),
+        (popInfo) => {
+          this.isComposePickerOpen = false;
+          const result = popInfo.result as ComposeResult | undefined;
+          if (!result || result.chatId === 0) {
+            this.setChatDestinationVisible(previousVisible);
+            return;
+          }
+
+          if (result.failedMemberCount > 0) {
+            try {
+              const message: string = localized(
+                $r('app.string.group_members_not_added').id,
+                '%d members could not be added. You can invite them with a link.'
+              ).replace('%d', result.failedMemberCount.toString());
+              this.getUIContext().getPromptAction().showToast({ message: message, duration: 3200 });
+            } catch (error) {
+              hilog.error(DOMAIN, TAG, 'Compose creation notice failed: %{public}s', String(error));
+            }
+          }
+
+          try {
+            const state: AppState = getAppCoreRuntime().getStore().getState();
+            const chat = state.chats.chats.get(result.chatId);
+            this.setChatDestinationVisible(previousVisible);
+            if (chat) {
+              this.openChat(buildChatItemVO(chat, state));
+              return;
+            }
+            // createPrivateChat returns the exact TDLib chat before the reducer's
+            // matching update is guaranteed to reach this page. Keep navigation
+            // deterministic without inventing an id or selecting another dialog.
+            const pendingItem = new ChatItemVO();
+            pendingItem.chatId = result.chatId;
+            pendingItem.title = result.chatTitle;
+            this.openChat(pendingItem);
+          } catch (error) {
+            this.setChatDestinationVisible(previousVisible);
+            hilog.error(DOMAIN, TAG, 'Failed to resolve Compose target: %{public}s', String(error));
+          }
+        }
+      );
+    } catch (error) {
+      this.isComposePickerOpen = false;
+      this.setChatDestinationVisible(previousVisible);
+      hilog.error(DOMAIN, TAG, 'Failed to open Compose picker: %{public}s', String(error));
+    }
   }
 
   private getTgReuseId(item: ChatItemVO): string {
@@ -549,7 +921,19 @@ export struct ChatListPage {
         .borderRadius(0)
         .onClick(() => {
           this.handleDeleteChat(item);
-      })
+        })
+
+      Button(localized($r('app.string.archive').id, 'Archive'))
+        .type(ButtonType.Normal)
+        .fontSize(12)
+        .fontColor(Color.White)
+        .backgroundColor(TgUiTokens.SWIPE_ACTION_ARCHIVE)
+        .width(72)
+        .height('100%')
+        .borderRadius(0)
+        .onClick(() => {
+          this.handleMoveToArchive(item);
+        })
     }
     .height('100%')
   }
@@ -561,6 +945,17 @@ export struct ChatListPage {
     pinUseCase.setPinned(item.chatId, !item.isPinned)
       .catch((error: Error) => {
         hilog.error(DOMAIN, TAG, 'Pin toggle failed for %{public}d: %{public}s', item.chatId, error.message);
+      });
+  }
+
+  private handleMoveToArchive(item: ChatItemVO): void {
+    const useCase = this.moveChatToListUseCase;
+    if (!useCase) {
+      return;
+    }
+    useCase.execute(item.chatId, 'archive')
+      .catch((error: Error) => {
+        hilog.error(DOMAIN, TAG, 'Archive failed for %{public}d: %{public}s', item.chatId, error.message);
       });
   }
 
@@ -704,11 +1099,14 @@ export struct ChatListPage {
       hilog.error(DOMAIN, TAG, 'Invalid chatId: %{public}d', item.chatId);
       return;
     }
-    const navStack = this.bindNavigationStack();
-    if (navStack === undefined) {
-      hilog.error(DOMAIN, TAG, 'Navigation stack unavailable');
-      return;
-    }
+    this.onSearchDeactivate();
+    const navStack = this.chatDetailStack;
+    const snapshotChat = getAppCoreRuntime().getStore().getState().chats.chats.get(item.chatId);
+    PendingChatUnreadSnapshot.set(
+      item.chatId,
+      snapshotChat ? snapshotChat.lastReadInboxMessageId : '0',
+      item.unreadCount
+    );
 
     const prevChatId: number = navigationUIState.activeChatId;
     const prevTitle: string = navigationUIState.activeChatTitle;
@@ -735,6 +1133,7 @@ export struct ChatListPage {
       this.isOpeningChat = false;
     } catch (e) {
       this.isOpeningChat = false;
+      PendingChatUnreadSnapshot.clear(item.chatId);
       navigationUIState.activeChatId = prevChatId;
       navigationUIState.activeChatTitle = prevTitle;
       navigationUIState.chatNavLockUntil = 0;
@@ -933,8 +1332,24 @@ export struct ChatListPage {
     Stack({ alignContent: Alignment.Top }) {
       // ── Content layer (list scrolls under top bar for blur) ──
       Refresh({ refreshing: $$this.isRefreshing }) {
-      List() {
+      List({ scroller: this.chatListScroller }) {
         this.buildListHeader()
+        if (this.shouldShowArchiveRow()) {
+          ListItem() {
+            TgArchivedChatsRow({
+              title: localized($r('app.string.archived_chats').id, 'Archived Chats'),
+              preview: this.archivedPreview,
+              chatCount: this.archivedChatsCount,
+              unreadCount: this.archivedUnreadCount,
+              showSeparator: true,
+              surfaceColor: TgUiTokens.CHAT_LIST_PINNED_SURFACE_BG,
+              separatorColor: TgUiTokens.CHAT_LIST_SEPARATOR
+            })
+          }
+          .onClick(() => {
+            this.openArchive();
+          })
+        }
         if (this.filteredChatsCount > 0) {
           LazyForEach(this.dataSource, (item: ChatItemVO) => {
             ListItem() {
@@ -962,6 +1377,9 @@ export struct ChatListPage {
                     isFake: item.isFake,
                     isSecret: item.isSecret,
                     hasMention: item.hasMention,
+                    surfaceColor: TgUiTokens.CHAT_LIST_SURFACE_BG,
+                    pinnedSurfaceColor: TgUiTokens.CHAT_LIST_PINNED_SURFACE_BG,
+                    separatorColor: TgUiTokens.CHAT_LIST_SEPARATOR,
                     showSeparator: TgUiFeatureFlags.USE_INTERNAL_CHAT_ROW_SEPARATOR
                   })
                   .reuseId(this.getTgReuseId(item))
@@ -969,8 +1387,8 @@ export struct ChatListPage {
                 if (item.isLastPinned) {
                   Row()
                     .width('100%')
-                    .height(TgUiTokens.SPACE_8)
-                    .backgroundColor(TgUiTokens.COLOR_BG_SECONDARY)
+                    .height(TgUiTokens.CHAT_ROW_SEPARATOR_STROKE)
+                    .backgroundColor(TgUiTokens.CHAT_LIST_SEPARATOR)
                 }
               }
             }
@@ -995,7 +1413,7 @@ export struct ChatListPage {
               this.buildPaginationFooter()
             }
           }
-        } else {
+        } else if (!this.shouldShowArchiveRow()) {
           ListItem() {
             this.buildListPlaceholder()
           }
@@ -1005,10 +1423,18 @@ export struct ChatListPage {
       .width('100%')
       .height('100%')
       .edgeEffect(EdgeEffect.Spring)
-      .contentStartOffset(this.topBarTotalHeight)
+      .contentStartOffset(this.chatListTopBarTotalHeight())
       .contentEndOffset(this.listBottomInset)
+      .onScrollFrameBegin((offset: number, _state: ScrollState) => {
+        this.updateSearchCollapseProgress(offset);
+        return { offsetRemain: offset };
+      })
       .onScrollIndex((_start: number, end: number) => {
         this.maybeLoadMoreChats(end);
+      })
+      .onReachStart(() => {
+        this.headerCollapseOffset = 0;
+        this.searchCollapseProgress = 0;
       })
       } // end Refresh content
       .onRefreshing(() => {
@@ -1022,25 +1448,34 @@ export struct ChatListPage {
         topInset: this.chatListTopInset(),
         title: localized($r('app.string.chats_title').id, 'Chats'),
         searchValue: this.searchQuery,
+        searchCollapseProgress: this.searchCollapseProgress,
+        selectedFilterIndex: this.selectedFilterIndex,
+        unreadFilterCount: this.unreadFilterCount,
+        storyPreviews: this.storyPreviews,
+        allFilterText: localized($r('app.string.chat_filter_all').id, 'All'),
+        unreadFilterText: localized($r('app.string.chat_filter_unread').id, 'Unread'),
+        personalFilterText: localized($r('app.string.chat_filter_personal').id, 'Personal'),
         searchPlaceholder: localized($r('app.string.search_placeholder').id, 'Search'),
-        editText: localized($r('app.string.edit').id, 'Edit'),
+        editText: localized($r('app.string.chat_list_edit_compact').id, 'Edit'),
+        onComposePress: (): void => {
+          this.openComposePicker();
+        },
+        onFilterChange: (index: number): void => {
+          this.selectFilter(index);
+        },
         onSearchChange: (value: string): void => {
           if (value === this.searchQuery) {
             return;
           }
-          this.searchQuery = value;
-          try {
-            const state = getAppCoreRuntime().getStore().getState();
-            this.rebuildList(state);
-          } catch (error) {
-            hilog.error(DOMAIN, TAG, 'Search rebuild failed: %{public}s', String(error));
-          }
+          this.onSearchQueryChange(value);
+        },
+        onSearchWillFocus: (): void => {
+          this.onHeaderSearchWillFocus();
         }
       })
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
-    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
+    .backgroundColor(TgUiTokens.CHAT_LIST_SURFACE_BG)
   }
 }

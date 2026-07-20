@@ -1,5 +1,6 @@
 import { TgIcon } from './TgIcon';
 import { TgUiTokens } from '../tokens/TgUiTokens';
+import { formatTelegramCompactCount } from '../utils/TgCompactCount';
 
 export enum TgChatSendStatus {
   None = 0,
@@ -10,17 +11,10 @@ export enum TgChatSendStatus {
 }
 
 @ComponentV2
-export struct TgChatMeta {
+export struct TgChatMetaTop {
   @Param timeText: string = '';
   @Param sendStatus: TgChatSendStatus = TgChatSendStatus.None;
-  @Param unreadCount: number = 0;
-  @Param isMuted: boolean = false;
-  @Param isPinned: boolean = false;
-  @Param hasMention: boolean = false;
-
-  @Param minWidth: number = TgUiTokens.CHAT_META_MIN_WIDTH;
-  @Param topRowHeight: number = TgUiTokens.CHAT_META_TOP_ROW_HEIGHT;
-  @Param bottomRowHeight: number = TgUiTokens.CHAT_META_BOTTOM_ROW_HEIGHT;
+  @Param rowHeight: number = TgUiTokens.CHAT_META_TOP_ROW_HEIGHT;
 
   private hasTimeText(): boolean {
     return this.timeText.trim().length > 0;
@@ -64,32 +58,42 @@ export struct TgChatMeta {
     return this.hasTimeText() ? TgUiTokens.CHAT_META_STATUS_GAP : 0;
   }
 
-  private unreadBadgeText(): string {
-    const count = Math.max(0, Math.floor(this.unreadCount));
-    if (count >= TgUiTokens.UNREAD_BADGE_COMPACT_MILLION) {
-      return this.compactBadgeTextForUnit(
-        count,
-        TgUiTokens.UNREAD_BADGE_COMPACT_MILLION,
-        TgUiTokens.UNREAD_BADGE_COMPACT_MILLION_SUFFIX
-      );
-    }
-    if (count >= TgUiTokens.UNREAD_BADGE_COMPACT_THOUSAND) {
-      return this.compactBadgeTextForUnit(
-        count,
-        TgUiTokens.UNREAD_BADGE_COMPACT_THOUSAND,
-        TgUiTokens.UNREAD_BADGE_COMPACT_THOUSAND_SUFFIX
-      );
-    }
-    return `${count}`;
-  }
+  build() {
+    Row() {
+      if (this.hasStatusIcon()) {
+        TgIcon({
+          src: this.statusIconResource(),
+          iconSize: TgUiTokens.CHAT_META_STATUS_ICON_SIZE,
+          tintColor: this.statusIconColor()
+        })
+          .margin({ right: this.statusGap() })
+      }
 
-  private compactBadgeTextForUnit(count: number, unit: number, suffix: string): string {
-    const whole = Math.floor(count / unit);
-    const decimal = Math.floor((count % unit) / (unit / TgUiTokens.UNREAD_BADGE_COMPACT_DECIMAL_DIVISOR));
-    if (decimal > 0) {
-      return `${whole}.${decimal}${suffix}`;
+      if (this.hasTimeText()) {
+        Text(this.timeText)
+          .fontSize(TgUiTokens.CHAT_META_TIME_FONT_SIZE)
+          .fontColor(TgUiTokens.COLOR_TEXT_META)
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Clip })
+      }
     }
-    return `${whole}${suffix}`;
+    .height(this.rowHeight)
+    .justifyContent(FlexAlign.End)
+    .alignItems(VerticalAlign.Center)
+  }
+}
+
+@ComponentV2
+export struct TgChatMetaBottom {
+  @Param unreadCount: number = 0;
+  @Param isMuted: boolean = false;
+  @Param isPinned: boolean = false;
+  @Param hasMention: boolean = false;
+  @Param reservePlaceholder: boolean = false;
+  @Param rowHeight: number = TgUiTokens.CHAT_META_BOTTOM_ROW_HEIGHT;
+
+  private unreadBadgeText(): string {
+    return formatTelegramCompactCount(this.unreadCount);
   }
 
   private unreadBadgeWidth(): number {
@@ -165,55 +169,56 @@ export struct TgChatMeta {
         iconSize: TgUiTokens.CHAT_META_PIN_ICON_SIZE,
         tintColor: TgUiTokens.COLOR_ICON_SECONDARY
       })
-    } else {
+    } else if (this.reservePlaceholder) {
       Row()
         .width(TgUiTokens.CHAT_META_BOTTOM_PLACEHOLDER_WIDTH)
         .height(TgUiTokens.CHAT_META_BOTTOM_PLACEHOLDER_HEIGHT)
         .opacity(0)
+    } else {
+      Row()
+        .width(0)
+        .height(this.rowHeight)
     }
-  }
-
-  @Builder
-  private buildTopRow() {
-    Row() {
-      if (this.hasStatusIcon()) {
-        TgIcon({
-          src: this.statusIconResource(),
-          iconSize: TgUiTokens.CHAT_META_STATUS_ICON_SIZE,
-          tintColor: this.statusIconColor()
-        })
-          .margin({ right: this.statusGap() })
-      }
-
-      if (this.hasTimeText()) {
-        Text(this.timeText)
-          .fontSize(TgUiTokens.CHAT_META_TIME_FONT_SIZE)
-          .fontColor(TgUiTokens.COLOR_TEXT_META)
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.Clip })
-      }
-    }
-    .width('100%')
-    .height(this.topRowHeight)
-    .justifyContent(FlexAlign.End)
-    .alignItems(VerticalAlign.Center)
-  }
-
-  @Builder
-  private buildBottomRow() {
-    Row() {
-      this.buildBottomContent()
-    }
-    .width('100%')
-    .height(this.bottomRowHeight)
-    .justifyContent(FlexAlign.End)
-    .alignItems(VerticalAlign.Center)
   }
 
   build() {
+    Row() {
+      this.buildBottomContent()
+    }
+    .height(this.rowHeight)
+    .justifyContent(FlexAlign.End)
+    .alignItems(VerticalAlign.Center)
+  }
+}
+
+@ComponentV2
+export struct TgChatMeta {
+  @Param timeText: string = '';
+  @Param sendStatus: TgChatSendStatus = TgChatSendStatus.None;
+  @Param unreadCount: number = 0;
+  @Param isMuted: boolean = false;
+  @Param isPinned: boolean = false;
+  @Param hasMention: boolean = false;
+
+  @Param minWidth: number = TgUiTokens.CHAT_META_MIN_WIDTH;
+  @Param topRowHeight: number = TgUiTokens.CHAT_META_TOP_ROW_HEIGHT;
+  @Param bottomRowHeight: number = TgUiTokens.CHAT_META_BOTTOM_ROW_HEIGHT;
+
+  build() {
     Column({ space: TgUiTokens.CHAT_META_ROW_GAP }) {
-      this.buildTopRow()
-      this.buildBottomRow()
+      TgChatMetaTop({
+        timeText: this.timeText,
+        sendStatus: this.sendStatus,
+        rowHeight: this.topRowHeight
+      })
+      TgChatMetaBottom({
+        unreadCount: this.unreadCount,
+        isMuted: this.isMuted,
+        isPinned: this.isPinned,
+        hasMention: this.hasMention,
+        reservePlaceholder: true,
+        rowHeight: this.bottomRowHeight
+      })
     }
     .constraintSize({ minWidth: this.minWidth })
     .alignItems(HorizontalAlign.End)

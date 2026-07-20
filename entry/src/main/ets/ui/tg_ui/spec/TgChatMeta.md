@@ -3,7 +3,7 @@
 ## 1) Scope
 - Atom: `TgChatMeta`
 - Target layer: `atoms`
-- Status: `in-progress`
+- Status: `done`
 
 ## 2) iOS source mapping
 - `submodules/ChatListUI/Sources/Node/ChatListItem.swift`
@@ -26,7 +26,9 @@
 - `unreadCount: number` — unread badge value.
 - `isMuted: boolean` — muted badge styling.
 - `isPinned: boolean` — pin fallback when unread absent.
-- `minWidth/topRowHeight/bottomRowHeight` — geometry controls (tokenized).
+- `TgChatMetaTop`: `timeText/sendStatus/rowHeight` for the title line.
+- `TgChatMetaBottom`: `unreadCount/isMuted/isPinned/hasMention/rowHeight` for the preview line.
+- `TgChatMeta` remains the composed demo/legacy wrapper with `minWidth/topRowHeight/bottomRowHeight` controls.
 
 ## 4) State matrix
 - none: only time, no bottom content.
@@ -40,16 +42,15 @@
 - mention + unread: mention dot and unread capsule share the same project-owned background color path.
 
 ## 5) Layout rules
-- Right meta cluster is always right-aligned and width-reserved:
-  - `constraintSize({ minWidth: tokens.chatMetaMinWidth })`
-  - inner rows use `justifyContent(FlexAlign.End)`.
+- Live `TgChatRow` owns two independent trailing lanes, matching the iOS layout pass:
+  - title width is reduced only by measured `date/status` content through intrinsic `TgChatMetaTop` geometry;
+  - preview width is reduced only by the current `badge/mention/pin` content through intrinsic `TgChatMetaBottom` geometry;
+  - an empty bottom accessory consumes zero width, so a normal preview can reach the trailing inset.
+- Both line atoms use `justifyContent(FlexAlign.End)` and keep the same trailing edge.
+- The composed `TgChatMeta` wrapper preserves the old fixed-min-width/placeholder probe for its standalone demo and archived-row integrations.
 - Top and bottom rows have fixed, tokenized heights.
-- **Anti-jump rule #1 (width reserve):**
-  - cluster min width prevents title/preview block from “breathing” when `badge ↔ pin ↔ none`.
-- **Anti-jump rule #2 (vertical reserve):**
-  - bottom row always exists with fixed geometry;
-  - if no badge/pin, render invisible placeholder (tokenized size) instead of collapsing row.
-  - placeholder width is reserved to badge max visual width (`UNREAD_BADGE_MAX_WIDTH`) so `none ↔ compact unread ↔ pin` does not micro-shift.
+- **Vertical stability:** top and bottom line heights remain fixed and tokenized, while horizontal width follows the actual accessory on that line.
+- **Standalone probe stability:** `TgChatMeta(reservePlaceholder)` still reserves the worst-case bottom width for the demo that compares state changes.
 - Priority for bottom content:
   - `unreadBadge` (if `unreadCount > 0`) → else `pin` (if pinned) → else placeholder.
 - Unread count formatting follows Telegram iOS `compactNumericCountString`: `1...999` exact, then compact `K` / `M` with one decimal when needed (`1K`, `2.5K`, `1.2M`). It must not clamp at `99+`.
@@ -77,7 +78,7 @@
     - `ICON_RES_PIN`
 
 ## 7) Acceptance checklist
-- [x] Right cluster min-width reserved and right aligned
+- [x] Live row uses independent intrinsic top/bottom trailing clusters and a stable right edge
 - [x] Bottom row vertical geometry is always reserved (no collapse)
 - [x] Placeholder width reserves worst-case bottom content (`compact K/M` / pin)
 - [x] `badge ↔ pin ↔ none` does not shift left text block in demo probe
@@ -87,4 +88,4 @@
 - [x] Unread badge avoids stock ArkUI `Badge` halo/border and owns capsule geometry locally
 - [x] Unread badge uses compact K/M count formatting instead of `99+` clamping
 - [x] Demo covers required states (`none/sending/sent/read/pinned/unread/muted`)
-- [ ] Final side-by-side polish against iOS screenshot sequence
+- [x] API23 runtime parity: a no-accessory preview reaches the content edge while time remains confined to the independent top lane (`.codex/ui-audit/2026-07-17/chatrow-line-meta/02-after.*`)

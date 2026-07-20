@@ -2,6 +2,10 @@
 // Eliminates copy-paste of computeSafeInsets / bindWindowSizeListener across shell pages.
 
 import { TgUiTokens } from '../tg_ui/tokens/TgUiTokens';
+import {
+  computeRootTabContentBottomInset,
+  ROOT_TAB_BAR_FALLBACK_CONTENT_INSET
+} from './RootTabBarGeometry';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 
@@ -44,8 +48,8 @@ export function computeChatListTopBarHeight(context: common.UIAbilityContext): n
 }
 
 /**
- * Compute the bottom content inset for tab pages (accounts for the overlaid tab-bar capsule + system nav).
- * Falls back to TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM.
+ * Compute the bottom content inset for tab pages using the shared root tab-bar geometry contract.
+ * Falls back to the accepted legacy 82vp clearance when the window stage is unavailable.
  */
 export function computeTabBottomInset(context: common.UIAbilityContext): number {
   try {
@@ -53,20 +57,18 @@ export function computeTabBottomInset(context: common.UIAbilityContext): number 
     if (windowStage) {
       const mainWindow = windowStage.getMainWindowSync();
       const systemAvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
-      let bottomInset = px2vp(systemAvoidArea.bottomRect.height);
+      const systemBottomInset = px2vp(systemAvoidArea.bottomRect.height);
+      let navigationBottomInset: number = 0;
       try {
         const navAvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
-        bottomInset = Math.max(bottomInset, px2vp(navAvoidArea.bottomRect.height));
+        navigationBottomInset = px2vp(navAvoidArea.bottomRect.height);
       } catch (_error) {
       }
-      // Floating island: 48vp of bar hovering barBottomMargin above the inset
-      return TgUiTokens.TAB_BAR_FLAT_HEIGHT
-        + Math.max(bottomInset, TgUiTokens.TAB_BAR_ISLAND_BOTTOM_MARGIN)
-        + TgUiTokens.SPACE_6;
+      return computeRootTabContentBottomInset(systemBottomInset, navigationBottomInset);
     }
   } catch (_error) {
   }
-  return TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
+  return ROOT_TAB_BAR_FALLBACK_CONTENT_INSET;
 }
 
 /**
