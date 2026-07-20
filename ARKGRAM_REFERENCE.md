@@ -14,10 +14,10 @@
 
 ## Где лежит (абсолютные пути, доступны из любой сессии)
 ```
-C:\Users\Kharki\Desktop\ArkGram-RE\out\ArkGram-project\entry\src\main\ets\   ← причёсанные .ets по путям
-C:\Users\Kharki\Desktop\ArkGram-RE\out\ArkGram-project\_reference\ArkGram_native_full.ts  ← полный нативный ArkTS (чище синтаксис)
-C:\Users\Kharki\Desktop\ArkGram-RE\out\ArkGram-project\_reference\modules.disasm.pa        ← офиц. дизасм (эталон сверки)
-C:\Users\Kharki\Desktop\ArkGram-RE\out\ArkGram-project\README.md             ← пределы + шпаргалка артефактов
+C:\Refs\Telegram\ArkGram-RE\out\ArkGram-project\entry\src\main\ets\   ← причёсанные .ets по путям
+C:\Refs\Telegram\ArkGram-RE\out\ArkGram-project\_reference\ArkGram_native_full.ts  ← полный нативный ArkTS (чище синтаксис)
+C:\Refs\Telegram\ArkGram-RE\out\ArkGram-project\_reference\modules.disasm.pa        ← офиц. дизасм (эталон сверки)
+C:\Refs\Telegram\ArkGram-RE\out\ArkGram-project\README.md             ← пределы + шпаргалка артефактов
 ```
 
 ## Карта: что где смотреть
@@ -95,4 +95,4 @@ C:\Users\Kharki\Desktop\ArkGram-RE\out\ArkGram-project\README.md             ←
 
 ## Пределы
 Не компилируется, локальные переменные безымянные (`vNN`), комментарии/типы утеряны.
-Только для чтения/изучения. Полный конвейер декомпиляции — в `C:\Users\Kharki\Desktop\ArkGram-RE\`.
+Только для чтения/изучения. Полный конвейер декомпиляции — в `C:\Refs\Telegram\ArkGram-RE\`.

@@ -1,6 +1,6 @@
 # DECISIONS — Telegram-HarmonyOS
 
-Last updated: 2026-05-03
+Last updated: 2026-07-10
 
 This file records decisions that are already effectively accepted in the repo.
 
@@ -10,9 +10,9 @@ This file records decisions that are already effectively accepted in the repo.
 - **Consequence:** UI refactors should not casually rewrite reducers, gateway contracts, or store ownership.
 
 ## D2. Use Telegram iOS as the visual source of truth
-- **Decision:** UI porting is anchored to the project-local reference set under `рефенсы/`, with Telegram iOS as the primary visual source.
-- **Why:** The goal is high-fidelity Telegram feel, not a generic HarmonyOS messenger.
-- **Consequence:** Non-trivial UI work starts from local reference inspection (`Telegram-iOS-master`, then other refs as needed), then spec, then atom/demo/integration.
+- **Decision:** UI porting is anchored to the latest installed Telegram iOS runtime witness first and `C:\Refs\Telegram\Telegram-iOS-current` second. Public source provides structure/states/constants but may lag the shipped App Store build.
+- **Why:** The goal is current high-fidelity Telegram feel, not fidelity to a stale source snapshot or a generic HarmonyOS messenger.
+- **Consequence:** Non-trivial UI work starts from a current screenshot/video baseline, then current iOS source inspection, platform mapping, spec, atom/demo, and integration. The old 2026-02 snapshot is historical only.
 
 ## D3. `docs/ai/MASTER_PLAN_TELEGRAM_UI.md` is the frozen UI contract
 - **Decision:** Master plan wins if smaller docs disagree.
@@ -74,3 +74,13 @@ This file records decisions that are already effectively accepted in the repo.
 - **Decision:** After explicit user direction on 2026-05-03, continue the root shell through API23 `HdsTabs` / `HdsNavigation` instead of restoring the deleted custom `TgTabBar` as the active shell.
 - **Why:** The refreshed docs/SDK show the HDS tab/navigation path and `barFloatingStyle` are real API23 surfaces, and the project strategy already prefers Harmony-native shell/chrome when platform quality is sufficient.
 - **Consequence:** `build-profile.json5` now intentionally targets and declares compatibility with `6.1.0(23)`, and `scripts/smoke-ui-phase0.ps1` validates the HDS root-shell contract. Any future API22 fallback would be a separate deliberate compatibility track, not the current active smoke boundary.
+
+## D15. Heavy reference repositories live outside the workspace
+- **Decision:** Third-party references live under `C:\Refs\Telegram`; `REFERENCES.md` is the canonical pinned registry. No junction is created back into the project.
+- **Why:** Git ignore protects history but not every IDE, antivirus, recursive search, or nested-repository detector. The reference set contains tens of thousands of files and large Android/native trees.
+- **Consequence:** Agents resolve references through `REFERENCES.md`, update pinned commits deliberately, and never silently clone/pull references inside the active Telegram-HarmonyOS workspace.
+
+## D16. Native HarmonyOS chrome, custom Telegram content
+- **Decision:** Keep new HDS SDK surfaces native for tabs, navigation/material bars, safe areas and motion; implement Telegram-defining content as custom `tg_ui`. The accepted design is `docs/ai/HYBRID_NATIVE_CUSTOM_UI_DESIGN_2026-07-10.md`.
+- **Why:** The API23+ HDS material/navigation APIs already provide a high-quality platform identity, while the runtime iPhone comparison shows that rows, wallpaper, bubbles, media, pinned state and content density still require Telegram-specific rendering.
+- **Consequence:** Do not custom-paint a replacement for the active `HdsTabs` island. Prefer `HdsNavigation`/native bar hosts with custom builders where their state contract is sufficient; retain custom components when native migration would lose Telegram behavior. Each boundary move requires a focused capability demo and runtime witness before replacing the active path.

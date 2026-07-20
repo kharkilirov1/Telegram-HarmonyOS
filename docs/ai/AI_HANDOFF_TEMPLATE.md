@@ -21,7 +21,7 @@ Use this template when handing work to another AI agent.
 - Keep changes incremental and reviewable.
 
 ## iOS reference inputs
-- Root: `C:\Users\Kharki\Downloads\референсы\Telegram-iOS-master\Telegram-iOS-master`
+- Root: `C:\Refs\Telegram\Telegram-iOS-current` (verify pinned commit in `REFERENCES.md`)
 - Exact files used:
   - <file1>
   - <file2>

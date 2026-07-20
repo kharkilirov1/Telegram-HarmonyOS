@@ -158,6 +158,7 @@ The UI does not mutate domain state directly. It reads through:
 
 ## 10. Canonical docs
 - Operator rules: `AGENTS.md`
+- External reference registry and pinned revisions: `REFERENCES.md`
 - Current state: `STATUS.md`
 - Accepted choices: `DECISIONS.md`
 - Current work: `TASKS/TODO.md`

@@ -23,7 +23,7 @@ Master UI contract (frozen):
 
 ## 2) Fixed decisions (agreed)
 1. iOS source of truth path:
-   - `C:\Users\Kharki\Desktop\Telegram-HarmonyOS\рефенсы\Telegram-iOS-master`
+   - `C:\Refs\Telegram\Telegram-iOS-current` (registry: `REFERENCES.md`)
 2. Work strategy:
    - Atom-first pipeline (`SPEC -> TOKENS -> DEMO -> ATOM -> integration`).
    - Order is governed by `docs/ai/ATOM_ROADMAP.md` and frozen contract `MASTER_PLAN_TELEGRAM_UI.md`.

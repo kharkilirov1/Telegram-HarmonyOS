@@ -180,7 +180,7 @@ Every reusable component should have:
 
 ### Visual Reference
 
-UI porting is anchored to **Telegram iOS** as the visual source of truth. Reference files are stored in `рефенсы/` directory.
+UI porting is anchored to **Telegram iOS**. Shipped runtime screenshots/video are the visual truth; current public source is in `C:\Refs\Telegram\Telegram-iOS-current`. The complete external registry is `REFERENCES.md`.
 
 ## Key Documentation
 

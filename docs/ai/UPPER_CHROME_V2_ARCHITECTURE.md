@@ -27,11 +27,11 @@ It does **not** mean just the visible title row.
 ## 2. iOS decomposition summary
 
 Grounded from:
-- `рефенсы/Telegram-iOS-master/submodules/TelegramUI/Components/ChatListHeaderComponent/Sources/ChatListNavigationBar.swift`
-- `рефенсы/Telegram-iOS-master/submodules/TelegramUI/Components/ChatListHeaderComponent/Sources/ChatListHeaderComponent.swift`
-- `рефенсы/Telegram-iOS-master/submodules/TelegramUI/Sources/ChatControllerNode.swift`
-- `рефенсы/Telegram-iOS-master/submodules/TelegramUI/Sources/ChatControllerContentData.swift`
-- `рефенсы/Telegram-iOS-master/submodules/TelegramUI/Sources/ChatHistoryNavigationButtonNode.swift`
+- `C:\Refs\Telegram\Telegram-iOS-current\submodules\TelegramUI\Components\ChatListHeaderComponent\Sources\ChatListNavigationBar.swift`
+- `C:\Refs\Telegram\Telegram-iOS-current\submodules\TelegramUI\Components\ChatListHeaderComponent\Sources\ChatListHeaderComponent.swift`
+- `C:\Refs\Telegram\Telegram-iOS-current\submodules\TelegramUI\Sources\ChatControllerNode.swift`
+- `C:\Refs\Telegram\Telegram-iOS-current\submodules\TelegramUI\Sources\ChatControllerContentData.swift`
+- `C:\Refs\Telegram\Telegram-iOS-current\submodules\TelegramUI\Sources\ChatHistoryNavigationButtonNode.swift`
 
 ### What iOS actually does
 - top safe/status area is part of the composition

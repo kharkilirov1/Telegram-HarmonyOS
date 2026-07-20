@@ -27,12 +27,12 @@ Before executing any phase:
 5. Read `TASKS/TODO.md`
 6. Read `TASKS/LESSONS.md`
 7. For HarmonyOS-specific decisions, query `harmonyos_docs`
-8. Inspect relevant local references under `рефенсы/`
+8. Inspect relevant external references from `REFERENCES.md`
 
 Reference priority:
-1. `harmonyos_docs` + `рефенсы/HarmonyOSComponentUXExamples`
-2. `рефенсы/Telegram-iOS-master`
-3. `рефенсы/telegram-android`
+1. `harmonyos_docs` + `C:\Refs\Telegram\HarmonyOSComponentUXExamples`
+2. `C:\Refs\Telegram\Telegram-iOS-current`
+3. `C:\Refs\Telegram\telegram-android`
 
 Global execution rules:
 - Work **phase-by-phase**, not randomly.
