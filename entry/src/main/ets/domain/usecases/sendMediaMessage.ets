@@ -17,6 +17,8 @@ export class SendMediaMessageParams {
   localPath: string = '';
   caption: string = '';
   replyToMessageId: MessageId = '0';
+  durationSeconds: number = 0;
+  waveformBase64: string = '';
 }
 
 class MediaValidationResult {
@@ -51,11 +53,17 @@ function validateSendMediaMessageParams(params: SendMediaMessageParams): MediaVa
     return result;
   }
 
+  if (params.mediaKind === 'voice' && params.durationSeconds <= 0) {
+    result.isValid = false;
+    result.errorMessage = 'Voice note duration must be positive';
+    return result;
+  }
+
   return result;
 }
 
 function isSupportedMediaKind(mediaKind: string): boolean {
-  return mediaKind === 'photo' || mediaKind === 'video' || mediaKind === 'document';
+  return mediaKind === 'photo' || mediaKind === 'video' || mediaKind === 'document' || mediaKind === 'voice';
 }
 
 export class SendMediaMessageUseCase {
@@ -85,8 +93,10 @@ export class SendMediaMessageUseCase {
         params.chatId,
         params.mediaKind,
         params.localPath,
-        params.caption,
-        params.replyToMessageId
+      params.caption,
+      params.replyToMessageId,
+      params.durationSeconds,
+      params.waveformBase64
       );
 
       await this.gateway.send(command);

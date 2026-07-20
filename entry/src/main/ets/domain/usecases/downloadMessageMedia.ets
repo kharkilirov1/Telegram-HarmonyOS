@@ -165,6 +165,10 @@ export class DownloadMessageMediaUseCase {
     // Photo — thumbnail only. Full photo is resolved by explicit tap/gallery download state.
     count += this.scanFileSlot(content.photoThumbFileId, content.photoThumbPath, THUMB_PRIORITY, budget - count);
 
+    // Link preview — the small poster is chat chrome and follows thumbnail priority.
+    count += this.scanFileSlot(content.linkPreviewPhotoThumbFileId, content.linkPreviewPhotoThumbPath,
+      THUMB_PRIORITY, budget - count);
+
     // Video — download thumbnail only (full video on demand)
     count += this.scanFileSlot(content.videoThumbFileId, content.videoThumbPath, THUMB_PRIORITY, budget - count);
 

@@ -16,6 +16,10 @@ const DOMAIN = 0x0013;
 export class SearchChatMessagesResult {
   messageIds: MessageId[] = [];
   totalCount: number = 0;
+  // Exact TDLib continuation cursor from foundChatMessages. Never infer the
+  // next page from the last visible timeline item: albums and deleted results
+  // make that fallback ambiguous.
+  nextFromMessageId: MessageId = '0';
 }
 
 // One tile/row of the profile Shared Media page
@@ -29,6 +33,54 @@ export class SharedMediaItem {
   fileName: string = '';
   fileSize: number = 0;
   linkText: string = '';
+  linkUrl: string = '';
+}
+
+function normalizeDetectedLink(value: string): string {
+  const link = value.trim();
+  if (link.startsWith('www.')) {
+    return 'https://' + link;
+  }
+  return link;
+}
+
+function extractFirstFormattedTextLink(formattedText: TdObject): string {
+  const text = formattedText.getString('text');
+  const entities = formattedText.getArray('entities');
+  for (let i = 0; i < entities.length; i++) {
+    const entity = entities[i];
+    const type = entity.getObject('type');
+    const typeName = type.getType();
+    if (typeName === 'textEntityTypeTextUrl') {
+      const target = type.getString('url');
+      if (target.trim().length > 0) {
+        return normalizeDetectedLink(target);
+      }
+    }
+    if (typeName === 'textEntityTypeUrl') {
+      const offset = Math.max(0, entity.getTopLevelNumber('offset'));
+      const length = Math.max(0, entity.getTopLevelNumber('length'));
+      const target = text.substring(offset, Math.min(text.length, offset + length));
+      if (target.trim().length > 0) {
+        return normalizeDetectedLink(target);
+      }
+    }
+  }
+  const detected = text.match(/(?:https?:\/\/|tg:\/\/|www\.)[^\s<>()]+/i);
+  return detected && detected.length > 0 ? normalizeDetectedLink(detected[0]) : '';
+}
+
+function extractSharedMediaLink(content: TdObject, formattedText: TdObject): string {
+  const preview = content.getObject('link_preview');
+  const previewUrl = preview.getString('url');
+  if (previewUrl.trim().length > 0) {
+    return normalizeDetectedLink(previewUrl);
+  }
+  const legacyPreviewUrl = content.getObject('web_page').getString('url');
+  if (legacyPreviewUrl.trim().length > 0) {
+    return normalizeDetectedLink(legacyPreviewUrl);
+  }
+  return extractFirstFormattedTextLink(formattedText);
 }
 
 function parseSharedMediaItem(msg: TdObject, filterType: string): SharedMediaItem | undefined {
@@ -36,6 +88,16 @@ function parseSharedMediaItem(msg: TdObject, filterType: string): SharedMediaIte
   item.messageId = msg.getInt64String('id');
   const content = msg.getObject('content');
   const ctype = content.getType();
+  if (filterType === 'Url' && ctype !== 'messageText') {
+    // searchMessagesFilterUrl also returns media whose caption contains a URL.
+    // Treat those as link rows before the photo/video/file branches.
+    item.kind = 'link';
+    const formattedCaption = content.getObject('caption');
+    const caption = formattedCaption.getString('text');
+    item.linkText = caption.length > 120 ? caption.substring(0, 120) : caption;
+    item.linkUrl = extractSharedMediaLink(content, formattedCaption);
+    return item;
+  }
   if (ctype === 'messagePhoto') {
     // pick the last (largest) photo size that has a file
     const sizes = content.getObject('photo').getArray('sizes');
@@ -44,7 +106,9 @@ function parseSharedMediaItem(msg: TdObject, filterType: string): SharedMediaIte
     }
     const mid = sizes[Math.min(1, sizes.length - 1)];
     const file = mid.getObject('photo');
-    item.thumbFileId = file.getNumber('id');
+    // A TDLib file also contains remote.id (string). Generic nested lookup can
+    // hit that value first and silently coerce the real numeric file id to 0.
+    item.thumbFileId = file.getTopLevelNumber('id');
     const local = file.getObject('local');
     if (local.getBool('is_downloading_completed')) {
       item.thumbPath = local.getString('path');
@@ -57,7 +121,7 @@ function parseSharedMediaItem(msg: TdObject, filterType: string): SharedMediaIte
     const video = content.getObject('video');
     item.duration = video.getNumber('duration');
     const thumbFile = video.getObject('thumbnail').getObject('file');
-    item.thumbFileId = thumbFile.getNumber('id');
+    item.thumbFileId = thumbFile.getTopLevelNumber('id');
     const local = thumbFile.getObject('local');
     if (local.getBool('is_downloading_completed')) {
       item.thumbPath = local.getString('path');
@@ -79,15 +143,10 @@ function parseSharedMediaItem(msg: TdObject, filterType: string): SharedMediaIte
   if (ctype === 'messageText') {
     // Url filter returns text messages containing links
     item.kind = 'link';
-    const text = content.getObject('text').getString('text');
+    const formattedText = content.getObject('text');
+    const text = formattedText.getString('text');
     item.linkText = text.length > 120 ? text.substring(0, 120) : text;
-    return item;
-  }
-  if (filterType === 'Url') {
-    // The Url filter also matches media whose CAPTION carries the link
-    item.kind = 'link';
-    const caption = content.getObject('caption').getString('text');
-    item.linkText = caption.length > 120 ? caption.substring(0, 120) : caption;
+    item.linkUrl = extractSharedMediaLink(content, formattedText);
     return item;
   }
   return undefined;
@@ -119,18 +178,20 @@ export class SearchChatMessagesUseCase {
     return items;
   }
 
-  // Downloads one thumbnail synchronously, returns sandbox path ('' on failure)
-  async downloadThumb(fileId: number): Promise<string> {
+  // Starts a non-blocking thumbnail download. Completion normally arrives via
+  // updateFile/FilesState; an already-local response can return its path now.
+  async requestThumbDownload(fileId: number, priority: number = 16): Promise<string> {
     if (fileId <= 0) {
       return '';
     }
     try {
-      const response = await this.gateway.send(createDownloadFileCommand(fileId, 1, true)) as TdObject;
+      const response = await this.gateway.send(createDownloadFileCommand(fileId, priority, false)) as TdObject;
       const local = response.getObject('local');
       if (local.getBool('is_downloading_completed')) {
         return local.getString('path');
       }
-    } catch (_e) {
+    } catch (error) {
+      throw new Error(`requestThumbDownload(${fileId}): ${String(error)}`);
     }
     return '';
   }
@@ -151,6 +212,10 @@ export class SearchChatMessagesUseCase {
 
       const result = new SearchChatMessagesResult();
       result.totalCount = tdGetNumber(response, 'total_count');
+      result.nextFromMessageId = response.getInt64String('next_from_message_id');
+      if (result.nextFromMessageId.length === 0) {
+        result.nextFromMessageId = '0';
+      }
 
       // foundChatMessages carries a plain messages array — extract ids directly
       result.messageIds = this.extractMessageIds(response);

@@ -4,7 +4,7 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { TdGatewayPort } from '../ports/TdGatewayPort';
 import { ChatId, MessageId } from '../../core/model/EntityId';
-import { createSendMessageCommand } from '../../core/model/AppCommand';
+import { createSendMessageCommand, CustomEmojiTextEntity } from '../../core/model/AppCommand';
 import { AppError, AppErrorKind } from '../../core/model/AppError';
 
 const TAG = 'SendMessage';
@@ -18,6 +18,7 @@ export class SendMessageParams {
   chatId: ChatId = 0;
   text: string = '';
   replyToMessageId: MessageId = '0';
+  customEmojiEntities: CustomEmojiTextEntity[] = [];
 }
 
 /**
@@ -89,7 +90,8 @@ export class SendMessageUseCase {
       const command = createSendMessageCommand(
         params.chatId,
         params.text,
-        params.replyToMessageId
+        params.replyToMessageId,
+        params.customEmojiEntities
       );
 
       await this.gateway.send(command);

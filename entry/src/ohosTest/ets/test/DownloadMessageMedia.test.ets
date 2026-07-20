@@ -193,5 +193,26 @@ export default function downloadMessageMediaTest() {
       expect(sentFileIds(gateway).length).assertEqual(6);
       useCase.stop();
     });
+
+    it('downloads_link_preview_thumbnail_without_enqueuing_full_preview_photo', 0, async () => {
+      const state = createInitialAppState();
+      const message = new Message();
+      message.content = new MessageContent();
+      message.content.linkPreviewPhotoThumbFileId = 90;
+      message.content.linkPreviewPhotoFileId = 91;
+      const chatMessages = new Map<string, Message>();
+      chatMessages.set('preview', message);
+      state.messages.messages.set(101, chatMessages);
+      const store = new AppStore(appReducer, state, false);
+      const gateway = new FakeGateway();
+      const useCase = new DownloadMessageMediaUseCase(store, gateway, (): number => 101);
+
+      useCase.start();
+      await sleep(750);
+      const ids = sentFileIds(gateway);
+      expect(ids.length).assertEqual(1);
+      expect(ids[0]).assertEqual(90);
+      useCase.stop();
+    });
   });
 }

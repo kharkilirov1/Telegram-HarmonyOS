@@ -17,14 +17,18 @@ export class ToggleChatPinnedUseCase {
     this.gateway = gateway;
   }
 
-  async setPinned(chatId: ChatId, isPinned: boolean): Promise<void> {
+  async setPinned(
+    chatId: ChatId,
+    isPinned: boolean,
+    chatList: 'main' | 'archive' = 'main'
+  ): Promise<void> {
     if (!chatId || chatId === 0) {
       throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid chatId', 'Input validation failed', 400, false);
     }
 
     try {
       hilog.info(DOMAIN, TAG, 'Toggling pin for chat %{public}d -> %{public}s', chatId, String(isPinned));
-      const command = createToggleChatPinnedCommand(chatId, isPinned);
+      const command = createToggleChatPinnedCommand(chatId, isPinned, chatList);
       await this.gateway.send(command);
       hilog.info(DOMAIN, TAG, 'Chat pin toggled');
     } catch (error) {
