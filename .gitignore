@@ -20,6 +20,7 @@ QWEN_*.md
 
 # Temporary scripts
 *.py
+!scripts/generate-unicode-emoji-catalog.py
 semantic_memory.db
 
 # IDE
@@ -41,6 +42,10 @@ entry/oh-package-lock.json5
 
 # Third-party dependencies (built separately)
 entry/src/main/cpp/third_party/
+!entry/src/main/cpp/third_party/
+entry/src/main/cpp/third_party/*
+!entry/src/main/cpp/third_party/rlottie/
+!entry/src/main/cpp/third_party/rlottie/**
 
 # OS
 .DS_Store
@@ -58,6 +63,7 @@ claude-context-mode/node_modules/
 devnull
 hvigor-debug.txt
 .project-memory-backups/
+# Guard only: canonical heavy references live in C:\Refs\Telegram (see REFERENCES.md).
 рефенсы/
 
 # Temporary / scratch
