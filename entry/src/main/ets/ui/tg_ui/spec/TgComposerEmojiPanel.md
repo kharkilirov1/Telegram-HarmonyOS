@@ -1,69 +1,84 @@
-# TgComposerEmojiPanel
+# TgComposerEmojiPanel passport
 
-## Goal
-First safe slice of Telegram composer emoji/sticker input mode:
-- render a compact recent-emoji panel above the composer;
-- insert selected emoji through a parent-owned callback;
-- expose a dedicated sticker callback without pretending sticker packs are implemented.
+## Reference
 
-## iOS References
-- `submodules/TelegramUI/Components/Chat/ChatTextInputPanelNode/Sources/ChatTextInputPanelComponent.swift`
-  - `InputMode.text / emoji / stickers`
-  - parent-owned `openStickers`, `sendEmoji`, and `updateInputMode...` callbacks
-- `submodules/TelegramUI/Components/Chat/ChatTextInputPanelNode/Sources/ChatTextInputPanelNode.swift`
-  - composer node owns input-mode plumbing and custom emoji rendering around the text input
-- `submodules/TelegramUI/Components/Chat/ChatTextInputPanelNode/Sources/AccessoryItemIconButton.swift`
-  - emoji/sticker/keyboard icon state is an input-mode action, not a text-send action
+- Runtime visual truth: user-provided Telegram iOS entity-keyboard screenshots from 2026-07-10.
+- Unicode keyboard data: Unicode `emoji-test.txt` 17.0 in CLDR order. The generated
+  `TgUnicodeEmojiCatalog.ets` keeps every fully-qualified neutral/base sequence in
+  the nine keyboard groups and records the source SHA-256; skin-tone modifiers are
+  contextual variants rather than duplicated grid cells.
+- iOS hierarchy: `C:\Refs\Telegram\Telegram-iOS-current\submodules\TelegramUI\Components\ChatEntityKeyboardInputNode\Sources\ChatEntityKeyboardInputNode.swift:184-195`.
+  `EmojiPagerContentComponent.emojiInputData` enables Unicode and custom emoji together and carries search state.
+- iOS insertion model: the same component inserts custom emoji into the attributed
+  input at the active selection with `ChatTextInputAttributes.customEmoji`; it does
+  not append blindly to the end of the draft.
+- iOS search flow: `C:\Refs\Telegram\Telegram-iOS-current\submodules\TelegramUI\Components\ChatEntityKeyboardInputNode\Sources\StickerPaneSearchContentNode.swift:621-645`.
+  Queries longer than one character resolve localized emoji keywords, add an English fallback for non-English locales, then search stickers with the resulting emoticons and original query.
+- TDLib contract: `tdlib/td/generate/scheme/td_api.tl:5575-5581`, `:13083`, `:13095`, `:13158`.
+  Installed and featured packs are `stickerTypeCustomEmoji`; featured results use
+  `trendingStickerSets`, and selected items are sent as
+  `textEntityTypeCustomEmoji(custom_emoji_id:int64)`.
 
-## Props / Inputs
-- `title: string`
-- `stickersTitle: string`
-- `emojis: string[]`
-- `glassMode: string`
-- callbacks:
-  - `onEmojiSelected(emoji)`
-  - `onStickerPress()`
+## Inputs
 
-## State Matrix
-- default recent emoji grid
-- narrow-width recent emoji grid
-- sticker action pressed
-- emoji insertion into parent composer draft
+- Unicode recent/category emoji.
+- Real installed plus featured custom-emoji pack tabs and their downloaded static previews.
+- Active pack id, loading state, server Unicode/custom search results, localized Search/GIF/Stickers/Emoji labels.
+- Glass policy and bottom safe-area inset.
 
-## Layout Rules
-1. The panel is a composer-owned glass capsule rendered immediately above `TgComposerInput`.
-2. The panel does not own draft state; selecting an emoji only emits `onEmojiSelected`.
-3. Sticker press is explicit and parent-owned; until real sticker packs exist it must fail visibly at integration level.
-4. The panel is included in the chat page composer-height measurement so the message list bottom offset grows with it.
-5. Repeated geometry belongs in `TgUiTokens`.
+## State matrix
 
-## Token Mapping
-- `COMPOSER_EMOJI_PANEL_RADIUS`
-- `COMPOSER_EMOJI_PANEL_PADDING`
-- `COMPOSER_EMOJI_PANEL_TOP_GAP`
-- `COMPOSER_EMOJI_PANEL_ROW_GAP`
-- `COMPOSER_EMOJI_PANEL_HEADER_HEIGHT`
-- `COMPOSER_EMOJI_CELL_SIZE`
-- `COMPOSER_EMOJI_CELL_RADIUS`
-- `COMPOSER_EMOJI_CELL_GAP`
-- `COMPOSER_EMOJI_COLUMNS`
-- `COMPOSER_EMOJI_TEXT_SIZE`
-- `COMPOSER_EMOJI_HEADER_SIZE`
-- `COMPOSER_EMOJI_PILL_HEIGHT`
-- `COMPOSER_EMOJI_PILL_RADIUS`
-- `COMPOSER_EMOJI_PILL_PADDING_H`
+- Unicode pack: recent plus the nine CLDR keyboard groups (Smileys, People,
+  Animals, Food, Travel, Activities, Objects, Symbols, Flags), 1914 base emoji,
+  eight-column grid.
+- Custom pack loading / empty / populated.
+- Installed packs first, then deduplicated featured packs from `getTrendingStickerSets`.
+- Pack strip with Unicode synthetic tab plus real TDLib packs; the strip is omitted
+  when Unicode is the only available tab.
+- Category rail / search field with idle, loading, empty, and mixed-result states.
+- Bottom peer modes: GIF / Stickers / Emoji.
 
-## Acceptance Checklist
-- [ ] Emoji button toggles the panel in live chat
-- [ ] Emoji selection appends to the current composer draft
-- [ ] Send button becomes active after emoji insertion
-- [ ] Sticker pill uses a dedicated callback and does not route through send
-- [ ] Composer overlay/list bottom offset includes panel height
-- [ ] No manual media/sticker backend behavior is claimed
+## Layout contract
 
-## Demo
-- `entry/src/main/ets/ui/tg_ui/demos/TgComposerEmojiPanelDemo.ets`
+- Full-width keyboard-slot panel; never an overlay over the composer or timeline.
+- Conditional top horizontal pack strip, rounded category/search rail, section title, scrollable
+  eight-column grid, and shared bottom mode bar.
+- The large Unicode catalog uses `LazyForEach` + `IDataSource`; changing category
+  reloads the data source instead of eagerly creating hundreds of offscreen cells.
+- Animated TGS/WebM cells use static thumbnails in the grid to avoid multiplying
+  live animation players.
+- During search, matching Unicode and real custom emoji share one eight-column grid.
 
-## Known Risks
-- This is not a full emoji/sticker picker: no categories, search, skin tones, animated/custom emoji, or sticker pack data.
-- Current insertion appends to the end of the draft because the composer does not yet expose a caret-aware text controller.
+## Interaction contract
+
+- Unicode tap emits a plain emoji.
+- Custom tap emits fallback Unicode plus the exact string int64 custom emoji id.
+- Pack tap loads the exact real `stickerSet`; featured packs are previews and are not
+  falsely marked installed.
+- Production send and draft paths serialize the id as `textEntityTypeCustomEmoji`.
+- Search starts at two trimmed characters and is page-owned: 250 ms debounce,
+  current locale plus `en-US` fallback, monotonically increasing request id, and
+  query/panel/lifecycle checks before results or downloaded previews are applied.
+- The data path is typed TDLib `searchEmojis` followed by
+  `searchStickers(stickerTypeCustomEmoji)`; no local glyph substring fallback is used.
+- The page tracks the current `TextArea` selection and inserts Unicode/custom emoji
+  at that range. Manual edits reconcile custom-emoji spans in UTF-16 coordinates:
+  untouched spans are retained/shifted and a span intersected by the edit is dropped.
+- Draft normalization and restore preserve the exact custom-emoji ids through the
+  TDLib DTO/state pipeline. The plain `TextArea` still renders fallback glyphs;
+  animated inline custom-emoji media requires a separate `RichEditor` migration.
+
+## Verification
+
+- Focused contract: `scripts/test-ios-emoji-keyboard.ps1`.
+- Generated-catalog suite: `TgUnicodeEmojiCatalog.test.ets` (nine-group order,
+  1914-count invariant, People/Flags completeness and no skin-tone duplicates).
+- API23 runtime: Recent, localized `Люди и жесты`, localized `Флаги`, and lazy
+  Flags scrolling are captured under `.codex/ui-audit/2026-07-15/emoji-catalog/`.
+
+## Token mapping
+
+- Panel and mode-bar geometry: `COMPOSER_KEYBOARD_PANEL_*`, `ENTITY_KEYBOARD_MODE_*`.
+- Pack strip: `COMPOSER_EMOJI_PACK_*`.
+- Search/category rail: `COMPOSER_EMOJI_NAV_*`, `COMPOSER_EMOJI_PILL_*`.
+- Grid: `COMPOSER_EMOJI_CELL_*`, `COMPOSER_CUSTOM_EMOJI_IMAGE_SIZE`.

@@ -2,20 +2,27 @@
 // TgChatScreenPage keeps @Local fields for ArkUI reactivity; this controller owns behavior.
 
 import { fileIo, picker } from '@kit.CoreFileKit';
-import { common } from '@kit.AbilityKit';
-import { promptAction } from '@kit.ArkUI';
+import { abilityAccessCtrl, common } from '@kit.AbilityKit';
+import { dataSharePredicates } from '@kit.ArkData';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
+import { camera, cameraPicker } from '@kit.CameraKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { localized } from '../../../core/utils/AppResource';
 import { SendMessageParams, SendMessageUseCase } from '../../../domain/usecases/sendMessage';
 import {
   SendMediaMessageParams,
   SendMediaMessageUseCase
 } from '../../../domain/usecases/sendMediaMessage';
+import { TgAttachmentRecentItem } from '../../tg_ui/atoms/TgAttachmentSheet';
+import { CustomEmojiTextEntity } from '../../../core/model/AppCommand';
+import {
+  normalizeCustomEmojiEntitiesForSubstring,
+  replaceDraftSelection
+} from '../../tg_ui/utils/TgCustomEmojiDraftPolicy';
 
 const DOMAIN = 0x0021;
 const TAG = 'ChatComposerController';
+const RECENT_ATTACHMENT_LIMIT = 24;
 
 export interface ChatComposerControllerHost {
   getActiveChatId(): number;
@@ -31,6 +38,11 @@ export interface ChatComposerControllerHost {
   submitForwardMessages(commentText: string): void;
   getDraftText(): string;
   setDraftText(value: string): void;
+  getDraftSelectionStart(): number;
+  getDraftSelectionEnd(): number;
+  setDraftSelection(start: number, end: number): void;
+  getCustomEmojiEntities(): CustomEmojiTextEntity[];
+  setCustomEmojiEntities(value: CustomEmojiTextEntity[]): void;
   setEmojiPanelVisible(value: boolean): void;
   getEmojiPanelVisible(): boolean;
   getReplyToMessageId(): string;
@@ -70,13 +82,18 @@ export class ChatComposerController {
     const params = new SendMessageParams();
     params.chatId = chatId;
     params.text = text;
+    const sentEntities = normalizeCustomEmojiEntitiesForSubstring(
+      host.getDraftText(), text, host.getCustomEmojiEntities());
+    params.customEmojiEntities = sentEntities;
     const replyToMessageId = host.getReplyToMessageId();
     if (replyToMessageId !== '0') {
       params.replyToMessageId = replyToMessageId;
     }
 
     const sentText = text;
+    host.setCustomEmojiEntities([]);
     host.setDraftText('');
+    host.setDraftSelection(0, 0);
     host.clearReplyMode();
 
     const wasNearBottom = host.isNearBottom();
@@ -95,7 +112,9 @@ export class ChatComposerController {
           return;
         }
         if (host.getDraftText().trim().length === 0 && host.getActiveChatId() === params.chatId) {
+          host.setCustomEmojiEntities(sentEntities);
           host.setDraftText(sentText);
+          host.setDraftSelection(sentText.length, sentText.length);
         }
         hilog.error(DOMAIN, TAG, 'Send failed: %{public}s', err.message);
       })
@@ -107,40 +126,65 @@ export class ChatComposerController {
       });
   }
 
-  handleAttachPress(host: ChatComposerControllerHost): void {
+  handleAttachmentMenuItemPress(index: number, host: ChatComposerControllerHost): void {
     host.setEmojiPanelVisible(false);
-    const buttons: promptAction.Button[] = [
-      { text: localized($r('app.string.photo').id, 'Photo'), color: TgUiTokens.COLOR_TEXT_TITLE },
-      { text: localized($r('app.string.video').id, 'Video'), color: TgUiTokens.COLOR_TEXT_TITLE },
-      { text: localized($r('app.string.document_label').id, 'Document'), color: TgUiTokens.COLOR_TEXT_TITLE }
-    ];
-    const actions: (() => void)[] = [
-      () => {
+    switch (index) {
+      case 0:
         this.openPhotoAttachmentPicker('photo', host);
-      },
-      () => {
-        this.openPhotoAttachmentPicker('video', host);
-      },
-      () => {
+        break;
+      case 1:
+        this.openCameraAttachmentPicker(host);
+        break;
+      case 2:
         this.openDocumentAttachmentPicker(host);
+        break;
+      default:
+        break;
+    }
+  }
+
+  async loadRecentAttachmentMedia(host: ChatComposerControllerHost): Promise<TgAttachmentRecentItem[]> {
+    let fetchResult: photoAccessHelper.FetchResult<photoAccessHelper.PhotoAsset> | undefined = undefined;
+    try {
+      if (!await this.requestReadMediaPermission(host)) {
+        return [];
       }
-    ];
-    const lifecycleToken: number = host.getLifecycleToken();
-    const chatId: number = host.getActiveChatId();
-    host.getChatUIContext().getPromptAction().showActionMenu({
-      title: '',
-      buttons: buttons as [promptAction.Button, promptAction.Button?, promptAction.Button?,
-        promptAction.Button?, promptAction.Button?, promptAction.Button?]
-    }).then((result: promptAction.ActionMenuSuccessResponse) => {
-      if (lifecycleToken !== host.getLifecycleToken() || host.getActiveChatId() !== chatId) {
-        return;
+      const context = host.getChatUIContext().getHostContext() as common.UIAbilityContext;
+      const accessHelper = photoAccessHelper.getPhotoAccessHelper(context);
+      const predicates = new dataSharePredicates.DataSharePredicates();
+      predicates.orderByDesc(photoAccessHelper.PhotoKeys.DATE_ADDED);
+      const fetchOptions: photoAccessHelper.FetchOptions = {
+        fetchColumns: [photoAccessHelper.PhotoKeys.DATE_ADDED],
+        predicates: predicates
+      };
+      fetchResult = await accessHelper.getAssets(fetchOptions);
+      const count = Math.min(fetchResult.getCount(), RECENT_ATTACHMENT_LIMIT);
+      const result: TgAttachmentRecentItem[] = [];
+      for (let index = 0; index < count; index++) {
+        const asset = await fetchResult.getObjectByPosition(index);
+        result.push(new TgAttachmentRecentItem(
+          asset.uri,
+          asset.displayName,
+          asset.photoType === photoAccessHelper.PhotoType.VIDEO
+        ));
       }
-      if (result.index >= 0 && result.index < actions.length) {
-        actions[result.index]();
+      return result;
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Recent attachment load failed: %{public}s', String(error));
+      return [];
+    } finally {
+      if (fetchResult !== undefined) {
+        fetchResult.close();
       }
-    }).catch((_: Error) => {
-      // User dismissed — no action needed.
-    });
+    }
+  }
+
+  handleRecentAttachmentPress(item: TgAttachmentRecentItem, host: ChatComposerControllerHost): void {
+    const kind = item.isVideo ? 'video' : 'photo';
+    const title = item.isVideo
+      ? localized($r('app.string.video').id, 'Video')
+      : localized($r('app.string.photo').id, 'Photo');
+    this.setPendingAttachment(kind, title, [item.uri], host);
   }
 
   handleEmojiPress(host: ChatComposerControllerHost): void {
@@ -153,14 +197,40 @@ export class ChatComposerController {
   handleVoicePress(host: ChatComposerControllerHost): void {
     host.setEmojiPanelVisible(false);
     this.showPendingToast(host, localized($r('app.string.composer_voice_unavailable').id,
-      'Voice recording is not available yet'));
+      'Hold the microphone to record'));
   }
 
   handleEmojiSelected(emoji: string, host: ChatComposerControllerHost): void {
     if (host.getActiveChatId() === 0 || emoji.length === 0) {
       return;
     }
-    host.setDraftText(`${host.getDraftText()}${emoji}`);
+    const change = replaceDraftSelection(
+      host.getDraftText(),
+      host.getDraftSelectionStart(),
+      host.getDraftSelectionEnd(),
+      emoji,
+      host.getCustomEmojiEntities()
+    );
+    host.setCustomEmojiEntities(change.entities);
+    host.setDraftText(change.text);
+    host.setDraftSelection(change.caretOffset, change.caretOffset);
+  }
+
+  handleCustomEmojiSelected(emoji: string, customEmojiId: string, host: ChatComposerControllerHost): void {
+    if (host.getActiveChatId() === 0 || emoji.length === 0 || customEmojiId === '0') {
+      return;
+    }
+    const change = replaceDraftSelection(
+      host.getDraftText(),
+      host.getDraftSelectionStart(),
+      host.getDraftSelectionEnd(),
+      emoji,
+      host.getCustomEmojiEntities(),
+      customEmojiId
+    );
+    host.setCustomEmojiEntities(change.entities);
+    host.setDraftText(change.text);
+    host.setDraftSelection(change.caretOffset, change.caretOffset);
   }
 
   handleStickerPress(host: ChatComposerControllerHost): void {
@@ -194,7 +264,9 @@ export class ChatComposerController {
         if (!this.isMediaSendContextActive(host, lifecycleToken, useCase, chatId)) {
           return;
         }
+        host.setCustomEmojiEntities([]);
         host.setDraftText('');
+        host.setDraftSelection(0, 0);
         host.clearPendingAttachmentState();
         host.clearReplyMode();
         if (wasNearBottom) {
@@ -257,6 +329,13 @@ export class ChatComposerController {
     }
   }
 
+  private async requestReadMediaPermission(host: ChatComposerControllerHost): Promise<boolean> {
+    const context = host.getChatUIContext().getHostContext() as common.UIAbilityContext;
+    const result = await abilityAccessCtrl.createAtManager()
+      .requestPermissionsFromUser(context, ['ohos.permission.READ_IMAGEVIDEO']);
+    return result.authResults.length > 0 && result.authResults[0] === 0;
+  }
+
   private async openPhotoAttachmentPicker(kind: string, host: ChatComposerControllerHost): Promise<void> {
     try {
       const photoPicker = new photoAccessHelper.PhotoViewPicker();
@@ -275,6 +354,33 @@ export class ChatComposerController {
         ? localized($r('app.string.video').id, 'Video')
         : localized($r('app.string.photo').id, 'Photo');
       this.setPendingAttachment(kind, title, result.photoUris, host);
+    } catch (error) {
+      this.handleAttachmentPickerError(error, host);
+    }
+  }
+
+  private async openCameraAttachmentPicker(host: ChatComposerControllerHost): Promise<void> {
+    try {
+      const context = host.getChatUIContext().getHostContext() as common.UIAbilityContext;
+      const profile: cameraPicker.PickerProfile = {
+        cameraPosition: camera.CameraPosition.CAMERA_POSITION_BACK,
+        videoDuration: 300
+      };
+      const result = await cameraPicker.pick(context,
+        [cameraPicker.PickerMediaType.PHOTO, cameraPicker.PickerMediaType.VIDEO], profile);
+      if (result === undefined) {
+        this.showPendingToast(host, localized($r('app.string.composer_attachment_unavailable').id,
+          'Attachment picker is not available yet'));
+        return;
+      }
+      if (result.resultCode !== 0 || result.resultUri.length === 0) {
+        return;
+      }
+      const kind = result.mediaType === cameraPicker.PickerMediaType.VIDEO ? 'video' : 'photo';
+      const title = kind === 'video'
+        ? localized($r('app.string.video').id, 'Video')
+        : localized($r('app.string.photo').id, 'Photo');
+      this.setPendingAttachment(kind, title, [result.resultUri], host);
     } catch (error) {
       this.handleAttachmentPickerError(error, host);
     }

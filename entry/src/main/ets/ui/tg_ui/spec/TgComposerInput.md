@@ -24,6 +24,8 @@ UI-only scope for this atom. Message send, keyboard controller integration, medi
 ## Props / Inputs
 - `text: string`
 - `placeholder: string`
+- `requestedCaretPosition: number`
+- `caretRequestRevision: number`
 - `isDisabled: boolean`
 - `showAttachButton: boolean`
 - `showEmojiButton: boolean`
@@ -46,6 +48,7 @@ UI-only scope for this atom. Message send, keyboard controller integration, medi
 - `bottomInset: number`
   - callbacks:
   - `onTextChange(text)`
+  - `onTextSelectionChange(start, end)`
   - `onSendPress(text)`
   - `onAttachPress()`
   - `onEmojiPress()`
@@ -73,16 +76,19 @@ UI-only scope for this atom. Message send, keyboard controller integration, medi
 ## Layout Rules
 1) Main row follows the iOS composer split:
    - optional attach circle
-   - central text capsule with inline accessory panel, text field, emoji lane, and send action
-   - trailing mic circle only while idle/empty
-   - when text or pending forward content is sendable, the send button docks inside the text capsule at the right edge
-2) The input field uses ArkUI `TextContentStyle.INLINE` so stock text-box chrome does not fight the custom capsule shell.
+   - central text capsule with inline accessory panel, text field, and emoji lane
+   - one trailing action circle that morphs from mic to send when the draft becomes sendable
+2) The input field uses ArkUI `TextContentStyle.DEFAULT`: on the current API23 runtime
+   `INLINE` paints an opaque focused block and blue frame over the custom glass shell.
 3) The send-style Enter key uses `onSubmit(..., SubmitEvent)` + `keepEditableState()` so the keyboard can stay visible after submit.
 4) Reply/edit/forward snippets are optional accessory panels rendered inside the central text capsule above the input row, not as separate external glass strips.
 5) Forward and selected-attachment snippets use the same embedded accessory-panel pattern as reply/edit, and the send action must stay enabled even when the text field is empty.
 6) Attach, emoji, and idle mic are explicit parent-owned actions. The atom must not silently route an idle mic tap through `onSendPress`.
 7) A selected attachment preview is only a UI/accessory state. Sending a picked URI requires a separate parent/runtime media-send path and must not be faked by this atom.
 8) All colors/sizes/weights/radii are tokenized in `TgUiTokens`.
+9) Selection is parent-owned. `onTextSelectionChange` reports the active range, while
+   `requestedCaretPosition` + `caretRequestRevision` restore the caret after a
+   panel-originated insertion or the panel-to-system-IME handoff.
 
 ## Token Mapping
 - Colors:
@@ -123,7 +129,7 @@ UI-only scope for this atom. Message send, keyboard controller integration, medi
 
 ## Acceptance Checklist
 - [ ] Mic/send state switch is stable and centered
-- [ ] Send action is inside the text capsule while mic stays outside in the idle state
+- [ ] One external action capsule changes from mic to send without changing row alignment
 - [ ] Input capsule keeps stable geometry on empty/long/multiline text
 - [ ] Emoji lane is optional and does not collapse the send button hit target
 - [ ] Placeholder/text typography stays telegram-like and tokenized
@@ -154,10 +160,13 @@ At least 10 states:
 13) wide container
 
 ## HarmonyOS grounding
-- `TextArea.style(TextContentStyle.INLINE)` — inline input style for custom shells
+- `TextArea.style(TextContentStyle.DEFAULT)` — accepted runtime path for the current glass shell
 - `TextArea.enterKeyType(EnterKeyType.Send)`
 - `TextArea.onSubmit((enterKey, event) => event.keepEditableState())` — keep keyboard visible after send-style submit
+- `TextArea.onTextSelectionChange((start, end) => ...)` — keep parent selection state current
+- `TextAreaController.caretPosition(offset)` — restore caret after custom-panel insertion
 
 ## Known Risks
-- Real keyboard avoid mode and caret behavior are integration concerns (screen-level).
+- Inline animated custom emoji cannot be rendered by plain `TextArea`; use `RichEditor`
+  only as a separate migration with a fallback/rollback path.
 - Final icon/background alpha may be tuned after binding to live chat page wallpaper.

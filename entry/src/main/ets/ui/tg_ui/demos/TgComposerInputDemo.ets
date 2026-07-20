@@ -1,11 +1,26 @@
+import { deviceInfo } from '@kit.BasicServicesKit';
 import { TgComposerInput } from '../atoms/TgComposerInput';
+import { TgUiFeatureFlags } from '../TgUiFeatureFlags';
 import { TgUiTokens } from '../tokens/TgUiTokens';
+import { resolveComposerMaterialMode } from '../utils/TgComposerMaterialPolicy';
+import { TgVoiceRecordingState } from '../utils/TgVoiceRecordingPolicy';
 
 @Preview({ title: 'TgComposerInput' })
 @ComponentV2
 export struct TgComposerInputDemo {
   @Local private interactiveDraft: string = '';
+  @Local private interactiveSelectionStart: number = 0;
+  @Local private interactiveSelectionEnd: number = 0;
   @Local private lastAuxAction: string = 'none';
+
+  private materialPathLabel(): string {
+    const mode = resolveComposerMaterialMode(
+      deviceInfo.apiAvailable('26.0.0'),
+      TgUiFeatureFlags.USE_NATIVE_IMMERSIVE_COMPOSER_MATERIAL,
+      true
+    );
+    return `Material path: ${mode}`;
+  }
 
   @Builder
   private caseBlock(label: string, isDisabled: boolean = false,
@@ -40,6 +55,12 @@ export struct TgComposerInputDemo {
               this.interactiveDraft = value;
             }
           },
+          onTextSelectionChange: (start: number, end: number): void => {
+            if (interactive) {
+              this.interactiveSelectionStart = start;
+              this.interactiveSelectionEnd = end;
+            }
+          },
           onSendPress: (_text: string): void => {
             if (interactive) {
               this.interactiveDraft = '';
@@ -48,6 +69,9 @@ export struct TgComposerInputDemo {
           },
           onAttachPress: (): void => {
             this.lastAuxAction = 'attach';
+          },
+          onAttachmentMenuItemPress: (index: number): void => {
+            this.lastAuxAction = `attachment ${index}`;
           },
           onEmojiPress: (): void => {
             this.lastAuxAction = 'emoji';
@@ -222,6 +246,76 @@ export struct TgComposerInputDemo {
     })
   }
 
+  @Builder
+  private modernStateBlock(label: string, state: TgVoiceRecordingState = 'idle', showBotMenu: boolean = false,
+    botMenuOpen: boolean = false, text: string = '') {
+    Column({ space: TgUiTokens.SPACE_6 }) {
+      Text(label)
+        .fontSize(TgUiTokens.FONT_META_SIZE)
+        .fontColor(TgUiTokens.COLOR_TEXT_META)
+        .width('100%')
+
+      Row() {
+        TgComposerInput({
+          text: text,
+          placeholder: 'Message',
+          showBotMenu: showBotMenu,
+          botMenuTitle: 'Menu',
+          botMenuOpen: botMenuOpen,
+          botMenuCommands: ['start', 'help', 'settings'],
+          botMenuDescriptions: ['Start the bot', 'Show available commands', 'Bot settings'],
+          voiceRecordingState: state,
+          voiceRecordingDurationMs: state === 'preparing' ? 0 : 12_000,
+          containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH,
+          onTextChange: (_value: string): void => {},
+          onSendPress: (_text: string): void => {},
+          onAttachPress: (): void => {
+            this.lastAuxAction = 'attach';
+          },
+          onEmojiPress: (): void => {
+            this.lastAuxAction = 'emoji';
+          },
+          onVoicePress: (): void => {
+            this.lastAuxAction = 'voice';
+          },
+          onVoiceRecordStart: (): void => {
+            this.lastAuxAction = 'voice start';
+          },
+          onVoiceRecordSend: (): void => {
+            this.lastAuxAction = 'voice send';
+          },
+          onVoiceRecordCancel: (): void => {
+            this.lastAuxAction = 'voice cancel';
+          },
+          onVoiceRecordLock: (): void => {
+            this.lastAuxAction = 'voice lock';
+          },
+          onBotMenuPress: (): void => {
+            this.lastAuxAction = 'bot menu';
+          },
+          onBotMenuOpenChange: (isOpen: boolean): void => {
+            this.lastAuxAction = isOpen ? 'bot menu open' : 'bot menu closed';
+          },
+          onBotMenuCommandPress: (index: number): void => {
+            this.lastAuxAction = `bot command ${index}`;
+          }
+        })
+        .width(TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH)
+      }
+      .width('100%')
+      .justifyContent(FlexAlign.Center)
+      .backgroundColor(TgUiTokens.COLOR_BG_SECONDARY)
+      .borderRadius(TgUiTokens.RADIUS_8)
+    }
+    .width('100%')
+    .padding({
+      left: TgUiTokens.SPACE_16,
+      right: TgUiTokens.SPACE_16,
+      top: TgUiTokens.SPACE_6,
+      bottom: TgUiTokens.SPACE_6
+    })
+  }
+
   build() {
     Scroll() {
       Column() {
@@ -257,7 +351,27 @@ export struct TgComposerInputDemo {
             bottom: TgUiTokens.SPACE_8
           })
 
-        this.caseBlock('01 empty idle (interactive)', false, true, false,
+        Text(`Interactive selection: ${this.interactiveSelectionStart}..${this.interactiveSelectionEnd}`)
+          .fontSize(TgUiTokens.FONT_META_SIZE)
+          .fontColor(TgUiTokens.COLOR_TEXT_META)
+          .width('100%')
+          .padding({
+            left: TgUiTokens.SPACE_16,
+            right: TgUiTokens.SPACE_16,
+            bottom: TgUiTokens.SPACE_8
+          })
+
+        Text(this.materialPathLabel())
+          .fontSize(TgUiTokens.FONT_META_SIZE)
+          .fontColor(TgUiTokens.COLOR_TEXT_META)
+          .width('100%')
+          .padding({
+            left: TgUiTokens.SPACE_16,
+            right: TgUiTokens.SPACE_16,
+            bottom: TgUiTokens.SPACE_8
+          })
+
+        this.caseBlock('01 empty idle / attachment popup (interactive)', false, true, false,
           TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, '', true, true)
         this.caseBlock('02 short text → send', false, true, false,
           TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, 'hello')
@@ -279,6 +393,12 @@ export struct TgComposerInputDemo {
         this.caseBlock('13 long text send', false, true, false,
           TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH,
           'This longer composer sample checks that the unified capsule remains stable under a more telegram-like draft width.')
+        this.modernStateBlock('14 bot menu', 'idle', true)
+        this.modernStateBlock('15 bot menu active', 'idle', true, true)
+        this.modernStateBlock('15a bot menu typing collapse', 'idle', true, false, 'Typing')
+        this.modernStateBlock('16 voice recording', 'recording')
+        this.modernStateBlock('17 voice locked', 'locked')
+        this.modernStateBlock('18 voice sending', 'sending')
       }
       .width('100%')
       .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
