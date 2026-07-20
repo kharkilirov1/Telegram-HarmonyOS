@@ -17,6 +17,7 @@ import {
   getMainWindow,
   removeWindowSizeListener
 } from '../../utils/SafeAreaUtils';
+import { ROOT_TAB_BAR_FALLBACK_CONTENT_INSET } from '../../utils/RootTabBarGeometry';
 import { createLoadCallsUseCase, LoadCallsUseCase, LoadCallsParams, CallHistoryRecord } from '../../../domain/usecases/loadCalls';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -63,13 +64,44 @@ function weekdayShort(day: number): string {
   }
 }
 
-function formatCallDate(timestampSec: number): string {
+function monthShort(month: number): string {
+  switch (month) {
+    case 0:
+      return localized($r('app.string.month_jan').id, 'Jan');
+    case 1:
+      return localized($r('app.string.month_feb').id, 'Feb');
+    case 2:
+      return localized($r('app.string.month_mar').id, 'Mar');
+    case 3:
+      return localized($r('app.string.month_apr').id, 'Apr');
+    case 4:
+      return localized($r('app.string.month_may').id, 'May');
+    case 5:
+      return localized($r('app.string.month_jun').id, 'Jun');
+    case 6:
+      return localized($r('app.string.month_jul').id, 'Jul');
+    case 7:
+      return localized($r('app.string.month_aug').id, 'Aug');
+    case 8:
+      return localized($r('app.string.month_sep').id, 'Sep');
+    case 9:
+      return localized($r('app.string.month_oct').id, 'Oct');
+    case 10:
+      return localized($r('app.string.month_nov').id, 'Nov');
+    case 11:
+      return localized($r('app.string.month_dec').id, 'Dec');
+    default:
+      return '';
+  }
+}
+
+function formatCallDate(timestampSec: number, nowMs: number = Date.now()): string {
   if (timestampSec <= 0) {
     return '';
   }
 
   const callDate = new Date(timestampSec * 1000);
-  const now = new Date();
+  const now = new Date(nowMs);
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const callDayStart = new Date(callDate.getFullYear(), callDate.getMonth(), callDate.getDate()).getTime();
   const diffDays = Math.floor((todayStart - callDayStart) / 86400000);
@@ -83,7 +115,11 @@ function formatCallDate(timestampSec: number): string {
   if (diffDays < 7) {
     return weekdayShort(callDate.getDay());
   }
-  return padTwo(callDate.getDate()) + '.' + padTwo(callDate.getMonth() + 1) + '.' + padTwo(callDate.getFullYear() % 100);
+  const shortDate = callDate.getDate().toString() + ' ' + monthShort(callDate.getMonth());
+  if (callDate.getFullYear() !== now.getFullYear()) {
+    return shortDate + ' ' + callDate.getFullYear().toString();
+  }
+  return shortDate;
 }
 
 function buildInitialsFromName(name: string): string {
@@ -126,9 +162,10 @@ function initialsForUser(user: User): string {
 
 @ComponentV2
 export struct CallsPage {
+  @Param onlyMissed: boolean = false;
   @Local private callRows: CallRowVO[] = [];
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
-  @Local private listBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
+  @Local private listBottomInset: number = ROOT_TAB_BAR_FALLBACK_CONTENT_INSET;
   @Local private isLoading: boolean = false;
 
   private unsubscribe?: () => void;
@@ -143,6 +180,21 @@ export struct CallsPage {
   private hasMore: boolean = true;
   private initialLoadRequested: boolean = false;
   private loadMoreScheduled: boolean = false;
+  private callsQueryGeneration: number = 0;
+
+  @Monitor('onlyMissed')
+  private onOnlyMissedChanged(_monitor: IMonitor): void {
+    this.callsQueryGeneration += 1;
+    this.loadedRecords = [];
+    this.callRows = [];
+    this.nextOffset = '';
+    this.hasMore = true;
+    this.initialLoadRequested = false;
+    this.isLoading = false;
+    if (this.unsubscribe !== undefined && this.loadCallsUseCase !== undefined) {
+      this.loadInitialIfNeeded();
+    }
+  }
 
   private clearRebuildTimer(): void {
     if (this.rebuildTimerId !== -1) {
@@ -262,7 +314,7 @@ export struct CallsPage {
       this.listBottomInset = computeTabBottomInset(context);
     } catch (_error) {
       this.topBarTotalHeight = TgUiTokens.TOP_BAR_HEIGHT;
-      this.listBottomInset = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
+      this.listBottomInset = ROOT_TAB_BAR_FALLBACK_CONTENT_INSET;
     }
   }
 
@@ -316,12 +368,14 @@ export struct CallsPage {
     const params = new LoadCallsParams();
     params.offset = reset ? '' : this.nextOffset;
     params.limit = 40;
-    params.onlyMissed = false;
+    params.onlyMissed = this.onlyMissed;
 
     const scheduledToken: number = this.pageLifecycleToken;
+    const queryGeneration: number = this.callsQueryGeneration;
     loadCallsUseCase.execute(params)
       .then((result) => {
-        if (!this.isCurrentLoadCallsContinuation(scheduledToken, loadCallsUseCase)) {
+        if (!this.isCurrentLoadCallsContinuation(scheduledToken, loadCallsUseCase) ||
+          queryGeneration !== this.callsQueryGeneration) {
           return;
         }
         if (reset) {
@@ -333,13 +387,15 @@ export struct CallsPage {
         this.rebuildRows(getAppCoreRuntime().getStore().getState());
       })
       .catch((error: Error) => {
-        if (!this.isCurrentLoadCallsContinuation(scheduledToken, loadCallsUseCase)) {
+        if (!this.isCurrentLoadCallsContinuation(scheduledToken, loadCallsUseCase) ||
+          queryGeneration !== this.callsQueryGeneration) {
           return;
         }
         hilog.error(DOMAIN, TAG, 'Failed to load calls: %{public}s', error.message);
       })
       .finally(() => {
-        if (!this.isCurrentLoadCallsContinuation(scheduledToken, loadCallsUseCase)) {
+        if (!this.isCurrentLoadCallsContinuation(scheduledToken, loadCallsUseCase) ||
+          queryGeneration !== this.callsQueryGeneration) {
           return;
         }
         this.isLoading = false;
@@ -375,23 +431,15 @@ export struct CallsPage {
 
   private labelForRecord(record: CallHistoryRecord): string {
     if (record.discardReasonType === 'callDiscardReasonDeclined') {
-      return record.isVideo
-        ? localized($r('app.string.message_call_declined_video').id, 'Declined video call')
-        : localized($r('app.string.message_call_declined_voice').id, 'Declined voice call');
+      return localized($r('app.string.calls_cancelled').id, 'Cancelled');
     }
     if (record.direction === 'missed') {
-      return record.isVideo
-        ? localized($r('app.string.message_call_missed_video').id, 'Missed video call')
-        : localized($r('app.string.message_call_missed_voice').id, 'Missed voice call');
+      return localized($r('app.string.calls_missed_label').id, 'Missed');
     }
     if (record.direction === 'incoming') {
-      return record.isVideo
-        ? localized($r('app.string.message_call_incoming_video').id, 'Incoming video call')
-        : localized($r('app.string.message_call_incoming_voice').id, 'Incoming voice call');
+      return localized($r('app.string.calls_incoming_label').id, 'Incoming');
     }
-    return record.isVideo
-      ? localized($r('app.string.message_call_outgoing_video').id, 'Outgoing video call')
-      : localized($r('app.string.message_call_outgoing_voice').id, 'Outgoing voice call');
+    return localized($r('app.string.calls_outgoing_label').id, 'Outgoing');
   }
 
   private rebuildRows(state: AppState): void {
@@ -445,7 +493,8 @@ export struct CallsPage {
         .width('100%')
         .height('100%')
         .edgeEffect(EdgeEffect.Spring)
-        .contentStartOffset(this.topBarTotalHeight)
+        .contentStartOffset(this.topBarTotalHeight + TgUiTokens.CALLS_FILTER_BAR_HEIGHT +
+          TgUiTokens.CALLS_FILTER_LIST_GAP)
         .contentEndOffset(this.listBottomInset)
         .onScrollIndex((_first: number, last: number, _center: number) => {
           this.scheduleLoadMore(last);
@@ -454,7 +503,9 @@ export struct CallsPage {
         Column() {
           Text(this.isLoading
             ? localized($r('app.string.loading').id, 'Loading…')
-            : localized($r('app.string.calls_no_recent').id, 'No recent calls'))
+            : this.onlyMissed
+              ? localized($r('app.string.calls_no_missed').id, 'No missed calls')
+              : localized($r('app.string.calls_no_recent').id, 'No recent calls'))
             .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
             .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
         }

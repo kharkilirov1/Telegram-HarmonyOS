@@ -6,9 +6,9 @@
 - Status: `done`
 
 ## 2) iOS source mapping
-- `Telegram-iOS-master/submodules/SettingsUI/Sources/LogoutOptionsController.swift`
-- `Telegram-iOS-master/submodules/SettingsUI/Sources/Notifications/NotificationsAndSoundsController.swift`
-- `Telegram-iOS-master/submodules/SettingsUI/Sources/Notifications/NotificationsCategoryItemListItem.swift`
+- `C:\Refs\Telegram\Telegram-iOS-current\submodules\SettingsUI\Sources\LogoutOptionsController.swift`
+- `C:\Refs\Telegram\Telegram-iOS-current\submodules\SettingsUI\Sources\Notifications\NotificationsAndSoundsController.swift`
+- `C:\Refs\Telegram\Telegram-iOS-current\submodules\SettingsUI\Sources\Notifications\NotificationsCategoryItemListItem.swift`
 
 ## 3) Props / inputs
 - `title: string`

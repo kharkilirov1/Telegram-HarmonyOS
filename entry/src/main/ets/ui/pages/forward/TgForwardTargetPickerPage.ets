@@ -4,7 +4,7 @@ import { localized } from '../../../core/utils/AppResource';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { createLoadChatsUseCase, LoadChatsUseCase } from '../../../domain/usecases/loadChats';
 import { ChatItemVO, buildChatItemVO } from '../chatlist/ChatItemVO';
-import { TgTopBar } from '../../tg_ui/atoms/TgTopBar';
+import { TgForwardPickerNavigationBar } from '../../tg_ui/atoms/TgForwardPickerNavigationBar';
 import { TgChatRow } from '../../tg_ui/atoms/TgChatRow';
 import { TgChatSendStatus } from '../../tg_ui/atoms/TgChatMeta';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
@@ -13,11 +13,21 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 const DOMAIN = 0x0044;
 const TAG = 'ForwardTargetPicker';
 
+export enum ForwardTargetPickerMode {
+  Forward = 'forward',
+  Compose = 'compose'
+}
+
 export class ForwardTargetPickerRouteParams {
   sourceChatId: number = 0;
+  mode: ForwardTargetPickerMode = ForwardTargetPickerMode.Forward;
 
-  constructor(sourceChatId: number) {
+  constructor(
+    sourceChatId: number = 0,
+    mode: ForwardTargetPickerMode = ForwardTargetPickerMode.Forward
+  ) {
     this.sourceChatId = sourceChatId;
+    this.mode = mode;
   }
 }
 
@@ -35,6 +45,7 @@ export class ForwardTargetPickerResult {
 export struct TgForwardTargetPickerPage {
   @Local pageStack: NavPathStack = new NavPathStack();
   @Local private sourceChatId: number = 0;
+  @Local private mode: ForwardTargetPickerMode = ForwardTargetPickerMode.Forward;
   @Local private searchQuery: string = '';
   @Local private filteredChats: ChatItemVO[] = [];
   @Local private filteredChatsCount: number = 0;
@@ -185,6 +196,13 @@ export struct TgForwardTargetPickerPage {
     return `${item.previewPrefix} ${item.lastMessage}`.toLowerCase().includes(normalizedQuery);
   }
 
+  private pickerTitle(): string {
+    if (this.mode === ForwardTargetPickerMode.Compose) {
+      return localized($r('app.string.new_message').id, 'New Message');
+    }
+    return localized($r('app.string.action_forward').id, 'Forward');
+  }
+
   private mapSendStatus(status: 'none' | 'pending' | 'sent' | 'read' | 'failed'): TgChatSendStatus {
     switch (status) {
       case 'pending':
@@ -206,7 +224,11 @@ export struct TgForwardTargetPickerPage {
     }
     try {
       this.isClosing = true;
-      this.pageStack.pop();
+      // Always provide a typed cancellation result. On current ArkUI builds a
+      // bare pop can restore the destination visually without dispatching the
+      // pushPathByName result callback, leaving the caller's duplicate guard
+      // stale.
+      this.pageStack.pop(new ForwardTargetPickerResult(0, ''));
     } catch (error) {
       this.isClosing = false;
       hilog.error(DOMAIN, TAG, 'Failed to pop forward picker: %{public}s', String(error));
@@ -260,9 +282,9 @@ export struct TgForwardTargetPickerPage {
         placeholder: localized($r('app.string.search_placeholder').id, 'Search')
       })
         .width('100%')
-        .height(TgUiTokens.SEARCH_BAR_HEIGHT)
+        .height(TgUiTokens.FORWARD_PICKER_SEARCH_HEIGHT)
         .backgroundColor(TgUiTokens.SEARCH_BAR_BG)
-        .borderRadius(TgUiTokens.SEARCH_BAR_RADIUS)
+        .borderRadius(TgUiTokens.FORWARD_PICKER_SEARCH_RADIUS)
         .placeholderColor(TgUiTokens.SEARCH_BAR_PLACEHOLDER_COLOR)
         .placeholderFont({
           size: TgUiTokens.SEARCH_BAR_FONT_SIZE,
@@ -287,12 +309,12 @@ export struct TgForwardTargetPickerPage {
         })
     }
     .width('100%')
-    .height(TgUiTokens.CHAT_LIST_NAV_SEARCH_AREA_HEIGHT)
+    .height(TgUiTokens.FORWARD_PICKER_SEARCH_AREA_HEIGHT)
     .padding({
-      left: TgUiTokens.SEARCH_BAR_SIDE_INSET,
-      right: TgUiTokens.SEARCH_BAR_SIDE_INSET
+      left: TgUiTokens.FORWARD_PICKER_SEARCH_SIDE_INSET,
+      right: TgUiTokens.FORWARD_PICKER_SEARCH_SIDE_INSET
     })
-    .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
+    .backgroundColor(Color.Transparent)
     .alignItems(VerticalAlign.Center)
   }
 
@@ -357,9 +379,9 @@ export struct TgForwardTargetPickerPage {
   build() {
     NavDestination() {
       Column() {
-        TgTopBar({
-          title: localized($r('app.string.action_forward').id, 'Forward'),
-          showBackAction: true,
+        TgForwardPickerNavigationBar({
+          title: this.pickerTitle(),
+          backAccessibilityText: localized($r('app.string.accessibility_back').id, 'Back'),
           onBackPress: (): void => {
             this.handleBackPress();
           }
@@ -377,8 +399,11 @@ export struct TgForwardTargetPickerPage {
     .onReady((context: NavDestinationContext) => {
       this.pageStack = context.pathStack;
       const params = context.pathInfo.param as ForwardTargetPickerRouteParams;
-      if (params && params.sourceChatId > 0) {
-        this.sourceChatId = params.sourceChatId;
+      if (params) {
+        if (params.sourceChatId > 0) {
+          this.sourceChatId = params.sourceChatId;
+        }
+        this.mode = params.mode;
       }
     })
     .onBackPressed((): boolean => {

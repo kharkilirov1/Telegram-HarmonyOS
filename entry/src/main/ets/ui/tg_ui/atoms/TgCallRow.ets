@@ -87,6 +87,8 @@ export struct TgCallRow {
               .fontSize(TgUiTokens.CALL_ROW_DATE_SIZE)
               .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
               .margin({ left: TgUiTokens.SPACE_4 })
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
           }
           .margin({ top: TgUiTokens.SPACE_2 })
           .alignItems(VerticalAlign.Center)
@@ -98,9 +100,10 @@ export struct TgCallRow {
         Text(this.dateText)
           .fontSize(TgUiTokens.CALL_ROW_DATE_SIZE)
           .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+          .maxLines(1)
 
         TgIcon({
-          src: TgUiTokens.ICON_RES_PHONE_CALL,
+          src: TgUiTokens.ICON_RES_INFO,
           iconSize: TgUiTokens.ICON_SIZE_MD,
           tintColor: TgUiTokens.COLOR_ICON_PRIMARY
         })

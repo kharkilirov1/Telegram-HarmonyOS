@@ -5,10 +5,12 @@
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, User } from '../../../core/model/AppState';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
-import { TgAvatar } from '../../tg_ui/atoms/TgAvatar';
+import { TgContactRow } from '../../tg_ui/atoms/TgContactRow';
+import { TgContactSectionHeader } from '../../tg_ui/atoms/TgContactSectionHeader';
 import { localized } from '../../../core/utils/AppResource';
 import { fileUri } from '@kit.CoreFileKit';
 import { computeTopBarHeight, computeTabBottomInset, getMainWindow, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
+import { ROOT_TAB_BAR_FALLBACK_CONTENT_INSET } from '../../utils/RootTabBarGeometry';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
@@ -26,17 +28,52 @@ class ContactVO {
   sortKey: string = '';
 }
 
+class ContactSectionVO {
+  title: string = '';
+  contacts: ContactVO[] = [];
+
+  constructor(title: string, contacts: ContactVO[]) {
+    this.title = title;
+    this.contacts = contacts;
+  }
+}
+
+function firstAlphabeticLetter(value: string): string {
+  const upper: string = value.toUpperCase();
+  for (let index: number = 0; index < upper.length; index += 1) {
+    const character: string = upper.charAt(index);
+    if ((character >= 'A' && character <= 'Z') ||
+      (character >= 'А' && character <= 'Я') || character === 'Ё') {
+      return character;
+    }
+  }
+  return '';
+}
+
+function isCyrillicLetter(value: string): boolean {
+  return (value >= 'А' && value <= 'Я') || value === 'Ё';
+}
+
 @ComponentV2
 export struct ContactsPage {
   @Local private contacts: ContactVO[] = [];
+  @Local private visibleContacts: ContactVO[] = [];
+  @Local private sections: ContactSectionVO[] = [];
+  @Local private alphabet: string[] = [];
+  @Local private searchText: string = '';
+  @Local private selectedSectionIndex: number = 0;
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
-  @Local private listBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
+  @Local private listBottomInset: number = ROOT_TAB_BAR_FALLBACK_CONTENT_INSET;
+
+  @Event onContactPress: (userId: number, name: string) => void = (_userId: number, _name: string): void => {};
 
   private unsubscribe?: () => void;
   private rebuildScheduled: boolean = false;
   private rebuildTimerId: number = -1;
   private pageLifecycleToken: number = 0;
+  private pendingSectionIndex: number = -1;
   private mainWindow?: window.Window;
+  private listScroller: Scroller = new Scroller();
 
   private clearRebuildTimer(): void {
     if (this.rebuildTimerId !== -1) {
@@ -99,6 +136,7 @@ export struct ContactsPage {
 
   aboutToDisappear(): void {
     this.pageLifecycleToken += 1;
+    this.pendingSectionIndex = -1;
     this.clearRebuildTimer();
     if (this.unsubscribe !== undefined) {
       this.unsubscribe();
@@ -135,7 +173,7 @@ export struct ContactsPage {
       this.listBottomInset = computeTabBottomInset(context);
     } catch (_error) {
       this.topBarTotalHeight = TgUiTokens.TOP_BAR_HEIGHT;
-      this.listBottomInset = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
+      this.listBottomInset = ROOT_TAB_BAR_FALLBACK_CONTENT_INSET;
     }
   }
 
@@ -157,8 +195,8 @@ export struct ContactsPage {
   }
 
   private userInitials(user: User): string {
-    const first = user.firstName.length > 0 ? user.firstName.charAt(0) : '';
-    const last = user.lastName.length > 0 ? user.lastName.charAt(0) : '';
+    const first: string = firstAlphabeticLetter(user.firstName);
+    const last: string = firstAlphabeticLetter(user.lastName);
     if (first.length > 0 && last.length > 0) {
       return (first + last).toUpperCase();
     }
@@ -192,6 +230,45 @@ export struct ContactsPage {
       user.phoneNumber.length === 0;
   }
 
+  private sectionTitleForName(name: string): string {
+    const first: string = firstAlphabeticLetter(name);
+    return first.length > 0 ? first : '#';
+  }
+
+  private rebuildVisibleContacts(): void {
+    const query: string = this.searchText.trim().toLowerCase();
+    const visible: ContactVO[] = [];
+    for (const contact of this.contacts) {
+      if (query.length === 0 || contact.sortKey.includes(query)) {
+        visible.push(contact);
+      }
+    }
+    this.visibleContacts = visible;
+
+    const sectionMap: Map<string, ContactVO[]> = new Map<string, ContactVO[]>();
+    const sectionOrder: string[] = [];
+    for (const contact of visible) {
+      const sectionTitle: string = this.sectionTitleForName(contact.name);
+      let sectionContacts: ContactVO[] | undefined = sectionMap.get(sectionTitle);
+      if (sectionContacts === undefined) {
+        sectionContacts = [];
+        sectionMap.set(sectionTitle, sectionContacts);
+        sectionOrder.push(sectionTitle);
+      }
+      sectionContacts.push(contact);
+    }
+
+    const grouped: ContactSectionVO[] = [];
+    for (const title of sectionOrder) {
+      grouped.push(new ContactSectionVO(title, sectionMap.get(title) ?? []));
+    }
+    this.sections = grouped;
+    this.alphabet = sectionOrder;
+    if (this.selectedSectionIndex >= grouped.length) {
+      this.selectedSectionIndex = Math.max(0, grouped.length - 1);
+    }
+  }
+
   private rebuildContacts(state: AppState): void {
     const result: ContactVO[] = [];
     for (const user of state.users.users.values()) {
@@ -211,95 +288,165 @@ export struct ContactsPage {
       vo.statusText = this.formatUserStatus(user);
       vo.avatarPath = user.photoSmall.length > 0 ? fileUri.getUriFromPath(user.photoSmall) : '';
       vo.isOnline = user.status === 'online';
-      vo.sortKey = vo.name.toLowerCase();
+      const firstLetter: string = firstAlphabeticLetter(vo.name).toLowerCase();
+      vo.sortKey = firstLetter + ' ' + vo.name.toLowerCase();
       result.push(vo);
     }
+    let locale: string = 'en';
+    try {
+      const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      const configuredLocale: string = context.resourceManager.getConfigurationSync().locale;
+      if (configuredLocale.length > 0) {
+        locale = configuredLocale.replace('_', '-');
+      }
+    } catch (_error) {
+      try {
+        const resolvedLocale: string = Intl.DateTimeFormat().resolvedOptions().locale;
+        if (resolvedLocale.length > 0) {
+          locale = resolvedLocale;
+        }
+      } catch (_fallbackError) {
+        locale = 'en';
+      }
+    }
+    const preferCyrillic: boolean = locale.toLowerCase().startsWith('ru');
     result.sort((a: ContactVO, b: ContactVO): number => {
-      if (a.sortKey < b.sortKey) {
-        return -1;
+      const aLetter: string = firstAlphabeticLetter(a.name);
+      const bLetter: string = firstAlphabeticLetter(b.name);
+      const aRank: number = aLetter.length === 0 ? 2
+        : isCyrillicLetter(aLetter) === preferCyrillic ? 0 : 1;
+      const bRank: number = bLetter.length === 0 ? 2
+        : isCyrillicLetter(bLetter) === preferCyrillic ? 0 : 1;
+      if (aRank !== bRank) {
+        return aRank - bRank;
       }
-      if (a.sortKey > b.sortKey) {
-        return 1;
+      try {
+        return a.sortKey.localeCompare(b.sortKey, locale);
+      } catch (_error) {
+        return a.sortKey.localeCompare(b.sortKey);
       }
-      return 0;
     });
     this.contacts = result;
+    this.rebuildVisibleContacts();
+  }
+
+  @Builder
+  private buildSectionHeader(title: string) {
+    TgContactSectionHeader({ title: title })
+  }
+
+  @Builder
+  private buildContactRow(contact: ContactVO, showSeparator: boolean) {
+    TgContactRow({
+      name: contact.name,
+      initials: contact.initials,
+      statusText: contact.statusText,
+      avatarPath: contact.avatarPath,
+      isOnline: contact.isOnline,
+      showSeparator: showSeparator,
+      onPress: (): void => {
+        this.onContactPress(contact.userId, contact.name);
+      }
+    })
   }
 
   build() {
     Stack({ alignContent: Alignment.Top }) {
-      if (this.contacts.length > 0) {
-        List() {
-          ForEach(this.contacts, (contact: ContactVO, index: number) => {
+      Stack({ alignContent: Alignment.End }) {
+        List({ scroller: this.listScroller }) {
+          ListItem() {
+            Search({ value: this.searchText, placeholder: $r('app.string.search_placeholder') })
+              .height(TgUiTokens.CONTACT_SEARCH_HEIGHT)
+              .backgroundColor(TgUiTokens.SEARCH_BAR_BG)
+              .margin({
+                left: TgUiTokens.CONTACT_SEARCH_SIDE_INSET,
+                right: TgUiTokens.CONTACT_SEARCH_SIDE_INSET,
+                top: TgUiTokens.CONTACT_SEARCH_VERTICAL_INSET,
+                bottom: TgUiTokens.CONTACT_SEARCH_VERTICAL_INSET
+              })
+              .onChange((value: string) => {
+                this.pendingSectionIndex = -1;
+                this.searchText = value;
+                this.selectedSectionIndex = 0;
+                this.rebuildVisibleContacts();
+              })
+          }
+
+          if (this.visibleContacts.length === 0) {
             ListItem() {
               Column() {
-                Row() {
-                  TgAvatar({
-                    avatarSize: TgUiTokens.CONTACT_ROW_AVATAR_SIZE,
-                    initials: contact.initials,
-                    useImage: contact.avatarPath.length > 0,
-                    imageSrc: contact.avatarPath,
-                    isOnline: contact.isOnline,
-                    avatarBackgroundColor: TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG
-                  })
-
-                  Column() {
-                    Text(contact.name)
-                      .fontSize(TgUiTokens.CONTACT_ROW_NAME_SIZE)
-                      .fontWeight(FontWeight.Regular)
-                      .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
-                      .maxLines(1)
-                      .textOverflow({ overflow: TextOverflow.Ellipsis })
-
-                    if (contact.statusText.length > 0) {
-                      Text(contact.statusText)
-                        .fontSize(TgUiTokens.CONTACT_ROW_STATUS_SIZE)
-                        .fontColor(contact.isOnline ? TgUiTokens.COLOR_ONLINE_DOT : TgUiTokens.COLOR_TEXT_PREVIEW)
-                        .maxLines(1)
-                        .textOverflow({ overflow: TextOverflow.Ellipsis })
-                        .margin({ top: TgUiTokens.SPACE_2 })
-                    }
-                  }
-                  .layoutWeight(1)
-                  .alignItems(HorizontalAlign.Start)
-                  .margin({ left: TgUiTokens.CONTACT_ROW_GAP })
-                }
-                .width('100%')
-                .height(TgUiTokens.CONTACT_ROW_HEIGHT)
-                .padding({
-                  left: TgUiTokens.CONTACT_ROW_PADDING_H,
-                  right: TgUiTokens.CONTACT_ROW_PADDING_H
-                })
-                .alignItems(VerticalAlign.Center)
-
-                if (index < this.contacts.length - 1) {
-                  Row()
-                    .width('100%')
-                    .height(TgUiTokens.CONTACT_ROW_SEPARATOR_STROKE)
-                    .backgroundColor(TgUiTokens.COLOR_SEPARATOR)
-                    .margin({ left: TgUiTokens.CONTACT_ROW_SEPARATOR_INSET })
-                }
+                Text(this.searchText.trim().length > 0
+                  ? localized($r('app.string.search_no_results').id, 'No results')
+                  : localized($r('app.string.no_contacts').id, 'No contacts yet'))
+                  .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+                  .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
               }
               .width('100%')
+              .height(TgUiTokens.CONTACT_EMPTY_STATE_HEIGHT)
+              .justifyContent(FlexAlign.Center)
+              .alignItems(HorizontalAlign.Center)
             }
-          }, (contact: ContactVO) => contact.userId.toString())
+          } else if (this.searchText.trim().length > 0) {
+            ForEach(this.visibleContacts, (contact: ContactVO, index: number) => {
+              ListItem() {
+                this.buildContactRow(contact, index < this.visibleContacts.length - 1)
+              }
+            }, (contact: ContactVO) => contact.userId.toString())
+          } else {
+            ForEach(this.sections, (section: ContactSectionVO) => {
+              ListItemGroup({ header: this.buildSectionHeader(section.title) }) {
+                ForEach(section.contacts, (contact: ContactVO, index: number) => {
+                  ListItem() {
+                    this.buildContactRow(contact, index < section.contacts.length - 1)
+                  }
+                }, (contact: ContactVO) => contact.userId.toString())
+              }
+            }, (section: ContactSectionVO) => section.title)
+          }
         }
         .width('100%')
         .height('100%')
         .edgeEffect(EdgeEffect.Spring)
-        .contentStartOffset(this.topBarTotalHeight)
+        .sticky(StickyStyle.Header)
         .contentEndOffset(this.listBottomInset)
-      } else {
-        Column() {
-          Text(localized($r('app.string.no_contacts').id, 'No contacts yet'))
-            .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
-            .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+        .onScrollIndex((firstIndex: number, _lastIndex: number, _centerIndex: number) => {
+          if (this.pendingSectionIndex < 0 &&
+            this.searchText.trim().length === 0 && this.sections.length > 0) {
+            this.selectedSectionIndex = Math.max(0, Math.min(this.sections.length - 1, firstIndex - 1));
+          }
+        })
+        .onScrollStop(() => {
+          if (this.pendingSectionIndex >= 0) {
+            this.selectedSectionIndex = this.pendingSectionIndex;
+            this.pendingSectionIndex = -1;
+          }
+        })
+
+        if (this.searchText.trim().length === 0 && this.alphabet.length > 1) {
+          AlphabetIndexer({ arrayValue: this.alphabet, selected: this.selectedSectionIndex })
+            .selected(this.selectedSectionIndex)
+            .font({ size: TgUiTokens.CONTACT_INDEXER_FONT_SIZE })
+            .selectedFont({ size: TgUiTokens.CONTACT_INDEXER_FONT_SIZE, weight: FontWeight.Bold })
+            .color(TgUiTokens.COLOR_ICON_PRIMARY)
+            .selectedColor(TgUiTokens.COLOR_TEXT_TITLE)
+            .selectedBackgroundColor(Color.Transparent)
+            .usingPopup(true)
+            .popupFont({ size: TgUiTokens.CONTACT_INDEXER_POPUP_FONT_SIZE, weight: FontWeight.Bold })
+            .popupBackground(TgUiTokens.COLOR_OVERLAY_DIM)
+            .alignStyle(IndexerAlign.Right)
+            .itemSize(TgUiTokens.CONTACT_INDEXER_ITEM_SIZE)
+            .autoCollapse(true)
+            .margin({ right: TgUiTokens.CONTACT_INDEXER_MARGIN_RIGHT })
+            .onSelect((index: number) => {
+              this.pendingSectionIndex = index;
+              this.selectedSectionIndex = index;
+              this.listScroller.scrollToIndex(index + 1, true, ScrollAlign.START);
+            })
         }
-        .width('100%')
-        .height('100%')
-        .justifyContent(FlexAlign.Center)
-        .alignItems(HorizontalAlign.Center)
       }
+      .width('100%')
+      .height('100%')
+      .padding({ top: this.topBarTotalHeight })
 
     }
     .width('100%')

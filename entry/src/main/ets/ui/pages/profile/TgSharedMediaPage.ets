@@ -1,6 +1,5 @@
-// TgSharedMediaPage — photo/video grid of a chat (profile → Shared Media → Media).
-// Data: searchChatMessages(filter=PhotoAndVideo); thumbnails download
-// sequentially (same throttle reasoning as the sticker panel).
+// TgSharedMediaPage — profile Shared Media sections backed by searchChatMessages.
+// Thumbnail work is bounded and re-prioritized from the visible scroll range.
 
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
@@ -10,7 +9,12 @@ import {
   SharedMediaItem
 } from '../../../domain/usecases/searchChatMessages';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
-import { PendingJumpSignal } from '../chat/PendingJumpSignal';
+import {
+  PendingSharedMediaActionSignal,
+  SharedMediaActionKind
+} from '../chat/PendingSharedMediaActionSignal';
+import { SharedMediaThumbnailCoordinator } from './SharedMediaThumbnailCoordinator';
+import { AppState } from '../../../core/model/AppState';
 import { fileUri } from '@kit.CoreFileKit';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
@@ -60,10 +64,11 @@ export class SharedMediaTileVO {
   readonly fileName: string;
   readonly fileSize: number;
   readonly linkText: string;
+  readonly linkUrl: string;
   @Trace thumbUri: string = '';
 
   constructor(messageId: string, kind: string, isVideo: boolean, thumbFileId: number,
-    duration: number, fileName: string, fileSize: number, linkText: string) {
+    duration: number, fileName: string, fileSize: number, linkText: string, linkUrl: string) {
     this.messageId = messageId;
     this.kind = kind;
     this.isVideo = isVideo;
@@ -72,6 +77,7 @@ export class SharedMediaTileVO {
     this.fileName = fileName;
     this.fileSize = fileSize;
     this.linkText = linkText;
+    this.linkUrl = linkUrl;
   }
 }
 
@@ -91,12 +97,34 @@ export struct TgSharedMediaPage {
   @Local private topInset: number = 0;
 
   private useCase?: SearchChatMessagesUseCase;
+  private thumbnailCoordinator?: SharedMediaThumbnailCoordinator;
+  private unsubscribe?: () => void;
   private lifecycleToken: number = 0;
   private isClosing: boolean = false;
 
   aboutToAppear(): void {
     this.lifecycleToken++;
     this.isClosing = false;
+    if (this.unsubscribe !== undefined) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
+    }
+    try {
+      const store = getAppCoreRuntime().getStore();
+      const subscriptionToken = this.lifecycleToken;
+      let activeUnsubscribe: (() => void) | undefined = undefined;
+      activeUnsubscribe = store.subscribe((newState: AppState, previousState: AppState): void => {
+        if (subscriptionToken !== this.lifecycleToken || this.unsubscribe !== activeUnsubscribe) {
+          return;
+        }
+        if (newState.files.transfers !== previousState.files.transfers) {
+          this.refreshThumbnailPaths(newState);
+        }
+      });
+      this.unsubscribe = activeUnsubscribe;
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'file-state subscription failed: %{public}s', String(error));
+    }
     try {
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
       const windowStage = context.windowStage;
@@ -112,6 +140,12 @@ export struct TgSharedMediaPage {
 
   aboutToDisappear(): void {
     this.lifecycleToken++;
+    this.thumbnailCoordinator?.cancel();
+    this.thumbnailCoordinator = undefined;
+    if (this.unsubscribe !== undefined) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
+    }
   }
 
   private loadMedia(chatId: number): void {
@@ -119,6 +153,8 @@ export struct TgSharedMediaPage {
       return;
     }
     this.chatId = chatId;
+    this.thumbnailCoordinator?.cancel();
+    this.thumbnailCoordinator = undefined;
     this.useCase = createSearchChatMessagesUseCase(getTdGatewayAdapter());
     const token = this.lifecycleToken;
     this.isLoading = true;
@@ -129,7 +165,7 @@ export struct TgSharedMediaPage {
       const tiles: SharedMediaTileVO[] = [];
       for (const item of items) {
         const tile = new SharedMediaTileVO(item.messageId, item.kind, item.isVideo,
-          item.thumbFileId, item.duration, item.fileName, item.fileSize, item.linkText);
+          item.thumbFileId, item.duration, item.fileName, item.fileSize, item.linkText, item.linkUrl);
         if (item.thumbPath.length > 0) {
           tile.thumbUri = fileUri.getUriFromPath(item.thumbPath);
         }
@@ -137,7 +173,8 @@ export struct TgSharedMediaPage {
       }
       this.tiles = tiles;
       this.isLoading = false;
-      this.fetchThumbs(tiles);
+      this.refreshThumbnailPaths(getAppCoreRuntime().getStore().getState());
+      this.startThumbnailDownloads(tiles);
     }).catch((error: Error) => {
       if (token === this.lifecycleToken) {
         this.isLoading = false;
@@ -146,34 +183,71 @@ export struct TgSharedMediaPage {
     });
   }
 
-  // Sequential thumb download — parallel calls would storm TDLib (lesson from
-  // the sticker panel); aborts when the page dies
-  private async fetchThumbs(tiles: SharedMediaTileVO[]): Promise<void> {
+  private startThumbnailDownloads(tiles: SharedMediaTileVO[]): void {
     const useCase = this.useCase;
     if (!useCase) {
       return;
     }
     const token = this.lifecycleToken;
-    for (const tile of tiles) {
-      if (token !== this.lifecycleToken) {
-        return;
-      }
-      if (tile.thumbUri.length === 0 && tile.thumbFileId > 0) {
-        const path = await useCase.downloadThumb(tile.thumbFileId);
-        if (path.length > 0) {
-          tile.thumbUri = fileUri.getUriFromPath(path);
+    const coordinator = new SharedMediaThumbnailCoordinator(
+      async (fileId: number): Promise<string> => {
+        const path = await useCase.requestThumbDownload(fileId, 16);
+        if (token !== this.lifecycleToken || path.length === 0) {
+          return '';
         }
+        return fileUri.getUriFromPath(path);
+      },
+      (fileId: number, reason: string): void => {
+        if (token === this.lifecycleToken) {
+          hilog.warn(DOMAIN, TAG, 'thumb %{public}d failed: %{public}s', fileId, reason);
+        }
+      }
+    );
+    this.thumbnailCoordinator = coordinator;
+    // Three columns fit up to seven rows on the tall phone viewport. Prime
+    // exactly that first screen; later screens are requested by onScrollIndex.
+    coordinator.prioritizeRange(tiles, 0, 20);
+  }
+
+  private prioritizeThumbnailRange(first: number, last: number): void {
+    if (first >= 0 && last >= first) {
+      const coordinator = this.thumbnailCoordinator;
+      if (coordinator) {
+        coordinator.prioritizeRange(this.tiles,
+          Math.max(0, first - 3), Math.min(this.tiles.length - 1, last + 6));
       }
     }
   }
 
-  // Queue the jump, then unwind Shared Media + Profile back to the chat;
-  // the chat consumes the signal in onShown
-  private jumpToMessage(messageId: string): void {
-    if (messageId === '0' || this.chatId === 0) {
+  private refreshThumbnailPaths(state: AppState): void {
+    for (let i = 0; i < this.tiles.length; i++) {
+      const tile = this.tiles[i];
+      if (tile.thumbUri.length > 0 || tile.thumbFileId <= 0) {
+        continue;
+      }
+      const transfer = state.files.transfers.get(tile.thumbFileId);
+      if (transfer && transfer.isDownloadingCompleted && transfer.localPath.length > 0) {
+        tile.thumbUri = fileUri.getUriFromPath(transfer.localPath);
+      }
+    }
+  }
+
+  // Unwind to the chat and let its existing media controllers perform the
+  // action. This keeps gallery/download/playback behavior identical to a
+  // bubble tap instead of creating a second controller stack in Profile.
+  private openSharedMediaItem(tile: SharedMediaTileVO): void {
+    if (tile.messageId === '0' || this.chatId === 0) {
       return;
     }
-    PendingJumpSignal.set(this.chatId, messageId);
+    let action: SharedMediaActionKind = 'media';
+    if (tile.kind === 'file') {
+      action = 'file';
+    } else if (tile.kind === 'link') {
+      action = 'link';
+    } else if (tile.kind === 'voice') {
+      action = 'voice';
+    }
+    PendingSharedMediaActionSignal.set(this.chatId, tile.messageId, action, tile.linkUrl);
     try {
       this.pageStack.popToName('TgChatScreenPage');
     } catch (error) {
@@ -318,7 +392,7 @@ export struct TgSharedMediaPage {
                 this.buildTile(tile)
               }
               .onClick(() => {
-                this.jumpToMessage(tile.messageId);
+                this.openSharedMediaItem(tile);
               })
             }, (tile: SharedMediaTileVO) => 'shm_' + tile.messageId)
           }
@@ -328,6 +402,9 @@ export struct TgSharedMediaPage {
           .width('100%')
           .layoutWeight(1)
           .scrollBar(BarState.Off)
+          .onScrollIndex((first: number, last: number): void => {
+            this.prioritizeThumbnailRange(first, last);
+          })
         } else {
           List() {
             ForEach(this.tiles, (tile: SharedMediaTileVO) => {
@@ -335,13 +412,16 @@ export struct TgSharedMediaPage {
                 this.buildListRow(tile)
               }
               .onClick(() => {
-                this.jumpToMessage(tile.messageId);
+                this.openSharedMediaItem(tile);
               })
             }, (tile: SharedMediaTileVO) => 'shl_' + tile.messageId)
           }
           .width('100%')
           .layoutWeight(1)
           .scrollBar(BarState.Off)
+          .onScrollIndex((first: number, last: number): void => {
+            this.prioritizeThumbnailRange(first, last);
+          })
         }
       }
       .width('100%')

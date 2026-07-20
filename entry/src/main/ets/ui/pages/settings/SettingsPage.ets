@@ -10,12 +10,25 @@ import { TgSettingsRow, TgSettingsTrailing } from '../../tg_ui/atoms/TgSettingsR
 import { fileUri } from '@kit.CoreFileKit';
 import { localized } from '../../../core/utils/AppResource';
 import { computeTopBarHeight, computeTabBottomInset, getMainWindow, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
+import { ROOT_TAB_BAR_FALLBACK_CONTENT_INSET } from '../../utils/RootTabBarGeometry';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 
 const DOMAIN = 0x0032;
 const TAG = 'SettingsPage';
+
+function firstAlphabeticLetter(value: string): string {
+  const upper: string = value.toUpperCase();
+  for (let index: number = 0; index < upper.length; index += 1) {
+    const character: string = upper.charAt(index);
+    if ((character >= 'A' && character <= 'Z') ||
+      (character >= 'А' && character <= 'Я') || character === 'Ё') {
+      return character;
+    }
+  }
+  return '';
+}
 
 @ComponentV2
 export struct SettingsPage {
@@ -24,7 +37,9 @@ export struct SettingsPage {
   @Local private userInitials: string = 'ME';
   @Local private userPhoto: string = '';
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
-  @Local private contentBottomInset: number = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
+  @Local private contentBottomInset: number = ROOT_TAB_BAR_FALLBACK_CONTENT_INSET;
+
+  @Event onOpenCalls: () => void = (): void => {};
 
   private unsubscribe?: () => void;
   private pageLifecycleToken: number = 0;
@@ -108,7 +123,7 @@ export struct SettingsPage {
       this.contentBottomInset = computeTabBottomInset(context);
     } catch (_error) {
       this.topBarTotalHeight = TgUiTokens.TOP_BAR_HEIGHT;
-      this.contentBottomInset = TgUiTokens.TAB_BAR_CONTENT_SAFE_BOTTOM;
+      this.contentBottomInset = ROOT_TAB_BAR_FALLBACK_CONTENT_INSET;
     }
   }
 
@@ -128,8 +143,8 @@ export struct SettingsPage {
     this.userPhone = user.phoneNumber.length > 0 ? '+' + user.phoneNumber : '';
     this.userPhoto = user.photoSmall.length > 0 ? fileUri.getUriFromPath(user.photoSmall) : '';
 
-    const first = user.firstName.length > 0 ? user.firstName.charAt(0) : '';
-    const last = user.lastName.length > 0 ? user.lastName.charAt(0) : '';
+    const first = firstAlphabeticLetter(user.firstName);
+    const last = firstAlphabeticLetter(user.lastName);
     this.userInitials = first.length > 0 ? (first + last).toUpperCase() : 'ME';
   }
 
@@ -176,9 +191,6 @@ export struct SettingsPage {
     Stack({ alignContent: Alignment.Top }) {
       Scroll() {
         Column() {
-          // Top padding for the top bar
-          Row().width('100%').height(this.topBarTotalHeight)
-
           this.buildProfileHeader()
 
           // ── Account section ──
@@ -194,6 +206,23 @@ export struct SettingsPage {
               title: localized($r('app.string.settings_recent_calls').id, 'Recent Calls'),
               iconRes: TgUiTokens.ICON_RES_PHONE_CALL,
               iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_GREEN,
+              trailingType: TgSettingsTrailing.Arrow,
+              showSeparator: true,
+              onRowClick: (): void => {
+                this.onOpenCalls();
+              }
+            })
+            TgSettingsRow({
+              title: localized($r('app.string.settings_devices').id, 'Devices'),
+              iconRes: TgUiTokens.ICON_RES_DEVICE,
+              iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_BLUE,
+              trailingType: TgSettingsTrailing.Arrow,
+              showSeparator: true
+            })
+            TgSettingsRow({
+              title: localized($r('app.string.settings_chat_folders').id, 'Chat Folders'),
+              iconRes: TgUiTokens.ICON_RES_FOLDER,
+              iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_BLUE,
               trailingType: TgSettingsTrailing.Arrow,
               showSeparator: false
             })
@@ -239,11 +268,18 @@ export struct SettingsPage {
               showSeparator: true
             })
             TgSettingsRow({
+              title: localized($r('app.string.settings_power_saving').id, 'Power Saving'),
+              iconRes: TgUiTokens.ICON_RES_POWER_SAVING,
+              iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_ORANGE,
+              trailingType: TgSettingsTrailing.Arrow,
+              showSeparator: true
+            })
+            TgSettingsRow({
               title: localized($r('app.string.settings_language').id, 'Language'),
               symbolRes: $r('sys.symbol.translate'),
               iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_PURPLE,
               trailingType: TgSettingsTrailing.Text,
-              trailingText: 'English',
+              trailingText: localized($r('app.string.language_current').id, 'English'),
               showSeparator: false
             })
           }
@@ -271,6 +307,13 @@ export struct SettingsPage {
               iconRes: TgUiTokens.ICON_RES_DOCUMENT,
               iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_BLUE,
               trailingType: TgSettingsTrailing.Arrow,
+              showSeparator: true
+            })
+            TgSettingsRow({
+              title: localized($r('app.string.settings_tips').id, 'Telegram Tips'),
+              symbolRes: $r('sys.symbol.lightbulb_fill'),
+              iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_GREEN,
+              trailingType: TgSettingsTrailing.Arrow,
               showSeparator: false
             })
           }
@@ -293,11 +336,11 @@ export struct SettingsPage {
       .height('100%')
       .edgeEffect(EdgeEffect.Spring)
       .scrollBar(BarState.Off)
+      .padding({ top: this.topBarTotalHeight })
 
     }
     .width('100%')
     .height('100%')
     .backgroundColor(TgUiTokens.COLOR_BG_SECONDARY)
-    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
   }
 }

@@ -7,8 +7,12 @@ import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, User, Chat } from '../../../core/model/AppState';
 import { loadUserFullInfo, loadSupergroupFullInfo } from '../../../domain/usecases/loadProfileInfo';
 import { TgAvatar } from '../../tg_ui/atoms/TgAvatar';
+import { TgProfileNavigationBar } from '../../tg_ui/atoms/TgProfileNavigationBar';
 import { SharedMediaRouteParams } from './TgSharedMediaPage';
+import { ProfileMembersRouteParams } from './TgProfileMembersPage';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
+import { PendingChatSearchSignal } from '../chat/PendingChatSearchSignal';
+import { localized } from '../../../core/utils/AppResource';
 import { fileUri } from '@kit.CoreFileKit';
 import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
@@ -22,9 +26,11 @@ declare function px2vp(value: number): number;
 // Route params passed from chat screen
 export class ProfileRouteParams {
   chatId: number = 0;
+  userId: number = 0;
 
-  constructor(chatId: number) {
+  constructor(chatId: number, userId: number = 0) {
     this.chatId = chatId;
+    this.userId = userId;
   }
 }
 
@@ -40,14 +46,20 @@ function getAvatarColor(id: number): Resource {
 }
 
 function getInitials(title: string): string {
-  if (!title) return '?';
-  const trimmed = title.trim();
-  if (trimmed.length === 0) return '?';
-  const spaceIdx = trimmed.indexOf(' ');
-  if (spaceIdx > 0 && spaceIdx < trimmed.length - 1) {
-    return (trimmed.charAt(0) + trimmed.charAt(spaceIdx + 1)).toUpperCase();
+  const words = title.trim().split(' ');
+  let result = '';
+  for (let wordIndex = 0; wordIndex < words.length && result.length < 2; wordIndex++) {
+    const upper = words[wordIndex].toUpperCase();
+    for (let index = 0; index < upper.length; index++) {
+      const character = upper.charAt(index);
+      if ((character >= 'A' && character <= 'Z') ||
+        (character >= 'А' && character <= 'Я') || character === 'Ё') {
+        result += character;
+        break;
+      }
+    }
   }
-  return trimmed.charAt(0).toUpperCase();
+  return result.length > 0 ? result : '?';
 }
 
 function toFileUri(path: string): string {
@@ -67,12 +79,12 @@ function formatPhone(phone: string): string {
 
 function statusText(user: User): string {
   switch (user.status) {
-    case 'online': return 'online';
-    case 'recently': return 'last seen recently';
-    case 'lastWeek': return 'last seen within a week';
-    case 'lastMonth': return 'last seen within a month';
-    case 'longTimeAgo': return 'last seen a long time ago';
-    default: return 'offline';
+    case 'online': return localized($r('app.string.online').id, 'online');
+    case 'recently': return localized($r('app.string.last_seen_recently').id, 'last seen recently');
+    case 'lastWeek': return localized($r('app.string.last_seen_within_week').id, 'last seen within a week');
+    case 'lastMonth': return localized($r('app.string.last_seen_within_month').id, 'last seen within a month');
+    case 'longTimeAgo': return localized($r('app.string.last_seen_long_ago').id, 'last seen a long time ago');
+    default: return localized($r('app.string.offline').id, 'offline');
   }
 }
 
@@ -99,6 +111,8 @@ export struct TgProfilePage {
   @Local pageStack: NavPathStack = new NavPathStack();
 
   @Local private chatId: number = 0;
+  @Local private profileUserId: number = 0;
+  @Local private supergroupId: number = 0;
   @Local private title: string = '';
   @Local private subtitle: string = '';
   @Local private avatarInitials: string = '';
@@ -147,6 +161,7 @@ export struct TgProfilePage {
   private loadProfile(chatId: number): void {
     if (chatId === 0) return; // groups/channels have negative ids
     this.chatId = chatId;
+    this.profileUserId = 0;
 
     const runtime = getAppCoreRuntime();
     const state = runtime.getStore().getState();
@@ -180,7 +195,59 @@ export struct TgProfilePage {
     }
   }
 
+  private loadUserProfile(userId: number): void {
+    if (userId <= 0) return;
+    this.chatId = 0;
+    this.profileUserId = userId;
+    this.chatType = 'private';
+
+    const runtime = getAppCoreRuntime();
+    this.applyState(runtime.getStore().getState());
+    if (this.storeUnsubscribe !== undefined) {
+      this.storeUnsubscribe();
+      this.storeUnsubscribe = undefined;
+    }
+    const lifecycleToken = this.pageLifecycleToken;
+    const targetUserId = userId;
+    let activeUnsubscribe: (() => void) | undefined = undefined;
+    activeUnsubscribe = runtime.getStore().subscribe((state: AppState): void => {
+      if (lifecycleToken !== this.pageLifecycleToken ||
+        this.profileUserId !== targetUserId ||
+        this.storeUnsubscribe !== activeUnsubscribe) {
+        return;
+      }
+      this.applyState(state);
+    });
+    this.storeUnsubscribe = activeUnsubscribe;
+    loadUserFullInfo(userId);
+  }
+
   private applyState(state: AppState): void {
+    if (this.chatId === 0 && this.profileUserId > 0) {
+      const directUser = state.users.users.get(this.profileUserId);
+      if (directUser === undefined) return;
+      const directName = (directUser.firstName + ' ' + directUser.lastName).trim();
+      this.title = directName.length > 0 ? directName :
+        (directUser.username.length > 0 ? '@' + directUser.username :
+          localized($r('app.string.deleted_account').id, 'Deleted Account'));
+      this.subtitle = statusText(directUser);
+      this.isOnline = directUser.status === 'online';
+      this.phoneNumber = formatPhone(directUser.phoneNumber);
+      this.username = directUser.username;
+      this.bio = directUser.bio;
+      this.isVerified = directUser.isVerified;
+      this.isPremium = directUser.isPremium;
+      this.avatarImageSrc = toFileUri(directUser.photoSmall);
+      this.avatarInitials = getInitials(this.title);
+      this.avatarColor = getAvatarColor(directUser.accentColorId >= 0 ? directUser.accentColorId : directUser.id);
+      this.memberCount = 0;
+      this.administratorCount = 0;
+      this.supergroupId = 0;
+      this.description = '';
+      this.inviteLink = '';
+      this.isMuted = false;
+      return;
+    }
     const chat = state.chats.chats.get(this.chatId);
     if (!chat) return;
 
@@ -190,6 +257,7 @@ export struct TgProfilePage {
     this.description = chat.description;
     this.inviteLink = chat.inviteLink;
     this.administratorCount = chat.administratorCount;
+    this.supergroupId = chat.supergroupId;
 
     if ((chat.type === 'private' || chat.type === 'secret') && chat.peerUserId > 0) {
       const user = state.users.users.get(chat.peerUserId);
@@ -246,6 +314,21 @@ export struct TgProfilePage {
     }
   }
 
+  private openMembers(filterKind: 'all' | 'administrators'): void {
+    if (this.chatId === 0) return;
+    const expectedCount = filterKind === 'administrators' ? this.administratorCount : this.memberCount;
+    try {
+      this.pageStack.pushPathByName('TgProfileMembersPage', new ProfileMembersRouteParams(
+        this.chatId,
+        this.supergroupId,
+        filterKind,
+        expectedCount
+      ));
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, 'Failed to push profile members: %{public}s', String(error));
+    }
+  }
+
   private handleBackPress(): void {
     if (this.isClosing) {
       hilog.warn(DOMAIN, TAG, 'Ignoring duplicate profile back pop while closing');
@@ -264,6 +347,18 @@ export struct TgProfilePage {
         this.isClosing = false;
         hilog.error(DOMAIN, TAG, 'Failed to pop profile page: %{public}s', String(error));
       }
+    }
+  }
+
+  private openChatSearch(): void {
+    if (this.chatId === 0) {
+      return;
+    }
+    PendingChatSearchSignal.set(this.chatId);
+    try {
+      this.pageStack.popToName('TgChatScreenPage');
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, 'Failed to return to chat search: %{public}s', String(error));
     }
   }
 
@@ -493,11 +588,22 @@ export struct TgProfilePage {
   private buildMembersSection() {
     Column() {
       if (this.memberCount > 0) {
-        this.buildDisclosureRow('Members', formatMemberCount(this.memberCount),
-          this.administratorCount > 0)
+        Column() {
+          this.buildDisclosureRow(localized($r('app.string.members_label').id, 'Members'),
+            formatMemberCount(this.memberCount), this.administratorCount > 0)
+        }
+        .onClick((): void => {
+          this.openMembers('all');
+        })
       }
       if (this.administratorCount > 0) {
-        this.buildDisclosureRow('Administrators', this.administratorCount.toString(), false)
+        Column() {
+          this.buildDisclosureRow(localized($r('app.string.administrators_label').id, 'Administrators'),
+            this.administratorCount.toString(), false)
+        }
+        .onClick((): void => {
+          this.openMembers('administrators');
+        })
       }
     }
     .width('100%')
@@ -554,20 +660,20 @@ export struct TgProfilePage {
   build() {
     NavDestination() {
       Column() {
-        // Custom compact header: system title bar is hidden (it drew its back
-        // button inside the status bar area)
-        Row() {
-          Image($r('app.media.ic_back'))
-            .width(24)
-            .height(24)
-            .fillColor(TgUiTokens.COMPOSER_ACTION_ACTIVE)
-            .onClick(() => {
-              this.handleBackPress();
-            })
-          Blank()
-        }
-        .width('100%')
-        .padding({ left: 16, right: 16, top: this.topInset + 8, bottom: 4 })
+        // PeerInfo uses independent left/right glass navigation containers;
+        // the system title bar remains hidden because it overlaps the status bar.
+        TgProfileNavigationBar({
+          topInset: this.topInset,
+          showSearch: this.chatId !== 0,
+          backAccessibilityText: localized($r('app.string.accessibility_back').id, 'Back'),
+          searchAccessibilityText: localized($r('app.string.search_in_chat').id, 'Search in chat'),
+          onBackPress: (): void => {
+            this.handleBackPress();
+          },
+          onSearchPress: (): void => {
+            this.openChatSearch();
+          }
+        })
 
         Scroll() {
           Column() {
@@ -587,16 +693,19 @@ export struct TgProfilePage {
               }
             }
 
-            // Notifications
-            this.buildNotificationsSection()
+            // Direct member profiles have no chat-owned settings yet.
+            if (this.chatId !== 0) {
+              this.buildNotificationsSection()
+            }
 
             // Members (groups/channels only)
             if (this.isGroupOrChannel() && (this.memberCount > 0 || this.administratorCount > 0)) {
               this.buildMembersSection()
             }
 
-            // Shared Media (all chat types)
-            this.buildSharedMediaSection()
+            if (this.chatId !== 0) {
+              this.buildSharedMediaSection()
+            }
 
             // Bottom spacer
             Column().height(40)
@@ -619,6 +728,8 @@ export struct TgProfilePage {
       const params = context.pathInfo.param as ProfileRouteParams;
       if (params && params.chatId !== 0) {
         this.loadProfile(params.chatId);
+      } else if (params && params.userId > 0) {
+        this.loadUserProfile(params.userId);
       }
       this.pageStack = context.pathStack;
     })

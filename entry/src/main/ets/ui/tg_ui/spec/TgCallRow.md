@@ -6,9 +6,9 @@
 - Status: `done`
 
 ## 2) iOS source mapping
-- `Telegram-iOS-master/submodules/CallListUI/Sources/CallListCallItem.swift`
-- `Telegram-iOS-master/submodules/CallListUI/Sources/CallListControllerNode.swift`
-- `Telegram-iOS-master/submodules/PeerInfoUI/Sources/ItemListCallListItem.swift`
+- `C:\Refs\Telegram\Telegram-iOS-current\submodules\CallListUI\Sources\CallListCallItem.swift`
+- `C:\Refs\Telegram\Telegram-iOS-current\submodules\CallListUI\Sources\CallListControllerNode.swift`
+- `C:\Refs\Telegram\Telegram-iOS-current\submodules\PeerInfoUI\Sources\ItemListCallListItem.swift`
 
 ## 3) Props / inputs
 - `name: string`
@@ -30,7 +30,7 @@
 
 ## 5) Layout rules
 - Left cluster: avatar + name/status stack.
-- Right cluster: date + call action icon.
+- Right cluster: relative/localized date + iOS-style info icon.
 - Missed call paints title and type icon with destructive color.
 - Subtitle line combines direction/video state and stays single-line.
 - Separator inset starts after the avatar block.
@@ -39,7 +39,7 @@
 - `CALL_ROW_*`
 - `ICON_RES_CALL_INCOMING`
 - `ICON_RES_CALL_OUTGOING`
-- `ICON_RES_PHONE_CALL`
+- `ICON_RES_INFO`
 - `COLOR_TEXT_TITLE`
 - `COLOR_TEXT_PREVIEW`
 - `COLOR_SEPARATOR`
@@ -51,3 +51,4 @@
 - [x] long names ellipsize correctly
 - [x] right-side date/action cluster stays aligned
 - [x] geometry and colors are tokenized
+- [x] older dates use localized short months and append a year only outside the current year
