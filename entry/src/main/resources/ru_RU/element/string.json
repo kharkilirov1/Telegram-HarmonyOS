@@ -2789,6 +2789,26 @@
       "value": "Переслать"
     },
     {
+      "name": "action_reply",
+      "value": "Ответить"
+    },
+    {
+      "name": "action_edit",
+      "value": "Изменить"
+    },
+    {
+      "name": "action_copy",
+      "value": "Копировать"
+    },
+    {
+      "name": "action_pin",
+      "value": "Закрепить"
+    },
+    {
+      "name": "action_delete",
+      "value": "Удалить"
+    },
+    {
       "name": "emoji_category_smileys",
       "value": "Смайлы и эмоции"
     },

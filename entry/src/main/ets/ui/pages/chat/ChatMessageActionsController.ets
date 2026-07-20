@@ -78,9 +78,10 @@ export class ChatMessageActionsController {
   ): void {
     host.clearEditMode(false);
     host.clearForwardMode();
-    const safeAuthor = author.length > 0 ? author : 'Message';
+    const generic = localized($r('app.string.message_action').id, 'Message');
+    const safeAuthor = author.length > 0 ? author : generic;
     const trimmed = preview.trim();
-    host.setReplyMode(messageId, safeAuthor, trimmed.length > 0 ? trimmed : 'Message', isQuote);
+    host.setReplyMode(messageId, safeAuthor, trimmed.length > 0 ? trimmed : generic, isQuote);
   }
 
   clearReplyMode(host: ChatMessageActionsHost): void {
@@ -189,8 +190,9 @@ export class ChatMessageActionsController {
   }
 
   openForwardTargetPickerForEntry(entry: ChatTimelineEntryVO, host: ChatMessageActionsHost): void {
-    const author = entry.message.isOutgoing ? 'You' :
-      (entry.message.senderName.length > 0 ? entry.message.senderName : 'Message');
+    const author = entry.message.isOutgoing ? localized($r('app.string.chat_you_prefix').id, 'You') :
+      (entry.message.senderName.length > 0 ? entry.message.senderName
+        : localized($r('app.string.message_action').id, 'Message'));
     const preview = this.resolveReplyPreviewForEntry(entry);
     this.openForwardTargetPicker([entry.message.messageId], author, preview, host);
   }
@@ -245,14 +247,18 @@ export class ChatMessageActionsController {
 
     const messageText = entry.message.text.length > 0 ? entry.message.text :
       (entry.message.caption.length > 0 ? entry.message.caption : '');
-    const author = entry.message.isOutgoing ? 'You' :
-      (entry.message.senderName.length > 0 ? entry.message.senderName : 'Message');
+    const author = entry.message.isOutgoing ? localized($r('app.string.chat_you_prefix').id, 'You') :
+      (entry.message.senderName.length > 0 ? entry.message.senderName
+        : localized($r('app.string.message_action').id, 'Message'));
     const preview = this.resolveReplyPreviewForEntry(entry);
     const messageId = entry.message.messageId;
 
     switch (items[index].id) {
       case 'reply':
-        this.startReply(messageId, author, preview, entry.message.replyIsQuote, host);
+        // A plain reply is never a quote — the target's own quote-reply state
+        // must not leak into the new draft banner (quote selection UI is a
+        // separate future slice).
+        this.startReply(messageId, author, preview, false, host);
         break;
       case 'edit':
         this.startEditMessage(messageId, messageText, host);
@@ -461,8 +467,9 @@ export class ChatMessageActionsController {
   }
 
   private buildForwardPreview(author: string, preview: string): string {
-    const safeAuthor = author.trim().length > 0 ? author.trim() : 'Message';
-    const safePreview = preview.trim().length > 0 ? preview.trim() : 'Message';
+    const genericLabel = localized($r('app.string.message_action').id, 'Message');
+    const safeAuthor = author.trim().length > 0 ? author.trim() : genericLabel;
+    const safePreview = preview.trim().length > 0 ? preview.trim() : genericLabel;
     return `${safeAuthor}: ${safePreview}`;
   }
 

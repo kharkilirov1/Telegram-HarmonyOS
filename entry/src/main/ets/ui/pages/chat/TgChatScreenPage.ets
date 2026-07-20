@@ -2120,8 +2120,11 @@ export struct TgChatScreenPage {
   // A draft reply restored before history loaded degrades to a generic
   // "Message / Message" chip — re-resolve it once the target arrives
   private refreshRestoredReplySnippet(state: AppState): void {
+    // The degraded chip is produced with the localized generic label, so the
+    // detection must compare against the same localized value in every locale.
+    const generic = localized($r('app.string.message_action').id, 'Message');
     if (this.replyToMessageId === '0'
-      || this.replyToAuthor !== 'Message' || this.replyToPreview !== 'Message') {
+      || this.replyToAuthor !== generic || this.replyToPreview !== generic) {
       return;
     }
     const chatMessages = state.messages.messages.get(this.activeChatId);

@@ -484,7 +484,9 @@ export function resolveSenderName(message: Message, state: AppState): string {
       return senderChat.title;
     }
   }
-  return message.isOutgoing ? 'You' : 'Unknown';
+  return message.isOutgoing
+    ? localizedString($r('app.string.chat_you_prefix').id, 'You')
+    : localizedString($r('app.string.calls_unknown').id, 'Unknown');
 }
 
 function findReplyMessage(
@@ -1116,7 +1118,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
       row.replyIsOutgoing = replyMessage.isOutgoing;
       row.replyIsQuote = message.replyIsQuote;
     } else {
-      row.replyAuthor = 'Reply';
+      row.replyAuthor = localizedString($r('app.string.action_reply').id, 'Reply');
       row.replyAuthorColorHex = '';
       row.replyIsOutgoing = false;
       row.replyIsQuote = false;

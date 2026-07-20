@@ -7,6 +7,7 @@ import { TgReplySnippet } from './TgReplySnippet';
 import { TgTextBodyV3 } from './TgTextBodyV3';
 import { TgMessageMeta, TgMessageSendStatus } from './TgMessageMeta';
 import { mediaGeometryTransitionId } from '../utils/TgMediaGeometryTransition';
+import { TextEntity } from '../../../core/model/AppState';
 
 @ComponentV2
 export struct TgMediaBubbleShellV2 {
@@ -23,6 +24,7 @@ export struct TgMediaBubbleShellV2 {
   @Param captionQuoteOffsets: number[] = [];
   @Param captionQuoteLengths: number[] = [];
   @Param captionQuoteCollapsedFlags: boolean[] = [];
+  @Param captionEntities: TextEntity[] = [];
 
   @Param photoPath: string = '';
   @Param photoMinithumb: string = '';
@@ -396,7 +398,8 @@ export struct TgMediaBubbleShellV2 {
               accentHex: this.replyAuthorColorHex,
               hasThumbnail: this.replyHasThumbnail,
               thumbnailSrc: this.replyThumbnailSrc,
-              containerWidth: this.maxBubbleWidth()
+              containerWidth: this.maxBubbleWidth(),
+              maxWidthRatio: 1.0
             })
           }
           .padding({
@@ -440,7 +443,7 @@ export struct TgMediaBubbleShellV2 {
                 quoteOffsets: this.captionQuoteOffsets,
                 quoteLengths: this.captionQuoteLengths,
                 quoteCollapsedFlags: this.captionQuoteCollapsedFlags,
-                textEntities: [],
+                textEntities: this.captionEntities,
               })
 
               Row() {

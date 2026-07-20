@@ -1,6 +1,20 @@
 # TODO — Telegram-HarmonyOS
 
-Last updated: 2026-07-19
+Last updated: 2026-07-21
+
+## Срез 2026-07-21 — баг-хант баблов/цитат (закрыт, см. STATUS)
+
+- [x] Разбивка недельного пласта на 12 коммитов (`be07eef..6b1894e`), рабочее дерево чистое
+- [x] Quote-блоки: entities внутри цитат, бар прижат к краю + зазор до текста, мета не поверх завершающей цитаты, data-ключи ForEach
+- [x] Reply-сниппет: полоса `matchParent` вместо жёсткой высоты 1+2 строки; снята двойная ratio-обрезка ширины (4 call-site)
+- [x] Капшены: `captionEntities` доведены до media shell (quote-ветка)
+- [x] Парсер: `textQuote.position` (0 валиден); композер не помечает новый reply как quote по флагу цели
+- [x] Локализация reply-слоя (`Reply`/`You`/`Unknown`/`Message`) + гвард restored-чипа сравнивает локализованный generic; ru/zh строки long-press меню (reply/edit/copy/pin/delete)
+- [x] Gallery-refresh: фолбэк `sourceMessageId`→`messageId`; on-device сьют `580/578/2 known`
+- [ ] **[новое, проверить]** Чат `File` показывает сабтайтл «группа» — если это Saved Messages (а не реальная группа с таким именем), сабтайтл для чата-с-собой должен отсутствовать; сверить тип peer'а в state
+- [ ] **[новое, minor]** Non-quote ветка капшена в `TgMediaBubbleShellV2` рендерит плоский Text — entities капшена там всё ещё теряются
+- [ ] **[новое, polish]** Collapsed-цитаты: рендер приглушением, без expand-каретки и сворачивания как в iOS
+- [ ] **[догфуд]** Живой скрин quote-бабла и quote-reply на новой геометрии (в досягаемой истории цитат не нашлось)
 
 Canonical execution order: `TASKS/AGENT_EXECUTION_PLAN.md` (Release Track v2: R0 → R1 → R2 → R3+)
 

@@ -382,8 +382,13 @@ export function computeTextBubbleLayout(engine: TgTextLayout, input: BubbleLayou
   let metaInline: boolean
   let extraMetaH: number
 
-  if (input.forceSeparateMeta || input.text.length === 0) {
-    // Empty text — meta on its own line
+  // The rendered quote background always spans the full content width, so an
+  // inline meta after a trailing quote block would sit on the tinted surface.
+  const lastSegmentIsQuote = segmentMeasurements.length > 0
+    && segmentMeasurements[segmentMeasurements.length - 1].isQuote
+
+  if (input.forceSeparateMeta || input.text.length === 0 || lastSegmentIsQuote) {
+    // Empty text or trailing quote — meta on its own line
     metaInline = false
     extraMetaH = TgUiTokens.MSG_META_ROW_HEIGHT
   } else if (lastLineWidth + META_INLINE_PAD + metaW <= maxContentWidth) {

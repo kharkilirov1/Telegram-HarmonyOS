@@ -283,34 +283,59 @@ export struct TgTextBodyV3 {
   }
 
   @Builder
-  buildQuoteSegment(segText: string, isCollapsed: boolean) {
+  buildQuoteSegment(segText: string, segStart: number, isCollapsed: boolean) {
     Row() {
-      // Left accent bar. height('100%') would resolve against the parent CONSTRAINT
-      // (list viewport) because the Row itself is auto-sized — matchParent resolves
-      // against the Row's final content height instead (witnessed screen-tall quotes)
+      // Left accent bar flush with the quote background edge (iOS geometry).
+      // height('100%') would resolve against the parent CONSTRAINT (list viewport)
+      // because the Row itself is auto-sized — matchParent resolves against the
+      // Row's final content height instead (witnessed screen-tall quotes)
       Column()
         .width(TgUiTokens.MSG_QUOTE_BAR_WIDTH)
         .height(LayoutPolicy.matchParent)
         .backgroundColor(this.quoteBarColor())
         .borderRadius(TgUiTokens.MSG_QUOTE_BAR_WIDTH / 2)
+        .margin({ right: TgUiTokens.MSG_QUOTE_BAR_GAP })
 
-      // Quote text
-      Text(segText)
-        .fontSize(TgUiTokens.MSG_QUOTE_TEXT_SIZE)
-        .fontWeight(FontWeight.Regular)
+      if (this.hasEntities(segStart, segText.length)) {
+        Text() {
+          ForEach(splitRichSpans(segText, segStart, this.textEntities),
+            (span: RichSpan) => {
+              Span(span.text)
+                .fontSize(span.isCode ? TgUiTokens.MSG_CODE_SIZE : TgUiTokens.MSG_QUOTE_TEXT_SIZE)
+                .fontWeight(span.isBold ? FontWeight.Bold : FontWeight.Regular)
+                .fontStyle(span.isItalic ? FontStyle.Italic : FontStyle.Normal)
+                .fontColor(span.isLink ? this.linkColor() : this.textColor())
+                .decoration({
+                  type: span.isUnderline ? TextDecorationType.Underline
+                    : (span.isStrikethrough ? TextDecorationType.LineThrough : TextDecorationType.None),
+                  color: span.isLink ? this.linkColor() : this.textColor()
+                })
+                .fontFamily(span.isCode ? 'monospace' : 'HarmonyOS Sans')
+                .textBackgroundStyle(span.isCode ? { color: this.codeBg(), radius: 4 } : undefined)
+            })
+        }
         .lineHeight(TgUiTokens.MSG_QUOTE_TEXT_LINE_HEIGHT)
-        .fontColor(this.textColor())
         .textAlign(TextAlign.Start)
         .wordBreak(WordBreak.BREAK_WORD)
         .opacity(isCollapsed ? TgUiTokens.MSG_QUOTE_COLLAPSED_OPACITY : 1.0)
+        .margin({ top: TgUiTokens.MSG_QUOTE_PADDING_V, bottom: TgUiTokens.MSG_QUOTE_PADDING_V })
         .layoutWeight(1)
+      } else {
+        Text(segText)
+          .fontSize(TgUiTokens.MSG_QUOTE_TEXT_SIZE)
+          .fontWeight(FontWeight.Regular)
+          .lineHeight(TgUiTokens.MSG_QUOTE_TEXT_LINE_HEIGHT)
+          .fontColor(this.textColor())
+          .textAlign(TextAlign.Start)
+          .wordBreak(WordBreak.BREAK_WORD)
+          .opacity(isCollapsed ? TgUiTokens.MSG_QUOTE_COLLAPSED_OPACITY : 1.0)
+          .margin({ top: TgUiTokens.MSG_QUOTE_PADDING_V, bottom: TgUiTokens.MSG_QUOTE_PADDING_V })
+          .layoutWeight(1)
+      }
     }
     .width(this.contentWidth)
     .padding({
-      left: TgUiTokens.MSG_QUOTE_BAR_GAP,
       right: TgUiTokens.MSG_QUOTE_PADDING_H,
-      top: TgUiTokens.MSG_QUOTE_PADDING_V,
-      bottom: TgUiTokens.MSG_QUOTE_PADDING_V,
     })
     .backgroundColor(this.quoteBackground())
     .borderRadius(TgUiTokens.MSG_QUOTE_RADIUS)
@@ -321,11 +346,12 @@ export struct TgTextBodyV3 {
       Column({ space: TgUiTokens.MSG_QUOTE_SEGMENT_GAP }) {
         ForEach(this.buildSegments(), (seg: TextBodySegment, idx: number) => {
           if (seg.isQuote) {
-            this.buildQuoteSegment(seg.text, seg.isCollapsed)
+            this.buildQuoteSegment(seg.text, seg.startOffset, seg.isCollapsed)
           } else {
             this.buildPlainSegment(seg.text, seg.startOffset)
           }
-        }, (seg: TextBodySegment, idx: number) => `seg_${idx}_${seg.isQuote ? 'q' : 'p'}`)
+        }, (seg: TextBodySegment, idx: number) =>
+          `seg_${idx}_${seg.isQuote ? 'q' : 'p'}_${seg.startOffset}_${seg.text.length}_${seg.isCollapsed ? 'c' : 'e'}`)
       }
       .alignItems(HorizontalAlign.Start)
     } else {

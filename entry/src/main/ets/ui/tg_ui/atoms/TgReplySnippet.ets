@@ -93,14 +93,6 @@ export struct TgReplySnippet {
     return this.isQuote ? TgUiTokens.REPLY_SNIPPET_QUOTE_MAX_PREVIEW_LINES : TgUiTokens.REPLY_SNIPPET_MAX_PREVIEW_LINES;
   }
 
-  private barHeight(): number {
-    const titleLines = 1;
-    const previewLines = this.isQuote ? 2 : 1;
-    return TgUiTokens.REPLY_SNIPPET_TITLE_LINE_HEIGHT * titleLines +
-      TgUiTokens.REPLY_SNIPPET_TEXT_GAP +
-      TgUiTokens.REPLY_SNIPPET_PREVIEW_LINE_HEIGHT * previewLines;
-  }
-
   @Builder
   private buildThumbnailSlot() {
     if (this.hasThumbnail) {
@@ -115,43 +107,44 @@ export struct TgReplySnippet {
   }
 
   build() {
-    Stack({ alignContent: Alignment.TopStart }) {
+    Row() {
+      // Accent bar flush with the snippet's left edge; matchParent tracks the
+      // real content height (title/preview wrap counts differ per state), so the
+      // stripe can never fall short of or overshoot the background box.
+      Column() {}
+        .width(TgUiTokens.REPLY_SNIPPET_BAR_WIDTH)
+        .height(LayoutPolicy.matchParent)
+        .backgroundColor(this.barColor())
+
       Row() {
-        Row() {
-          Column({ space: TgUiTokens.REPLY_SNIPPET_TEXT_GAP }) {
-            Text(this.resolvedAuthor())
-              .fontSize(TgUiTokens.REPLY_SNIPPET_TITLE_SIZE)
-              .fontWeight(TgUiTokens.REPLY_SNIPPET_TITLE_WEIGHT)
-              .lineHeight(TgUiTokens.REPLY_SNIPPET_TITLE_LINE_HEIGHT)
-              .fontColor(this.titleColor())
-              .maxLines(this.maxTitleLines())
-              .textOverflow({ overflow: TextOverflow.Ellipsis })
+        Column({ space: TgUiTokens.REPLY_SNIPPET_TEXT_GAP }) {
+          Text(this.resolvedAuthor())
+            .fontSize(TgUiTokens.REPLY_SNIPPET_TITLE_SIZE)
+            .fontWeight(TgUiTokens.REPLY_SNIPPET_TITLE_WEIGHT)
+            .lineHeight(TgUiTokens.REPLY_SNIPPET_TITLE_LINE_HEIGHT)
+            .fontColor(this.titleColor())
+            .maxLines(this.maxTitleLines())
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
 
-            Text(this.resolvedPreview())
-              .fontSize(TgUiTokens.REPLY_SNIPPET_PREVIEW_SIZE)
-              .fontWeight(TgUiTokens.REPLY_SNIPPET_PREVIEW_WEIGHT)
-              .lineHeight(TgUiTokens.REPLY_SNIPPET_PREVIEW_LINE_HEIGHT)
-              .fontColor(this.previewColor())
-              .maxLines(this.maxPreviewLines())
-              .textOverflow({ overflow: TextOverflow.Ellipsis })
-          }
-          .alignItems(HorizontalAlign.Start)
-
-          this.buildThumbnailSlot()
+          Text(this.resolvedPreview())
+            .fontSize(TgUiTokens.REPLY_SNIPPET_PREVIEW_SIZE)
+            .fontWeight(TgUiTokens.REPLY_SNIPPET_PREVIEW_WEIGHT)
+            .lineHeight(TgUiTokens.REPLY_SNIPPET_PREVIEW_LINE_HEIGHT)
+            .fontColor(this.previewColor())
+            .maxLines(this.maxPreviewLines())
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
         }
-        .alignItems(this.isQuote ? VerticalAlign.Top : VerticalAlign.Center)
+        .alignItems(HorizontalAlign.Start)
+
+        this.buildThumbnailSlot()
       }
+      .alignItems(this.isQuote ? VerticalAlign.Top : VerticalAlign.Center)
       .padding({
-        left: TgUiTokens.REPLY_SNIPPET_PADDING_H + TgUiTokens.REPLY_SNIPPET_BAR_WIDTH + TgUiTokens.REPLY_SNIPPET_BAR_GAP,
+        left: TgUiTokens.REPLY_SNIPPET_PADDING_H + TgUiTokens.REPLY_SNIPPET_BAR_GAP,
         right: TgUiTokens.REPLY_SNIPPET_PADDING_H,
         top: TgUiTokens.REPLY_SNIPPET_PADDING_V,
         bottom: TgUiTokens.REPLY_SNIPPET_PADDING_V
       })
-
-      Column() {}
-        .width(TgUiTokens.REPLY_SNIPPET_BAR_WIDTH)
-        .height(this.barHeight() + TgUiTokens.REPLY_SNIPPET_PADDING_V * 2)
-        .backgroundColor(this.barColor())
     }
     .constraintSize({
       maxWidth: this.maxSnippetWidth()

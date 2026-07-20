@@ -295,6 +295,49 @@ export default function messageDtoParserTest() {
         expect(dto.editDate).assertEqual(1700000000);
       });
 
+      it('parses textQuote text and position from messageReplyToMessage', 0, () => {
+        const dto = createMessageDtoFromTd(TdObject.fromJSON(
+          '{"@type":"message","id":99,"chat_id":10,"date":1,' +
+            '"reply_to":{"@type":"messageReplyToMessage","chat_id":10,"message_id":7,' +
+            '"quote":{"@type":"textQuote","text":{"@type":"formattedText",' +
+            '"text":"quoted fragment","entities":[]},"position":12,"is_manual":true}},' +
+            '"content":{"@type":"messageText","text":{"@type":"formattedText",' +
+            '"text":"Answer","entities":[]}}}'
+        ));
+
+        expect(dto.replyIsQuote).assertTrue();
+        expect(dto.replyQuoteText).assertEqual('quoted fragment');
+        expect(dto.replyQuoteOffset).assertEqual(12);
+      });
+
+      it('keeps position 0 as a valid textQuote start instead of the -1 sentinel', 0, () => {
+        const dto = createMessageDtoFromTd(TdObject.fromJSON(
+          '{"@type":"message","id":99,"chat_id":10,"date":1,' +
+            '"reply_to":{"@type":"messageReplyToMessage","chat_id":10,"message_id":7,' +
+            '"quote":{"@type":"textQuote","text":{"@type":"formattedText",' +
+            '"text":"lead quote","entities":[]},"is_manual":true}},' +
+            '"content":{"@type":"messageText","text":{"@type":"formattedText",' +
+            '"text":"Answer","entities":[]}}}'
+        ));
+
+        expect(dto.replyIsQuote).assertTrue();
+        expect(dto.replyQuoteText).assertEqual('lead quote');
+        expect(dto.replyQuoteOffset).assertEqual(0);
+      });
+
+      it('reports no quote for a plain reply', 0, () => {
+        const dto = createMessageDtoFromTd(TdObject.fromJSON(
+          '{"@type":"message","id":99,"chat_id":10,"date":1,' +
+            '"reply_to":{"@type":"messageReplyToMessage","chat_id":10,"message_id":7},' +
+            '"content":{"@type":"messageText","text":{"@type":"formattedText",' +
+            '"text":"Answer","entities":[]}}}'
+        ));
+
+        expect(dto.replyIsQuote).assertFalse();
+        expect(dto.replyQuoteText).assertEqual('');
+        expect(dto.replyQuoteOffset).assertEqual(-1);
+      });
+
       it('preserves relation chat id independently from the returned original chat', 0, () => {
         const dto = createMessageDtoFromTd(TdObject.fromJSON(
           '{"@type":"message","id":100,"chat_id":10,"date":1,' +

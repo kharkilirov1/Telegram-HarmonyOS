@@ -1,6 +1,21 @@
 # LESSONS — repeated mistakes and project-specific pitfalls
 
-Last updated: 2026-07-19
+Last updated: 2026-07-21
+
+## 109. Git Bash молча конвертирует абсолютные аргументы hdc в C:/Program Files/Git/…
+- Repro: `aa test … -s unittest /ets/testrunner/OpenHarmonyTestRunner` из Git Bash умирал с `Cannot find module '…entry_testC:/Program Files/Git/ets/testrunner/…'` («App died»), а `hdc file recv /data/local/tmp/x.png` падал с «no such file or directory, path:C:/Program Files/Git/data/…» — MSYS переписывает всё, что похоже на POSIX-путь.
+- Fix: префикс `MSYS_NO_PATHCONV=1` для ЛЮБОЙ hdc-команды с remote-путями (`shell aa test`, `shell uitest dumpLayout -p`, `file recv/send`). Рецепт on-device раннера из урока 67 работает из Git Bash только с этим флагом.
+- Также: перед инструментальным `aa test` нужен `aa force-stop` — живой процесс приложения даёт тот же «App died» без jscrash-подсказки.
+
+## 108. Рендер-атом и measurement-движок дублируют геометрию — дрейф не ловится компилятором
+- В паре TgReplySnippet/TgBubbleLayout полоса бара жёстко считала «1 тайтл + 2 превью», пока maxLines разрешали 2+3; ширина сниппета повторно умножалась на bubble-ratio поверх уже ужатой движком ширины (на regular-ширинах — до 0.42×). Оба дефекта невидимы для сборки и smoke.
+- Правило: у каждого числа в атоме (высота, inset, ratio) должен быть ровно один владелец. Полосы/фоны, обязанные совпадать с контентом переменной высоты, — только `LayoutPolicy.matchParent` (паттерн quote-бара, урок про height('100%') остаётся в силе); ширины, уже посчитанные движком, передавать с `maxWidthRatio: 1.0`, а не давать атому «улучшать» их дефолтным ratio.
+- При любом изменении атома сверять его констант-лист с соответствующим measure* в TgBubbleLayout; расхождение — дефект, даже если «на глаз похоже».
+
+## 107. Компайл-гейт ohosTest маскирует красноту до первого настоящего прогона
+- Первый полный on-device прогон после серии срезов 18–19 июля: 580 тестов и ДВЕ незадокументированные красноты (gallery-refresh читал `sourceMessageId` без фолбэка) поверх двух известных. Все срезы при этом были «зелёными» по OhosTestCompileArkTS.
+- Правило из урока 67 усилено: после каждого пласта, трогающего core/domain/VO, гонять сьют на устройстве, а не только компилировать; «known failures» фиксировать поимённо в STATUS, чтобы новый фейл был отличим от фонового.
+- Литералы UI-строк в гвардах — мина: `refreshRestoredReplySnippet` сравнивал с literal `'Message'`, тогда как источник ставит локализованное значение — ветка мертва во всех локалях, кроме английской. Гвард и источник обязаны брать одну и ту же локализованную константу.
 
 ## 106. A grouped-media row has two identities: the album container and the tapped member
 - Telegram collapses several TDLib messages into one visual row, but selection, refresh and spatial transition belong to the exact member. Give every cell a stable real-or-synthetic member identity, attach `geometryTransition` to that cell, and hide only the active cell; binding the primary row id to the whole mosaic creates a smooth but spatially false morph.

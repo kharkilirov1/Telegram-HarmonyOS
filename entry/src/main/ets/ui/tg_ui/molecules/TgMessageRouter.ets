@@ -901,6 +901,7 @@ export struct TgMessageRouter {
       captionQuoteOffsets: this.captionQuoteOffsets,
       captionQuoteLengths: this.captionQuoteLengths,
       captionQuoteCollapsedFlags: this.captionQuoteCollapsedFlags,
+      captionEntities: this.captionEntities,
       photoPath: this.photoPath,
       photoMinithumb: this.photoMinithumb,
       photoFileId: this.photoFileId,
@@ -1098,7 +1099,10 @@ export struct TgMessageRouter {
               accentHex: this.replyAuthorColorHex,
               hasThumbnail: this.replyHasThumbnail,
               thumbnailSrc: this.replyThumbnailSrc,
-              containerWidth: this.maxBubbleWidth()
+              // maxBubbleWidth() is already ratio-capped; the parent constrains
+              // the snippet — a second ratio here would squeeze it further.
+              containerWidth: this.maxBubbleWidth(),
+              maxWidthRatio: 1.0
             })
               .margin({ bottom: TgUiTokens.SPACE_4 })
               .onClick(() => {
@@ -1363,7 +1367,8 @@ export struct TgMessageRouter {
                 accentHex: this.replyAuthorColorHex,
                 hasThumbnail: this.replyHasThumbnail,
                 thumbnailSrc: this.replyThumbnailSrc,
-                containerWidth: this.maxBubbleWidth()
+                containerWidth: this.maxBubbleWidth(),
+                maxWidthRatio: 1.0
               })
             }
             .onClick(() => {

@@ -493,9 +493,15 @@ export function createMessageDtoFromTd(tdMessage: TdObject): MessageDto {
   const quoteObjText = tdGetString(quoteObj, 'text');
   const quoteText = tdGetString(replyTo, 'quote_text');
   const resolvedQuoteText = quoteText.length > 0 ? quoteText : quoteObjText;
-  const quoteOffset = tdGetNumber(replyTo, 'quote_offset');
+  // Current TDLib carries the position inside textQuote (`quote.position`,
+  // omitted when 0); legacy payloads used a flat `quote_offset`. Position 0
+  // is a valid quote start and must not collapse to the -1 sentinel.
+  const legacyQuoteOffset = tdGetNumber(replyTo, 'quote_offset');
+  const quotePosition = tdHasKeys(quoteObj)
+    ? tdGetNumber(quoteObj, 'position')
+    : (legacyQuoteOffset > 0 ? legacyQuoteOffset : -1);
   messageDto.replyQuoteText = resolvedQuoteText;
-  messageDto.replyQuoteOffset = quoteOffset > 0 ? quoteOffset : -1;
+  messageDto.replyQuoteOffset = resolvedQuoteText.length > 0 ? quotePosition : -1;
   messageDto.replyIsQuote = tdGetBoolean(replyTo, 'quote') || tdHasKeys(quoteObj) || resolvedQuoteText.length > 0;
 
   return messageDto;

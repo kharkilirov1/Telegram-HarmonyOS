@@ -2789,6 +2789,26 @@
       "value": "转发"
     },
     {
+      "name": "action_reply",
+      "value": "回复"
+    },
+    {
+      "name": "action_edit",
+      "value": "编辑"
+    },
+    {
+      "name": "action_copy",
+      "value": "复制"
+    },
+    {
+      "name": "action_pin",
+      "value": "置顶"
+    },
+    {
+      "name": "action_delete",
+      "value": "删除"
+    },
+    {
       "name": "emoji_category_smileys",
       "value": "表情与情感"
     },

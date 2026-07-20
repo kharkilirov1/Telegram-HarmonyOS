@@ -20,6 +20,12 @@ function isSameGalleryItem(previous: MediaGalleryItem, next: MediaGalleryItem): 
     previous.type === next.type;
 }
 
+// Builders keep sourceMessageId populated, but an empty value must not leak an
+// empty geometryTransition id — the member message id is the safe identity.
+function galleryTransitionSourceId(item: MediaGalleryItem): string {
+  return item.sourceMessageId.length > 0 ? item.sourceMessageId : item.messageId;
+}
+
 export function resolveRefreshedMediaGalleryState(previousItems: MediaGalleryItem[], previousIndex: number,
   nextItems: MediaGalleryItem[]): MediaGalleryRefreshResult {
   const result = new MediaGalleryRefreshResult();
@@ -36,13 +42,13 @@ export function resolveRefreshedMediaGalleryState(previousItems: MediaGalleryIte
     for (let i = 0; i < nextItems.length; i++) {
       if (isSameGalleryItem(previousItem, nextItems[i])) {
         result.currentIndex = i;
-        result.sourceMessageId = nextItems[i].sourceMessageId;
+        result.sourceMessageId = galleryTransitionSourceId(nextItems[i]);
         return result;
       }
     }
   }
 
   result.currentIndex = clampGalleryIndex(previousIndex, nextItems.length);
-  result.sourceMessageId = nextItems[result.currentIndex].sourceMessageId;
+  result.sourceMessageId = galleryTransitionSourceId(nextItems[result.currentIndex]);
   return result;
 }

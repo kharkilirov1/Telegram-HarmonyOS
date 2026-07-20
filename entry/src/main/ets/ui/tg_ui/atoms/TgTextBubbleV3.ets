@@ -140,7 +140,10 @@ export struct TgTextBubbleV3 {
         accentHex: this.replyAuthorColorHex,
         hasThumbnail: this.replyHasThumbnail,
         thumbnailSrc: this.replyThumbnailSrc,
+        // The engine already shrink-wrapped the bubble; re-applying the bubble
+        // ratio here would clip the snippet below the reserved content width.
         containerWidth: this.layout?.bubbleWidth ?? this.containerWidth,
+        maxWidthRatio: 1.0,
       })
         .margin({ bottom: TgUiTokens.SPACE_4 })
         .onClick(() => this.onReplyTap())
