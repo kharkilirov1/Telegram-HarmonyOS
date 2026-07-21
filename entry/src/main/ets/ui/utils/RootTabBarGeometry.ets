@@ -29,11 +29,20 @@ export const ROOT_SEARCH_DOCK_IDLE_WIDTH: number = ROOT_TAB_BAR_VISIBLE_HEIGHT;
 export const ROOT_SEARCH_DOCK_GAP: number = 16;
 export const ROOT_SEARCH_DOCK_FALLBACK_CONTAINER_WIDTH: number = 436;
 
-export function resolveRootTabBarRenderState(selectedIndex: number,
+export const ROOT_TAB_BAR_TRANSITION_SHOW_MS: number = 220;
+export const ROOT_TAB_BAR_TRANSITION_HIDE_MS: number = 180;
+// Accumulated same-direction scroll (vp) required before the island reacts —
+// keeps micro-jitters and bounce from toggling the bar.
+export const ROOT_TAB_BAR_AUTO_HIDE_THRESHOLD: number = 24;
+
+export function isRootTabBarHidden(selectedIndex: number,
   chatScreenVisible: boolean, keyboardVisible: boolean = false,
-  keepVisibleForKeyboard: boolean = false): RootTabBarRenderState {
-  const hidden = (selectedIndex === 2 && chatScreenVisible) ||
+  keepVisibleForKeyboard: boolean = false): boolean {
+  return (selectedIndex === 2 && chatScreenVisible) ||
     (keyboardVisible && !keepVisibleForKeyboard);
+}
+
+export function resolveRootTabBarRenderStateFromHidden(hidden: boolean): RootTabBarRenderState {
   if (hidden) {
     return {
       overlap: false,
@@ -50,6 +59,13 @@ export function resolveRootTabBarRenderState(selectedIndex: number,
     opacity: 1,
     maskHeight: ROOT_TAB_BAR_BACKPLATE_MASK_HEIGHT
   };
+}
+
+export function resolveRootTabBarRenderState(selectedIndex: number,
+  chatScreenVisible: boolean, keyboardVisible: boolean = false,
+  keepVisibleForKeyboard: boolean = false): RootTabBarRenderState {
+  return resolveRootTabBarRenderStateFromHidden(isRootTabBarHidden(
+    selectedIndex, chatScreenVisible, keyboardVisible, keepVisibleForKeyboard));
 }
 
 export function resolveRootSearchDockGeometry(containerWidth: number): RootSearchDockGeometry {

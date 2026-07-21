@@ -2,6 +2,16 @@
 
 Last updated: 2026-07-21
 
+## 110. hdc install печатает «AppMod finish» и при ПРОВАЛЕ установки
+- Repro: диск эмулятора заполнился (HAP вырос до 158MB из-за вендоренного нативного слоя) → `install failed due to insufficient disk memory. code:9568288`, но следом всё равно печатается `AppMod finish`. Усечённый `| tail -1` показывал только его — цепочка build→install→force-stop→start выглядела зелёной, а рантайм крутил СТАРЫЙ код: новые логи не появлялись, хотя строка была в собранном `modules.abc`.
+- Диагностическая лестница, которая сработала: лог отсутствует → grep строки в built HAP/abc (строка есть) → значит стейл-рантайм → полный вывод install → ошибка места.
+- Правила: (1) успех установки = grep «install bundle successfully», не «AppMod finish»; (2) при «фикс не проявился» первым делом сверять, что артефакт ДОЕХАЛ (строка-маркер в abc + успешный install), лишь потом дебажить код; (3) держать `/data/local/tmp` чистым — витнесс-артефакты прошлых сессий съели место.
+
+## 111. Скролл-колбэки List получают и не-жестовые кадры
+- `onScrollFrameBegin` стреляет и на layout/data-шторм кадрах при холодной синхронизации (прилетают с положительным offset) — авто-скрытие острова срабатывало без единого касания. Фильтр: реагировать только на `ScrollState.Scroll | Fling`.
+- Паттерн «адаптивный бар»: дочерняя страница шлёт latch-free события по гистерезису (24vp аккумулированного направления), хост дедуплицирует против своего состояния и владеет guards/сбросами (поиск, сплит, вход в чат, смена таба). Латч на стороне отправителя рассинхронизируется с принудительными показами хоста.
+- Анимируемость: свод всех входов в один `@Local`, меняемый внутри `animateTo` (`@Local`-ссылка на `@ObservedV2`-синглтон + `@Monitor('field.path')` — документированный паттерн) — дал анимированный hide/show нативного `HdsTabs` без кастомного рендера бара.
+
 ## 109. Git Bash молча конвертирует абсолютные аргументы hdc в C:/Program Files/Git/…
 - Repro: `aa test … -s unittest /ets/testrunner/OpenHarmonyTestRunner` из Git Bash умирал с `Cannot find module '…entry_testC:/Program Files/Git/ets/testrunner/…'` («App died»), а `hdc file recv /data/local/tmp/x.png` падал с «no such file or directory, path:C:/Program Files/Git/data/…» — MSYS переписывает всё, что похоже на POSIX-путь.
 - Fix: префикс `MSYS_NO_PATHCONV=1` для ЛЮБОЙ hdc-команды с remote-путями (`shell aa test`, `shell uitest dumpLayout -p`, `file recv/send`). Рецепт on-device раннера из урока 67 работает из Git Bash только с этим флагом.

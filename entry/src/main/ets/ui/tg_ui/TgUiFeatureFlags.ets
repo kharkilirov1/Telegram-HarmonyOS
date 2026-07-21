@@ -12,4 +12,9 @@ export class TgUiFeatureFlags {
   // API 26+ may render the custom Telegram composer with native immersive
   // material. API 23-25 stay on the accepted adaptive-blur fallback.
   static readonly USE_NATIVE_IMMERSIVE_COMPOSER_MATERIAL: boolean = true;
+
+  // Root island auto-hides while the chat list scrolls down and returns on
+  // scroll up. Planned to become a user-facing Settings toggle once real
+  // settings storage exists (user decision 2026-07-21).
+  static readonly USE_ROOT_BAR_AUTO_HIDE_ON_SCROLL: boolean = true;
 }

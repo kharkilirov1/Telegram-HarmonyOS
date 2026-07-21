@@ -27,6 +27,7 @@ import {
   removeWindowSizeListener
 } from '../../utils/SafeAreaUtils';
 import { ROOT_TAB_BAR_FALLBACK_CONTENT_INSET } from '../../utils/RootTabBarGeometry';
+import { ROOT_TAB_BAR_AUTO_HIDE_THRESHOLD } from '../../utils/RootTabBarGeometry';
 import { resolveChatHostTopInset } from '../../utils/ChatSplitGeometry';
 import { PendingChatUnreadSnapshot } from '../chat/PendingChatUnreadSnapshot';
 import { ComposeResult, ComposeRouteParams } from '../compose/TgComposePage';
@@ -91,6 +92,7 @@ export struct ChatListPage {
   @Event onSearchQueryChange: (value: string) => void = (_: string): void => {};
   @Event onSearchDeactivate: () => void = (): void => {};
   @Event onHeaderSearchWillFocus: () => void = (): void => {};
+  @Event onRootBarAutoHide: (hidden: boolean) => void = (_: boolean): void => {};
 
   // Reactive state from @ObservedV2 model (replaces @StorageLink)
   private chatsState = chatsUIState;
@@ -111,6 +113,7 @@ export struct ChatListPage {
 
   private dataSource: ChatListDataSource = new ChatListDataSource();
   private chatListScroller: Scroller = new Scroller();
+  private rootBarAutoHideAccum: number = 0;
   private headerCollapseOffset: number = 0;
   private lastVisibleListEndIndex: number = -1;
   private unsubscribe?: () => void;
@@ -706,6 +709,36 @@ export struct ChatListPage {
       this.rebuildList(getAppCoreRuntime().getStore().getState());
     } catch (error) {
       hilog.error(DOMAIN, TAG, 'Filter rebuild failed: %{public}s', String(error));
+    }
+  }
+
+  // Deliberately latch-free: the host may force-show the island (return from
+  // chat, search activation), so every threshold crossing re-emits and the
+  // host deduplicates against its own state.
+  private emitRootBarAutoHide(hidden: boolean): void {
+    this.rootBarAutoHideAccum = 0;
+    this.onRootBarAutoHide(hidden);
+  }
+
+  // Direction hysteresis: only an accumulated same-direction run of
+  // ROOT_TAB_BAR_AUTO_HIDE_THRESHOLD vp flips the island, so bounce and
+  // micro-jitter never toggle it. onReachStart force-shows at the top.
+  private trackRootBarAutoHide(frameOffset: number): void {
+    if (!TgUiFeatureFlags.USE_ROOT_BAR_AUTO_HIDE_ON_SCROLL || this.hasActiveSearch()) {
+      return;
+    }
+    if (frameOffset > 0) {
+      this.rootBarAutoHideAccum = Math.max(0, this.rootBarAutoHideAccum) + frameOffset;
+      if (this.rootBarAutoHideAccum >= ROOT_TAB_BAR_AUTO_HIDE_THRESHOLD) {
+        this.emitRootBarAutoHide(true);
+      }
+      return;
+    }
+    if (frameOffset < 0) {
+      this.rootBarAutoHideAccum = Math.min(0, this.rootBarAutoHideAccum) + frameOffset;
+      if (this.rootBarAutoHideAccum <= -ROOT_TAB_BAR_AUTO_HIDE_THRESHOLD) {
+        this.emitRootBarAutoHide(false);
+      }
     }
   }
 
@@ -1425,8 +1458,13 @@ export struct ChatListPage {
       .edgeEffect(EdgeEffect.Spring)
       .contentStartOffset(this.chatListTopBarTotalHeight())
       .contentEndOffset(this.listBottomInset)
-      .onScrollFrameBegin((offset: number, _state: ScrollState) => {
+      .onScrollFrameBegin((offset: number, state: ScrollState) => {
         this.updateSearchCollapseProgress(offset);
+        // Layout/data-storm adjustments arrive as Idle frames — only a real
+        // drag or fling may auto-hide the island (witnessed startup self-hide).
+        if (state === ScrollState.Scroll || state === ScrollState.Fling) {
+          this.trackRootBarAutoHide(offset);
+        }
         return { offsetRemain: offset };
       })
       .onScrollIndex((_start: number, end: number) => {
@@ -1435,6 +1473,7 @@ export struct ChatListPage {
       .onReachStart(() => {
         this.headerCollapseOffset = 0;
         this.searchCollapseProgress = 0;
+        this.emitRootBarAutoHide(false);
       })
       } // end Refresh content
       .onRefreshing(() => {

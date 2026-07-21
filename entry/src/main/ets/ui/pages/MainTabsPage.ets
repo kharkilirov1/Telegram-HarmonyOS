@@ -12,7 +12,7 @@ import { ContactsPage } from './contacts/ContactsPage';
 import { CallsPage } from './calls/CallsPage';
 import { SettingsPage } from './settings/SettingsPage';
 import { StorageKeys } from '../../app/bridge/AppStoreBridge';
-import { navigationUIState, chatsUIState } from '../../core/model/UIStateModels';
+import { navigationUIState, chatsUIState, NavigationUIState } from '../../core/model/UIStateModels';
 import { localized } from '../../core/utils/AppResource';
 import { TgUiTokens } from '../tg_ui/tokens/TgUiTokens';
 import { TgUiFeatureFlags } from '../tg_ui/TgUiFeatureFlags';
@@ -21,10 +21,13 @@ import { TgRootSearchDock } from '../tg_ui/atoms/TgRootSearchDock';
 import { TgChatSplitPlaceholder } from '../tg_ui/atoms/TgChatSplitPlaceholder';
 import { resolveChatSplitGeometry } from '../utils/ChatSplitGeometry';
 import {
+  isRootTabBarHidden,
   resolveRootSearchDockGeometry,
-  resolveRootTabBarRenderState,
+  resolveRootTabBarRenderStateFromHidden,
   RootSearchDockGeometry,
-  RootTabBarRenderState
+  RootTabBarRenderState,
+  ROOT_TAB_BAR_TRANSITION_HIDE_MS,
+  ROOT_TAB_BAR_TRANSITION_SHOW_MS
 } from '../utils/RootTabBarGeometry';
 import {
   bleedIconStyle,
@@ -65,7 +68,9 @@ export struct MainTabsPage {
   @Local private chatListSearchClosing: boolean = false;
   @Local private chatListSearchFocusPending: boolean = false;
   @Local private chatListSearchFocusRevision: number = 0;
-  private navState = navigationUIState;
+  @Local private navState: NavigationUIState = navigationUIState;
+  @Local private rootBarHidden: boolean = false;
+  @Local private rootBarScrollHidden: boolean = false;
   private chatsState = chatsUIState;
   private rootSearchTransitionTimerId: number = -1;
   private callsFilterItems: SegmentButtonV2Items = new SegmentButtonV2Items([
@@ -81,12 +86,65 @@ export struct MainTabsPage {
   private controller: HdsTabsController = new HdsTabsController();
 
   private rootTabBarRenderState(): RootTabBarRenderState {
-    return resolveRootTabBarRenderState(
+    return resolveRootTabBarRenderStateFromHidden(this.rootBarHidden);
+  }
+
+  private desiredRootBarHidden(): boolean {
+    const scrollHidden = TgUiFeatureFlags.USE_ROOT_BAR_AUTO_HIDE_ON_SCROLL &&
+      this.rootBarScrollHidden &&
+      this.selectedIndex === 2 &&
+      this.chatNavigationMode !== NavigationMode.Split &&
+      !this.chatListSearchActive && !this.chatListSearchClosing;
+    return scrollHidden || isRootTabBarHidden(
       this.selectedIndex,
       this.chatNavigationMode === NavigationMode.Split ? false : this.navState.chatScreenVisible,
       this.keyboardVisible,
       this.chatListSearchActive || this.chatListSearchClosing
     );
+  }
+
+  @Monitor('navState.chatScreenVisible', 'keyboardVisible', 'selectedIndex', 'chatNavigationMode',
+    'chatListSearchActive', 'chatListSearchClosing')
+  private onRootBarInputsChanged(_monitor: IMonitor): void {
+    // Entering a chat, leaving the Chats tab or opening Search drops the
+    // scroll-hidden latch, so the island is visible again afterwards.
+    if (this.navState.chatScreenVisible || this.selectedIndex !== 2 || this.chatListSearchActive) {
+      this.rootBarScrollHidden = false;
+    }
+    this.syncRootBarHidden(true);
+  }
+
+  private handleRootBarAutoHide(hidden: boolean): void {
+    if (this.rootBarScrollHidden === hidden) {
+      return;
+    }
+    this.rootBarScrollHidden = hidden;
+    this.syncRootBarHidden(true);
+  }
+
+  // The island used to vanish in one frame: every input was bound directly
+  // into HdsTabs attributes as a 0/1 step. Funnel all inputs through a single
+  // flag whose change runs inside animateTo, so hide/show follows the shared
+  // glass motion policy instead of a step change.
+  private syncRootBarHidden(animated: boolean): void {
+    const desired = this.desiredRootBarHidden();
+    if (desired === this.rootBarHidden) {
+      return;
+    }
+    if (!animated) {
+      this.rootBarHidden = desired;
+      return;
+    }
+    try {
+      this.getUIContext().animateTo({
+        duration: desired ? ROOT_TAB_BAR_TRANSITION_HIDE_MS : ROOT_TAB_BAR_TRANSITION_SHOW_MS,
+        curve: desired ? Curve.EaseIn : Curve.EaseOut
+      }, () => {
+        this.rootBarHidden = desired;
+      });
+    } catch (_error) {
+      this.rootBarHidden = desired;
+    }
   }
 
   private rootTabBarOpacity(): number {
@@ -288,6 +346,7 @@ export struct MainTabsPage {
     AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
     this.navState.chatScreenVisible = false;
     this.controller.changeIndex(this.selectedIndex);
+    this.syncRootBarHidden(false);
     hilog.info(DOMAIN, TAG, 'MainTabsPage appeared with tab index: %{public}d', this.selectedIndex);
   }
 
@@ -545,6 +604,9 @@ export struct MainTabsPage {
             },
             onKeyboardVisibilityChange: (visible: boolean): void => {
               this.keyboardVisible = visible;
+            },
+            onRootBarAutoHide: (hidden: boolean): void => {
+              this.handleRootBarAutoHide(hidden);
             }
           })
         }
