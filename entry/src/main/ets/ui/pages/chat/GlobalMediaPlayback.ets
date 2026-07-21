@@ -7,6 +7,15 @@ import {
   MediaPlaybackSnapshot,
   MediaContentType
 } from './VoicePlaybackController';
+import {
+  SearchChatMessagesUseCase,
+  createSearchChatMessagesUseCase
+} from '../../../domain/usecases/searchChatMessages';
+import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const DOMAIN = 0x0020;
+const TAG = 'GlobalMediaPlayback';
 
 @ObservedV2
 export class MediaPlaybackUIState {
@@ -65,8 +74,54 @@ export class GlobalMediaPlayback {
     this.controller.setOnCompleted((messageId: string, contentType: MediaContentType): void => {
       if (this.pageCompleted) {
         this.pageCompleted(messageId, contentType);
+        return;
+      }
+      // No chat page alive — keep the music playlist going globally. Voice
+      // auto-advance stays page-only: it also marks rows as listened, which
+      // needs the page's timeline state.
+      if (contentType === 'audio') {
+        this.playNextAudio().catch((_error: Object) => {});
       }
     });
+  }
+
+  private searchUseCase?: SearchChatMessagesUseCase;
+
+  private ensureSearchUseCase(): SearchChatMessagesUseCase {
+    if (!this.searchUseCase) {
+      this.searchUseCase = createSearchChatMessagesUseCase(getTdGatewayAdapter());
+    }
+    return this.searchUseCase;
+  }
+
+  // Island ⏭ and out-of-chat auto-advance: play the next (newer) audio of the
+  // same chat, downloading it first when needed. Returns false at playlist end.
+  async playNextAudio(): Promise<boolean> {
+    const chatId = this.metaChatId !== 0 ? this.metaChatId : mediaPlaybackUIState.chatId;
+    const messageId = mediaPlaybackUIState.messageId;
+    hilog.debug(DOMAIN, TAG,
+      `playNextAudio: chat=${chatId} anchor=${messageId} type=${mediaPlaybackUIState.contentType}`);
+    if (chatId === 0 || messageId === '0' || mediaPlaybackUIState.contentType !== 'audio') {
+      return false;
+    }
+    const useCase = this.ensureSearchUseCase();
+    const track = await useCase.findNextAudioNewer(chatId, messageId);
+    if (!track) {
+      hilog.debug(DOMAIN, TAG, 'playNextAudio: no newer track');
+      return false;
+    }
+    hilog.debug(DOMAIN, TAG,
+      `playNextAudio: next=${track.messageId} file=${track.fileId} local=${track.localPath.length > 0}`);
+    const path = track.localPath.length > 0
+      ? track.localPath
+      : await useCase.downloadAudioSync(track.fileId);
+    if (path.length === 0) {
+      return false;
+    }
+    const title = track.title.length > 0 ? track.title : this.metaTitle;
+    this.setNowPlaying(title, track.performer, chatId);
+    await this.controller.toggle(track.messageId, path, 'audio');
+    return true;
   }
 
   controllerRef(): MediaPlaybackController {

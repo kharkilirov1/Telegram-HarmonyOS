@@ -14,10 +14,14 @@ export struct TgRootMiniPlayer {
   @Param progress: number = 0;
   @Param collapsed: boolean = false;
   @Param stopLabel: string = 'Stop';
+  // Music-bar pattern (native Music app): a skip-next control inside the bar.
+  @Param showNext: boolean = false;
 
   @Event onTogglePlay: () => void = (): void => {};
   @Event onExpandRequest: () => void = (): void => {};
   @Event onStop: () => void = (): void => {};
+  @Event onNext: () => void = (): void => {};
+  @Event onBodyTap: () => void = (): void => {};
 
   private clampedProgress(): number {
     return Math.max(0, Math.min(1, this.progress));
@@ -45,6 +49,24 @@ export struct TgRootMiniPlayer {
       }
       this.onTogglePlay();
     })
+  }
+
+  @Builder
+  private buildNextAction() {
+    Stack({ alignContent: Alignment.Center }) {
+      TgIcon({
+        src: TgUiTokens.ICON_RES_SKIP_NEXT,
+        iconSize: TgUiTokens.CHAT_TOP_BAR_ACTION_ICON_SIZE,
+        tintColor: TgUiTokens.COLOR_TEXT_TITLE
+      })
+    }
+    .width(ROOT_SEARCH_DOCK_CONTROL_SIZE)
+    .height(ROOT_SEARCH_DOCK_CONTROL_SIZE)
+    .accessibilityGroup(true)
+    .accessibilityLevel('yes')
+    .accessibilityRole(AccessibilityRoleType.BUTTON)
+    .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.92 })
+    .onClick(() => this.onNext())
   }
 
   @Builder
@@ -88,7 +110,11 @@ export struct TgRootMiniPlayer {
         }
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Start)
+        .onClick(() => this.onBodyTap())
 
+        if (this.showNext) {
+          this.buildNextAction()
+        }
         this.buildStopAction()
       }
       .width('100%')

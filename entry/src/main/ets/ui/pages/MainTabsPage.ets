@@ -20,6 +20,7 @@ import { TgRootTabUnreadBadge } from '../tg_ui/atoms/TgRootTabUnreadBadge';
 import { TgRootSearchDock } from '../tg_ui/atoms/TgRootSearchDock';
 import { TgRootMiniPlayer } from '../tg_ui/atoms/TgRootMiniPlayer';
 import { globalMediaPlayback, mediaPlaybackUIState, MediaPlaybackUIState } from './chat/GlobalMediaPlayback';
+import { PendingJumpSignal } from './chat/PendingJumpSignal';
 import { TgChatSplitPlaceholder } from '../tg_ui/atoms/TgChatSplitPlaceholder';
 import { resolveChatSplitGeometry } from '../utils/ChatSplitGeometry';
 import {
@@ -76,6 +77,9 @@ export struct MainTabsPage {
   @Local private rootBarScrollHidden: boolean = false;
   @Local private playback: MediaPlaybackUIState = mediaPlaybackUIState;
   @Local private playerUserCollapsed: boolean = false;
+  // Island player body-tap → ChatListPage.openChat bridge (tick + payload).
+  @Local private islandOpenChatTick: number = 0;
+  @Local private islandOpenChatId: number = 0;
   // True only after applyMiniBarStyle(EXPAND) ran on a visible bar; reset
   // whenever the bar hides so a re-shown bar always mounts COLLAPSE and the
   // expand transaction has a real delta to animate (see rootIslandMiniBar).
@@ -281,8 +285,15 @@ export struct MainTabsPage {
       isPlaying: this.playback.isPlaying,
       progress: this.playback.progress,
       collapsed: this.playerUserCollapsed,
+      showNext: this.playback.contentType === 'audio',
       onTogglePlay: (): void => {
         globalMediaPlayback.toggleCurrent().catch((_error: Object) => {});
+      },
+      onNext: (): void => {
+        globalMediaPlayback.playNextAudio().catch((_error: Object) => {});
+      },
+      onBodyTap: (): void => {
+        this.openPlayingMessage();
       },
       onExpandRequest: (): void => {
         this.playerUserCollapsed = false;
@@ -293,6 +304,23 @@ export struct MainTabsPage {
         globalMediaPlayback.stop().catch((_error: Object) => {});
       }
     })
+  }
+
+  // Body tap on the island player: open the chat jumped to the playing
+  // message (voice AND audio for now — the v3 morph card will take over the
+  // audio case). Opening a chat is ChatListPage's ritual (active-chat state
+  // triple, unread snapshot, requestOpenChatData) — a bare push renders the
+  // split placeholder instead — so the tap only sets the jump signal and
+  // ticks the bridge param; the live ChatListPage runs its own openChat.
+  private openPlayingMessage(): void {
+    const chatId = this.playback.chatId;
+    const messageId = this.playback.messageId;
+    if (chatId === 0 || messageId === '0' || this.navState.chatScreenVisible) {
+      return;
+    }
+    PendingJumpSignal.set(chatId, messageId);
+    this.islandOpenChatId = chatId;
+    this.islandOpenChatTick += 1;
   }
 
   private handlePlayerBarStyleChange(miniBarStyle: HdsBarStyle, mode: HdsTabsBarChangeMode): void {
@@ -752,6 +780,8 @@ export struct MainTabsPage {
         Navigation(this.chatListNavStack) {
           ChatListPage({
             chatDetailStack: this.chatDetailNavStack,
+            islandOpenChatTick: this.islandOpenChatTick,
+            islandOpenChatId: this.islandOpenChatId,
             searchQuery: this.chatListSearchQuery,
             onSearchQueryChange: (value: string): void => {
               this.updateChatListSearchQuery(value);

@@ -2,7 +2,15 @@
 
 Snapshot date: 2026-07-22 (target API 26; live runtime floor API 23)
 
-## Latest (2026-07-22) — остров-мини-плеер (срез 3/3), авто-мини выключен
+## Latest (2026-07-22, вечер) — Island Player Suite v1: полоса по паттерну Музыки
+
+- **⏭ для музыки в острове:** `TgRootMiniPlayer` получил skip-next (новая иконка `ic_skip_next`), показывается только для `contentType==='audio'`. Глобальный next в `GlobalMediaPlayback.playNextAudio()`: `searchChatMessages(from='0', filter=Audio, limit=100)` → ближайший новее якоря → при нужде блокирующий `downloadFile(synchronous=true)` → toggle. Тот же метод подхватывает auto-advance аудио, когда страница чата мертва (раньше completed вне чата глох). Конец плейлиста = честный no-op.
+- **Тап тела плеера → прыжок к играющему сообщению** (voice и audio; в v3 audio заберёт морф-карточка): `PendingJumpSignal` + tick-мост `islandOpenChatTick/Id` из MainTabsPage в живой ChatListPage, который выполняет свой полный `openChat`-ритуал. Голый `pushPathByName` из таб-страницы рендерит сплит-плейсхолдер «Чат не выбран» — открывать чаты можно только ритуалом ChatListPage (активный чат в трёх стейтах + unread-снапшот + requestOpenChatData).
+- **Витнессы (канал «Ремиксы | Gold», API23):** остров с музыкой `[⏸ Mhk' / Ремиксы | Gold ⏭ ✕]`; ⏭ со второго трека переключил на новейший (hilog `playNextAudio: next=… local=true` + скрин); ⏭ на последнем треке — no-op с «no newer track»; body-tap открыл канал прямо на играющем бабле. Скрины в `.codex/ui-audit/2026-07-21/root-bar-adaptive/` (island-music-next, next-switch-final и др.).
+- **Пофикшенный silent-fail:** file id из TDLib-дерева обязан извлекаться `getTopLevelNumber('id')` — generic `getNumber` ловит `remote.id` (строку) и молча даёт 0 (грабля уже была задокументирована в parseSharedMediaItem; LESSONS 114).
+- Спека пласта: `docs/superpowers/specs/2026-07-22-island-player-suite-design.md` (v2 — AVSession+фон, v3 — морф-карточка).
+
+## Ранее (2026-07-22) — остров-мини-плеер (срез 3/3), авто-мини выключен
 
 - **Воспроизведение войсов/аудио стало app-глобальным:** новый `GlobalMediaPlayback` (pages/chat) владеет единственным `MediaPlaybackController`+AVPlayer на всё приложение; страница чата больше не создаёт/не убивает плеер на вход/выход, а только регистрирует row-repaint хендлеры (`setPageHandlers`, с реплеем последнего снапшота для мгновенной отрисовки строк при реоткрытии). Выход из чата НЕ останавливает звук — им владеет остров (поведение Telegram iOS). Зеркало `@ObservedV2 MediaPlaybackUIState` (hasActive/isPlaying/progress/title/subtitle/chatId) питает UI.
 - **Мини-плеер в HDS miniBar-слоте острова:** новый атом `TgRootMiniPlayer` (play/pause 48vp — он же контент свёрнутой линзы, тайтл+сабтайтл, стоп-✕, 2vp прогресс-полоса по нижней кромке); арбитраж слота в `MainTabsPage` — активный/закрывающийся Search всегда важнее, плеер возвращается после; `rootIslandMiniBar()` объединяет обе ветки, ширины/inset обобщены на все root-табы. Мета публикуется страницей на всех 4 стартовых путях (`publishNowPlayingMeta`: voice → отправитель+«Голосовое сообщение», audio → audioTitle+отправитель).

@@ -12,7 +12,9 @@ Last updated: 2026-07-21
   - [x] **[дефект → починен 2026-07-22]** Таб-линза под плеером: тройной root cause (prop-опережение транзакции → защёлка `playerBarStyleApplied`; транзакция внутри animateTo показа → отложка SHOW_MS+30; ручной `barWidth=48` давил EXPAND-таб в колонки букв → prop всегда полный, линзу делает транзакция). E2E-витнессы: линза+плеер в ряд, pause-флип ▶, stop, search-регресс
   - [ ] Completed-стейт полосы/иконки перепроверить на живом прогоне (иконка после конца трека)
 - [ ] **ПЛАСТ: Island Player Suite** (спека `docs/superpowers/specs/2026-07-22-island-player-suite-design.md`, порядок утверждён 2026-07-22):
-  - [ ] v1: полоса по паттерну Музыки — ⏭ для audio, тап тела: voice→jump к сообщению (audio временно тоже), глобальный next через searchChatMessages (чинит и auto-advance вне чата)
+  - [x] v1 (2026-07-22): полоса по паттерну Музыки — ⏭ для audio (глобальный next: searchChatMessages from='0' filter=Audio + downloadFile synchronous; чинит и auto-advance вне чата), тап тела → openChat-мост в ChatListPage + PendingJumpSignal → чат открывается на играющем сообщении. E2E-витнессы в «Ремиксы | Gold»: смена трека ⏭ (SUF→Mhk', лог next=…+скрин), конец плейлиста = корректный no-op, body-tap jump. Пофикшена remote.id-грабля (file id только через getTopLevelNumber)
+    - [ ] хвост: body-tap с не-Chats табов (мост живёт в ChatListPage)
+    - [ ] хвост: ⏮ prev-трек (симметрия ⏭) — решить в v3
   - [ ] v2: AVSession + continuous task audioPlayback — шторка/локскрин/наушники, музыка живёт при свёрнутом приложении
   - [ ] v3: морф-карточка из острова — обложка (допарсить album_cover_thumbnail), сик-бар, ⏮⏭, скорость, тап-вне сворачивает
 - [x] **Авто-мини выключен** (`USE_ROOT_BAR_AUTO_HIDE_ON_SCROLL=false`, решение пользователя 2026-07-22) — остров постоянный; включение вернётся настройкой

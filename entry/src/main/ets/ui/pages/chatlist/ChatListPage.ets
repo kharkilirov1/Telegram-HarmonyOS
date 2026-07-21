@@ -86,6 +86,12 @@ export struct ChatListPage {
   @Local pageStack: NavPathStack = new NavPathStack();
 
   @Param chatDetailStack: NavPathStack = new NavPathStack();
+  // Island player body-tap bridge: MainTabsPage ticks this after setting
+  // PendingJumpSignal; the full openChat ritual must run HERE (active-chat
+  // state triple, unread snapshot, requestOpenChatData) — a bare push from
+  // the tabs page renders the split placeholder instead of the chat.
+  @Param islandOpenChatTick: number = 0;
+  @Param islandOpenChatId: number = 0;
 
   @Event onKeyboardVisibilityChange: (visible: boolean) => void = (_: boolean): void => {};
   @Param searchQuery: string = '';
@@ -1105,6 +1111,19 @@ export struct ChatListPage {
           }
           hilog.error(DOMAIN, TAG, 'Mark unread failed: %{public}s', err.message);
         });
+    }
+  }
+
+  @Monitor('islandOpenChatTick')
+  private onIslandOpenChatRequested(_monitor: IMonitor): void {
+    const chatId = this.islandOpenChatId;
+    if (this.islandOpenChatTick === 0 || chatId === 0) {
+      return;
+    }
+    const state: AppState = getAppCoreRuntime().getStore().getState();
+    const chat = state.chats.chats.get(chatId);
+    if (chat) {
+      this.openChat(buildChatItemVO(chat, state));
     }
   }
 

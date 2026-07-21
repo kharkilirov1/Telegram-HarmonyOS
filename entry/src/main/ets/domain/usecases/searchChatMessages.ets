@@ -22,6 +22,15 @@ export class SearchChatMessagesResult {
   nextFromMessageId: MessageId = '0';
 }
 
+// Adjacent audio track of a chat — global playlist step for the island player
+export class AdjacentAudioTrack {
+  messageId: MessageId = '0';
+  fileId: number = 0;
+  localPath: string = '';
+  title: string = '';
+  performer: string = '';
+}
+
 // One tile/row of the profile Shared Media page
 export class SharedMediaItem {
   messageId: string = '0';
@@ -34,6 +43,15 @@ export class SharedMediaItem {
   fileSize: number = 0;
   linkText: string = '';
   linkUrl: string = '';
+}
+
+// int64 message ids as decimal strings: longer string = bigger number
+// (ids are positive), equal lengths compare lexicographically.
+function isMessageIdNewer(candidate: string, anchor: string): boolean {
+  if (candidate.length !== anchor.length) {
+    return candidate.length > anchor.length;
+  }
+  return candidate > anchor;
 }
 
 function normalizeDetectedLink(value: string): string {
@@ -176,6 +194,57 @@ export class SearchChatMessagesUseCase {
     hilog.info(DOMAIN, TAG, 'Shared media loaded: %{public}d of %{public}d msgs',
       items.length, messages.length);
     return items;
+  }
+
+  // Next (newer) audio track after fromMessageId — same direction as the
+  // in-chat auto-advance, which walks the timeline downwards. One query from
+  // '0' (all chat audios, newest first) and the neighbour picked in code: a
+  // non-zero from_message_id with a negative offset plus a filter returned
+  // empty on live TDLib, while from='0' is the battle-tested search path.
+  async findNextAudioNewer(chatId: ChatId, fromMessageId: MessageId): Promise<AdjacentAudioTrack | undefined> {
+    const command = createSearchChatMessagesCommand(chatId, '', '0', 0, 100);
+    command.payload.filterType = 'Audio';
+    const response = await this.gateway.send(command) as TdObject;
+    const messages = response.getArray('messages');
+    hilog.debug(DOMAIN, TAG, `nextAudio: got ${messages.length} audios, anchor=${fromMessageId}`);
+    let best: AdjacentAudioTrack | undefined = undefined;
+    for (let i = 0; i < messages.length; i++) {
+      const msg = messages[i] as TdObject;
+      const id = msg.getInt64String('id');
+      if (id.length === 0 || !isMessageIdNewer(id, fromMessageId)) {
+        continue;
+      }
+      const audio = msg.getObject('content').getObject('audio');
+      const file = audio.getObject('audio');
+      // getTopLevelNumber: generic nested 'id' lookup hits remote.id (string)
+      // first and silently returns 0 (same pitfall as the thumb parsing above).
+      const fileId = file.getTopLevelNumber('id');
+      if (fileId <= 0) {
+        continue;
+      }
+      // messages are newest-first: the LAST qualifying entry is the closest
+      const track = new AdjacentAudioTrack();
+      track.messageId = id;
+      track.fileId = fileId;
+      track.localPath = file.getObject('local').getBool('is_downloading_completed')
+        ? file.getObject('local').getString('path')
+        : '';
+      track.title = audio.getString('title');
+      track.performer = audio.getString('performer');
+      best = track;
+    }
+    return best;
+  }
+
+  // Blocking audio download: TDLib downloadFile with synchronous=true answers
+  // only after the file is fully local, so the response carries the path.
+  async downloadAudioSync(fileId: number): Promise<string> {
+    if (fileId <= 0) {
+      return '';
+    }
+    const response = await this.gateway.send(createDownloadFileCommand(fileId, 32, true)) as TdObject;
+    const local = response.getObject('local');
+    return local.getBool('is_downloading_completed') ? local.getString('path') : '';
   }
 
   // Starts a non-blocking thumbnail download. Completion normally arrives via

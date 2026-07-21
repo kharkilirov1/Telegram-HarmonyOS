@@ -1433,6 +1433,7 @@ export class TgUiTokens {
   static readonly ICON_RES_VIDEO: Resource = $r('app.media.ic_video');
   static readonly ICON_RES_PLAY: Resource = $r('app.media.ic_play');
   static readonly ICON_RES_PAUSE: Resource = $r('app.media.ic_pause');
+  static readonly ICON_RES_SKIP_NEXT: Resource = $r('app.media.ic_skip_next');
   static readonly ICON_RES_VOICE: Resource = $r('app.media.ic_voice');
   static readonly ICON_RES_SEARCH: Resource = $r('app.media.ic_search');
   static readonly ICON_RES_EDIT: Resource = $r('app.media.ic_edit');
