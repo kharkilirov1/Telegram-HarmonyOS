@@ -76,6 +76,10 @@ export struct MainTabsPage {
   @Local private rootBarScrollHidden: boolean = false;
   @Local private playback: MediaPlaybackUIState = mediaPlaybackUIState;
   @Local private playerUserCollapsed: boolean = false;
+  // True only after applyMiniBarStyle(EXPAND) ran on a visible bar; reset
+  // whenever the bar hides so a re-shown bar always mounts COLLAPSE and the
+  // expand transaction has a real delta to animate (see rootIslandMiniBar).
+  @Local private playerBarStyleApplied: boolean = false;
   private chatsState = chatsUIState;
   private rootSearchTransitionTimerId: number = -1;
   private callsFilterItems: SegmentButtonV2Items = new SegmentButtonV2Items([
@@ -183,7 +187,18 @@ export struct MainTabsPage {
     if (this.islandPlayerVisible()) {
       // Expanded player collapses the tab lens exactly like an active Search;
       // a user-collapsed player keeps the full tabs beside its 48vp lens.
-      const playerWidth = this.playerUserCollapsed ? geometry.tabBarWidth : geometry.activeTabBarWidth;
+      // Gated by the same latch as miniBarStyle: squeezing barWidth while the
+      // bar is hidden mounts the tab bar as 48px-wide EXPAND (all five tabs
+      // crushed into vertical letter columns, witnessed via bounds dump), and
+      // the later style transaction has no width delta left to repack it into
+      // the single-tab lens. Width and style must both flip in the same frame
+      // as applyMiniBarStyle on a visible bar — the Search activation pattern.
+      // Always the FULL tab width: squeezing barWidth to 48 by prop makes HDS
+      // crush the still-EXPANDed tab bar into 48px (five tabs as vertical
+      // letter columns under the player, witnessed via bounds dump). The
+      // 48vp single-tab lens is produced only by the style TRANSACTION in
+      // syncIslandPlayerStyle — tab 269.7→48 with a real delta (LESSONS 113).
+      const playerWidth = geometry.tabBarWidth;
       return { smallWidth: playerWidth, mediumWidth: playerWidth, largeWidth: playerWidth };
     }
     if (!this.shouldShowRootSearchDock()) {
@@ -216,17 +231,42 @@ export struct MainTabsPage {
       : undefined;
   }
 
+  private playerMiniBarWidthRange(): HdsBarWidthRangeOptions {
+    // Witnessed-good expanded player width: full tab width (269.7vp), so the
+    // island is [48vp tab lens][player] — slightly narrower than the Search
+    // island, wide enough for title/subtitle/controls.
+    const width = this.rootSearchDockGeometry().tabBarWidth;
+    return { smallWidth: width, mediumWidth: width, largeWidth: width };
+  }
+
   private rootIslandMiniBar(): HdsTabsMiniBar | undefined {
     if (this.islandPlayerVisible()) {
       return {
         miniBarBuilder: () => this.buildRootMiniPlayer(),
-        miniBarWidth: this.islandMiniBarExpandedWidthRange(),
-        miniBarStyle: this.playerUserCollapsed ? HdsBarStyle.COLLAPSE : HdsBarStyle.EXPAND,
+        miniBarWidth: this.playerMiniBarWidthRange(),
+        // COLLAPSE until the expand transaction has run on a visible bar: a
+        // hidden bar that re-renders with an EXPAND prop paints the mini bar
+        // wide WITHOUT the width transaction (tab bar stays full), and a later
+        // applyMiniBarStyle(EXPAND) is a delta-less no-op. The latch keeps the
+        // prop one step behind the transaction, mirroring the Search flow
+        // where flag flip + applyMiniBarStyle happen together while visible.
+        miniBarStyle: this.playerUserCollapsed || !this.playerBarStyleApplied
+          ? HdsBarStyle.COLLAPSE
+          : HdsBarStyle.EXPAND,
         enableMiniBarBackground: true,
         enableMiniBarClip: true,
-        onBarStyleChange: (miniBarStyle: HdsBarStyle, _tabBarStyle: HdsBarStyle,
-          _miniBarWidth: number, _tabBarWidth: number, mode: HdsTabsBarChangeMode): void => {
+        onBarStyleChange: (miniBarStyle: HdsBarStyle, tabBarStyle: HdsBarStyle,
+          miniBarWidth: number, tabBarWidth: number, mode: HdsTabsBarChangeMode): void => {
+          hilog.debug(DOMAIN, TAG,
+            `islandPlayer barStyleChange mini=${miniBarStyle} tab=${tabBarStyle} ` +
+            `miniW=${miniBarWidth} tabW=${tabBarWidth} mode=${mode}`);
           this.handlePlayerBarStyleChange(miniBarStyle, mode);
+        },
+        onMiniBarAnimationStart: (style: HdsBarStyle, width: number): void => {
+          hilog.debug(DOMAIN, TAG, `islandPlayer miniBarAnim style=${style} width=${width}`);
+        },
+        onTabBarAnimationStart: (style: HdsBarStyle, width: number): void => {
+          hilog.debug(DOMAIN, TAG, `islandPlayer tabBarAnim style=${style} width=${width}`);
         }
       };
     }
@@ -246,6 +286,7 @@ export struct MainTabsPage {
       },
       onExpandRequest: (): void => {
         this.playerUserCollapsed = false;
+        this.playerBarStyleApplied = true;
         this.controller.applyMiniBarStyle(HdsBarStyle.EXPAND);
       },
       onStop: (): void => {
@@ -264,13 +305,26 @@ export struct MainTabsPage {
     this.playerUserCollapsed = miniBarStyle === HdsBarStyle.COLLAPSE;
   }
 
-  // rootBarHidden is monitored because applyMiniBarStyle issued while the
-  // island is hidden (inside a chat) is ignored by HDS — the style must be
-  // re-applied once the bar is visible again (witnessed player-over-lens
-  // overlap on return from chat).
+  // rootBarHidden is monitored so the expand transaction re-runs every time
+  // the bar comes back: while hidden the applied-latch is reset, which forces
+  // the miniBarStyle prop back to COLLAPSE (see rootIslandMiniBar for why the
+  // prop must never get ahead of the transaction).
   @Monitor('playback.hasActive', 'chatListSearchActive', 'chatListSearchClosing', 'rootBarHidden')
-  private onIslandPlayerInputsChanged(_monitor: IMonitor): void {
+  private onIslandPlayerInputsChanged(monitor: IMonitor): void {
     if (this.rootBarHidden) {
+      this.playerBarStyleApplied = false;
+      return;
+    }
+    if (monitor.dirty.includes('rootBarHidden')) {
+      // rootBarHidden flips inside the bar show/hide animateTo, so a style
+      // transaction issued synchronously here nests into that animation and
+      // lands with a broken layout (lens painted under the expanded player,
+      // witnessed). Defer until the show animation has finished.
+      setTimeout(() => {
+        if (!this.rootBarHidden) {
+          this.syncIslandPlayerStyle();
+        }
+      }, ROOT_TAB_BAR_TRANSITION_SHOW_MS + 30);
       return;
     }
     this.syncIslandPlayerStyle();
@@ -279,19 +333,17 @@ export struct MainTabsPage {
   private syncIslandPlayerStyle(): void {
     if (this.islandPlayerVisible()) {
       if (!this.playerUserCollapsed) {
+        // Latch + transaction together on a visible bar — the Search
+        // activation pattern; the bar is COLLAPSE at this point, so the
+        // transaction has a delta and animates both bar widths.
+        this.playerBarStyleApplied = true;
+        hilog.debug(DOMAIN, TAG, 'islandPlayer apply EXPAND (latched)');
         this.controller.applyMiniBarStyle(HdsBarStyle.EXPAND);
-        // HDS runs a final builder/layout pass after the bar becomes visible;
-        // re-assert once after it so the tab lens actually collapses (same
-        // 360ms pattern as the search dock focus re-assert).
-        setTimeout(() => {
-          if (this.islandPlayerVisible() && !this.playerUserCollapsed && !this.rootBarHidden) {
-            this.controller.applyMiniBarStyle(HdsBarStyle.EXPAND);
-          }
-        }, 360);
       }
       return;
     }
     this.playerUserCollapsed = false;
+    this.playerBarStyleApplied = false;
     if (this.playback.hasActive) {
       // Search took the slot; its own activation flow drives the bar style.
       return;
