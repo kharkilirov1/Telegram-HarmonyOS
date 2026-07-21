@@ -93,6 +93,8 @@ export struct TgChatTopBar {
     .onClick(() => {
       this.onBackPress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Back')
   }
 
   @Builder
@@ -142,6 +144,8 @@ export struct TgChatTopBar {
       hilog.info(0x0021, 'TgChatTopBar', 'title tapped');
       this.onTitlePress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.subtitle ? this.title + ', ' + this.subtitle : this.title)
   }
 
   @Builder
@@ -211,6 +215,8 @@ export struct TgChatTopBar {
       hilog.info(0x0021, 'TgChatTopBar', 'avatar tapped');
       this.onAvatarPress();
     })
+    .accessibilityGroup(true)
+    .accessibilityDescription('Profile')
   }
 
   build() {
