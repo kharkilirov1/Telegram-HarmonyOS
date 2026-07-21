@@ -15,6 +15,11 @@ export class TgUiFeatureFlags {
 
   // Root island auto-hides while the chat list scrolls down and returns on
   // scroll up. Planned to become a user-facing Settings toggle once real
-  // settings storage exists (user decision 2026-07-21).
-  static readonly USE_ROOT_BAR_AUTO_HIDE_ON_SCROLL: boolean = true;
+  // settings storage exists; disabled until then so the island stays put
+  // (user decision 2026-07-21).
+  static readonly USE_ROOT_BAR_AUTO_HIDE_ON_SCROLL: boolean = false;
+
+  // Active voice/audio playback docks into the root island miniBar slot as a
+  // system-style mini player; an active Search still owns the slot first.
+  static readonly USE_ROOT_ISLAND_MINI_PLAYER: boolean = true;
 }

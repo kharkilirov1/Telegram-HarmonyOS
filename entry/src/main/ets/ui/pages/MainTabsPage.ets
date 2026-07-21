@@ -18,6 +18,8 @@ import { TgUiTokens } from '../tg_ui/tokens/TgUiTokens';
 import { TgUiFeatureFlags } from '../tg_ui/TgUiFeatureFlags';
 import { TgRootTabUnreadBadge } from '../tg_ui/atoms/TgRootTabUnreadBadge';
 import { TgRootSearchDock } from '../tg_ui/atoms/TgRootSearchDock';
+import { TgRootMiniPlayer } from '../tg_ui/atoms/TgRootMiniPlayer';
+import { globalMediaPlayback, mediaPlaybackUIState, MediaPlaybackUIState } from './chat/GlobalMediaPlayback';
 import { TgChatSplitPlaceholder } from '../tg_ui/atoms/TgChatSplitPlaceholder';
 import { resolveChatSplitGeometry } from '../utils/ChatSplitGeometry';
 import {
@@ -40,6 +42,7 @@ import {
   HdsBarWidthRangeOptions,
   HdsTabsController,
   HdsTabsMiniBar,
+  HdsTabsBarChangeMode,
   HdsNavigationTitleMode,
   BottomBuilderShowType,
   TitleSize
@@ -71,6 +74,8 @@ export struct MainTabsPage {
   @Local private navState: NavigationUIState = navigationUIState;
   @Local private rootBarHidden: boolean = false;
   @Local private rootBarScrollHidden: boolean = false;
+  @Local private playback: MediaPlaybackUIState = mediaPlaybackUIState;
+  @Local private playerUserCollapsed: boolean = false;
   private chatsState = chatsUIState;
   private rootSearchTransitionTimerId: number = -1;
   private callsFilterItems: SegmentButtonV2Items = new SegmentButtonV2Items([
@@ -165,11 +170,25 @@ export struct MainTabsPage {
     return resolveRootSearchDockGeometry(this.rootTabsWidth);
   }
 
+  // The mini player docks into the same single HDS miniBar slot as Search;
+  // an active/closing Search always wins the slot, the player returns after.
+  private islandPlayerVisible(): boolean {
+    return TgUiFeatureFlags.USE_ROOT_ISLAND_MINI_PLAYER &&
+      this.playback.hasActive &&
+      !this.chatListSearchActive && !this.chatListSearchClosing;
+  }
+
   private rootSearchDockBarWidthRange(): HdsBarWidthRangeOptions | undefined {
+    const geometry = this.rootSearchDockGeometry();
+    if (this.islandPlayerVisible()) {
+      // Expanded player collapses the tab lens exactly like an active Search;
+      // a user-collapsed player keeps the full tabs beside its 48vp lens.
+      const playerWidth = this.playerUserCollapsed ? geometry.tabBarWidth : geometry.activeTabBarWidth;
+      return { smallWidth: playerWidth, mediumWidth: playerWidth, largeWidth: playerWidth };
+    }
     if (!this.shouldShowRootSearchDock()) {
       return undefined;
     }
-    const geometry = this.rootSearchDockGeometry();
     // Telegram iOS collapses the selected-tab lens to 48pt while Search owns
     // the bar. On API23 this also releases the stale full TabBar hit box that
     // otherwise sits above the visually expanded HDS mini bar.
@@ -179,18 +198,107 @@ export struct MainTabsPage {
     return { smallWidth: width, mediumWidth: width, largeWidth: width };
   }
 
-  private rootSearchDockExpandedWidthRange(): HdsBarWidthRangeOptions | undefined {
-    if (!this.shouldShowRootSearchDock()) {
-      return undefined;
-    }
+  private islandMiniBarExpandedWidthRange(): HdsBarWidthRangeOptions {
     const width = this.rootSearchDockGeometry().miniBarExpandedWidth;
     return { smallWidth: width, mediumWidth: width, largeWidth: width };
   }
 
+  private rootSearchDockExpandedWidthRange(): HdsBarWidthRangeOptions | undefined {
+    if (!this.shouldShowRootSearchDock()) {
+      return undefined;
+    }
+    return this.islandMiniBarExpandedWidthRange();
+  }
+
   private rootSearchDockSideMargin(): number | undefined {
-    return this.shouldShowRootSearchDock()
+    return this.islandPlayerVisible() || this.shouldShowRootSearchDock()
       ? this.rootSearchDockGeometry().sideMargin
       : undefined;
+  }
+
+  private rootIslandMiniBar(): HdsTabsMiniBar | undefined {
+    if (this.islandPlayerVisible()) {
+      return {
+        miniBarBuilder: () => this.buildRootMiniPlayer(),
+        miniBarWidth: this.islandMiniBarExpandedWidthRange(),
+        miniBarStyle: this.playerUserCollapsed ? HdsBarStyle.COLLAPSE : HdsBarStyle.EXPAND,
+        enableMiniBarBackground: true,
+        enableMiniBarClip: true,
+        onBarStyleChange: (miniBarStyle: HdsBarStyle, _tabBarStyle: HdsBarStyle,
+          _miniBarWidth: number, _tabBarWidth: number, mode: HdsTabsBarChangeMode): void => {
+          this.handlePlayerBarStyleChange(miniBarStyle, mode);
+        }
+      };
+    }
+    return this.rootSearchMiniBar();
+  }
+
+  @Builder
+  buildRootMiniPlayer() {
+    TgRootMiniPlayer({
+      title: this.playback.title,
+      subtitle: this.playback.subtitle,
+      isPlaying: this.playback.isPlaying,
+      progress: this.playback.progress,
+      collapsed: this.playerUserCollapsed,
+      onTogglePlay: (): void => {
+        globalMediaPlayback.toggleCurrent().catch((_error: Object) => {});
+      },
+      onExpandRequest: (): void => {
+        this.playerUserCollapsed = false;
+        this.controller.applyMiniBarStyle(HdsBarStyle.EXPAND);
+      },
+      onStop: (): void => {
+        globalMediaPlayback.stop().catch((_error: Object) => {});
+      }
+    })
+  }
+
+  private handlePlayerBarStyleChange(miniBarStyle: HdsBarStyle, mode: HdsTabsBarChangeMode): void {
+    if (!this.islandPlayerVisible() || mode !== HdsTabsBarChangeMode.USER_CLICK) {
+      return;
+    }
+    // Tapping the collapsed tab lens natively re-expands the tabs; mirror the
+    // native result into player state so the style prop never disagrees with
+    // the actual bar.
+    this.playerUserCollapsed = miniBarStyle === HdsBarStyle.COLLAPSE;
+  }
+
+  // rootBarHidden is monitored because applyMiniBarStyle issued while the
+  // island is hidden (inside a chat) is ignored by HDS — the style must be
+  // re-applied once the bar is visible again (witnessed player-over-lens
+  // overlap on return from chat).
+  @Monitor('playback.hasActive', 'chatListSearchActive', 'chatListSearchClosing', 'rootBarHidden')
+  private onIslandPlayerInputsChanged(_monitor: IMonitor): void {
+    if (this.rootBarHidden) {
+      return;
+    }
+    this.syncIslandPlayerStyle();
+  }
+
+  private syncIslandPlayerStyle(): void {
+    if (this.islandPlayerVisible()) {
+      if (!this.playerUserCollapsed) {
+        this.controller.applyMiniBarStyle(HdsBarStyle.EXPAND);
+        // HDS runs a final builder/layout pass after the bar becomes visible;
+        // re-assert once after it so the tab lens actually collapses (same
+        // 360ms pattern as the search dock focus re-assert).
+        setTimeout(() => {
+          if (this.islandPlayerVisible() && !this.playerUserCollapsed && !this.rootBarHidden) {
+            this.controller.applyMiniBarStyle(HdsBarStyle.EXPAND);
+          }
+        }, 360);
+      }
+      return;
+    }
+    this.playerUserCollapsed = false;
+    if (this.playback.hasActive) {
+      // Search took the slot; its own activation flow drives the bar style.
+      return;
+    }
+    if (!this.chatListSearchActive && !this.chatListSearchClosing) {
+      this.controller.applyMiniBarStyle(HdsBarStyle.COLLAPSE);
+    }
   }
 
   private rootSearchMiniBar(): HdsTabsMiniBar | undefined {
@@ -679,7 +787,7 @@ export struct MainTabsPage {
           barSideMargin: this.rootSearchDockSideMargin(),
           barBottomMargin: this.rootTabBarRenderState().bottomMargin,
           barOpacity: this.rootTabBarOpacity(),
-          miniBar: this.rootSearchMiniBar(),
+          miniBar: this.rootIslandMiniBar(),
           systemMaterialEffect: {
             materialType: hdsMaterial.MaterialType.ADAPTIVE,
             materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE

@@ -44,6 +44,7 @@ import {
   timelineEntryContainsMessageId
 } from './ChatTimelineVO';
 import { MediaPlaybackController, MediaPlaybackSnapshot, MediaContentType } from './VoicePlaybackController';
+import { globalMediaPlayback } from './GlobalMediaPlayback';
 import { ChatMediaDownloadController } from './ChatMediaDownloadController';
 import {
   PendingMediaOpenIntent,
@@ -1538,17 +1539,15 @@ export struct TgChatScreenPage {
   }
 
   private setupMediaPlaybackController(): void {
-    const previous = this.mediaPlaybackController;
-    if (previous) {
-      this.mediaPlaybackController = undefined;
-      previous.release().catch((_error: Object) => {});
-    }
     this.resetPlaybackState();
-    const controller = new MediaPlaybackController();
+    // Playback is app-global (survives leaving the chat for the island mini
+    // player); the page only registers row-repaint handlers on the shared
+    // controller instead of owning a per-visit AVPlayer.
+    const controller: MediaPlaybackController = globalMediaPlayback.controllerRef();
     this.mediaPlaybackController = controller;
     const lifecycleToken: number = this.pageLifecycleToken;
     const chatId: number = this.activeChatId;
-    controller.setListener((snapshot: MediaPlaybackSnapshot): void => {
+    globalMediaPlayback.setPageHandlers((snapshot: MediaPlaybackSnapshot): void => {
       if (lifecycleToken !== this.pageLifecycleToken ||
         this.mediaPlaybackController !== controller ||
         this.activeChatId !== chatId) {
@@ -1580,8 +1579,7 @@ export struct TgChatScreenPage {
       // Playback state lives on the page — LazyForEach rows only repaint via
       // an explicit notify (lesson 65), so poke every affected row.
       this.notifyPlaybackRows(prevVoiceId, prevAudioId, snapshot.messageId);
-    });
-    controller.setOnCompleted((messageId: string, contentType: MediaContentType): void => {
+    }, (messageId: string, contentType: MediaContentType): void => {
       if (lifecycleToken !== this.pageLifecycleToken ||
         this.mediaPlaybackController !== controller ||
         this.activeChatId !== chatId) {
@@ -1608,14 +1606,40 @@ export struct TgChatScreenPage {
   }
 
   private teardownMediaPlaybackController(): void {
-    const controller = this.mediaPlaybackController;
     this.mediaPlaybackController = undefined;
     this.resetPlaybackState();
-    if (!controller) {
+    // Playback intentionally keeps running app-globally — the root island
+    // mini player owns it once the page goes away (Telegram iOS behavior);
+    // only the page-scoped handlers are detached here.
+    globalMediaPlayback.setPageHandlers(undefined, undefined);
+  }
+
+  // The island mini player renders these strings after the page is gone, so
+  // capture them while the row data is still reachable.
+  private publishNowPlayingMeta(messageId: string, contentType: MediaContentType): void {
+    let senderName = '';
+    let audioTitle = '';
+    const entries = this.dataSource.getAllEntries();
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      if (entry.kind === 'message' && entry.message.messageId === messageId) {
+        senderName = entry.message.isOutgoing
+          ? localized($r('app.string.chat_you_prefix').id, 'You')
+          : entry.message.senderName;
+        audioTitle = entry.message.audioTitle.trim();
+        break;
+      }
+    }
+    const fallbackTitle = senderName.length > 0 ? senderName : navigationUIState.activeChatTitle;
+    if (contentType === 'audio' && audioTitle.length > 0) {
+      globalMediaPlayback.setNowPlaying(audioTitle, fallbackTitle, this.activeChatId);
       return;
     }
-    controller.release()
-      .catch((_error: Object) => {});
+    globalMediaPlayback.setNowPlaying(
+      fallbackTitle,
+      localized($r('app.string.voice_message').id, 'Voice message'),
+      this.activeChatId
+    );
   }
 
   private handlePlaybackCompleted(messageId: string, contentType: MediaContentType): void {
@@ -1636,6 +1660,7 @@ export struct TgChatScreenPage {
         this.locallyListenedVoiceIds.add(msg.messageId);
         const controller = this.mediaPlaybackController;
         if (controller) {
+          this.publishNowPlayingMeta(msg.messageId, 'voice');
           controller.toggle(msg.messageId, msg.voicePath, 'voice')
             .catch((_error: Object) => {});
         }
@@ -1644,6 +1669,7 @@ export struct TgChatScreenPage {
       if (contentType === 'audio' && msg.contentType === 'audio' && msg.audioPath.length > 0) {
         const controller = this.mediaPlaybackController;
         if (controller) {
+          this.publishNowPlayingMeta(msg.messageId, 'audio');
           controller.toggle(msg.messageId, msg.audioPath, 'audio')
             .catch((_error: Object) => {});
         }
@@ -2560,6 +2586,7 @@ export struct TgChatScreenPage {
     if (!controller) {
       return;
     }
+    this.publishNowPlayingMeta(messageId, 'voice');
     controller.toggle(messageId, voicePath, 'voice')
       .catch((_error: Object) => {});
   }
@@ -2667,6 +2694,7 @@ export struct TgChatScreenPage {
         rawPath = audioPath;
       }
     }
+    this.publishNowPlayingMeta(messageId, 'audio');
     controller.toggle(messageId, rawPath, 'audio')
       .catch((_error: Object) => {});
   }
