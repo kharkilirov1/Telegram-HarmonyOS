@@ -16,6 +16,8 @@ export struct TgTopBar {
   @Param rightIcon: Resource = TgUiTokens.ICON_RES_MORE;
   @Param showSecondRightAction: boolean = false;
   @Param secondRightIcon: Resource = TgUiTokens.ICON_RES_MORE;
+  @Param rightActionDescription: string = '';
+  @Param secondRightActionDescription: string = '';
   @Param glassMode: string = TgGlassPolicy.MODE_AUTO;
 
   @Event onBackPress: () => void = (): void => {};
@@ -79,6 +81,9 @@ export struct TgTopBar {
     .height(TgUiTokens.TOP_BAR_ACTION_TOUCH)
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
+    .accessibilityGroup(true)
+    .accessibilityDescription(this.showBackAction ? 'Back' : this.leftText)
+    .clickEffect({ level: ClickEffectLevel.LIGHT })
     .onClick(() => {
       if (this.showBackAction) {
         this.onBackPress();
@@ -98,6 +103,9 @@ export struct TgTopBar {
           tintColor: TgUiTokens.COLOR_ICON_PRIMARY
         })
           .margin({ right: TgUiTokens.SPACE_16 })
+          .accessibilityGroup(true)
+          .accessibilityDescription(this.secondRightActionDescription)
+          .clickEffect({ level: ClickEffectLevel.LIGHT })
           .onClick(() => {
             this.onSecondRightPress();
           })
@@ -109,6 +117,9 @@ export struct TgTopBar {
           iconSize: TgUiTokens.TOP_BAR_ACTION_ICON_SIZE,
           tintColor: TgUiTokens.COLOR_ICON_PRIMARY
         })
+          .accessibilityGroup(true)
+          .accessibilityDescription(this.rightActionDescription)
+          .clickEffect({ level: ClickEffectLevel.LIGHT })
       }
     }
     .height(TgUiTokens.TOP_BAR_ACTION_TOUCH)

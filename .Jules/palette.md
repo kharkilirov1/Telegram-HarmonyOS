@@ -1,0 +1,3 @@
+## 2024-07-22 - Adding accessibility to TopBar action slots
+**Learning:** In top bars, combining small icons into larger action slots (like a 44x44vp `Row`) requires careful consideration of accessibility grouping. If the outer container uses conditionally applied click handlers based on its children's presence, applying `.accessibilityGroup(true)` to the outer container can create accessibility traps where nested active elements are hidden from screen readers.
+**Action:** Apply accessibility modifiers and click effects to the specific interactable components (like the inner icons) when multiple actions coexist within a single slot wrapper, ensuring individual focus and interaction. Parameterize descriptions for reusable UI elements.
