@@ -189,9 +189,14 @@ export struct TgLinkPreviewBubble {
       .backgroundColor(this.previewBackgroundColor())
       .borderRadius(TgUiTokens.LINK_PREVIEW_RADIUS)
 
+      // matchParent, not '100%': inside an auto-sized Stack a percent height
+      // resolves against the parent CONSTRAINT (list viewport) and inflates
+      // the whole bubble to screen height with the card floating mid-void
+      // (witnessed); matchParent tracks the Stack's final content height —
+      // same fix as the quote bar in TgTextBodyV3 and TgReplySnippet.
       Column()
         .width(TgUiTokens.LINK_PREVIEW_RAIL_WIDTH)
-        .height('100%')
+        .height(LayoutPolicy.matchParent)
         .backgroundColor(this.accentColor())
         .borderRadius(TgUiTokens.LINK_PREVIEW_RAIL_RADIUS)
     }

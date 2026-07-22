@@ -5,7 +5,9 @@
       "path": "./src/main/cpp/CMakeLists.txt",
       "arguments": "",
       "abiFilters": [
-        "arm64-v8a",
+        // arm64-v8a re-enable for release builds on real devices; emulator-only
+        // x86_64 halves the HAP (each ABI carries two ~35MB tdjson copies) so
+        // installs fit the emulator's tight /data headroom.
         "x86_64"
       ],
       "cppFlags": ""

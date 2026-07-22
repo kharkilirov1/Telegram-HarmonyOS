@@ -2,7 +2,13 @@
 
 Snapshot date: 2026-07-22 (target API 26; live runtime floor API 23)
 
-## Latest (2026-07-22, ночь) — Island Player Suite v2+v3: системная интеграция и полный плеер
+## Latest (2026-07-23) — фикс «областей цитат»: рельса линк-превью раздувала бабл на весь экран
+
+- **Root cause (репро пользователя):** `TgLinkPreviewBubble` рисовал акцентную рельсу `height('100%')` внутри auto-sized Stack — процент резолвится против constraint (вьюпорт листа) → бабл в высоту экрана, карточка превью плавает в центре пустоты; при unconstrained тот же процент даёт 0 (рельса исчезает) — отсюда «некоторые корректны, некоторые нет». Та же грабля ловилась в quote bar и reply snippet; фикс — `LayoutPolicy.matchParent` (третье и последнее место, LESSONS 118). Настоящие blockquote-области рендерятся корректно (витнесс Мяурицио). Старый `appfreeze` в faultlog совпадает с прокруткой бабла-гиганта.
+- **Витнессы:** до — скрин пользователя (t.me-превью в пустоте на весь экран); после — GitHub-превью в Dart & Flutter: рельса ровно по карточке (site/title/description/фото), `linkpreview-witness2.png`.
+- **Сборка для эмулятора — x86_64-only** (`abiFilters`): HAP 83M вместо 152M (дубли libtdjson двух ABI), инсталлы проходят тесный диск. Перед сборкой на живое устройство вернуть arm64-v8a в entry/build-profile.json5.
+
+## Ранее (2026-07-22, ночь) — Island Player Suite v2+v3: системная интеграция и полный плеер
 
 - **v2 — AVSession + фон:** `GlobalMediaPlayback.attachAvSession(context)` (вызов из MainTabsPage.aboutToAppear) создаёт одну сессию 'audio' на приложение; на каждом снапшоте — троттленный `setAVPlaybackState` (флипы play/pause или ≥3с позиции), на смене трека/меты — `setAVMetadata` (assetId=messageId, title, artist, duration, mediaImage при наличии обложки). Команды из системы: play/pause→toggle, stop, playNext/playPrevious→findAdjacentAudio, seek→seekToProgress. Continuous task AUDIO_PLAYBACK берётся на старте воспроизведения (wantAgent на EntryAbility), отпускается при полном стопе; module.json5 — backgroundModes audioPlayback + KEEP_BACKGROUND_RUNNING (+reason-строки en/ru/zh). **E2E:** системная медиа-карточка в Пункте управления с треком/исполнителем/бейджем приложения (`control-center-media.png`), музыка играет спустя 12с после Home (`curState: playing`), pause из системной карточки доходит и исполняется (`avSession cmd: pause` → JsPause Task).
 - **v3 — карточка плеера:** тап тела острова с музыкой открывает `TgIslandPlayerCard` в нативном `bindSheet` (560vp, showClose): обложка (заглушка при отсутствии; `album_cover_thumbnail` допарсен DTO→модель(AppState)→VO, недокачанный thumb догружается по coverFileId и подставляется), тайтл/исполнитель, слайдер-сик с временем (E2E: 0:13→5:09 драгом), контролы 1x/1.5x/2x (`setPlaybackSpeed`, скорость переживает смену трека), ⏮/▶⏸/⏭ (prev-E2E: Mhk'→Stand up friend'). Войс-тап остался прыжком к сообщению. `findNextAudioNewer` обобщён в `findAdjacentAudio(newer)`.
