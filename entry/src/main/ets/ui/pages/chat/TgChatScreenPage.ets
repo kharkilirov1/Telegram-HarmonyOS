@@ -1632,7 +1632,11 @@ export struct TgChatScreenPage {
         audioTitle = entry.message.audioTitle.trim();
         audioPerformer = entry.message.audioPerformer.trim();
         coverPath = entry.message.audioCoverPath;
-        coverFileId = entry.message.audioCoverFileId;
+        // iOS parity: ID3 cover first, else the Telegram-served album art
+        // looked up by title+performer (external_album_covers).
+        coverFileId = entry.message.audioCoverFileId > 0
+          ? entry.message.audioCoverFileId
+          : entry.message.audioExternalCoverFileId;
         break;
       }
     }

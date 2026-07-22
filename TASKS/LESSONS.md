@@ -2,6 +2,11 @@
 
 Last updated: 2026-07-22
 
+## 116. Обложки треков: пользовательская гипотеза ≠ механизм, референс решает
+- Гипотеза «iOS берёт обложку из фото канала» разбилась о референс: Telegram-iOS качает арт СЕРВИСОМ по title+performer (MusicAlbumArtResources → AlbumCoverResource → webDocuments DC). В TDLib это готовое поле `audio.external_album_covers` — каскад ID3→external закрыл кейс без всякой эвристики по фото.
+- Когда поля нет в наших моделях и td_api.tl недоступен (вендорен только .so) — `strings libtdjson.so | grep <field>` мгновенно подтверждает поддержку полем этой сборки TDLib.
+- Диск эмулятора (код 9568288 insufficient disk memory при install): `bm clean -n <bundle> -c` (кэш, НЕ -d — там сессия) + `rm /data/local/tmp/*.json|png` (мои дампы/скрины копятся десятками MB) — освобождает сотни MB без потери логина.
+
 ## 115. AVSession/bindSheet/фон: заметки v2+v3
 - AVSession подключается к уже готовому глобальному плееру одним листенером: мета-словарь на смене assetId + троттленный playback-state (флипы + ≥3с позиции) — сессия «бесплатно» даёт карточку Пункта управления, локскрин и команды с наушников. Контекст берётся в aboutToAppear корневой страницы (`getUIContext().getHostContext() as common.UIAbilityContext`), не в EntryAbility.
 - Витнесс «команда из системы дошла» — hilog в session.on-колбэке, а «пауза исполнена» — родные `JsPause Task Start/Out/End` логи AVPlayerNapi: `JsGetState`-строки живут только пока тикает прогресс-таймер, после паузы их просто нет (отсутствие ≠ не сработало).

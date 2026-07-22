@@ -192,6 +192,7 @@ export class MessageContent {
   audioPerformer: string = '';
   audioCoverPath: string = '';
   audioCoverFileId: number = 0;
+  audioExternalCoverFileId: number = 0;
 
   // Voice note
   voicePath: string = '';

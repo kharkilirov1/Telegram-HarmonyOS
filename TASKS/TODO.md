@@ -20,6 +20,7 @@ Last updated: 2026-07-21
     - [ ] хвост-полиш: bg task рестартует на межтрековом release-снапшоте '0' (стоп/старт цикл) — держать таск до конца сессии
     - [ ] хвост-полиш: system play/pause оба маплены в toggle — строгие play()/pause() против рассинхрона иконки шторки
     - [ ] хвост: обложка в системной карточке (mediaImage file:// — проверить формат/PixelMap на живом устройстве)
+  - [x] v3.1 (2026-07-22): обложки как в iOS — каскад ID3 `album_cover_thumbnail` → серверный арт `external_album_covers` (iOS-референс: AlbumCoverResource ищет по title+performer через webDocuments DC; поле подтверждено strings по вендоренному libtdjson). E2E: «Mhk'» был с заглушкой (player-card.png) — стал с настоящим артом (card-external-cover.png)
 - [x] **Авто-мини выключен** (`USE_ROOT_BAR_AUTO_HIDE_ON_SCROLL=false`, решение пользователя 2026-07-22) — остров постоянный; включение вернётся настройкой
 
 ## Срез 2026-07-21 — баг-хант баблов/цитат (закрыт, см. STATUS)

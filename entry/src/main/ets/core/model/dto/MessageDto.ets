@@ -107,6 +107,7 @@ export class MessageContentDto {
   audioPath: string = '';
   audioCoverPath: string = '';
   audioCoverFileId: number = 0;
+  audioExternalCoverFileId: number = 0;
   audioFileId: number = 0;
   audioDuration: number = 0;
   audioTitle: string = '';
@@ -606,6 +607,13 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       const coverFile = tdGetObject(tdGetObject(audioObj, 'album_cover_thumbnail'), 'file');
       contentDto.audioCoverPath = extractLocalFilePath(coverFile);
       contentDto.audioCoverFileId = extractFileId(coverFile);
+      // iOS parity: with no ID3 cover Telegram serves album art looked up by
+      // title+performer — TDLib exposes those as external_album_covers.
+      const externalCovers = tdGetArray(audioObj, 'external_album_covers');
+      if (externalCovers.length > 0) {
+        const externalFile = tdGetObject(externalCovers[externalCovers.length - 1], 'file');
+        contentDto.audioExternalCoverFileId = extractFileId(externalFile);
+      }
       contentDto.audioFileId = extractFileId(audioFile);
       contentDto.audioUniqueId = extractRemoteUniqueId(audioFile);
       contentDto.audioDuration = tdGetNumber(audioObj, 'duration');

@@ -69,6 +69,14 @@ function parseAdjacentAudioTrack(msg: TdObject, id: string): AdjacentAudioTrack 
   track.coverPath = coverFile.getObject('local').getBool('is_downloading_completed')
     ? coverFile.getObject('local').getString('path')
     : '';
+  if (track.coverFileId <= 0) {
+    // iOS parity: Telegram-served album art by title+performer.
+    const externalCovers = audio.getArray('external_album_covers');
+    if (externalCovers.length > 0) {
+      const externalFile = (externalCovers[externalCovers.length - 1] as TdObject).getObject('file');
+      track.coverFileId = externalFile.getTopLevelNumber('id');
+    }
+  }
   return track;
 }
 
