@@ -140,11 +140,11 @@ export class GlobalMediaPlayback {
         this.avSession = session;
         session.on('play', (): void => {
           hilog.debug(DOMAIN, TAG, 'avSession cmd: play');
-          this.toggleCurrent().catch((_error: Object) => {});
+          this.resumeCurrent().catch((_error: Object) => {});
         });
         session.on('pause', (): void => {
           hilog.debug(DOMAIN, TAG, 'avSession cmd: pause');
-          this.toggleCurrent().catch((_error: Object) => {});
+          this.pauseCurrent().catch((_error: Object) => {});
         });
         session.on('stop', (): void => {
           this.stop().catch((_error: Object) => {});
@@ -310,6 +310,22 @@ export class GlobalMediaPlayback {
       return;
     }
     await this.controller.toggle(messageId, this.lastPath, this.lastType);
+  }
+
+  // Strict system-command semantics: the Control Center card's icon can lag
+  // the real state, so 'play'/'pause' must be idempotent — a toggle would
+  // invert the desync instead of converging on the requested state.
+  async pauseCurrent(): Promise<void> {
+    // controller.pause() itself no-ops unless the player is actually playing.
+    await this.controller.pause();
+  }
+
+  async resumeCurrent(): Promise<void> {
+    if (mediaPlaybackUIState.isPlaying) {
+      return;
+    }
+    // toggle from a paused/prepared/completed player strictly plays.
+    await this.toggleCurrent();
   }
 
   async stop(): Promise<void> {

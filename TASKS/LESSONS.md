@@ -2,6 +2,10 @@
 
 Last updated: 2026-07-22
 
+## 117. Системные медиа-команды и диск эмулятора: два коротких урока
+- Системные play/pause обязаны быть СТРОГИМИ и идемпотентными, не toggle: иконка карточки Пункта управления живёт своей жизнью и при рассинхроне toggle инвертирует состояние вместо схождения. Рецепт: pause → метод контроллера с guard'ом «только из playing»; play → гейт по isPlaying + toggle (из паузы toggle строго играет). Витнесс цикла: `cmd pause→JsPause Task`, `cmd play→JsPlay Task`, итоговый state playing.
+- Диск эмулятора, уровень 2: порог install ≈1ГБ свободного; когда `bm clean -c` не спасает — `bm uninstall -n <bundle> -k` (keep-data) + install: код пересоздаётся, data/el2 с TDLib-сессией остаётся (проверено — чат-лист без перелогина). Медиа-кэш TDLib (animations 300M+, photos 200M+) и /data/log недоступны на запись из hdc shell (undebuggable сборка, smode запрещён) — чистить их можно только изнутри приложения (optimizeStorage — кандидат в настройки).
+
 ## 116. Обложки треков: пользовательская гипотеза ≠ механизм, референс решает
 - Гипотеза «iOS берёт обложку из фото канала» разбилась о референс: Telegram-iOS качает арт СЕРВИСОМ по title+performer (MusicAlbumArtResources → AlbumCoverResource → webDocuments DC). В TDLib это готовое поле `audio.external_album_covers` — каскад ID3→external закрыл кейс без всякой эвристики по фото.
 - Когда поля нет в наших моделях и td_api.tl недоступен (вендорен только .so) — `strings libtdjson.so | grep <field>` мгновенно подтверждает поддержку полем этой сборки TDLib.
