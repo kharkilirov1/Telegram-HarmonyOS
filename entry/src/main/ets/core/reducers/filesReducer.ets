@@ -112,6 +112,8 @@ function applyFilePathToContent(content: MessageContent, fileId: number, localPa
   c.audioDuration = content.audioDuration;
   c.audioTitle = content.audioTitle;
   c.audioPerformer = content.audioPerformer;
+  c.audioCoverPath = content.audioCoverPath;
+  c.audioCoverFileId = content.audioCoverFileId;
 
   c.voicePath = content.voiceFileId === fileId ? localPath : content.voicePath;
   c.voiceFileId = content.voiceFileId;

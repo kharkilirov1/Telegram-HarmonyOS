@@ -1619,6 +1619,9 @@ export struct TgChatScreenPage {
   private publishNowPlayingMeta(messageId: string, contentType: MediaContentType): void {
     let senderName = '';
     let audioTitle = '';
+    let audioPerformer = '';
+    let coverPath = '';
+    let coverFileId = 0;
     const entries = this.dataSource.getAllEntries();
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
@@ -1627,12 +1630,17 @@ export struct TgChatScreenPage {
           ? localized($r('app.string.chat_you_prefix').id, 'You')
           : entry.message.senderName;
         audioTitle = entry.message.audioTitle.trim();
+        audioPerformer = entry.message.audioPerformer.trim();
+        coverPath = entry.message.audioCoverPath;
+        coverFileId = entry.message.audioCoverFileId;
         break;
       }
     }
     const fallbackTitle = senderName.length > 0 ? senderName : navigationUIState.activeChatTitle;
     if (contentType === 'audio' && audioTitle.length > 0) {
-      globalMediaPlayback.setNowPlaying(audioTitle, fallbackTitle, this.activeChatId);
+      globalMediaPlayback.setNowPlaying(audioTitle,
+        audioPerformer.length > 0 ? audioPerformer : fallbackTitle,
+        this.activeChatId, coverPath, coverFileId);
       return;
     }
     globalMediaPlayback.setNowPlaying(

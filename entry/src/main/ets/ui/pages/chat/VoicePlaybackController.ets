@@ -123,6 +123,23 @@ export class MediaPlaybackController {
     await this.openAndStart(messageId, filePath, contentType);
   }
 
+  // 1 / 1.5 / 2 — applied immediately and re-applied by the caller after a
+  // track change (a fresh AVPlayer always starts at 1x).
+  async setPlaybackSpeed(multiplier: number): Promise<void> {
+    if (!this.player) {
+      return;
+    }
+    let mode: media.PlaybackSpeed = media.PlaybackSpeed.SPEED_FORWARD_1_00_X;
+    if (multiplier >= 1.99) {
+      mode = media.PlaybackSpeed.SPEED_FORWARD_2_00_X;
+    } else if (multiplier >= 1.49) {
+      mode = media.PlaybackSpeed.SPEED_FORWARD_1_50_X;
+    }
+    try {
+      this.player.setSpeed(mode);
+    } catch (_error) {}
+  }
+
   async seekToProgress(progress: number): Promise<void> {
     if (!this.player) {
       return;

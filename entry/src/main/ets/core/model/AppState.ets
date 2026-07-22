@@ -190,6 +190,8 @@ export class MessageContent {
   audioDuration: number = 0;
   audioTitle: string = '';
   audioPerformer: string = '';
+  audioCoverPath: string = '';
+  audioCoverFileId: number = 0;
 
   // Voice note
   voicePath: string = '';

@@ -2879,6 +2879,10 @@
     {
       "name": "group_members_not_added",
       "value": "%d members could not be added. You can invite them with a link."
+    },
+    {
+      "name": "permission_background_audio_reason",
+      "value": "Keep music and voice messages playing in the background"
     }
   ]
 }

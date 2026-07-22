@@ -29,6 +29,8 @@ export class AdjacentAudioTrack {
   localPath: string = '';
   title: string = '';
   performer: string = '';
+  coverPath: string = '';
+  coverFileId: number = 0;
 }
 
 // One tile/row of the profile Shared Media page
@@ -43,6 +45,31 @@ export class SharedMediaItem {
   fileSize: number = 0;
   linkText: string = '';
   linkUrl: string = '';
+}
+
+function parseAdjacentAudioTrack(msg: TdObject, id: string): AdjacentAudioTrack | undefined {
+  const audio = msg.getObject('content').getObject('audio');
+  const file = audio.getObject('audio');
+  // getTopLevelNumber: generic nested 'id' lookup hits remote.id (string)
+  // first and silently returns 0 (same pitfall as the thumb parsing above).
+  const fileId = file.getTopLevelNumber('id');
+  if (fileId <= 0) {
+    return undefined;
+  }
+  const track = new AdjacentAudioTrack();
+  track.messageId = id;
+  track.fileId = fileId;
+  track.localPath = file.getObject('local').getBool('is_downloading_completed')
+    ? file.getObject('local').getString('path')
+    : '';
+  track.title = audio.getString('title');
+  track.performer = audio.getString('performer');
+  const coverFile = audio.getObject('album_cover_thumbnail').getObject('file');
+  track.coverFileId = coverFile.getTopLevelNumber('id');
+  track.coverPath = coverFile.getObject('local').getBool('is_downloading_completed')
+    ? coverFile.getObject('local').getString('path')
+    : '';
+  return track;
 }
 
 // int64 message ids as decimal strings: longer string = bigger number
@@ -196,41 +223,40 @@ export class SearchChatMessagesUseCase {
     return items;
   }
 
-  // Next (newer) audio track after fromMessageId — same direction as the
-  // in-chat auto-advance, which walks the timeline downwards. One query from
-  // '0' (all chat audios, newest first) and the neighbour picked in code: a
-  // non-zero from_message_id with a negative offset plus a filter returned
-  // empty on live TDLib, while from='0' is the battle-tested search path.
-  async findNextAudioNewer(chatId: ChatId, fromMessageId: MessageId): Promise<AdjacentAudioTrack | undefined> {
+  // Adjacent audio track around fromMessageId — 'newer' matches the in-chat
+  // auto-advance direction (timeline downwards), 'older' is the ⏮ step. One
+  // query from '0' (all chat audios, newest first) and the neighbour picked
+  // in code: a non-zero from_message_id with a negative offset plus a filter
+  // returned empty on live TDLib, while from='0' is the battle-tested path.
+  async findAdjacentAudio(chatId: ChatId, fromMessageId: MessageId,
+    newer: boolean): Promise<AdjacentAudioTrack | undefined> {
     const command = createSearchChatMessagesCommand(chatId, '', '0', 0, 100);
     command.payload.filterType = 'Audio';
     const response = await this.gateway.send(command) as TdObject;
     const messages = response.getArray('messages');
-    hilog.debug(DOMAIN, TAG, `nextAudio: got ${messages.length} audios, anchor=${fromMessageId}`);
+    hilog.debug(DOMAIN, TAG,
+      `adjacentAudio: got ${messages.length} audios, anchor=${fromMessageId} newer=${newer}`);
+    // messages are newest-first: for 'newer' the LAST qualifying entry is the
+    // closest to the anchor, for 'older' the FIRST qualifying entry is.
     let best: AdjacentAudioTrack | undefined = undefined;
     for (let i = 0; i < messages.length; i++) {
       const msg = messages[i] as TdObject;
       const id = msg.getInt64String('id');
-      if (id.length === 0 || !isMessageIdNewer(id, fromMessageId)) {
+      if (id.length === 0) {
         continue;
       }
-      const audio = msg.getObject('content').getObject('audio');
-      const file = audio.getObject('audio');
-      // getTopLevelNumber: generic nested 'id' lookup hits remote.id (string)
-      // first and silently returns 0 (same pitfall as the thumb parsing above).
-      const fileId = file.getTopLevelNumber('id');
-      if (fileId <= 0) {
+      const qualifies = newer ? isMessageIdNewer(id, fromMessageId)
+        : isMessageIdNewer(fromMessageId, id);
+      if (!qualifies) {
         continue;
       }
-      // messages are newest-first: the LAST qualifying entry is the closest
-      const track = new AdjacentAudioTrack();
-      track.messageId = id;
-      track.fileId = fileId;
-      track.localPath = file.getObject('local').getBool('is_downloading_completed')
-        ? file.getObject('local').getString('path')
-        : '';
-      track.title = audio.getString('title');
-      track.performer = audio.getString('performer');
+      const track = parseAdjacentAudioTrack(msg, id);
+      if (!track) {
+        continue;
+      }
+      if (!newer) {
+        return track;
+      }
       best = track;
     }
     return best;

@@ -21,6 +21,8 @@ import { TgRootSearchDock } from '../tg_ui/atoms/TgRootSearchDock';
 import { TgRootMiniPlayer } from '../tg_ui/atoms/TgRootMiniPlayer';
 import { globalMediaPlayback, mediaPlaybackUIState, MediaPlaybackUIState } from './chat/GlobalMediaPlayback';
 import { PendingJumpSignal } from './chat/PendingJumpSignal';
+import { TgIslandPlayerCard } from '../tg_ui/molecules/TgIslandPlayerCard';
+import { common } from '@kit.AbilityKit';
 import { TgChatSplitPlaceholder } from '../tg_ui/atoms/TgChatSplitPlaceholder';
 import { resolveChatSplitGeometry } from '../utils/ChatSplitGeometry';
 import {
@@ -80,6 +82,8 @@ export struct MainTabsPage {
   // Island player body-tap → ChatListPage.openChat bridge (tick + payload).
   @Local private islandOpenChatTick: number = 0;
   @Local private islandOpenChatId: number = 0;
+  // v3: full player card in a native sheet (audio body-tap).
+  @Local private playerCardExpanded: boolean = false;
   // True only after applyMiniBarStyle(EXPAND) ran on a visible bar; reset
   // whenever the bar hides so a re-shown bar always mounts COLLAPSE and the
   // expand transaction has a real delta to animate (see rootIslandMiniBar).
@@ -318,9 +322,43 @@ export struct MainTabsPage {
     if (chatId === 0 || messageId === '0' || this.navState.chatScreenVisible) {
       return;
     }
+    // Audio opens the full player card (Music-app pattern); voice jumps to
+    // the message in its chat.
+    if (this.playback.contentType === 'audio') {
+      this.playerCardExpanded = true;
+      return;
+    }
     PendingJumpSignal.set(chatId, messageId);
     this.islandOpenChatId = chatId;
     this.islandOpenChatTick += 1;
+  }
+
+  @Builder
+  buildPlayerCardSheet() {
+    TgIslandPlayerCard({
+      title: this.playback.title,
+      subtitle: this.playback.subtitle,
+      coverPath: this.playback.coverPath,
+      isPlaying: this.playback.isPlaying,
+      progress: this.playback.progress,
+      durationMs: this.playback.durationMs,
+      speed: this.playback.speed,
+      onTogglePlay: (): void => {
+        globalMediaPlayback.toggleCurrent().catch((_error: Object) => {});
+      },
+      onNext: (): void => {
+        globalMediaPlayback.playNextAudio().catch((_error: Object) => {});
+      },
+      onPrev: (): void => {
+        globalMediaPlayback.playPrevAudio().catch((_error: Object) => {});
+      },
+      onSeek: (progress: number): void => {
+        globalMediaPlayback.seekToProgress(progress).catch((_error: Object) => {});
+      },
+      onCycleSpeed: (): void => {
+        globalMediaPlayback.cyclePlaybackSpeed().catch((_error: Object) => {});
+      }
+    })
   }
 
   private handlePlayerBarStyleChange(miniBarStyle: HdsBarStyle, mode: HdsTabsBarChangeMode): void {
@@ -372,6 +410,7 @@ export struct MainTabsPage {
     }
     this.playerUserCollapsed = false;
     this.playerBarStyleApplied = false;
+    this.playerCardExpanded = false;
     if (this.playback.hasActive) {
       // Search took the slot; its own activation flow drives the bar style.
       return;
@@ -535,6 +574,12 @@ export struct MainTabsPage {
     this.navState.chatScreenVisible = false;
     this.controller.changeIndex(this.selectedIndex);
     this.syncRootBarHidden(false);
+    try {
+      globalMediaPlayback.attachAvSession(
+        this.getUIContext().getHostContext() as common.UIAbilityContext);
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'attachAvSession failed: %{public}s', String(error));
+    }
     hilog.info(DOMAIN, TAG, 'MainTabsPage appeared with tab index: %{public}d', this.selectedIndex);
   }
 
@@ -883,6 +928,14 @@ export struct MainTabsPage {
         .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
         .animationDuration(0)
         .scrollable(false)
+        .bindSheet(this.playerCardExpanded, this.buildPlayerCardSheet(), {
+          height: 560,
+          backgroundColor: TgUiTokens.COLOR_BG_PRIMARY,
+          showClose: true,
+          onDisappear: (): void => {
+            this.playerCardExpanded = false;
+          }
+        })
         .onChange((index: number) => {
           hilog.info(DOMAIN, TAG, 'HdsTabs onChange: %{public}d', index);
           this.handleTabChange(index);

@@ -200,6 +200,8 @@ export class ChatMessageRowVO {
   audioDuration: number = 0;
   audioTitle: string = '';
   audioPerformer: string = '';
+  audioCoverPath: string = '';
+  audioCoverFileId: number = 0;
   fileName: string = '';
   fileSize: number = 0;
   mimeType: string = '';
@@ -1040,6 +1042,8 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
     row.audioDuration = content.audioDuration;
     row.audioTitle = content.audioTitle;
     row.audioPerformer = content.audioPerformer;
+    row.audioCoverPath = resolveContentPath(content.audioCoverPath, content.audioCoverFileId, state, '');
+    row.audioCoverFileId = content.audioCoverFileId;
     row.fileName = content.audioTitle.length > 0 ? content.audioTitle : content.fileName;
   }
 

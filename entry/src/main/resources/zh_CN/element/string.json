@@ -2855,6 +2855,10 @@
     {
       "name": "group_members_not_added",
       "value": "有 %d 位成员未能添加，可通过邀请链接邀请。"
+    },
+    {
+      "name": "permission_background_audio_reason",
+      "value": "在后台继续播放音乐和语音消息"
     }
   ]
 }

@@ -15,8 +15,11 @@ Last updated: 2026-07-21
   - [x] v1 (2026-07-22): полоса по паттерну Музыки — ⏭ для audio (глобальный next: searchChatMessages from='0' filter=Audio + downloadFile synchronous; чинит и auto-advance вне чата), тап тела → openChat-мост в ChatListPage + PendingJumpSignal → чат открывается на играющем сообщении. E2E-витнессы в «Ремиксы | Gold»: смена трека ⏭ (SUF→Mhk', лог next=…+скрин), конец плейлиста = корректный no-op, body-tap jump. Пофикшена remote.id-грабля (file id только через getTopLevelNumber)
     - [ ] хвост: body-tap с не-Chats табов (мост живёт в ChatListPage)
     - [ ] хвост: ⏮ prev-трек (симметрия ⏭) — решить в v3
-  - [ ] v2: AVSession + continuous task audioPlayback — шторка/локскрин/наушники, музыка живёт при свёрнутом приложении
-  - [ ] v3: морф-карточка из острова — обложка (допарсить album_cover_thumbnail), сик-бар, ⏮⏭, скорость, тап-вне сворачивает
+  - [x] v2 (2026-07-22): AVSession ('TgIslandPlayer', audio) + continuous task AUDIO_PLAYBACK — E2E: системная медиа-карточка в Пункте управления (трек/исполнитель/бейдж приложения, скрин control-center-media.png), музыка играет через 12с после Home, pause из системной карточки доходит (`avSession cmd: pause` → JsPause Task). module.json5: backgroundModes audioPlayback + KEEP_BACKGROUND_RUNNING
+  - [x] v3 (2026-07-22): карточка плеера в нативном bindSheet по тапу тела с музыкой — обложка (album_cover_thumbnail допарсен DTO→модель→VO, догрузка thumb в карточке), слайдер-сик (витнесс 0:13→5:09), скорость 1x/1.5x/2x (setSpeed), ⏮⏭ через общий findAdjacentAudio (prev-витнесс Mhk'→Stand up friend'). Войс-тап остался прыжком к сообщению
+    - [ ] хвост-полиш: bg task рестартует на межтрековом release-снапшоте '0' (стоп/старт цикл) — держать таск до конца сессии
+    - [ ] хвост-полиш: system play/pause оба маплены в toggle — строгие play()/pause() против рассинхрона иконки шторки
+    - [ ] хвост: обложка в системной карточке (mediaImage file:// — проверить формат/PixelMap на живом устройстве)
 - [x] **Авто-мини выключен** (`USE_ROOT_BAR_AUTO_HIDE_ON_SCROLL=false`, решение пользователя 2026-07-22) — остров постоянный; включение вернётся настройкой
 
 ## Срез 2026-07-21 — баг-хант баблов/цитат (закрыт, см. STATUS)

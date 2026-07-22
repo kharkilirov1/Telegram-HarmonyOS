@@ -2,7 +2,13 @@
 
 Snapshot date: 2026-07-22 (target API 26; live runtime floor API 23)
 
-## Latest (2026-07-22, вечер) — Island Player Suite v1: полоса по паттерну Музыки
+## Latest (2026-07-22, ночь) — Island Player Suite v2+v3: системная интеграция и полный плеер
+
+- **v2 — AVSession + фон:** `GlobalMediaPlayback.attachAvSession(context)` (вызов из MainTabsPage.aboutToAppear) создаёт одну сессию 'audio' на приложение; на каждом снапшоте — троттленный `setAVPlaybackState` (флипы play/pause или ≥3с позиции), на смене трека/меты — `setAVMetadata` (assetId=messageId, title, artist, duration, mediaImage при наличии обложки). Команды из системы: play/pause→toggle, stop, playNext/playPrevious→findAdjacentAudio, seek→seekToProgress. Continuous task AUDIO_PLAYBACK берётся на старте воспроизведения (wantAgent на EntryAbility), отпускается при полном стопе; module.json5 — backgroundModes audioPlayback + KEEP_BACKGROUND_RUNNING (+reason-строки en/ru/zh). **E2E:** системная медиа-карточка в Пункте управления с треком/исполнителем/бейджем приложения (`control-center-media.png`), музыка играет спустя 12с после Home (`curState: playing`), pause из системной карточки доходит и исполняется (`avSession cmd: pause` → JsPause Task).
+- **v3 — карточка плеера:** тап тела острова с музыкой открывает `TgIslandPlayerCard` в нативном `bindSheet` (560vp, showClose): обложка (заглушка при отсутствии; `album_cover_thumbnail` допарсен DTO→модель(AppState)→VO, недокачанный thumb догружается по coverFileId и подставляется), тайтл/исполнитель, слайдер-сик с временем (E2E: 0:13→5:09 драгом), контролы 1x/1.5x/2x (`setPlaybackSpeed`, скорость переживает смену трека), ⏮/▶⏸/⏭ (prev-E2E: Mhk'→Stand up friend'). Войс-тап остался прыжком к сообщению. `findNextAudioNewer` обобщён в `findAdjacentAudio(newer)`.
+- Хвосты-полиш в TODO: bg task стоп/старт на межтрековом '0'-снапшоте; строгие play/pause вместо toggle для системных команд; обложка в системной карточке.
+
+## Ранее (2026-07-22, вечер) — Island Player Suite v1: полоса по паттерну Музыки
 
 - **⏭ для музыки в острове:** `TgRootMiniPlayer` получил skip-next (новая иконка `ic_skip_next`), показывается только для `contentType==='audio'`. Глобальный next в `GlobalMediaPlayback.playNextAudio()`: `searchChatMessages(from='0', filter=Audio, limit=100)` → ближайший новее якоря → при нужде блокирующий `downloadFile(synchronous=true)` → toggle. Тот же метод подхватывает auto-advance аудио, когда страница чата мертва (раньше completed вне чата глох). Конец плейлиста = честный no-op.
 - **Тап тела плеера → прыжок к играющему сообщению** (voice и audio; в v3 audio заберёт морф-карточка): `PendingJumpSignal` + tick-мост `islandOpenChatTick/Id` из MainTabsPage в живой ChatListPage, который выполняет свой полный `openChat`-ритуал. Голый `pushPathByName` из таб-страницы рендерит сплит-плейсхолдер «Чат не выбран» — открывать чаты можно только ритуалом ChatListPage (активный чат в трёх стейтах + unread-снапшот + requestOpenChatData).

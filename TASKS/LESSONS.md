@@ -2,6 +2,13 @@
 
 Last updated: 2026-07-22
 
+## 115. AVSession/bindSheet/фон: заметки v2+v3
+- AVSession подключается к уже готовому глобальному плееру одним листенером: мета-словарь на смене assetId + троттленный playback-state (флипы + ≥3с позиции) — сессия «бесплатно» даёт карточку Пункта управления, локскрин и команды с наушников. Контекст берётся в aboutToAppear корневой страницы (`getUIContext().getHostContext() as common.UIAbilityContext`), не в EntryAbility.
+- Витнесс «команда из системы дошла» — hilog в session.on-колбэке, а «пауза исполнена» — родные `JsPause Task Start/Out/End` логи AVPlayerNapi: `JsGetState`-строки живут только пока тикает прогресс-таймер, после паузы их просто нет (отсутствие ≠ не сработало).
+- Промежуточная модель обязательна: DTO-поле без дублирования в MessageContent (AppState) и ОБОИХ редьюсерах (messagesReducer + filesReducer clone-путь) — компайл-ошибка в VO-маппере. Поля медиа-контента живут в ЧЕТЫРЁХ местах.
+- Слепой «already»-чек в патч-скриптах (grep по второй строке replacement) молча пропускает файлы — после массовых python-патчей перепроверять каждый файл грепом цели.
+- bindSheet(560vp, showClose) — самый дешёвый нативный «полноценный плеер»: drag-bar, жест закрытия и скругления бесплатно; onDisappear синхронизирует @Local-флаг при жестовом закрытии.
+
 ## 114. Island Player v1: три ловушки одного среза
 - TDLib file id — ТОЛЬКО `getTopLevelNumber('id')`: generic вложенный `getNumber('id')` первым находит `remote.id` (строка) и молча возвращает 0 → «no newer track» при живом кандидате. Грабля уже была описана комментарием в parseSharedMediaItem — читай соседний рабочий парсер ДО написания своего.
 - Открытие чата — ритуал ChatListPage (активный чат в navigationUIState+chatUIState+AppStorage, unread-снапшот, navLock, requestOpenChatData). Голый `pushPathByName('TgChatScreenPage')` из другой страницы рендерит сплит-плейсхолдер «Чат не выбран». Внешним инициаторам — tick-мост параметром в живой ChatListPage.

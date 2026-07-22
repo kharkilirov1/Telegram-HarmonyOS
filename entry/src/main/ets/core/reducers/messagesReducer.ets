@@ -124,6 +124,8 @@ function contentFromDto(dto: MessageContentDto): MessageContent {
   content.audioDuration = dto.audioDuration;
   content.audioTitle = dto.audioTitle;
   content.audioPerformer = dto.audioPerformer;
+  content.audioCoverPath = dto.audioCoverPath;
+  content.audioCoverFileId = dto.audioCoverFileId;
 
   content.voicePath = dto.voicePath;
   content.voiceFileId = dto.voiceFileId;
@@ -290,6 +292,8 @@ function cloneMessage(msg: Message): Message {
   clonedContent.audioDuration = msg.content.audioDuration;
   clonedContent.audioTitle = msg.content.audioTitle;
   clonedContent.audioPerformer = msg.content.audioPerformer;
+  clonedContent.audioCoverPath = msg.content.audioCoverPath;
+  clonedContent.audioCoverFileId = msg.content.audioCoverFileId;
   clonedContent.voicePath = msg.content.voicePath;
   clonedContent.voiceFileId = msg.content.voiceFileId;
   clonedContent.voiceDuration = msg.content.voiceDuration;
