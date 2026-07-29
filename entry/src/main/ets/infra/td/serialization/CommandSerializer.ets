@@ -45,6 +45,7 @@ import {
   SetTdlibOnlineCommand,
   GetUserFullInfoCommand,
   GetSupergroupFullInfoCommand,
+  GetBasicGroupFullInfoCommand,
   SearchChatMembersCommand,
   GetSupergroupMembersCommand,
   DownloadFileCommand,
@@ -120,6 +121,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('closeChat', serializeCloseChat);
 COMMAND_SERIALIZATION_HANDLERS.set('setTdlibOnline', serializeSetTdlibOnline);
 COMMAND_SERIALIZATION_HANDLERS.set('getUserFullInfo', serializeGetUserFullInfo);
 COMMAND_SERIALIZATION_HANDLERS.set('getSupergroupFullInfo', serializeGetSupergroupFullInfo);
+COMMAND_SERIALIZATION_HANDLERS.set('getBasicGroupFullInfo', serializeGetBasicGroupFullInfo);
 COMMAND_SERIALIZATION_HANDLERS.set('searchChatMembers', serializeSearchChatMembers);
 COMMAND_SERIALIZATION_HANDLERS.set('getSupergroupMembers', serializeGetSupergroupMembers);
 COMMAND_SERIALIZATION_HANDLERS.set('downloadFile', serializeDownloadFile);
@@ -490,6 +492,12 @@ function serializeGetSupergroupFullInfo(command: AnyAppCommand, result: Serializ
   const cmd = command as GetSupergroupFullInfoCommand;
   result.method = 'getSupergroupFullInfo';
   result.params.setNumber('supergroup_id', cmd.payload.supergroupId);
+}
+
+function serializeGetBasicGroupFullInfo(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetBasicGroupFullInfoCommand;
+  result.method = 'getBasicGroupFullInfo';
+  result.params.setNumber('basic_group_id', cmd.payload.basicGroupId);
 }
 
 function chatMembersFilterJson(filterKind: string): string {

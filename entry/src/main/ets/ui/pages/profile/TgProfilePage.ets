@@ -5,7 +5,7 @@
 
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, User, Chat } from '../../../core/model/AppState';
-import { loadUserFullInfo, loadSupergroupFullInfo } from '../../../domain/usecases/loadProfileInfo';
+import { loadUserFullInfo, loadSupergroupFullInfo, loadBasicGroupFullInfo } from '../../../domain/usecases/loadProfileInfo';
 import { TgAvatar } from '../../tg_ui/atoms/TgAvatar';
 import { TgProfileNavigationBar } from '../../tg_ui/atoms/TgProfileNavigationBar';
 import { SharedMediaRouteParams } from './TgSharedMediaPage';
@@ -191,6 +191,8 @@ export struct TgProfilePage {
         loadUserFullInfo(chat.peerUserId);
       } else if ((chat.type === 'supergroup' || chat.type === 'channel') && chat.supergroupId > 0) {
         loadSupergroupFullInfo(chatId, chat.supergroupId);
+      } else if (chat.type === 'group' && chat.basicGroupId > 0) {
+        loadBasicGroupFullInfo(chatId, chat.basicGroupId);
       }
     }
   }

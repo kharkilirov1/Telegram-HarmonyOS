@@ -51,6 +51,7 @@ export class ChatDto {
   draftCustomEmojiEntities: CustomEmojiTextEntity[] = [];
   draftReplyToMessageId: string = '0';
   supergroupId: number = 0;
+  basicGroupId: number = 0;
 }
 
 export function extractCustomEmojiTextEntities(formattedText: TdObject): CustomEmojiTextEntity[] {
@@ -105,9 +106,11 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   }
 
   const chatDto = new ChatDto();
-  // Extract supergroup_id for later getSupergroupFullInfo calls
+  // Extract supergroup_id / basic_group_id for later *FullInfo calls
   if (tdTypeStr === 'chatTypeSupergroup') {
     chatDto.supergroupId = tdGetNumber(tdTypeObj, 'supergroup_id');
+  } else if (tdTypeStr === 'chatTypeBasicGroup') {
+    chatDto.basicGroupId = tdGetNumber(tdTypeObj, 'basic_group_id');
   }
   chatDto.id = tdChat.getTopLevelNumber('id');
   chatDto.type = type;
@@ -274,6 +277,8 @@ export function applyChatUpdate(chat: ChatDto, update: ChatUpdateDto): ChatDto {
   updatedChat.id = chat.id;
   updatedChat.type = chat.type;
   updatedChat.peerUserId = chat.peerUserId;
+  updatedChat.supergroupId = chat.supergroupId;
+  updatedChat.basicGroupId = chat.basicGroupId;
   updatedChat.accentColorId = chat.accentColorId;
   updatedChat.title = chat.title;
   updatedChat.unreadCount = chat.unreadCount;

@@ -94,6 +94,7 @@ import {
   createSendMediaMessageUseCase
 } from '../../../domain/usecases/sendMediaMessage';
 import { createEditMessageUseCase, EditMessageUseCase } from '../../../domain/usecases/editMessage';
+import { loadSupergroupFullInfo, loadBasicGroupFullInfo } from '../../../domain/usecases/loadProfileInfo';
 import { createDeleteMessagesUseCase, DeleteMessagesUseCase } from '../../../domain/usecases/deleteMessages';
 import { ForwardMessagesUseCase, createForwardMessagesUseCase } from '../../../domain/usecases/forwardMessages';
 import { createOpenChatUseCase, OpenChatUseCase } from '../../../domain/usecases/openChat';
@@ -259,6 +260,8 @@ export struct TgChatScreenPage {
   @Local private activeAudioProgress: number = 0;
   @Local private activeAudioPlaying: boolean = false;
   @Local private pendingMediaDownloadVersion: number = 0;
+  // Однократный запрос member count на чат: объект чата TDLib счётчик не несёт
+  private memberCountHydratedChatId: number = 0;
   @Local private showMediaGallery: boolean = false;
   @Local private galleryItems: MediaGalleryItem[] = [];
   @Local private galleryInitialIndex: number = 0;
@@ -1828,6 +1831,15 @@ export struct TgChatScreenPage {
       }
     } else {
       // Groups/supergroups/channels: show member count
+      if (chat.memberCount === 0 && this.memberCountHydratedChatId !== chat.id) {
+        if (chat.supergroupId > 0) {
+          this.memberCountHydratedChatId = chat.id;
+          loadSupergroupFullInfo(chat.id, chat.supergroupId);
+        } else if (chat.basicGroupId > 0) {
+          this.memberCountHydratedChatId = chat.id;
+          loadBasicGroupFullInfo(chat.id, chat.basicGroupId);
+        }
+      }
       if (chat.memberCount > 0) {
         if (chat.type === 'channel') {
           const fmt = localized($r('app.string.subscribers_count').id, '%s subscribers');

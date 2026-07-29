@@ -67,6 +67,7 @@ export class Chat {
   memberCount: number = 0;
   description: string = '';
   supergroupId: number = 0; // TDLib supergroup_id for fetching full info
+  basicGroupId: number = 0; // TDLib basic_group_id for fetching full info
   inviteLink: string = '';
   administratorCount: number = 0;
 }

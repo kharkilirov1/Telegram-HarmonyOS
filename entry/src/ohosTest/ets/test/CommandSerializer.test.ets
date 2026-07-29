@@ -10,6 +10,8 @@ import {
   createGetInstalledCustomEmojiSetsCommand,
   createGetTrendingCustomEmojiSetsCommand,
   createGetChatPinnedMessageCommand,
+  createGetSupergroupFullInfoCommand,
+  createGetBasicGroupFullInfoCommand,
   createGetRepliedMessageCommand,
   createGetChatHistoryCommand,
   createLoadChatsCommand,
@@ -81,6 +83,16 @@ export default function commandSerializerTest() {
         expect(unarchive.method).assertEqual('addChatToList');
         expect(unarchive.params.getNumber('chat_id')).assertEqual(123);
         expect(unarchive.params.getString('_chat_list_json')).assertEqual('{"@type":"chatListMain"}');
+      });
+
+      it('should serialize both group full-info requests with their TDLib ids', 0, () => {
+        const supergroup = serializeCommand(createGetSupergroupFullInfoCommand(777));
+        expect(supergroup.method).assertEqual('getSupergroupFullInfo');
+        expect(supergroup.params.getNumber('supergroup_id')).assertEqual(777);
+
+        const basicGroup = serializeCommand(createGetBasicGroupFullInfoCommand(90));
+        expect(basicGroup.method).assertEqual('getBasicGroupFullInfo');
+        expect(basicGroup.params.getNumber('basic_group_id')).assertEqual(90);
       });
 
       it('should serialize createPrivateChat with force=false by default', 0, () => {

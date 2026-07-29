@@ -161,6 +161,10 @@ export class GetSupergroupFullInfoPayload {
   supergroupId: number = 0;
 }
 
+export class GetBasicGroupFullInfoPayload {
+  basicGroupId: number = 0;
+}
+
 export type ChatMembersFilterKind = 'all' | 'members' | 'administrators';
 
 export class SearchChatMembersPayload {
@@ -473,6 +477,11 @@ export class GetSupergroupFullInfoCommand extends AppCommand {
   payload: GetSupergroupFullInfoPayload = new GetSupergroupFullInfoPayload();
 }
 
+export class GetBasicGroupFullInfoCommand extends AppCommand {
+  type: string = 'getBasicGroupFullInfo';
+  payload: GetBasicGroupFullInfoPayload = new GetBasicGroupFullInfoPayload();
+}
+
 export class SearchChatMembersCommand extends AppCommand {
   type: string = 'searchChatMembers';
   payload: SearchChatMembersPayload = new SearchChatMembersPayload();
@@ -679,6 +688,7 @@ export type AnyAppCommand =
   | CloseChatCommand
   | GetUserFullInfoCommand
   | GetSupergroupFullInfoCommand
+  | GetBasicGroupFullInfoCommand
   | SearchChatMembersCommand
   | GetSupergroupMembersCommand
   | EditMessageTextCommand
@@ -952,6 +962,12 @@ export function createGetUserFullInfoCommand(userId: UserId): GetUserFullInfoCom
 export function createGetSupergroupFullInfoCommand(supergroupId: number): GetSupergroupFullInfoCommand {
   const cmd = new GetSupergroupFullInfoCommand();
   cmd.payload.supergroupId = supergroupId;
+  return cmd;
+}
+
+export function createGetBasicGroupFullInfoCommand(basicGroupId: number): GetBasicGroupFullInfoCommand {
+  const cmd = new GetBasicGroupFullInfoCommand();
+  cmd.payload.basicGroupId = basicGroupId;
   return cmd;
 }
 

@@ -153,6 +153,7 @@ export function cloneChat(chat: Chat): Chat {
   newChat.memberCount = chat.memberCount;
   newChat.description = chat.description;
   newChat.supergroupId = chat.supergroupId;
+  newChat.basicGroupId = chat.basicGroupId;
   newChat.inviteLink = chat.inviteLink;
   newChat.administratorCount = chat.administratorCount;
   if (chat.lastMessage) {
