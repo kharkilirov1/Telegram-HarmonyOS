@@ -155,11 +155,10 @@ export struct TgGroupedPhotoBubble {
       this.cellDownloading(index),
       this.cellFileId(index)
     );
-    if (mode === 'download') {
+    if (mode === 'downloadAndOpen') {
       this.onDownloadToggle(index);
-      return;
     }
-    if (mode === 'open') {
+    if (mode === 'open' || mode === 'downloadAndOpen') {
       this.onPhotoTap(index);
     }
   }
@@ -254,7 +253,7 @@ export struct TgGroupedPhotoBubble {
     .alignItems(VerticalAlign.Center)
     .backgroundColor(TgUiTokens.VIDEO_BUBBLE_PLAY_BG)
     .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
-    .onClick(() => this.onDownloadToggle(index))
+    .onClick(() => this.handleSurfaceTap(index))
     .transition({
       type: TransitionType.All,
       opacity: 0,

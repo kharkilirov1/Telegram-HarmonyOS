@@ -17,11 +17,11 @@ export default function tgMediaGalleryPolicyTest() {
       expect(resolveVisualMediaTapMode(true, false)).assertEqual('open');
     });
 
-    it('downloads a remote album cell before allowing the gallery to open', 0, () => {
+    it('opens a remote album cell immediately while starting only an idle download', 0, () => {
       expect(resolvePhotoAlbumTapMode(true, false, 77)).assertEqual('open');
-      expect(resolvePhotoAlbumTapMode(false, false, 77)).assertEqual('download');
-      expect(resolvePhotoAlbumTapMode(false, true, 77)).assertEqual('none');
-      expect(resolvePhotoAlbumTapMode(false, false, 0)).assertEqual('none');
+      expect(resolvePhotoAlbumTapMode(false, false, 77)).assertEqual('downloadAndOpen');
+      expect(resolvePhotoAlbumTapMode(false, true, 77)).assertEqual('open');
+      expect(resolvePhotoAlbumTapMode(false, false, 0)).assertEqual('open');
     });
 
     it('releases an optimistic gallery spinner when the exact file fails', 0, () => {

@@ -254,7 +254,7 @@ export struct TgPhotoBubble {
       if (this.isDownloading) {
         this.buildDownloadingStatusButton()
       } else if (!this.hasLocalPhoto || this.isDownloadFailed) {
-        this.buildIdleStatusButton(TgUiTokens.ICON_RES_DOWNLOAD, () => this.onDownloadToggle())
+        this.buildIdleStatusButton(TgUiTokens.ICON_RES_DOWNLOAD, () => this.handleSurfaceTap())
       }
     }
     .width('100%')

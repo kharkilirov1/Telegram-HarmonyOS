@@ -1,5 +1,5 @@
 export type TgVisualMediaTapMode = 'open' | 'downloadAndOpen';
-export type TgPhotoAlbumTapMode = 'open' | 'download' | 'none';
+export type TgPhotoAlbumTapMode = 'open' | 'downloadAndOpen' | 'none';
 export type TgGalleryPreviewKind = 'thumbnail' | 'minithumb' | 'none';
 
 export class TgGalleryPhotoOffset {
@@ -30,13 +30,10 @@ export function resolveVisualMediaTapMode(hasLocalMedia: boolean, isDownloading:
 
 export function resolvePhotoAlbumTapMode(hasLocalMedia: boolean, isDownloading: boolean,
   fileId: number): TgPhotoAlbumTapMode {
-  if (hasLocalMedia) {
-    return 'open';
+  if (!hasLocalMedia && !isDownloading && fileId > 0) {
+    return 'downloadAndOpen';
   }
-  if (!isDownloading && fileId > 0) {
-    return 'download';
-  }
-  return 'none';
+  return 'open';
 }
 
 export function resolveGalleryTransferActive(isDownloading: boolean, downloadProgress: number,
