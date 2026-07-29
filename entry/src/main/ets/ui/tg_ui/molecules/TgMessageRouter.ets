@@ -1110,6 +1110,7 @@ export struct TgMessageRouter {
               accentHex: this.replyAuthorColorHex,
               hasThumbnail: this.replyHasThumbnail,
               thumbnailSrc: this.replyThumbnailSrc,
+              fillWidth: true,
               // maxBubbleWidth() is already ratio-capped; the parent constrains
               // the snippet — a second ratio here would squeeze it further.
               containerWidth: this.maxBubbleWidth(),
@@ -1378,6 +1379,7 @@ export struct TgMessageRouter {
                 accentHex: this.replyAuthorColorHex,
                 hasThumbnail: this.replyHasThumbnail,
                 thumbnailSrc: this.replyThumbnailSrc,
+              fillWidth: true,
                 containerWidth: this.maxBubbleWidth(),
                 maxWidthRatio: 1.0
               })

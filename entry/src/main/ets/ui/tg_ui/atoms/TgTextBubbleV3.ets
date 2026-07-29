@@ -142,6 +142,7 @@ export struct TgTextBubbleV3 {
         accentHex: this.replyAuthorColorHex,
         hasThumbnail: this.replyHasThumbnail,
         thumbnailSrc: this.replyThumbnailSrc,
+        fillWidth: true,
         // The engine already shrink-wrapped the bubble; re-applying the bubble
         // ratio here would clip the snippet below the reserved content width.
         containerWidth: this.layout?.bubbleWidth ?? this.containerWidth,

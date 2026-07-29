@@ -11,6 +11,9 @@ export struct TgReplySnippet {
   @Param thumbnailSrc: Resource | string = $r('app.media.app_icon_transparent');
   @Param containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH;
   @Param maxWidthRatio: number = TgUiTokens.BUBBLE_MAX_WIDTH_RATIO;
+  // iOS: плашка реплая заполняет ширину контента бабла, а не свой текст —
+  // иначе реплай на медиа («Видеосообщение») рендерится обрубком
+  @Param fillWidth: boolean = false;
 
   private resolvedAuthor(): string {
     return this.author.length > 0 ? this.author : ' ';
@@ -146,6 +149,7 @@ export struct TgReplySnippet {
         bottom: TgUiTokens.REPLY_SNIPPET_PADDING_V
       })
     }
+    .width(this.fillWidth ? '100%' : undefined)
     .constraintSize({
       maxWidth: this.maxSnippetWidth()
     })

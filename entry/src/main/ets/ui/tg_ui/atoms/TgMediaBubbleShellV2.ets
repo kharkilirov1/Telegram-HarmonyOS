@@ -402,6 +402,7 @@ export struct TgMediaBubbleShellV2 {
               accentHex: this.replyAuthorColorHex,
               hasThumbnail: this.replyHasThumbnail,
               thumbnailSrc: this.replyThumbnailSrc,
+              fillWidth: true,
               containerWidth: this.maxBubbleWidth(),
               maxWidthRatio: 1.0
             })
