@@ -88,6 +88,9 @@ export struct TgTextBodyV3 {
   // Accent color for quote bar (sender color in groups)
   @Param quoteAccentHex: string = ''
 
+  // Optional reserve text appended transparently to the last plain segment (for inline meta)
+  @Param metaReserveText: string = ''
+
   private hasQuotes(): boolean {
     return this.quoteOffsets.length > 0 && this.quoteLengths.length > 0
   }
@@ -245,8 +248,8 @@ export struct TgTextBodyV3 {
   }
 
   @Builder
-  buildPlainSegment(segText: string, segStart: number = 0) {
-    if (this.hasEntities(segStart, segText.length)) {
+  buildPlainSegment(segText: string, segStart: number = 0, isLast: boolean = false) {
+    if (this.hasEntities(segStart, segText.length) || (isLast && this.metaReserveText.length > 0)) {
       Text() {
         ForEach(splitRichSpans(segText, segStart, this.textEntities),
           (span: RichSpan) => {
@@ -263,6 +266,12 @@ export struct TgTextBodyV3 {
               .fontFamily(span.isCode ? 'monospace' : 'HarmonyOS Sans')
               .textBackgroundStyle(span.isCode ? { color: this.codeBg(), radius: 4 } : undefined)
           })
+
+        if (isLast && this.metaReserveText.length > 0) {
+          Span(this.metaReserveText)
+            .fontSize(TgUiTokens.MSG_META_SIZE)
+            .fontColor(Color.Transparent)
+        }
       }
       .lineHeight(TgUiTokens.MSG_TEXT_LINE_HEIGHT)
       .textAlign(TextAlign.Start)
@@ -348,14 +357,14 @@ export struct TgTextBodyV3 {
           if (seg.isQuote) {
             this.buildQuoteSegment(seg.text, seg.startOffset, seg.isCollapsed)
           } else {
-            this.buildPlainSegment(seg.text, seg.startOffset)
+            this.buildPlainSegment(seg.text, seg.startOffset, seg.isLast)
           }
         }, (seg: TextBodySegment, idx: number) =>
           `seg_${idx}_${seg.isQuote ? 'q' : 'p'}_${seg.startOffset}_${seg.text.length}_${seg.isCollapsed ? 'c' : 'e'}`)
       }
       .alignItems(HorizontalAlign.Start)
     } else {
-      this.buildPlainSegment(this.text, 0)
+      this.buildPlainSegment(this.text, 0, true)
     }
   }
 }

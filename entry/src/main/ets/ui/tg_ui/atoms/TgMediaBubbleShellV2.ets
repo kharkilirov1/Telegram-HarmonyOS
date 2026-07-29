@@ -465,19 +465,13 @@ export struct TgMediaBubbleShellV2 {
             .width(this.visualMediaBubbleWidth())
           } else {
             Stack({ alignContent: Alignment.BottomEnd }) {
-              Text() {
-                Span(this.caption.trim())
-                  .fontSize(TgUiTokens.MSG_TEXT_SIZE)
-                  .fontWeight(TgUiTokens.MSG_TEXT_WEIGHT)
-                  .fontColor(this.captionColor())
-                Span(this.buildMetaReserve())
-                  .fontSize(TgUiTokens.MSG_META_SIZE)
-                  .fontColor(Color.Transparent)
-              }
-              .lineHeight(TgUiTokens.MSG_TEXT_LINE_HEIGHT)
-              .textAlign(TextAlign.Start)
-              .wordBreak(WordBreak.BREAK_WORD)
-              .lineBreakStrategy(LineBreakStrategy.HIGH_QUALITY)
+              TgTextBodyV3({
+                text: this.caption.trim(),
+                isOutgoing: this.isOutgoing,
+                contentWidth: this.visualMediaBubbleWidth() - TgUiTokens.BUBBLE_PADDING_H * 2,
+                textEntities: this.captionEntities,
+                metaReserveText: this.buildMetaReserve()
+              })
               .width('100%')
               .padding({
                 left: TgUiTokens.BUBBLE_PADDING_H,
