@@ -2,6 +2,11 @@
 
 Snapshot date: 2026-07-22 (target API 26; live runtime floor API 23)
 
+## Latest (2026-07-29, тик 5) — continuous task переживает межтрековый '0'-снапшот
+
+- **Island-player хвост закрыт кодом:** каждый `release()` эмитит снапшот `messageId='0'`, включая межтрековый внутри `openAndStart()`/auto-advance — continuous task AUDIO_PLAYBACK стопался и стартовал на каждой смене трека (окно для убийства процесса в фоне). Теперь '0'-снапшот взводит отложенный стоп (linger 4с — покрывает блокирующий downloadFile следующего трека), любой playing-снапшот его отменяет; явный `stop()` (остров ✕ / AVSession stop) гасит таск немедленно, как раньше. Гейты main 2:18 / smoke-ui / ohosTest 1:26 зелёные; runtime-витнесс — в очередь к эмулятору.
+- Контрольная проверка тика 4: `quoteTextStyle()` движка использует тот же `MSG_QUOTE_TEXT_LINE_HEIGHT`, что и рендер — обрезка collapsed-цитат согласована by construction.
+
 ## Latest (2026-07-29, тик 4) — collapsed-цитаты по iOS-контракту
 
 - **`72d16ae`:** expandable blockquote больше не «слегка приглушённая полная цитата»: обрезка до `MSG_QUOTE_COLLAPSED_MAX_LINES=3` с эллипсисом и шевроном в правом нижнем углу (`sys.symbol.chevron_down/up`), тап по цитате разворачивает/сворачивает инлайн. Ключевая механика: движок `TgBubbleLayout` меряет ОБРЕЗАННУЮ высоту свернутой цитаты (иначе бабл выше видимого контента), состояние `expandedQuoteIndices` живёт в `TgMessageRouter` (@Local) и течёт в движок и в `TgTextBodyV3`; toggle пере-меряет layout. Идентичность цитаты — порядковый индекс над слитыми start-сортированными диапазонами — движок и рендер строят их зеркально. Токен-заглушка `MSG_QUOTE_COLLAPSED_OPACITY` удалена.
