@@ -2493,8 +2493,13 @@ export struct TgChatScreenPage {
     this.mediaDownloadCtrl.requestMediaDownload(fileId, this.pageLifecycleToken);
     this.pendingMediaDownloadVersion = this.mediaDownloadCtrl.getVersion();
     if (messageId.length > 0) {
-      // Мгновенный отклик на тап: LazyForEach-строка перерисовывается сразу
-      // (pending-состояние живёт в контроллере и без notify не доезжает до бабла)
+      const entries = this.dataSource.getAllEntries();
+      for (let i = 0; i < entries.length; i++) {
+        if (entries[i].kind === 'message' && entries[i].message.messageId === messageId) {
+          entries[i].key = entries[i].stableKey + '_dl' + this.pendingMediaDownloadVersion;
+          break;
+        }
+      }
       this.dataSource.notifyItemChangedByMessageId(messageId);
     }
   }
@@ -2506,6 +2511,13 @@ export struct TgChatScreenPage {
     }
     this.pendingMediaDownloadVersion = this.mediaDownloadCtrl.getVersion();
     if (messageId.length > 0) {
+      const entries = this.dataSource.getAllEntries();
+      for (let i = 0; i < entries.length; i++) {
+        if (entries[i].kind === 'message' && entries[i].message.messageId === messageId) {
+          entries[i].key = entries[i].stableKey + '_dl' + this.pendingMediaDownloadVersion;
+          break;
+        }
+      }
       this.dataSource.notifyItemChangedByMessageId(messageId);
     }
   }
