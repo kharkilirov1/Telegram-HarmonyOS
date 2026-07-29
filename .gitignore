@@ -68,6 +68,8 @@ hvigor-debug.txt
 
 # Temporary / scratch
 tmp/
+.tmp_*
+.agents/
 
 # Manual runtime verification artifacts
 TASKS/runtime-sweeps/forward-runtime-sweep-*.md
