@@ -931,3 +931,8 @@ Last updated: 2026-07-22
 - Gate visual acceptance on a non-empty expected UI tree or named screen node after confirming process freshness; an arbitrary short sleep can turn a valid build into a false visual failure.
 - Theme qualification should be witnessed twice: the system Settings radio state proves light/dark selection, while the app layout colors prove that the qualified `base`/`dark` resources actually engaged.
 
+
+### 2026-07-29 Смена policy-контракта обязана тянуть за собой grep по ohosTest
+- Прошлая teamwork-сессия поменяла union `TgPhotoAlbumTapMode` (`'download'`/`'none'` → `'downloadAndOpen'`/`'open'`), прогнала smoke-build + smoke-ui и объявила победу, но `TgMediaGalleryPolicy.test.ets` остался на старом контракте. `assertEqual('download')` принимает произвольную строку — суженный union компиляцию теста НЕ ломает, падение случилось бы только на on-device прогоне.
+- Компиляционные гейты (main + OhosTestCompileArkTS) не свидетельствуют о согласованности строковых ассертов с типами. При изменении любого resolver/policy-контракта — сразу `grep -rn <имя функции> entry/src/ohosTest` и правка таблицы истинности в тесте.
+- Незакоммиченный рабочий срез чужой сессии — не «сделано»: аудит той сессии сам себя проверял теми же смоками и пропустил тест. Повторная верификация в новой сессии (свои smoke-build/smoke-ui/ohosTest) заняла ~4 минуты и дала право коммитить.
