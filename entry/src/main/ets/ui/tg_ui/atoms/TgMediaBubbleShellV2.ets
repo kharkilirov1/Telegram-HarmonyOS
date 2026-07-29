@@ -26,6 +26,10 @@ export struct TgMediaBubbleShellV2 {
   @Param captionQuoteCollapsedFlags: boolean[] = [];
   @Param captionEntities: TextEntity[] = [];
 
+  // Разворот collapsed-цитат капшена живёт в самом shell: капшен не меряется
+  // движком, поэтому toggle здесь чисто рендерный (в отличие от Router-пути)
+  @Local private captionExpandedQuoteIndices: number[] = [];
+
   @Param photoPath: string = '';
   @Param photoMinithumb: string = '';
   @Param videoMinithumb: string = '';
@@ -444,6 +448,12 @@ export struct TgMediaBubbleShellV2 {
                 quoteLengths: this.captionQuoteLengths,
                 quoteCollapsedFlags: this.captionQuoteCollapsedFlags,
                 textEntities: this.captionEntities,
+                expandedQuoteIndices: this.captionExpandedQuoteIndices,
+                onQuoteToggle: (quoteIndex: number): void => {
+                  this.captionExpandedQuoteIndices = this.captionExpandedQuoteIndices.includes(quoteIndex)
+                    ? this.captionExpandedQuoteIndices.filter((idx: number): boolean => idx !== quoteIndex)
+                    : [...this.captionExpandedQuoteIndices, quoteIndex];
+                },
               })
 
               Row() {
