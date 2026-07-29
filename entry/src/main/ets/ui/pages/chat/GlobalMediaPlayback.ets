@@ -20,6 +20,9 @@ import { common } from '@kit.AbilityKit';
 
 const DOMAIN = 0x0020;
 const TAG = 'GlobalMediaPlayback';
+// Covers the inter-track gap including a blocking downloadFile of the next
+// audio; a genuine session end without stop() still releases after this.
+const BG_TASK_STOP_LINGER_MS = 4000;
 
 @ObservedV2
 export class MediaPlaybackUIState {
@@ -127,6 +130,10 @@ export class GlobalMediaPlayback {
   private avLastState: boolean | undefined = undefined;
   private avLastPositionSec: number = -10;
   private bgTaskActive: boolean = false;
+  // Deferred stop for the inter-track release snapshot ('0'): the next track
+  // starts within moments, so the continuous task must survive the gap instead
+  // of a stop/start cycle that opens a background-kill window.
+  private bgTaskStopTimer: number = -1;
 
   // Called once from the root page with its UIAbility context. Safe to call
   // again — the session is created only once per ability.
@@ -226,6 +233,9 @@ export class GlobalMediaPlayback {
     if (!context) {
       return;
     }
+    if (snapshot.messageId !== '0' && snapshot.isPlaying) {
+      this.cancelScheduledBgTaskStop();
+    }
     if (snapshot.messageId !== '0' && snapshot.isPlaying && !this.bgTaskActive) {
       this.bgTaskActive = true;
       const wantAgentInfo: wantAgent.WantAgentInfo = {
@@ -249,10 +259,31 @@ export class GlobalMediaPlayback {
         });
       return;
     }
-    if (snapshot.messageId === '0' && this.bgTaskActive) {
-      this.bgTaskActive = false;
-      backgroundTaskManager.stopBackgroundRunning(context).catch((_error: Object) => {});
+    if (snapshot.messageId === '0' && this.bgTaskActive && this.bgTaskStopTimer < 0) {
+      // Inter-track '0' or a real session end — decided by whether a new track
+      // starts before the linger elapses; an explicit stop() skips the wait.
+      this.bgTaskStopTimer = setTimeout(() => {
+        this.bgTaskStopTimer = -1;
+        this.stopBackgroundTaskNow();
+      }, BG_TASK_STOP_LINGER_MS);
     }
+  }
+
+  private cancelScheduledBgTaskStop(): void {
+    if (this.bgTaskStopTimer >= 0) {
+      clearTimeout(this.bgTaskStopTimer);
+      this.bgTaskStopTimer = -1;
+    }
+  }
+
+  private stopBackgroundTaskNow(): void {
+    this.cancelScheduledBgTaskStop();
+    const context = this.avContext;
+    if (!context || !this.bgTaskActive) {
+      return;
+    }
+    this.bgTaskActive = false;
+    backgroundTaskManager.stopBackgroundRunning(context).catch((_error: Object) => {});
   }
 
   controllerRef(): MediaPlaybackController {
@@ -330,6 +361,9 @@ export class GlobalMediaPlayback {
 
   async stop(): Promise<void> {
     await this.controller.release();
+    // Explicit session end: release the continuous task immediately instead of
+    // waiting out the inter-track linger.
+    this.stopBackgroundTaskNow();
   }
 
   async seekToProgress(progress: number): Promise<void> {
