@@ -52,7 +52,7 @@ import {
   PendingMediaOpenResolution,
   resolvePendingMediaOpenIntent
 } from './PendingMediaOpenIntent';
-import { resolveRefreshedMediaGalleryState } from './MediaGalleryState';
+import { mergeGalleryItemsInPlace, resolveRefreshedMediaGalleryState } from './MediaGalleryState';
 import { ChatScreenRouteParams } from './ChatScreenRouteParams';
 import { ChatComposerController } from './ChatComposerController';
 import {
@@ -2862,10 +2862,16 @@ export struct TgChatScreenPage {
     if (!this.showMediaGallery) {
       return;
     }
+    const nextItems = this.buildMediaGalleryItems();
+    if (mergeGalleryItemsInPlace(this.galleryItems, nextItems)) {
+      // Состав не изменился: @Trace-поля уже донесли файловую дельту до
+      // переиспользованных узлов галереи, замена массива не нужна.
+      return;
+    }
     const result = resolveRefreshedMediaGalleryState(
       this.galleryItems,
       this.galleryCurrentIndex,
-      this.buildMediaGalleryItems()
+      nextItems
     );
     if (result.shouldClose) {
       this.galleryItems = [];

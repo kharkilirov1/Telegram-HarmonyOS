@@ -1,8 +1,12 @@
+// File-transfer fields are @Trace so that gallery nodes reused by ForEach
+// (stable key = index + messageId) still repaint when a download starts,
+// progresses, fails or completes while the gallery stays open.
+@ObservedV2
 export class MediaGalleryItem {
   type: string = 'photo'; // 'photo' | 'video' | 'animation' | 'videoNote'
-  path: string = '';
-  thumbnailPath: string = '';
-  minithumb: string = '';
+  @Trace path: string = '';
+  @Trace thumbnailPath: string = '';
+  @Trace minithumb: string = '';
   caption: string = '';
   senderName: string = '';
   timestamp: string = '';
@@ -12,7 +16,7 @@ export class MediaGalleryItem {
   fileId: number = 0;
   messageId: string = '';
   sourceMessageId: string = '';
-  isDownloading: boolean = false;
-  isDownloadFailed: boolean = false;
-  downloadProgress: number = -1;
+  @Trace isDownloading: boolean = false;
+  @Trace isDownloadFailed: boolean = false;
+  @Trace downloadProgress: number = -1;
 }

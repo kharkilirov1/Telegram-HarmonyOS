@@ -33,6 +33,7 @@ import tgCustomEmojiDraftPolicyTest from './TgCustomEmojiDraftPolicy.test';
 import chatDraftEntitiesTest from './ChatDraftEntities.test';
 import chatListUnreadBadgeTest from './ChatListUnreadBadge.test';
 import mediaGalleryGeometryTransitionTest from './MediaGalleryGeometryTransition.test';
+import mediaGalleryStateTest from './MediaGalleryState.test';
 import tgPhotoAlbumLayoutTest from './TgPhotoAlbumLayout.test';
 import tgUnicodeEmojiCatalogTest from './TgUnicodeEmojiCatalog.test';
 import sharedMediaThumbnailCoordinatorTest from './SharedMediaThumbnailCoordinator.test';
@@ -100,6 +101,7 @@ export default function testsuite() {
   chatDraftEntitiesTest();
   chatListUnreadBadgeTest();
   mediaGalleryGeometryTransitionTest();
+  mediaGalleryStateTest();
   tgPhotoAlbumLayoutTest();
   tgUnicodeEmojiCatalogTest();
   sharedMediaThumbnailCoordinatorTest();
