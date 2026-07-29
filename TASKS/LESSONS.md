@@ -950,3 +950,8 @@ Last updated: 2026-07-22
 ### 2026-07-29 Новая AppCommand обязана попасть в union AnyAppCommand
 - `adapter.send(createGetBasicGroupFullInfoCommand(...))` упал `arkts-no-structural-typing`: send принимает union `AnyAppCommand`, и класс, не вписанный в union (AppCommand.ets ~строка 662), структурно не подходит. Чек-лист новой команды: payload → class → factory → union `AnyAppCommand` → сериализатор → регистрация хендлера → юнит на method+params.
 - `applyChatUpdate` копирует поля DTO вручную и терял `supergroupId` — третья инкарнация класса «ручной клон отстаёт от модели» (stateClone/cloneChat уже ловили это). При добавлении поля в ChatDto/Chat грепать ВСЕ ручные копировальщики: `applyChatUpdate`, `cloneChat`, стейт-клоны.
+
+### 2026-07-29 Эмулятор HarmonyOS: data-ФС не растёт вслед за qemu-диском
+- Правка `disk.dataPartition.size` (hardware-qemu.ini) + `hw.dataPartitionSize` (config.ini) увеличивает виртуальный диск, но гость НЕ ресайзит ФС /data при буте (нет аналога Android fs_mgr resize); resize2fs/прав в госте нет. Расширить data живого инстанса без пересоздания (= потери сессии) невозможно — не тратить время на этот путь.
+- Preflight эмулятора требует ~15-20G свободного на C: («No enough space to start Emulator» в Emulator.log при том, что раньше стартовал); после отказа лаунчер повисает зомби ~81MB БЕЗ VM, и каждый следующий старт отвечает «already running» — диагностируется по RAM процесса (нормальный бут сразу набирает гигабайты), лечится taskkill зомби.
+- Эксперименты над образом — только с бэкапом и сверкой байт: qcow2 5.9GB не влезает на FAT32 (лимит 4GB) — split -b 3900m + контроль суммы размеров кусков против исходника.
