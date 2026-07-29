@@ -2,6 +2,11 @@
 
 Snapshot date: 2026-07-22 (target API 26; live runtime floor API 23)
 
+## Latest (2026-07-29, тик 4) — collapsed-цитаты по iOS-контракту
+
+- **`72d16ae`:** expandable blockquote больше не «слегка приглушённая полная цитата»: обрезка до `MSG_QUOTE_COLLAPSED_MAX_LINES=3` с эллипсисом и шевроном в правом нижнем углу (`sys.symbol.chevron_down/up`), тап по цитате разворачивает/сворачивает инлайн. Ключевая механика: движок `TgBubbleLayout` меряет ОБРЕЗАННУЮ высоту свернутой цитаты (иначе бабл выше видимого контента), состояние `expandedQuoteIndices` живёт в `TgMessageRouter` (@Local) и течёт в движок и в `TgTextBodyV3`; toggle пере-меряет layout. Идентичность цитаты — порядковый индекс над слитыми start-сортированными диапазонами — движок и рендер строят их зеркально. Токен-заглушка `MSG_QUOTE_COLLAPSED_OPACITY` удалена.
+- Гейты: main 2:18, smoke-ui, ohosTest 1:23 — зелёные. Runtime-витнесс (живая expandable-цитата, toggle) — в общую очередь к разблокировке эмулятора.
+
 ## Latest (2026-07-29, тик 3) — member count для basic-групп + скрытый баг applyChatUpdate
 
 - **`bca434f`:** basic-группы впервые получают счётчик участников — `getBasicGroupFullInfo` не был подключён вовсе, отсюда вечный сабтайтл «группа» у File-чата. Прокинут `basic_group_id` (DTO→state→clone), типизированная команда+сериализатор зеркалят супергрупный путь, счётчик = `members.length` (контракт сверен strings'ом по вендоренной libtdjson 1.8.61, есть и `getBasicGroupFullInfo`, и `basicGroupFullInfo`). Топ-бар чата теперь однократно запрашивает счётчик при `memberCount==0` для ОБОИХ типов групп (супергруппы раньше получали его только через профиль); профиль гидратирует basic-группы. Юнит на сериализацию обеих full-info команд.
