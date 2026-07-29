@@ -1,0 +1,46 @@
+{
+  "plural": [
+    {
+      "name": "group_members_count_plural",
+      "value": [
+        {
+          "quantity": "one",
+          "value": "%d участник"
+        },
+        {
+          "quantity": "few",
+          "value": "%d участника"
+        },
+        {
+          "quantity": "many",
+          "value": "%d участников"
+        },
+        {
+          "quantity": "other",
+          "value": "%d участника"
+        }
+      ]
+    },
+    {
+      "name": "subscribers_count_plural",
+      "value": [
+        {
+          "quantity": "one",
+          "value": "%d подписчик"
+        },
+        {
+          "quantity": "few",
+          "value": "%d подписчика"
+        },
+        {
+          "quantity": "many",
+          "value": "%d подписчиков"
+        },
+        {
+          "quantity": "other",
+          "value": "%d подписчика"
+        }
+      ]
+    }
+  ]
+}

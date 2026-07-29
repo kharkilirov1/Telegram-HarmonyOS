@@ -1,0 +1,30 @@
+{
+  "plural": [
+    {
+      "name": "group_members_count_plural",
+      "value": [
+        {
+          "quantity": "one",
+          "value": "%d member"
+        },
+        {
+          "quantity": "other",
+          "value": "%d members"
+        }
+      ]
+    },
+    {
+      "name": "subscribers_count_plural",
+      "value": [
+        {
+          "quantity": "one",
+          "value": "%d subscriber"
+        },
+        {
+          "quantity": "other",
+          "value": "%d subscribers"
+        }
+      ]
+    }
+  ]
+}

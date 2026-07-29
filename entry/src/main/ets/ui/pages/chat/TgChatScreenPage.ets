@@ -128,7 +128,7 @@ import {
 } from '../../../core/model/AppCommand';
 import { TdObject } from '../../../models/TdTypes';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
-import { localized } from '../../../core/utils/AppResource';
+import { localized, localizedPlural } from '../../../core/utils/AppResource';
 import { MediaGalleryItem } from '../../../models/MediaGalleryItem';
 import { TgMediaGalleryPage } from '../../tg_ui/atoms/TgMediaGalleryPage';
 import { albumMediaSourceId } from '../../tg_ui/utils/TgMediaGeometryTransition';
@@ -1842,11 +1842,11 @@ export struct TgChatScreenPage {
       }
       if (chat.memberCount > 0) {
         if (chat.type === 'channel') {
-          const fmt = localized($r('app.string.subscribers_count').id, '%s subscribers');
-          this.chatSubtitle = fmt.replace('%s', chat.memberCount.toString());
+          this.chatSubtitle = localizedPlural($r('app.plural.subscribers_count_plural').id,
+            chat.memberCount, `${chat.memberCount} subscribers`);
         } else {
-          const fmt = localized($r('app.string.group_members_count').id, '%s members');
-          this.chatSubtitle = fmt.replace('%s', chat.memberCount.toString());
+          this.chatSubtitle = localizedPlural($r('app.plural.group_members_count_plural').id,
+            chat.memberCount, `${chat.memberCount} members`);
         }
       } else {
         this.chatSubtitle = chat.type === 'channel'
@@ -2664,6 +2664,12 @@ export struct TgChatScreenPage {
         context.startAbility(want)
           .catch((error: Object): void => {
             hilog.warn(DOMAIN, TAG, 'Document viewer start failed: %{public}s', String(error));
+            // Формат без зарегистрированного viewer'а: молчание читается как
+            // сломанный тап — показываем честный тост.
+            this.getUIContext().getPromptAction().showToast({
+              message: localized($r('app.string.document_no_viewer').id, 'No app can open this file'),
+              duration: 2000
+            });
           });
       };
       const lastSeparator = Math.max(documentPath.lastIndexOf('/'), documentPath.lastIndexOf('\\'));

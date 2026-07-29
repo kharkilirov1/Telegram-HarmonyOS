@@ -1,0 +1,22 @@
+{
+  "plural": [
+    {
+      "name": "group_members_count_plural",
+      "value": [
+        {
+          "quantity": "other",
+          "value": "%d 位成员"
+        }
+      ]
+    },
+    {
+      "name": "subscribers_count_plural",
+      "value": [
+        {
+          "quantity": "other",
+          "value": "%d 位订阅者"
+        }
+      ]
+    }
+  ]
+}

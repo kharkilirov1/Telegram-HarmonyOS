@@ -1,6 +1,10 @@
 {
   "string": [
     {
+      "name": "document_no_viewer",
+      "value": "Нет приложения для открытия этого файла"
+    },
+    {
       "name": "module_desc",
       "value": "Telegram клиент для HarmonyOS"
     },

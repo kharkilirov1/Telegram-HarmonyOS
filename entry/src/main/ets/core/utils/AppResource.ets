@@ -48,3 +48,23 @@ export function localized(resourceId: number, fallback: string): string {
   const value = getString(resourceId);
   return value.length > 0 ? value : fallback;
 }
+
+/**
+ * Получить singular/plural строку из app.plural.* по количеству
+ * (CLDR-формы текущей локали: ru — one/few/many/other).
+ */
+export function localizedPlural(resourceId: number, count: number, fallback: string): string {
+  if (!appContext) {
+    console.error('ResourceManager not initialized');
+    return fallback;
+  }
+  try {
+    // count дважды: первый выбирает CLDR-форму, второй подставляется в %d
+    const value = appContext.resourceManager.getIntPluralStringValueSync(resourceId, count, count);
+    return value.length > 0 ? value : fallback;
+  } catch (error) {
+    const err: BusinessError = error as BusinessError;
+    console.error('getIntPluralStringValueSync failed, code: ' + err.code + ', message: ' + err.message);
+    return fallback;
+  }
+}
