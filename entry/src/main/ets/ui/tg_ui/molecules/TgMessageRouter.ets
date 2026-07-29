@@ -161,6 +161,10 @@ export struct TgMessageRouter {
   @Event onAudioSeek: (messageId: string, progress: number) => void = (_: string, __: number) => {};
   @Event onVoiceSeek: (messageId: string, progress: number) => void = (_: string, __: number) => {};
 
+  // Inline expand/collapse state for collapsed quotes; resets with node recycle,
+  // which matches the acceptable iOS-like behavior for offscreen messages.
+  @Local private expandedQuoteIndices: number[] = [];
+
   // ── Sticker ──
   @Param stickerPath: string = '';
   @Param stickerThumbnailPath: string = '';
@@ -434,6 +438,7 @@ export struct TgMessageRouter {
         quoteOffsets: this.quoteOffsets,
         quoteLengths: this.quoteLengths,
         quoteCollapsedFlags: this.quoteCollapsedFlags,
+        expandedQuoteIndices: this.expandedQuoteIndices,
       }
       return computeTextBubbleLayout(engine, input)
     } catch (_e) {
@@ -1059,6 +1064,12 @@ export struct TgMessageRouter {
           sendStatus: this.sendStatus,
           onReplyTap: (): void => {
             this.onReplyPress();
+          },
+          expandedQuoteIndices: this.expandedQuoteIndices,
+          onQuoteToggle: (quoteIndex: number): void => {
+            this.expandedQuoteIndices = this.expandedQuoteIndices.includes(quoteIndex)
+              ? this.expandedQuoteIndices.filter((idx: number): boolean => idx !== quoteIndex)
+              : [...this.expandedQuoteIndices, quoteIndex];
           }
         })
 

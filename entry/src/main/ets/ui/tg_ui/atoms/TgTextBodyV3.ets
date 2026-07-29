@@ -64,6 +64,7 @@ interface TextBodySegment {
   isQuote: boolean
   isCollapsed: boolean
   isLast: boolean
+  quoteIndex: number
 }
 
 class TgQuoteSegmentRange {
@@ -91,13 +92,17 @@ export struct TgTextBodyV3 {
   // Optional reserve text appended transparently to the last plain segment (for inline meta)
   @Param metaReserveText: string = ''
 
+  // Ordinal indices of quotes the user expanded inline (collapsed quotes only)
+  @Param expandedQuoteIndices: number[] = []
+  @Event onQuoteToggle: (quoteIndex: number) => void = (_: number) => {}
+
   private hasQuotes(): boolean {
     return this.quoteOffsets.length > 0 && this.quoteLengths.length > 0
   }
 
   private buildSegments(): TextBodySegment[] {
     if (!this.hasQuotes()) {
-      return [{ text: this.text, startOffset: 0, isQuote: false, isCollapsed: false, isLast: true }]
+      return [{ text: this.text, startOffset: 0, isQuote: false, isCollapsed: false, isLast: true, quoteIndex: -1 }]
     }
 
     const ranges: TgQuoteSegmentRange[] = []
@@ -140,6 +145,7 @@ export struct TgTextBodyV3 {
 
     const segments: TextBodySegment[] = []
     let cursor = 0
+    let quoteCounter = 0
 
     for (let i = 0; i < merged.length; i++) {
       const qStart = merged[i].start
@@ -157,7 +163,8 @@ export struct TgTextBodyV3 {
           startOffset: cursor,
           isQuote: false,
           isCollapsed: false,
-          isLast: false
+          isLast: false,
+          quoteIndex: -1
         })
         }
       }
@@ -170,7 +177,8 @@ export struct TgTextBodyV3 {
         startOffset: qStart,
         isQuote: true,
         isCollapsed: collapsed,
-        isLast: false
+        isLast: false,
+        quoteIndex: quoteCounter++
       })
       }
 
@@ -186,14 +194,15 @@ export struct TgTextBodyV3 {
         startOffset: cursor,
         isQuote: false,
         isCollapsed: false,
-        isLast: false
+        isLast: false,
+        quoteIndex: -1
       })
       }
     }
 
     // Mark last segment
     if (segments.length === 0) {
-      return [{ text: this.text.length > 0 ? this.text : ' ', startOffset: 0, isQuote: false, isCollapsed: false, isLast: true }]
+      return [{ text: this.text.length > 0 ? this.text : ' ', startOffset: 0, isQuote: false, isCollapsed: false, isLast: true, quoteIndex: -1 }]
     }
     segments[segments.length - 1].isLast = true
 
@@ -291,8 +300,37 @@ export struct TgTextBodyV3 {
     }
   }
 
+  private isQuoteClipped(isCollapsed: boolean, quoteIndex: number): boolean {
+    return isCollapsed && !this.expandedQuoteIndices.includes(quoteIndex)
+  }
+
   @Builder
-  buildQuoteSegment(segText: string, segStart: number, isCollapsed: boolean) {
+  buildQuoteSegment(segText: string, segStart: number, isCollapsed: boolean, quoteIndex: number) {
+    Stack({ alignContent: Alignment.BottomEnd }) {
+      this.buildQuoteContent(segText, segStart, isCollapsed, quoteIndex)
+
+      if (isCollapsed) {
+        SymbolGlyph(this.isQuoteClipped(isCollapsed, quoteIndex)
+          ? $r('sys.symbol.chevron_down')
+          : $r('sys.symbol.chevron_up'))
+          .fontSize(TgUiTokens.MSG_QUOTE_CHEVRON_SIZE)
+          .fontColor([this.quoteBarColor()])
+          .margin({ right: 4, bottom: 4 })
+      }
+    }
+    .width(this.contentWidth)
+    .backgroundColor(this.quoteBackground())
+    .borderRadius(TgUiTokens.MSG_QUOTE_RADIUS)
+    .clip(true)
+    .onClick((): void => {
+      if (isCollapsed) {
+        this.onQuoteToggle(quoteIndex)
+      }
+    })
+  }
+
+  @Builder
+  buildQuoteContent(segText: string, segStart: number, isCollapsed: boolean, quoteIndex: number) {
     Row() {
       // Left accent bar flush with the quote background edge (iOS geometry).
       // height('100%') would resolve against the parent CONSTRAINT (list viewport)
@@ -326,7 +364,12 @@ export struct TgTextBodyV3 {
         .lineHeight(TgUiTokens.MSG_QUOTE_TEXT_LINE_HEIGHT)
         .textAlign(TextAlign.Start)
         .wordBreak(WordBreak.BREAK_WORD)
-        .opacity(isCollapsed ? TgUiTokens.MSG_QUOTE_COLLAPSED_OPACITY : 1.0)
+        .maxLines(this.isQuoteClipped(isCollapsed, quoteIndex)
+          ? TgUiTokens.MSG_QUOTE_COLLAPSED_MAX_LINES : undefined)
+        .textOverflow({
+          overflow: this.isQuoteClipped(isCollapsed, quoteIndex)
+            ? TextOverflow.Ellipsis : TextOverflow.None
+        })
         .margin({ top: TgUiTokens.MSG_QUOTE_PADDING_V, bottom: TgUiTokens.MSG_QUOTE_PADDING_V })
         .layoutWeight(1)
       } else {
@@ -337,17 +380,20 @@ export struct TgTextBodyV3 {
           .fontColor(this.textColor())
           .textAlign(TextAlign.Start)
           .wordBreak(WordBreak.BREAK_WORD)
-          .opacity(isCollapsed ? TgUiTokens.MSG_QUOTE_COLLAPSED_OPACITY : 1.0)
+          .maxLines(this.isQuoteClipped(isCollapsed, quoteIndex)
+            ? TgUiTokens.MSG_QUOTE_COLLAPSED_MAX_LINES : undefined)
+          .textOverflow({
+            overflow: this.isQuoteClipped(isCollapsed, quoteIndex)
+              ? TextOverflow.Ellipsis : TextOverflow.None
+          })
           .margin({ top: TgUiTokens.MSG_QUOTE_PADDING_V, bottom: TgUiTokens.MSG_QUOTE_PADDING_V })
           .layoutWeight(1)
       }
     }
-    .width(this.contentWidth)
+    .width('100%')
     .padding({
       right: TgUiTokens.MSG_QUOTE_PADDING_H,
     })
-    .backgroundColor(this.quoteBackground())
-    .borderRadius(TgUiTokens.MSG_QUOTE_RADIUS)
   }
 
   build() {
@@ -355,12 +401,13 @@ export struct TgTextBodyV3 {
       Column({ space: TgUiTokens.MSG_QUOTE_SEGMENT_GAP }) {
         ForEach(this.buildSegments(), (seg: TextBodySegment, idx: number) => {
           if (seg.isQuote) {
-            this.buildQuoteSegment(seg.text, seg.startOffset, seg.isCollapsed)
+            this.buildQuoteSegment(seg.text, seg.startOffset, seg.isCollapsed, seg.quoteIndex)
           } else {
             this.buildPlainSegment(seg.text, seg.startOffset, seg.isLast)
           }
         }, (seg: TextBodySegment, idx: number) =>
-          `seg_${idx}_${seg.isQuote ? 'q' : 'p'}_${seg.startOffset}_${seg.text.length}_${seg.isCollapsed ? 'c' : 'e'}`)
+          `seg_${idx}_${seg.isQuote ? 'q' : 'p'}_${seg.startOffset}_${seg.text.length}_${seg.isCollapsed ? 'c' : 'e'}` +
+          `_x${seg.quoteIndex >= 0 && this.expandedQuoteIndices.includes(seg.quoteIndex) ? '1' : '0'}`)
       }
       .alignItems(HorizontalAlign.Start)
     } else {

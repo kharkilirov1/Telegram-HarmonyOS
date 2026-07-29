@@ -201,10 +201,12 @@ function measureTextSegments(engine: TgTextLayout, input: BubbleLayoutInput, max
       - TgUiTokens.MSG_QUOTE_PADDING_H
   )
 
+  let quoteIndex = -1
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i]
     const text = segment.text.length > 0 ? segment.text : ' '
     if (segment.isQuote) {
+      quoteIndex++
       const innerLayout = engine.measureText(text, quoteStyleKey, quoteInnerMaxWidth)
       const visualWidth = Math.min(
         maxContentWidth,
@@ -213,10 +215,18 @@ function measureTextSegments(engine: TgTextLayout, input: BubbleLayoutInput, max
           + TgUiTokens.MSG_QUOTE_BAR_GAP
           + TgUiTokens.MSG_QUOTE_PADDING_H
       )
+      // Collapsed quotes render clipped to MAX_LINES; the measured height must
+      // match the clipped render or the bubble grows past its visible content.
+      const expanded = (input.expandedQuoteIndices ?? []).includes(quoteIndex)
+      let innerHeight = innerLayout.height
+      if (segment.isCollapsed && !expanded &&
+        innerLayout.lineCount > TgUiTokens.MSG_QUOTE_COLLAPSED_MAX_LINES) {
+        innerHeight = TgUiTokens.MSG_QUOTE_COLLAPSED_MAX_LINES * TgUiTokens.MSG_QUOTE_TEXT_LINE_HEIGHT
+      }
       measurements.push({
         width: visualWidth,
         lastLineWidth: visualWidth,
-        height: innerLayout.height + TgUiTokens.MSG_QUOTE_PADDING_V * 2,
+        height: innerHeight + TgUiTokens.MSG_QUOTE_PADDING_V * 2,
         isQuote: true,
       })
     } else {

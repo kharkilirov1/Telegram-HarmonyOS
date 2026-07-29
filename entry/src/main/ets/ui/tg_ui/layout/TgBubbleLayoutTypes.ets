@@ -70,6 +70,8 @@ export interface BubbleLayoutInput {
   quoteOffsets: number[]
   quoteLengths: number[]
   quoteCollapsedFlags: boolean[]
+  // Ordinal indices (over merged, start-sorted quotes) the user expanded inline
+  expandedQuoteIndices?: number[]
 }
 
 /**

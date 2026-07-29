@@ -761,7 +761,9 @@ export class TgUiTokens {
   static readonly MSG_QUOTE_BAR_RADIUS: number = 2;
   static readonly MSG_QUOTE_BAR_GAP: number = 6;
   static readonly MSG_QUOTE_SEGMENT_GAP: number = 2;
-  static readonly MSG_QUOTE_COLLAPSED_OPACITY: number = 0.9;
+  // Collapsed (expandable) quotes: iOS clips to a few lines with a corner chevron
+  static readonly MSG_QUOTE_COLLAPSED_MAX_LINES: number = 3;
+  static readonly MSG_QUOTE_CHEVRON_SIZE: number = 14;
 
   static readonly REPLY_SNIPPET_MIN_HEIGHT: number = 32;
   static readonly REPLY_SNIPPET_PADDING_H: number = TgUiTokens.MSG_QUOTE_PADDING_H;

@@ -53,6 +53,7 @@ export struct TgTextBubbleV3 {
   @Param quoteOffsets: number[] = []
   @Param quoteLengths: number[] = []
   @Param quoteCollapsedFlags: boolean[] = []
+  @Param expandedQuoteIndices: number[] = []
   @Param textEntities: TextEntity[] = []
   @Param quoteAccentHex: string = ''
 
@@ -68,6 +69,7 @@ export struct TgTextBubbleV3 {
 
   // ── Events ──
   @Event onReplyTap: () => void = () => {}
+  @Event onQuoteToggle: (quoteIndex: number) => void = (_: number) => {}
 
   // ── Computed helpers ──
 
@@ -167,8 +169,12 @@ export struct TgTextBubbleV3 {
           quoteOffsets: this.quoteOffsets,
           quoteLengths: this.quoteLengths,
           quoteCollapsedFlags: this.quoteCollapsedFlags,
+          expandedQuoteIndices: this.expandedQuoteIndices,
           textEntities: this.textEntities,
           quoteAccentHex: this.quoteAccentHex,
+          onQuoteToggle: (quoteIndex: number): void => {
+            this.onQuoteToggle(quoteIndex)
+          },
         })
       }
     }
