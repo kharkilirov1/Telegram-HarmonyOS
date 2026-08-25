@@ -728,7 +728,7 @@ export class TgUiTokens {
   static readonly VOICE_BUBBLE_WAVE_BARS_COUNT: number = 28;
   static readonly VOICE_BUBBLE_WAVE_BAR_WIDTH: number = 2;
   static readonly VOICE_BUBBLE_WAVE_BAR_GAP: number = 2;
-  static readonly VOICE_BUBBLE_WAVE_MIN_HEIGHT: number = 3;
+  static readonly VOICE_BUBBLE_WAVE_MIN_HEIGHT: number = 2;
   static readonly VOICE_BUBBLE_WAVE_MAX_HEIGHT: number = 18;
   static readonly VOICE_BUBBLE_WAVE_AREA_HEIGHT: number = 18;
   static readonly VOICE_BUBBLE_WAVE_DURATION_GAP: number = 4;

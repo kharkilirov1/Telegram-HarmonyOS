@@ -67,6 +67,11 @@ export struct TgVoiceBubble {
     return TgUiTokens.resolveVoiceBubbleWidth(this.containerWidth, this.maxWidthRatio, this.durationSec);
   }
 
+  private waveformAreaWidth(): number {
+    return Math.max(1, this.computedBubbleWidth() - TgUiTokens.VOICE_BUBBLE_PADDING_H * 2 -
+      TgUiTokens.VOICE_BUBBLE_BUTTON_SIZE - TgUiTokens.VOICE_BUBBLE_CONTENT_GAP);
+  }
+
   private durationColor(): ResourceColor {
     if (this.isDownloadFailed && !this.hasLocalFile && !this.isTransferActive()) {
       return TgUiTokens.COLOR_TEXT_ERROR;
@@ -109,10 +114,10 @@ export struct TgVoiceBubble {
     return this.isPlaying ? TgUiTokens.ICON_RES_PAUSE : TgUiTokens.ICON_RES_PLAY;
   }
 
-  private fallbackBars(): number[] {
+  private fallbackBars(count: number): number[] {
     const fallbackPattern: number[] = [5, 7, 10, 8, 12, 9, 6, 11];
     const bars: number[] = [];
-    for (let i = 0; i < TgUiTokens.VOICE_BUBBLE_WAVE_BARS_COUNT; i++) {
+    for (let i = 0; i < count; i++) {
       bars.push(fallbackPattern[i % fallbackPattern.length]);
     }
     return bars;
@@ -193,30 +198,48 @@ export struct TgVoiceBubble {
     return this.unpackWaveformSamples(bytes);
   }
 
-  private waveformBars(): number[] {
+  // iOS AudioWaveformComponent contract: 2pt bars with 2pt gap (numBars =
+  // floor(width / (bar + gap))), heights normalized by the real max sample
+  // (not by 31) and pulled down by sampleWidth * 1.5 so the wave never
+  // touches the ceiling; the smallest bar collapses into a 2pt dot.
+  private waveformBarsForWidth(width: number): number[] {
+    const step = TgUiTokens.VOICE_BUBBLE_WAVE_BAR_WIDTH + TgUiTokens.VOICE_BUBBLE_WAVE_BAR_GAP;
+    const numBars = Math.max(1, Math.floor(width / step));
     const samples = this.rawWaveformSamples();
     if (samples.length === 0) {
-      return this.fallbackBars();
+      return this.iosScaledBars(this.fallbackBars(numBars));
     }
 
-    const bars: number[] = [];
-    const minHeight = TgUiTokens.VOICE_BUBBLE_WAVE_MIN_HEIGHT;
-    const maxHeight = TgUiTokens.VOICE_BUBBLE_WAVE_MAX_HEIGHT;
-    const heightRange = Math.max(1, maxHeight - minHeight);
-
-    for (let i = 0; i < TgUiTokens.VOICE_BUBBLE_WAVE_BARS_COUNT; i++) {
-      const start = Math.floor(i * samples.length / TgUiTokens.VOICE_BUBBLE_WAVE_BARS_COUNT);
-      const end = Math.max(start + 1,
-        Math.floor((i + 1) * samples.length / TgUiTokens.VOICE_BUBBLE_WAVE_BARS_COUNT));
+    const peaks: number[] = [];
+    for (let i = 0; i < numBars; i++) {
+      const start = Math.floor(i * samples.length / numBars);
+      const end = Math.max(start + 1, Math.floor((i + 1) * samples.length / numBars));
       let peak = 0;
       for (let j = start; j < end && j < samples.length; j++) {
         if (samples[j] > peak) {
           peak = samples[j];
         }
       }
-      bars.push(minHeight + Math.floor(peak * heightRange / 31));
+      peaks.push(peak);
     }
-    return bars;
+    return this.iosScaledBars(peaks);
+  }
+
+  private iosScaledBars(peaks: number[]): number[] {
+    let maxSample = 0;
+    for (const peak of peaks) {
+      if (peak > maxSample) {
+        maxSample = peak;
+      }
+    }
+    const invScale = 1 / Math.max(1, maxSample);
+    const peakHeight = TgUiTokens.VOICE_BUBBLE_WAVE_MAX_HEIGHT;
+    const diff = TgUiTokens.VOICE_BUBBLE_WAVE_BAR_WIDTH * 1.5;
+    const minBar = TgUiTokens.VOICE_BUBBLE_WAVE_MIN_HEIGHT;
+    return peaks.map((peak: number): number => {
+      const h = Math.max(minBar, peak * peakHeight * invScale - diff);
+      return Math.min(peakHeight, h);
+    });
   }
 
   private inactiveWaveColor(): string | number {
@@ -237,19 +260,17 @@ export struct TgVoiceBubble {
 
   private drawWaveform(): void {
     const context = this.canvasContext;
-    const bars = this.waveformBars();
+    const totalCanvasWidth = context.width;
+    const bars = this.waveformBarsForWidth(totalCanvasWidth);
     if (bars.length === 0) return;
 
-    const totalCanvasWidth = context.width;
     const areaHeight = TgUiTokens.VOICE_BUBBLE_WAVE_AREA_HEIGHT;
-    // iOS pattern: 2pt bar width, 1pt gap → ratio 1.5 parts per bar
-    const partsPerBar = 1.5;
-    const totalParts = (bars.length * partsPerBar) - 0.5;
-    const barWidth = Math.max(1.5, totalCanvasWidth / totalParts);
-    const barGap = barWidth * 0.5;
+    // iOS AudioWaveformComponent: fixed 2pt bars with 2pt gap, never scaled
+    const barWidth = TgUiTokens.VOICE_BUBBLE_WAVE_BAR_WIDTH;
+    const barGap = TgUiTokens.VOICE_BUBBLE_WAVE_BAR_GAP;
     const barRadius = barWidth / 2;
 
-    const totalDrawWidth = bars.length * (barWidth + barGap);
+    const totalDrawWidth = bars.length * (barWidth + barGap) - barGap;
     const activeWidth = totalDrawWidth * this.normalizedProgress();
 
     context.clearRect(0, 0, totalCanvasWidth, areaHeight);
@@ -374,7 +395,7 @@ export struct TgVoiceBubble {
         .gesture(
           PanGesture({ direction: PanDirection.Horizontal })
             .onActionUpdate((event: GestureEvent) => {
-              const width = Math.max(1, TgUiTokens.VOICE_BUBBLE_WAVE_BARS_COUNT * (TgUiTokens.VOICE_BUBBLE_WAVE_BAR_WIDTH + TgUiTokens.VOICE_BUBBLE_WAVE_BAR_GAP));
+              const width = Math.max(1, this.waveformAreaWidth());
               const progress = Math.max(0, Math.min(1, event.offsetX / width));
               this.onSeek(progress);
             })

@@ -522,6 +522,22 @@ export struct TgMessageRouter {
     return TgUiTokens.resolveAudioBubbleWidth(this.maxBubbleWidth(), 1.0);
   }
 
+  // iOS parity: the reply plate above an intrinsic bubble clips to the bubble
+  // width — voice plate to voiceBubbleWidth, audio plate to audioBubbleWidth;
+  // document keeps its content-sized intrinsic plate.
+  private replySnippetFillWidth(): boolean {
+    return this.contentType === 'voice' ||
+      this.contentType === 'audio' ||
+      (this.contentType === 'document' && this.mimeType.startsWith('audio/'));
+  }
+
+  private replySnippetPlateWidth(): number {
+    if (this.contentType === 'voice') {
+      return Math.max(1, this.voiceBubbleWidth() - TgUiTokens.BUBBLE_PADDING_H * 2);
+    }
+    return Math.max(1, this.audioBubbleWidth() - TgUiTokens.BUBBLE_PADDING_H * 2);
+  }
+
   private hasVenueInfo(): boolean {
     return this.locationVenueTitle.trim().length > 0 || this.locationVenueAddress.trim().length > 0;
   }
@@ -1378,10 +1394,12 @@ export struct TgMessageRouter {
                 accentHex: this.replyAuthorColorHex,
                 hasThumbnail: this.replyHasThumbnail,
                 thumbnailSrc: this.replyThumbnailSrc,
-                containerWidth: this.maxBubbleWidth(),
-                maxWidthRatio: 1.0
+                containerWidth: this.replySnippetFillWidth() ? this.replySnippetPlateWidth() : this.maxBubbleWidth(),
+                maxWidthRatio: 1.0,
+                fillWidth: this.replySnippetFillWidth()
               })
             }
+            .width(this.replySnippetFillWidth() ? this.replySnippetPlateWidth() : 'auto')
             .onClick(() => {
               this.onReplyPress();
             })
