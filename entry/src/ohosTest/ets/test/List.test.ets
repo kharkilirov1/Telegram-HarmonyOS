@@ -53,6 +53,7 @@ import importContactTest from './ImportContact.test';
 import createBasicGroupChatTest from './CreateBasicGroupChat.test';
 import createChannelChatTest from './CreateChannelChat.test';
 import composeCreationModelTest from './ComposeCreationModel.test';
+import eventPipelineTest from './EventPipeline.test';
 
 export default function testsuite() {
   // Core state management
@@ -70,6 +71,7 @@ export default function testsuite() {
   // Infrastructure
   tdGatewayTest();
   eventNormalizerTest();
+  eventPipelineTest();
 
   // Feature use cases
   loadCallsTest();
