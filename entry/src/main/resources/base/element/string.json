@@ -161,6 +161,18 @@
       "value": "Unmute"
     },
     {
+      "name": "channel_join",
+      "value": "Join"
+    },
+    {
+      "name": "group_join",
+      "value": "Join Group"
+    },
+    {
+      "name": "conversation_default_restricted_text",
+      "value": "Writing messages isn't allowed in this group."
+    },
+    {
       "name": "read",
       "value": "Read"
     },

@@ -58,7 +58,11 @@ Official HarmonyOS docs used for mapping:
 - New upper-chrome work must be **`@ComponentV2`-first**
 - Do not reintroduce V1-only mental models
 - `backgroundEffect` is possible but should be treated as a later/perf-sensitive option
-- `backgroundBlurStyle + gradient overlay` is the preferred base composition
+- In-app glass (LESSON 121, 2026-08-29): `backdropBlur(radius) + translucent tint` is the
+  preferred base composition. `backgroundBlurStyle` (system material) collapses to an
+  opaque plate on emulator GPU paths — reserve it for system surfaces (`bindSheet`)
+  and API 26 native `ImmersiveMaterial` paths gated by `TgGlassPolicy.supportsNativeMaterial()`.
+  Never combine `renderGroup(true)` with a backdropBlur node (isolates the backdrop layer).
 
 ---
 

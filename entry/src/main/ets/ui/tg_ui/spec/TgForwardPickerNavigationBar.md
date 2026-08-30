@@ -11,7 +11,7 @@
 - Telegram iOS content hierarchy:
   - `C:\Refs\Telegram\Telegram-iOS-current\submodules\TelegramUI\Components\PeerSelectionController\Sources\PeerSelectionControllerNode.swift`
   - forwarding targets remain a `ChatListNode`, not a fabricated recent-peer grid.
-- HarmonyOS grounding: ArkUI `Search` remains the native search control. API26 uses `systemMaterial(ImmersiveMaterial)`; API23-25 retain the shared adaptive `backgroundBlurStyle` fallback.
+- HarmonyOS grounding: ArkUI `Search` remains the native search control. API26 uses `systemMaterial(ImmersiveMaterial)` gated by `TgGlassPolicy.supportsNativeMaterial()` (emulator excluded — material renders opaque there); API23-25 retain the real within-app glass fallback `backdropBlur + translucent tint` (LESSON 121: `backgroundBlurStyle` renders opaque on emulator GPU).
 
 ## Inputs
 

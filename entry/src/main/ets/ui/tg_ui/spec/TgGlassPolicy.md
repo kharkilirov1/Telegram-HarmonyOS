@@ -13,9 +13,12 @@
 ## Rules
 1. Components do **not** decide blur quality themselves.
 2. Glass components read policy and switch:
-   - blur on (`BlurStyle.Thin`) in `auto/high`
-   - blur off (`BlurStyle.NONE`) in `fallback`
-3. In fallback mode, components must use opaque/semi-opaque fallback backgrounds.
+   - realtime glass in `auto/high`: **in-app surfaces** use `backdropBlur(radius)` +
+     visible translucent tint (LESSON 121 — `backgroundBlurStyle` renders an opaque
+     plate on emulator GPU paths); **native material paths** (API 26 real device only)
+     use `systemMaterial(ImmersiveMaterial)` behind `supportsNativeMaterial()`
+   - blur off in `fallback` (opaque/semi-opaque fallback backgrounds)
+3. Never combine `renderGroup(true)` with a backdropBlur node (isolates the backdrop layer).
 4. Glass atoms use `@StorageLink(StorageKeys.GLASS_MODE)` so downgrade is reactive at runtime without restart.
 
 ## Current integrations

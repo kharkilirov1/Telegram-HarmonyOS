@@ -505,7 +505,7 @@ export struct TgComposerStickerPanel {
       .width('100%')
       .height(TgUiTokens.COMPOSER_STICKER_PANEL_HEIGHT)
       .backgroundColor(this.panelBg())
-      .backgroundBlurStyle(TgGlassPolicy.composerBlurStyle(), TgGlassPolicy.glassOptions())
+      .backdropBlur(this.useBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0)
       .borderRadius(TgUiTokens.COMPOSER_KEYBOARD_PANEL_RADIUS)
       .border({ width: TgUiTokens.COMPOSER_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
       .clip(true)

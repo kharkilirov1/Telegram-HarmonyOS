@@ -25,7 +25,11 @@ export struct TgChatListFilterBar {
   }
 
   private useNativeMaterial(): boolean {
-    return deviceInfo.apiAvailable('26.0.0') && this.useBlur();
+    return TgGlassPolicy.supportsNativeMaterial() && this.useBlur();
+  }
+
+  private railBackdropBlur(): number {
+    return this.useBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0;
   }
 
   private badgeText(): string {
@@ -127,16 +131,14 @@ export struct TgChatListFilterBar {
     }
     .width('100%')
     .height(TgUiTokens.CHAT_LIST_NAV_FILTER_HEIGHT)
-    .backgroundColor(this.useBlur() ? TgUiTokens.FILTER_BAR_BG : TgUiTokens.FILTER_BAR_FALLBACK_BG)
-    .backgroundBlurStyle(this.useBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE,
-      TgGlassPolicy.glassOptions())
+    .backgroundColor(this.useBlur() ? TgUiTokens.CHAT_TOP_BAR_SCROLL_CAPSULE_BG : TgUiTokens.FILTER_BAR_FALLBACK_BG)
+    .backdropBlur(this.railBackdropBlur())
     .border({
       width: TgUiTokens.FILTER_BAR_BORDER_WIDTH,
       color: TgUiTokens.FILTER_BAR_BORDER_COLOR
     })
     .borderRadius(TgUiTokens.CHAT_LIST_NAV_FILTER_RADIUS)
     .clip(true)
-    .renderGroup(true)
   }
 
   build() {

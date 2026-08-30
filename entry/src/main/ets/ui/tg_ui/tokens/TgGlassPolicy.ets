@@ -58,8 +58,9 @@ export class TgGlassPolicy {
   }
 
   static composerBlurStyle(): BlurStyle {
-    // ULTRA_THIN keeps the capsule translucent where THICK collapsed to an
-    // opaque plate on dark chat backgrounds (emulator GPU observation).
+    // Style choice is nearly irrelevant on the emulator GPU path (THICK and
+    // ULTRA_THIN both collapse opaque — lesson 121). Kept only for legacy
+    // system-surface callers; in-app glass must use backdropBlur + tint.
     return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE;
   }
 

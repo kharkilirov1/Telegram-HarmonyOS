@@ -150,8 +150,8 @@ export struct TgTopBar {
     }
     .height(this.topInset + TgUiTokens.TOP_BAR_HEIGHT)
     .width('100%')
-    .backgroundColor(this.useRealtimeBlur() ? TgUiTokens.TOP_BAR_GLASS_BG : TgUiTokens.TOP_BAR_GLASS_FALLBACK_BG)
-    .backgroundBlurStyle(TgGlassPolicy.topBarBlurStyle(), TgGlassPolicy.glassOptions())
+    .backgroundColor(this.useRealtimeBlur() ? TgUiTokens.CHAT_LIST_NAV_BAND_BG : TgUiTokens.TOP_BAR_GLASS_FALLBACK_BG)
+    .backdropBlur(this.useRealtimeBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0)
     .overlay(this.buildGlassSpecular())
     .border({
       width: { bottom: TgUiTokens.TOP_BAR_SEPARATOR_STROKE },

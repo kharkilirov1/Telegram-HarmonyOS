@@ -209,6 +209,10 @@
       "value": "#662C2C2E"
     },
     {
+      "name": "chat_list_nav_band_bg",
+      "value": "#992C2C2E"
+    },
+    {
       "name": "chrome_fade_strong",
       "value": "#400F2837"
     },

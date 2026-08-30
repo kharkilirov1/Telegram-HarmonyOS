@@ -57,8 +57,8 @@ export struct TgTopChromeBackground {
       Column()
         .width('100%')
         .height(this.totalHeight())
-        .backgroundColor(this.useRealtimeBlur() ? TgUiTokens.TOP_BAR_GLASS_BG : TgUiTokens.TOP_BAR_GLASS_FALLBACK_BG)
-        .backgroundBlurStyle(TgGlassPolicy.topBarBlurStyle(), TgGlassPolicy.glassOptions())
+        .backgroundColor(this.useRealtimeBlur() ? TgUiTokens.CHAT_LIST_NAV_BAND_BG : TgUiTokens.TOP_BAR_GLASS_FALLBACK_BG)
+        .backdropBlur(this.useRealtimeBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0)
         .border({
           width: { bottom: this.showBottomSeparator ? TgUiTokens.TOP_BAR_SEPARATOR_STROKE : 0 },
           color: TgUiTokens.TOP_BAR_SEPARATOR

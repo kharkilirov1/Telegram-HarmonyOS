@@ -24,15 +24,15 @@ export struct TgPinnedMessagePanel {
   }
 
   private useNativeMaterial(): boolean {
-    return deviceInfo.apiAvailable('26.0.0') && this.useBlur();
+    return TgGlassPolicy.supportsNativeMaterial() && this.useBlur();
   }
 
   private capsuleBg(): ResourceColor {
-    return this.useBlur() ? TgUiTokens.CHAT_TOP_BAR_CAPSULE_BG : TgUiTokens.CHAT_TOP_BAR_CAPSULE_FALLBACK_BG;
+    return this.useBlur() ? TgUiTokens.CHAT_TOP_BAR_SCROLL_CAPSULE_BG : TgUiTokens.CHAT_TOP_BAR_CAPSULE_FALLBACK_BG;
   }
 
-  private capsuleBlurStyle(): BlurStyle {
-    return this.useBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE;
+  private capsuleBackdropBlur(): number {
+    return this.useBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0;
   }
 
   private safeTotalCount(): number {
@@ -199,11 +199,10 @@ export struct TgPinnedMessagePanel {
     .width('100%')
     .height(TgUiTokens.PINNED_PANEL_HEIGHT)
     .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    .backdropBlur(this.capsuleBackdropBlur())
     .border({ width: TgUiTokens.PINNED_PANEL_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .borderRadius(TgUiTokens.PINNED_PANEL_RADIUS)
     .clip(true)
-    .renderGroup(true)
   }
 
   @Builder

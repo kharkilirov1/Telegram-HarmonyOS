@@ -8,7 +8,7 @@
 - Telegram iOS navigation button states and accessibility:
   - `C:\Refs\Telegram\Telegram-iOS-current\submodules\TelegramUI\Components\PeerInfo\PeerInfoScreen\Sources\PeerInfoHeaderNavigationButton.swift`
   - icon-only Back and Search states, each exposed as an accessibility button.
-- HarmonyOS grounding: ArkUI `systemMaterial` owns material background/border/shadow attributes; do not combine those visual attributes on the native-material path. API23 fallback uses adaptive `backgroundBlurStyle`.
+- HarmonyOS grounding: ArkUI `systemMaterial` owns material background/border/shadow attributes; do not combine those visual attributes on the native-material path (gate: `TgGlassPolicy.supportsNativeMaterial()`, emulator excluded — material renders opaque there). API23 fallback uses real within-app glass `backdropBlur + translucent tint` (LESSON 121: `backgroundBlurStyle` renders opaque on emulator GPU).
 
 ## Inputs
 

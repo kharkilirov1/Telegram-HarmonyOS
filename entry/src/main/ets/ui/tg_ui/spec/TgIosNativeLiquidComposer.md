@@ -43,15 +43,18 @@ Existing event signatures remain unchanged; the new events are additive.
 
 | Runtime/capability | Feature flag | Glass policy | Surface |
 | --- | --- | --- | --- |
-| API 26+ | enabled | realtime | `uiMaterial.ImmersiveMaterial` |
-| API 23-25 | enabled | realtime | adaptive `backgroundBlurStyle` |
-| any | disabled | realtime | adaptive `backgroundBlurStyle` |
+| API 26+ real device (`supportsNativeMaterial()`) | enabled | realtime | `uiMaterial.ImmersiveMaterial` |
+| API 26 emulator | enabled | realtime | `backdropBlur(GLASS_CAPSULE_BACKDROP_BLUR)` + tint |
+| API 23-25 | enabled | realtime | `backdropBlur(GLASS_CAPSULE_BACKDROP_BLUR)` + tint |
+| any | disabled | realtime | `backdropBlur` + tint (flag-independent recipe) |
 | any | any | fallback | opaque resource background |
 
-The API 26 builders are annotated with
-`@Available({ minApiVersion: '26.0.0' })` and are called only below an explicit
-`deviceInfo.apiAvailable('26.0.0')` guard. The native material owns its shadow
-and material color; it is not combined with the fallback border/background.
+`backgroundBlurStyle` (system material) is excluded from this surface: on emulator
+GPU paths it renders an opaque plate (LESSON 121, 2026-08-29). The API 26 builders
+are annotated with `@Available({ minApiVersion: '26.0.0' })` and the native gate is
+`TgGlassPolicy.supportsNativeMaterial()` (emulator excluded). The native material
+owns its shadow and material color; it is not combined with the fallback
+border/background.
 
 ## Layout contract
 

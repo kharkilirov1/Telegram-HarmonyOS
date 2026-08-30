@@ -58,7 +58,15 @@ export struct TgChatListNavigationBar {
   }
 
   private useNativeMaterial(): boolean {
-    return deviceInfo.apiAvailable('26.0.0') && this.useBlur();
+    return TgGlassPolicy.supportsNativeMaterial() && this.useBlur();
+  }
+
+  private actionBackdropBlur(): number {
+    return this.useBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0;
+  }
+
+  private bandBackdropBlur(): number {
+    return this.useBlur() ? TgUiTokens.CHROME_FADE_BLUR_STRONG : 0;
   }
 
   private collapseProgress(): number {
@@ -90,7 +98,9 @@ export struct TgChatListNavigationBar {
   }
 
   private actionBackground(): ResourceColor {
-    return this.useBlur() ? TgUiTokens.CHAT_TOP_BAR_CAPSULE_BG : TgUiTokens.CHAT_TOP_BAR_CAPSULE_FALLBACK_BG;
+    // Visible tint (like the chat-screen capsules): an invisible tint makes the
+    // capsule a floating outline; backdropBlur needs a real tint to read as glass.
+    return this.useBlur() ? TgUiTokens.CHAT_TOP_BAR_SCROLL_CAPSULE_BG : TgUiTokens.CHAT_TOP_BAR_CAPSULE_FALLBACK_BG;
   }
 
   private storyRingTop(story: TgChatListStoryPreview): ResourceColor {
@@ -111,10 +121,6 @@ export struct TgChatListNavigationBar {
       return TgUiTokens.CHAT_LIST_STORY_RING_CLOSE_FRIENDS;
     }
     return TgUiTokens.CHAT_LIST_STORY_RING_UNSEEN_BOTTOM;
-  }
-
-  private actionBlurStyle(): BlurStyle {
-    return this.useBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE;
   }
 
   private actionResponseRegionOffset(): number {
@@ -184,14 +190,13 @@ export struct TgChatListNavigationBar {
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
     .backgroundColor(this.actionBackground())
-    .backgroundBlurStyle(this.actionBlurStyle(), TgGlassPolicy.glassOptions())
+    .backdropBlur(this.actionBackdropBlur())
     .border({
       width: TgUiTokens.CHAT_LIST_NAV_ACTION_BORDER_WIDTH,
       color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER
     })
     .borderRadius(TgUiTokens.CHAT_LIST_NAV_ACTION_RADIUS)
     .clip(true)
-    .renderGroup(true)
     .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.94 })
     .responseRegion({
       x: 0,
@@ -297,14 +302,13 @@ export struct TgChatListNavigationBar {
     .width(TgUiTokens.CHAT_LIST_NAV_RIGHT_ACTION_WIDTH)
     .height(TgUiTokens.CHAT_LIST_NAV_ACTION_HEIGHT)
     .backgroundColor(this.actionBackground())
-    .backgroundBlurStyle(this.actionBlurStyle(), TgGlassPolicy.glassOptions())
+    .backdropBlur(this.actionBackdropBlur())
     .border({
       width: TgUiTokens.CHAT_LIST_NAV_ACTION_BORDER_WIDTH,
       color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER
     })
     .borderRadius(TgUiTokens.CHAT_LIST_NAV_ACTION_RADIUS)
     .clip(true)
-    .renderGroup(true)
     .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.97 })
   }
 
@@ -526,10 +530,13 @@ export struct TgChatListNavigationBar {
 
   build() {
     Stack({ alignContent: Alignment.TopStart }) {
+      // Under-glass band: chat rows scroll beneath the bar and are sampled by
+      // backdropBlur (lesson 121) — an opaque plate here cuts the list off.
       Row()
         .width('100%')
         .height(this.visibleBackgroundHeight())
-        .backgroundColor(TgUiTokens.CHAT_LIST_PINNED_SURFACE_BG)
+        .backgroundColor(this.useBlur() ? TgUiTokens.CHAT_LIST_NAV_BAND_BG : TgUiTokens.CHAT_LIST_PINNED_SURFACE_BG)
+        .backdropBlur(this.bandBackdropBlur())
 
       Column() {
         Row()

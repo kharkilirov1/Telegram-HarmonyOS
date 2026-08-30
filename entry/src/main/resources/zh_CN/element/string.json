@@ -161,6 +161,18 @@
       "value": "取消静音"
     },
     {
+      "name": "channel_join",
+      "value": "加入"
+    },
+    {
+      "name": "group_join",
+      "value": "加入群组"
+    },
+    {
+      "name": "conversation_default_restricted_text",
+      "value": "该群组不允许发送消息。"
+    },
+    {
       "name": "read",
       "value": "已读"
     },

@@ -49,8 +49,8 @@
 - Title/search state changes use the shared asymmetric opacity/scale transition.
 
 ## Material contract
-- API 26: `uiMaterial.ImmersiveMaterial`; `THIN` for interactive side controls and `REGULAR` for title/search surfaces.
-- API 23-25: adaptive `backgroundBlurStyle` plus a chat-only translucent tint that keeps fast-scrolling message text subordinate inside each capsule; disabled realtime glass uses the opaque fallback token.
+- API 26: `uiMaterial.ImmersiveMaterial`; `THIN` for interactive side controls and `REGULAR` for title/search surfaces. Native gate is `TgGlassPolicy.supportsNativeMaterial()` (API 26 real devices only — emulator renders the material opaque).
+- API 23-25: real within-app glass `backdropBlur(GLASS_CAPSULE_BACKDROP_BLUR)` plus a visible translucent tint (`chat_top_bar_scroll_capsule_bg`) that keeps scrolling message text readable through the capsule; disabled realtime glass uses the opaque fallback token. `backgroundBlurStyle` collapses to an opaque plate on emulator GPU paths (LESSON 121) — never use it for these capsules.
 - No naked search icon, no flat transparent back/title/avatar surface, and no shared panel behind the capsule cluster.
 
 ## Acceptance

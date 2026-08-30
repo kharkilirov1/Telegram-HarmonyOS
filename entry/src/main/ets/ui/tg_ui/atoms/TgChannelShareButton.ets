@@ -16,7 +16,11 @@ export struct TgChannelShareButton {
   }
 
   private useNativeMaterial(): boolean {
-    return deviceInfo.apiAvailable('26.0.0') && this.useBlur();
+    return TgGlassPolicy.supportsNativeMaterial() && this.useBlur();
+  }
+
+  private surfaceBackdropBlur(): number {
+    return this.useBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0;
   }
 
   private responseOffset(): number {
@@ -61,18 +65,14 @@ export struct TgChannelShareButton {
     .height(TgUiTokens.CHANNEL_SHARE_BUTTON_SIZE)
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
-    .backgroundColor(TgUiTokens.CHANNEL_SHARE_BUTTON_BG)
-    .backgroundBlurStyle(
-      this.useBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE,
-      TgGlassPolicy.glassOptions()
-    )
+    .backgroundColor(this.useBlur() ? TgUiTokens.CHAT_TOP_BAR_SCROLL_CAPSULE_BG : TgUiTokens.CHANNEL_SHARE_BUTTON_BG)
+    .backdropBlur(this.surfaceBackdropBlur())
     .border({
       width: TgUiTokens.CHANNEL_SHARE_BUTTON_BORDER_WIDTH,
       color: TgUiTokens.CHANNEL_SHARE_BUTTON_BORDER
     })
     .borderRadius(TgUiTokens.CHANNEL_SHARE_BUTTON_SIZE / 2)
     .clip(true)
-    .renderGroup(true)
     .hitTestBehavior(HitTestMode.None)
   }
 

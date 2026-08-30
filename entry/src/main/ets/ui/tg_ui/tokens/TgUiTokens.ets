@@ -1112,6 +1112,7 @@ export class TgUiTokens {
   static readonly SEARCH_NAV_ICON_SIZE: number = 22;
   static readonly SEARCH_NAV_STATUS_MIN_WIDTH: number = 96;
   static readonly SEARCH_NAV_PROGRESS_SIZE: number = 16;
+  static readonly SEARCH_NAV_BORDER_WIDTH: number = 0.5;
   static readonly SEARCH_HIT_FLASH: string = 'rgba(0, 122, 255, 0.28)';
   static readonly SEARCH_HIT_OUTLINE: string = 'rgba(10, 132, 255, 0.88)';
   static readonly SEARCH_HIT_OUTLINE_WIDTH: number = 1.5;
@@ -1430,6 +1431,9 @@ export class TgUiTokens {
   // collapses to an opaque plate on emulator GPU paths — use only on native
   // material paths and system surfaces (bindSheet).
   static readonly GLASS_CAPSULE_BACKDROP_BLUR: number = 14;
+  // Chat-list nav band: translucent tint sampled by backdropBlur so chat rows
+  // stay readable (blurred) under the full-width bar, like the iOS header.
+  static readonly CHAT_LIST_NAV_BAND_BG: Resource = $r('app.color.chat_list_nav_band_bg');
 
   // ── Shared icon resources for chat pipeline ──
   static readonly ICON_RES_CHECK: Resource = $r('app.media.ic_check');

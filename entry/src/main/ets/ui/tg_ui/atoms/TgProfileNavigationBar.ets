@@ -22,15 +22,15 @@ export struct TgProfileNavigationBar {
   }
 
   private useNativeMaterial(): boolean {
-    return deviceInfo.apiAvailable('26.0.0') && this.useBlur();
+    return TgGlassPolicy.supportsNativeMaterial() && this.useBlur();
   }
 
   private capsuleBackground(): ResourceColor {
-    return this.useBlur() ? TgUiTokens.CHAT_TOP_BAR_CAPSULE_BG : TgUiTokens.CHAT_TOP_BAR_CAPSULE_FALLBACK_BG;
+    return this.useBlur() ? TgUiTokens.CHAT_TOP_BAR_SCROLL_CAPSULE_BG : TgUiTokens.CHAT_TOP_BAR_CAPSULE_FALLBACK_BG;
   }
 
-  private capsuleBlurStyle(): BlurStyle {
-    return this.useBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE;
+  private capsuleBackdropBlur(): number {
+    return this.useBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0;
   }
 
   private responseRegionOffset(): number {
@@ -97,11 +97,10 @@ export struct TgProfileNavigationBar {
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
     .backgroundColor(this.capsuleBackground())
-    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    .backdropBlur(this.capsuleBackdropBlur())
     .border({ width: TgUiTokens.PROFILE_NAV_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .borderRadius(TgUiTokens.PROFILE_NAV_CONTROL_RADIUS)
     .clip(true)
-    .renderGroup(true)
     .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.88 })
     .responseRegion({
       x: this.responseRegionOffset(),

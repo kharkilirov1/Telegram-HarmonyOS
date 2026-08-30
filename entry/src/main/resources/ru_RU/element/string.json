@@ -161,6 +161,18 @@
       "value": "Со звуком"
     },
     {
+      "name": "channel_join",
+      "value": "Подписаться"
+    },
+    {
+      "name": "group_join",
+      "value": "Вступить в группу"
+    },
+    {
+      "name": "conversation_default_restricted_text",
+      "value": "Отправка сообщений в этой группе запрещена."
+    },
+    {
       "name": "read",
       "value": "Прочитано"
     },

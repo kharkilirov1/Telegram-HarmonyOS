@@ -4203,9 +4203,9 @@ export struct TgChatScreenPage {
         }
         .height(TgUiTokens.SEARCH_NAV_CAPSULE_HEIGHT)
         .backgroundColor(TgUiTokens.COMPOSER_CAPSULE_BG)
-        .border({ width: 0.5, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
+        .border({ width: TgUiTokens.SEARCH_NAV_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
         .borderRadius(TgUiTokens.SEARCH_NAV_CAPSULE_RADIUS)
-        .backgroundBlurStyle(TgGlassPolicy.composerBlurStyle(), TgGlassPolicy.glassOptions())
+        .backdropBlur(TgGlassPolicy.shouldUseRealtimeBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0)
 
         Blank()
 
@@ -4240,9 +4240,9 @@ export struct TgChatScreenPage {
           .padding({ left: TgUiTokens.SPACE_12, right: TgUiTokens.SPACE_12 })
           .justifyContent(FlexAlign.Center)
           .backgroundColor(TgUiTokens.COMPOSER_CAPSULE_BG)
-          .border({ width: 0.5, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
+          .border({ width: TgUiTokens.SEARCH_NAV_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
           .borderRadius(TgUiTokens.SEARCH_NAV_CAPSULE_RADIUS)
-          .backgroundBlurStyle(TgGlassPolicy.composerBlurStyle(), TgGlassPolicy.glassOptions())
+          .backdropBlur(TgGlassPolicy.shouldUseRealtimeBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0)
         }
       }
       .width('100%')
