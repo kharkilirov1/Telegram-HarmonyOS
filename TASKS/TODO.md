@@ -8,25 +8,26 @@ Last updated: 2026-08-31
 
 ### Волна 1 — стекло: рецепт и гейты
 
-- [ ] **Унифицировать гейт нативного материала** на `TgGlassPolicy.supportsNativeMaterial()`: 6 поверхностей дублируют `apiAvailable('26') && useBlur()` БЕЗ emulator-чека (TgChatListNavigationBar:61, TgChatListFilterBar:28, TgChannelShareButton:19, TgForwardPickerNavigationBar:52, TgPinnedMessagePanel:27, TgProfileNavigationBar:25) — на API 26 эмуляторе уйдут в NATIVE-ветку и отрисуются плитой ImmersiveMaterial.
-- [ ] **Перенести рецепт урока 121** (backdropBlur + тинт, снять renderGroup) на 10 поверхностей: TgChatListNavigationBar (Edit 186-187, right-actions 299-300, renderGroup 194/307, **снести плиту фона бара 529-532** — кейс пользователя «контент не виден под баром»), TgChatListFilterBar (130-132, renderGroup 139), TgForwardPickerNavigationBar (146/237/316, renderGroup ×3), TgProfileNavigationBar (100, renderGroup 104), TgPinnedMessagePanel (202, renderGroup 206), TgChannelShareButton (65-68, renderGroup 75), TgComposerEmojiPanel (563-564), TgComposerStickerPanel (507-508), TgChatScreenPage buildSearchNavBar (4208/4245 + инлайн `width: 0.5` → токен).
-- [ ] Точка централизации: обновить рецепт в `TgTopChromeBackground.ets` (сейчас мёртвый — consumer только demo — и со старым рецептом внутри) и перевести бары на него, ЛИБО точечный перенос по чеклисту выше; решить судьбу demo-only `TgTopBar.ets`/`TgTopChromeBackground.ets` (обновить или удалить).
-- Не трогать: bindPopup (TgChatScreenPage:4736) — системная поверхность, политика разрешает backgroundBlurStyle. Токены в порядке: хардкодов радиусов/тинтов стекла нет (кроме `width: 0.5` выше).
+- [x] **Унифицировать гейт нативного материала** на `TgGlassPolicy.supportsNativeMaterial()`: 6 поверхностей дублировали `apiAvailable('26') && useBlur()` без emulator-чека — заменено (TgChatListNavigationBar, TgChatListFilterBar, TgChannelShareButton, TgForwardPickerNavigationBar, TgPinnedMessagePanel, TgProfileNavigationBar).
+- [x] **Перенести рецепт урока 121** (backdropBlur + тинт, снять renderGroup) на 10 поверхностей: TgChatListNavigationBar (капсулы + **плита фона бара снесена** → `CHAT_LIST_NAV_BAND_BG` + backdropBlur, dark/light ресурсы добавлены), TgChatListFilterBar, TgForwardPickerNavigationBar (×3), TgProfileNavigationBar, TgPinnedMessagePanel, TgChannelShareButton, TgComposerEmojiPanel, TgComposerStickerPanel, TgChatScreenPage buildSearchNavBar (×2, инлайн `width: 0.5` → `SEARCH_NAV_BORDER_WIDTH`), demo-примитивы TgTopBar/TgTopChromeBackground. Невидимый тинт `CHAT_TOP_BAR_CAPSULE_BG` заменён на видимый `CHAT_TOP_BAR_SCROLL_CAPSULE_BG` в фолбэк-капсулах. Проверка: `backgroundBlurStyle` в prod остался только в bindPopup (системная поверхность, разрешено), `renderGroup(true)` = 0.
+- [x] Точка централизации: рецепт заведён и в мёртвый TgTopChromeBackground (держим живым, не удаляем — миграционная безопасность); судьба demo-only TgTopBar/TgTopChromeBackground — на усмотрение, сейчас оба на новом рецепте.
+- Токены в порядке: хардкодов радиусов/тинтов стекла нет.
 
 ### Волна 2 — нижняя панель чата по состоянию (iOS: ChatInterfaceStateInputPanels.swift:13 — 8+ панелей)
 
-- Модель: `TdChat` не содержит `status` (member/left/kicked); `TdChatPermissions` объявлен, но не потребляется; нужен маппинг прав + ветвление панели в TgChatScreenPage ~5033 (сейчас компосер рендерится всегда, isDisabled только `activeChatId === 0`).
-- [ ] Критично: канал подписан → панель «Mute/Unmute» (+Gift); канал НЕ подписан → «Join»; megagroup не подписан → «Join Group»/«Apply to Join»; kicked → красная «Delete and Exit»; bannedRights → Restricted-текст (`Conversation.RestrictedText*`).
-- [ ] Средне: slow mode (отсчёт поверх placeholder, disable attach), бот не запущен → «Start», заблокирован юзером → «Unblock» (строка `unblock_user` уже в ресурсах), Premium-required, секретный чат handshake.
-- [ ] Спека + атомы: SubscriberPanel / RestrictedPanel / UnblockStart (по процедуре SPEC→DEMO→ATOM→INTEGRATION).
+- [x] **Критичный срез (код готов, ждёт runtime-витнесс):** модель `canSendBasicMessages` (ChatDto→Chat, парс из `chat.permissions`), атом `TgChatBottomActionBar` (action: Mute/Unmute/Join-accent; restricted: текст-причина; стекло по уроку 121; спека + демо), ветвление в TgChatScreenPage вместо безусловного компосера, Mute/Unmute через `SetChatMuteUseCase`, Join через новый `joinChat` (команда+сериализатор+use case; td_api.tl:12010 `joinChat chat_id`), строки channel_join/group_join/conversation_default_restricted_text (base/ru/zh), тест сериализации joinChat. Гейты: main build + ohosTest compile + ui-smoke зелёные; попутно починен `EventPipeline.test.ets` (80 ошибок ArkTS с d3bf112, LESSON 123).
+  - Прогон витнесса: открыть канал из списка → «Mute/Unmute» вместо компосера (переключение live); открыть канал через поиск → «Join»; супергруппа с выключенными правами → Restricted-текст.
+- [ ] Критично (след. срезы): kicked → красная «Delete and Exit»; per-user `bannedRights` (нужен `getChatMember`-гидрат статуса — в объекте chat его нет).
+- [ ] Средне: slow mode (отсчёт, disable attach), бот не запущен → «Start», заблокирован юзером → «Unblock» (`unblock_user` в ресурсах), Premium-required, секретный чат handshake, «Join Group» для megagroup-не-подписок.
 
 ### Волна 3 — доки и контракты (расхождения аудита 08-31)
 
-- [ ] Дуализм канона: AGENTS.md правило 5 + DECISIONS D3 («MASTER_PLAN выигрывает») vs CLAUDE.md:45 + AGENT_EXECUTION_PLAN:20 («docs/ai — архив»). Назначить одного победителя.
-- [ ] CLAUDE.md устарел системно: цель v0.1.0 (:79), V1-утверждения (:136-138, «TgChatRow V1 exception» против D7 и ARCHITECTURE.md:143), «API 22+» (:77), «спеки опциональны» (:143).
-- [ ] Спеки стекла не знают урок 121: docs/ai/UPPER_CHROME_V2_ARCHITECTURE.md:61 («backgroundBlurStyle preferred», канонизирован ARCHITECTURE.md:132), spec/TgChatTopBar.md:53, spec/TgIosNativeLiquidComposer.md:47-48, spec/TgForwardPickerNavigationBar.md:14, spec/TgProfileNavigationBar.md:11, spec/TgGlassPolicy.md:15-17.
-- [ ] TgGlassPolicy.ets:60-63: комментарий про ULTRA_THIN всё ещё неверен (LESSON 121: стиль почти не влияет), хотя TODO ранее заявлял правку.
-- [ ] Мелочи: D14 (target 23 vs факт 26 в build-profile.json5); reuseId-контракт smoke-ui-phase0.ps1:400 против LESSON 84 и ARCHITECTURE.md:144; HYBRID_DESIGN:89-92 (ChatListPage без собственного Navigation); MASTER_PLAN эпохи API 22 (удалённый TgUnreadBadge, @Reusable-модель) — решить судьбу.
+- [x] Спеки стекла приведены к уроку 121: UPPER_CHROME_V2_ARCHITECTURE.md (constraint-секция), spec/TgChatTopBar.md, spec/TgIosNativeLiquidComposer.md (матрица материалов), spec/TgForwardPickerNavigationBar.md, spec/TgProfileNavigationBar.md, spec/TgGlassPolicy.md (правила).
+- [x] CLAUDE.md: цель v0.1.0 → production quality; V1-утверждения сняты (D7); спеки обязательны; «pixel-perfect не цель» → «production quality по референсу».
+- [x] TgGlassPolicy.ets: комментарий composerBlurStyle приведён к уроку 121 (стиль почти не влияет).
+- [ ] Дуализм канона: AGENTS.md правило 5 + DECISIONS D3 («MASTER_PLAN выигрывает») vs CLAUDE.md («docs/ai — архив»). Назначить одного победителя (решение пользователя).
+- [ ] Мелочи: D14 (target 23 vs факт 26 в build-profile.json5); reuseId-контракт smoke-ui-phase0.ps1:400 против LESSON 84; HYBRID_DESIGN:89-92; судьба MASTER_PLAN эпохи API 22.
+- Полнота аудита: доков 26 находок (детали в LESSON 122 и истории аудита), в TODO/STATUS вынесены значимые.
 
 ### Вне волн (в силе)
 

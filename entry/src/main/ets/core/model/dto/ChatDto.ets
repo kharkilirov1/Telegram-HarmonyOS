@@ -52,6 +52,9 @@ export class ChatDto {
   draftReplyToMessageId: string = '0';
   supergroupId: number = 0;
   basicGroupId: number = 0;
+  // chat.permissions.can_send_basic_messages; false → bottom bar replaces the
+  // composer (iOS Subscriber/Restricted panels, ChatInterfaceStateInputPanels.swift)
+  canSendBasicMessages: boolean = true;
 }
 
 export function extractCustomEmojiTextEntities(formattedText: TdObject): CustomEmojiTextEntity[] {
@@ -117,6 +120,10 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   chatDto.title = tdGetString(tdChat, 'title');
   chatDto.accentColorId = extractOptionalAccentColorId(tdChat);
   chatDto.unreadCount = tdGetNumber(tdChat, 'unread_count');
+  const permissions = tdGetObject(tdChat, 'permissions');
+  if (tdHasKeys(permissions)) {
+    chatDto.canSendBasicMessages = tdGetBoolean(permissions, 'can_send_basic_messages');
+  }
   chatDto.lastReadOutboxMessageId = tdGetInt64(tdChat, 'last_read_outbox_message_id');
   chatDto.lastReadInboxMessageId = tdGetInt64(tdChat, 'last_read_inbox_message_id');
 

@@ -4,7 +4,7 @@
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { chatUIState, navigationUIState } from '../../../core/model/UIStateModels';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
-import { AppState, Message, TextEntity } from '../../../core/model/AppState';
+import { AppState, Chat, Message, TextEntity } from '../../../core/model/AppState';
 import { fileUri } from '@kit.CoreFileKit';
 import { filePreview } from '@kit.PreviewKit';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
@@ -98,6 +98,9 @@ import { loadSupergroupFullInfo, loadBasicGroupFullInfo } from '../../../domain/
 import { createDeleteMessagesUseCase, DeleteMessagesUseCase } from '../../../domain/usecases/deleteMessages';
 import { ForwardMessagesUseCase, createForwardMessagesUseCase } from '../../../domain/usecases/forwardMessages';
 import { createOpenChatUseCase, OpenChatUseCase } from '../../../domain/usecases/openChat';
+import { createSetChatMuteUseCase, SetChatMuteUseCase, MUTE_FOREVER } from '../../../domain/usecases/setChatMute';
+import { createJoinChatUseCase, JoinChatUseCase } from '../../../domain/usecases/joinChat';
+import { TgChatBottomActionBar } from '../../tg_ui/atoms/TgChatBottomActionBar';
 import { SearchChatMessagesUseCase, createSearchChatMessagesUseCase } from '../../../domain/usecases/searchChatMessages';
 import { PinChatMessageUseCase, createPinChatMessageUseCase } from '../../../domain/usecases/pinChatMessage';
 import {
@@ -198,6 +201,11 @@ export struct TgChatScreenPage {
   @Local private composerTotalHeight: number = TgUiTokens.COMPOSER_MIN_CAPSULE_HEIGHT +
     TgUiTokens.COMPOSER_VERTICAL_INSET * 2 + TgUiTokens.SPACE_8;
   @Local private composerDraftText: string = '';
+  // iOS-style bottom panel replacing the composer where composing is
+  // unavailable (broadcast channel / revoked default send rights).
+  // 'none' + !restricted = normal composer lane.
+  @Local private chatBottomBarAction: 'none' | 'mute' | 'unmute' | 'join' = 'none';
+  @Local private chatBottomBarRestricted: boolean = false;
   @Local private composerSelectionStart: number = 0;
   @Local private composerSelectionEnd: number = 0;
   @Local private composerCaretRequestRevision: number = 0;
@@ -1788,9 +1796,64 @@ export struct TgChatScreenPage {
     }
   }
 
+  private deriveChatBottomBar(chat: Chat): void {
+    // iOS ChatInterfaceStateInputPanels.swift:13 — private chats keep the
+    // composer; broadcast channels get the Subscriber panel (Mute/Unmute when
+    // joined, accent Join when not in the main list); a revoked default send
+    // right gets the Restricted text panel. Spec: TgChatBottomActionBar.md.
+    this.chatBottomBarRestricted = false;
+    this.chatBottomBarAction = 'none';
+    if (chat.peerUserId > 0) {
+      return;
+    }
+    if (chat.type === 'channel') {
+      if (chat.order === '0') {
+        this.chatBottomBarAction = 'join';
+      } else {
+        this.chatBottomBarAction = chat.muteForSeconds > 0 ? 'unmute' : 'mute';
+      }
+      return;
+    }
+    if (!chat.canSendBasicMessages) {
+      this.chatBottomBarRestricted = true;
+    }
+  }
+
+  private bottomBarActionLabel(): string {
+    switch (this.chatBottomBarAction) {
+      case 'join':
+        return localized($r('app.string.channel_join').id, 'Join');
+      case 'unmute':
+        return localized($r('app.string.unmute').id, 'Unmute');
+      case 'mute':
+        return localized($r('app.string.mute').id, 'Mute');
+      default:
+        return '';
+    }
+  }
+
+  private handleChatBottomBarAction(): void {
+    if (this.activeChatId === 0 || this.chatBottomBarAction === 'none') {
+      return;
+    }
+    try {
+      if (this.chatBottomBarAction === 'mute') {
+        createSetChatMuteUseCase(getTdGatewayAdapter()).mute(this.activeChatId, MUTE_FOREVER);
+      } else if (this.chatBottomBarAction === 'unmute') {
+        createSetChatMuteUseCase(getTdGatewayAdapter()).unmute(this.activeChatId);
+      } else if (this.chatBottomBarAction === 'join') {
+        createJoinChatUseCase(getTdGatewayAdapter()).join(this.activeChatId);
+      }
+    } catch (_error) {
+      // Use cases log failures; the store update drives the next derive pass.
+    }
+  }
+
   private updateChatTopBarData(state: AppState): void {
     const chat = state.chats.chats.get(this.activeChatId);
     if (chat === undefined) {
+      this.chatBottomBarAction = 'none';
+      this.chatBottomBarRestricted = false;
       this.chatSubtitle = '';
       this.chatSubtitleMode = TgChatTopBarSubtitleMode.Secondary;
       this.chatSubtitleSpinner = false;
@@ -1809,6 +1872,7 @@ export struct TgChatScreenPage {
     this.chatTopBarTrailingAction = chat.peerUserId > 0
       ? TgChatTopBarTrailingAction.Search
       : TgChatTopBarTrailingAction.Avatar;
+    this.deriveChatBottomBar(chat);
 
     if (chat.peerUserId > 0) {
       const user = state.users.users.get(chat.peerUserId);
@@ -5052,6 +5116,18 @@ export struct TgChatScreenPage {
               Column() {
               if (this.isSearchMode) {
                 this.buildSearchNavBar()
+              } else if (this.chatBottomBarRestricted || this.chatBottomBarAction !== 'none') {
+                TgChatBottomActionBar({
+                  mode: this.chatBottomBarRestricted ? 'restricted' : 'action',
+                  actionText: this.bottomBarActionLabel(),
+                  isActionAccent: this.chatBottomBarAction === 'join',
+                  messageText: localized($r('app.string.conversation_default_restricted_text').id,
+                    "Writing messages isn't allowed in this group."),
+                  bottomInset: this.composerKeyboardPanelVisible() ? 0 : this.bottomOverlayInset,
+                  onActionPress: (): void => {
+                    this.handleChatBottomBarAction();
+                  }
+                })
               } else {
                 TgComposerInput({
                   text: this.composerDraftText,

@@ -18,6 +18,7 @@ import {
   DeleteMessagesCommand,
   ForwardMessagesCommand,
   SetChatMuteCommand,
+  JoinChatCommand,
   ToggleChatPinnedCommand,
   AddChatToListCommand,
   PinChatMessageCommand,
@@ -95,6 +96,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('editMessageText', serializeEditMessageText);
 COMMAND_SERIALIZATION_HANDLERS.set('deleteMessages', serializeDeleteMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('forwardMessages', serializeForwardMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('setChatMute', serializeSetChatMute);
+COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
 COMMAND_SERIALIZATION_HANDLERS.set('addChatToList', serializeAddChatToList);
 COMMAND_SERIALIZATION_HANDLERS.set('pinChatMessage', serializePinChatMessage);
@@ -275,6 +277,13 @@ function serializeSetChatMute(command: AnyAppCommand, result: SerializedCommand)
   result.params.setNumber('chat_id', cmd.payload.chatId);
   const settingsJson = `{"@type":"chatNotificationSettings","use_default_mute_for":false,"mute_for":${cmd.payload.muteForSeconds}}`;
   result.params.setString('_notification_settings_json', settingsJson);
+}
+
+function serializeJoinChat(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as JoinChatCommand;
+  // TDLib: joinChat chat_id:int53 = Ok — channel/supergroup join
+  result.method = 'joinChat';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
 }
 
 function serializeToggleChatIsPinned(command: AnyAppCommand, result: SerializedCommand): void {

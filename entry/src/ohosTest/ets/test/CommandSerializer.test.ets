@@ -17,6 +17,7 @@ import {
   createLoadChatsCommand,
   createLoadActiveStoriesCommand,
   createAddChatToListCommand,
+  createJoinChatCommand,
   createPinChatMessageCommand,
   createPrivateChatCommand,
   createImportContactsCommand,
@@ -169,6 +170,12 @@ export default function commandSerializerTest() {
         const unread = serializeCommand(createToggleChatIsMarkedAsUnreadCommand(100, true));
         expect(unread.method).assertEqual('toggleChatIsMarkedAsUnread');
         expect(unread.params.getBool('is_marked_as_unread')).assertTrue();
+      });
+
+      it('should serialize joinChat with chat_id (td_api.tl:12010)', 0, () => {
+        const join = serializeCommand(createJoinChatCommand(-1001234567890));
+        expect(join.method).assertEqual('joinChat');
+        expect(join.params.getNumber('chat_id')).assertEqual(-1001234567890);
       });
 
       it('should serialize chat draft with reply_to object and explicit clear', 0, () => {

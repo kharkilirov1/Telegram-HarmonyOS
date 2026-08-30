@@ -63,6 +63,7 @@ function chatFromDto(dto: ChatDto): Chat {
   chat.archiveOrder = dto.archiveOrder;
   chat.supergroupId = dto.supergroupId;
   chat.basicGroupId = dto.basicGroupId;
+  chat.canSendBasicMessages = dto.canSendBasicMessages;
 
   if (dto.photo) {
     chat.photoSmall = dto.photo.small;

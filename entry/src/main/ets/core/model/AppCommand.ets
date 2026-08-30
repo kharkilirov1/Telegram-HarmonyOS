@@ -512,6 +512,15 @@ export class SetChatMuteCommand extends AppCommand {
   payload: SetChatMutePayload = new SetChatMutePayload();
 }
 
+export class JoinChatPayload {
+  chatId: ChatId = 0; // TDLib joinChat takes the chat id (chat_id:int53)
+}
+
+export class JoinChatCommand extends AppCommand {
+  type: string = 'joinChat';
+  payload: JoinChatPayload = new JoinChatPayload();
+}
+
 export class ToggleChatPinnedCommand extends AppCommand {
   type: string = 'toggleChatIsPinned';
   payload: ToggleChatPinnedPayload = new ToggleChatPinnedPayload();
@@ -695,6 +704,7 @@ export type AnyAppCommand =
   | DeleteMessagesCommand
   | ForwardMessagesCommand
   | SetChatMuteCommand
+  | JoinChatCommand
   | ToggleChatPinnedCommand
   | AddChatToListCommand
   | PinChatMessageCommand
@@ -1043,6 +1053,12 @@ export function createSetChatMuteCommand(chatId: ChatId, muteForSeconds: number)
   const cmd = new SetChatMuteCommand();
   cmd.payload.chatId = chatId;
   cmd.payload.muteForSeconds = muteForSeconds;
+  return cmd;
+}
+
+export function createJoinChatCommand(chatId: ChatId): JoinChatCommand {
+  const cmd = new JoinChatCommand();
+  cmd.payload.chatId = chatId;
   return cmd;
 }
 

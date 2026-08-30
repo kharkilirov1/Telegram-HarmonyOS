@@ -323,6 +323,15 @@ export class TgUiTokens {
   static readonly PINNED_PANEL_HEIGHT: number = 48;
   static readonly PINNED_PANEL_SIDE_INSET: number = 14;
   static readonly PINNED_PANEL_RADIUS: number = 12;
+
+  // ── Chat bottom action/restricted bar (iOS Subscriber/Restricted panels) ──
+  // Replaces the composer in chats where composing is unavailable
+  // (broadcast channels, revoked default send rights).
+  static readonly CHAT_BOTTOM_BAR_HEIGHT: number = 48;
+  static readonly CHAT_BOTTOM_BAR_SIDE_INSET: number = 14;
+  static readonly CHAT_BOTTOM_BAR_RADIUS: number = 24;
+  static readonly CHAT_BOTTOM_BAR_ACTION_FONT_SIZE: number = 16;
+  static readonly CHAT_BOTTOM_BAR_RESTRICTED_FONT_SIZE: number = 13;
   static readonly PINNED_PANEL_CONTENT_LEFT: number = 16;
   static readonly PINNED_PANEL_CONTENT_RIGHT: number = 8;
   static readonly PINNED_PANEL_STRIPE_WIDTH: number = 2;

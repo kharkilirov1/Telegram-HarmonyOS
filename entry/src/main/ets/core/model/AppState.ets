@@ -68,6 +68,9 @@ export class Chat {
   description: string = '';
   supergroupId: number = 0; // TDLib supergroup_id for fetching full info
   basicGroupId: number = 0; // TDLib basic_group_id for fetching full info
+  // chat.permissions.can_send_basic_messages — false means the default send
+  // right is revoked for everyone (broadcast channels, restricted groups)
+  canSendBasicMessages: boolean = true;
   inviteLink: string = '';
   administratorCount: number = 0;
 }
