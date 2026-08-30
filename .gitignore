@@ -70,6 +70,7 @@ hvigor-debug.txt
 # Temporary / scratch
 tmp/
 .tmp_*
+.screenshot.png
 .agents/
 
 # Manual runtime verification artifacts

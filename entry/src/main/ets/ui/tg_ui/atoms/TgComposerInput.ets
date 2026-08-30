@@ -170,8 +170,11 @@ export struct TgComposerInput {
     return this.useBlur() ? TgUiTokens.COMPOSER_CAPSULE_BG : TgUiTokens.COMPOSER_CAPSULE_FALLBACK_BG;
   }
 
-  private capsuleBlurStyle(): BlurStyle {
-    return TgGlassPolicy.composerBlurStyle();
+  // Real within-app glass: backdropBlur samples the wallpaper/content behind
+  // the capsule. backgroundBlurStyle collapses to an opaque plate on emulator
+  // GPU paths; keep it only on system surfaces (bindSheet) and native material.
+  private capsuleBackdropBlur(): number {
+    return this.useBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0;
   }
 
   private responseRegionOffset(): number {
@@ -180,7 +183,7 @@ export struct TgComposerInput {
 
   private materialMode(): TgComposerMaterialMode {
     return resolveComposerMaterialMode(
-      deviceInfo.apiAvailable('26.0.0'),
+      TgGlassPolicy.supportsNativeMaterial(),
       TgUiFeatureFlags.USE_NATIVE_IMMERSIVE_COMPOSER_MATERIAL,
       this.useBlur()
     );
@@ -354,8 +357,7 @@ export struct TgComposerInput {
     .alignItems(VerticalAlign.Center)
     // Glass circle on API23-25; solid accent only for the active send state.
     .backgroundColor(this.canSend() ? TgUiTokens.COMPOSER_ACTION_ACTIVE : this.capsuleBg())
-    .backgroundBlurStyle(this.canSend() ? BlurStyle.NONE : this.capsuleBlurStyle(),
-      TgGlassPolicy.glassOptions())
+    .backdropBlur(this.canSend() ? 0 : this.capsuleBackdropBlur())
     .border({
       width: this.canSend() ? 0 : TgUiTokens.COMPOSER_CONTROL_BORDER_WIDTH,
       color: TgUiTokens.COMPOSER_CAPSULE_BORDER
@@ -879,7 +881,7 @@ export struct TgComposerInput {
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
     .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    .backdropBlur(this.capsuleBackdropBlur())
     .border({ width: TgUiTokens.COMPOSER_CONTROL_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
     .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
     .clip(true)
@@ -933,7 +935,7 @@ export struct TgComposerInput {
     .layoutWeight(1)
     .alignItems(HorizontalAlign.Start)
     .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    .backdropBlur(this.capsuleBackdropBlur())
     .borderRadius(TgUiTokens.COMPOSER_CAPSULE_RADIUS)
     .border({ width: TgUiTokens.COMPOSER_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
     .clip(true)
@@ -1068,7 +1070,7 @@ export struct TgComposerInput {
     .height(this.botMenuPopupHeight())
     .scrollBar(BarState.Off)
     .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    .backdropBlur(this.capsuleBackdropBlur())
     .border({ width: TgUiTokens.COMPOSER_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
     .borderRadius(TgUiTokens.COMPOSER_KEYBOARD_PANEL_RADIUS)
     .clip(true)
@@ -1270,7 +1272,7 @@ export struct TgComposerInput {
     }
     .layoutWeight(1)
     .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    .backdropBlur(this.capsuleBackdropBlur())
     .border({ width: TgUiTokens.COMPOSER_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
     .borderRadius(TgUiTokens.COMPOSER_CAPSULE_RADIUS)
     .clip(true)
@@ -1308,9 +1310,7 @@ export struct TgComposerInput {
     .backgroundColor(this.voiceRecordingState === 'locked'
       ? TgUiTokens.COMPOSER_ACTION_ACTIVE
       : this.capsuleBg())
-    .backgroundBlurStyle(this.voiceRecordingState === 'locked'
-      ? BlurStyle.NONE
-      : this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    .backdropBlur(this.voiceRecordingState === 'locked' ? 0 : this.capsuleBackdropBlur())
     .border({
       width: this.voiceRecordingState === 'locked' ? 0 : TgUiTokens.COMPOSER_CONTROL_BORDER_WIDTH,
       color: TgUiTokens.COMPOSER_CAPSULE_BORDER
@@ -1430,7 +1430,7 @@ export struct TgComposerInput {
       preferType: SheetType.BOTTOM,
       mode: SheetMode.OVERLAY,
       backgroundColor: TgUiTokens.ATTACHMENT_SHEET_BG,
-      blurStyle: this.capsuleBlurStyle(),
+      blurStyle: TgGlassPolicy.composerBlurStyle(),
       maskColor: TgUiTokens.COMPOSER_ATTACHMENT_SHEET_MASK,
       enableOutsideInteractive: false,
       onDisappear: () => {

@@ -414,6 +414,11 @@ export class TgUiTokens {
   static readonly UNREAD_BADGE_MAX_WIDTH: number = 52;
   static readonly UNREAD_BADGE_DISABLED_OPACITY: number = 0.45;
 
+  // Root tab bar mask (Huawei dock-style fade over floating glass bar).
+  // Flat translucent color, not a gradient resource: the visible fade comes
+  // from the HDS material underneath; maskColor only tints the band.
+  static readonly TAB_BAR_MASK_FADE: Resource = $r('app.color.root_tab_bar_mask_fade');
+
   // Root tab bar unread badge (Telegram iOS TabBarUI: 18pt capsule, 13pt regular text, 5pt side inset)
   static readonly TAB_BADGE_BG: string = '#EB5545';
   static readonly TAB_BADGE_TEXT: string = '#FFFFFF';
@@ -989,7 +994,8 @@ export class TgUiTokens {
   static readonly COMPOSER_RECORDING_TIMER_SIZE: number = 15;
   static readonly COMPOSER_RECORDING_LABEL_SIZE: number = 14;
   static readonly COMPOSER_RECORDING_PROGRESS_SIZE: number = 18;
-  static readonly COMPOSER_CAPSULE_BG: Resource = $r('app.color.glass_nav_bg');
+  // Glass tint over GLASS_CAPSULE_BACKDROP_BLUR (visible glass, wallpaper ghosts through)
+  static readonly COMPOSER_CAPSULE_BG: Resource = $r('app.color.composer_glass_tint');
   static readonly COMPOSER_CAPSULE_FALLBACK_BG: Resource = $r('app.color.comp_background_tertiary');
   static readonly COMPOSER_CAPSULE_BORDER: Resource = $r('app.color.glass_edge_highlight');
   static readonly COMPOSER_TEXT: Resource = $r('app.color.text_primary');
@@ -1115,6 +1121,8 @@ export class TgUiTokens {
   static readonly SCROLL_FAB_SIZE: number = 40;
   static readonly SCROLL_FAB_BG: Resource = $r('app.color.scroll_fab_bg');
   static readonly SCROLL_FAB_MARGIN: number = 12;
+  // Keeps the FAB drawable above the composer fade band sibling (z 0).
+  static readonly SCROLL_FAB_Z_OVER_FADE: number = 2;
   static readonly SCROLL_FAB_BADGE_HEIGHT: number = 20;
   static readonly SCROLL_FAB_BADGE_MIN_WIDTH: number = 20;
   static readonly SCROLL_FAB_BADGE_FONT_SIZE: number = 13;
@@ -1404,6 +1412,24 @@ export class TgUiTokens {
   static readonly CHAT_TOP_BAR_SCROLL_CAPSULE_BG: Resource = $r('app.color.chat_top_bar_scroll_capsule_bg');
   static readonly CHAT_TOP_BAR_CAPSULE_FALLBACK_BG: Resource = $r('app.color.comp_background_tertiary');
   static readonly CHAT_TOP_BAR_CAPSULE_BORDER: Resource = $r('app.color.glass_edge_highlight');
+
+  // ── Chrome fading blur bands (iOS-style progressive blur behind chat bars) ──
+  // Scrim stops share the wallpaper-base hue; alpha fades per zone so the band
+  // dissolves into the timeline instead of ending on a hard plate edge.
+  static readonly CHROME_FADE_STRONG: Resource = $r('app.color.chrome_fade_strong');
+  static readonly CHROME_FADE_MID: Resource = $r('app.color.chrome_fade_mid');
+  static readonly CHROME_FADE_WEAK: Resource = $r('app.color.chrome_fade_weak');
+  static readonly CHROME_FADE_ZERO: Resource = $r('app.color.chrome_fade_zero');
+  static readonly CHROME_FADE_ZONE_HEIGHT: number = 22;
+  static readonly CHROME_FADE_BLUR_STRONG: number = 14;
+  static readonly CHROME_FADE_BLUR_MID: number = 7;
+  static readonly CHROME_FADE_BLUR_SOFT: number = 3;
+
+  // Glass capsules (top bar islands, composer capsule): real within-app glass
+  // is backdropBlur + translucent tint. backgroundBlurStyle (system material)
+  // collapses to an opaque plate on emulator GPU paths — use only on native
+  // material paths and system surfaces (bindSheet).
+  static readonly GLASS_CAPSULE_BACKDROP_BLUR: number = 14;
 
   // ── Shared icon resources for chat pipeline ──
   static readonly ICON_RES_CHECK: Resource = $r('app.media.ic_check');

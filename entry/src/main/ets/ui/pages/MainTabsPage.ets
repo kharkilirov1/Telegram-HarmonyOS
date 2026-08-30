@@ -920,8 +920,11 @@ export struct MainTabsPage {
             materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
           }
         })
+        // Dock-style fade: translucent theme-color gradient mask (NOT a solid
+        // backplate) so the HDS immersive material underneath keeps blurring
+        // live content — content scrolls visibly through/behind the floating bar.
         .barBackgroundStyle({
-          maskColor: TgUiTokens.COLOR_BG_PRIMARY,
+          maskColor: TgUiTokens.TAB_BAR_MASK_FADE,
           maskHeight: this.rootTabBarRenderState().maskHeight
         })
         .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)

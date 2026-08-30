@@ -4832,6 +4832,27 @@ export struct TgChatScreenPage {
     )
   }
 
+  // iOS-style bottom dock scrim: bottom-anchored behind the composer, fading
+  // from transparent at its top edge to the deepest tint at the very bottom of
+  // the screen. It extends one zone above the composer top (bubble dissolve-in)
+  // and shows through the translucent capsule to the bottom edge.
+  @Builder
+  private buildComposerFadeBackdrop() {
+    Column()
+      .width('100%')
+      .height(this.composerTotalHeight + TgUiTokens.CHROME_FADE_ZONE_HEIGHT)
+      .backdropBlur(TgGlassPolicy.shouldUseRealtimeBlur() ? TgUiTokens.CHROME_FADE_BLUR_MID : 0)
+      .linearGradient({
+        direction: GradientDirection.Bottom,
+        colors: [
+          [TgUiTokens.CHROME_FADE_ZERO, 0],
+          [TgUiTokens.CHROME_FADE_WEAK, 0.6],
+          [TgUiTokens.CHROME_FADE_STRONG, 1]
+        ]
+      })
+      .hitTestBehavior(HitTestMode.None)
+  }
+
   build() {
     NavDestination() {
       Stack({ alignContent: Alignment.TopStart }) {
@@ -4885,6 +4906,13 @@ export struct TgChatScreenPage {
               .edgeEffect(EdgeEffect.Spring)
               .scrollBar(BarState.Off)
               .contentStartOffset(this.chatContentStartOffset())
+              // iOS-style under-glass timeline: the List viewport spans the full
+              // screen so bubbles scroll beneath the composer capsule (the glass
+              // samples real content), while contentEndOffset keeps the resting
+              // bottom position of the last message above the composer. This
+              // replaces the old viewport-clip padding (spec
+              // TgIosNativeLiquidComposer.md contract reversed 2026-08-29).
+              .contentEndOffset(this.composerTotalHeight)
               .maintainVisibleContentPosition(true)
               .onDidScroll((scrollOffset: number, scrollState: ScrollState) => {
                 this.maybeUnlockAutoPagination(scrollOffset, scrollState);
@@ -4939,7 +4967,6 @@ export struct TgChatScreenPage {
         }
         .width('100%')
         .height('100%')
-        .padding({ bottom: this.composerTotalHeight })
 
         // ── Pinned-message overlay (custom Telegram content below native/hybrid chrome) ──
         if (this.shouldShowPinnedMessagePanel()) {
@@ -5018,8 +5045,11 @@ export struct TgChatScreenPage {
               .width('100%')
               .padding({ right: TgUiTokens.SCROLL_FAB_MARGIN, bottom: TgUiTokens.SCROLL_FAB_MARGIN })
               .hitTestBehavior(HitTestMode.Transparent)
+              .zIndex(TgUiTokens.SCROLL_FAB_Z_OVER_FADE)
             }
-            Column() {
+            Stack({ alignContent: Alignment.Bottom }) {
+              this.buildComposerFadeBackdrop()
+              Column() {
               if (this.isSearchMode) {
                 this.buildSearchNavBar()
               } else {
@@ -5238,6 +5268,7 @@ export struct TgChatScreenPage {
                 }
               }
           }
+          .width('100%')
           .onAreaChange((_oldArea: Area, newArea: Area) => {
             const h = newArea.height as number;
             if (h > 0 && h !== this.composerTotalHeight) {
@@ -5250,6 +5281,12 @@ export struct TgChatScreenPage {
               }
             }
           })
+          .hitTestBehavior(HitTestMode.Transparent)
+        }
+        // Bottom-aligned Stack on purpose: the scrim is anchored to the very
+        // bottom edge of the screen (user direction 2026-08-29), one zone
+        // taller than the composer so it dissolves bubbles just above the
+        // capsule top, and shows through the translucent glass below it.
         }
         .width('100%')
         .height('100%')
@@ -5268,7 +5305,7 @@ export struct TgChatScreenPage {
       })
       .width('100%')
       .height('100%')
-      .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
+      .backgroundColor(Color.Transparent)
       .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
       .bindSheet(this.stickerSettingsOpen, this.buildStickerSettingsSheet(), {
         height: SheetSize.LARGE,

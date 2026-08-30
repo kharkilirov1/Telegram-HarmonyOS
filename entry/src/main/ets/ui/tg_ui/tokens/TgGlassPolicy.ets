@@ -1,3 +1,4 @@
+import { deviceInfo } from '@kit.BasicServicesKit';
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 
 export type TgGlassMode = 'auto' | 'high' | 'fallback';
@@ -36,6 +37,14 @@ export class TgGlassPolicy {
     return TgGlassPolicy.shouldUseRealtimeBlurForMode(TgGlassPolicy.getMode());
   }
 
+  // ImmersiveMaterial renders as an opaque plate on the emulator GPU path,
+  // so route it to the realtime-blur capsules there; native on real devices.
+  static supportsNativeMaterial(): boolean {
+    const productModel: string = deviceInfo.productModel || '';
+    const isEmulator: boolean = productModel.toLowerCase().includes('emulator');
+    return deviceInfo.apiAvailable('26.0.0') && !isEmulator;
+  }
+
   static topBarBlurStyle(): BlurStyle {
     return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE;
   }
@@ -49,9 +58,9 @@ export class TgGlassPolicy {
   }
 
   static composerBlurStyle(): BlurStyle {
-    // THICK reads as real material on dark chat backgrounds; ULTRA_THIN was
-    // indistinguishable from a flat plate
-    return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.COMPONENT_THICK : BlurStyle.NONE;
+    // ULTRA_THIN keeps the capsule translucent where THICK collapsed to an
+    // opaque plate on dark chat backgrounds (emulator GPU observation).
+    return TgGlassPolicy.shouldUseRealtimeBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE;
   }
 
   static searchBlurStyle(): BlurStyle {

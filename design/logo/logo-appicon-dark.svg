@@ -1,0 +1,18 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Telegram HarmonyOS app icon, dark">
+  <defs>
+    <linearGradient id="deep" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#37BBFE"/>
+      <stop offset="1" stop-color="#0A59F7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- night navy squircle -->
+  <rect x="16" y="16" width="480" height="480" rx="120" fill="#0D1522"/>
+  <!-- gradient border ring -->
+  <rect x="23" y="23" width="466" height="466" rx="113" fill="none" stroke="url(#deep)" stroke-width="14"/>
+
+  <!-- gradient paper plane, tilted -12 deg -->
+  <g transform="translate(64 64) rotate(-12 192 192)">
+    <path d="M32.2 336 L368 192 L32.2 48 L32 160 L272 192 L32 224 Z" fill="url(#deep)"/>
+  </g>
+</svg>

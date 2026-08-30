@@ -41,6 +41,10 @@
       "value": "#1C1C1E"
     },
     {
+      "name": "root_tab_bar_mask_fade",
+      "value": "#B31C1C1E"
+    },
+    {
       "name": "chat_list_surface_bg",
       "value": "#18212D"
     },
@@ -198,7 +202,27 @@
     },
     {
       "name": "chat_top_bar_scroll_capsule_bg",
-      "value": "#B32C2C2E"
+      "value": "#992C2C2E"
+    },
+    {
+      "name": "composer_glass_tint",
+      "value": "#662C2C2E"
+    },
+    {
+      "name": "chrome_fade_strong",
+      "value": "#400F2837"
+    },
+    {
+      "name": "chrome_fade_mid",
+      "value": "#260F2837"
+    },
+    {
+      "name": "chrome_fade_weak",
+      "value": "#140F2837"
+    },
+    {
+      "name": "chrome_fade_zero",
+      "value": "#000F2837"
     },
     {
       "name": "glass_tab_bg",

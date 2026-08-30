@@ -1,0 +1,21 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Telegram HarmonyOS orbit mark">
+  <defs>
+    <linearGradient id="orbitgrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#37BBFE"/>
+      <stop offset="1" stop-color="#0A59F7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- faint full orbit track -->
+  <circle cx="256" cy="256" r="204" fill="none" stroke="#0A59F7" stroke-opacity="0.15" stroke-width="16"/>
+  <!-- gradient orbit arc with a gap (comet trail) -->
+  <circle cx="256" cy="256" r="204" fill="none" stroke="url(#orbitgrad)" stroke-width="16"
+          stroke-linecap="round" stroke-dasharray="770 512" transform="rotate(-30 256 256)"/>
+  <!-- accent node at the arc start -->
+  <circle cx="432.7" cy="154" r="22" fill="url(#orbitgrad)"/>
+
+  <!-- paper plane breaking through the orbit, tilted -12 deg -->
+  <g transform="translate(76 76) scale(0.94) rotate(-12 192 192)">
+    <path d="M32.2 336 L368 192 L32.2 48 L32 160 L272 192 L32 224 Z" fill="url(#orbitgrad)"/>
+  </g>
+</svg>

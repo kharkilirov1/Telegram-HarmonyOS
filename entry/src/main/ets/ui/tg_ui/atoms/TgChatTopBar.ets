@@ -50,15 +50,18 @@ export struct TgChatTopBar {
   }
 
   private useNativeMaterial(): boolean {
-    return deviceInfo.apiAvailable('26.0.0') && this.useBlur();
+    return TgGlassPolicy.supportsNativeMaterial() && this.useBlur();
   }
 
   private capsuleBg(): ResourceColor {
     return this.useBlur() ? TgUiTokens.CHAT_TOP_BAR_SCROLL_CAPSULE_BG : TgUiTokens.CHAT_TOP_BAR_CAPSULE_FALLBACK_BG;
   }
 
-  private capsuleBlurStyle(): BlurStyle {
-    return this.useBlur() ? BlurStyle.COMPONENT_ULTRA_THIN : BlurStyle.NONE;
+  // Real within-app glass: backdropBlur samples the actual content behind the
+  // capsule (timeline + fade band). backgroundBlurStyle collapses to an opaque
+  // plate on emulator GPU paths, so fallback capsules blur the backdrop.
+  private capsuleBackdropBlur(): number {
+    return this.useBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0;
   }
 
   private responseRegionOffset(): number {
@@ -132,11 +135,10 @@ export struct TgChatTopBar {
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
     .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    .backdropBlur(this.capsuleBackdropBlur())
     .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CONTROL_RADIUS)
     .clip(true)
-    .renderGroup(true)
     .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.88 })
     .responseRegion({
       x: this.responseRegionOffset(),
@@ -236,11 +238,10 @@ export struct TgChatTopBar {
       right: TgUiTokens.CHAT_TOP_BAR_TITLE_PADDING_H
     })
     .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    .backdropBlur(this.capsuleBackdropBlur())
     .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_TITLE_RADIUS)
     .clip(true)
-    .renderGroup(true)
     .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.96 })
     .onClick(() => {
       hilog.info(0x0021, 'TgChatTopBar', 'title tapped');
@@ -308,11 +309,10 @@ export struct TgChatTopBar {
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
     .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    .backdropBlur(this.capsuleBackdropBlur())
     .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CONTROL_RADIUS)
     .clip(true)
-    .renderGroup(true)
     .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.88 })
     .responseRegion({
       x: this.responseRegionOffset(),
@@ -389,11 +389,10 @@ export struct TgChatTopBar {
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
     .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    .backdropBlur(this.capsuleBackdropBlur())
     .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_CONTROL_RADIUS)
     .clip(true)
-    .renderGroup(true)
     .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.88 })
     .responseRegion({
       x: this.responseRegionOffset(),
@@ -481,11 +480,10 @@ export struct TgChatTopBar {
     .height(TgUiTokens.CHAT_TOP_BAR_TITLE_HEIGHT)
     .layoutWeight(1)
     .backgroundColor(this.capsuleBg())
-    .backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())
+    .backdropBlur(this.capsuleBackdropBlur())
     .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
     .borderRadius(TgUiTokens.CHAT_TOP_BAR_TITLE_RADIUS)
     .clip(true)
-    .renderGroup(true)
   }
 
   @Builder
@@ -501,8 +499,59 @@ export struct TgChatTopBar {
     }
   }
 
+  // iOS-style progressive blur: content scrolling under the bar dissolves into
+  // a fading blur+scrim band instead of stopping on a hard plate edge.
+  // GradientDirection names the travel side (stop-0 opposite): Bottom +
+  // ascending stops render STRONG at the very top edge, ZERO at the bottom.
+  // Frost is tiered so content stays readable behind the title row (iOS
+  // reference: heavy frost only over the status strip, medium across the bar).
+  @Builder
+  private buildFadeBackdrop() {
+    Column() {
+      Column()
+        .width('100%')
+        .height(this.topInset)
+        .backdropBlur(this.useBlur() ? TgUiTokens.CHROME_FADE_BLUR_STRONG : 0)
+        .linearGradient({
+          direction: GradientDirection.Bottom,
+          colors: [
+            [TgUiTokens.CHROME_FADE_STRONG, 0],
+            [TgUiTokens.CHROME_FADE_MID, 1]
+          ]
+        })
+
+      Column()
+        .width('100%')
+        .height(TgUiTokens.CHAT_TOP_BAR_TITLE_HEIGHT + TgUiTokens.TOP_BAR_BOTTOM_PADDING)
+        .backdropBlur(this.useBlur() ? TgUiTokens.CHROME_FADE_BLUR_MID : 0)
+        .linearGradient({
+          direction: GradientDirection.Bottom,
+          colors: [
+            [TgUiTokens.CHROME_FADE_MID, 0],
+            [TgUiTokens.CHROME_FADE_WEAK, 1]
+          ]
+        })
+
+      Column()
+        .width('100%')
+        .height(TgUiTokens.CHROME_FADE_ZONE_HEIGHT)
+        .backdropBlur(this.useBlur() ? TgUiTokens.CHROME_FADE_BLUR_SOFT : 0)
+        .linearGradient({
+          direction: GradientDirection.Bottom,
+          colors: [
+            [TgUiTokens.CHROME_FADE_WEAK, 0],
+            [TgUiTokens.CHROME_FADE_ZERO, 1]
+          ]
+        })
+    }
+    .width('100%')
+    .hitTestBehavior(HitTestMode.None)
+  }
+
   build() {
     Stack({ alignContent: Alignment.TopStart }) {
+      this.buildFadeBackdrop()
+
       Column() {
         Row().width('100%').height(this.topInset)
 
@@ -550,7 +599,6 @@ export struct TgChatTopBar {
       }
       .width('100%')
       .padding({ bottom: TgUiTokens.TOP_BAR_BOTTOM_PADDING })
-      .backgroundColor(Color.Transparent)
     }
     .width('100%')
   }

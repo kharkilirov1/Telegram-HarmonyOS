@@ -1,5 +1,5 @@
-import { deviceInfo } from '@kit.BasicServicesKit';
 import { TgComposerInput } from '../atoms/TgComposerInput';
+import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 import { TgUiFeatureFlags } from '../TgUiFeatureFlags';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { resolveComposerMaterialMode } from '../utils/TgComposerMaterialPolicy';
@@ -15,7 +15,7 @@ export struct TgComposerInputDemo {
 
   private materialPathLabel(): string {
     const mode = resolveComposerMaterialMode(
-      deviceInfo.apiAvailable('26.0.0'),
+      TgGlassPolicy.supportsNativeMaterial(),
       TgUiFeatureFlags.USE_NATIVE_IMMERSIVE_COMPOSER_MATERIAL,
       true
     );

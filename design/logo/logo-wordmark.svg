@@ -1,0 +1,20 @@
+<svg width="920" height="360" viewBox="0 0 920 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Telegram for HarmonyOS wordmark">
+  <defs>
+    <linearGradient id="wmbadge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#37BBFE"/>
+      <stop offset="1" stop-color="#1C8FD6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- badge -->
+  <rect x="20" y="60" width="240" height="240" rx="60" fill="url(#wmbadge)"/>
+  <g transform="translate(32 72) scale(0.5625) rotate(-12 192 192)">
+    <path d="M32.2 336 L368 192 L32.2 48 L32 160 L272 192 L32 224 Z" fill="#FFFFFF"/>
+  </g>
+
+  <!-- text -->
+  <text x="308" y="190" font-family="HarmonyOS Sans, Segoe UI, system-ui, sans-serif"
+        font-size="118" font-weight="700" fill="#10192B">Telegram</text>
+  <text x="312" y="258" font-family="HarmonyOS Sans, Segoe UI, system-ui, sans-serif"
+        font-size="50" font-weight="500" fill="#229ED9" letter-spacing="9">FOR HARMONYOS</text>
+</svg>

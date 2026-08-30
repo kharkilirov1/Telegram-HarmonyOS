@@ -108,10 +108,14 @@ and material color; it is not combined with the fallback border/background.
   per product direction. HarmonyOS `responseRegion` expands every primary
   34vp control back to at least 40×40vp, so visual density does not shrink the
   supported touch target.
-- The content layer reserves the measured composer height as bottom padding, so
-  the List viewport physically ends at the composer top in idle, focused IME,
-  emoji/sticker and multiline states. `contentEndOffset` is not used as a
-  substitute for viewport geometry.
+- The timeline is an iOS-style under-glass layer: the List viewport spans the
+  full screen behind the composer, so bubbles scroll beneath the glass capsule
+  and the capsule's backdropBlur samples real content. Resting clearance is
+  provided by `contentEndOffset(composerTotalHeight)` (the same pattern as
+  ChatListPage/Calls/Contacts/Archived), not by viewport clipping. The earlier
+  "viewport physically ends at the composer top" contract was reversed
+  2026-08-29: with the fade-band glass the clipped timeline read as a hard
+  edge over the composer, and the capsule could only ever sample wallpaper.
 - If the user is already at the bottom, `TextArea` captures that intent on
   touch-down before ArkUI starts `KeyboardAvoidMode.RESIZE`. Page-height and
   composer-height changes then reapply
