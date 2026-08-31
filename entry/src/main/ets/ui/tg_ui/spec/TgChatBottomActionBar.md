@@ -50,4 +50,13 @@ bot "Start", blocked "Unblock", slow-mode countdown, Premium-required.
 - [x] iOS source constants recorded.
 - [x] State matrix derived from data available in `Chat` (order/muteForSeconds/permissions).
 - [x] Glass recipe per lesson 121, token-only geometry/colors.
-- [ ] Runtime witness: opened broadcast channel shows Mute/Unmute instead of composer.
+- [x] Runtime witness (Pura API24, 2026-08-31, `.codex/ui-audit/2026-08-31/bottom-bar-glass/`):
+  opened broadcast channel «Автомания» (2 009 236 подписчиков) → glass capsule
+  «Без звука» (Mute) instead of the composer (`05-channel-avtomania.jpeg`); tap →
+  live flip to «Со звуком» (Unmute) through setChatNotificationSettings round-trip,
+  post content reads through the backdropBlur capsule (`06-crop-bottom.png`);
+  private-bot chat keeps the composer (`03-channel-open.jpeg`).
+- [ ] Join-state runtime witness: BLOCKED — no UI path opens an unjoined public
+  channel (Compose global search returns users only, `08/09-compose-*.jpeg`);
+  needs a public-channel search entry point (separate slice). Command chain
+  covered by CommandSerializer.test.ets.
