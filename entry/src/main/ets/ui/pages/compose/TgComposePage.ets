@@ -3,6 +3,7 @@ import { fileUri } from '@kit.CoreFileKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, UserStatusType } from '../../../core/model/AppState';
+import { createNewChatEvent } from '../../../core/model/AppEvent';
 import { ChatDto } from '../../../core/model/dto/ChatDto';
 import { UserDto } from '../../../core/model/dto/UserDto';
 import { localized } from '../../../core/utils/AppResource';
@@ -23,10 +24,12 @@ import { TgForwardPickerNavigationBar } from '../../tg_ui/atoms/TgForwardPickerN
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import {
   ComposeContactVO,
+  ComposePublicChatVO,
   ComposeSearchContactsVO,
   buildComposeContacts,
   filterComposeContacts,
   isCurrentComposeSearchRequest,
+  makeComposePublicChatVOs,
   mergeComposeSearchContacts
 } from './ComposeContactModel';
 import { ComposeCreationResult, ComposeCreationRouteParams } from './ComposeCreationRouteTypes';
@@ -68,6 +71,7 @@ export struct TgComposePage {
   @Local private visibleContacts: ComposeContactVO[] = [];
   @Local private searchContactResults: ComposeContactVO[] = [];
   @Local private searchGlobalResults: ComposeContactVO[] = [];
+  @Local private searchPublicChatResults: ComposePublicChatVO[] = [];
   @Local private isRemoteSearching: boolean = false;
   @Local private isRemoteSearchSettled: boolean = false;
   @Local private contactSections: ComposeContactSectionVO[] = [];
@@ -90,6 +94,7 @@ export struct TgComposePage {
   private remoteCloudContacts: UserDto[] = [];
   private remoteKnownUsers: UserDto[] = [];
   private remoteGlobalUsers: UserDto[] = [];
+  private remotePublicChats: ChatDto[] = [];
 
   private clearRebuildTimer(): void {
     if (this.rebuildTimerId !== -1) {
@@ -209,9 +214,11 @@ export struct TgComposePage {
       );
       this.searchContactResults = searchResults.contacts;
       this.searchGlobalResults = searchResults.global;
+      this.searchPublicChatResults = makeComposePublicChatVOs(this.remotePublicChats);
     } else {
       this.searchContactResults = [];
       this.searchGlobalResults = [];
+      this.searchPublicChatResults = [];
     }
 
     const sectionMap: Map<string, ComposeContactVO[]> = new Map<string, ComposeContactVO[]>();
@@ -243,8 +250,10 @@ export struct TgComposePage {
     this.remoteCloudContacts = [];
     this.remoteKnownUsers = [];
     this.remoteGlobalUsers = [];
+    this.remotePublicChats = [];
     this.searchContactResults = [];
     this.searchGlobalResults = [];
+    this.searchPublicChatResults = [];
     this.isRemoteSearching = false;
     this.isRemoteSearchSettled = false;
   }
@@ -301,6 +310,7 @@ export struct TgComposePage {
         this.remoteCloudContacts = result.cloudContacts;
         this.remoteKnownUsers = result.knownUsers;
         this.remoteGlobalUsers = result.globalUsers;
+        this.remotePublicChats = result.globalPublicChats;
         this.isRemoteSearching = false;
         this.isRemoteSearchSettled = true;
         this.rebuildVisibleContacts();
@@ -312,8 +322,9 @@ export struct TgComposePage {
         this.remoteCloudContacts = [];
         this.remoteKnownUsers = [];
         this.remoteGlobalUsers = [];
+        this.remotePublicChats = [];
         this.isRemoteSearching = false;
-        this.isRemoteSearchSettled = true;
+        this.isRemoteSearchSettled = false;
         this.rebuildVisibleContacts();
         hilog.warn(DOMAIN, TAG, 'Compose remote search failed: %{public}s', error.message);
       });
@@ -444,6 +455,41 @@ export struct TgComposePage {
         hilog.error(DOMAIN, TAG, 'createPrivateChat failed for %{public}d: %{public}s',
           contact.userId, error.message);
       });
+  }
+
+  private handlePublicChatSelect(chat: ComposePublicChatVO): void {
+    if (this.isOpeningContact || this.isOpeningAction) {
+      hilog.info(DOMAIN, TAG, 'Ignoring duplicate Compose public-chat activation');
+      return;
+    }
+    const dto: ChatDto | undefined = this.remotePublicChats.find((item: ChatDto): boolean => item.id === chat.chatId);
+    if (dto === undefined || this.isClosing) {
+      return;
+    }
+
+    // The searched chat is not in the chat list yet — hydrate it into the store
+    // so the chat screen (bottom action bar, top bar) sees the full chat object.
+    try {
+      getAppCoreRuntime().getStore().dispatch(createNewChatEvent(dto.id, dto));
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'newChat dispatch failed for %{public}d: %{public}s',
+        chat.chatId, String(error));
+    }
+
+    this.isOpeningContact = true;
+    if (!this.canPop('selection')) {
+      this.isOpeningContact = false;
+      return;
+    }
+    try {
+      this.isClosing = true;
+      this.pageStack.pop(new ComposeResult(chat.chatId, chat.name));
+    } catch (error) {
+      this.isClosing = false;
+      this.isOpeningContact = false;
+      this.errorText = localized($r('app.string.action_failed').id, 'Action failed');
+      hilog.error(DOMAIN, TAG, 'Compose public-chat pop failed: %{public}s', String(error));
+    }
   }
 
   private openCreationRoute(routeName: string): void {
@@ -582,6 +628,34 @@ export struct TgComposePage {
                 this.buildContactRow(contact, (index ?? 0) < this.searchGlobalResults.length - 1, true)
               }
             }, (contact: ComposeContactVO): string => 'compose-search-global-' + contact.userId.toString())
+          }
+        }
+        if (this.searchPublicChatResults.length > 0) {
+          ListItemGroup({
+            header: this.buildSectionHeader(
+              localized($r('app.string.search_public_chats_section').id, 'Channels and Groups')
+            )
+          }) {
+            ForEach(this.searchPublicChatResults, (chat: ComposePublicChatVO, index?: number) => {
+              ListItem() {
+                TgContactRow({
+                  name: chat.name,
+                  initials: chat.initials,
+                  statusText: localized(
+                    (chat.isChannel ? $r('app.string.channel_label') : $r('app.string.group_label')).id,
+                    chat.isChannel ? 'channel' : 'group'
+                  ),
+                  avatarPath: '',
+                  isOnline: false,
+                  showSeparator: (index ?? 0) < this.searchPublicChatResults.length - 1,
+                  rowHeight: TgUiTokens.COMPOSE_CONTACT_ROW_HEIGHT,
+                  contentGap: TgUiTokens.COMPOSE_CONTACT_ROW_GAP,
+                  statusFontSize: TgUiTokens.COMPOSE_CONTACT_STATUS_SIZE,
+                  separatorInset: TgUiTokens.COMPOSE_CONTACT_SEPARATOR_INSET,
+                  onPress: (): void => this.handlePublicChatSelect(chat)
+                })
+              }
+            }, (chat: ComposePublicChatVO): string => 'compose-search-public-' + chat.chatId.toString())
           }
         }
       } else {

@@ -56,7 +56,14 @@ bot "Start", blocked "Unblock", slow-mode countdown, Premium-required.
   live flip to «Со звуком» (Unmute) through setChatNotificationSettings round-trip,
   post content reads through the backdropBlur capsule (`06-crop-bottom.png`);
   private-bot chat keeps the composer (`03-channel-open.jpeg`).
-- [ ] Join-state runtime witness: BLOCKED — no UI path opens an unjoined public
-  channel (Compose global search returns users only, `08/09-compose-*.jpeg`);
-  needs a public-channel search entry point (separate slice). Command chain
-  covered by CommandSerializer.test.ets.
+- [x] Join search entry point (2026-08-31/09-01 slice): Compose global search
+  now renders public channels/supergroups («Каналы и группы» section,
+  `searchPublicChats` + `getChat` hydration; negative chat ids preserved —
+  TDLib ids for groups/channels are negative and a positive-only filter
+  dropped them). Channel «Дуров's Channel» rendered in the section at runtime
+  (`19-atdurov.jpeg`). Tap → `newChat` store hydration → ComposeResult pop →
+  chat screen.
+- [ ] Join-state runtime witness: BLOCKED by host disk — C: 100% full (5.4 GB
+  free, emulator boot needs ~30 GB, LESSON 120 gate «No enough space to start
+  Emulator» in deployed/Pura API24/Log/Emulator.log). Repro path after disk
+  cleanup: Compose → search channel → tap row → accent «Подписаться» capsule.

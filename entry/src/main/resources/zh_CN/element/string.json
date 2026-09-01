@@ -1213,6 +1213,10 @@
       "value": "全局搜索"
     },
     {
+      "name": "search_public_chats_section",
+      "value": "频道和群组"
+    },
+    {
       "name": "search_chats_section",
       "value": "聊天"
     },

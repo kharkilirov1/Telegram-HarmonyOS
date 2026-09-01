@@ -1273,6 +1273,10 @@
       "value": "Global Search"
     },
     {
+      "name": "search_public_chats_section",
+      "value": "Channels and Groups"
+    },
+    {
       "name": "search_chats_section",
       "value": "Chats"
     },

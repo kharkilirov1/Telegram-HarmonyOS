@@ -1,4 +1,5 @@
 import { AppState, User, UserStatusType } from '../../../core/model/AppState';
+import { ChatDto } from '../../../core/model/dto/ChatDto';
 import { UserDto } from '../../../core/model/dto/UserDto';
 
 export class ComposeContactVO {
@@ -13,6 +14,43 @@ export class ComposeContactVO {
   sectionTitle: string = '#';
   sortKey: string = '';
   searchKey: string = '';
+}
+
+export class ComposePublicChatVO {
+  chatId: number = 0;
+  name: string = '';
+  initials: string = '';
+  isChannel: boolean = true;
+}
+
+export function makeComposePublicChatVOs(chats: ChatDto[]): ComposePublicChatVO[] {
+  const result: ComposePublicChatVO[] = [];
+  const seen: Set<number> = new Set<number>();
+  for (const chat of chats) {
+    if (chat.id <= 0 || seen.has(chat.id) || chat.title.trim().length === 0) {
+      continue;
+    }
+    seen.add(chat.id);
+    const vo = new ComposePublicChatVO();
+    vo.chatId = chat.id;
+    vo.name = chat.title;
+    vo.isChannel = chat.type === 'channel';
+    vo.initials = composeTitleInitials(chat.title);
+    result.push(vo);
+  }
+  return result;
+}
+
+function composeTitleInitials(title: string): string {
+  const parts: string[] = title.trim().split(/\s+/);
+  let initials: string = '';
+  for (const part of parts) {
+    if (part.length === 0 || initials.length >= 2) {
+      break;
+    }
+    initials += part.charAt(0).toUpperCase();
+  }
+  return initials.length > 0 ? initials : '#';
 }
 
 export class ComposeSearchContactsVO {

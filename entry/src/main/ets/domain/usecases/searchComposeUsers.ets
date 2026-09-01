@@ -8,7 +8,7 @@ import {
   createSearchContactsCommand,
   createSearchPublicChatsCommand
 } from '../../core/model/AppCommand';
-import { ChatType, createChatDtoFromTd } from '../../core/model/dto/ChatDto';
+import { ChatDto, ChatType, createChatDtoFromTd } from '../../core/model/dto/ChatDto';
 import { UserDto, createUserDtoFromTd } from '../../core/model/dto/UserDto';
 import { TdObject } from '../../models/TdTypes';
 import { TdGatewayPort } from '../ports/TdGatewayPort';
@@ -20,6 +20,9 @@ export class ComposeRemoteUserSearchResult {
   cloudContacts: UserDto[] = [];
   knownUsers: UserDto[] = [];
   globalUsers: UserDto[] = [];
+  // Public channels/supergroups from searchPublicChats — tap opens the chat
+  // (hydrated into the store by the page before navigation).
+  globalPublicChats: ChatDto[] = [];
 }
 
 function uniquePositiveIds(ids: number[]): number[] {
@@ -28,6 +31,22 @@ function uniquePositiveIds(ids: number[]): number[] {
   for (const rawId of ids) {
     const id: number = Math.trunc(rawId);
     if (id <= 0 || seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    result.push(id);
+  }
+  return result;
+}
+
+// TDLib chat ids are negative for basic groups/supergroups/channels — keep the
+// sign, drop only zeros/duplicates (channels from searchPublicChats).
+function uniqueNonZeroIds(ids: number[]): number[] {
+  const result: number[] = [];
+  const seen: Set<number> = new Set<number>();
+  for (const rawId of ids) {
+    const id: number = Math.trunc(rawId);
+    if (id === 0 || seen.has(id)) {
       continue;
     }
     seen.add(id);
@@ -83,18 +102,20 @@ export class SearchComposeUsersUseCase {
     const safeLimit: number = Math.max(1, Math.min(MAX_COMPOSE_SEARCH_LIMIT, Math.trunc(limit)));
 
     // TDLib has no single contacts.search equivalent that returns myResults/results.
-    // Run the three closest typed sources together, then preserve iOS precedence.
+    // Run the closest typed sources together, then preserve iOS precedence.
     const sources: UserDto[][] = await Promise.all([
       this.searchCloudContacts(query, safeLimit),
       this.searchKnownPrivateChats(query, safeLimit),
       this.searchGlobalPrivateChats(query, safeLimit)
     ]);
+    const publicChats: ChatDto[] = await this.searchGlobalPublicChats(query, safeLimit);
 
     const result = new ComposeRemoteUserSearchResult();
     const seen: Set<number> = new Set<number>();
     appendUniqueUsers(result.cloudContacts, sources[0], seen);
     appendUniqueUsers(result.knownUsers, sources[1], seen);
     appendUniqueUsers(result.globalUsers, sources[2], seen);
+    result.globalPublicChats = publicChats;
     return result;
   }
 
@@ -139,6 +160,43 @@ export class SearchComposeUsersUseCase {
       // searchPublicChats has no limit argument, so enforce the same budget locally.
       const limitedChatIds: number[] = chatIds === undefined ? [] : chatIds.slice(0, limit);
       return await this.hydratePrivateChatUsers(limitedChatIds);
+    } catch (_error) {
+      return [];
+    }
+  }
+
+  // searchPublicChats answers with public channels/supergroups too; the
+  // private-user path above drops them, this one keeps them for the
+  // «Каналы и группы» section (iOS ContactsSearchContainerNode global results).
+  private async searchGlobalPublicChats(query: string, limit: number): Promise<ChatDto[]> {
+    try {
+      const response = await this.gateway.send(createSearchPublicChatsCommand(query));
+      if (!(response instanceof TdObject)) {
+        return [];
+      }
+      const chatIds: number[] | undefined = parseComposeChatIdsResponse(response);
+      const limitedChatIds: number[] = chatIds === undefined ? [] : uniqueNonZeroIds(chatIds).slice(0, limit);
+      const chats: ChatDto[] = [];
+      const seen: Set<number> = new Set<number>();
+      for (const chatId of limitedChatIds) {
+        try {
+          const chatResponse = await this.gateway.send(createGetChatCommand(chatId));
+          if (!(chatResponse instanceof TdObject) || chatResponse.getType() !== 'chat') {
+            continue;
+          }
+          const chat = createChatDtoFromTd(chatResponse);
+          if (chat.id !== chatId || seen.has(chat.id)) {
+            continue;
+          }
+          if (chat.type === ChatType.CHANNEL || chat.type === ChatType.SUPERGROUP || chat.type === ChatType.GROUP) {
+            seen.add(chat.id);
+            chats.push(chat);
+          }
+        } catch (_error) {
+          // One stale/deleted chat must not discard the rest of the search page.
+        }
+      }
+      return chats;
     } catch (_error) {
       return [];
     }

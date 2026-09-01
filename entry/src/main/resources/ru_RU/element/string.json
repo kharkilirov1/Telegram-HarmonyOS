@@ -1213,6 +1213,10 @@
       "value": "Глобальный поиск"
     },
     {
+      "name": "search_public_chats_section",
+      "value": "Каналы и группы"
+    },
+    {
       "name": "search_chats_section",
       "value": "Чаты"
     },
