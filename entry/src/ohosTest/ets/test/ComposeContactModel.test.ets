@@ -1,13 +1,23 @@
 import { describe, expect, it } from '@ohos/hypium';
 import { AppState, User, createInitialAppState } from '../../../main/ets/core/model/AppState';
+import { ChatDto, ChatType } from '../../../main/ets/core/model/dto/ChatDto';
 import { UserDto } from '../../../main/ets/core/model/dto/UserDto';
 import {
   buildComposeContacts,
   composeContactInitials,
   filterComposeContacts,
   isCurrentComposeSearchRequest,
+  makeComposePublicChatVOs,
   mergeComposeSearchContacts
 } from '../../../main/ets/ui/pages/compose/ComposeContactModel';
+
+function createPublicChatDto(id: number, title: string, isChannel: boolean): ChatDto {
+  const chat = new ChatDto();
+  chat.id = id;
+  chat.title = title;
+  chat.type = isChannel ? ChatType.CHANNEL : ChatType.GROUP;
+  return chat;
+}
 
 function createUser(
   id: number,
@@ -126,6 +136,25 @@ export default function composeContactModelTest() {
         .assertFalse();
       expect(isCurrentComposeSearchRequest(newQ1Generation, newQ1Generation, 8, 8, 'q1', 'q1', true))
         .assertFalse();
+    });
+
+    it('keeps negative channel/group ids in public chat VOs', 0, () => {
+      // TDLib chat ids for groups/channels are negative — a `<= 0` VO filter
+      // would silently drop every searchable channel from the section.
+      const vos = makeComposePublicChatVOs([
+        createPublicChatDto(-1001117841280, "Durov's Channel", true),
+        createPublicChatDto(-123456, 'Test Group', false),
+        createPublicChatDto(0, 'Invalid', true),
+        createPublicChatDto(-1001117841280, 'Duplicate', true),
+        createPublicChatDto(-777, '   ', true)
+      ]);
+
+      expect(vos.length).assertEqual(2);
+      expect(vos[0].chatId).assertEqual(-1001117841280);
+      expect(vos[0].name).assertEqual("Durov's Channel");
+      expect(vos[0].isChannel).assertTrue();
+      expect(vos[1].chatId).assertEqual(-123456);
+      expect(vos[1].isChannel).assertFalse();
     });
   });
 }

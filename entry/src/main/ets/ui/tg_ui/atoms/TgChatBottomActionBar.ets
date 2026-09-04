@@ -121,7 +121,7 @@ export struct TgChatBottomActionBar {
     .backgroundColor(this.surfaceBg())
     .backdropBlur(this.surfaceBackdropBlur())
     .border({
-      width: TgUiTokens.SEARCH_NAV_BORDER_WIDTH,
+      width: TgUiTokens.CHAT_BOTTOM_BAR_BORDER_WIDTH,
       color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER
     })
     .borderRadius(TgUiTokens.CHAT_BOTTOM_BAR_RADIUS)

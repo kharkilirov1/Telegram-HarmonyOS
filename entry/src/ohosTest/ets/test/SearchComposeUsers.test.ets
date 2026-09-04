@@ -28,6 +28,9 @@ function privateChatJson(chatId: number, userId: number): string {
 class FakeComposeSearchGateway implements TdGatewayPort {
   sentCommands: AnyAppCommand[] = [];
   failPublic: boolean = false;
+  // Switches searchPublicChats to a mixed vector with a negative-id channel
+  // (TDLib group/channel chat ids are negative) to exercise the type split.
+  includeChannel: boolean = false;
 
   initialize(): Promise<void> {
     return Promise.resolve();
@@ -48,6 +51,11 @@ class FakeComposeSearchGateway implements TdGatewayPort {
         if (this.failPublic) {
           return Promise.reject(new Error('public search unavailable'));
         }
+        if (this.includeChannel) {
+          return Promise.resolve(TdObject.fromJSON(
+            '{"@type":"chats","total_count":2,"chat_ids":[105,-1001117841280]}'
+          ));
+        }
         return Promise.resolve(TdObject.fromJSON(
           '{"@type":"chats","total_count":4,"chat_ids":[102,103,104,105]}'
         ));
@@ -62,6 +70,13 @@ class FakeComposeSearchGateway implements TdGatewayPort {
 
   private getChatResponse(chatId: number): Promise<Object> {
     switch (chatId) {
+      case -1001117841280:
+        return Promise.resolve(TdObject.fromJSON(
+          '{"@type":"chat","id":-1001117841280,"title":"Test Channel",' +
+          '"type":{"@type":"chatTypeSupergroup","supergroup_id":1117841280,"is_channel":true},' +
+          '"permissions":{"@type":"chatPermissions","can_send_basic_messages":false},' +
+          '"positions":[]}'
+        ));
       case 100:
         return Promise.resolve(TdObject.fromJSON(privateChatJson(100, 3)));
       case 101:
@@ -194,6 +209,31 @@ export default function searchComposeUsersTest() {
       expect(gateway.sentCommands.length).assertEqual(0);
       expect(result.cloudContacts.length).assertEqual(0);
       expect(result.globalUsers.length).assertEqual(0);
+    });
+
+    it('splits one searchPublicChats response by chat type and keeps negative channel ids', 0, async () => {
+      const gateway = new FakeComposeSearchGateway();
+      gateway.includeChannel = true;
+      const result = await new SearchComposeUsersUseCase(gateway).execute('channel');
+
+      // Private chat hydrates into global users…
+      expect(result.globalUsers.length).assertEqual(1);
+      expect(result.globalUsers[0].id).assertEqual(6);
+      // …while the negative-id broadcast channel feeds the public-chats section.
+      expect(result.globalPublicChats.length).assertEqual(1);
+      expect(result.globalPublicChats[0].id).assertEqual(-1001117841280);
+      expect(result.globalPublicChats[0].title).assertEqual('Test Channel');
+      expect(result.globalPublicChats[0].canSendBasicMessages).assertFalse();
+
+      // Exactly ONE server-side searchPublicChats per query — no duplicates.
+      const publicSearchCount: number = gateway.sentCommands
+        .filter((command: AnyAppCommand): boolean => command.type === 'searchPublicChats')
+        .length;
+      expect(publicSearchCount).assertEqual(1);
+      // The channel id never goes down the per-user path.
+      const channelUserHydration = gateway.sentCommands.some((command: AnyAppCommand): boolean =>
+        command.type === 'getUser' && (command as GetUserCommand).payload.userId === -1001117841280);
+      expect(channelUserHydration).assertFalse();
     });
   });
 }

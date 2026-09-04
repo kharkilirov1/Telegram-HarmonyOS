@@ -294,6 +294,8 @@ export struct TgChatScreenPage {
   private editUseCase?: EditMessageUseCase;
   private deleteUseCase?: DeleteMessagesUseCase;
   private forwardUseCase?: ForwardMessagesUseCase;
+  private chatMuteUseCase?: SetChatMuteUseCase;
+  private chatJoinUseCase?: JoinChatUseCase;
   private openChatUseCase?: OpenChatUseCase;
   private searchUseCase?: SearchChatMessagesUseCase;
   private pinUseCase?: PinChatMessageUseCase;
@@ -998,6 +1000,8 @@ export struct TgChatScreenPage {
       this.editUseCase = createEditMessageUseCase(getTdGatewayAdapter());
       this.deleteUseCase = createDeleteMessagesUseCase(getTdGatewayAdapter());
       this.forwardUseCase = createForwardMessagesUseCase(getTdGatewayAdapter());
+      this.chatMuteUseCase = createSetChatMuteUseCase(getTdGatewayAdapter());
+      this.chatJoinUseCase = createJoinChatUseCase(getTdGatewayAdapter());
       this.openChatUseCase = createOpenChatUseCase(store, getTdGatewayAdapter());
       this.searchUseCase = createSearchChatMessagesUseCase(getTdGatewayAdapter());
       this.pinUseCase = createPinChatMessageUseCase(getTdGatewayAdapter());
@@ -1179,6 +1183,8 @@ export struct TgChatScreenPage {
     this.editUseCase = undefined;
     this.deleteUseCase = undefined;
     this.forwardUseCase = undefined;
+    this.chatMuteUseCase = undefined;
+    this.chatJoinUseCase = undefined;
     this.searchUseCase = undefined;
     this.pinUseCase = undefined;
     this.loadChatHistoryUseCase = undefined;
@@ -1807,7 +1813,11 @@ export struct TgChatScreenPage {
       return;
     }
     if (chat.type === 'channel') {
-      if (chat.order === '0') {
+      // In a list = subscribed. An archived channel keeps order='0' (order is
+      // the chatListMain key only), so archiveOrder must count as membership —
+      // otherwise a subscribed channel would show an accent Join button.
+      const inChatList = chat.order !== '0' || chat.archiveOrder !== '0';
+      if (!inChatList) {
         this.chatBottomBarAction = 'join';
       } else {
         this.chatBottomBarAction = chat.muteForSeconds > 0 ? 'unmute' : 'mute';
@@ -1836,16 +1846,17 @@ export struct TgChatScreenPage {
     if (this.activeChatId === 0 || this.chatBottomBarAction === 'none') {
       return;
     }
-    try {
-      if (this.chatBottomBarAction === 'mute') {
-        createSetChatMuteUseCase(getTdGatewayAdapter()).mute(this.activeChatId, MUTE_FOREVER);
-      } else if (this.chatBottomBarAction === 'unmute') {
-        createSetChatMuteUseCase(getTdGatewayAdapter()).unmute(this.activeChatId);
-      } else if (this.chatBottomBarAction === 'join') {
-        createJoinChatUseCase(getTdGatewayAdapter()).join(this.activeChatId);
-      }
-    } catch (_error) {
-      // Use cases log failures; the store update drives the next derive pass.
+    // Use cases throw AppError on TDLib failures (flood limits, invite-only
+    // channels) — the rejection must be handled, the store update drives the
+    // next derive pass on success.
+    const muteUseCase = this.chatMuteUseCase;
+    const joinUseCase = this.chatJoinUseCase;
+    if (this.chatBottomBarAction === 'mute' && muteUseCase !== undefined) {
+      muteUseCase.mute(this.activeChatId, MUTE_FOREVER).catch((): void => {});
+    } else if (this.chatBottomBarAction === 'unmute' && muteUseCase !== undefined) {
+      muteUseCase.unmute(this.activeChatId).catch((): void => {});
+    } else if (this.chatBottomBarAction === 'join' && joinUseCase !== undefined) {
+      joinUseCase.join(this.activeChatId).catch((): void => {});
     }
   }
 
@@ -4266,7 +4277,8 @@ export struct TgChatScreenPage {
           })
         }
         .height(TgUiTokens.SEARCH_NAV_CAPSULE_HEIGHT)
-        .backgroundColor(TgUiTokens.COMPOSER_CAPSULE_BG)
+        .backgroundColor(TgGlassPolicy.shouldUseRealtimeBlur()
+          ? TgUiTokens.COMPOSER_CAPSULE_BG : TgUiTokens.COMPOSER_CAPSULE_FALLBACK_BG)
         .border({ width: TgUiTokens.SEARCH_NAV_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
         .borderRadius(TgUiTokens.SEARCH_NAV_CAPSULE_RADIUS)
         .backdropBlur(TgGlassPolicy.shouldUseRealtimeBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0)
@@ -4303,7 +4315,8 @@ export struct TgChatScreenPage {
           .constraintSize({ minWidth: TgUiTokens.SEARCH_NAV_STATUS_MIN_WIDTH })
           .padding({ left: TgUiTokens.SPACE_12, right: TgUiTokens.SPACE_12 })
           .justifyContent(FlexAlign.Center)
-          .backgroundColor(TgUiTokens.COMPOSER_CAPSULE_BG)
+          .backgroundColor(TgGlassPolicy.shouldUseRealtimeBlur()
+            ? TgUiTokens.COMPOSER_CAPSULE_BG : TgUiTokens.COMPOSER_CAPSULE_FALLBACK_BG)
           .border({ width: TgUiTokens.SEARCH_NAV_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
           .borderRadius(TgUiTokens.SEARCH_NAV_CAPSULE_RADIUS)
           .backdropBlur(TgGlassPolicy.shouldUseRealtimeBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0)

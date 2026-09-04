@@ -27,7 +27,9 @@ export function makeComposePublicChatVOs(chats: ChatDto[]): ComposePublicChatVO[
   const result: ComposePublicChatVO[] = [];
   const seen: Set<number> = new Set<number>();
   for (const chat of chats) {
-    if (chat.id <= 0 || seen.has(chat.id) || chat.title.trim().length === 0) {
+    // Non-zero only: TDLib group/channel chat ids are negative — a `<= 0`
+    // filter here would silently drop every searchable channel.
+    if (chat.id === 0 || seen.has(chat.id) || chat.title.trim().length === 0) {
       continue;
     }
     seen.add(chat.id);

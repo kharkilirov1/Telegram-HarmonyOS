@@ -25,6 +25,13 @@ export class ComposeRemoteUserSearchResult {
   globalPublicChats: ChatDto[] = [];
 }
 
+// Type-based split of one searchPublicChats response: PRIVATE chats hydrate
+// global users, CHANNEL/SUPERGROUP/GROUP feed the «Каналы и группы» section.
+class GlobalChatSplit {
+  users: UserDto[] = [];
+  publicChats: ChatDto[] = [];
+}
+
 function uniquePositiveIds(ids: number[]): number[] {
   const result: number[] = [];
   const seen: Set<number> = new Set<number>();
@@ -105,17 +112,16 @@ export class SearchComposeUsersUseCase {
     // Run the closest typed sources together, then preserve iOS precedence.
     const sources: UserDto[][] = await Promise.all([
       this.searchCloudContacts(query, safeLimit),
-      this.searchKnownPrivateChats(query, safeLimit),
-      this.searchGlobalPrivateChats(query, safeLimit)
+      this.searchKnownPrivateChats(query, safeLimit)
     ]);
-    const publicChats: ChatDto[] = await this.searchGlobalPublicChats(query, safeLimit);
+    const global = await this.searchGlobalChats(query, safeLimit);
 
     const result = new ComposeRemoteUserSearchResult();
     const seen: Set<number> = new Set<number>();
     appendUniqueUsers(result.cloudContacts, sources[0], seen);
     appendUniqueUsers(result.knownUsers, sources[1], seen);
-    appendUniqueUsers(result.globalUsers, sources[2], seen);
-    result.globalPublicChats = publicChats;
+    appendUniqueUsers(result.globalUsers, global.users, seen);
+    result.globalPublicChats = global.publicChats;
     return result;
   }
 
@@ -150,56 +156,52 @@ export class SearchComposeUsersUseCase {
     }
   }
 
-  private async searchGlobalPrivateChats(query: string, limit: number): Promise<UserDto[]> {
+  // ONE searchPublicChats request feeds both global sections: private users
+  // («Глобальный поиск») and public channels/supergroups («Каналы и группы»,
+  // iOS ContactsSearchContainerNode global results). Splitting happens by
+  // CHAT TYPE after getChat: TDLib chat ids for groups/channels are negative
+  // on current builds, so ids are filtered by non-zero only — never by sign
+  // (a positive-only filter here silently dropped every channel).
+  private async searchGlobalChats(query: string, limit: number): Promise<GlobalChatSplit> {
+    const split = new GlobalChatSplit();
     try {
       const response = await this.gateway.send(createSearchPublicChatsCommand(query));
-      if (!(response instanceof TdObject)) {
-        return [];
+      if (!(response instanceof TdObject) || response.getType() !== 'chats') {
+        return split;
       }
-      const chatIds: number[] | undefined = parseComposeChatIdsResponse(response);
-      // searchPublicChats has no limit argument, so enforce the same budget locally.
-      const limitedChatIds: number[] = chatIds === undefined ? [] : chatIds.slice(0, limit);
-      return await this.hydratePrivateChatUsers(limitedChatIds);
-    } catch (_error) {
-      return [];
-    }
-  }
-
-  // searchPublicChats answers with public channels/supergroups too; the
-  // private-user path above drops them, this one keeps them for the
-  // «Каналы и группы» section (iOS ContactsSearchContainerNode global results).
-  private async searchGlobalPublicChats(query: string, limit: number): Promise<ChatDto[]> {
-    try {
-      const response = await this.gateway.send(createSearchPublicChatsCommand(query));
-      if (!(response instanceof TdObject)) {
-        return [];
-      }
-      const chatIds: number[] | undefined = parseComposeChatIdsResponse(response);
-      const limitedChatIds: number[] = chatIds === undefined ? [] : uniqueNonZeroIds(chatIds).slice(0, limit);
-      const chats: ChatDto[] = [];
-      const seen: Set<number> = new Set<number>();
-      for (const chatId of limitedChatIds) {
+      const chatIds: number[] = uniqueNonZeroIds(response.getNumberArray('chat_ids')).slice(0, limit);
+      const seenUsers: Set<number> = new Set<number>();
+      for (const chatId of chatIds) {
         try {
           const chatResponse = await this.gateway.send(createGetChatCommand(chatId));
           if (!(chatResponse instanceof TdObject) || chatResponse.getType() !== 'chat') {
             continue;
           }
           const chat = createChatDtoFromTd(chatResponse);
-          if (chat.id !== chatId || seen.has(chat.id)) {
+          if (chat.id !== chatId) {
             continue;
           }
-          if (chat.type === ChatType.CHANNEL || chat.type === ChatType.SUPERGROUP || chat.type === ChatType.GROUP) {
-            seen.add(chat.id);
-            chats.push(chat);
+          if (chat.type === ChatType.PRIVATE) {
+            if (chat.peerUserId <= 0 || seenUsers.has(chat.peerUserId)) {
+              continue;
+            }
+            const user: UserDto | undefined = await this.hydrateUser(chat.peerUserId);
+            if (user !== undefined) {
+              seenUsers.add(user.id);
+              split.users.push(user);
+            }
+          } else if (chat.type === ChatType.CHANNEL || chat.type === ChatType.SUPERGROUP ||
+            chat.type === ChatType.GROUP) {
+            split.publicChats.push(chat);
           }
         } catch (_error) {
           // One stale/deleted chat must not discard the rest of the search page.
         }
       }
-      return chats;
     } catch (_error) {
-      return [];
+      // Telegram iOS treats an individual search-source failure as an empty source.
     }
+    return split;
   }
 
   private async hydrateUsers(userIds: number[]): Promise<UserDto[]> {
