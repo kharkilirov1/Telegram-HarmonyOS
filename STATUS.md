@@ -1,10 +1,10 @@
 # STATUS — Telegram-HarmonyOS
 
-## 2026-09-26 — предложение по укреплению архитектуры
+## 2026-09-26 — широкое ревью и план стабилизации
 
-- По запросу пользователя подготовлен [поэтапный план A0–A5](TASKS/ARCHITECTURE_HARDENING_PLAN_2026-09-26.md) для issue и PR в `dev`.
-- Основания: code review и host-воспроизведения ошибок lifecycle/JSON. Проверки на HarmonyOS, SDK-build и реализация этапов не выполнены в этом срезе.
-- Scope этого среза — документация. Историческое решение о заморозке ниже сохранено; runtime, релизный трек и `dev→main` не возобновляются автоматически.
+- Подготовлены [ревью с 23 группами находок](TASKS/CODE_REVIEW_2026-09-26.md) и [план A0–A5 / B1–B4](TASKS/ARCHITECTURE_HARDENING_PLAN_2026-09-26.md); tracking [issue #198](https://github.com/kharkilirov1/Telegram-HarmonyOS/issues/198), [PR #199](https://github.com/kharkilirov1/Telegram-HarmonyOS/pull/199).
+- Сохранены [host-репродукторы](scripts/review/2026-09-26/README.md) реальных ETS/C++ модулей с mocks. Их exit 0 подтверждает известные дефекты базы, не готовность релиза. P0 не установлен.
+- Scope: документы и audit artifacts, production-код не меняется. SDK/HAP/Hypium/device проверки и реализация исправлений не выполнены. Историческая заморозка ниже сохраняется; `dev→main` этим PR не разрешается.
 
 Snapshot date: 2026-07-22 (target API 26; live runtime floor API 23)
 

@@ -4,16 +4,18 @@ Tracking issue: [#198](https://github.com/kharkilirov1/Telegram-HarmonyOS/issues
 
 Дата: 2026-09-26. База анализа: `dev`, `2d2f68391e259fa83e4c3e09f38841cc08c235d1`.
 
-Статус: предложен план реализации. Этот документ и PR с ним не исправляют runtime и не означают, что этапы ниже выполнены. Историческая заморозка в [STATUS.md](../STATUS.md) сохраняется; текущий запрос пользователя разрешает подготовить план, tracking issue и PR. Каждый этап реализации предлагается отдельным небольшим PR в `dev`. Это датированное дополнение к [каноническому release roadmap](AGENT_EXECUTION_PLAN.md); архивные `docs/ai/*`, принятые `DECISIONS.md` и merge `dev→main` этот PR не пересматривает.
+Статус: предложен план реализации. После расширенного ревью добавлены B1–B4 и [23 группы находок](CODE_REVIEW_2026-09-26.md). PR содержит документы и host-репродукторы известных дефектов; runtime не исправлен, этапы ниже не выполнены. Историческая заморозка в [STATUS.md](../STATUS.md) сохраняется; текущий запрос пользователя разрешает подготовить план, tracking issue и PR. Каждый этап реализации предлагается отдельным небольшим PR в `dev`. Это датированное дополнение к [каноническому release roadmap](AGENT_EXECUTION_PLAN.md); архивные `docs/ai/*`, принятые `DECISIONS.md` и merge `dev→main` этот PR не пересматривает.
 
 ## 1. Цель и границы
 
-Сохранить существующие UI-компоненты, use cases, reducers и TDLib, укрепив четыре области:
+Сохранить существующие UI-компоненты, use cases, reducers и TDLib. Первоначальные четыре области:
 
 1. Управление жизнью сессии, повторным входом и восстановлением после ошибок.
 2. Владение native-потоком, callback и очередями.
 3. Корректное преобразование JSON TDLib в данные приложения, включая точные int64.
 4. Проверяемость поведения и разделение обязанностей экрана чата.
+
+Расширенное ревью добавило обязательные области: целостность DTO/state pipeline (B1), корректность пользовательских mutations и черновиков (B2), владение media-операциями (B3), безопасные логи и стоимость production-проверок (B4). Конкретные условия, locations и доказательства — в [CODE_REVIEW_2026-09-26.md](CODE_REVIEW_2026-09-26.md).
 
 Первый полезный результат: выход/отмена входа и повторная инициализация не оставляют приложение с закрытым клиентом или устаревшим адаптером. Следующий: задержанные события не пересекают границу сессии, поля JSON читаются на правильном уровне, перегрузка имеет определённое поведение.
 
@@ -27,7 +29,7 @@ Tracking issue: [#198](https://github.com/kharkilirov1/Telegram-HarmonyOS/issues
 | `LoginController` сохраняет прежний adapter/gateway после reset runtime | [LoginController](../entry/src/main/ets/ui/controllers/LoginController.ets), [TdGatewayAdapter](../entry/src/main/ets/infra/td/adapter/TdGatewayAdapter.ets), [AppCoreRuntime](../entry/src/main/ets/app/bootstrap/AppCoreRuntime.ets) | В host-стенде новый gateway был `ready`, а отправка через прежний контроллер завершилась ошибкой до native send |
 | После таймаута `close` callback старого запуска может доставить update новому gateway | [TdGateway](../entry/src/main/ets/infra/td/gateway/TdGateway.ets), [MainThreadDispatcher](../entry/src/main/ets/infra/threading/MainThreadDispatcher.ets), [AppCoreRuntime](../entry/src/main/ets/app/bootstrap/AppCoreRuntime.ets) | Управляемый replay задержанного callback: client 2 попал в gateway client 3. Это условный сценарий при timeout/restart; он не доказывает нарушение FIFO после успешного получения финального `Closed` |
 | Regex-getter читает вложенное поле вместо верхнего | [TdObject](../entry/src/main/ets/models/td/common/index.ets) | На исходном модуле `getNumber('id')` для `{"nested":{"id":7},"id":42}` вернул `7`; для `{"nested":{"id":7}}` тоже вернул `7` |
-| Native-мост игнорирует статусы TSFN, не освобождает payload при `env == nullptr`, имеет неограниченную очередь и синхронный `join` | [tdlib_napi.cpp](../entry/src/main/cpp/tdlib_napi.cpp), [napi_init.cpp](../entry/src/main/cpp/napi_init.cpp) | Статический анализ. Нативные fault tests и поведение teardown конкретной версии OpenHarmony ещё нужны |
+| Native-мост игнорирует статусы TSFN, не освобождает payload при `env == nullptr`, имеет неограниченную очередь и синхронный `join` | [tdlib_napi.cpp](../entry/src/main/cpp/tdlib_napi.cpp), [napi_init.cpp](../entry/src/main/cpp/napi_init.cpp) | Host C++ harness подтвердил Running без TSFN, env-null payload leak и stop около 3,4 с на управляемом потоке. Поведение конкретного SDK teardown и нагрузка требуют native/device tests |
 | CI не запускает поведенческие тесты; HarmonyOS build включается отдельно | [smoke.yml](../.github/workflows/smoke.yml), [smoke-ui-phase0.sh](../scripts/smoke-ui-phase0.sh) | Проверен workflow: обязательны документы и статические UI-контракты. Сборка тестового HAP сама по себе не означает выполнение тестов |
 
 Уровень P0 по этим данным не установлен. Ошибки входа/перезапуска рассматриваются как кандидаты P1 с указанными условиями. Архитектурные улучшения не получают аварийный приоритет только из-за размера файла.
@@ -67,14 +69,16 @@ Host-проверка ArkTS после удаления типов провер�
 
 ## 4. Этапы и небольшие PR
 
-Рекомендуемый порядок: A0 → A1 → A2 → A3 → A4 → A5. Первые релизно-значимые задачи — A0–A3; A4 выполняется только после устранения воспроизводимых ошибок, чтобы не задерживать стабилизацию ради структуры файлов. A3 можно готовить независимо после A0, но переключение gateway на новый codec согласуется с A1/A2. A4 начинается после стабилизации session API. По одному изменению поведения на PR; UI-полиш и SDK-upgrade не смешивать с этой работой. Профильные native/device-проверки входят в приёмку соответствующих A1/A2/A4 PR; A5 повторяет общую матрицу, а не откладывает всю платформенную проверку до конца. При недоступном стенде affected PR остаётся с явно незавершённой runtime-приёмкой.
+Порядок после расширенного ревью: A0 (build bootstrap и проверки) → первые P1 из A1/B1/B3 → оставшиеся A2/A3/B1/B2/B3/B4 → A4 → A5. Локальные исправления отрицательных chat ID, sending_state и recorder ownership не ждут полного архитектурного рефакторинга. A3 и независимые B-срезы можно готовить параллельно после A0; переключение gateway на codec согласуется с A1/A2. A4 начинается после исправления поведения и стабилизации API. По одному изменению поведения на PR; UI-полиш и SDK-upgrade не смешивать. Native/device-проверки входят в приёмку соответствующих PR; A5 повторяет общую матрицу, а не откладывает платформенную проверку до конца. При недоступном стенде affected PR остаётся с явно незавершённой runtime-приёмкой.
 
 ### A0. Воспроизводимые проверки и исходная точка
 
 **PR:** `test: establish architecture regression harness`.
 
+- Восстановить отсутствующий `tools/hvigor/hvigor-ohos-plugin-compat`, импортируемый корневым `hvigorfile.ts`, либо заменить штатным bootstrap; подтвердить build чистого checkout (R05).
+- Исправить BRE/ERE-проверку hex в Bash smoke и доказать её отрицательным fixture (R23).
 - Закрепить базовый commit, фактические SDK/API/NDK, ABI, TDLib version/SHA и контрольную сумму prebuilt. `SONAME` в CMake не считать доказательством версии бинарника.
-- Добавить host-runner для чистой логики, fake transport, управляемые часы и задержанные callbacks. Существующие воспроизведения перенести из временного стенда в репозиторий с командами запуска.
+- Добавить host-runner для чистой логики, fake transport, управляемые часы и задержанные callbacks. В [audit artifacts](../scripts/review/2026-09-26/README.md) уже сохранены исполнимые воспроизведения; они утверждают наличие дефектов. Перенести fixtures в suite ожидаемого корректного поведения вместе с fixes, не подключать audit runner как release gate.
 - Сохранить JSON fixtures с повторяющимися вложенными ключами, экранированием и большими ID. Использовать синтетические данные, без переписок и авторизационных секретов.
 - В CI выполнять поведенческие host-тесты. Существующий UI smoke оставить дополнительной проверкой; утверждение о наличии строки в коде не заменяет assertion результата.
 - Добавлять тест ожидаемого исправленного поведения вместе с соответствующим фиксирующим PR: зафиксировать, что он падает на базе и проходит после изменения. Не оставлять красную default-ветку или бессрочно отключённые регрессии.
@@ -157,6 +161,8 @@ Host-проверка ArkTS после удаления типов провер�
 - Сборка `ohosTest` и выполнение тестов — разные результаты; отчёт содержит команду, число запущенных/пройденных тестов, commit, SDK и TDLib artifact identity.
 - Использовать существующий self-hosted HarmonyOS runner либо подготовленный локальный стенд. Недоступность стенда обозначать «не проверено», а не зелёным результатом. Включение branch protection выполняется отдельно при готовности runner и прав доступа.
 - Проверить cold start, pre-auth Back, отказ logout, успешный logout/relogin, reset во время pending request, timeout close, медленный JS-consumer, повторное открытие чата и фон/возврат.
+- Повторить сценарии B1–B4 на устройстве: creation без повторной mutation, offline/failed send и history reload, jump при pagination, read/mentions, draft/edit/partial media retry, cancel/retry recorder, playback stop во время create/Next.
+- Отдельно проверить ARM64 device product: текущий глобальный `x86_64` ABI не переопределяется release-конфигурацией. Решить и документировать границу регистрации нового аккаунта (`waitRegistration` сейчас отменяется).
 - Сравнить p95/p99 длительность обработки batch/JS slices, stop latency, peak backlog bytes/items и память после прогрева серии restart. Пороговые значения согласовать по baseline A0 и ограничениям устройства до признания этапа выполненным.
 
 **Готово, когда:** пройдена матрица ниже; нет необъяснённого монотонного роста session-owned ресурсов в 100 restart-циклах host-стенда и 20 циклах на устройстве; сценарии без сети/с отказами заканчиваются определённым состоянием; в отчёте явно перечислены оставшиеся ограничения.
@@ -185,7 +191,7 @@ Host-проверка ArkTS после удаления типов провер�
 3. Миграция не меняет формат TDLib БД. Проверки реального logout удаляют локальные данные по контракту TDLib и требуют отдельной тестовой сессии; обычный shutdown проверять через `close`.
 4. Откат — revert одного этапа к проверенному baseline вместе с зависимыми адаптерами/тестами. Не включать старый и новый receive loop одновременно. При откате codec/session fix явно возвращается известный дефект; такой rollback не считается готовностью к выпуску.
 5. UI-извлечение можно остановить после любого принятого среза. Критерий — понятное владение, меньшая связанность и сохранённое поведение; целевого числа файлов/строк нет.
-6. Tracking issue остаётся открытым после merge документа. Закрытие — после A0–A5 или явно согласованного сокращения объёма с указанием оставшихся задач.
+6. Tracking issue остаётся открытым после merge документа. Закрытие — после A0–A5 и B1–B4 или явно согласованного сокращения объёма с указанием оставшихся задач.
 
 ## 7. Чеклист tracking issue
 
@@ -195,6 +201,10 @@ Host-проверка ArkTS после удаления типов провер�
 - [ ] A3: структурный codec и точные ID на всём пути.
 - [ ] A4: постепенное выделение обязанностей экрана чата.
 - [ ] A5: device-регрессии, замеры и обязательные критерии выпуска.
+- [ ] B1: контракты DTO, маршрутизация событий, history и команды чатов.
+- [ ] B2: draft/edit ownership, подтверждённый прогресс отправки, caption command.
+- [ ] B3: владение recording/playback/download операциями.
+- [ ] B4: credential logging и стоимость production invariants.
 
 ## 8. Контракты внешних API
 
@@ -202,3 +212,52 @@ Host-проверка ArkTS после удаления типов провер�
 - [TDLib authorizationStateClosed](https://core.telegram.org/tdlib/docs/classtd_1_1td__api_1_1authorization_state_closed.html): финальное состояние; для дальнейшей работы нужен новый клиент.
 - [TDLib JSON interface](https://core.telegram.org/tdlib/docs/td__json__client_8h.html): один одновременный получатель `td_receive`.
 - [OpenHarmony N-API data types](https://github.com/openharmony/docs/blob/master/zh-cn/application-dev/napi/napi-data-types-interfaces.md): TSFN modes; точные lifetime/cleanup-гарантии дополнительно сверяются с SDK проекта в A0/A2.
+
+
+## 9. Дополнение по широкому ревью: B1–B4
+
+Это обязательные срезы стабилизации до структурного A4, а не повод переписать все слои. ID Rxx отсылают к [отчёту](CODE_REVIEW_2026-09-26.md). Один B-этап может содержать несколько небольших PR по самостоятельным причинам ошибок.
+
+### B1. Контракты данных, состояния и команд чатов
+
+**Первыми:** R02 (отрицательные ID) и R03 (sending_state). Остальные: R08–R13. JSON R06/R07 входит в A3; минимальные локальные исправления не должны ждать полной миграции codec.
+
+- Различать chat/user/message/file IDs на границах и в fixtures; server success сохранять до локальной hydration/navigation, retry не повторяет уже committed создание.
+- Согласовать full DTO и partial updates: sending state/error, mentions, reply origin и остальные поддерживаемые поля. Не терять метаданные в ручных clones.
+- Сделать routing supported events исчерпывающим и проверять через настоящий `appReducer`. Не добавлять второй event bus.
+- Различать неизвестную chat position и подтверждённое отсутствие в списке.
+- Ввести generation окна истории, общую для primary/older/newer; reset происходит только при принятой новой операции. Поздний ответ не меняет текущее окно и cursors.
+- «Прочитано» обрабатывает actual unread и manual unread по разным TDLib контрактам.
+
+**Приёмка:** negative group/channel creation признаётся успешным; pending/failed переживают history reload; aggregate 150 не заменяется partial sum 2; reset реально проходит root reducer; removed chat исчезает; jump не смешивает разорванные окна; download сохраняет cross-chat reply; snapshot mention count совпадает с partial update; mark-read отправляет нужные команды и выбирает актуальный read target даже при загруженном старом окне после jump.
+
+### B2. Composer, edit и подтверждённый прогресс отправки
+
+**Находки:** R14–R16.
+
+- Ввести snapshot/revision операции composer и отдельный edit buffer. Завершение/ошибка Promise изменяет только собственную версию; новый текст, entities, reply и вложения сохраняются.
+- Track accepted media items: retry повторяет только оставшийся хвост и не дублирует caption/reply. Различать локальный preparation failure и неоднозначный transport timeout.
+- Typed edit target выбирает text или caption command; failed edit сохраняет ввод и даёт понятное состояние UI.
+
+**Приёмка:** новый draft переживает завершение media send и ошибку forwarding; edit/cancel восстанавливает прежний draft; A accepted/B failed/retry даёт A,B без второго A; caption редактируется правильной командой, включая entities и сетевой отказ. Не блокировать весь composer только ради обхода гонки без оценки UX.
+
+### B3. Владение ресурсами media-операции
+
+**Первая задача:** R04 recorder; затем R17/R18 playback/download.
+
+- Recorder/FD/temp path принадлежат отдельной операции; её cleanup использует captured resources. Результат create проверяется до записи в shared поля. Cancel/failed prepare завершают cleanup до повторного запуска.
+- Playback intent generation проходит player create/prepare, playlist search и file download. Stop инвалидирует все continuations, включая Next; каждый проигрыватель/FD освобождает его owner.
+- Download request identity задаётся отдельно для каждого file и меняется при retry; membership pending-set недостаточна для принятия ответа.
+- Общий helper вводить только если исправления демонстрируют одинаковый контракт; UI lifecycle token не заменяет идентичность отдельных операций.
+
+**Приёмка:** begin A/cancel/begin B/late A не трогает B; после failed prepare и dispose нет потерянных FD/output; два быстрых play не оставляют orphan player; Stop во время create/Next не возобновляет звук; старый download reject не меняет новый retry. Host races обязательны, recorder/player также проверяются на устройстве.
+
+### B4. Логи и стоимость production-проверок
+
+**Находки:** R21/R22; CI gaps решаются в A0/A5.
+
+- Убрать символы auth code из public logs; синтетические секреты не появляются даже частично в captured logger. Ошибки API тоже проверять на безопасное содержимое.
+- Передавать AppStore явный build debug flag. Production invariants должны иметь определённую локальную стоимость; полный обход оставить диагностическим инструментом.
+- Измерить реальную основную message map, а не только отдельный LRU. Ввести ограничение/выгрузку с учётом текущего timeline, reply hydration и scroll anchor; не выбрасывать данные вслепую.
+
+**Приёмка:** logger fixtures не содержат секретных фрагментов; progress update не запускает debug scan всей истории в production; на устройстве проверены time slices, backlog и память на согласованном объёме истории. Host 0,7 с не используется как device performance budget.

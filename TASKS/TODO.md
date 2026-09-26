@@ -2,7 +2,7 @@
 
 ## 2026-09-26 — предложенный трек укрепления архитектуры
 
-Подробности, зависимости и критерии приёмки: [ARCHITECTURE_HARDENING_PLAN_2026-09-26.md](ARCHITECTURE_HARDENING_PLAN_2026-09-26.md). Этапы ещё не реализованы; [issue #198](https://github.com/kharkilirov1/Telegram-HarmonyOS/issues/198) является рабочим чеклистом.
+Находки: [CODE_REVIEW_2026-09-26.md](CODE_REVIEW_2026-09-26.md). Сначала build bootstrap и P1 R01–R05; A4 следует после исправлений поведения. Подробности, зависимости и критерии приёмки: [ARCHITECTURE_HARDENING_PLAN_2026-09-26.md](ARCHITECTURE_HARDENING_PLAN_2026-09-26.md). Этапы ещё не реализованы; [issue #198](https://github.com/kharkilirov1/Telegram-HarmonyOS/issues/198) является рабочим чеклистом.
 
 - [ ] A0: воспроизводимый baseline и поведенческие проверки.
 - [ ] A1: session ownership, logout/restart, отбрасывание устаревших событий.
@@ -10,6 +10,12 @@
 - [ ] A3: структурный JSON-контракт и точные ID.
 - [ ] A4: небольшие выделения обязанностей экрана чата после стабилизации.
 - [ ] A5: device-регрессии, замеры и критерии выпуска.
+- [ ] B1: ID/sending_state, DTO/state routing, history windows, mark-read и сохранность полей.
+- [ ] B2: composer revision, отдельный edit buffer, partial-send retry и caption command.
+- [ ] B3: recording/playback/download operation ownership и отмена.
+- [ ] B4: безопасные auth logs, production invariants и основная message map.
+
+Audit probes уже сохранены; это не завершение A0 и не acceptance tests исправлений.
 
 Last updated: 2026-07-29
 

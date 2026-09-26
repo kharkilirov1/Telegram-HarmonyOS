@@ -1,11 +1,13 @@
 # CURRENT PATCHSET BOUNDARY — active snapshot
 
-## Дополнение 2026-09-26 — architecture hardening proposal
+## Дополнение 2026-09-26 — code review и architecture hardening
 
-- База: `dev@2d2f68391e259fa83e4c3e09f38841cc08c235d1`.
-- Новый scope: [план A0–A5](ARCHITECTURE_HARDENING_PLAN_2026-09-26.md), датированные записи в STATUS/TODO/LESSONS, tracking issue и PR документации.
-- Проверка: локальные ссылки документа и `bash scripts/smoke-ui-phase0.sh`; HarmonyOS build/device tests в этом срезе не выполнялись.
-- Runtime-код, SDK, зависимости и исторические решения не изменяются. Исторический baseline от июля ниже сохранён как запись прежнего среза.
+- База production: `dev@2d2f68391e259fa83e4c3e09f38841cc08c235d1`.
+- Scope: [ревью R01–R23](CODE_REVIEW_2026-09-26.md), [план A0–A5 / B1–B4](ARCHITECTURE_HARDENING_PLAN_2026-09-26.md), STATUS/TODO/LESSONS и host audit artifacts в `scripts/review/2026-09-26/`.
+- Проверки: запуск сохранённого host runner, отдельный invariant cost probe, локальные ссылки и `git diff --check`; прежний UI smoke — только статический дополнительный сигнал.
+- Runtime, SDK, зависимости, CI workflow и release policy не меняются. Audit runner утверждает наличие дефектов базы, не исправленность; HarmonyOS build/device tests не выполнены.
+- Публикация: существующие [issue #198](https://github.com/kharkilirov1/Telegram-HarmonyOS/issues/198) и [PR #199](https://github.com/kharkilirov1/Telegram-HarmonyOS/pull/199), без автозакрытия tracking issue.
+- Исторический baseline от июля ниже сохранён как запись прежнего среза.
 
 Last updated: 2026-07-02
 

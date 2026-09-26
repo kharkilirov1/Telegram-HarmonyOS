@@ -8,6 +8,15 @@
 - Нельзя ограничивать TSFN-очередь простой заменой `0` на конечный размер при blocking enqueue и синхронном join из JS: сначала нужен совместимый протокол остановки и владения.
 - План реализации и матрица проверок: [ARCHITECTURE_HARDENING_PLAN_2026-09-26.md](ARCHITECTURE_HARDENING_PLAN_2026-09-26.md). Эти наблюдения не являются отчётом об исправлении runtime.
 
+### Дополнение после широкого ревью
+
+- Наличие обработчика в leaf reducer не доказывает его достижимость из `appReducer`: проверки должны проходить production routing.
+- Chat ID группы/канала отрицательный; fixture с положительным ID способен скрыть отказ после уже выполненной серверной mutation.
+- Lifecycle token страницы не различает две операции внутри одной страницы. У draft, history window, recorder/player и file retry есть собственное владение и revision/generation.
+- Full snapshot DTO должен сохранять sending state/mentions/reply origin так же, как partial updates; ручные clones регулярно теряют новые поля.
+- Audit runner, подтверждающий баг, не является зелёным тестом исправленного поведения. Build, static smoke, host logic и device execution — разные результаты.
+- Подробности и подтверждения: [CODE_REVIEW_2026-09-26.md](CODE_REVIEW_2026-09-26.md).
+
 Last updated: 2026-07-22
 
 ## 118. height('100%') в auto-sized контейнере — грабля, пойманная ТРИЖДЫ
