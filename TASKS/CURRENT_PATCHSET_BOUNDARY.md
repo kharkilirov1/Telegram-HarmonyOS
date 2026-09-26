@@ -1,5 +1,12 @@
 # CURRENT PATCHSET BOUNDARY — active snapshot
 
+## Дополнение 2026-09-26 — architecture hardening proposal
+
+- База: `dev@2d2f68391e259fa83e4c3e09f38841cc08c235d1`.
+- Новый scope: [план A0–A5](ARCHITECTURE_HARDENING_PLAN_2026-09-26.md), датированные записи в STATUS/TODO/LESSONS, tracking issue и PR документации.
+- Проверка: локальные ссылки документа и `bash scripts/smoke-ui-phase0.sh`; HarmonyOS build/device tests в этом срезе не выполнялись.
+- Runtime-код, SDK, зависимости и исторические решения не изменяются. Исторический baseline от июля ниже сохранён как запись прежнего среза.
+
 Last updated: 2026-07-02
 
 ## Baseline
