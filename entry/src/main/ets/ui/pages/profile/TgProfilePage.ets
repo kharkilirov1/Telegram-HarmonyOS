@@ -109,6 +109,12 @@ function formatMemberCount(count: number): string {
   return count.toString();
 }
 
+class ProfileInfoRowParams {
+  label: string = '';
+  value: string = '';
+  showSeparator: boolean = true;
+}
+
 @ComponentV2
 export struct TgProfilePage {
   @Local pageStack: NavPathStack = new NavPathStack();
@@ -528,20 +534,21 @@ export struct TgProfilePage {
 
   // ─── Builders ───
 
+  // One object literal keeps cached-to-fresh values reactive inside these builders.
   @Builder
-  private buildInfoRowAccent(label: string, value: string, showSeparator: boolean = true) {
+  private buildInfoRowAccent(row: ProfileInfoRowParams) {
     Column() {
       Row() {
         Column() {
-          Text(value)
-            .id(label === 'bio' ? 'profile_bio' : 'profile_info_' + label)
+          Text(row.value)
+            .id(row.label === 'bio' ? 'profile_bio' : 'profile_info_' + row.label)
             .fontSize(17)
             .fontColor(TgUiTokens.COLOR_ICON_PRIMARY)
             .maxLines(5)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .copyOption(CopyOptions.LocalDevice)
 
-          Text(label)
+          Text(row.label)
             .fontSize(14)
             .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
             .margin({ top: 2 })
@@ -552,7 +559,7 @@ export struct TgProfilePage {
       .width('100%')
       .padding({ left: 16, right: 16, top: 11, bottom: 11 })
 
-      if (showSeparator) {
+      if (row.showSeparator) {
         Divider()
           .strokeWidth(0.5)
           .color(TgUiTokens.COLOR_SEPARATOR)
@@ -562,19 +569,19 @@ export struct TgProfilePage {
   }
 
   @Builder
-  private buildInfoRow(label: string, value: string, showSeparator: boolean = true) {
+  private buildInfoRow(row: ProfileInfoRowParams) {
     Column() {
       Row() {
         Column() {
-          Text(value)
-            .id(label === 'bio' ? 'profile_bio' : 'profile_info_' + label)
+          Text(row.value)
+            .id(row.label === 'bio' ? 'profile_bio' : 'profile_info_' + row.label)
             .fontSize(17)
             .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
             .maxLines(5)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .copyOption(CopyOptions.LocalDevice)
 
-          Text(label)
+          Text(row.label)
             .fontSize(14)
             .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
             .margin({ top: 2 })
@@ -585,7 +592,7 @@ export struct TgProfilePage {
       .width('100%')
       .padding({ left: 16, right: 16, top: 11, bottom: 11 })
 
-      if (showSeparator) {
+      if (row.showSeparator) {
         Divider()
           .strokeWidth(0.5)
           .color(TgUiTokens.COLOR_SEPARATOR)
@@ -701,13 +708,13 @@ export struct TgProfilePage {
   private buildUserInfoSection() {
     Column() {
       if (this.phoneNumber.length > 0) {
-        this.buildInfoRowAccent('phone', this.phoneNumber, this.username.length > 0 || this.bio.length > 0)
+        this.buildInfoRowAccent({ label: 'phone', value: this.phoneNumber, showSeparator: this.username.length > 0 || this.bio.length > 0 })
       }
       if (this.username.length > 0) {
-        this.buildInfoRow('username', '@' + this.username, this.bio.length > 0)
+        this.buildInfoRow({ label: 'username', value: '@' + this.username, showSeparator: this.bio.length > 0 })
       }
       if (this.bio.length > 0) {
-        this.buildInfoRow('bio', this.bio, false)
+        this.buildInfoRow({ label: 'bio', value: this.bio, showSeparator: false })
       }
     }
     .width('100%')
@@ -723,11 +730,11 @@ export struct TgProfilePage {
     Column() {
       // Description
       if (this.description.length > 0) {
-        this.buildInfoRow('info', this.description, this.inviteLink.length > 0)
+        this.buildInfoRow({ label: 'info', value: this.description, showSeparator: this.inviteLink.length > 0 })
       }
       // Invite link
       if (this.inviteLink.length > 0) {
-        this.buildInfoRow('link', this.inviteLink, false)
+        this.buildInfoRow({ label: 'link', value: this.inviteLink, showSeparator: false })
       }
     }
     .width('100%')
