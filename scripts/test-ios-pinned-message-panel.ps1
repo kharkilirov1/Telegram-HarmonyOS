@@ -1,3 +1,4 @@
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
@@ -16,10 +17,10 @@ foreach ($path in @($atomPath, $demoPath, $specPath, $pagePath, $useCasePath, $c
   }
 }
 
-$atom = Get-Content -LiteralPath $atomPath -Raw
-$demo = Get-Content -LiteralPath $demoPath -Raw
-$spec = Get-Content -LiteralPath $specPath -Raw
-$tokens = Get-Content -LiteralPath $tokensPath -Raw
+$atom = Get-ChatContractContent -LiteralPath $atomPath -Raw
+$demo = Get-ChatContractContent -LiteralPath $demoPath -Raw
+$spec = Get-ChatContractContent -LiteralPath $specPath -Raw
+$tokens = Get-ChatContractContent -LiteralPath $tokensPath -Raw
 
 $requiredAtomPatterns = @(
   "import { uiMaterial } from '@kit.ArkUI';",
@@ -84,8 +85,9 @@ foreach ($pattern in @('ChatPinnedMessageTitlePanelNode.swift', '50.0', '15.0', 
   }
 }
 
-$page = Get-Content -LiteralPath $pagePath -Raw -Encoding UTF8
-foreach ($pattern in @('TgPinnedMessagePanel({', 'loadPinnedMessageInfo(chatId)',
+$page = Get-ChatContractContent -LiteralPath $pagePath -Raw -Encoding UTF8
+foreach ($pattern in @('TgPinnedMessagePanel({', 'createLoadPinnedMessagesUseCase(route.gateway)',
+    'useCase.executeSingle(chatId)',
     '.contentStartOffset(this.chatContentStartOffset())', 'this.jumpToMessageId(this.pinnedMessageId)',
     'this.pinnedMessageDismissedId = this.pinnedMessageId',
     'timelineEntryContainsMessageId(entry, messageId)',
@@ -95,7 +97,7 @@ foreach ($pattern in @('TgPinnedMessagePanel({', 'loadPinnedMessageInfo(chatId)'
   }
 }
 
-$useCase = Get-Content -LiteralPath $useCasePath -Raw -Encoding UTF8
+$useCase = Get-ChatContractContent -LiteralPath $useCasePath -Raw -Encoding UTF8
 foreach ($pattern in @('export class PinnedMessageInfo', 'parsePinnedMessageInfo',
     'createGetChatPinnedMessageCommand(chatId)', 'createMessageDtoFromTd(response)')) {
   if (-not $useCase.Contains($pattern)) {
@@ -103,8 +105,8 @@ foreach ($pattern in @('export class PinnedMessageInfo', 'parsePinnedMessageInfo
   }
 }
 
-$command = Get-Content -LiteralPath $commandPath -Raw -Encoding UTF8
-$serializer = Get-Content -LiteralPath $serializerPath -Raw -Encoding UTF8
+$command = Get-ChatContractContent -LiteralPath $commandPath -Raw -Encoding UTF8
+$serializer = Get-ChatContractContent -LiteralPath $serializerPath -Raw -Encoding UTF8
 foreach ($pattern in @('GetChatPinnedMessageCommand', 'createGetChatPinnedMessageCommand')) {
   if (-not $command.Contains($pattern)) {
     throw "Pinned-message command contract is missing: $pattern"

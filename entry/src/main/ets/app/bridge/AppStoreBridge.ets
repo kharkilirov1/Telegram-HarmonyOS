@@ -13,7 +13,7 @@
 
 import { AppStore } from '../../core/store/AppStore';
 import { AppState, AuthStatus, ConnectionStatus } from '../../core/model/AppState';
-import { authUIState, chatsUIState, navigationUIState } from '../../core/model/UIStateModels';
+import { authUIState, chatsUIState, navigationUIState, chatUIState } from '../../core/model/UIStateModels';
 import { selectTotalUnreadCount } from '../../domain/selectors/chatSelectors';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
@@ -61,6 +61,22 @@ export class StorageKeys {
 }
 
 // ─── Bridge Class ───
+
+export function resetAccountNavigationContext(): void {
+  AppStorage.setOrCreate<number>(StorageKeys.ACTIVE_CHAT_ID, 0);
+  AppStorage.setOrCreate<string>(StorageKeys.ACTIVE_CHAT_TITLE, '');
+  AppStorage.setOrCreate<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
+  AppStorage.setOrCreate<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, 0);
+  AppStorage.setOrCreate<number>(StorageKeys.MAIN_TAB_INDEX, 2);
+  navigationUIState.activeChatId = 0;
+  navigationUIState.activeChatOwnerToken = 0;
+  navigationUIState.activeChatTitle = '';
+  navigationUIState.chatScreenVisible = false;
+  navigationUIState.chatNavLockUntil = 0;
+  navigationUIState.mainTabIndex = 2;
+  chatUIState.activeChatId = 0;
+  chatUIState.activeChatTitle = '';
+}
 
 export class AppStoreBridge {
   private store: AppStore;
@@ -175,6 +191,7 @@ export class AppStoreBridge {
 
     // ── Init @ObservedV2 navigation model defaults ──
     navigationUIState.mainTabIndex = 2;
+    navigationUIState.activeChatOwnerToken = 0;
     navigationUIState.chatScreenVisible = false;
     navigationUIState.glassMode = 'auto';
 

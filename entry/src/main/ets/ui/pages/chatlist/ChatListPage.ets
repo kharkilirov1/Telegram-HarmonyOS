@@ -8,6 +8,8 @@ import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { chatsUIState, navigationUIState, chatUIState } from '../../../core/model/UIStateModels';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState } from '../../../core/model/AppState';
+import { AppStore } from '../../../core/store/AppStore';
+import { TdGatewayPort } from '../../../domain/ports/TdGatewayPort';
 import { ChatItemVO, buildChatItemVO } from './ChatItemVO';
 import { ChatListDataSource } from './ChatListDataSource';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
@@ -24,12 +26,13 @@ import { localized } from '../../../core/utils/AppResource';
 import {
   computeTabBottomInset,
   getMainWindow,
+  addWindowSizeListener,
   removeWindowSizeListener
 } from '../../utils/SafeAreaUtils';
 import { ROOT_TAB_BAR_FALLBACK_CONTENT_INSET } from '../../utils/RootTabBarGeometry';
 import { ROOT_TAB_BAR_AUTO_HIDE_THRESHOLD } from '../../utils/RootTabBarGeometry';
 import { resolveChatHostTopInset } from '../../utils/ChatSplitGeometry';
-import { PendingChatUnreadSnapshot } from '../chat/PendingChatUnreadSnapshot';
+import { ChatScreenRouteParams } from '../chat/ChatScreenRouteParams';
 import { ComposeResult, ComposeRouteParams } from '../compose/TgComposePage';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { createLoadChatsUseCase, LoadChatsUseCase } from '../../../domain/usecases/loadChats';
@@ -37,7 +40,6 @@ import {
   createLoadArchiveChatsUseCase,
   LoadArchiveChatsUseCase
 } from '../../../domain/usecases/loadArchiveChats';
-import { createOpenChatUseCase, OpenChatUseCase, OpenChatParams } from '../../../domain/usecases/openChat';
 import { createSetChatMuteUseCase, SetChatMuteUseCase, MUTE_FOREVER } from '../../../domain/usecases/setChatMute';
 import { createDeleteChatHistoryUseCase, DeleteChatHistoryUseCase } from '../../../domain/usecases/deleteChatHistory';
 import { createToggleChatUnreadUseCase, ToggleChatUnreadUseCase } from '../../../domain/usecases/toggleChatUnread';
@@ -61,26 +63,6 @@ const TAG = 'ChatListPage';
 const CHAT_NAV_TRANSITION_LOCK_MS = 760;
 let lastPortraitChatTopInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
 
-class ChatRouteParams {
-  chatId: number = 0;
-  chatTitle: string = '';
-
-  constructor(chatId: number, chatTitle: string = '') {
-    this.chatId = chatId;
-    this.chatTitle = chatTitle;
-  }
-}
-
-class OpenChatRequest implements OpenChatParams {
-  chatId: number = 0;
-  loadMessages?: boolean = true;
-  limit?: number = 50;
-
-  constructor(chatId: number) {
-    this.chatId = chatId;
-  }
-}
-
 @ComponentV2
 export struct ChatListPage {
   @Local pageStack: NavPathStack = new NavPathStack();
@@ -88,7 +70,7 @@ export struct ChatListPage {
   @Param chatDetailStack: NavPathStack = new NavPathStack();
   // Island player body-tap bridge: MainTabsPage ticks this after setting
   // PendingJumpSignal; the full openChat ritual must run HERE (active-chat
-  // state triple, unread snapshot, requestOpenChatData) — a bare push from
+  // state triple and account-owned route snapshot) — a bare push from
   // the tabs page renders the split placeholder instead of the chat.
   @Param islandOpenChatTick: number = 0;
   @Param islandOpenChatId: number = 0;
@@ -130,10 +112,13 @@ export struct ChatListPage {
   private archiveInitialLoadRequested: boolean = false;
   private storyInitialLoadRequested: boolean = false;
   private mainWindow?: window.Window;
+  private windowSizeListener?: () => void;
   private loadChatsUseCase?: LoadChatsUseCase;
   private loadArchiveChatsUseCase?: LoadArchiveChatsUseCase;
   private loadActiveStoriesUseCase?: LoadActiveStoriesUseCase;
-  private openChatUseCase?: OpenChatUseCase;
+  private accountStore?: AppStore;
+  private accountScope?: AppStore;
+  private chatGateway?: TdGatewayPort;
   private muteUseCase?: SetChatMuteUseCase;
   private pinUseCase?: ToggleChatPinnedUseCase;
   private moveChatToListUseCase?: MoveChatToListUseCase;
@@ -141,6 +126,7 @@ export struct ChatListPage {
   private toggleUnreadUseCase?: ToggleChatUnreadUseCase;
   private isOpeningChat: boolean = false;
   private isComposePickerOpen: boolean = false;
+  private composePickerGeneration: number = 0;
   private deferredOpenTimerId: number = -1;
   private deferredOpenChatId: number = 0;
   private deferredOpenChatTitle: string = '';
@@ -216,6 +202,8 @@ export struct ChatListPage {
     if (this.deferredOpenTimerId !== -1 && this.deferredOpenChatId === chatId) {
       return;
     }
+    const params = this.createChatRouteParams(chatId, title);
+    if (params === undefined) return;
 
     this.clearDeferredOpen();
     this.deferredOpenChatId = chatId;
@@ -228,17 +216,9 @@ export struct ChatListPage {
         return;
       }
       this.deferredOpenTimerId = -1;
-      const pendingChatId = this.deferredOpenChatId;
-      const pendingTitle = this.deferredOpenChatTitle;
       this.deferredOpenChatId = 0;
       this.deferredOpenChatTitle = '';
-      if (pendingChatId === 0) {
-        return;
-      }
-      const pendingItem = new ChatItemVO();
-      pendingItem.chatId = pendingChatId;
-      pendingItem.title = pendingTitle;
-      this.openChat(pendingItem);
+      this.openChatRoute(params);
     }, effectiveDelayMs) as number;
     this.deferredOpenTimerId = scheduledTimerId;
 
@@ -282,15 +262,18 @@ export struct ChatListPage {
     try {
       const runtime = getAppCoreRuntime();
       const store = runtime.getStore();
-      this.loadChatsUseCase = createLoadChatsUseCase(store, getTdGatewayAdapter());
-      this.loadArchiveChatsUseCase = createLoadArchiveChatsUseCase(store, getTdGatewayAdapter());
-      this.loadActiveStoriesUseCase = createLoadActiveStoriesUseCase(store, getTdGatewayAdapter());
-      this.openChatUseCase = createOpenChatUseCase(store, getTdGatewayAdapter());
-      this.muteUseCase = createSetChatMuteUseCase(getTdGatewayAdapter());
-      this.pinUseCase = createToggleChatPinnedUseCase(getTdGatewayAdapter());
-      this.moveChatToListUseCase = createMoveChatToListUseCase(getTdGatewayAdapter());
-      this.deleteChatUseCase = createDeleteChatHistoryUseCase(getTdGatewayAdapter());
-      this.toggleUnreadUseCase = createToggleChatUnreadUseCase(getTdGatewayAdapter());
+      const gateway = getTdGatewayAdapter();
+      this.accountStore = store;
+      this.accountScope = store.createScope();
+      this.chatGateway = gateway;
+      this.loadChatsUseCase = createLoadChatsUseCase(store, gateway);
+      this.loadArchiveChatsUseCase = createLoadArchiveChatsUseCase(store, gateway);
+      this.loadActiveStoriesUseCase = createLoadActiveStoriesUseCase(store, gateway);
+      this.muteUseCase = createSetChatMuteUseCase(gateway);
+      this.pinUseCase = createToggleChatPinnedUseCase(gateway);
+      this.moveChatToListUseCase = createMoveChatToListUseCase(gateway);
+      this.deleteChatUseCase = createDeleteChatHistoryUseCase(gateway);
+      this.toggleUnreadUseCase = createToggleChatUnreadUseCase(gateway);
       this.rebuildList(store.getState());
       this.maybeLoadInitialChats(store.getState());
       this.maybeLoadInitialArchive(store.getState());
@@ -359,33 +342,37 @@ export struct ChatListPage {
     this.loadChatsUseCase = undefined;
     this.loadArchiveChatsUseCase = undefined;
     this.loadActiveStoriesUseCase = undefined;
-    this.openChatUseCase = undefined;
+    this.accountStore = undefined;
+    this.accountScope = undefined;
+    this.chatGateway = undefined;
     this.muteUseCase = undefined;
     this.pinUseCase = undefined;
     this.moveChatToListUseCase = undefined;
     this.deleteChatUseCase = undefined;
     this.toggleUnreadUseCase = undefined;
-    removeWindowSizeListener(this.mainWindow);
+    removeWindowSizeListener(this.windowSizeListener);
+    this.windowSizeListener = undefined;
     this.mainWindow = undefined;
     hilog.info(DOMAIN, TAG, 'Unsubscribed from store');
   }
 
   private bindWindowSizeListener(): void {
     try {
-      removeWindowSizeListener(this.mainWindow);
+      removeWindowSizeListener(this.windowSizeListener);
+      this.windowSizeListener = undefined;
+      this.mainWindow = undefined;
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
       this.mainWindow = getMainWindow(context);
       if (this.mainWindow !== undefined) {
         const lifecycleToken: number = this.pageLifecycleToken;
         const boundWindow: window.Window = this.mainWindow;
         this.computeSafeInsets();
-        this.mainWindow.on('windowSizeChange', (size: window.Size) => {
+        this.windowSizeListener = addWindowSizeListener(boundWindow, (size: window.Size) => {
           if (lifecycleToken !== this.pageLifecycleToken || this.mainWindow !== boundWindow) {
             return;
           }
           this.computeSafeInsets(size);
-        });
-        this.mainWindow.on('avoidAreaChange', (data: window.AvoidAreaOptions) => {
+        }, (data: window.AvoidAreaOptions) => {
           if (lifecycleToken !== this.pageLifecycleToken || this.mainWindow !== boundWindow) {
             return;
           }
@@ -815,7 +802,20 @@ export struct ChatListPage {
       return;
     }
 
+    const store = this.accountStore;
+    const gateway = this.chatGateway;
+    if (store === undefined || gateway === undefined || !this.isCurrentAccountOwner()) return;
+    const lifecycleToken = this.pageLifecycleToken;
+    const generation = ++this.composePickerGeneration;
+    const previousOwnerToken = navigationUIState.activeChatOwnerToken;
+    let resultConsumed = false;
+    const current = (): boolean => lifecycleToken === this.pageLifecycleToken &&
+      generation === this.composePickerGeneration && this.accountStore === store &&
+      this.chatGateway === gateway && this.isCurrentAccountOwner() &&
+      navigationUIState.activeChatOwnerToken === previousOwnerToken;
+
     this.onSearchDeactivate();
+    if (!current()) return;
     const previousVisible: boolean = navigationUIState.chatScreenVisible;
     this.isComposePickerOpen = true;
     this.setChatDestinationVisible(true);
@@ -825,6 +825,8 @@ export struct ChatListPage {
         'TgComposePage',
         new ComposeRouteParams(),
         (popInfo) => {
+          if (resultConsumed || !current()) return;
+          resultConsumed = true;
           this.isComposePickerOpen = false;
           const result = popInfo.result as ComposeResult | undefined;
           if (!result || result.chatId === 0) {
@@ -845,29 +847,26 @@ export struct ChatListPage {
           }
 
           try {
-            const state: AppState = getAppCoreRuntime().getStore().getState();
+            const state: AppState = store.getState();
             const chat = state.chats.chats.get(result.chatId);
+            const params = new ChatScreenRouteParams(result.chatId, chat ? chat.title : result.chatTitle, store, gateway);
+            if (!current() || !params.isCurrentAccount(getAppCoreRuntime().getStore())) return;
             this.setChatDestinationVisible(previousVisible);
-            if (chat) {
-              this.openChat(buildChatItemVO(chat, state));
-              return;
-            }
             // createPrivateChat returns the exact TDLib chat before the reducer's
             // matching update is guaranteed to reach this page. Keep navigation
             // deterministic without inventing an id or selecting another dialog.
-            const pendingItem = new ChatItemVO();
-            pendingItem.chatId = result.chatId;
-            pendingItem.title = result.chatTitle;
-            this.openChat(pendingItem);
+            this.openChatRoute(params);
           } catch (error) {
-            this.setChatDestinationVisible(previousVisible);
+            if (current()) this.setChatDestinationVisible(previousVisible);
             hilog.error(DOMAIN, TAG, 'Failed to resolve Compose target: %{public}s', String(error));
           }
         }
       );
     } catch (error) {
-      this.isComposePickerOpen = false;
-      this.setChatDestinationVisible(previousVisible);
+      if (current()) {
+        this.isComposePickerOpen = false;
+        this.setChatDestinationVisible(previousVisible);
+      }
       hilog.error(DOMAIN, TAG, 'Failed to open Compose picker: %{public}s', String(error));
     }
   }
@@ -1120,7 +1119,9 @@ export struct ChatListPage {
     if (this.islandOpenChatTick === 0 || chatId === 0) {
       return;
     }
-    const state: AppState = getAppCoreRuntime().getStore().getState();
+    const store = this.accountStore;
+    if (store === undefined || !this.isCurrentAccountOwner()) return;
+    const state: AppState = store.getState();
     const chat = state.chats.chats.get(chatId);
     if (chat) {
       this.openChat(buildChatItemVO(chat, state));
@@ -1128,7 +1129,26 @@ export struct ChatListPage {
   }
 
   private openChat(item: ChatItemVO): void {
-    hilog.info(DOMAIN, TAG, 'openChat called for chatId: %{public}d', item.chatId);
+    const params = this.createChatRouteParams(item.chatId, item.title);
+    if (params !== undefined) this.openChatRoute(params);
+  }
+
+  private isCurrentAccountOwner(): boolean {
+    return this.accountStore !== undefined && this.accountScope !== undefined &&
+      this.accountScope.isScopeCurrent() && getAppCoreRuntime().getStore() === this.accountStore;
+  }
+
+  private createChatRouteParams(chatId: number, title: string): ChatScreenRouteParams | undefined {
+    const store = this.accountStore;
+    const gateway = this.chatGateway;
+    if (chatId === 0 || store === undefined || gateway === undefined || !this.isCurrentAccountOwner()) return undefined;
+    return new ChatScreenRouteParams(chatId, title, store, gateway);
+  }
+
+  private openChatRoute(params: ChatScreenRouteParams): void {
+    if (!this.isCurrentAccountOwner() || params.accountStore !== this.accountStore ||
+      !params.isCurrentAccount(getAppCoreRuntime().getStore())) return;
+    hilog.info(DOMAIN, TAG, 'openChat called for chatId: %{public}d', params.chatId);
     const nowMs = Date.now();
     const navLockUntil = navigationUIState.chatNavLockUntil;
     if (nowMs < navLockUntil) {
@@ -1136,84 +1156,70 @@ export struct ChatListPage {
       this.clearDeferredOpen();
       return;
     }
-    if (item.chatId === this.deferredOpenChatId) {
+    if (params.chatId === this.deferredOpenChatId) {
       this.clearDeferredOpen();
     }
     if (this.isOpeningChat) {
-      hilog.info(DOMAIN, TAG, 'Ignoring duplicate openChat tap for %{public}d', item.chatId);
+      hilog.info(DOMAIN, TAG, 'Ignoring duplicate openChat tap for %{public}d', params.chatId);
       return;
     }
     if (!TgUiFeatureFlags.USE_TG_CHAT_V2) {
       hilog.info(DOMAIN, TAG, 'TgChatV2 feature flag is disabled');
       return;
     }
-    if (item.chatId === 0) {
-      hilog.error(DOMAIN, TAG, 'Invalid chatId: %{public}d', item.chatId);
+    if (params.chatId === 0) {
+      hilog.error(DOMAIN, TAG, 'Invalid chatId: %{public}d', params.chatId);
       return;
     }
+    const lifecycleToken = this.pageLifecycleToken;
     this.onSearchDeactivate();
+    if (lifecycleToken !== this.pageLifecycleToken || !this.isCurrentAccountOwner() ||
+      !params.isCurrentAccount(getAppCoreRuntime().getStore())) return;
     const navStack = this.chatDetailStack;
-    const snapshotChat = getAppCoreRuntime().getStore().getState().chats.chats.get(item.chatId);
-    PendingChatUnreadSnapshot.set(
-      item.chatId,
-      snapshotChat ? snapshotChat.lastReadInboxMessageId : '0',
-      item.unreadCount
-    );
 
+    const prevOwnerToken = navigationUIState.activeChatOwnerToken;
     const prevChatId: number = navigationUIState.activeChatId;
     const prevTitle: string = navigationUIState.activeChatTitle;
+    const prevVisible = navigationUIState.chatScreenVisible;
+    const prevLockUntil = navigationUIState.chatNavLockUntil;
     const prevStoredChatId: number = AppStorage.get<number>(StorageKeys.ACTIVE_CHAT_ID) ?? prevChatId;
     const prevStoredTitle: string = AppStorage.get<string>(StorageKeys.ACTIVE_CHAT_TITLE) ?? prevTitle;
     hilog.info(DOMAIN, TAG, 'Setting active chat and pushing TgChatScreenPage');
-    navigationUIState.activeChatId = item.chatId;
-    navigationUIState.activeChatTitle = item.title;
+    navigationUIState.activeChatOwnerToken = params.navigationToken;
+    navigationUIState.activeChatId = params.chatId;
+    navigationUIState.activeChatTitle = params.chatTitle;
 
     try {
       this.isOpeningChat = true;
       const nextNavLockUntil = Date.now() + CHAT_NAV_TRANSITION_LOCK_MS;
       navigationUIState.chatNavLockUntil = nextNavLockUntil;
       AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, nextNavLockUntil);
-      // Set chatUIState so TgChatScreenPage route initialization and lastOpenedChatId work correctly.
-      chatUIState.activeChatId = item.chatId;
-      chatUIState.activeChatTitle = item.title;
-      AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, item.chatId);
-      AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, item.title);
-      navStack.pushPathByName('TgChatScreenPage', new ChatRouteParams(item.chatId, item.title));
+      chatUIState.activeChatId = params.chatId;
+      chatUIState.activeChatTitle = params.chatTitle;
+      AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, params.chatId);
+      AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, params.chatTitle);
       navigationUIState.chatScreenVisible = true;
       AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
-      this.requestOpenChatData(item.chatId);
+      navStack.pushPathByName('TgChatScreenPage', params);
       this.isOpeningChat = false;
     } catch (e) {
       this.isOpeningChat = false;
-      PendingChatUnreadSnapshot.clear(item.chatId);
-      navigationUIState.activeChatId = prevChatId;
-      navigationUIState.activeChatTitle = prevTitle;
-      navigationUIState.chatNavLockUntil = 0;
-      chatUIState.activeChatId = prevChatId;
-      chatUIState.activeChatTitle = prevTitle;
-      AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, 0);
-      AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, prevStoredChatId);
-      AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, prevStoredTitle);
-      navigationUIState.chatScreenVisible = false;
-      AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
+      if (navigationUIState.activeChatOwnerToken === params.navigationToken &&
+        params.isCurrentAccount(getAppCoreRuntime().getStore())) {
+        navigationUIState.activeChatOwnerToken = prevOwnerToken;
+        navigationUIState.activeChatId = prevChatId;
+        navigationUIState.activeChatTitle = prevTitle;
+        navigationUIState.chatNavLockUntil = prevLockUntil;
+        chatUIState.activeChatId = prevChatId;
+        chatUIState.activeChatTitle = prevTitle;
+        AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, prevLockUntil);
+        AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, prevStoredChatId);
+        AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, prevStoredTitle);
+        navigationUIState.chatScreenVisible = prevVisible;
+        AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, prevVisible);
+      }
       hilog.error(DOMAIN, TAG, 'Failed to push TgChatScreenPage: %{public}s', String(e));
     }
-  }
-
-  private requestOpenChatData(chatId: number): void {
-    const openChatUseCase = this.openChatUseCase;
-    if (!openChatUseCase) {
-      hilog.warn(DOMAIN, TAG, 'openChatUseCase is unavailable');
-      return;
-    }
-    const lifecycleToken: number = this.pageLifecycleToken;
-    openChatUseCase.execute(new OpenChatRequest(chatId))
-      .catch((error: Object) => {
-        if (lifecycleToken !== this.pageLifecycleToken || this.openChatUseCase !== openChatUseCase) {
-          return;
-        }
-        hilog.warn(DOMAIN, TAG, 'openChat flow failed: %{public}s', String(error));
-      });
   }
 
   private bindNavigationStack(): NavPathStack | undefined {

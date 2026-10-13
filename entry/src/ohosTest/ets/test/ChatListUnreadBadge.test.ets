@@ -5,6 +5,7 @@ import {
 } from '../../../main/ets/core/model/AppEvent';
 import { Chat, createInitialAppState } from '../../../main/ets/core/model/AppState';
 import { chatsReducer } from '../../../main/ets/core/reducers/chatsReducer';
+import { appReducer } from '../../../main/ets/core/reducers/index';
 import { cloneChatsState } from '../../../main/ets/core/utils/stateClone';
 import { selectTotalUnreadCount } from '../../../main/ets/domain/selectors/chatSelectors';
 import { TdObject } from '../../../main/ets/models/TdTypes';
@@ -49,6 +50,43 @@ export default function chatListUnreadBadgeTest() {
       const cloned = cloneChatsState(state.chats);
       expect(cloned.mainUnreadMessageCount).assertEqual(1250);
       expect(cloned.archiveUnreadMessageCount).assertEqual(7);
+    });
+
+    it('routes unread aggregates through the combined reducer to the root selector without loaded chats', 0, () => {
+      const initialState = createInitialAppState();
+      let state = initialState;
+      expect(selectTotalUnreadCount(state)).assertEqual(0);
+
+      const mainEvent = new ChatListUnreadMessageCountChangedEvent();
+      mainEvent.chatListType = 'main';
+      mainEvent.unreadCount = 1250;
+      mainEvent.unreadUnmutedCount = 1200;
+      state = appReducer(state, mainEvent);
+
+      const archiveEvent = new ChatListUnreadMessageCountChangedEvent();
+      archiveEvent.chatListType = 'archive';
+      archiveEvent.unreadCount = 7;
+      archiveEvent.unreadUnmutedCount = 3;
+      state = appReducer(state, archiveEvent);
+
+      expect(state.chats.chats.size).assertEqual(0);
+      expect(initialState.chats.mainUnreadMessageCount).assertEqual(-1);
+      expect(state.chats.mainUnreadMessageCount).assertEqual(1250);
+      expect(state.chats.mainUnreadUnmutedMessageCount).assertEqual(1200);
+      expect(state.chats.archiveUnreadMessageCount).assertEqual(7);
+      expect(state.chats.archiveUnreadUnmutedMessageCount).assertEqual(3);
+      expect(selectTotalUnreadCount(state)).assertEqual(1250);
+
+      const resetEvent = new ChatListUnreadMessageCountChangedEvent();
+      resetEvent.chatListType = 'main';
+      resetEvent.unreadCount = 0;
+      resetEvent.unreadUnmutedCount = 0;
+      state = appReducer(state, resetEvent);
+      expect(state.chats.mainUnreadMessageCount).assertEqual(0);
+      expect(state.chats.mainUnreadUnmutedMessageCount).assertEqual(0);
+      expect(state.chats.archiveUnreadMessageCount).assertEqual(7);
+      expect(state.chats.archiveUnreadUnmutedMessageCount).assertEqual(3);
+      expect(selectTotalUnreadCount(state)).assertEqual(0);
     });
 
     it('prefers the complete aggregate and falls back to loaded main-list messages only', 0, () => {

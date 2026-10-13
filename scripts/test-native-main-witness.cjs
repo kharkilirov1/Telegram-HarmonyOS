@@ -1,0 +1,45 @@
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const assert = require('node:assert/strict');
+const { projectWitness } = require('./prepare-native-main-witness.cjs');
+const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'tg-main-witness-'));
+const source = path.join(temp, 'source'), project = path.join(temp, 'sdk');
+const put = (root, name, data) => { const target = path.join(root, name); fs.mkdirSync(path.dirname(target), { recursive: true }); fs.writeFileSync(target, data); };
+const main = 'entry/src/main';
+const ability = "export default class TestAbility extends UIAbility {\nHypium.hypiumTest(abilityDelegator, abilityDelegatorArguments, testsuite);\n}\nimport testsuite from '../test/List.test';\nimport { navigationUIState } from '../../../main/ets/core/model/UIStateModels';\nwindowStage.loadContent('testability/pages/Index', callback);";
+const page = "import { Dock } from '../../../../main/ets/ui/Dock';\nimport { Fixture } from '../components/Fixture';\nconst realBody = 'Navigation, actual Dock and callbacks';";
+try {
+  const seed = root => {
+    put(root, main + '/module.json5', JSON.stringify({ module: { abilities: [{ name: 'EntryAbility' }] } }));
+    put(root, main + '/resources/base/profile/main_pages.json', '{"src":[]}');
+    put(root, main + '/ets/ui/Dock.ets', 'real production Resource widget');
+    put(root, 'entry/src/ohosTest/ets/testability/TestAbility.ets', ability);
+    put(root, 'entry/src/ohosTest/ets/testability/pages/Index.ets', page);
+    put(root, 'entry/src/ohosTest/ets/test/List.test.ets', 'all1177SuiteCallbacks();');
+  };
+  seed(source); seed(project);
+  const app = bundle => put(project, 'AppScope/app.json5', JSON.stringify({ app: { bundleName: bundle } }));
+  const dummy = () => put(project, main + '/ets/services/ConfigLocal.ets', 'export const TELEGRAM_API_ID: number = 0;\nexport const TELEGRAM_API_HASH: string = "";');
+  app('com.telegram.harmonyos.slowmode20261002'); dummy();
+  const receipt = path.join(temp, 'receipt.json');
+  assert.throws(() => projectWitness(source, source, receipt), /separate/);
+  app('com.telegram.harmonyos'); assert.throws(() => projectWitness(source, project, receipt), /isolated/);
+  app('com.telegram.harmonyos.slowmode20261002');
+  put(project, main + '/ets/services/ConfigLocal.ets', 'export const TELEGRAM_API_ID: number = 123;');
+  assert.throws(() => projectWitness(source, project, receipt), /dummy/); dummy();
+  put(project, main + '/ets/ui/Dock.ets', 'changed production');
+  assert.throws(() => projectWitness(source, project, receipt), /Production drift/);
+  put(project, main + '/ets/ui/Dock.ets', 'real production Resource widget');
+  const beforeManifest = fs.readFileSync(path.join(project, main, 'module.json5'));
+  const result = projectWitness(source, project, receipt);
+  assert.equal(result.module, 'entry'); assert.equal(result.ability, 'TestAbility');
+  const actual = fs.readFileSync(path.join(project, main, 'ets/entryability/NativeValidationAbility.ets'), 'utf8');
+  assert.equal(actual, ability.replace("from '../test/List.test'", "from '../../../ohosTest/ets/test/List.test'").replace("from '../../../main/ets/core/model/UIStateModels'", "from '../core/model/UIStateModels'").replace("loadContent('testability/pages/Index'", "loadContent('pages/NativeValidationFixture'"));
+  assert.equal(fs.readFileSync(path.join(project, main, 'ets/pages/NativeValidationFixture.ets'), 'utf8'), page.replaceAll("from '../../../../main/ets/ui/", "from '../ui/").replaceAll("from '../components/", "from '../../../ohosTest/ets/testability/components/"));
+  assert(fs.readFileSync(path.join(receipt + '.before', main, 'module.json5')).equals(beforeManifest));
+  assert.equal(fs.readFileSync(path.join(source, 'entry/src/ohosTest/ets/testability/TestAbility.ets'), 'utf8'), ability);
+  assert.equal(fs.readFileSync(path.join(project, 'entry/src/ohosTest/ets/test/List.test.ets'), 'utf8'), 'all1177SuiteCallbacks();');
+  assert.throws(() => projectWitness(source, project, receipt), /overwrite/);
+  console.log('PASS isolated main-module projection, shared callbacks, byte guards and before-images');
+} finally { fs.rmSync(temp, { recursive: true, force: true }); }

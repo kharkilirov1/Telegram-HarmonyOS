@@ -397,6 +397,30 @@
       "value": "Отмена"
     },
     {
+      "name": "delete_message_title",
+      "value": "Удалить сообщение?"
+    },
+    {
+      "name": "delete_message_warning",
+      "value": "Это действие нельзя отменить."
+    },
+    {
+      "name": "delete_message_for_me",
+      "value": "Удалить у меня"
+    },
+    {
+      "name": "delete_message_for_everyone",
+      "value": "Удалить у всех"
+    },
+    {
+      "name": "delete_message_unavailable",
+      "value": "Сейчас это сообщение нельзя удалить."
+    },
+    {
+      "name": "delete_message_not_confirmed",
+      "value": "Удаление не подтверждено. Проверьте чат перед повторной попыткой."
+    },
+    {
       "name": "share_contact",
       "value": "Поделиться контактом"
     },
@@ -2879,6 +2903,126 @@
     {
       "name": "permission_background_audio_reason",
       "value": "Продолжение воспроизведения музыки и голосовых сообщений в фоне"
+    },
+    {
+      "name": "channel_access_unavailable",
+      "value": "Этот канал недоступен."
+    },
+    {
+      "name": "forward_invalid_selection",
+      "value": "Выберите до 100 доступных сообщений для пересылки."
+    },
+    {
+      "name": "forward_partial_failed",
+      "value": "Не удалось переслать некоторые сообщения."
+    },
+    {
+      "name": "forward_result_unknown",
+      "value": "Перед повторной пересылкой проверьте чат назначения."
+    },
+    {
+      "name": "forward_source_checking",
+      "value": "Проверка пересылки…"
+    },
+    {
+      "name": "forward_source_denied",
+      "value": "Пересылка недоступна"
+    },
+    {
+      "name": "forward_source_retry",
+      "value": "Повторить проверку пересылки"
+    },
+    {
+      "name": "group_access_unavailable",
+      "value": "Эта группа недоступна."
+    },
+    {
+      "name": "edit_message_not_confirmed",
+      "value": "Изменение не подтверждено. Ваш текст сохранён. Проверьте сообщение перед повторной попыткой."
+    },
+    {
+      "name": "edit_message_unavailable",
+      "value": "Сейчас это сообщение нельзя изменить. Ваш текст сохранён."
+    },
+    {
+      "name": "chat_open_not_confirmed",
+      "value": "Открытие чата не подтверждено. Вернитесь назад и откройте чат снова."
+    },
+    {
+      "name": "composer_album_unknown_title",
+      "value": "Результат отправки неизвестен"
+    },
+    {
+      "name": "composer_album_unknown_message",
+      "value": "Проверьте чат перед повторной отправкой этих фото. Возможно, они уже отправлены."
+    },
+    {
+      "name": "composer_album_resend_title",
+      "value": "Отправить эти фото снова?"
+    },
+    {
+      "name": "composer_album_resend_message",
+      "value": "Возможно, эти фото уже отправлены. При повторной отправке могут появиться дубликаты."
+    },
+    {
+      "name": "composer_album_resend_action",
+      "value": "Отправить снова"
+    },
+    {
+      "name": "composer_photo_preview_photo",
+      "value": "Фото"
+    },
+    {
+      "name": "composer_photo_preview_move_earlier",
+      "value": "Раньше"
+    },
+    {
+      "name": "composer_photo_preview_remove",
+      "value": "Удалить фото"
+    },
+    {
+      "name": "composer_photo_preview_move_later",
+      "value": "Позже"
+    },
+    {
+      "name": "composer_photo_preview_loading",
+      "value": "Загрузка фото…"
+    },
+    {
+      "name": "composer_photo_preview_unavailable",
+      "value": "Фото недоступно"
+    },
+    {
+      "name": "composer_send_resend_title",
+      "value": "Отправить сообщение ещё раз?"
+    },
+    {
+      "name": "composer_send_resend_message",
+      "value": "Это сообщение уже могло быть отправлено. Повторная отправка может создать дубликаты."
+    },
+    {
+      "name": "composer_send_result_unknown",
+      "value": "Проверьте чат перед повторной отправкой. Сообщение уже могло быть отправлено."
+    },
+    {
+      "name": "composer_media_resend_title",
+      "value": "Отправить эти файлы ещё раз?"
+    },
+    {
+      "name": "composer_media_resend_message",
+      "value": "Некоторые файлы уже могли быть отправлены. Повторная отправка может создать дубли."
+    },
+    {
+      "name": "composer_media_result_unknown",
+      "value": "Проверьте чат перед повторной отправкой. Эти файлы уже могли быть отправлены."
+    },
+    {
+      "name": "composer_slowmode_wait",
+      "value": "Медленный режим"
+    },
+    {
+      "name": "composer_voice_preview",
+      "value": "Голосовое сообщение"
     }
   ]
 }

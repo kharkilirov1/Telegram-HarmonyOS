@@ -1,4 +1,4 @@
-// LoginRouter — роутер авторизации с использованием AppStorage
+// LoginRouter — lifecycle auth truth with AppStorage-backed form metadata
 //
 // AppStoreBridge синхронизирует AppStore → AppStorage.
 // V2: @Local поля + store.subscribe() → syncFromAppStorage() вместо @StorageLink.
@@ -11,7 +11,6 @@ import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { CodeType, LoginController } from '../../controllers/LoginController';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
-import { createAuthStateChangedEvent } from '../../../core/model/AppEvent';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 // ─── Auth Context ───
@@ -31,7 +30,7 @@ export struct LoginRouter {
   @Event onAuthComplete: () => void = (): void => {};
 
   // ─── Local state (V2: @Local вместо @StorageLink) ───
-  // Синхронизируется с AppStorage через store subscription в aboutToAppear
+  // Auth/error use the stable root store; other form metadata uses the UI bridge.
   @Local authStatus: string = 'notInitialized';
   @Local authPhone: string = '';
   @Local codeType: string = 'sms';
@@ -39,12 +38,15 @@ export struct LoginRouter {
   @Local codeTimeout: number = 60;
   @Local codeNextType: string = 'call';
   @Local passwordHint: string = '';
+  @Local authError: string = '';
+  @Local localError: Resource | undefined = undefined;
+  @Local forceBackInFlight: boolean = false;
+  @Local recoveryInFlight: boolean = false;
 
   private unsubscribe?: () => void;
   private pageLifecycleToken: number = 0;
   private forceBackRequestSerial: number = 0;
-  // Отслеживание предыдущего статуса для определения направления перехода
-  private prevStatus: string = 'notInitialized';
+  private recoveryRequestSerial: number = 0;
 
   private isCurrentRouterContinuation(scheduledToken: number): boolean {
     return scheduledToken === this.pageLifecycleToken;
@@ -54,60 +56,75 @@ export struct LoginRouter {
     return this.isCurrentRouterContinuation(scheduledToken) && scheduledSerial === this.forceBackRequestSerial;
   }
 
-  // Сбрасывает auth state на сервере через TDLib logOut, затем возвращает на экран телефона.
-  //
-  // Аналог auth.cancelCode в Android (TLRPC.TL_auth_cancelCode).
-  // Без этого вызова при повторном setAuthenticationPhoneNumber сервер либо
-  // продолжает ждать код по старому номеру, либо отправляет код через другую сессию
-  // (authenticationCodeTypeTelegramMessage) вместо SMS.
-  //
-  // После logOut TDLib сам присылает updateAuthorizationState: waitPhoneNumber →
-  // AppStoreBridge обновляет AUTH_STATUS → @StorageLink обновляет роутер.
-  // Fallback: если logOut не отвечает — принудительно обновляем AppStorage.
-  private forceBackToPhone(reason: string): void {
+  // Request logout only. Neither ok nor failure proves that phone input is ready.
+  // Runtime owns Closed recovery; only its real auth updates select the next step.
+  private async forceBackToPhone(reason: string): Promise<void> {
+    if (this.unsubscribe === undefined || this.forceBackInFlight || this.recoveryInFlight) {
+      return;
+    }
+    const authStatus: string = getAppCoreRuntime().getLifecycleStore().getState().auth.status;
+    if (authStatus !== 'waitCode' && authStatus !== 'waitPassword' && authStatus !== 'waitQrCode' &&
+        authStatus !== 'waitRegistration' && authStatus !== 'waitEmailAddress' && authStatus !== 'waitEmailCode') {
+      return;
+    }
     const requestToken: number = this.pageLifecycleToken;
     this.forceBackRequestSerial += 1;
     const requestSerial: number = this.forceBackRequestSerial;
+    this.forceBackInFlight = true;
+    this.localError = undefined;
     hilog.warn(0x0003, 'LoginRouter', 'forceBackToPhone: %{public}s — вызываем TDLib logOut', reason);
-
-    LoginController.getInstance().logout()
-      .then((): void => {
-        if (!this.isCurrentForceBackRequest(requestToken, requestSerial)) {
-          return;
-        }
-        hilog.info(0x0003, 'LoginRouter', 'logOut выполнен — TDLib обновит AUTH_STATUS на waitPhoneNumber');
-        // TDLib сам эмитирует updateAuthorizationState: waitPhoneNumber.
-        // AppStoreBridge подхватит и обновит AppStorage → роутер переключится сам.
-      })
-      .catch((error: Error): void => {
-        if (!this.isCurrentForceBackRequest(requestToken, requestSerial)) {
-          return;
-        }
-        // logout() внутри перехватывает ошибки и не бросает — этот catch страховочный.
-        hilog.error(0x0003, 'LoginRouter', 'logout() unexpected throw: %{public}s', String(error));
-        // Fallback: обновляем UI напрямую если TDLib не ответил
-        AppStorage.set<string>(StorageKeys.AUTH_STATUS, 'waitPhoneNumber');
-      });
-
-    // Оптимистичный fallback через store — срабатывает если TDLib медленно обновляет состояние.
-    // Если TDLib уже выставил waitPhoneNumber — повторная запись не имеет эффекта.
     try {
-      getAppCoreRuntime().getStore().dispatch(createAuthStateChangedEvent('waitPhoneNumber'))
-        .catch((error: Error) => {
-          if (!this.isCurrentForceBackRequest(requestToken, requestSerial)) {
-            return;
-          }
-          hilog.warn(0x0003, 'LoginRouter', 'Store dispatch waitPhoneNumber failed: %{public}s', String(error));
-          AppStorage.set<string>(StorageKeys.AUTH_STATUS, 'waitPhoneNumber');
-        });
+      await LoginController.getInstance().logout();
     } catch (error) {
-      hilog.error(0x0003, 'LoginRouter', 'Force back dispatch threw: %{public}s', String(error));
-      AppStorage.set<string>(StorageKeys.AUTH_STATUS, 'waitPhoneNumber');
+      if (this.isCurrentForceBackRequest(requestToken, requestSerial)) {
+        this.localError = $r('app.string.action_failed');
+        hilog.warn(0x0003, 'LoginRouter', 'Logout failed; waiting for authoritative auth state');
+      }
+    } finally {
+      if (this.isCurrentForceBackRequest(requestToken, requestSerial)) {
+        this.forceBackInFlight = false;
+      }
     }
   }
 
+  private async retryRecovery(): Promise<void> {
+    const runtime = getAppCoreRuntime();
+    if (this.unsubscribe === undefined || this.recoveryInFlight || this.forceBackInFlight ||
+        runtime.getLifecycleStore().getState().auth.status !== 'closed') {
+      return;
+    }
+    const requestToken: number = this.pageLifecycleToken;
+    this.recoveryRequestSerial += 1;
+    const requestSerial: number = this.recoveryRequestSerial;
+    this.recoveryInFlight = true;
+    this.localError = undefined;
+    try {
+      await runtime.retryClientRecovery();
+    } catch (error) {
+      if (this.isCurrentRouterContinuation(requestToken) && requestSerial === this.recoveryRequestSerial) {
+        this.localError = $r('app.string.action_failed');
+        hilog.warn(0x0003, 'LoginRouter', 'Client recovery failed');
+      }
+    } finally {
+      if (this.isCurrentRouterContinuation(requestToken) && requestSerial === this.recoveryRequestSerial) {
+        this.recoveryInFlight = false;
+      }
+    }
+  }
+
+  private hasRecoveryFailure(): boolean {
+    return this.authStatus === 'closed' &&
+      (this.authError.length > 0 || this.localError !== undefined) && !this.recoveryInFlight;
+  }
+
   private syncFromAppStorage(): void {
-    this.authStatus = AppStorage.get<string>(StorageKeys.AUTH_STATUS) ?? 'notInitialized';
+    const auth = getAppCoreRuntime().getLifecycleStore().getState().auth;
+    if (this.authStatus !== auth.status) {
+      this.resetLocalActions();
+    }
+    this.authStatus = auth.status;
+    // Error details stay out of Text/log output; the UI uses a localized generic message.
+    this.authError = auth.error;
     this.authPhone = AppStorage.get<string>(StorageKeys.AUTH_PHONE) ?? '';
     this.codeType = AppStorage.get<string>(StorageKeys.CODE_TYPE) ?? 'sms';
     this.codeLength = AppStorage.get<number>(StorageKeys.CODE_LENGTH) ?? 5;
@@ -116,8 +133,17 @@ export struct LoginRouter {
     this.passwordHint = AppStorage.get<string>(StorageKeys.PASSWORD_HINT) ?? '';
   }
 
+  private resetLocalActions(): void {
+    this.forceBackRequestSerial += 1;
+    this.recoveryRequestSerial += 1;
+    this.forceBackInFlight = false;
+    this.recoveryInFlight = false;
+    this.localError = undefined;
+  }
+
   aboutToAppear(): void {
     this.pageLifecycleToken += 1;
+    this.resetLocalActions();
     this.syncFromAppStorage();
     hilog.info(0x0003, 'LoginRouter', 'LoginRouter aboutToAppear, initial authStatus: %{public}s', this.authStatus);
     if (this.unsubscribe !== undefined) {
@@ -127,7 +153,7 @@ export struct LoginRouter {
     try {
       const subscriptionToken: number = this.pageLifecycleToken;
       let activeUnsubscribe: (() => void) | undefined = undefined;
-      activeUnsubscribe = getAppCoreRuntime().getStore().subscribe(() => {
+      activeUnsubscribe = getAppCoreRuntime().getLifecycleStore().subscribe(() => {
         if (!this.isCurrentRouterContinuation(subscriptionToken) || this.unsubscribe !== activeUnsubscribe) {
           return;
         }
@@ -141,7 +167,7 @@ export struct LoginRouter {
 
   aboutToDisappear(): void {
     this.pageLifecycleToken += 1;
-    this.forceBackRequestSerial += 1;
+    this.resetLocalActions();
     hilog.info(0x0003, 'LoginRouter', 'LoginRouter aboutToDisappear');
     if (this.unsubscribe !== undefined) {
       this.unsubscribe();
@@ -151,16 +177,36 @@ export struct LoginRouter {
 
   build() {
     Stack() {
-      // Реактивное переключение по статусу из AppStorage
+      // Auth state/error come from the stable lifecycle store, not an account-scoped subscription.
       // authStatus обновляется через store subscription → syncFromAppStorage()
 
-      if (this.authStatus === 'notInitialized' ||
+      if (this.hasRecoveryFailure()) {
+        Column({ space: TgUiTokens.SPACE_16 }) {
+          Text($r('app.string.action_failed'))
+            .fontSize(TgUiTokens.LOGIN_ERROR_SIZE)
+            .fontColor(TgUiTokens.LOGIN_ERROR_COLOR)
+            .textAlign(TextAlign.Center)
+          Button($r('app.string.retry'))
+            .height(TgUiTokens.LOGIN_BUTTON_HEIGHT)
+            .borderRadius(TgUiTokens.LOGIN_BUTTON_RADIUS)
+            .fontSize(TgUiTokens.LOGIN_BUTTON_TEXT_SIZE)
+            .fontColor(TgUiTokens.LOGIN_BUTTON_TEXT_COLOR)
+            .backgroundColor(TgUiTokens.LOGIN_BUTTON_BG)
+            .enabled(!this.recoveryInFlight)
+            .onClick(() => { this.retryRecovery(); })
+        }
+        .width('100%')
+        .height('100%')
+        .padding(TgUiTokens.LOGIN_SIDE_INSET)
+        .justifyContent(FlexAlign.Center)
+        .backgroundColor(TgUiTokens.LOGIN_BG)
+      } else if (this.authStatus === 'notInitialized' ||
           this.authStatus === 'waitTdlibParameters' ||
           this.authStatus === 'loggingOut' ||
           this.authStatus === 'closing' ||
           this.authStatus === 'closed') {
         // TDLib not ready or going through logout/restart cycle.
-        // AuthSideEffect will handle re-init and drive us to waitPhoneNumber.
+        // Pending automatic/manual recovery remains a spinner until real auth state or error.
         Column() {
           LoadingProgress()
             .width(40)
@@ -271,6 +317,26 @@ export struct LoginRouter {
         .justifyContent(FlexAlign.Center)
         .alignItems(HorizontalAlign.Center)
         .backgroundColor(TgUiTokens.LOGIN_BG)
+      }
+
+      // Keep the server-selected form mounted on logout failure; offer an explicit retry.
+      if (this.localError !== undefined && this.authStatus !== 'closed') {
+        Column({ space: TgUiTokens.SPACE_12 }) {
+          Text(this.localError)
+            .fontSize(TgUiTokens.LOGIN_ERROR_SIZE)
+            .fontColor(TgUiTokens.LOGIN_ERROR_COLOR)
+            .textAlign(TextAlign.Center)
+          Button($r('app.string.retry'))
+            .height(TgUiTokens.LOGIN_BUTTON_HEIGHT)
+            .borderRadius(TgUiTokens.LOGIN_BUTTON_RADIUS)
+            .fontColor(TgUiTokens.LOGIN_BUTTON_TEXT_COLOR)
+            .backgroundColor(TgUiTokens.LOGIN_BUTTON_BG)
+            .enabled(!this.forceBackInFlight)
+            .onClick(() => { this.forceBackToPhone('retry_logout'); })
+        }
+        .padding(TgUiTokens.LOGIN_SIDE_INSET)
+        .backgroundColor(TgUiTokens.LOGIN_BG)
+        .align(Alignment.Bottom)
       }
     }
     .width('100%')

@@ -1,10 +1,11 @@
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState } from '../../../core/model/AppState';
+import { AppStore } from '../../../core/store/AppStore';
+import { TdGatewayPort } from '../../../domain/ports/TdGatewayPort';
 import { chatUIState, navigationUIState } from '../../../core/model/UIStateModels';
 import { localized } from '../../../core/utils/AppResource';
 import { createLoadArchiveChatsUseCase, LoadArchiveChatsUseCase } from '../../../domain/usecases/loadArchiveChats';
-import { createOpenChatUseCase, OpenChatParams, OpenChatUseCase } from '../../../domain/usecases/openChat';
 import { createMoveChatToListUseCase, MoveChatToListUseCase } from '../../../domain/usecases/moveChatToList';
 import { createToggleChatPinnedUseCase, ToggleChatPinnedUseCase } from '../../../domain/usecases/toggleChatPinned';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
@@ -24,36 +25,17 @@ import {
   computeTabBottomInset,
   computeTopBarHeight,
   getMainWindow,
+  addWindowSizeListener,
   removeWindowSizeListener
 } from '../../utils/SafeAreaUtils';
 import { ROOT_TAB_BAR_FALLBACK_CONTENT_INSET } from '../../utils/RootTabBarGeometry';
 import { ChatItemVO, buildChatItemVO } from './ChatItemVO';
 import { ChatListDataSource } from './ChatListDataSource';
-import { PendingChatUnreadSnapshot } from '../chat/PendingChatUnreadSnapshot';
+import { ChatScreenRouteParams } from '../chat/ChatScreenRouteParams';
 
 const DOMAIN = 0x0012;
 const TAG = 'TgArchivedChatsPage';
 const CHAT_NAV_TRANSITION_LOCK_MS = 760;
-
-class ArchivedChatRouteParams {
-  chatId: number = 0;
-  chatTitle: string = '';
-
-  constructor(chatId: number, chatTitle: string) {
-    this.chatId = chatId;
-    this.chatTitle = chatTitle;
-  }
-}
-
-class ArchivedOpenChatRequest implements OpenChatParams {
-  chatId: number = 0;
-  loadMessages?: boolean = true;
-  limit?: number = 50;
-
-  constructor(chatId: number) {
-    this.chatId = chatId;
-  }
-}
 
 @ComponentV2
 export struct TgArchivedChatsPage {
@@ -68,12 +50,15 @@ export struct TgArchivedChatsPage {
   private unsubscribe?: () => void;
   private pageLifecycleToken: number = 0;
   private loadArchiveUseCase?: LoadArchiveChatsUseCase;
-  private openChatUseCase?: OpenChatUseCase;
+  private accountStore?: AppStore;
+  private accountScope?: AppStore;
+  private chatGateway?: TdGatewayPort;
   private moveChatToListUseCase?: MoveChatToListUseCase;
   private pinUseCase?: ToggleChatPinnedUseCase;
   private archiveLoadInFlight: boolean = false;
   private archiveHasMore: boolean = true;
   private mainWindow?: window.Window;
+  private windowSizeListener?: () => void;
 
   onPageShow(): void {
     navigationUIState.chatNavLockUntil = 0;
@@ -95,8 +80,10 @@ export struct TgArchivedChatsPage {
     const runtime = getAppCoreRuntime();
     const store = runtime.getStore();
     const gateway = getTdGatewayAdapter();
+    this.accountStore = store;
+    this.accountScope = store.createScope();
+    this.chatGateway = gateway;
     this.loadArchiveUseCase = createLoadArchiveChatsUseCase(store, gateway);
-    this.openChatUseCase = createOpenChatUseCase(store, gateway);
     this.moveChatToListUseCase = createMoveChatToListUseCase(gateway);
     this.pinUseCase = createToggleChatPinnedUseCase(gateway);
     this.rebuildList(store.getState());
@@ -123,11 +110,14 @@ export struct TgArchivedChatsPage {
       this.unsubscribe = undefined;
     }
     this.loadArchiveUseCase = undefined;
-    this.openChatUseCase = undefined;
+    this.accountStore = undefined;
+    this.accountScope = undefined;
+    this.chatGateway = undefined;
     this.moveChatToListUseCase = undefined;
     this.pinUseCase = undefined;
     this.archiveLoadInFlight = false;
-    removeWindowSizeListener(this.mainWindow);
+    removeWindowSizeListener(this.windowSizeListener);
+    this.windowSizeListener = undefined;
     this.mainWindow = undefined;
   }
 
@@ -145,13 +135,15 @@ export struct TgArchivedChatsPage {
 
   private bindWindowSizeListener(): void {
     try {
-      removeWindowSizeListener(this.mainWindow);
+      removeWindowSizeListener(this.windowSizeListener);
+      this.windowSizeListener = undefined;
+      this.mainWindow = undefined;
       const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
       this.mainWindow = getMainWindow(context);
       if (this.mainWindow !== undefined) {
         const lifecycleToken = this.pageLifecycleToken;
         const boundWindow = this.mainWindow;
-        this.mainWindow.on('windowSizeChange', (_size: window.Size) => {
+        this.windowSizeListener = addWindowSizeListener(boundWindow, (_size: window.Size) => {
           if (lifecycleToken === this.pageLifecycleToken && this.mainWindow === boundWindow) {
             this.computeSafeInsets();
           }
@@ -218,16 +210,22 @@ export struct TgArchivedChatsPage {
     if (item.chatId === 0 || Date.now() < navigationUIState.chatNavLockUntil) {
       return;
     }
+    const store = this.accountStore;
+    const gateway = this.chatGateway;
+    if (store === undefined || gateway === undefined || this.accountScope === undefined ||
+      !this.accountScope.isScopeCurrent() || getAppCoreRuntime().getStore() !== store) return;
+    const params = new ChatScreenRouteParams(item.chatId, item.title, store, gateway);
+    if (!params.isCurrentAccount(getAppCoreRuntime().getStore())) return;
+    const previousOwnerToken = navigationUIState.activeChatOwnerToken;
     const previousChatId = navigationUIState.activeChatId;
     const previousTitle = navigationUIState.activeChatTitle;
-    const snapshotChat = getAppCoreRuntime().getStore().getState().chats.chats.get(item.chatId);
-    PendingChatUnreadSnapshot.set(
-      item.chatId,
-      snapshotChat ? snapshotChat.lastReadInboxMessageId : '0',
-      item.unreadCount
-    );
+    const previousVisible = navigationUIState.chatScreenVisible;
+    const previousLockUntil = navigationUIState.chatNavLockUntil;
+    const previousStoredChatId = AppStorage.get<number>(StorageKeys.ACTIVE_CHAT_ID) ?? previousChatId;
+    const previousStoredTitle = AppStorage.get<string>(StorageKeys.ACTIVE_CHAT_TITLE) ?? previousTitle;
     try {
       const navLockUntil = Date.now() + CHAT_NAV_TRANSITION_LOCK_MS;
+      navigationUIState.activeChatOwnerToken = params.navigationToken;
       navigationUIState.chatNavLockUntil = navLockUntil;
       navigationUIState.activeChatId = item.chatId;
       navigationUIState.activeChatTitle = item.title;
@@ -236,25 +234,24 @@ export struct TgArchivedChatsPage {
       AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, navLockUntil);
       AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, item.chatId);
       AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, item.title);
-      this.pageStack.pushPathByName('TgChatScreenPage', new ArchivedChatRouteParams(item.chatId, item.title));
       navigationUIState.chatScreenVisible = true;
       AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
-      const useCase = this.openChatUseCase;
-      if (useCase !== undefined) {
-        useCase.execute(new ArchivedOpenChatRequest(item.chatId)).catch((error: Object) => {
-          hilog.warn(DOMAIN, TAG, 'Archived openChat flow failed: %{public}s', String(error));
-        });
-      }
+      this.pageStack.pushPathByName('TgChatScreenPage', params);
     } catch (error) {
-      PendingChatUnreadSnapshot.clear(item.chatId);
-      navigationUIState.chatNavLockUntil = 0;
-      navigationUIState.activeChatId = previousChatId;
-      navigationUIState.activeChatTitle = previousTitle;
-      chatUIState.activeChatId = previousChatId;
-      chatUIState.activeChatTitle = previousTitle;
-      navigationUIState.chatScreenVisible = false;
-      AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, 0);
-      AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, false);
+      if (navigationUIState.activeChatOwnerToken === params.navigationToken &&
+        params.isCurrentAccount(getAppCoreRuntime().getStore())) {
+        navigationUIState.activeChatOwnerToken = previousOwnerToken;
+        navigationUIState.chatNavLockUntil = previousLockUntil;
+        navigationUIState.activeChatId = previousChatId;
+        navigationUIState.activeChatTitle = previousTitle;
+        chatUIState.activeChatId = previousChatId;
+        chatUIState.activeChatTitle = previousTitle;
+        navigationUIState.chatScreenVisible = previousVisible;
+        AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, previousLockUntil);
+        AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, previousStoredChatId);
+        AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, previousStoredTitle);
+        AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, previousVisible);
+      }
       hilog.error(DOMAIN, TAG, 'Failed to open archived chat: %{public}s', String(error));
     }
   }

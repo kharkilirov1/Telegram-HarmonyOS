@@ -1,3 +1,4 @@
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -25,7 +26,7 @@ $contracts = @(
   @{ Path = $layout; Pattern = 'export function computeTgPhotoAlbumLayout'; Label = 'pure album layout API' },
   @{ Path = $layout; Pattern = 'TELEGRAM_ALBUM_MAX_ITEMS = 10'; Label = 'Telegram album limit' },
   @{ Path = $tokens; Pattern = 'PHOTO_ALBUM_GAP: number = 1;'; Label = 'iOS one-point mosaic seam' },
-  @{ Path = $policy; Pattern = 'export function resolvePhotoAlbumTapMode'; Label = 'local-before-open photo tap policy' },
+  @{ Path = $policy; Pattern = 'export function resolvePhotoAlbumTapMode'; Label = 'photo tap policy' },
   @{ Path = $identity; Pattern = 'export function albumMediaSourceId'; Label = 'stable per-member transition identity' },
   @{ Path = $bubble; Pattern = 'ForEach(this.albumLayout().frames'; Label = 'calculated frame rendering' },
   @{ Path = $bubble; Pattern = '@Param photoMessageIds: string[]'; Label = 'per-cell source-message identity' },
@@ -34,7 +35,9 @@ $contracts = @(
   @{ Path = $bubble; Pattern = '@Param photoFileIds: number[]'; Label = 'per-cell file identity' },
   @{ Path = $bubble; Pattern = '@Param photoDownloadProgress: number[]'; Label = 'per-cell progress' },
   @{ Path = $bubble; Pattern = '@Event onPhotoTap: (albumIndex: number)'; Label = 'exact tapped index event' },
-  @{ Path = $bubble; Pattern = "if (mode === 'download')"; Label = 'remote member downloads before gallery open' },
+  @{ Path = $bubble; Pattern = "if (mode === 'downloadAndOpen')"; Label = 'remote member starts its download' },
+  @{ Path = $bubble; Pattern = 'this.onDownloadToggle(index);'; Label = 'download targets the tapped member' },
+  @{ Path = $bubble; Pattern = "if (mode === 'open' || mode === 'downloadAndOpen')"; Label = 'remote member opens gallery without waiting for local file' },
   @{ Path = $bubble; Pattern = 'this.onPhotoTap(index);'; Label = 'surface tap routing' },
   @{ Path = $shell; Pattern = '@Event onMediaDownloadCancel: (fileId: number)'; Label = 'live shell cancel routing' },
   @{ Path = $shell; Pattern = 'photoMessageIds: this.albumPhotoMessageIds'; Label = 'member identities reach the atom' },
@@ -57,16 +60,16 @@ $contracts = @(
 )
 
 foreach ($contract in $contracts) {
-  if (-not (Select-String -LiteralPath $contract.Path -SimpleMatch $contract.Pattern -Quiet)) {
+  if (-not (Select-ChatContractString -LiteralPath $contract.Path -SimpleMatch $contract.Pattern -Quiet)) {
     throw "Missing $($contract.Label): $($contract.Pattern)"
   }
 }
 
-if (Select-String -LiteralPath $bubble -SimpleMatch 'Math.min(4, this.photoPaths.length)' -Quiet) {
+if (Select-ChatContractString -LiteralPath $bubble -SimpleMatch 'Math.min(4, this.photoPaths.length)' -Quiet) {
   throw 'Grouped-photo bubble must not clip valid Telegram albums to four cells.'
 }
 
-if (Select-String -LiteralPath $page -SimpleMatch 'onAlbumPhotoTap: (photoPath: string, caption: string)' -Quiet) {
+if (Select-ChatContractString -LiteralPath $page -SimpleMatch 'onAlbumPhotoTap: (photoPath: string, caption: string)' -Quiet) {
   throw 'Album tap must not discard the cell index and reopen the primary item.'
 }
 

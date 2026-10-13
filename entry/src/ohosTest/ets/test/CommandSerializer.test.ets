@@ -4,12 +4,14 @@ import {
   createDeleteMessagesCommand,
   createDownloadFileCommand,
   createEditMessageTextCommand,
+  createEditMessageCaptionCommand,
   createForwardMessagesCommand,
   createGetFavoriteStickersCommand,
   createGetPremiumStickersCommand,
   createGetInstalledCustomEmojiSetsCommand,
   createGetTrendingCustomEmojiSetsCommand,
   createGetChatPinnedMessageCommand,
+  createGetMessageCommand,
   createGetSupergroupFullInfoCommand,
   createGetBasicGroupFullInfoCommand,
   createGetRepliedMessageCommand,
@@ -44,6 +46,8 @@ import {
   createToggleChatPinnedCommand,
   createToggleChatIsMarkedAsUnreadCommand,
   createViewMessagesCommand,
+  EditMessageEntity,
+  EditMessageLinkPreviewOptions,
   CustomEmojiTextEntity,
   ImportedContactInput
 } from '../../../main/ets/core/model/AppCommand';
@@ -283,6 +287,241 @@ export default function commandSerializerTest() {
         expect(pin.params.getString('_message_id_json')).assertEqual('900');
         expect(pin.params.getBool('disable_notification')).assertTrue();
         expect(pin.params.getBool('only_for_self')).assertTrue();
+      });
+
+      it('should serialize nonempty editMessageCaption with exact text and above flag', 0, () => {
+        const text = '  Подпись "quoted" \\\nline\r\ttab  ';
+        const aboveFlags: boolean[] = [false, true];
+        for (const above of aboveFlags) {
+          const command = createEditMessageCaptionCommand(-1001234567890, '900', text, above);
+          expect(command.type).assertEqual('editMessageCaption');
+          expect(command.payload.caption).assertEqual(text);
+          expect(command.payload.showCaptionAboveMedia).assertEqual(above);
+          const edit = serializeCommand(command);
+          expect(edit.method).assertEqual('editMessageCaption');
+          expect(edit.params.get('show_caption_above_media')).assertEqual(above);
+          const json = buildTdlibRequestJson(edit.method, edit.params);
+          const request = TdObject.fromJSON(json);
+          expect(request.getTopLevelStringStrict('@type')).assertEqual('editMessageCaption');
+          expect(request.getTopLevelBooleanStrict('show_caption_above_media')).assertEqual(above);
+          const caption = request.getTopLevelObjectStrict('caption');
+          expect(caption?.getTopLevelStringStrict('@type')).assertEqual('formattedText');
+          expect(caption?.getTopLevelStringStrict('text')).assertEqual(text);
+          expect(caption?.getTopLevelObjectArrayStrict('entities')?.length).assertEqual(0);
+          expect(json.indexOf('"reply_markup"') < 0).assertTrue();
+          expect(json.indexOf('"input_message_content"') < 0).assertTrue();
+          expect(json.indexOf('"_caption_json"') < 0).assertTrue();
+        }
+      });
+
+      it('should serialize empty editMessageCaption without losing either above flag', 0, () => {
+        const aboveFlags: boolean[] = [false, true];
+        for (const above of aboveFlags) {
+          const command = createEditMessageCaptionCommand(1, '900', '', above);
+          expect(command.payload.caption).assertEqual('');
+          expect(command.payload.showCaptionAboveMedia).assertEqual(above);
+          const edit = serializeCommand(command);
+          expect(edit.method).assertEqual('editMessageCaption');
+          expect(edit.params.get('show_caption_above_media')).assertEqual(above);
+          const json = buildTdlibRequestJson(edit.method, edit.params);
+          const request = TdObject.fromJSON(json);
+          const caption = request.getTopLevelObjectStrict('caption');
+          expect(caption?.getTopLevelStringStrict('@type')).assertEqual('formattedText');
+          expect(caption?.getTopLevelStringStrict('text')).assertEqual('');
+          expect(caption?.getTopLevelObjectArrayStrict('entities')?.length).assertEqual(0);
+          expect(request.getTopLevelBooleanStrict('show_caption_above_media')).assertEqual(above);
+          expect(json.indexOf('"reply_markup"') < 0).assertTrue();
+          expect(json.indexOf('"input_message_content"') < 0).assertTrue();
+        }
+      });
+
+      it('should preserve numeric safe IDs in editMessageCaption wire JSON', 0, () => {
+        const edit = serializeCommand(createEditMessageCaptionCommand(
+          -9007199254740991, '9007199254740991', 'caption', false
+        ));
+        expect(edit.method).assertEqual('editMessageCaption');
+        expect(edit.params.get('chat_id')).assertEqual(-9007199254740991);
+        expect(edit.params.getString('_message_id_json')).assertEqual('9007199254740991');
+        const request = TdObject.fromJSON(buildTdlibRequestJson(edit.method, edit.params));
+        expect(request.getTopLevelNumberStrict('chat_id')).assertEqual(-9007199254740991);
+        expect(request.getTopLevelNumberStrict('message_id')).assertEqual(9007199254740991);
+      });
+
+      it('should preserve full server entity types and UTF-16 ranges in both edit commands', 0, () => {
+        const text = 'name 😀 code url';
+        const entities: EditMessageEntity[] = [
+          new EditMessageEntity(0, 4, '{"@type":"textEntityTypeBold"}'),
+          new EditMessageEntity(0, 4, '{"@type":"textEntityTypeMentionName","user_id":9007199254740991}'),
+          new EditMessageEntity(5, 2, '{"@type":"textEntityTypeCustomEmoji","custom_emoji_id":"5368324170671202286"}'),
+          new EditMessageEntity(8, 4, '{"@type":"textEntityTypePreCode","language":"typescript"}'),
+          new EditMessageEntity(13, 3, '{"@type":"textEntityTypeTextUrl","url":"https://example.test/?a=\\\"b\\\""}')
+        ];
+        const edits: SerializedCommand[] = [
+          serializeCommand(createEditMessageTextCommand(1, '900', text, entities)),
+          serializeCommand(createEditMessageCaptionCommand(1, '900', text, true, entities))
+        ];
+        for (const edit of edits) {
+          const request = TdObject.fromJSON(buildTdlibRequestJson(edit.method, edit.params));
+          const formatted = edit.method === 'editMessageCaption'
+            ? request.getTopLevelObjectStrict('caption')
+            : request.getTopLevelObjectStrict('input_message_content')?.getTopLevelObjectStrict('text');
+          expect(formatted?.getTopLevelStringStrict('text')).assertEqual(text);
+          const actual = formatted?.getTopLevelObjectArrayStrict('entities');
+          expect(actual?.length).assertEqual(entities.length);
+          for (let i = 0; i < entities.length; i++) {
+            expect(actual?.[i]?.getTopLevelStringStrict('@type')).assertEqual('textEntity');
+            expect(actual?.[i]?.getTopLevelNumberStrict('offset')).assertEqual(entities[i].offset);
+            expect(actual?.[i]?.getTopLevelNumberStrict('length')).assertEqual(entities[i].length);
+          }
+          expect(actual?.[0]?.getTopLevelObjectStrict('type')?.getTopLevelStringStrict('@type'))
+            .assertEqual('textEntityTypeBold');
+          expect(actual?.[1]?.getTopLevelObjectStrict('type')?.getTopLevelNumberStrict('user_id'))
+            .assertEqual(9007199254740991);
+          expect(actual?.[2]?.getTopLevelObjectStrict('type')?.getTopLevelStringStrict('custom_emoji_id'))
+            .assertEqual('5368324170671202286');
+          expect(actual?.[3]?.getTopLevelObjectStrict('type')?.getTopLevelStringStrict('language'))
+            .assertEqual('typescript');
+          expect(actual?.[4]?.getTopLevelObjectStrict('type')?.getTopLevelStringStrict('url'))
+            .assertEqual('https://example.test/?a="b"');
+        }
+      });
+
+      it('should preserve signed int64 custom emoji IDs as exact strings', 0, () => {
+        const ids: string[] = ['-9223372036854775808', '9223372036854775807', '-1'];
+        for (const id of ids) {
+          const entity = new EditMessageEntity(0, 2,
+            '{"@type":"textEntityTypeCustomEmoji","custom_emoji_id":"' + id + '"}');
+          const edit = serializeCommand(createEditMessageCaptionCommand(1, '900', '😀', true, [entity]));
+          const request = TdObject.fromJSON(buildTdlibRequestJson(edit.method, edit.params));
+          const actual = request.getTopLevelObjectStrict('caption')?.getTopLevelObjectArrayStrict('entities');
+          expect(actual?.[0]?.getTopLevelObjectStrict('type')?.getTopLevelStringStrict('custom_emoji_id'))
+            .assertEqual(id);
+        }
+      });
+
+      it('should snapshot edit entities and preview options without mutating callers', 0, () => {
+        const entity = new EditMessageEntity(0, 4, '{"@type":"textEntityTypeBold"}');
+        const entities: EditMessageEntity[] = [entity];
+        const preview = new EditMessageLinkPreviewOptions(true, 'https://example.test', true, false, true);
+        const text = createEditMessageTextCommand(1, '900', 'text', entities, preview);
+        const caption = createEditMessageCaptionCommand(1, '900', 'text', false, entities);
+        expect(text.payload.entities === entities).assertFalse();
+        expect(text.payload.entities[0] === entity).assertFalse();
+        expect(caption.payload.entities[0] === entity).assertFalse();
+        expect(text.payload.linkPreviewOptions === preview).assertFalse();
+        entity.offset = 99;
+        entity.typeJson = '{"@type":"textEntityTypeItalic"}';
+        entities.length = 0;
+        preview.url = 'changed';
+        preview.isDisabled = false;
+        const serializedText = serializeCommand(text);
+        const serializedCaption = serializeCommand(caption);
+        const textSnapshot = buildTdlibRequestJson(serializedText.method, serializedText.params);
+        const captionSnapshot = buildTdlibRequestJson(serializedCaption.method, serializedCaption.params);
+        expect(textSnapshot.indexOf('"@type":"textEntityTypeBold"') >= 0).assertTrue();
+        expect(captionSnapshot.indexOf('"@type":"textEntityTypeBold"') >= 0).assertTrue();
+        const content = TdObject.fromJSON(textSnapshot).getTopLevelObjectStrict('input_message_content');
+        expect(content?.getTopLevelObjectStrict('link_preview_options')?.getTopLevelStringStrict('url'))
+          .assertEqual('https://example.test');
+        expect(content?.getTopLevelObjectStrict('link_preview_options')?.getTopLevelBooleanStrict('is_disabled'))
+          .assertEqual(true);
+        expect(entity.offset).assertEqual(99);
+        expect(preview.url).assertEqual('changed');
+        text.payload.entities[0].offset = 8;
+        caption.payload.entities[0].typeJson = '{}';
+        expect(buildTdlibRequestJson(serializedText.method, serializedText.params)).assertEqual(textSnapshot);
+        expect(buildTdlibRequestJson(serializedCaption.method, serializedCaption.params)).assertEqual(captionSnapshot);
+      });
+
+      it('should serialize all explicit link preview options inside inputMessageText', 0, () => {
+        const flags: boolean[] = [false, true];
+        for (const flag of flags) {
+          const url = 'https://example.test/?q="quoted"\nnext';
+          const options = new EditMessageLinkPreviewOptions(flag, url, !flag, flag, !flag);
+          const edit = serializeCommand(createEditMessageTextCommand(1, '900', 'text', [], options));
+          const request = TdObject.fromJSON(buildTdlibRequestJson(edit.method, edit.params));
+          const content = request.getTopLevelObjectStrict('input_message_content');
+          expect(content?.getTopLevelStringStrict('@type')).assertEqual('inputMessageText');
+          expect(content?.getTopLevelBooleanStrict('clear_draft')).assertEqual(true);
+          const preview = content?.getTopLevelObjectStrict('link_preview_options');
+          expect(preview?.getTopLevelStringStrict('@type')).assertEqual('linkPreviewOptions');
+          expect(preview?.getTopLevelStringStrict('url')).assertEqual(url);
+          expect(preview?.getTopLevelBooleanStrict('is_disabled')).assertEqual(flag);
+          expect(preview?.getTopLevelBooleanStrict('force_small_media')).assertEqual(!flag);
+          expect(preview?.getTopLevelBooleanStrict('force_large_media')).assertEqual(flag);
+          expect(preview?.getTopLevelBooleanStrict('show_above_text')).assertEqual(!flag);
+        }
+      });
+
+      it('should retain the exact default edit text path when optional formatting is absent', 0, () => {
+        const edit = serializeCommand(createEditMessageTextCommand(1, '900', 'text'));
+        expect(edit.params.getString('_input_message_content_json')).assertEqual(
+          '{"@type":"inputMessageText","text":{"@type":"formattedText","text":"text","entities":[]},"clear_draft":true}'
+        );
+        const defaults = new EditMessageLinkPreviewOptions();
+        expect(defaults.isDisabled).assertEqual(false);
+        expect(defaults.url).assertEqual('');
+        expect(defaults.forceSmallMedia).assertEqual(false);
+        expect(defaults.forceLargeMedia).assertEqual(false);
+        expect(defaults.showAboveText).assertEqual(false);
+      });
+
+      it('should reject invalid edit entity ranges instead of silently stripping formatting', 0, () => {
+        const typeJson = '{"@type":"textEntityTypeBold"}';
+        const invalid: EditMessageEntity[] = [
+          new EditMessageEntity(-1, 1, typeJson), new EditMessageEntity(0.5, 1, typeJson),
+          new EditMessageEntity(0, 0, typeJson), new EditMessageEntity(0, -1, typeJson),
+          new EditMessageEntity(0, 1.5, typeJson), new EditMessageEntity(0, 5, typeJson),
+          new EditMessageEntity(4, 1, typeJson), new EditMessageEntity(NaN, 1, typeJson),
+          new EditMessageEntity(0, Infinity, typeJson)
+        ];
+        for (const entity of invalid) {
+          let textRejected = false;
+          let captionRejected = false;
+          try { serializeCommand(createEditMessageTextCommand(1, '900', 'text', [entity])); }
+          catch (error) { textRejected = error instanceof Error && error.message === 'Invalid edit message entity range'; }
+          try { serializeCommand(createEditMessageCaptionCommand(1, '900', 'text', false, [entity])); }
+          catch (error) { captionRejected = error instanceof Error && error.message === 'Invalid edit message entity range'; }
+          expect(textRejected).assertTrue();
+          expect(captionRejected).assertTrue();
+        }
+      });
+
+      it('should reject malformed or nonliteral entity types before raw JSON expansion', 0, () => {
+        const invalid: string[] = [
+          '', 'null', '[]', '{"nested":{"@type":"textEntityTypeBold"}}',
+          '{"@type":7}', '{"@type":"sendMessage"}', '{"@type":"textEntityType"}',
+          '{"@type":"textEntityTypeBold"},"injected":true',
+          '{"@type":"textEntityTypeCustomEmoji","custom_emoji_id":"0"}',
+          '{"@type":"textEntityTypeCustomEmoji","custom_emoji_id":"9223372036854775808"}',
+          '{"@type":"textEntityTypeCustomEmoji","custom_emoji_id":"-9223372036854775809"}',
+          '{"@type":"textEntityTypeCustomEmoji","custom_emoji_id":5368324170671202286}'
+        ];
+        for (const typeJson of invalid) {
+          const entity = new EditMessageEntity(0, 1, typeJson);
+          let rejected = false;
+          try {
+            serializeCommand(createEditMessageTextCommand(1, '900', 'text', [entity]));
+          } catch (error) {
+            rejected = error instanceof Error && error.message === 'Invalid edit message entity type';
+          }
+          expect(rejected).assertTrue();
+        }
+      });
+
+      it('should serialize getMessage with numeric safe IDs', 0, () => {
+        const command = createGetMessageCommand(-9007199254740991, '9007199254740991');
+        expect(command.type).assertEqual('getMessage');
+        expect(command.payload.chatId).assertEqual(-9007199254740991);
+        expect(command.payload.messageId).assertEqual('9007199254740991');
+        const message = serializeCommand(command);
+        expect(message.method).assertEqual('getMessage');
+        expect(message.params.get('chat_id')).assertEqual(-9007199254740991);
+        expect(message.params.getString('_message_id_json')).assertEqual('9007199254740991');
+        const request = TdObject.fromJSON(buildTdlibRequestJson(message.method, message.params));
+        expect(request.getTopLevelStringStrict('@type')).assertEqual('getMessage');
+        expect(request.getTopLevelNumberStrict('chat_id')).assertEqual(-9007199254740991);
+        expect(request.getTopLevelNumberStrict('message_id')).assertEqual(9007199254740991);
       });
 
       it('should serialize history/view/download commands', 0, () => {

@@ -9,7 +9,7 @@ import { TgAvatar } from '../../tg_ui/atoms/TgAvatar';
 import { TgSettingsRow, TgSettingsTrailing } from '../../tg_ui/atoms/TgSettingsRow';
 import { fileUri } from '@kit.CoreFileKit';
 import { localized } from '../../../core/utils/AppResource';
-import { computeTopBarHeight, computeTabBottomInset, getMainWindow, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
+import { computeTopBarHeight, computeTabBottomInset, getMainWindow, addWindowSizeListener, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
 import { ROOT_TAB_BAR_FALLBACK_CONTENT_INSET } from '../../utils/RootTabBarGeometry';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
@@ -44,6 +44,7 @@ export struct SettingsPage {
   private unsubscribe?: () => void;
   private pageLifecycleToken: number = 0;
   private mainWindow?: window.Window;
+  private windowSizeListener?: () => void;
 
   aboutToAppear(): void {
     this.pageLifecycleToken += 1;
@@ -92,19 +93,22 @@ export struct SettingsPage {
       this.unsubscribe();
       this.unsubscribe = undefined;
     }
-    removeWindowSizeListener(this.mainWindow);
+    removeWindowSizeListener(this.windowSizeListener);
+    this.windowSizeListener = undefined;
     this.mainWindow = undefined;
   }
 
   private bindWindowSizeListener(): void {
     try {
-      removeWindowSizeListener(this.mainWindow);
+      removeWindowSizeListener(this.windowSizeListener);
+      this.windowSizeListener = undefined;
+      this.mainWindow = undefined;
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
       this.mainWindow = getMainWindow(context);
       if (this.mainWindow !== undefined) {
         const lifecycleToken: number = this.pageLifecycleToken;
         const boundWindow: window.Window = this.mainWindow;
-        this.mainWindow.on('windowSizeChange', (_size: window.Size) => {
+        this.windowSizeListener = addWindowSizeListener(boundWindow, (_size: window.Size) => {
           if (lifecycleToken !== this.pageLifecycleToken || this.mainWindow !== boundWindow) {
             return;
           }

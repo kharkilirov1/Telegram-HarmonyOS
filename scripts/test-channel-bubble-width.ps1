@@ -1,3 +1,4 @@
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -14,11 +15,11 @@ foreach ($path in @($tokensPath, $routerPath, $pagePath, $demoPath, $passportPat
   }
 }
 
-$tokens = Get-Content -LiteralPath $tokensPath -Raw
-$router = Get-Content -LiteralPath $routerPath -Raw
-$page = Get-Content -LiteralPath $pagePath -Raw
-$demo = Get-Content -LiteralPath $demoPath -Raw
-$passport = Get-Content -LiteralPath $passportPath -Raw
+$tokens = Get-ChatContractContent -LiteralPath $tokensPath -Raw
+$router = Get-ChatContractContent -LiteralPath $routerPath -Raw
+$page = Get-ChatContractContent -LiteralPath $pagePath -Raw
+$demo = Get-ChatContractContent -LiteralPath $demoPath -Raw
+$passport = Get-ChatContractContent -LiteralPath $passportPath -Raw
 
 foreach ($fragment in @(
     'CHANNEL_BUBBLE_SHARE_ACTION_INSET: number = 45',
@@ -38,7 +39,7 @@ foreach ($fragment in @(
 }
 
 foreach ($fragment in @(
-    '@Local private activeChatIsChannel: boolean = false',
+    '@Trace activeChatIsChannel: boolean = false',
     "this.activeChatIsChannel = chat?.type === 'channel';",
     'isBroadcastChannel: this.activeChatIsChannel')) {
   if (-not $page.Contains($fragment)) {

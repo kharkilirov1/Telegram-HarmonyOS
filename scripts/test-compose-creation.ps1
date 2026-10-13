@@ -61,7 +61,9 @@ Assert-Contains 'entry/src/main/ets/infra/td/serialization/CommandSerializer.ets
 Assert-Contains 'entry/src/main/ets/domain/usecases/createBasicGroupChat.ets' `
   'chat.type === ChatType.GROUP' 'Created basic group type guard is missing'
 Assert-Contains 'entry/src/main/ets/domain/usecases/createChannelChat.ets' `
-  'chat.type !== ChatType.CHANNEL' 'Created channel type guard is missing'
+  "chatType.getTopLevelStringStrict\('@type'\) !== 'chatTypeSupergroup'" 'Created channel TDLib type guard is missing'
+Assert-Contains 'entry/src/main/ets/domain/usecases/createChannelChat.ets' `
+  "chatType.getTopLevelBooleanStrict\('is_channel'\) !== true" 'Created channel strict is_channel guard is missing'
 Assert-Contains 'entry/src/main/ets/domain/usecases/createBasicGroupChat.ets' `
   'committedChat' 'Committed group identity fallback is missing'
 Assert-Contains 'entry/src/main/ets/ui/pages/compose/TgNewGroupMembersPage.ets' `

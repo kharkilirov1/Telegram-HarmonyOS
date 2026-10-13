@@ -5,6 +5,7 @@ import { ChatId, UserId, MessageId } from './EntityId';
 import { AnyAppEvent } from './AppEvent';
 import { CustomEmojiTextEntity } from './AppCommand';
 import { ChatActiveStoriesDto } from './dto/StoryDto';
+import { GroupAccessDto, GroupSendPermissionsDto, SupergroupBoostsDto, SupergroupSlowmodeDto } from './dto/GroupAccessDto';
 
 // Type definitions
 export type AuthStatus = 'notInitialized' | 'waitTdlibParameters' | 'waitPhoneNumber' | 'waitCode' | 'waitPassword' | 'waitRegistration' | 'waitQrCode' | 'ready' | 'loggingOut' | 'closing' | 'closed';
@@ -71,6 +72,7 @@ export class Chat {
   // chat.permissions.can_send_basic_messages — false means the default send
   // right is revoked for everyone (broadcast channels, restricted groups)
   canSendBasicMessages: boolean = true;
+  sendPermissions?: GroupSendPermissionsDto;
   inviteLink: string = '';
   administratorCount: number = 0;
 }
@@ -84,6 +86,11 @@ export class ChatTypingInfo {
 
 export class ChatsState {
   chats: Map<ChatId, Chat> = new Map<ChatId, Chat>();
+  // TDLib group updates can precede newChat. Keep the two ID namespaces separate.
+  supergroupAccess: Map<number, GroupAccessDto> = new Map<number, GroupAccessDto>();
+  basicGroupAccess: Map<number, GroupAccessDto> = new Map<number, GroupAccessDto>();
+  supergroupBoosts: Map<number, SupergroupBoostsDto> = new Map<number, SupergroupBoostsDto>();
+  supergroupSlowmode: Map<number, SupergroupSlowmodeDto> = new Map<number, SupergroupSlowmodeDto>();
   orderedChatIds: ChatId[] = [];
   archivedChatIds: ChatId[] = [];
   activeStoriesByChatId: Map<ChatId, ChatActiveStoriesDto> = new Map<ChatId, ChatActiveStoriesDto>();

@@ -184,7 +184,7 @@ export class LoadChatsUseCase {
       throw new AppError(
         err.kind || AppErrorKind.NETWORK,
         'Failed to load chats',
-        err.message,
+        err.technicalMessage || err.message,
         err.tdlibCode || 0,
         err.retryable !== false
       );

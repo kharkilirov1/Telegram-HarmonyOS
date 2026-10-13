@@ -7,6 +7,7 @@ import { AccentColorDto } from './dto/AccentColorDto';
 import { MessageDto, MessageUpdateDto, MessageContentDto } from './dto/MessageDto';
 import { UserDto, UserUpdateDto } from './dto/UserDto';
 import { ChatActiveStoriesDto } from './dto/StoryDto';
+import { GroupAccessDto, SupergroupBoostsDto, SupergroupSlowmodeDto } from './dto/GroupAccessDto';
 
 // Base event class
 export class AppEvent {
@@ -32,6 +33,7 @@ export class AuthStateChangedEvent extends AppEvent {
   nextCodeType: string = '';
   passwordHint: string = '';
   qrCodeLink: string = '';
+  error: string = '';
 }
 
 // Fired after getMe() resolves — sets the current user's ID
@@ -48,6 +50,21 @@ export class ConnectionStateChangedEvent extends AppEvent {
 }
 
 // --- Chat events ---
+
+export class GroupAccessUpdatedEvent extends AppEvent {
+  type: string = 'groupAccessUpdated';
+  access: GroupAccessDto = new GroupAccessDto();
+}
+
+export class SupergroupBoostsUpdatedEvent extends AppEvent {
+  type: string = 'supergroupBoostsUpdated';
+  boosts: SupergroupBoostsDto = new SupergroupBoostsDto();
+}
+
+export class SupergroupSlowmodeUpdatedEvent extends AppEvent {
+  type: string = 'supergroupSlowmodeUpdated';
+  slowmode: SupergroupSlowmodeDto = new SupergroupSlowmodeDto();
+}
 
 export class NewChatEvent extends AppEvent {
   type: string = 'newChat';
@@ -259,6 +276,9 @@ export type AnyAppEvent =
   | AuthStateChangedEvent
   | MyUserResolvedEvent
   | ConnectionStateChangedEvent
+  | GroupAccessUpdatedEvent
+  | SupergroupBoostsUpdatedEvent
+  | SupergroupSlowmodeUpdatedEvent
   | NewChatEvent
   | ChatUpdatedEvent
   | ChatReadInboxEvent
@@ -284,6 +304,27 @@ export type AnyAppEvent =
   | FileDownloadedEvent;
 
 // --- Factory helpers ---
+
+export function createSupergroupSlowmodeUpdatedEvent(slowmode: SupergroupSlowmodeDto): SupergroupSlowmodeUpdatedEvent {
+  const event = new SupergroupSlowmodeUpdatedEvent();
+  event.slowmode = slowmode;
+  event.timestamp = Date.now();
+  return event;
+}
+
+export function createSupergroupBoostsUpdatedEvent(boosts: SupergroupBoostsDto): SupergroupBoostsUpdatedEvent {
+  const event = new SupergroupBoostsUpdatedEvent();
+  event.boosts = boosts;
+  event.timestamp = Date.now();
+  return event;
+}
+
+export function createGroupAccessUpdatedEvent(access: GroupAccessDto): GroupAccessUpdatedEvent {
+  const event = new GroupAccessUpdatedEvent();
+  event.access = access;
+  event.timestamp = Date.now();
+  return event;
+}
 
 export function createAuthStateChangedEvent(
   state: AuthState,

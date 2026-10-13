@@ -23,6 +23,8 @@ export class TgAttachmentRecentItem {
 export struct TgAttachmentSheet {
   @Param items: TgAttachmentRecentItem[] = [];
   @Param isLoading: boolean = false;
+  @Param photoEnabled: boolean = true;
+  @Param videoEnabled: boolean = true;
   @Param categoryEnabled: boolean[] = [true, true, true, false, false, false];
 
   @Event onClose: () => void = () => {};
@@ -162,8 +164,9 @@ export struct TgAttachmentSheet {
     .width('100%')
     .aspectRatio(1)
     .clip(true)
+    .opacity((item.isVideo ? this.videoEnabled : this.photoEnabled) ? 1 : TgUiTokens.ATTACHMENT_SHEET_DISABLED_OPACITY)
     .onClick(() => {
-      this.onRecentPress(item);
+      if (item.isVideo ? this.videoEnabled : this.photoEnabled) this.onRecentPress(item);
     })
   }
 

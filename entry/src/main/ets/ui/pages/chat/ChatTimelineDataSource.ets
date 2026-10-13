@@ -281,58 +281,81 @@ export class ChatTimelineDataSource implements IDataSource {
     return true;
   }
 
-  /**
-   * Anchor-based prepend detection.
-   * Finds the first MESSAGE key from oldItems in newItems.
-   * Returns the number of items prepended (offset), or -1 if not a prepend.
-   * More robust than isPrependToHead — tolerates unread marker changes,
-   * date separator key mutations, and showSenderName recalculation.
-   */
-  private detectPrependByAnchor(oldItems: ChatTimelineEntryVO[], newItems: ChatTimelineEntryVO[]): number {
-    if (newItems.length <= oldItems.length || oldItems.length === 0) {
-      return -1;
+  private hasUniqueKeys(items: ChatTimelineEntryVO[]): boolean {
+    const stableKeys: Set<string> = new Set<string>();
+    const renderKeys: Set<string> = new Set<string>();
+    for (const item of items) {
+      if (item.stableKey.length === 0 || item.key.length === 0 ||
+        stableKeys.has(item.stableKey) || renderKeys.has(item.key)) {
+        return false;
+      }
+      stableKeys.add(item.stableKey);
+      renderKeys.add(item.key);
     }
-    // Find the first stable message key in old items
-    let anchorKey = '';
+    return true;
+  }
+
+  private hasConsistentRenderKeyOwners(oldItems: ChatTimelineEntryVO[], newItems: ChatTimelineEntryVO[]): boolean {
+    const previousOwners: Map<string, string> = new Map<string, string>();
+    for (const item of oldItems) {
+      previousOwners.set(item.key, item.stableKey);
+    }
+    for (const item of newItems) {
+      const previousOwner = previousOwners.get(item.key);
+      if (previousOwner !== undefined && previousOwner !== item.stableKey) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private canReconcileOrderedKeys(oldItems: ChatTimelineEntryVO[], newIndices: Map<string, number>): boolean {
+    let previousIndex: number = -1;
+    let retainedCount: number = 0;
+    for (const item of oldItems) {
+      const nextIndex = newIndices.get(item.stableKey);
+      if (nextIndex !== undefined) {
+        if (nextIndex <= previousIndex) {
+          return false;
+        }
+        previousIndex = nextIndex;
+        retainedCount++;
+      }
+    }
+    return retainedCount > 0;
+  }
+
+  private reconcileOrderedKeys(oldItems: ChatTimelineEntryVO[], newItems: ChatTimelineEntryVO[],
+    newIndices: Map<string, number>): void {
+    // Use the first surviving message's net shift; leading markers are not an offset.
     for (let i = 0; i < oldItems.length; i++) {
-      if (oldItems[i].kind === 'message') {
-        anchorKey = oldItems[i].key;
+      const nextIndex = newIndices.get(oldItems[i].stableKey);
+      if (oldItems[i].kind === 'message' && nextIndex !== undefined) {
+        this.lastPrependCount = Math.max(0, nextIndex - i);
         break;
       }
     }
-    if (anchorKey.length === 0) {
-      return -1;
-    }
-    // Find that key in new items
-    for (let i = 0; i < newItems.length; i++) {
-      if (newItems[i].key === anchorKey) {
-        // Verify: at least a few subsequent message keys match
-        let verified = 0;
-        let oldIdx = 0;
-        let newIdx = i;
-        while (oldIdx < oldItems.length && newIdx < newItems.length && verified < 5) {
-          if (oldItems[oldIdx].kind !== 'message') {
-            oldIdx++;
-            continue;
-          }
-          if (newItems[newIdx].kind !== 'message') {
-            newIdx++;
-            continue;
-          }
-          if (oldItems[oldIdx].key !== newItems[newIdx].key) {
-            return -1; // Keys diverged — not a prepend
-          }
-          verified++;
-          oldIdx++;
-          newIdx++;
-        }
-        if (verified >= 2) {
-          return i; // Number of prepended entries
-        }
-        return -1;
+    // Keep retained rows in place. Every notification observes its completed mutation.
+    this.items = oldItems;
+    for (let i = this.items.length - 1; i >= 0; i--) {
+      if (!newIndices.has(this.items[i].stableKey)) {
+        this.items.splice(i, 1);
+        this.notifyDataDelete(i);
       }
     }
-    return -1;
+    for (let i = 0; i < newItems.length; i++) {
+      const previous = this.items[i];
+      const next = newItems[i];
+      if (previous === undefined || previous.stableKey !== next.stableKey) {
+        this.items.splice(i, 0, next);
+        this.notifyDataAdd(i);
+      } else {
+        this.items[i] = next;
+        if (!this.sameEntry(previous, next)) {
+          this.notifyDataChange(i);
+        }
+      }
+    }
   }
 
   private isTrimFromTail(oldItems: ChatTimelineEntryVO[], newItems: ChatTimelineEntryVO[]): boolean {
@@ -349,7 +372,15 @@ export class ChatTimelineDataSource implements IDataSource {
 
   applyDiff(newItems: ChatTimelineEntryVO[]): void {
     this.lastPrependCount = 0;
-    const oldItems = this.items;
+    const oldItems = this.items.slice();
+
+    // Ambiguous identities cannot safely retain a native list item.
+    if (!this.hasUniqueKeys(oldItems) || !this.hasUniqueKeys(newItems) ||
+      !this.hasConsistentRenderKeyOwners(oldItems, newItems)) {
+      this.items = newItems;
+      this.notifyDataReloaded();
+      return;
+    }
 
     if (oldItems.length === 0) {
       this.items = newItems;
@@ -427,31 +458,12 @@ export class ChatTimelineDataSource implements IDataSource {
       return;
     }
 
-    // Anchor-based prepend: tolerates unread/date key mutations
-    const anchorOffset = this.detectPrependByAnchor(oldItems, newItems);
-    if (anchorOffset > 0) {
-      this.lastPrependCount = anchorOffset;
-      hilog.info(DOMAIN, TAG,
-        'applyDiff: ANCHOR-PREPEND path, offset=%{public}d old=%{public}d new=%{public}d',
-        anchorOffset, oldItems.length, newItems.length);
-      // Per-item insert in reverse order at index 0
-      for (let i = anchorOffset - 1; i >= 0; i--) {
-        this.items.splice(0, 0, newItems[i]);
-        this.notifyDataAdd(0);
-      }
-      // Update existing items that shifted
-      for (let i = 0; i < oldItems.length; i++) {
-        const newIdx = i + anchorOffset;
-        if (newIdx < newItems.length && !this.sameEntry(oldItems[i], newItems[newIdx])) {
-          this.items[newIdx] = newItems[newIdx];
-          this.notifyDataChange(newIdx);
-        }
-      }
-      // Append any tail items beyond old range
-      for (let i = oldItems.length + anchorOffset; i < newItems.length; i++) {
-        this.items.push(newItems[i]);
-        this.notifyDataAdd(i);
-      }
+    const newIndices: Map<string, number> = new Map<string, number>();
+    for (let i = 0; i < newItems.length; i++) {
+      newIndices.set(newItems[i].stableKey, i);
+    }
+    if (this.canReconcileOrderedKeys(oldItems, newIndices)) {
+      this.reconcileOrderedKeys(oldItems, newItems, newIndices);
       return;
     }
 

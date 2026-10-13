@@ -397,6 +397,30 @@
       "value": "取消"
     },
     {
+      "name": "delete_message_title",
+      "value": "删除消息？"
+    },
+    {
+      "name": "delete_message_warning",
+      "value": "此操作无法撤销。"
+    },
+    {
+      "name": "delete_message_for_me",
+      "value": "为我删除"
+    },
+    {
+      "name": "delete_message_for_everyone",
+      "value": "为所有人删除"
+    },
+    {
+      "name": "delete_message_unavailable",
+      "value": "目前无法删除此消息。"
+    },
+    {
+      "name": "delete_message_not_confirmed",
+      "value": "删除未确认。请先检查聊天再重试。"
+    },
+    {
       "name": "share_contact",
       "value": "分享联系人"
     },
@@ -2879,6 +2903,126 @@
     {
       "name": "permission_background_audio_reason",
       "value": "在后台继续播放音乐和语音消息"
+    },
+    {
+      "name": "channel_access_unavailable",
+      "value": "此频道不可用。"
+    },
+    {
+      "name": "forward_invalid_selection",
+      "value": "请选择最多100条有效消息进行转发。"
+    },
+    {
+      "name": "forward_partial_failed",
+      "value": "部分消息无法转发。"
+    },
+    {
+      "name": "forward_result_unknown",
+      "value": "再次转发前，请检查目标聊天。"
+    },
+    {
+      "name": "forward_source_checking",
+      "value": "正在检查转发…"
+    },
+    {
+      "name": "forward_source_denied",
+      "value": "无法转发"
+    },
+    {
+      "name": "forward_source_retry",
+      "value": "重新检查转发"
+    },
+    {
+      "name": "group_access_unavailable",
+      "value": "此群组不可用。"
+    },
+    {
+      "name": "edit_message_not_confirmed",
+      "value": "修改未确认。您的文本已保留。请先检查消息再重试。"
+    },
+    {
+      "name": "edit_message_unavailable",
+      "value": "目前无法编辑此消息。您的文本已保留。"
+    },
+    {
+      "name": "chat_open_not_confirmed",
+      "value": "无法确认聊天已打开。请返回后重新打开聊天。"
+    },
+    {
+      "name": "composer_album_unknown_title",
+      "value": "发送结果未知"
+    },
+    {
+      "name": "composer_album_unknown_message",
+      "value": "再次发送这些照片前，请先查看聊天。这些照片可能已经发送。"
+    },
+    {
+      "name": "composer_album_resend_title",
+      "value": "要再次发送这些照片吗？"
+    },
+    {
+      "name": "composer_album_resend_message",
+      "value": "这些照片可能已经发送。再次发送可能导致重复。"
+    },
+    {
+      "name": "composer_album_resend_action",
+      "value": "再次发送"
+    },
+    {
+      "name": "composer_photo_preview_photo",
+      "value": "照片"
+    },
+    {
+      "name": "composer_photo_preview_move_earlier",
+      "value": "前移"
+    },
+    {
+      "name": "composer_photo_preview_remove",
+      "value": "移除照片"
+    },
+    {
+      "name": "composer_photo_preview_move_later",
+      "value": "后移"
+    },
+    {
+      "name": "composer_photo_preview_loading",
+      "value": "正在加载照片…"
+    },
+    {
+      "name": "composer_photo_preview_unavailable",
+      "value": "照片不可用"
+    },
+    {
+      "name": "composer_send_resend_title",
+      "value": "再次发送这条消息？"
+    },
+    {
+      "name": "composer_send_resend_message",
+      "value": "这条消息可能已经发送。再次发送可能会产生重复消息。"
+    },
+    {
+      "name": "composer_send_result_unknown",
+      "value": "再次发送前请检查聊天。这条消息可能已经发送。"
+    },
+    {
+      "name": "composer_media_resend_title",
+      "value": "再次发送这些文件？"
+    },
+    {
+      "name": "composer_media_resend_message",
+      "value": "部分文件可能已经发送。再次发送可能会造成重复。"
+    },
+    {
+      "name": "composer_media_result_unknown",
+      "value": "再次发送前请检查聊天，这些文件可能已经发送。"
+    },
+    {
+      "name": "composer_slowmode_wait",
+      "value": "慢速模式"
+    },
+    {
+      "name": "composer_voice_preview",
+      "value": "语音消息"
     }
   ]
 }

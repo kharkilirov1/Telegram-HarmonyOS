@@ -57,7 +57,16 @@ export struct TgComposerInput {
     this.textBuffer = this.text;
   }
   @Param isDisabled: boolean = false;
+  @Param sendEnabled: boolean = true;
+  @Param slowmodeSeconds: number = 0;
+  @Param slowmodeLabel: string = 'Slow mode';
+  @Param voiceEnabled: boolean = true;
+  @Param accessRetryVisible: boolean = false;
+  @Param accessRetryLabel: string = 'Retry';
   @Param showAttachButton: boolean = true;
+  @Param attachmentPhotoEnabled: boolean = true;
+  @Param attachmentVideoEnabled: boolean = true;
+  @Param attachmentCategoryEnabled: boolean[] = [true, true, true, false, false, false];
   @Param attachmentMenuLabels: string[] = ['Camera', 'Photo', 'Video', 'Document'];
   @Param attachmentRecentItems: TgAttachmentRecentItem[] = [];
   @Param attachmentRecentLoading: boolean = false;
@@ -72,6 +81,7 @@ export struct TgComposerInput {
   @Param voiceRecordingDurationMs: number = 0;
   @Param voiceSlideLabel: string = 'Slide to cancel';
   @Param voiceLockedLabel: string = 'Recording';
+  @Param voicePreviewLabel: string = 'Voice message';
   @Param voicePreparingLabel: string = 'Starting...';
   @Param voiceSendingLabel: string = 'Sending...';
 
@@ -83,6 +93,7 @@ export struct TgComposerInput {
   @Param replyHasThumbnail: boolean = false;
 
   @Param showEditSnippet: boolean = false;
+  @Param allowEmptyEdit: boolean = false;
   @Param editPreview: string = '';
   @Param showForwardSnippet: boolean = false;
   @Param forwardTitle: string = 'Forwarded message';
@@ -97,6 +108,7 @@ export struct TgComposerInput {
   @Param bottomInset: number = 0;
 
   @Event onSendPress: (text: string) => void = (_: string) => {};
+  @Event onAccessRetryPress: () => void = () => {};
   @Event onTextChange: (text: string) => void = (_: string) => {};
   @Event onTextSelectionChange: (start: number, end: number) => void = (_: number, __: number) => {};
   @Event onInputWillFocus: () => void = () => {};
@@ -134,6 +146,10 @@ export struct TgComposerInput {
     return this.text.trim().length > 0;
   }
 
+  private handleAccessRetryPress(): void {
+    if (this.accessRetryVisible && !this.isDisabled) this.onAccessRetryPress();
+  }
+
   private hasPendingForward(): boolean {
     return this.showForwardSnippet;
   }
@@ -142,8 +158,25 @@ export struct TgComposerInput {
     return this.showAttachmentSnippet;
   }
 
+  private hasSendIntent(): boolean {
+    return this.hasText() || this.hasPendingForward() || this.hasPendingAttachment() ||
+      (this.showEditSnippet && this.allowEmptyEdit);
+  }
+
   private canSend(): boolean {
-    return (this.hasText() || this.hasPendingForward() || this.hasPendingAttachment()) && !this.isDisabled;
+    return this.hasSendIntent() && this.sendEnabled && !this.isDisabled && !this.isSlowmodeActive();
+  }
+
+  private isSlowmodeActive(): boolean {
+    return !this.showEditSnippet && this.slowmodeSeconds > 0;
+  }
+
+  private slowmodeTime(): string {
+    return formatVoiceRecordingDuration(this.slowmodeSeconds * 1000);
+  }
+
+  private isVoicePreviewOrLocked(): boolean {
+    return this.voiceRecordingState === 'locked' || this.voiceRecordingState === 'preview';
   }
 
   private isVoiceRecordingActive(): boolean {
@@ -155,8 +188,10 @@ export struct TgComposerInput {
   }
 
   private handleSend(): void {
+    if (!this.canSend()) return;
     const trimmed = this.text.trim();
-    if (trimmed.length === 0 && !this.showForwardSnippet && !this.showAttachmentSnippet) {
+    if (trimmed.length === 0 && !this.showForwardSnippet && !this.showAttachmentSnippet &&
+      !(this.showEditSnippet && this.allowEmptyEdit)) {
       return;
     }
     this.onSendPress(trimmed);
@@ -222,31 +257,42 @@ export struct TgComposerInput {
 
   @Builder
   private buildActionIcon() {
-    TgIcon({
-      src: this.canSend() ? TgUiTokens.ICON_RES_SEND : TgUiTokens.ICON_RES_MIC,
-      iconSize: TgUiTokens.COMPOSER_ICON_SIZE,
-      tintColor: this.canSend()
-        ? TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT
-        : TgUiTokens.COMPOSER_CONTROL_ICON
-    })
+    if (this.isSlowmodeActive()) {
+      Text(this.slowmodeTime())
+        .id('tg_composer_slowmode_countdown')
+        .fontSize(TgUiTokens.FONT_META_SIZE)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(TgUiTokens.COMPOSER_CONTROL_ICON)
+        .maxLines(1)
+        .accessibilityText(this.slowmodeLabel + ' ' + this.slowmodeTime())
+    } else {
+      TgIcon({
+        src: this.hasSendIntent() || this.showEditSnippet ? TgUiTokens.ICON_RES_SEND : TgUiTokens.ICON_RES_MIC,
+        iconSize: TgUiTokens.COMPOSER_ICON_SIZE,
+        tintColor: this.canSend()
+          ? TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT
+          : TgUiTokens.COMPOSER_CONTROL_ICON
+      })
+    }
   }
 
   private handleActionPress(): void {
-    if (this.isDisabled) {
+    if (this.isDisabled || this.isSlowmodeActive()) {
       return;
     }
     if (Date.now() <= this.voiceClickSuppressionUntil) {
       return;
     }
-    if (this.canSend()) {
-      this.handleSend();
-    } else {
+    if (this.hasSendIntent()) {
+      if (this.canSend()) this.handleSend();
+    } else if (!this.showEditSnippet && this.voiceEnabled) {
       this.onVoicePress();
     }
   }
 
   private beginVoiceRecordingGesture(): void {
-    if (this.isDisabled || this.canSend() || this.isVoiceRecordingActive()) {
+    if (this.isDisabled || this.isSlowmodeActive() || !this.voiceEnabled || this.showEditSnippet ||
+      this.hasSendIntent() || this.isVoiceRecordingActive()) {
       return;
     }
     this.voiceGestureActive = true;
@@ -692,7 +738,9 @@ export struct TgComposerInput {
     this.buildAccessorySeparator()
 
     Row() {
-      TextArea({ text: this.textBuffer!!, placeholder: this.placeholder, controller: this.textController })
+      TextArea({ text: this.textBuffer!!,
+        placeholder: this.isSlowmodeActive() ? this.slowmodeLabel + ' ' + this.slowmodeTime() : this.placeholder,
+        controller: this.textController })
         .id(this.textFocusKey)
         // DEFAULT, not INLINE: the INLINE focus state paints an opaque
         // system block + blue frame over the glass capsule while typing.
@@ -812,6 +860,9 @@ export struct TgComposerInput {
     TgAttachmentSheet({
       items: this.attachmentRecentItems,
       isLoading: this.attachmentRecentLoading,
+      photoEnabled: this.attachmentPhotoEnabled,
+      videoEnabled: this.attachmentVideoEnabled,
+      categoryEnabled: this.attachmentCategoryEnabled,
       onClose: (): void => {
         this.attachmentMenuOpen = false;
         this.onAttachmentMenuOpenChange(false);
@@ -830,7 +881,7 @@ export struct TgComposerInput {
   }
 
   private handleAttachPress(): void {
-    if (!this.isDisabled) {
+    if (!this.isDisabled && !this.isSlowmodeActive()) {
       this.textController.stopEditing();
       this.onBotMenuOpenChange(false);
       this.attachmentMenuOpen = !this.attachmentMenuOpen;
@@ -858,6 +909,7 @@ export struct TgComposerInput {
     }))
     .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
     .clip(true)
+    .opacity(this.isSlowmodeActive() ? TgUiTokens.COMPOSER_DISABLED_OPACITY : 1)
     .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.85 })
     .responseRegion({
       x: this.responseRegionOffset(),
@@ -885,6 +937,7 @@ export struct TgComposerInput {
     .border({ width: TgUiTokens.COMPOSER_CONTROL_BORDER_WIDTH, color: TgUiTokens.COMPOSER_CAPSULE_BORDER })
     .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
     .clip(true)
+    .opacity(this.isSlowmodeActive() ? TgUiTokens.COMPOSER_DISABLED_OPACITY : 1)
     .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.85 })
     .responseRegion({
       x: this.responseRegionOffset(),
@@ -1182,7 +1235,7 @@ export struct TgComposerInput {
   @Builder
   private buildRecordingSurfaceContent() {
     Row({ space: TgUiTokens.COMPOSER_RECORDING_GAP }) {
-      if (this.voiceRecordingState === 'locked') {
+      if (this.isVoicePreviewOrLocked()) {
         Row() {
           TgIcon({
             src: TgUiTokens.ICON_RES_DELETE,
@@ -1214,9 +1267,9 @@ export struct TgComposerInput {
         .minFontScale(1)
         .maxFontScale(1)
 
-      if (this.voiceRecordingState === 'locked') {
+      if (this.isVoicePreviewOrLocked()) {
         this.buildRecordingWaveform()
-        Text(this.voiceLockedLabel)
+        Text(this.voiceRecordingState === 'preview' ? this.voicePreviewLabel : this.voiceLockedLabel)
           .fontSize(TgUiTokens.COMPOSER_RECORDING_LABEL_SIZE)
           .fontColor(TgUiTokens.COMPOSER_PLACEHOLDER)
           .maxLines(1)
@@ -1294,32 +1347,40 @@ export struct TgComposerInput {
   @Builder
   private buildFallbackRecordingAction() {
     Row() {
-      TgIcon({
-        src: this.voiceRecordingState === 'locked' ? TgUiTokens.ICON_RES_SEND : TgUiTokens.ICON_RES_LOCK,
-        iconSize: TgUiTokens.COMPOSER_RECORDING_ICON_SIZE,
-        tintColor: this.voiceRecordingState === 'locked'
-          ? TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT
-          : TgUiTokens.COMPOSER_ACTION_ACTIVE
-      })
+      if (this.isVoicePreviewOrLocked() && this.isSlowmodeActive()) {
+        Text(this.slowmodeTime())
+          .id('tg_composer_voice_slowmode_countdown')
+          .fontSize(TgUiTokens.FONT_META_SIZE)
+          .fontColor(TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT)
+          .accessibilityText(this.slowmodeLabel + ' ' + this.slowmodeTime())
+      } else {
+        TgIcon({
+          src: this.isVoicePreviewOrLocked() ? TgUiTokens.ICON_RES_SEND : TgUiTokens.ICON_RES_LOCK,
+          iconSize: TgUiTokens.COMPOSER_RECORDING_ICON_SIZE,
+          tintColor: this.isVoicePreviewOrLocked()
+            ? TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT
+            : TgUiTokens.COMPOSER_ACTION_ACTIVE
+        })
+      }
     }
     .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
     .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
     .flexShrink(0)
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
-    .backgroundColor(this.voiceRecordingState === 'locked'
+    .backgroundColor(this.isVoicePreviewOrLocked()
       ? TgUiTokens.COMPOSER_ACTION_ACTIVE
       : this.capsuleBg())
-    .backdropBlur(this.voiceRecordingState === 'locked' ? 0 : this.capsuleBackdropBlur())
+    .backdropBlur(this.isVoicePreviewOrLocked() ? 0 : this.capsuleBackdropBlur())
     .border({
-      width: this.voiceRecordingState === 'locked' ? 0 : TgUiTokens.COMPOSER_CONTROL_BORDER_WIDTH,
+      width: this.isVoicePreviewOrLocked() ? 0 : TgUiTokens.COMPOSER_CONTROL_BORDER_WIDTH,
       color: TgUiTokens.COMPOSER_CAPSULE_BORDER
     })
     .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
     .clip(true)
     .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.85 })
     .onClick(() => {
-      if (this.voiceRecordingState === 'locked') {
+      if (this.isVoicePreviewOrLocked() && !this.isSlowmodeActive() && !this.isDisabled) {
         this.onVoiceRecordSend();
       }
     })
@@ -1353,7 +1414,7 @@ export struct TgComposerInput {
   @Builder
   private buildRecordingAction() {
     if (deviceInfo.apiAvailable('26.0.0')) {
-      if (this.voiceRecordingState !== 'locked' && this.materialMode() === 'nativeImmersive') {
+      if (!this.isVoicePreviewOrLocked() && this.materialMode() === 'nativeImmersive') {
         this.buildNativeRecordingAction()
       } else {
         this.buildFallbackRecordingAction()
@@ -1409,6 +1470,17 @@ export struct TgComposerInput {
 
   build() {
     Column() {
+      // Partial permission failure must not replace a still-working composer.
+      // Native Button retains platform accessibility, focus and disabled behavior.
+      if (this.accessRetryVisible) {
+        Button(this.accessRetryLabel)
+          .id('tg_composer_access_retry')
+          .constraintSize({ minHeight: TgUiTokens.COMPOSER_ACCESSORY_MIN_HEIGHT })
+          .enabled(!this.isDisabled)
+          .onClick((): void => {
+            this.handleAccessRetryPress();
+          })
+      }
       if (this.botMenuOpen) {
         this.buildBotMenuPanel()
       }

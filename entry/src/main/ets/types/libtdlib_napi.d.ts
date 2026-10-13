@@ -5,7 +5,8 @@ declare module 'libtdlib_napi.so' {
     receive(timeoutSeconds: number): string | null;
     execute(requestJson: string): string | null;
     startReceiveLoop(callback: (responseJson: string) => void): void;
-    stopReceiveLoop(): void;
+    /** Resolves after the receive worker has stopped; rejection requires a stop retry before start. */
+    stopReceiveLoop(): Promise<void>;
     /** Returns JSON: { mode: "REAL", tdlibDir: string, soname: string } */
     getTdlibInfo(): string;
   }

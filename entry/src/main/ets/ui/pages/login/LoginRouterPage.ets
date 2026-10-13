@@ -5,6 +5,7 @@
 import { LoginRouter } from './LoginRouter';
 import { MainTabsPage } from '../MainTabsPage';
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
+import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN = 0x0003;
@@ -22,28 +23,76 @@ struct LoginRouterPage {
   @Local showMainUI: boolean = false;
 
   private pageLifecycleToken: number = 0;
+  private transitionGeneration: number = 0;
   private transitionTimerId: number = -1;
+  private unsubscribe?: () => void;
 
-  private isCurrentTransitionCallback(scheduledToken: number): boolean {
-    return scheduledToken === this.pageLifecycleToken;
+  private isCurrentTransitionCallback(scheduledToken: number, scheduledGeneration: number): boolean {
+    return scheduledToken === this.pageLifecycleToken && scheduledGeneration === this.transitionGeneration;
   }
 
   aboutToAppear(): void {
     this.pageLifecycleToken += 1;
+    this.invalidateTransition();
+    if (this.unsubscribe !== undefined) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
+    }
+    const store = getAppCoreRuntime().getLifecycleStore();
+    const subscriptionToken: number = this.pageLifecycleToken;
+    let activeUnsubscribe: (() => void) | undefined = undefined;
+    activeUnsubscribe = store.subscribe((state, prevState) => {
+      if (subscriptionToken !== this.pageLifecycleToken || this.unsubscribe !== activeUnsubscribe) {
+        return;
+      }
+      // Network reconnect is not auth loss. Keep this root subscription across accounts.
+      if (state.auth.status === prevState.auth.status) {
+        return;
+      }
+      if (state.auth.status !== 'ready') {
+        this.showMainUI = false;
+        this.invalidateTransition();
+        if (prevState.auth.status === 'ready') {
+          this.clearAccountNavigation();
+        }
+      } else {
+        this.waitForDataAndTransition();
+      }
+    });
+    this.unsubscribe = activeUnsubscribe;
     // If already authenticated (app restart), skip login flow
-    const currentAuth = AppStorage.get<string>(StorageKeys.AUTH_STATUS);
+    const currentAuth = store.getState().auth.status;
+    this.showMainUI = currentAuth === 'ready';
     if (currentAuth === 'ready') {
-      this.showMainUI = true;
       hilog.info(DOMAIN, TAG, 'Already authenticated — showing main UI');
     } else {
-      AppStorage.setOrCreate('pageStack', this.pageStack);
+      this.clearAccountNavigation();
       hilog.info(DOMAIN, TAG, 'Not authenticated — showing login flow');
     }
   }
 
   aboutToDisappear(): void {
     this.pageLifecycleToken += 1;
+    this.invalidateTransition();
+    if (this.unsubscribe !== undefined) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
+    }
+  }
+
+  private invalidateTransition(): void {
+    this.transitionGeneration += 1;
     this.clearTransitionTimer();
+  }
+
+  private clearAccountNavigation(): void {
+    // The bridge may still point at a stack owned by the previous account UI.
+    const storedStack = AppStorage.get<NavPathStack>('pageStack');
+    if (storedStack !== undefined && storedStack !== this.pageStack) {
+      storedStack.clear();
+    }
+    this.pageStack.clear();
+    AppStorage.setOrCreate('pageStack', this.pageStack);
   }
 
   /**
@@ -52,14 +101,25 @@ struct LoginRouterPage {
    *
    * - MIN_WAIT: minimum spinner time (UI preparation)
    * - Polls connectionStatus + dialogsCount every 100ms
-   * - MAX_WAIT: safety timeout (show tabs regardless)
+   * - MAX_WAIT: data timeout (never bypasses current auth readiness)
    */
   private waitForDataAndTransition(): void {
+    if (this.unsubscribe === undefined || this.showMainUI || this.transitionTimerId !== -1 ||
+        getAppCoreRuntime().getLifecycleStore().getState().auth.status !== 'ready') {
+      return;
+    }
     const transitionToken: number = this.pageLifecycleToken;
+    const transitionGeneration: number = this.transitionGeneration;
     const startTime = Date.now();
 
     const check = (): void => {
-      if (!this.isCurrentTransitionCallback(transitionToken)) {
+      if (!this.isCurrentTransitionCallback(transitionToken, transitionGeneration)) {
+        return;
+      }
+      if (getAppCoreRuntime().getLifecycleStore().getState().auth.status !== 'ready') {
+        this.showMainUI = false;
+        this.invalidateTransition();
+        this.clearAccountNavigation();
         return;
       }
       const elapsed = Date.now() - startTime;

@@ -109,17 +109,49 @@ export function getMainWindow(context: common.UIAbilityContext): window.Window |
 }
 
 /**
- * Safely remove a previously registered windowSizeChange listener.
+ * Bind page-owned window callbacks and return their idempotent disposer.
+ * Roll back partial registration without touching other owners' subscriptions.
  */
-export function removeWindowSizeListener(mainWindow: window.Window | undefined): void {
-  if (mainWindow !== undefined) {
+export function addWindowSizeListener(
+  mainWindow: window.Window,
+  onSizeChange: (size: window.Size) => void,
+  onAvoidAreaChange?: (data: window.AvoidAreaOptions) => void
+): () => void {
+  let active: boolean = true;
+  const sizeListener = (size: window.Size): void => {
+    if (active) onSizeChange(size);
+  };
+  const avoidAreaListener = (data: window.AvoidAreaOptions): void => {
+    if (active && onAvoidAreaChange !== undefined) onAvoidAreaChange(data);
+  };
+  const dispose = (): void => {
+    if (!active) return;
+    // Fence queued callbacks even if the native unsubscribe fails.
+    active = false;
     try {
-      mainWindow.off('windowSizeChange');
+      mainWindow.off('windowSizeChange', sizeListener);
     } catch (_error) {
     }
-    try {
-      mainWindow.off('avoidAreaChange');
-    } catch (_error) {
+    if (onAvoidAreaChange !== undefined) {
+      try {
+        mainWindow.off('avoidAreaChange', avoidAreaListener);
+      } catch (_error) {
+      }
     }
+  };
+  try {
+    mainWindow.on('windowSizeChange', sizeListener);
+    if (onAvoidAreaChange !== undefined) {
+      mainWindow.on('avoidAreaChange', avoidAreaListener);
+    }
+  } catch (error) {
+    dispose();
+    throw error as Error;
   }
+  return dispose;
+}
+
+/** Safely dispose only the callbacks owned by this subscription. */
+export function removeWindowSizeListener(dispose: (() => void) | undefined): void {
+  if (dispose !== undefined) dispose();
 }

@@ -15,6 +15,7 @@ import {
   computeTopBarHeight,
   computeTabBottomInset,
   getMainWindow,
+  addWindowSizeListener,
   removeWindowSizeListener
 } from '../../utils/SafeAreaUtils';
 import { ROOT_TAB_BAR_FALLBACK_CONTENT_INSET } from '../../utils/RootTabBarGeometry';
@@ -174,6 +175,7 @@ export struct CallsPage {
   private loadMoreTimerId: number = -1;
   private pageLifecycleToken: number = 0;
   private mainWindow?: window.Window;
+  private windowSizeListener?: () => void;
   private loadCallsUseCase?: LoadCallsUseCase;
   private loadedRecords: CallHistoryRecord[] = [];
   private nextOffset: string = '';
@@ -283,19 +285,22 @@ export struct CallsPage {
       this.unsubscribe = undefined;
     }
     this.loadCallsUseCase = undefined;
-    removeWindowSizeListener(this.mainWindow);
+    removeWindowSizeListener(this.windowSizeListener);
+    this.windowSizeListener = undefined;
     this.mainWindow = undefined;
   }
 
   private bindWindowSizeListener(): void {
     try {
-      removeWindowSizeListener(this.mainWindow);
+      removeWindowSizeListener(this.windowSizeListener);
+      this.windowSizeListener = undefined;
+      this.mainWindow = undefined;
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
       this.mainWindow = getMainWindow(context);
       if (this.mainWindow !== undefined) {
         const lifecycleToken: number = this.pageLifecycleToken;
         const boundWindow: window.Window = this.mainWindow;
-        this.mainWindow.on('windowSizeChange', (_size: window.Size) => {
+        this.windowSizeListener = addWindowSizeListener(boundWindow, (_size: window.Size) => {
           if (lifecycleToken !== this.pageLifecycleToken || this.mainWindow !== boundWindow) {
             return;
           }

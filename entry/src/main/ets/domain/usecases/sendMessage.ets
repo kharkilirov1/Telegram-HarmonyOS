@@ -5,7 +5,8 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { TdGatewayPort } from '../ports/TdGatewayPort';
 import { ChatId, MessageId } from '../../core/model/EntityId';
 import { createSendMessageCommand, CustomEmojiTextEntity } from '../../core/model/AppCommand';
-import { AppError, AppErrorKind } from '../../core/model/AppError';
+import { AppError, AppErrorKind, asWriteRequestError, isSilentTdlibError } from '../../core/model/AppError';
+import { TdObject } from '../../core/utils/tdAccessors';
 
 const TAG = 'SendMessage';
 const DOMAIN = 0x0007;
@@ -94,22 +95,23 @@ export class SendMessageUseCase {
         params.customEmojiEntities
       );
 
-      await this.gateway.send(command);
+      const response = await this.gateway.send(command);
+      const id = response instanceof TdObject ? response.getTopLevelNumberStrict('id') : undefined;
+      if (!(response instanceof TdObject) || response.getTopLevelStringStrict('@type') !== 'message' ||
+        response.getTopLevelNumberStrict('chat_id') !== params.chatId || id === undefined ||
+        !Number.isSafeInteger(id) || id <= 0) {
+        throw new AppError(AppErrorKind.UNKNOWN, 'Sending result unknown', 'Invalid sendMessage acceptance response');
+      }
 
       hilog.info(DOMAIN, TAG, 'Message sent successfully');
       // TDLib will send updateNewMessage + updateMessageSendSucceeded via event pipeline
 
     } catch (error) {
-      const err = error as Error;
-      hilog.error(DOMAIN, TAG, 'Failed to send message: %{public}s', err.message);
-
-      throw new AppError(
-        AppErrorKind.UNKNOWN,
-        `Failed to send message to chat ${params.chatId}`,
-        err.message,
-        0,
-        true
-      );
+      const failure = asWriteRequestError(error, 'Could not send message');
+      if (!isSilentTdlibError(failure)) {
+        hilog.error(DOMAIN, TAG, 'Failed to send message: %{public}s', failure.message);
+      }
+      throw failure;
     }
   }
 

@@ -24,9 +24,25 @@ jobs:
         shell: bash
         run: bash ./scripts/smoke-ui-phase0.sh
 
+  smoke-host:
+    name: Smoke (host behavioral tests)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Run all host behavioral suites
+        run: node scripts/run-host-tests.cjs
+
   smoke-build-harmony:
     name: Smoke (hvigor build)
-    needs: smoke-static
+    needs: [smoke-static, smoke-host]
     if: ${{ vars.HARMONYOS_SMOKE_BUILD == 'true' }}
     runs-on: [self-hosted, Windows, HarmonyOS]
     steps:

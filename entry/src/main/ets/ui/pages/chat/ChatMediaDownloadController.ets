@@ -24,7 +24,9 @@ export class MediaDownloadStatus {
 }
 
 export class ChatMediaDownloadController {
-  private pendingFileIds: Set<number> = new Set<number>();
+  private pendingAttempts: Map<number, number> = new Map<number, number>();
+  // Never reset: a retry after cancel/clear must not reuse an old attempt's identity.
+  private nextAttemptId: number = 0;
   private failedFileMessages: Map<number, string> = new Map<number, string>();
   private version: number = 0;
   private changeListener?: (version: number, fileId: number) => void;
@@ -44,24 +46,33 @@ export class ChatMediaDownloadController {
     return this.version;
   }
 
-  requestMediaDownload(fileId: number, lifecycleToken: number): void {
+  // Keep the caller signature; clearPendingDownloads is the lifecycle boundary.
+  requestMediaDownload(fileId: number, _lifecycleToken: number): void {
     if (fileId <= 0) return;
-    if (this.pendingFileIds.has(fileId)) {
+    if (this.pendingAttempts.has(fileId)) {
       hilog.info(DOMAIN, TAG, 'Skip duplicate on-demand download: fileId=%{public}d', fileId);
       return;
     }
-    if (this.failedFileMessages.delete(fileId)) {
+    // Capture account capabilities before listeners or async continuations can
+    // cross a logout boundary. Never fetch a fresh account store on completion.
+    const store = getAppCoreRuntime().getStore();
+    const gateway = getTdGatewayAdapter();
+    const wasFailed = this.failedFileMessages.delete(fileId);
+    const attemptId = ++this.nextAttemptId;
+    this.pendingAttempts.set(fileId, attemptId);
+    // Publish ownership before notifying listeners, which may synchronously cancel/retry.
+    if (wasFailed) {
       this.bumpVersion(fileId);
+      if (this.pendingAttempts.get(fileId) !== attemptId) return;
     }
-    this.pendingFileIds.add(fileId);
     this.bumpVersion(fileId);
+    if (this.pendingAttempts.get(fileId) !== attemptId) return;
     hilog.info(DOMAIN, TAG, 'On-demand media download requested: fileId=%{public}d', fileId);
-    const token = lifecycleToken;
     const capturedFileId = fileId;
     const command = createDownloadFileCommand(capturedFileId, 5, false);
-    getTdGatewayAdapter().send(command)
+    gateway.send(command)
       .then((response: Object): void => {
-        if (token !== lifecycleToken || !this.pendingFileIds.has(capturedFileId)) {
+        if (this.pendingAttempts.get(capturedFileId) !== attemptId) {
           return;
         }
         try {
@@ -76,11 +87,11 @@ export class ChatMediaDownloadController {
             event.localPath = path;
             event.isComplete = true;
             event.timestamp = Date.now();
-            getAppCoreRuntime().getStore().dispatch(event);
-            if (this.pendingFileIds.delete(capturedFileId)) {
-              this.bumpVersion(capturedFileId);
-            }
-            if (this.failedFileMessages.delete(capturedFileId)) {
+            store.dispatch(event);
+            const wasPending = this.pendingAttempts.delete(capturedFileId);
+            const wasFailed = this.failedFileMessages.delete(capturedFileId);
+            // Finish this attempt's cleanup before a listener can start the next.
+            if (wasPending || wasFailed) {
               this.bumpVersion(capturedFileId);
             }
           }
@@ -89,7 +100,7 @@ export class ChatMediaDownloadController {
         }
       })
       .catch((error: Error): void => {
-        if (token !== lifecycleToken || !this.pendingFileIds.has(capturedFileId)) {
+        if (this.pendingAttempts.get(capturedFileId) !== attemptId) {
           return;
         }
         hilog.warn(DOMAIN, TAG, 'On-demand download failed: fileId=%{public}d: %{public}s',
@@ -100,11 +111,8 @@ export class ChatMediaDownloadController {
 
   cancelMediaDownload(fileId: number): void {
     if (fileId <= 0) return;
-    const wasPending = this.pendingFileIds.delete(fileId);
+    const wasPending = this.pendingAttempts.delete(fileId);
     const wasFailed = this.failedFileMessages.delete(fileId);
-    if (wasPending || wasFailed) {
-      this.bumpVersion(fileId);
-    }
     const event = new FileTransferUpdatedEvent();
     event.fileId = fileId;
     event.localPath = '';
@@ -122,13 +130,17 @@ export class ChatMediaDownloadController {
         hilog.warn(DOMAIN, TAG, 'Cancel media download failed: fileId=%{public}d: %{public}s',
           fileId, error.message);
       });
+    // Send cancel before notifying: a listener's retry must follow, not precede it.
+    if (wasPending || wasFailed) {
+      this.bumpVersion(fileId);
+    }
   }
 
   clearPendingDownloads(): void {
-    if (this.pendingFileIds.size === 0 && this.failedFileMessages.size === 0) {
+    if (this.pendingAttempts.size === 0 && this.failedFileMessages.size === 0) {
       return;
     }
-    this.pendingFileIds.clear();
+    this.pendingAttempts.clear();
     this.failedFileMessages.clear();
     this.bumpVersion();
   }
@@ -137,7 +149,7 @@ export class ChatMediaDownloadController {
     if (fileId <= 0) {
       return false;
     }
-    return this.pendingFileIds.has(fileId);
+    return this.pendingAttempts.has(fileId);
   }
 
   isDownloadFailed(fileId: number): boolean {
@@ -159,7 +171,7 @@ export class ChatMediaDownloadController {
     if (fileId <= 0) {
       return status;
     }
-    status.isPending = this.pendingFileIds.has(fileId);
+    status.isPending = this.pendingAttempts.has(fileId);
     status.isFailed = this.failedFileMessages.has(fileId);
     status.errorMessage = this.failedFileMessages.get(fileId) || '';
     return status;
@@ -170,7 +182,7 @@ export class ChatMediaDownloadController {
       return;
     }
     const normalizedMessage = message.trim().length > 0 ? message.trim() : 'Download failed';
-    const wasPending = this.pendingFileIds.delete(fileId);
+    const wasPending = this.pendingAttempts.delete(fileId);
     const previousMessage = this.failedFileMessages.get(fileId) || '';
     this.failedFileMessages.set(fileId, normalizedMessage);
     if (wasPending || previousMessage !== normalizedMessage) {
@@ -179,7 +191,7 @@ export class ChatMediaDownloadController {
   }
 
   syncResolvedDownloads(entries: ChatTimelineEntryVO[]): void {
-    if ((this.pendingFileIds.size === 0 && this.failedFileMessages.size === 0) || entries.length === 0) {
+    if ((this.pendingAttempts.size === 0 && this.failedFileMessages.size === 0) || entries.length === 0) {
       return;
     }
     const resolved: Set<number> = new Set<number>();
@@ -217,7 +229,7 @@ export class ChatMediaDownloadController {
     }
     let changed = false;
     resolved.forEach((fileId: number) => {
-      if (this.pendingFileIds.delete(fileId)) {
+      if (this.pendingAttempts.delete(fileId)) {
         changed = true;
       }
       if (this.failedFileMessages.delete(fileId)) {

@@ -149,6 +149,69 @@ export default function filePipelineTest() {
         expect(updated.files.transfers.get(77)!.isDownloadingActive).assertFalse();
       });
 
+      it('should preserve a cross-chat reply when an unrelated file completes', 0, () => {
+        const state = createInitialAppState();
+        const message = new Message();
+        message.id = '10';
+        message.chatId = 101;
+        message.replyToChatId = 202;
+        message.replyToMessageId = '20';
+        message.content.photoFileId = 77;
+        const chatMessages = new Map<string, Message>();
+        chatMessages.set(message.id, message);
+        state.messages.messages.set(101, chatMessages);
+
+        const event = new FileDownloadedEvent();
+        event.fileId = 78;
+        event.localPath = '/data/files/unrelated.jpg';
+        event.isComplete = true;
+
+        const updated = filesReducer(state, event);
+        expect(updated === state).assertTrue();
+        expect(updated.messages.messages.get(101)!.get('10') === message).assertTrue();
+        expect(message.content.photoPath).assertEqual('');
+        expect(message.replyToChatId).assertEqual(202);
+        expect(message.replyToMessageId).assertEqual('20');
+      });
+
+      it('should preserve cross-chat reply metadata when a matching file completes', 0, () => {
+        const state = createInitialAppState();
+        const message = new Message();
+        message.id = '10';
+        message.chatId = 101;
+        message.replyToChatId = 202;
+        message.replyToMessageId = '20';
+        message.replyIsQuote = true;
+        message.replyQuoteText = 'Quoted reply';
+        message.replyQuoteOffset = 4;
+        message.content.type = 'photo';
+        message.content.photoFileId = 77;
+        const chatMessages = new Map<string, Message>();
+        chatMessages.set(message.id, message);
+        state.messages.messages.set(101, chatMessages);
+
+        const event = new FileDownloadedEvent();
+        event.fileId = 77;
+        event.localPath = '/data/files/reply.jpg';
+        event.isComplete = true;
+
+        const updated = filesReducer(state, event);
+        const cloned = updated.messages.messages.get(101)!.get('10')!;
+        expect(updated === state).assertFalse();
+        expect(updated.version).assertEqual(state.version + 1);
+        expect(cloned === message).assertFalse();
+        expect(cloned.content === message.content).assertFalse();
+        expect(cloned.content.photoPath).assertEqual('/data/files/reply.jpg');
+        expect(cloned.replyToChatId).assertEqual(202);
+        expect(cloned.replyToMessageId).assertEqual('20');
+        expect(cloned.replyIsQuote).assertTrue();
+        expect(cloned.replyQuoteText).assertEqual('Quoted reply');
+        expect(cloned.replyQuoteOffset).assertEqual(4);
+        expect(state.messages.messages.get(101)!.get('10') === message).assertTrue();
+        expect(message.content.photoPath).assertEqual('');
+        expect(message.replyToChatId).assertEqual(202);
+      });
+
       it('should resolve a link preview thumbnail without dropping preview identity', 0, () => {
         const state = createInitialAppState();
         const message = new Message();

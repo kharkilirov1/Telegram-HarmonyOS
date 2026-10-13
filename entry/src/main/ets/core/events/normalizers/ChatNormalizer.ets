@@ -8,7 +8,10 @@ import {
   ChatReadInboxEvent,
   ChatReadOutboxEvent,
   createNewChatEvent,
-  createChatUpdatedEvent
+  createChatUpdatedEvent,
+  createGroupAccessUpdatedEvent,
+  createSupergroupBoostsUpdatedEvent,
+  createSupergroupSlowmodeUpdatedEvent
 } from '../../model/AppEvent';
 import {
   createChatDtoFromTd,
@@ -20,6 +23,7 @@ import {
   extractChatPhoto,
   extractCustomEmojiTextEntities
 } from '../../model/dto/ChatDto';
+import { GroupKind, GroupSendPermissionsDto, createGroupAccessDtoFromTd, createSupergroupBoostsDtoFromTd, createSupergroupSlowmodeDtoFromTd } from '../../model/dto/GroupAccessDto';
 import { TdObject } from '../../../models/TdTypes';
 import {
   tdGetNumber, tdGetString, tdGetInt64,
@@ -78,6 +82,39 @@ function handleDirectChat(events: AnyAppEvent[], update: TdObject): void {
   }
 }
 
+function pushGroupAccess(events: AnyAppEvent[], group: TdObject, kind: GroupKind): void {
+  const access = createGroupAccessDtoFromTd(group, kind);
+  if (access !== undefined) events.push(createGroupAccessUpdatedEvent(access));
+}
+
+function handleSupergroup(events: AnyAppEvent[], update: TdObject): void {
+  const group = update.getTopLevelObjectStrict('supergroup');
+  if (group !== undefined) pushGroupAccess(events, group, 'supergroup');
+}
+
+function handleSupergroupFullInfo(events: AnyAppEvent[], update: TdObject): void {
+  const groupId = update.getTopLevelNumberStrict('supergroup_id');
+  const info = update.getTopLevelObjectStrict('supergroup_full_info');
+  if (typeof groupId !== 'number' || info === undefined) return;
+  const boosts = createSupergroupBoostsDtoFromTd(info, groupId);
+  if (boosts !== undefined) events.push(createSupergroupBoostsUpdatedEvent(boosts));
+  const slowmode = createSupergroupSlowmodeDtoFromTd(info, groupId);
+  if (slowmode !== undefined) events.push(createSupergroupSlowmodeUpdatedEvent(slowmode));
+}
+
+function handleBasicGroup(events: AnyAppEvent[], update: TdObject): void {
+  const group = update.getTopLevelObjectStrict('basic_group');
+  if (group !== undefined) pushGroupAccess(events, group, 'basicGroup');
+}
+
+function handleDirectSupergroup(events: AnyAppEvent[], update: TdObject): void {
+  pushGroupAccess(events, update, 'supergroup');
+}
+
+function handleDirectBasicGroup(events: AnyAppEvent[], update: TdObject): void {
+  pushGroupAccess(events, update, 'basicGroup');
+}
+
 function handleChatTitle(events: AnyAppEvent[], update: TdObject): void {
   const chatId = tdGetNumber(update, 'chat_id');
   if (!chatId) return;
@@ -89,6 +126,21 @@ function handleChatTitle(events: AnyAppEvent[], update: TdObject): void {
 
   const updates = new ChatUpdateDto();
   updates.title = nextTitle;
+  events.push(createChatUpdatedEvent(chatId, updates));
+}
+
+function handleChatPermissions(events: AnyAppEvent[], update: TdObject): void {
+  // TDLib updateChatPermissions: chat_id:int53, permissions:chatPermissions.
+  // Chat IDs may be negative. Missing fields must not fabricate a grant/revoke.
+  const chatId = update.getTopLevelNumberStrict('chat_id');
+  if (typeof chatId !== 'number' || !Number.isSafeInteger(chatId) || chatId === 0) return;
+  const permissions = update.getTopLevelObjectStrict('permissions');
+  const canSendBasicMessages = permissions?.getTopLevelBooleanStrict('can_send_basic_messages');
+  if (permissions === undefined || canSendBasicMessages === undefined) return;
+
+  const updates = new ChatUpdateDto();
+  updates.canSendBasicMessages = canSendBasicMessages;
+  updates.sendPermissions = GroupSendPermissionsDto.fromTd(permissions);
   events.push(createChatUpdatedEvent(chatId, updates));
 }
 
@@ -334,7 +386,13 @@ export function registerChatHandlers(
 ): void {
   handlers.set('updateNewChat', handleNewChat);
   handlers.set('chat', handleDirectChat);
+  handlers.set('updateSupergroup', handleSupergroup);
+  handlers.set('updateSupergroupFullInfo', handleSupergroupFullInfo);
+  handlers.set('updateBasicGroup', handleBasicGroup);
+  handlers.set('supergroup', handleDirectSupergroup);
+  handlers.set('basicGroup', handleDirectBasicGroup);
   handlers.set('updateChatTitle', handleChatTitle);
+  handlers.set('updateChatPermissions', handleChatPermissions);
   handlers.set('updateChatPhoto', handleChatPhoto);
   handlers.set('updateChatLastMessage', handleChatLastMessage);
   handlers.set('updateChatAddedToList', handleChatAddedToList);

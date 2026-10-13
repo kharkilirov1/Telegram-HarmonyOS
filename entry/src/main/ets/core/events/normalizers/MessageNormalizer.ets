@@ -93,7 +93,7 @@ function handleMessageSendFailed(events: AnyAppEvent[], update: TdObject): void 
 
   const errorObj = tdGetObject(update, 'error');
   const errorCode = tdGetNumber(errorObj, 'code');
-  const errorMessage = tdGetString(errorObj, 'message');
+  const errorMessage = errorCode === 406 ? '' : tdGetString(errorObj, 'message');
 
   const event = new MessageSendFailedEvent();
   event.chatId = chatId;

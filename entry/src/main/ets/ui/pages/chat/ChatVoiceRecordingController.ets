@@ -18,14 +18,26 @@ import {
 const DOMAIN = 0x0021;
 const TAG = 'ChatVoiceRecorder';
 const VOICE_TIMER_INTERVAL_MS = 250;
+// Retained chat pages share the output directory, but not operation tokens.
+let voiceOutputSequence: number = 0;
 
 type PendingVoiceResolution = 'none' | 'send' | 'cancel' | 'lock';
 
+// Startup owns this bundle locally until start succeeds for the current operation.
+// Cleanup retains the same bundle across awaits, never the controller's next one.
+class VoiceRecordingResources {
+  recorder?: media.AVRecorder;
+  outputFile?: fileIo.File;
+  outputPath: string = '';
+  releasePromise?: Promise<void>;
+}
+
 export interface ChatVoiceRecordingHost {
+  canSendNewMessages(sendKind?: string): boolean;
   getActiveChatId(): number;
   getLifecycleToken(): number;
   getChatUIContext(): UIContext;
-  getSendMediaUseCase(): SendMediaMessageUseCase | undefined;
+  getSendMediaUseCase(mediaKind?: string): SendMediaMessageUseCase | undefined;
   getReplyToMessageId(): string;
   clearReplyMode(): void;
   isNearBottom(): boolean;
@@ -34,9 +46,8 @@ export interface ChatVoiceRecordingHost {
 }
 
 export class ChatVoiceRecordingController {
-  private recorder?: media.AVRecorder;
-  private outputFile?: fileIo.File;
-  private outputPath: string = '';
+  private resources?: VoiceRecordingResources;
+  private mediaUseCase?: SendMediaMessageUseCase;
   private recorderState: TgVoiceRecordingState = 'idle';
   private startedAt: number = 0;
   private durationMs: number = 0;
@@ -54,18 +65,19 @@ export class ChatVoiceRecordingController {
     this.durationMs = 0;
     this.chatId = host.getActiveChatId();
     this.lifecycleToken = host.getLifecycleToken();
-    if (this.chatId === 0 || host.getSendMediaUseCase() === undefined) {
+    this.mediaUseCase = host.getSendMediaUseCase('voice');
+    if (this.chatId === 0 || this.mediaUseCase === undefined || !host.canSendNewMessages('voice')) {
       return;
     }
 
     const token = ++this.operationToken;
     this.setState(host, 'preparing', 0);
-    this.beginAsync(host, token).catch((error: Error) => {
-      if (token !== this.operationToken) {
+    this.beginAsync(host, token).catch(async (error: Error) => {
+      if (!this.canResetOwnedPage(host, token)) {
         return;
       }
       hilog.error(DOMAIN, TAG, 'Voice recording start failed: %{public}s', error.message);
-      this.failAndReset(host, localized($r('app.string.composer_voice_record_failed').id,
+      await this.failAndReset(host, localized($r('app.string.composer_voice_record_failed').id,
         'Could not start voice recording'));
     });
   }
@@ -75,16 +87,16 @@ export class ChatVoiceRecordingController {
       this.pendingResolution = 'send';
       return;
     }
-    if (this.recorderState !== 'recording' && this.recorderState !== 'locked') {
+    if (this.recorderState !== 'recording' && this.recorderState !== 'locked' && this.recorderState !== 'preview') {
       return;
     }
     const token = this.operationToken;
-    this.finishAndSendAsync(host, token).catch((error: Error) => {
-      if (token !== this.operationToken) {
+    this.finishAndSendAsync(host, token).catch(async (error: Error) => {
+      if (!this.canResetOwnedPage(host, token)) {
         return;
       }
       hilog.error(DOMAIN, TAG, 'Voice recording send failed: %{public}s', error.message);
-      this.failAndReset(host, localized($r('app.string.composer_voice_send_failed').id,
+      await this.failAndReset(host, localized($r('app.string.composer_voice_send_failed').id,
         'Could not send voice message'));
     });
   }
@@ -109,23 +121,26 @@ export class ChatVoiceRecordingController {
     const token = ++this.operationToken;
     this.cancelAsync(host, token).catch((error: Error) => {
       hilog.warn(DOMAIN, TAG, 'Voice recording cancel cleanup failed: %{public}s', error.message);
-      this.setState(host, 'idle', 0);
+      if (this.canResetOwnedPage(host, token)) {
+        this.setState(host, 'idle', 0);
+      }
     });
   }
 
   dispose(): void {
     ++this.operationToken;
-    this.stopTimer();
-    this.releaseRecorder(true).catch((error: Error) => {
+    const resources = this.resources;
+    this.resetFields();
+    this.releaseRecorder(resources, true).catch((error: Error) => {
       hilog.warn(DOMAIN, TAG, 'Voice recorder dispose failed: %{public}s', error.message);
     });
     this.recorderState = 'idle';
-    this.pendingResolution = 'none';
   }
 
   private async beginAsync(host: ChatVoiceRecordingHost, token: number): Promise<void> {
     const granted = await this.requestMicrophonePermission(host);
-    if (!this.isActive(host, token)) {
+    if (!this.isActive(host, token) || !host.canSendNewMessages('voice')) {
+      this.resetUnstartedOwnedPage(host, token);
       return;
     }
     if (!granted) {
@@ -138,32 +153,47 @@ export class ChatVoiceRecordingController {
     const context = host.getChatUIContext().getHostContext() as common.UIAbilityContext;
     const outputDir = `${context.filesDir}/composer_voice`;
     this.ensureDirectory(outputDir);
-    this.outputPath = `${outputDir}/tg_voice_${Date.now()}.m4a`;
-    this.outputFile = fileIo.openSync(this.outputPath,
-      fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.CREATE | fileIo.OpenMode.TRUNC);
+    const resources = new VoiceRecordingResources();
+    let published = false;
+    try {
+      resources.outputPath = `${outputDir}/tg_voice_${Date.now()}_${++voiceOutputSequence}.m4a`;
+      resources.outputFile = fileIo.openSync(resources.outputPath,
+        fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.CREATE | fileIo.OpenMode.TRUNC);
 
-    this.recorder = await media.createAVRecorder();
-    const profile: media.AVRecorderProfile = {
-      audioBitrate: 64_000,
-      audioChannels: 1,
-      audioCodec: media.CodecMimeType.AUDIO_AAC,
-      audioSampleRate: 48_000,
-      fileFormat: media.ContainerFormatType.CFT_MPEG_4A
-    };
-    const config: media.AVRecorderConfig = {
-      audioSourceType: media.AudioSourceType.AUDIO_SOURCE_TYPE_MIC,
-      profile: profile,
-      url: `fd://${this.outputFile.fd}`
-    };
-    await this.recorder.prepare(config);
-    if (!this.isActive(host, token)) {
-      await this.releaseRecorder(true);
-      return;
-    }
-    await this.recorder.start();
-    if (!this.isActive(host, token)) {
-      await this.releaseRecorder(true);
-      return;
+      const recorder = await media.createAVRecorder();
+      resources.recorder = recorder;
+      if (!this.isActive(host, token) || !host.canSendNewMessages('voice')) {
+        this.resetUnstartedOwnedPage(host, token);
+        return;
+      }
+      const profile: media.AVRecorderProfile = {
+        audioBitrate: 64_000,
+        audioChannels: 1,
+        audioCodec: media.CodecMimeType.AUDIO_AAC,
+        audioSampleRate: 48_000,
+        fileFormat: media.ContainerFormatType.CFT_MPEG_4A
+      };
+      const config: media.AVRecorderConfig = {
+        audioSourceType: media.AudioSourceType.AUDIO_SOURCE_TYPE_MIC,
+        profile: profile,
+        url: `fd://${resources.outputFile.fd}`
+      };
+      await recorder.prepare(config);
+      if (!this.isActive(host, token) || !host.canSendNewMessages('voice')) {
+        this.resetUnstartedOwnedPage(host, token);
+        return;
+      }
+      await recorder.start();
+      if (!this.isActive(host, token) || !host.canSendNewMessages('voice')) {
+        this.resetUnstartedOwnedPage(host, token);
+        return;
+      }
+      this.resources = resources;
+      published = true;
+    } finally {
+      if (!published) {
+        await this.releaseRecorder(resources, true);
+      }
     }
 
     this.startedAt = Date.now();
@@ -187,28 +217,40 @@ export class ChatVoiceRecordingController {
   }
 
   private async finishAndSendAsync(host: ChatVoiceRecordingHost, token: number): Promise<void> {
+    const resources = this.resources;
     this.durationMs = this.currentDurationMs();
     this.setState(host, 'sending', this.durationMs);
-    await this.releaseRecorder(false);
+    this.stopTimer();
+    await this.releaseRecorder(resources, false);
     if (!this.isActive(host, token)) {
+      await this.releaseRecorder(resources, true);
+      this.resetRevokedOwnedPage(host, token);
       return;
     }
     if (!isVoiceRecordingDurationSendable(this.durationMs)) {
-      this.deleteOutputFile();
+      this.deleteOutputFile(resources);
+      this.resetFields();
       this.setState(host, 'idle', 0);
       this.showToast(host, localized($r('app.string.composer_voice_too_short').id,
         'Recording is too short'));
       return;
     }
 
-    const useCase = host.getSendMediaUseCase();
-    if (useCase === undefined || this.outputPath.length === 0) {
+    const useCase = host.getSendMediaUseCase('voice');
+    if (useCase === undefined || resources === undefined || resources.outputPath.length === 0) {
       throw new Error('Voice send use case or output path is unavailable');
+    }
+    if (!host.canSendNewMessages('voice')) {
+      // Recorder is stopped, but this owned file is still an unsent draft.
+      // Reuse the existing Send/Delete controls; expiry never sends it itself.
+      this.startedAt = 0;
+      this.setState(host, 'preview', this.durationMs);
+      return;
     }
     const params = new SendMediaMessageParams();
     params.chatId = this.chatId;
     params.mediaKind = 'voice';
-    params.localPath = this.outputPath;
+    params.localPath = resources.outputPath;
     params.durationSeconds = Math.max(1, Math.ceil(this.durationMs / 1000));
     params.waveformBase64 = '';
     const replyToMessageId = host.getReplyToMessageId();
@@ -219,6 +261,7 @@ export class ChatVoiceRecordingController {
     const wasNearBottom = host.isNearBottom();
     await useCase.execute(params);
     if (!this.isActive(host, token)) {
+      this.resetRevokedOwnedPage(host, token);
       return;
     }
     host.clearReplyMode();
@@ -230,8 +273,10 @@ export class ChatVoiceRecordingController {
   }
 
   private async cancelAsync(host: ChatVoiceRecordingHost, token: number): Promise<void> {
-    await this.releaseRecorder(true);
-    if (token !== this.operationToken) {
+    const resources = this.resources;
+    this.stopTimer();
+    await this.releaseRecorder(resources, true);
+    if (!this.canResetOwnedPage(host, token)) {
       return;
     }
     this.resetFields();
@@ -280,10 +325,24 @@ export class ChatVoiceRecordingController {
     return Math.max(this.durationMs, Date.now() - this.startedAt);
   }
 
-  private async releaseRecorder(deleteFile: boolean): Promise<void> {
-    this.stopTimer();
-    const recorder = this.recorder;
-    this.recorder = undefined;
+  private async releaseRecorder(resources: VoiceRecordingResources | undefined, deleteFile: boolean): Promise<void> {
+    if (resources === undefined) {
+      return;
+    }
+    if (resources.releasePromise === undefined) {
+      resources.releasePromise = this.releaseResources(resources);
+    }
+    await resources.releasePromise;
+    if (deleteFile) {
+      this.deleteOutputFile(resources);
+    }
+  }
+
+  private async releaseResources(resources: VoiceRecordingResources): Promise<void> {
+    const recorder = resources.recorder;
+    const outputFile = resources.outputFile;
+    resources.recorder = undefined;
+    resources.outputFile = undefined;
     if (recorder !== undefined) {
       try {
         if (recorder.state === 'started' || recorder.state === 'paused') {
@@ -300,36 +359,37 @@ export class ChatVoiceRecordingController {
         hilog.warn(DOMAIN, TAG, 'AVRecorder release failed: %{public}s', String(error));
       }
     }
-    if (this.outputFile !== undefined) {
+    if (outputFile !== undefined) {
       try {
-        fileIo.closeSync(this.outputFile);
+        fileIo.closeSync(outputFile);
       } catch (error) {
         hilog.warn(DOMAIN, TAG, 'Voice output close failed: %{public}s', String(error));
       }
-      this.outputFile = undefined;
-    }
-    if (deleteFile) {
-      this.deleteOutputFile();
     }
   }
 
-  private deleteOutputFile(): void {
-    if (this.outputPath.length === 0) {
+  private deleteOutputFile(resources: VoiceRecordingResources | undefined): void {
+    if (resources === undefined || resources.outputPath.length === 0) {
       return;
     }
     try {
-      if (fileIo.accessSync(this.outputPath)) {
-        fileIo.unlinkSync(this.outputPath);
+      if (fileIo.accessSync(resources.outputPath)) {
+        fileIo.unlinkSync(resources.outputPath);
       }
     } catch (error) {
       hilog.warn(DOMAIN, TAG, 'Voice output delete failed: %{public}s', String(error));
     }
-    this.outputPath = '';
+    resources.outputPath = '';
   }
 
-  private failAndReset(host: ChatVoiceRecordingHost, message: string): void {
-    ++this.operationToken;
-    this.releaseRecorder(true).catch((_error: Error) => {});
+  private async failAndReset(host: ChatVoiceRecordingHost, message: string): Promise<void> {
+    const token = ++this.operationToken;
+    const resources = this.resources;
+    this.stopTimer();
+    await this.releaseRecorder(resources, true);
+    if (!this.canResetOwnedPage(host, token)) {
+      return;
+    }
     this.recorderState = 'error';
     host.setVoiceRecordingState('error', 0);
     this.showToast(host, message);
@@ -339,8 +399,8 @@ export class ChatVoiceRecordingController {
 
   private resetFields(): void {
     this.stopTimer();
-    this.outputFile = undefined;
-    this.outputPath = '';
+    this.resources = undefined;
+    this.mediaUseCase = undefined;
     this.startedAt = 0;
     this.durationMs = 0;
     this.pendingResolution = 'none';
@@ -352,8 +412,32 @@ export class ChatVoiceRecordingController {
   }
 
   private isActive(host: ChatVoiceRecordingHost, token: number): boolean {
-    return token === this.operationToken &&
-      this.lifecycleToken === host.getLifecycleToken() &&
+    return this.isOwnedPage(host, token) &&
+      (this.mediaUseCase === undefined || host.getSendMediaUseCase('voice') === this.mediaUseCase);
+  }
+
+  private canResetOwnedPage(host: ChatVoiceRecordingHost, token: number): boolean {
+    const current = host.getSendMediaUseCase('voice');
+    return this.isOwnedPage(host, token) &&
+      (this.mediaUseCase === undefined || current === undefined || current === this.mediaUseCase);
+  }
+
+  private resetUnstartedOwnedPage(host: ChatVoiceRecordingHost, token: number): void {
+    if (this.canResetOwnedPage(host, token)) {
+      this.resetFields();
+      this.setState(host, 'idle', 0);
+    }
+  }
+
+  private resetRevokedOwnedPage(host: ChatVoiceRecordingHost, token: number): void {
+    if (this.isOwnedPage(host, token) && host.getSendMediaUseCase('voice') === undefined) {
+      this.resetFields();
+      this.setState(host, 'idle', 0);
+    }
+  }
+
+  private isOwnedPage(host: ChatVoiceRecordingHost, token: number): boolean {
+    return token === this.operationToken && this.lifecycleToken === host.getLifecycleToken() &&
       this.chatId === host.getActiveChatId();
   }
 
@@ -363,4 +447,3 @@ export class ChatVoiceRecordingController {
     } catch (_error) {}
   }
 }
-

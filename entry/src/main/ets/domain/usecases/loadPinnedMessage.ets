@@ -97,6 +97,14 @@ export class LoadPinnedMessagesUseCase {
     this.gateway = gateway;
   }
 
+  async executeSingle(chatId: number): Promise<PinnedMessageInfo> {
+    if (chatId === 0) {
+      return new PinnedMessageInfo();
+    }
+    const response = await this.gateway.send(createGetChatPinnedMessageCommand(chatId)) as TdObject;
+    return parsePinnedMessageInfo(response);
+  }
+
   async execute(chatId: number, fromMessageId: string = '0', limit: number = 100): Promise<PinnedMessagesPage> {
     if (chatId === 0) {
       return new PinnedMessagesPage();
@@ -118,8 +126,7 @@ export async function loadPinnedMessageInfo(chatId: number): Promise<PinnedMessa
   if (chatId === 0) {
     return new PinnedMessageInfo();
   }
-  const response = await getTdGatewayAdapter().send(createGetChatPinnedMessageCommand(chatId)) as TdObject;
-  return parsePinnedMessageInfo(response);
+  return new LoadPinnedMessagesUseCase(getTdGatewayAdapter()).executeSingle(chatId);
 }
 
 export async function loadPinnedMessagesPage(

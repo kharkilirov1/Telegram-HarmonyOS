@@ -7,6 +7,7 @@ PHASE0_FILES=(
   "entry/src/main/ets/ui/pages/MainTabsPage.ets"
   "entry/src/main/ets/ui/pages/chatlist/ChatListPage.ets"
   "entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets"
+  "entry/src/main/ets/ui/pages/chat/ChatTopBarPresentation.ets"
   "entry/src/main/ets/ui/tg_ui/atoms/TgChatRow.ets"
   "entry/src/main/ets/ui/tg_ui/atoms/TgChatMeta.ets"
   "entry/src/main/ets/ui/tg_ui/atoms/TgTopBar.ets"
@@ -30,7 +31,7 @@ for file in "${PHASE0_FILES[@]}"; do
   
   while IFS=: read -r line_num line_content; do
     HEX_VIOLATIONS+=("$file:$line_num -> $line_content")
-  done < <(grep -n "$HEX_PATTERN" "$full_path" || true)
+  done < <(grep -nE -- "$HEX_PATTERN" "$full_path" || true)
 done
 
 if [[ ${#HEX_VIOLATIONS[@]} -gt 0 ]]; then
@@ -71,6 +72,11 @@ CHAT_TIMELINE_TEST="$ROOT/entry/src/ohosTest/ets/test/ChatTimelineVO.test.ets"
 PENDING_CHAT_UNREAD_SNAPSHOT="$ROOT/entry/src/main/ets/ui/pages/chat/PendingChatUnreadSnapshot.ets"
 MAIN_TABS_PAGE="$ROOT/entry/src/main/ets/ui/pages/MainTabsPage.ets"
 CHAT_SCREEN_PAGE="$ROOT/entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets"
+CHAT_SCREEN_CONTRACT=$(mktemp)
+trap 'rm -f -- "$CHAT_SCREEN_CONTRACT"' EXIT
+node "$ROOT/scripts/chat-screen-source.cjs" --contract "$CHAT_SCREEN_PAGE" > "$CHAT_SCREEN_CONTRACT"
+CHAT_SCREEN_PAGE="$CHAT_SCREEN_CONTRACT"
+TOP_BAR_PRESENTATION="$ROOT/entry/src/main/ets/ui/pages/chat/ChatTopBarPresentation.ets"
 ROOT_TAB_BAR_GEOMETRY="$ROOT/entry/src/main/ets/ui/utils/RootTabBarGeometry.ets"
 SAFE_AREA_UTILS="$ROOT/entry/src/main/ets/ui/utils/SafeAreaUtils.ets"
 CONTACTS_PAGE="$ROOT/entry/src/main/ets/ui/pages/contacts/ContactsPage.ets"
@@ -247,16 +253,46 @@ TOP_BAR_SUBTITLE_CONTRACTS=(
   "localized(\$r('app.string.chat_preview_choosing_location').id, 'choosing location...')"
 )
 for contract in "${TOP_BAR_SUBTITLE_CONTRACTS[@]}"; do
-  if ! grep -Fq "$contract" "$CHAT_SCREEN_PAGE"; then
+  if ! grep -Fq "$contract" "$TOP_BAR_PRESENTATION"; then
     echo "ERROR: Chat top-bar subtitle localization contract missing: $contract" >&2
     exit 1
   fi
 done
-if grep -Fq "return 'online';" "$CHAT_SCREEN_PAGE" ||
-   grep -Eq "actionLabel = '(recording|sending|choosing|playing)" "$CHAT_SCREEN_PAGE"; then
+if grep -Fq "return 'online';" "$TOP_BAR_PRESENTATION" ||
+   grep -Eq "actionLabel = '(recording|sending|choosing|playing)" "$TOP_BAR_PRESENTATION"; then
   echo "ERROR: Chat top-bar user/activity subtitles must not bypass app-language resources." >&2
   exit 1
 fi
+if ! grep -Fq "from './ChatTopBarPresentation'" "$CHAT_SCREEN_PAGE" ||
+   ! grep -Fq 'this.applyChatSubtitlePresentation(chatSubtitlePresentation(' "$CHAT_SCREEN_PAGE" ||
+   ! grep -Fq 'this.applyChatAvatarPresentation(chatAvatarPresentation(' "$CHAT_SCREEN_PAGE"; then
+  echo "ERROR: Chat top-bar presentation helper is not wired into the page." >&2
+  exit 1
+fi
+TOP_BAR_REACTIVE_CONTRACTS=(
+  '@Trace chatSubtitle:'
+  '@Trace chatSubtitleMode:'
+  '@Trace chatSubtitleSpinner:'
+  '@Trace chatAvatarInitials:'
+  '@Trace chatAvatarColorIndex:'
+  '@Trace chatAvatarImageSrc:'
+  '@Trace chatIsOnline:'
+  '@Trace chatTopBarTrailingAction:'
+  'subtitle: this.chatSubtitle,'
+  'subtitleMode: this.chatSubtitleMode,'
+  'showSubtitleSpinner: this.chatSubtitleSpinner,'
+  'avatarInitials: this.chatAvatarInitials,'
+  'avatarColorIndex: this.chatAvatarColorIndex,'
+  'avatarImageSrc: this.chatAvatarImageSrc,'
+  'isOnline: this.chatIsOnline,'
+  'trailingAction: this.chatTopBarTrailingAction,'
+)
+for contract in "${TOP_BAR_REACTIVE_CONTRACTS[@]}"; do
+  if ! grep -Fq "$contract" "$CHAT_SCREEN_PAGE"; then
+    echo "ERROR: Chat top-bar reactive field/param contract missing: $contract" >&2
+    exit 1
+  fi
+done
 
 TOP_BAR_SUBTITLE_RESOURCES=(
   online
@@ -553,15 +589,26 @@ for contract in \
 done
 
 for source in "$CHAT_LIST_PAGE" "$ARCHIVED_CHAT_LIST_PAGE"; do
-  if ! grep -Fq 'PendingChatUnreadSnapshot.set(' "$source"; then
-    echo "ERROR: Chat-list unread snapshot must be captured before navigation: $source" >&2
+  if ! grep -Fq "import { ChatScreenRouteParams } from '../chat/ChatScreenRouteParams';" "$source" ||
+     grep -Fq 'PendingChatUnreadSnapshot' "$source"; then
+    echo "ERROR: Chat-list unread entry must use canonical owner-bound params: $source" >&2
     exit 1
   fi
 done
 
+if ! grep -Fq 'return new ChatScreenRouteParams(chatId, title, store, gateway);' "$CHAT_LIST_PAGE" ||
+   ! grep -Fq 'const params = this.createChatRouteParams(item.chatId, item.title);' "$CHAT_LIST_PAGE" ||
+   ! grep -Fq "navStack.pushPathByName('TgChatScreenPage', params);" "$CHAT_LIST_PAGE" ||
+   ! grep -Fq 'const params = new ChatScreenRouteParams(item.chatId, item.title, store, gateway);' "$ARCHIVED_CHAT_LIST_PAGE" ||
+   ! grep -Fq "this.pageStack.pushPathByName('TgChatScreenPage', params);" "$ARCHIVED_CHAT_LIST_PAGE"; then
+  echo 'ERROR: Chat-list callers must pass captured canonical route params unchanged.' >&2
+  exit 1
+fi
+
 for contract in \
-  'PendingChatUnreadSnapshot.consume(this.activeChatId);' \
-  'private hasRestoredUnreadBoundary: boolean = false;' \
+  'const entryUnreadCount = route.entryUnreadCount ?? (entryChat ? entryChat.unreadCount : 0);' \
+  "route.entryLastReadInboxMessageId ?? (entryChat ? entryChat.lastReadInboxMessageId : '0')" \
+  'hasRestoredUnreadBoundary: boolean = false;' \
   'const targetIndex = this.unreadRestoreIndex;' \
   'this.listInitialIndex = this.unreadRestoreIndex;'; do
   if ! grep -Fq "$contract" "$CHAT_SCREEN_PAGE"; then
@@ -569,6 +616,11 @@ for contract in \
     exit 1
   fi
 done
+
+if grep -Fq 'PendingChatUnreadSnapshot.consume(' "$CHAT_SCREEN_PAGE"; then
+  echo 'ERROR: Chat route must not consume an unowned global unread snapshot.' >&2
+  exit 1
+fi
 
 if grep -Fq 'UNREAD_TRACE' "$CHAT_TIMELINE"; then
   echo 'ERROR: Temporary unread diagnostics must not ship.' >&2

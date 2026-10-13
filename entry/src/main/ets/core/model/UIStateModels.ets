@@ -30,11 +30,15 @@ export class ChatsUIState {
 
 @ObservedV2
 export class NavigationUIState {
+  @Trace applicationForeground: boolean = true;
   @Trace mainTabIndex: number = 2;
   @Trace chatScreenVisible: boolean = false;
   @Trace glassMode: string = 'auto';
   @Trace chatNavLockUntil: number = 0;
   @Trace activeChatId: number = 0;
+  // Route identity, not a chat/account id: overlapping same-chat pages must
+  // not clear each other's globals or roll back a newer navigation intent.
+  @Trace activeChatOwnerToken: number = 0;
   @Trace activeChatTitle: string = '';
 }
 

@@ -61,12 +61,13 @@ export function normalizeBasicGroupTitle(title: string): string {
 export function parseCreatedBasicGroupChatResponse(
   response: TdObject
 ): CreatedBasicGroupChatResponse | undefined {
-  if (response.getType() !== 'createdBasicGroupChat') {
+  if (response.getTopLevelStringStrict('@type') !== 'createdBasicGroupChat') {
     return undefined;
   }
 
-  const chatId: number = response.getTopLevelNumber('chat_id');
-  if (chatId <= 0) {
+  // Chat IDs are signed int53 values; group IDs are normally negative.
+  const chatId = response.getTopLevelNumberStrict('chat_id');
+  if (typeof chatId !== 'number' || !Number.isSafeInteger(chatId) || chatId === 0) {
     return undefined;
   }
 

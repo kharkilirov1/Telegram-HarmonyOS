@@ -22,8 +22,9 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
   }
 
   // Chats
-  if (action.type === 'newChat' || action.type === 'chatUpdated' ||
+  if (action.type === 'supergroupSlowmodeUpdated' || action.type === 'supergroupBoostsUpdated' || action.type === 'groupAccessUpdated' || action.type === 'newChat' || action.type === 'chatUpdated' ||
     action.type === 'chatReadInbox' || action.type === 'chatReadOutbox' ||
+    action.type === 'chatListUnreadMessageCountChanged' ||
     action.type === 'chatsLoadStateChanged' || action.type === 'chatAction' ||
     action.type === 'chatFullInfo' || action.type === 'chatActiveStoriesUpdated') {
     return chatsReducer(state, action);
@@ -33,7 +34,8 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
   if (action.type === 'newMessage' || action.type === 'replyMessageHydrated' ||
     action.type === 'messageUpdated' ||
     action.type === 'messageContentUpdated' || action.type === 'messageSendSucceeded' ||
-    action.type === 'messageSendFailed' || action.type === 'messagesDeleted') {
+    action.type === 'messageSendFailed' || action.type === 'messagesDeleted' ||
+    action.type === 'chatMessagesReset') {
     return messagesReducer(state, action);
   }
 

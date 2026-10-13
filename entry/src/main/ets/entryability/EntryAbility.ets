@@ -9,6 +9,7 @@ import { StorageKeys } from '../app/bridge/AppStoreBridge';
 import { getMessageCacheManager } from '../core/utils/MessageLruCache';
 import { setAppContext } from '../core/utils/AppResource';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { navigationUIState } from '../core/model/UIStateModels';
 
 const TAG = 'EntryAbility';
 const DOMAIN = 0x0000;
@@ -104,10 +105,12 @@ export default class EntryAbility extends UIAbility {
   }
 
   onForeground(): void {
+    navigationUIState.applicationForeground = true;
     hilog.info(DOMAIN, TAG, 'onForeground');
   }
 
   onBackground(): void {
+    navigationUIState.applicationForeground = false;
     hilog.info(DOMAIN, TAG, 'onBackground');
   }
 

@@ -2,7 +2,7 @@
 // username assignment and subscriber invitation remain separate follow-up flows.
 
 import { createNewSupergroupChatCommand } from '../../core/model/AppCommand';
-import { ChatDto, ChatType, createChatDtoFromTd } from '../../core/model/dto/ChatDto';
+import { ChatDto, createChatDtoFromTd } from '../../core/model/dto/ChatDto';
 import { TdObject } from '../../models/TdTypes';
 import { TdGatewayPort } from '../ports/TdGatewayPort';
 
@@ -26,13 +26,24 @@ export function normalizeChannelDescription(description: string): string {
 }
 
 export function parseCreatedChannelChat(response: TdObject): ChatDto | undefined {
-  if (response.getType() !== 'chat') {
+  if (response.getTopLevelStringStrict('@type') !== 'chat') {
+    return undefined;
+  }
+  // Chat IDs are signed int53 values; the separate supergroup ID is positive.
+  const chatId = response.getTopLevelNumberStrict('id');
+  const chatType = response.getTopLevelObjectStrict('type');
+  if (typeof chatId !== 'number' || !Number.isSafeInteger(chatId) || chatId === 0 ||
+    chatType === undefined || chatType.getTopLevelStringStrict('@type') !== 'chatTypeSupergroup' ||
+    chatType.getTopLevelBooleanStrict('is_channel') !== true) {
+    return undefined;
+  }
+  const supergroupId = chatType.getTopLevelNumberStrict('supergroup_id');
+  if (typeof supergroupId !== 'number' || !Number.isSafeInteger(supergroupId) || supergroupId <= 0) {
     return undefined;
   }
   const chat: ChatDto = createChatDtoFromTd(response);
-  if (chat.id <= 0 || chat.type !== ChatType.CHANNEL || chat.supergroupId <= 0) {
-    return undefined;
-  }
+  chat.id = chatId;
+  chat.supergroupId = supergroupId;
   return chat;
 }
 

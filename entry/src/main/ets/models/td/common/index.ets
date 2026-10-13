@@ -157,6 +157,107 @@ export class TdObject {
     return 0;
   }
 
+  /**
+   * Read a literal top-level JSON number without coercion, truncation or nested fallback.
+   * Deliberately bypasses the legacy getter cache; callers validate integer/range bounds.
+   * This does not change the semantics of existing getters or cache-built requests.
+   */
+  getTopLevelNumberStrict(prop: string): number | undefined {
+    if (!this.rawJson) return undefined;
+    try {
+      const parsed = JSON.parse(this.rawJson) as Record<string, Object> | null;
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return undefined;
+      if (Object.keys(parsed).indexOf(prop) < 0) return undefined;
+      const value = parsed[prop];
+      return typeof value === 'number' ? value : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  // Authoritative update fields must not use regex/nested fallback or coerce
+  // strings into booleans. Missing/malformed is distinct from explicit false.
+  getTopLevelBooleanStrict(prop: string): boolean | undefined {
+    if (!this.rawJson) return undefined;
+    try {
+      const parsed = JSON.parse(this.rawJson) as Record<string, Object> | null;
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return undefined;
+      if (Object.keys(parsed).indexOf(prop) < 0) return undefined;
+      const value = parsed[prop];
+      return typeof value === 'boolean' ? value : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  getTopLevelStringStrict(prop: string): string | undefined {
+    if (!this.rawJson) return undefined;
+    try {
+      const parsed = JSON.parse(this.rawJson) as Record<string, Object> | null;
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return undefined;
+      if (Object.keys(parsed).indexOf(prop) < 0) return undefined;
+      const value = parsed[prop];
+      return typeof value === 'string' ? value : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  getTopLevelObjectStrict(prop: string): TdObject | undefined {
+    if (!this.rawJson) return undefined;
+    try {
+      const parsed = JSON.parse(this.rawJson) as Record<string, Object> | null;
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return undefined;
+      if (Object.keys(parsed).indexOf(prop) < 0) return undefined;
+      const value = parsed[prop];
+      if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined;
+      return TdObject.fromJSON(JSON.stringify(value));
+    } catch {
+      return undefined;
+    }
+  }
+
+  // Distinguish a legitimate optional null/absent field from a malformed
+  // scalar/array when a caller must preserve an optional server-side option.
+  isTopLevelNullOrMissing(prop: string): boolean {
+    if (!this.rawJson) return false;
+    try {
+      const parsed = JSON.parse(this.rawJson) as Record<string, Object> | null;
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return false;
+      return Object.keys(parsed).indexOf(prop) < 0 || parsed[prop] === null;
+    } catch {
+      return false;
+    }
+  }
+
+  // Received schema fragments (for example entityType's int64/link metadata)
+  // must not be serialized from the lazy getter cache: toJSON() is a builder.
+  getReceivedJSON(): string | undefined {
+    return this.rawJson || undefined;
+  }
+
+  // Preserve null slots and top-level identity in positional TDLib responses
+  // (forwardMessages). Legacy getArray skips nulls and can match nested arrays.
+  getTopLevelObjectArrayStrict(prop: string): (TdObject | null)[] | undefined {
+    if (!this.rawJson) return undefined;
+    try {
+      const parsed = JSON.parse(this.rawJson) as Record<string, Object> | null;
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return undefined;
+      if (Object.keys(parsed).indexOf(prop) < 0) return undefined;
+      const value = parsed[prop];
+      if (!Array.isArray(value)) return undefined;
+      const result: (TdObject | null)[] = [];
+      for (const item of value as Object[]) {
+        if (item === null) result.push(null);
+        else if (typeof item === 'object' && !Array.isArray(item)) result.push(TdObject.fromJSON(JSON.stringify(item)));
+        else return undefined;
+      }
+      return result;
+    } catch {
+      return undefined;
+    }
+  }
+
   getBool(prop: string): boolean {
     const val = this.get(prop);
     if (typeof val === 'boolean') return val;
@@ -800,25 +901,19 @@ function parseJsonArray(arrayJson: string): TdObject[] {
  * Unescape JSON string escape sequences.
  */
 function unescapeJsonString(str: string): string {
-  return str
-    .replace(/\\n/g, '\n')
-    .replace(/\\r/g, '\r')
-    .replace(/\\t/g, '\t')
-    .replace(/\\"/g, '"')
-    .replace(/\\\\/g, '\\')
-    .replace(/\\u([0-9a-fA-F]{4})/g, (match: string, hex: string) => String.fromCharCode(Number.parseInt(hex, 16)));
+  // Decode original escape tokens once; never reinterpret a decoded backslash.
+  // Parse only a valid string escape, not the object containing exact int64 values.
+  return str.replace(/\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})/g,
+    (escape: string): string => JSON.parse('"' + escape + '"') as string);
 }
 
 /**
  * Escape string for JSON serialization.
  */
 function escapeJsonString(str: string): string {
-  return str
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r')
-    .replace(/\t/g, '\\t');
+  // valueToJsonString adds the quotes; retain JSON's full string escaping.
+  const quoted = JSON.stringify(str);
+  return quoted.substring(1, quoted.length - 1);
 }
 
 // =====================================================

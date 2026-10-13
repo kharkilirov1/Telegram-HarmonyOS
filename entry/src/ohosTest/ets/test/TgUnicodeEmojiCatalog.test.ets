@@ -19,8 +19,9 @@ export default function tgUnicodeEmojiCatalogTest() {
       }
     });
 
-    it('contains the complete neutral base catalog without skin-tone duplicates', 0, () => {
+    it('contains the complete neutral base catalog without skin-tone duplicates', 0, async () => {
       let actualCount: number = 0;
+      let checkedCount: number = 0;
       for (const category of UNICODE_EMOJI_CATEGORIES) {
         actualCount += category.emojis.length;
         for (const emoji of category.emojis) {
@@ -29,6 +30,11 @@ export default function tgUnicodeEmojiCatalogTest() {
           expect(emoji.includes('🏽')).assertFalse();
           expect(emoji.includes('🏾')).assertFalse();
           expect(emoji.includes('🏿')).assertFalse();
+          checkedCount++;
+          // Keep every assertion while giving native window/watchdog tasks a turn.
+          if (checkedCount % 128 === 0) {
+            await new Promise<void>((resolve) => { setTimeout(() => resolve(), 0); });
+          }
         }
       }
       expect(actualCount).assertEqual(UNICODE_EMOJI_COUNT);

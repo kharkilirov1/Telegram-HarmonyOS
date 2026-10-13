@@ -21,6 +21,7 @@ import {
 } from '../model/AppState';
 import { CustomEmojiTextEntity } from '../model/AppCommand';
 import { ChatActiveStoriesDto } from '../model/dto/StoryDto';
+import { GroupAccessDto, SupergroupBoostsDto, SupergroupSlowmodeDto } from '../model/dto/GroupAccessDto';
 
 /**
  * Clone AuthState immutably
@@ -51,8 +52,23 @@ export function cloneConnectionState(connection: ConnectionState): ConnectionSta
 }
 
 /**
- * Clone ChatsState immutably
+ * Copy a producer's group access DTO before storing it as an immutable value.
  */
+export function cloneGroupAccess(access: GroupAccessDto): GroupAccessDto {
+  const copy = new GroupAccessDto();
+  copy.groupId = access.groupId;
+  copy.kind = access.kind;
+  copy.role = access.role;
+  copy.isMember = access.isMember;
+  copy.isActive = access.isActive;
+  copy.isSlowModeEnabled = access.isSlowModeEnabled;
+  copy.canPostMessages = access.canPostMessages;
+  copy.canEditMessages = access.canEditMessages;
+  copy.permissions = access.permissions?.clone();
+  return copy;
+}
+
+/** Clone ChatsState containers; unchanged entries retain identity for hydration guards. */
 export function cloneChatsState(chats: ChatsState): ChatsState {
   const newChats = new ChatsState();
   // Clone maps and arrays
@@ -60,6 +76,11 @@ export function cloneChatsState(chats: ChatsState): ChatsState {
   chats.chats.forEach((chat: Chat, chatId: number) => {
     newChats.chats.set(chatId, chat);
   });
+  // Group DTOs are copied on reducer ingress and never mutated in state.
+  newChats.supergroupAccess = new Map<number, GroupAccessDto>(chats.supergroupAccess);
+  newChats.basicGroupAccess = new Map<number, GroupAccessDto>(chats.basicGroupAccess);
+  newChats.supergroupBoosts = new Map<number, SupergroupBoostsDto>(chats.supergroupBoosts);
+  newChats.supergroupSlowmode = new Map<number, SupergroupSlowmodeDto>(chats.supergroupSlowmode);
   newChats.orderedChatIds = chats.orderedChatIds.slice();
   newChats.archivedChatIds = chats.archivedChatIds.slice();
   newChats.activeStoriesByChatId = new Map<number, ChatActiveStoriesDto>(chats.activeStoriesByChatId);
@@ -154,6 +175,8 @@ export function cloneChat(chat: Chat): Chat {
   newChat.description = chat.description;
   newChat.supergroupId = chat.supergroupId;
   newChat.basicGroupId = chat.basicGroupId;
+  newChat.canSendBasicMessages = chat.canSendBasicMessages;
+  newChat.sendPermissions = chat.sendPermissions?.clone();
   newChat.inviteLink = chat.inviteLink;
   newChat.administratorCount = chat.administratorCount;
   if (chat.lastMessage) {

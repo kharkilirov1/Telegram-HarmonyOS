@@ -43,10 +43,12 @@ export class LoadChatHistoryParams {
 class BucketReservation {
   bucketKey: string;
   requestSeq: number;
+  windowGeneration: number;
 
-  constructor(bucketKey: string, requestSeq: number) {
+  constructor(bucketKey: string, requestSeq: number, windowGeneration: number) {
     this.bucketKey = bucketKey;
     this.requestSeq = requestSeq;
+    this.windowGeneration = windowGeneration;
   }
 }
 
@@ -69,6 +71,7 @@ export class LoadChatHistoryUseCase {
   private static inFlightChatIds: Set<ChatId> = new Set<ChatId>();
   private static inFlightRequestBuckets: Set<string> = new Set<string>();
   private static latestRequestSeqByBucket: Map<string, number> = new Map<string, number>();
+  private static windowGenerationByChat: Map<ChatId, number> = new Map<ChatId, number>();
   private static historyFetchedChatIds: Set<ChatId> = new Set<ChatId>();
   private static inFlightUserIds: Set<number> = new Set<number>();
   private static lastUserHydrationAt: Map<number, number> = new Map<number, number>();
@@ -93,6 +96,7 @@ export class LoadChatHistoryUseCase {
     LoadChatHistoryUseCase.inFlightChatIds.clear();
     LoadChatHistoryUseCase.inFlightRequestBuckets.clear();
     LoadChatHistoryUseCase.latestRequestSeqByBucket.clear();
+    LoadChatHistoryUseCase.windowGenerationByChat.clear();
     LoadChatHistoryUseCase.historyFetchedChatIds.clear();
     LoadChatHistoryUseCase.inFlightUserIds.clear();
     LoadChatHistoryUseCase.lastUserHydrationAt.clear();
@@ -109,7 +113,7 @@ export class LoadChatHistoryUseCase {
 
   private isCurrentGeneration(generation: number): boolean {
     return generation === this.instanceGeneration &&
-      generation === LoadChatHistoryUseCase.lifecycleGeneration;
+      generation === LoadChatHistoryUseCase.lifecycleGeneration && this.store.isScopeCurrent();
   }
 
   private isInstanceCurrent(): boolean {
@@ -167,6 +171,25 @@ export class LoadChatHistoryUseCase {
     return LoadChatHistoryUseCase.inFlightChatIds.has(chatId);
   }
 
+  // Retain the existing reservation identity after release for late UI callbacks.
+  captureRequestIdentity(chatId: ChatId, direction: LoadChatHistoryDirection): string {
+    if (!this.isInstanceCurrent() || chatId === 0) {
+      return '';
+    }
+    const bucketKey = this.getBucketKey(chatId, direction);
+    const requestSeq = LoadChatHistoryUseCase.latestRequestSeqByBucket.get(bucketKey);
+    if (requestSeq === undefined) {
+      return '';
+    }
+    return this.instanceGeneration.toString() + ':' +
+      (LoadChatHistoryUseCase.windowGenerationByChat.get(chatId) || 0).toString() + ':' +
+      bucketKey + ':' + requestSeq.toString();
+  }
+
+  isRequestIdentityCurrent(chatId: ChatId, direction: LoadChatHistoryDirection, identity: string): boolean {
+    return identity !== '' && this.captureRequestIdentity(chatId, direction) === identity;
+  }
+
   canLoadOlderMessages(chatId: ChatId): boolean {
     if (!this.isInstanceCurrent()) {
       return false;
@@ -217,11 +240,30 @@ export class LoadChatHistoryUseCase {
     LoadChatHistoryUseCase.inFlightChatIds.add(chatId);
     const requestSeq = (LoadChatHistoryUseCase.latestRequestSeqByBucket.get(bucketKey) || 0) + 1;
     LoadChatHistoryUseCase.latestRequestSeqByBucket.set(bucketKey, requestSeq);
-    return new BucketReservation(bucketKey, requestSeq);
+    return new BucketReservation(bucketKey, requestSeq,
+      LoadChatHistoryUseCase.windowGenerationByChat.get(chatId) || 0);
   }
 
-  private isLatestBucketRequest(bucketKey: string, requestSeq: number): boolean {
-    return (LoadChatHistoryUseCase.latestRequestSeqByBucket.get(bucketKey) || 0) === requestSeq;
+  private isCurrentRequest(chatId: ChatId, reservation: BucketReservation, generation: number): boolean {
+    return this.isCurrentGeneration(generation) &&
+      (LoadChatHistoryUseCase.windowGenerationByChat.get(chatId) || 0) === reservation.windowGeneration &&
+      LoadChatHistoryUseCase.latestRequestSeqByBucket.get(reservation.bucketKey) === reservation.requestSeq;
+  }
+
+  private resetMessageWindow(chatId: ChatId): void {
+    // Retire ALL directions before any await. Old requests may finish, but no
+    // longer own this chat's range, dispatch queue or loading reservations.
+    const nextGeneration = (LoadChatHistoryUseCase.windowGenerationByChat.get(chatId) || 0) + 1;
+    LoadChatHistoryUseCase.windowGenerationByChat.set(chatId, nextGeneration);
+    LoadChatHistoryUseCase.inFlightRequestBuckets.delete(this.getBucketKey(chatId, 'initial'));
+    LoadChatHistoryUseCase.inFlightRequestBuckets.delete(this.getBucketKey(chatId, 'older'));
+    LoadChatHistoryUseCase.inFlightRequestBuckets.delete(this.getBucketKey(chatId, 'newer'));
+    LoadChatHistoryUseCase.inFlightChatIds.delete(chatId);
+    LoadChatHistoryUseCase.historyFetchedChatIds.delete(chatId);
+    LoadChatHistoryUseCase.oldestMessageId.delete(chatId);
+    LoadChatHistoryUseCase.newestMessageId.delete(chatId);
+    LoadChatHistoryUseCase.canLoadOlder.set(chatId, true);
+    LoadChatHistoryUseCase.canLoadNewer.set(chatId, true);
   }
 
   private releaseBucket(chatId: ChatId, bucketKey: string): void {
@@ -340,15 +382,16 @@ export class LoadChatHistoryUseCase {
     chatId: ChatId,
     oldestId: MessageId,
     limit: number,
-    generation: number
+    generation: number,
+    reservation: BucketReservation
   ): Promise<void> {
-    if (!this.isCurrentGeneration(generation)) {
+    if (!this.isCurrentRequest(chatId, reservation, generation)) {
       return;
     }
 
     let currentOldestId = oldestId;
     for (let attempt = 0; attempt < INITIAL_HISTORY_MAX_TOP_UP_ATTEMPTS; attempt++) {
-      if (!this.isCurrentGeneration(generation)) {
+      if (!this.isCurrentRequest(chatId, reservation, generation)) {
         return;
       }
 
@@ -373,7 +416,7 @@ export class LoadChatHistoryUseCase {
       try {
         await this.execute(topUpParams);
       } catch (error) {
-        if (!this.isCurrentGeneration(generation)) {
+        if (!this.isCurrentRequest(chatId, reservation, generation)) {
           return;
         }
         hilog.warn(DOMAIN, TAG,
@@ -381,7 +424,7 @@ export class LoadChatHistoryUseCase {
           chatId, currentOldestId, String(error));
         return;
       }
-      if (!this.isCurrentGeneration(generation)) {
+      if (!this.isCurrentRequest(chatId, reservation, generation)) {
         return;
       }
 
@@ -569,20 +612,9 @@ export class LoadChatHistoryUseCase {
   // jump resets loaded messages first, then loads a window around the target.
   // Both pagination edges reopen — the window sits mid-history.
   async loadAroundMessage(chatId: ChatId, messageId: MessageId, limit: number = 40): Promise<boolean> {
-    if (chatId === 0 || messageId === '0' || messageId === '') {
+    if (!this.isInstanceCurrent() || chatId === 0 || messageId === '0' || messageId === '') {
       return false;
     }
-    const resetEvent = new ChatMessagesResetEvent();
-    resetEvent.chatId = chatId;
-    await this.store.dispatch(resetEvent);
-    if (!this.isInstanceCurrent()) {
-      return false;
-    }
-
-    LoadChatHistoryUseCase.oldestMessageId.delete(chatId);
-    LoadChatHistoryUseCase.newestMessageId.delete(chatId);
-    LoadChatHistoryUseCase.canLoadOlder.set(chatId, true);
-    LoadChatHistoryUseCase.canLoadNewer.set(chatId, true);
 
     const params = new LoadChatHistoryParams();
     params.chatId = chatId;
@@ -620,6 +652,16 @@ export class LoadChatHistoryUseCase {
       return false;
     }
 
+    // A late unread anchor replaces the completed fallback range, not a page
+    // within it. First aroundUnread loads and pending primary loads retain their
+    // normal cache/deduplication semantics; the page retries a pending correction.
+    const replacesWindow = params.direction === 'initial' &&
+      (params.reason === 'aroundMessage' ||
+        (params.reason === 'aroundUnread' && this.hasHistoryBeenFetched(chatId) &&
+          !this.isLoading(chatId, 'initial')));
+    if (replacesWindow) {
+      this.resetMessageWindow(chatId);
+    }
     const bucketReservation = this.reserveBucket(chatId, params.direction);
     if (bucketReservation === null) {
       hilog.debug(DOMAIN, TAG, 'History load already in progress for %{public}d bucket=%{public}s',
@@ -628,6 +670,17 @@ export class LoadChatHistoryUseCase {
     }
 
     try {
+      if (replacesWindow) {
+        // Reserve primary before notifying reset listeners so fallback loaders
+        // cannot take the jump's slot. Also fence resets still in the store queue.
+        const resetEvent = new ChatMessagesResetEvent();
+        resetEvent.chatId = chatId;
+        await this.store.dispatch(resetEvent,
+          (): boolean => this.isCurrentRequest(chatId, bucketReservation, generation));
+        if (!this.isCurrentRequest(chatId, bucketReservation, generation)) {
+          return false;
+        }
+      }
       const command = createGetChatHistoryCommand(
         chatId,
         params.fromMessageId,
@@ -636,18 +689,12 @@ export class LoadChatHistoryUseCase {
         params.onlyLocal
       );
       const response = await this.gateway.send(command);
-      if (!this.isCurrentGeneration(generation)) {
+      if (!this.isCurrentRequest(chatId, bucketReservation, generation)) {
         return false;
       }
       const normalizedResponse = response as TdObject;
       if (!(normalizedResponse instanceof TdObject)) {
         hilog.warn(DOMAIN, TAG, 'getChatHistory returned non-object response');
-        return false;
-      }
-
-      if (!this.isLatestBucketRequest(bucketReservation.bucketKey, bucketReservation.requestSeq)) {
-        hilog.debug(DOMAIN, TAG, 'Ignoring stale history response for %{public}d bucket=%{public}s seq=%{public}d',
-          chatId, bucketReservation.bucketKey, bucketReservation.requestSeq);
         return false;
       }
 
@@ -657,22 +704,26 @@ export class LoadChatHistoryUseCase {
       const messageWindow = this.updateMessageWindow(chatId, messages);
       const deferInitialDispatchForTopUp = this.shouldTopUpInitialWindow(params, messageWindow);
       if (deferInitialDispatchForTopUp) {
+        // Initialize edges before the child request. Its empty/no-progress
+        // result owns the older edge and must survive this initial completion.
+        this.refreshPaginationState(chatId, params, messageWindow, previousOldestId, previousNewestId);
         hilog.debug(DOMAIN, TAG,
           'Deferring dispatch of short initial batch for %{public}d until older top-up completes',
           chatId);
-        await this.requestInitialOlderTopUp(chatId, messageWindow.oldestId, params.limit, generation);
-        if (!this.isCurrentGeneration(generation)) {
+        await this.requestInitialOlderTopUp(chatId, messageWindow.oldestId, params.limit, generation, bucketReservation);
+        if (!this.isCurrentRequest(chatId, bucketReservation, generation)) {
           return false;
         }
       }
 
       const events = getEventNormalizer().normalize(normalizedResponse);
       if (events.length > 0) {
-        if (!this.isCurrentGeneration(generation)) {
+        if (!this.isCurrentRequest(chatId, bucketReservation, generation)) {
           return false;
         }
-        await this.store.dispatchBatch(events);
-        if (!this.isCurrentGeneration(generation)) {
+        await this.store.dispatchBatch(events,
+          (): boolean => this.isCurrentRequest(chatId, bucketReservation, generation));
+        if (!this.isCurrentRequest(chatId, bucketReservation, generation)) {
           return false;
         }
         LoadChatHistoryUseCase.historyFetchedChatIds.add(chatId);
@@ -685,10 +736,12 @@ export class LoadChatHistoryUseCase {
       }
 
       // Track pagination state: oldest message and whether more history exists
-      if (!this.isCurrentGeneration(generation)) {
+      if (!this.isCurrentRequest(chatId, bucketReservation, generation)) {
         return false;
       }
-      this.refreshPaginationState(chatId, params, messageWindow, previousOldestId, previousNewestId);
+      if (!deferInitialDispatchForTopUp) {
+        this.refreshPaginationState(chatId, params, messageWindow, previousOldestId, previousNewestId);
+      }
 
       const missingSenderIds = this.collectMissingSenderIds(normalizedResponse);
       if (missingSenderIds.length > 0) {
@@ -718,8 +771,11 @@ export class LoadChatHistoryUseCase {
 
       return true;
     } catch (error) {
-      if (!this.isCurrentGeneration(generation)) {
+      if (!this.isCurrentRequest(chatId, bucketReservation, generation)) {
         return false;
+      }
+      if (error instanceof AppError) {
+        throw error;
       }
       hilog.warn(DOMAIN, TAG, 'History load failed for %{public}d: %{public}s',
         chatId, String(error));
@@ -731,7 +787,7 @@ export class LoadChatHistoryUseCase {
         true
       );
     } finally {
-      if (this.isCurrentGeneration(generation)) {
+      if (this.isCurrentRequest(chatId, bucketReservation, generation)) {
         this.releaseBucket(chatId, bucketReservation.bucketKey);
       }
     }

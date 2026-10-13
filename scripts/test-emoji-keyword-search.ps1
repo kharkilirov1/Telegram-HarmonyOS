@@ -1,6 +1,7 @@
 param(
   [string]$Root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 )
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 
 $ErrorActionPreference = 'Stop'
 
@@ -9,7 +10,7 @@ function Read-ProjectFile([string]$RelativePath) {
   if (-not (Test-Path -LiteralPath $path)) {
     throw "Missing file: $RelativePath"
   }
-  return Get-Content -LiteralPath $path -Raw
+  return Get-ChatContractContent -LiteralPath $path -Raw
 }
 
 function Assert-Contains([string]$Content, [string]$Pattern, [string]$Message) {

@@ -1,13 +1,14 @@
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
-$controller = Get-Content -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/pages/chat/ChatSearchController.ets') -Raw
-$useCase = Get-Content -LiteralPath (Join-Path $root 'entry/src/main/ets/domain/usecases/searchChatMessages.ets') -Raw
-$page = Get-Content -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets') -Raw
-$tokens = Get-Content -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/tg_ui/tokens/TgUiTokens.ets') -Raw
-$topBar = Get-Content -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgChatTopBar.ets') -Raw
-$profile = Get-Content -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/pages/profile/TgProfilePage.ets') -Raw
+$controller = Get-ChatContractContent -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/pages/chat/ChatSearchController.ets') -Raw
+$useCase = Get-ChatContractContent -LiteralPath (Join-Path $root 'entry/src/main/ets/domain/usecases/searchChatMessages.ets') -Raw
+$page = Get-ChatContractContent -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets') -Raw
+$tokens = Get-ChatContractContent -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/tg_ui/tokens/TgUiTokens.ets') -Raw
+$topBar = Get-ChatContractContent -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgChatTopBar.ets') -Raw
+$profile = Get-ChatContractContent -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/pages/profile/TgProfilePage.ets') -Raw
 
 $contracts = @(
   @{ Name = 'TDLib next cursor parsed'; Source = $useCase; Text = "getInt64String('next_from_message_id')" },

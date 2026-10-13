@@ -14,7 +14,9 @@ $spec = Get-Content -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/tg_ui/s
 
 $checks = @(
   @{ Name = 'independent API26 action material'; Source = $bar; Text = '.systemMaterial(new uiMaterial.ImmersiveMaterial({' },
-  @{ Name = 'API23 adaptive blur fallback'; Source = $bar; Text = '.backgroundBlurStyle(this.actionBlurStyle(), TgGlassPolicy.glassOptions())' },
+  @{ Name = 'in-app capsule backdrop blur (lesson 121)'; Source = $bar; Text = '.backdropBlur(this.actionBackdropBlur())' },
+  @{ Name = 'native material uses the shared device gate'; Source = $bar; Text = 'TgGlassPolicy.supportsNativeMaterial() && this.useBlur()' },
+  @{ Name = 'fallback disables capsule blur'; Source = $bar; Text = 'this.useBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0' },
   @{ Name = 'no legacy full width chrome plate'; Source = $bar; Reject = 'TgTopChromeBackground' },
   @{ Name = 'centered Search placeholder activates native input'; Source = $bar; Text = '.hitTestBehavior(HitTestMode.Block)' },
   @{ Name = 'Search focus state removes activation overlay'; Source = $bar; Text = '@Local private searchFocused: boolean = false' },
@@ -41,7 +43,8 @@ $checks = @(
   @{ Name = 'compact centered Search'; Source = $tokens; Text = 'CHAT_LIST_NAV_SEARCH_HEIGHT: number = 40' },
   @{ Name = 'compact filter rail'; Source = $tokens; Text = 'CHAT_LIST_NAV_FILTER_HEIGHT: number = 32' },
   @{ Name = 'primary foreground for glass actions'; Source = $bar; Text = 'tintColor: TgUiTokens.COLOR_TEXT_TITLE' },
-  @{ Name = 'chat-list scoped navigation surface'; Source = $bar; Text = '.backgroundColor(TgUiTokens.CHAT_LIST_PINNED_SURFACE_BG)' },
+  @{ Name = 'under-glass navigation band retains the opaque fallback'; Source = $bar; Text = '.backgroundColor(this.useBlur() ? TgUiTokens.CHAT_LIST_NAV_BAND_BG : TgUiTokens.CHAT_LIST_PINNED_SURFACE_BG)' },
+  @{ Name = 'navigation band samples scrolling rows'; Source = $bar; Text = '.backdropBlur(this.bandBackdropBlur())' },
   @{ Name = 'navigation surface follows Search collapse'; Source = $bar; Text = 'CHAT_LIST_NAV_SEARCH_AREA_HEIGHT * this.collapseProgress()' },
   @{ Name = 'chat-list scoped Search surface'; Source = $bar; Text = '.backgroundColor(TgUiTokens.CHAT_LIST_SEARCH_SURFACE_BG)' },
   @{ Name = 'runtime rows receive chat-list surface'; Source = $page; Text = 'surfaceColor: TgUiTokens.CHAT_LIST_SURFACE_BG' },

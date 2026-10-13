@@ -1,3 +1,4 @@
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -12,7 +13,7 @@ if (-not (Test-Path -LiteralPath $passport)) {
   throw "HdsActionBar composer passport not found: $passport"
 }
 
-$content = Get-Content -LiteralPath $demo -Raw -Encoding UTF8
+$content = Get-ChatContractContent -LiteralPath $demo -Raw -Encoding UTF8
 $required = @(
   "HdsActionBar({",
   "primaryButtonBuilder:",
@@ -46,13 +47,13 @@ $protectedFiles = @(
 
 foreach ($relativePath in $protectedFiles) {
   $path = Join-Path $root $relativePath
-  $protectedContent = Get-Content -LiteralPath $path -Raw -Encoding UTF8
+  $protectedContent = Get-ChatContractContent -LiteralPath $path -Raw -Encoding UTF8
   if ($protectedContent.Contains('TgHdsActionBarComposerDemo')) {
     throw "Demo-only isolation violated by: $relativePath"
   }
 }
 
-if ((Get-Content -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets') -Raw -Encoding UTF8).Contains('HdsActionBar')) {
+if ((Get-ChatContractContent -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets') -Raw -Encoding UTF8).Contains('HdsActionBar')) {
   throw 'Live chat page must not contain HdsActionBar during the demo-only capability phase.'
 }
 

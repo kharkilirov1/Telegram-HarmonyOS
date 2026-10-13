@@ -63,6 +63,13 @@ export class SendMediaMessagePayload {
   waveformBase64: string = '';
 }
 
+export class SendMediaAlbumPayload {
+  chatId: ChatId = 0;
+  localPaths: string[] = [];
+  caption: string = '';
+  replyToMessageId: MessageId = '0';
+}
+
 export class ViewMessagesPayload {
   chatId: ChatId = 0;
   messageIds: MessageId[] = [];
@@ -149,6 +156,16 @@ export class GetRepliedMessagePayload {
   messageId: MessageId = '0';
 }
 
+export class GetMessagePayload {
+  chatId: ChatId = 0;
+  messageId: MessageId = '0';
+}
+
+export class GetMessagePropertiesPayload {
+  chatId: ChatId = 0;
+  messageId: MessageId = '0';
+}
+
 export class CloseChatPayload {
   chatId: ChatId = 0;
 }
@@ -159,6 +176,14 @@ export class GetUserFullInfoPayload {
 
 export class GetSupergroupFullInfoPayload {
   supergroupId: number = 0;
+}
+
+export class GetSupergroupPayload {
+  supergroupId: number = 0;
+}
+
+export class GetBasicGroupPayload {
+  basicGroupId: number = 0;
 }
 
 export class GetBasicGroupFullInfoPayload {
@@ -181,16 +206,60 @@ export class GetSupergroupMembersPayload {
   filterKind: ChatMembersFilterKind = 'all';
 }
 
+export class EditMessageEntity {
+  offset: number = 0;
+  length: number = 0;
+  typeJson: string = '';
+
+  constructor(offset: number = 0, length: number = 0, typeJson: string = '') {
+    this.offset = offset;
+    this.length = length;
+    this.typeJson = typeJson;
+  }
+}
+
+export class EditMessageLinkPreviewOptions {
+  isDisabled: boolean = false;
+  url: string = '';
+  forceSmallMedia: boolean = false;
+  forceLargeMedia: boolean = false;
+  showAboveText: boolean = false;
+
+  constructor(
+    isDisabled: boolean = false,
+    url: string = '',
+    forceSmallMedia: boolean = false,
+    forceLargeMedia: boolean = false,
+    showAboveText: boolean = false
+  ) {
+    this.isDisabled = isDisabled;
+    this.url = url;
+    this.forceSmallMedia = forceSmallMedia;
+    this.forceLargeMedia = forceLargeMedia;
+    this.showAboveText = showAboveText;
+  }
+}
+
 export class EditMessageTextPayload {
   chatId: ChatId = 0;
   messageId: MessageId = '0';
   text: string = '';
+  entities: EditMessageEntity[] = [];
+  linkPreviewOptions?: EditMessageLinkPreviewOptions;
+}
+
+export class EditMessageCaptionPayload {
+  chatId: ChatId = 0;
+  messageId: MessageId = '0';
+  caption: string = '';
+  showCaptionAboveMedia: boolean = false;
+  entities: EditMessageEntity[] = [];
 }
 
 export class DeleteMessagesPayload {
   chatId: ChatId = 0;
   messageIds: MessageId[] = [];
-  revoke: boolean = true;
+  revoke: boolean = false;
 }
 
 export class ForwardMessagesPayload {
@@ -392,6 +461,11 @@ export class SendMediaMessageCommand extends AppCommand {
   payload: SendMediaMessagePayload = new SendMediaMessagePayload();
 }
 
+export class SendMediaAlbumCommand extends AppCommand {
+  type: string = 'sendMediaAlbum';
+  payload: SendMediaAlbumPayload = new SendMediaAlbumPayload();
+}
+
 export class ViewMessagesCommand extends AppCommand {
   type: string = 'viewMessages';
   payload: ViewMessagesPayload = new ViewMessagesPayload();
@@ -457,6 +531,16 @@ export class GetChatPinnedMessageCommand extends AppCommand {
   payload: GetChatPinnedMessagePayload = new GetChatPinnedMessagePayload();
 }
 
+export class GetMessageCommand extends AppCommand {
+  type: string = 'getMessage';
+  payload: GetMessagePayload = new GetMessagePayload();
+}
+
+export class GetMessagePropertiesCommand extends AppCommand {
+  type: string = 'getMessageProperties';
+  payload: GetMessagePropertiesPayload = new GetMessagePropertiesPayload();
+}
+
 export class GetRepliedMessageCommand extends AppCommand {
   type: string = 'getRepliedMessage';
   payload: GetRepliedMessagePayload = new GetRepliedMessagePayload();
@@ -477,6 +561,16 @@ export class GetSupergroupFullInfoCommand extends AppCommand {
   payload: GetSupergroupFullInfoPayload = new GetSupergroupFullInfoPayload();
 }
 
+export class GetSupergroupCommand extends AppCommand {
+  type: string = 'getSupergroup';
+  payload: GetSupergroupPayload = new GetSupergroupPayload();
+}
+
+export class GetBasicGroupCommand extends AppCommand {
+  type: string = 'getBasicGroup';
+  payload: GetBasicGroupPayload = new GetBasicGroupPayload();
+}
+
 export class GetBasicGroupFullInfoCommand extends AppCommand {
   type: string = 'getBasicGroupFullInfo';
   payload: GetBasicGroupFullInfoPayload = new GetBasicGroupFullInfoPayload();
@@ -495,6 +589,11 @@ export class GetSupergroupMembersCommand extends AppCommand {
 export class EditMessageTextCommand extends AppCommand {
   type: string = 'editMessageText';
   payload: EditMessageTextPayload = new EditMessageTextPayload();
+}
+
+export class EditMessageCaptionCommand extends AppCommand {
+  type: string = 'editMessageCaption';
+  payload: EditMessageCaptionPayload = new EditMessageCaptionPayload();
 }
 
 export class DeleteMessagesCommand extends AppCommand {
@@ -680,6 +779,7 @@ export type AnyAppCommand =
   | SetTdlibOnlineCommand
   | SendMessageCommand
   | SendMediaMessageCommand
+  | SendMediaAlbumCommand
   | ViewMessagesCommand
   | GetChatHistoryCommand
   | GetUserCommand
@@ -692,15 +792,20 @@ export type AnyAppCommand =
   | SearchPublicChatsCommand
   | SearchCallMessagesCommand
   | GetChatCommand
+  | GetMessageCommand
+  | GetMessagePropertiesCommand
   | GetChatPinnedMessageCommand
   | GetRepliedMessageCommand
   | CloseChatCommand
   | GetUserFullInfoCommand
+  | GetSupergroupCommand
+  | GetBasicGroupCommand
   | GetSupergroupFullInfoCommand
   | GetBasicGroupFullInfoCommand
   | SearchChatMembersCommand
   | GetSupergroupMembersCommand
   | EditMessageTextCommand
+  | EditMessageCaptionCommand
   | DeleteMessagesCommand
   | ForwardMessagesCommand
   | SetChatMuteCommand
@@ -819,6 +924,20 @@ export function createSendMediaMessageCommand(
   cmd.payload.replyToMessageId = replyToMessageId || '0';
   cmd.payload.durationSeconds = durationSeconds;
   cmd.payload.waveformBase64 = waveformBase64;
+  return cmd;
+}
+
+export function createSendMediaAlbumCommand(
+  chatId: ChatId,
+  localPaths: string[],
+  caption: string = '',
+  replyToMessageId: MessageId = '0'
+): SendMediaAlbumCommand {
+  const cmd = new SendMediaAlbumCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.localPaths = localPaths.slice();
+  cmd.payload.caption = caption;
+  cmd.payload.replyToMessageId = replyToMessageId;
   return cmd;
 }
 
@@ -941,6 +1060,20 @@ export function createGetChatCommand(chatId: ChatId): GetChatCommand {
   return cmd;
 }
 
+export function createGetMessageCommand(chatId: ChatId, messageId: MessageId): GetMessageCommand {
+  const cmd = new GetMessageCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.messageId = messageId;
+  return cmd;
+}
+
+export function createGetMessagePropertiesCommand(chatId: ChatId, messageId: MessageId): GetMessagePropertiesCommand {
+  const cmd = new GetMessagePropertiesCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.messageId = messageId;
+  return cmd;
+}
+
 export function createGetChatPinnedMessageCommand(chatId: ChatId): GetChatPinnedMessageCommand {
   const cmd = new GetChatPinnedMessageCommand();
   cmd.payload.chatId = chatId;
@@ -972,6 +1105,18 @@ export function createGetUserFullInfoCommand(userId: UserId): GetUserFullInfoCom
 export function createGetSupergroupFullInfoCommand(supergroupId: number): GetSupergroupFullInfoCommand {
   const cmd = new GetSupergroupFullInfoCommand();
   cmd.payload.supergroupId = supergroupId;
+  return cmd;
+}
+
+export function createGetSupergroupCommand(supergroupId: number): GetSupergroupCommand {
+  const cmd = new GetSupergroupCommand();
+  cmd.payload.supergroupId = supergroupId;
+  return cmd;
+}
+
+export function createGetBasicGroupCommand(basicGroupId: number): GetBasicGroupCommand {
+  const cmd = new GetBasicGroupCommand();
+  cmd.payload.basicGroupId = basicGroupId;
   return cmd;
 }
 
@@ -1012,19 +1157,46 @@ export function createGetSupergroupMembersCommand(
 export function createEditMessageTextCommand(
   chatId: ChatId,
   messageId: MessageId,
-  text: string
+  text: string,
+  entities: EditMessageEntity[] = [],
+  linkPreviewOptions?: EditMessageLinkPreviewOptions
 ): EditMessageTextCommand {
   const cmd = new EditMessageTextCommand();
   cmd.payload.chatId = chatId;
   cmd.payload.messageId = messageId;
   cmd.payload.text = text;
+  cmd.payload.entities = entities.map((entity: EditMessageEntity) =>
+    new EditMessageEntity(entity.offset, entity.length, entity.typeJson));
+  if (linkPreviewOptions !== undefined) {
+    cmd.payload.linkPreviewOptions = new EditMessageLinkPreviewOptions(
+      linkPreviewOptions.isDisabled, linkPreviewOptions.url, linkPreviewOptions.forceSmallMedia,
+      linkPreviewOptions.forceLargeMedia, linkPreviewOptions.showAboveText
+    );
+  }
+  return cmd;
+}
+
+export function createEditMessageCaptionCommand(
+  chatId: ChatId,
+  messageId: MessageId,
+  caption: string,
+  showCaptionAboveMedia: boolean,
+  entities: EditMessageEntity[] = []
+): EditMessageCaptionCommand {
+  const cmd = new EditMessageCaptionCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.messageId = messageId;
+  cmd.payload.caption = caption;
+  cmd.payload.showCaptionAboveMedia = showCaptionAboveMedia;
+  cmd.payload.entities = entities.map((entity: EditMessageEntity) =>
+    new EditMessageEntity(entity.offset, entity.length, entity.typeJson));
   return cmd;
 }
 
 export function createDeleteMessagesCommand(
   chatId: ChatId,
   messageIds: MessageId[],
-  revoke: boolean = true
+  revoke: boolean = false
 ): DeleteMessagesCommand {
   const cmd = new DeleteMessagesCommand();
   cmd.payload.chatId = chatId;

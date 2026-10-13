@@ -1,7 +1,7 @@
 // JoinChat use case — join a public channel/supergroup via TDLib
 // TDLib contract: joinChat chat_id:int53 = Ok (td_api.tl:12010)
-// Membership arrives back as updateChatPosition (chatListMain) → chatsReducer,
-// so the bottom action bar re-evaluates Join → Mute/Unmute from order !== '0'.
+// Membership arrives through updateSupergroup/updateBasicGroup status updates.
+// A successful join response or chat-list position is not membership evidence.
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { TdGatewayPort } from '../ports/TdGatewayPort';

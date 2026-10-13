@@ -10,7 +10,9 @@ $spec = Get-Content -Raw (Join-Path $root 'entry/src/main/ets/ui/tg_ui/spec/TgPr
 $checks = @(
   @{ Name = 'profile page uses the isolated atom'; Source = $page; Text = 'TgProfileNavigationBar({' },
   @{ Name = 'native material path'; Source = $atom; Text = '.systemMaterial(new uiMaterial.ImmersiveMaterial({' },
-  @{ Name = 'API23 adaptive blur fallback'; Source = $atom; Text = '.backgroundBlurStyle(this.capsuleBlurStyle(), TgGlassPolicy.glassOptions())' },
+  @{ Name = 'in-app capsule backdrop blur (lesson 121)'; Source = $atom; Text = '.backdropBlur(this.capsuleBackdropBlur())' },
+  @{ Name = 'native material uses the shared device gate'; Source = $atom; Text = 'TgGlassPolicy.supportsNativeMaterial() && this.useBlur()' },
+  @{ Name = 'fallback disables capsule blur'; Source = $atom; Text = 'this.useBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0' },
   @{ Name = '44vp response region'; Source = $atom; Text = 'PROFILE_NAV_RESPONSE_SIZE' },
   @{ Name = 'iOS 16pt side inset token'; Source = $tokens; Text = 'PROFILE_NAV_SIDE_INSET: number = 16' },
   @{ Name = 'no full width plate contract'; Source = $spec; Text = 'there is no full-width background plate' },

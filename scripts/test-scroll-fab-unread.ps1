@@ -1,14 +1,16 @@
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
-$page = Get-Content -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets') -Raw
-$atom = Get-Content -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgScrollToBottomButton.ets') -Raw
-$tokens = Get-Content -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/tg_ui/tokens/TgUiTokens.ets') -Raw
+$page = Get-ChatContractContent -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets') -Raw
+$atom = Get-ChatContractContent -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgScrollToBottomButton.ets') -Raw
+$tokens = Get-ChatContractContent -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/tg_ui/tokens/TgUiTokens.ets') -Raw
+$compactCount = Get-ChatContractContent -LiteralPath (Join-Path $root 'entry/src/main/ets/ui/tg_ui/utils/TgCompactCount.ets') -Raw
 
 $contracts = @(
   @{ Name = 'live atom integration'; Source = $page; Text = 'TgScrollToBottomButton({' },
-  @{ Name = 'retained unread state'; Source = $page; Text = '@Local private scrollToBottomUnreadCount: number = 0' },
+  @{ Name = 'retained unread state'; Source = $page; Text = '@Trace scrollToBottomUnreadCount: number = 0' },
   @{ Name = 'entry unread capture'; Source = $page; Text = 'entryChat ? Math.max(0, entryChat.unreadCount) : 0' },
   @{ Name = 'runtime unread raise'; Source = $page; Text = 'chat.unreadCount > this.scrollToBottomUnreadCount' },
   @{ Name = 'bottom clears unread'; Source = $page; Text = 'if (!this.showScrollToBottom)' },
@@ -17,7 +19,9 @@ $contracts = @(
   @{ Name = 'iOS 20vp badge'; Source = $tokens; Text = 'SCROLL_FAB_BADGE_HEIGHT: number = 20' },
   @{ Name = 'iOS badge offset'; Source = $tokens; Text = 'SCROLL_FAB_BADGE_TOP_OFFSET: number = -7' },
   @{ Name = 'zero hides badge'; Source = $atom; Text = 'if (this.safeUnreadCount() > 0)' },
-  @{ Name = 'compact count'; Source = $atom; Text = 'UNREAD_BADGE_COMPACT_THOUSAND' },
+  @{ Name = 'atom delegates to shared compact count formatter'; Source = $atom; Text = 'return formatTelegramCompactCount(this.safeUnreadCount());' },
+  @{ Name = 'shared formatter retains the thousand threshold'; Source = $compactCount; Text = 'UNREAD_BADGE_COMPACT_THOUSAND' },
+  @{ Name = 'shared formatter retains the million threshold'; Source = $compactCount; Text = 'UNREAD_BADGE_COMPACT_MILLION' },
   @{ Name = 'non-intercepting badge'; Source = $atom; Text = '.hitTestBehavior(HitTestMode.None)' }
 )
 

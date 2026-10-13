@@ -2,6 +2,7 @@
 // ArkTS compliant - uses TdObject wrapper class
 
 import { ChatId } from '../EntityId';
+import { GroupSendPermissionsDto } from './GroupAccessDto';
 import { TdObject, tdGetString, tdGetNumber, tdGetBoolean, tdGetInt64, tdGetObject, tdGetArray, tdHasKeys } from '../../utils/tdAccessors';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { CustomEmojiTextEntity } from '../AppCommand';
@@ -55,6 +56,7 @@ export class ChatDto {
   // chat.permissions.can_send_basic_messages; false → bottom bar replaces the
   // composer (iOS Subscriber/Restricted panels, ChatInterfaceStateInputPanels.swift)
   canSendBasicMessages: boolean = true;
+  sendPermissions?: GroupSendPermissionsDto;
 }
 
 export function extractCustomEmojiTextEntities(formattedText: TdObject): CustomEmojiTextEntity[] {
@@ -120,9 +122,10 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   chatDto.title = tdGetString(tdChat, 'title');
   chatDto.accentColorId = extractOptionalAccentColorId(tdChat);
   chatDto.unreadCount = tdGetNumber(tdChat, 'unread_count');
-  const permissions = tdGetObject(tdChat, 'permissions');
-  if (tdHasKeys(permissions)) {
-    chatDto.canSendBasicMessages = tdGetBoolean(permissions, 'can_send_basic_messages');
+  const permissions = tdChat.getTopLevelObjectStrict('permissions');
+  if (permissions !== undefined && permissions.getTopLevelBooleanStrict('can_send_basic_messages') !== undefined) {
+    chatDto.sendPermissions = GroupSendPermissionsDto.fromTd(permissions);
+    chatDto.canSendBasicMessages = chatDto.sendPermissions.canSendBasicMessages;
   }
   chatDto.lastReadOutboxMessageId = tdGetInt64(tdChat, 'last_read_outbox_message_id');
   chatDto.lastReadInboxMessageId = tdGetInt64(tdChat, 'last_read_inbox_message_id');
@@ -258,6 +261,8 @@ export function extractMainListPosition(tdPosition: TdObject): ChatPositionInfo 
 
 // Helper for partial updates (chatUpdated event)
 export class ChatUpdateDto {
+  canSendBasicMessages?: boolean;
+  sendPermissions?: GroupSendPermissionsDto;
   peerUserId?: number;
   accentColorId?: number;
   title?: string;
@@ -286,6 +291,8 @@ export function applyChatUpdate(chat: ChatDto, update: ChatUpdateDto): ChatDto {
   updatedChat.peerUserId = chat.peerUserId;
   updatedChat.supergroupId = chat.supergroupId;
   updatedChat.basicGroupId = chat.basicGroupId;
+  updatedChat.canSendBasicMessages = chat.canSendBasicMessages;
+  updatedChat.sendPermissions = chat.sendPermissions?.clone();
   updatedChat.accentColorId = chat.accentColorId;
   updatedChat.title = chat.title;
   updatedChat.unreadCount = chat.unreadCount;
@@ -304,6 +311,15 @@ export function applyChatUpdate(chat: ChatDto, update: ChatUpdateDto): ChatDto {
   updatedChat.draftReplyToMessageId = chat.draftReplyToMessageId;
 
   // Apply updates
+  if (update.sendPermissions !== undefined) {
+    updatedChat.sendPermissions = update.sendPermissions.clone();
+    updatedChat.canSendBasicMessages = updatedChat.sendPermissions.canSendBasicMessages;
+  } else if (update.canSendBasicMessages !== undefined) {
+    updatedChat.canSendBasicMessages = update.canSendBasicMessages;
+    if (updatedChat.sendPermissions !== undefined) {
+      updatedChat.sendPermissions.canSendBasicMessages = update.canSendBasicMessages;
+    }
+  }
   if (update.peerUserId !== undefined) {
     updatedChat.peerUserId = update.peerUserId;
   }

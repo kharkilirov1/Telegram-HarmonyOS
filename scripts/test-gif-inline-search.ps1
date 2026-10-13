@@ -1,11 +1,12 @@
 param(
   [string]$Root = (Split-Path -Parent $PSScriptRoot)
 )
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 
 $ErrorActionPreference = 'Stop'
 
 function Read-ProjectFile([string]$RelativePath) {
-  return Get-Content -LiteralPath (Join-Path $Root $RelativePath) -Raw -Encoding UTF8
+  return Get-ChatContractContent -LiteralPath (Join-Path $Root $RelativePath) -Raw -Encoding UTF8
 }
 
 function Assert-Contains([string]$Text, [string]$Pattern, [string]$Message) {

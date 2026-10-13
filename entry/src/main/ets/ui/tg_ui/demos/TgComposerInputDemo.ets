@@ -12,6 +12,7 @@ export struct TgComposerInputDemo {
   @Local private interactiveSelectionStart: number = 0;
   @Local private interactiveSelectionEnd: number = 0;
   @Local private lastAuxAction: string = 'none';
+  @Local private permissionsRetryVisible: boolean = true;
 
   private materialPathLabel(): string {
     const mode = resolveComposerMaterialMode(
@@ -29,7 +30,8 @@ export struct TgComposerInputDemo {
     containerWidth: number = TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH,
     text: string = '',
     showEmoji: boolean = true,
-    interactive: boolean = false) {
+    interactive: boolean = false,
+    retryPermissions: boolean = false, slowmodeSeconds: number = 0) {
     Column({ space: TgUiTokens.SPACE_6 }) {
       Text(label)
         .fontSize(TgUiTokens.FONT_META_SIZE)
@@ -41,6 +43,14 @@ export struct TgComposerInputDemo {
           text: interactive ? this.interactiveDraft : text,
           placeholder: 'Message',
           isDisabled: isDisabled,
+          slowmodeSeconds: slowmodeSeconds,
+          accessRetryVisible: retryPermissions && this.permissionsRetryVisible,
+          accessRetryLabel: 'Retry permissions',
+          attachmentPhotoEnabled: !retryPermissions || !this.permissionsRetryVisible,
+          onAccessRetryPress: (): void => {
+            this.permissionsRetryVisible = false;
+            this.lastAuxAction = 'permissions retry (demo, no network)';
+          },
           showAttachButton: showAttach,
           showEmojiButton: showEmoji,
           showReplySnippet: showReply,
@@ -100,23 +110,24 @@ export struct TgComposerInputDemo {
   }
 
   @Builder
-  private editCaseBlock() {
+  private editCaseBlock(emptyCaption: boolean = false) {
     Column({ space: TgUiTokens.SPACE_6 }) {
-      Text('05 edit mode snippet')
+      Text(emptyCaption ? '20 empty caption edit (local-only)' : '05 edit mode snippet')
         .fontSize(TgUiTokens.FONT_META_SIZE)
         .fontColor(TgUiTokens.COLOR_TEXT_META)
         .width('100%')
 
       Row() {
         TgComposerInput({
-          text: 'Edited text here',
+          text: emptyCaption ? '' : 'Edited text here',
           placeholder: 'Message',
           showEditSnippet: true,
+          allowEmptyEdit: emptyCaption,
           editPreview: 'Original message that is being edited',
           containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH,
           onTextChange: (_value: string): void => {},
           onSendPress: (_text: string): void => {
-            this.lastAuxAction = 'edit send';
+            this.lastAuxAction = emptyCaption ? 'edit:remove-caption (local-only)' : 'edit send';
           },
           onAttachPress: (): void => {
             this.lastAuxAction = 'attach';
@@ -248,7 +259,7 @@ export struct TgComposerInputDemo {
 
   @Builder
   private modernStateBlock(label: string, state: TgVoiceRecordingState = 'idle', showBotMenu: boolean = false,
-    botMenuOpen: boolean = false, text: string = '') {
+    botMenuOpen: boolean = false, text: string = '', slowmodeSeconds: number = 0) {
     Column({ space: TgUiTokens.SPACE_6 }) {
       Text(label)
         .fontSize(TgUiTokens.FONT_META_SIZE)
@@ -265,6 +276,7 @@ export struct TgComposerInputDemo {
           botMenuCommands: ['start', 'help', 'settings'],
           botMenuDescriptions: ['Start the bot', 'Show available commands', 'Bot settings'],
           voiceRecordingState: state,
+          slowmodeSeconds: slowmodeSeconds,
           voiceRecordingDurationMs: state === 'preparing' ? 0 : 12_000,
           containerWidth: TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH,
           onTextChange: (_value: string): void => {},
@@ -399,6 +411,15 @@ export struct TgComposerInputDemo {
         this.modernStateBlock('16 voice recording', 'recording')
         this.modernStateBlock('17 voice locked', 'locked')
         this.modernStateBlock('18 voice sending', 'sending')
+        this.caseBlock('19 partial rights load failed: retry keeps composer and draft', false, true, false,
+          TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, 'Text remains available', true, false, true)
+        this.editCaseBlock(true)
+        this.caseBlock('20 slow mode empty: timer, editable draft, attach blocked', false, true, false,
+          TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, '', true, false, false, 65)
+        this.caseBlock('21 slow mode populated: visible timer without clearing text', false, true, true,
+          TgUiTokens.MSG_DEMO_BASE_CONTAINER_WIDTH, 'Keep this draft', true, false, false, 9)
+        this.modernStateBlock('22 unsent voice preview during slow mode', 'preview', false, false, '', 9)
+        this.modernStateBlock('23 unsent voice preview after expiry: explicit Send or Delete', 'preview')
       }
       .width('100%')
       .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)

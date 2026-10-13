@@ -1,4 +1,4 @@
-export type TgVoiceRecordingState = 'idle' | 'preparing' | 'recording' | 'locked' | 'sending' | 'error';
+export type TgVoiceRecordingState = 'idle' | 'preparing' | 'recording' | 'locked' | 'preview' | 'sending' | 'error';
 export type TgVoiceRecordingGestureResolution = 'none' | 'cancel' | 'lock';
 
 export const TG_VOICE_CANCEL_THRESHOLD_VP: number = -72;
@@ -31,4 +31,3 @@ export function formatVoiceRecordingDuration(durationMs: number): string {
 export function isVoiceRecordingDurationSendable(durationMs: number): boolean {
   return durationMs >= TG_VOICE_MIN_DURATION_MS;
 }
-

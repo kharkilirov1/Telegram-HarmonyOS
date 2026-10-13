@@ -485,7 +485,7 @@ export default function messagesReducerTest() {
         const resetEvent = new ChatMessagesResetEvent();
         resetEvent.chatId = 9;
 
-        const newState = messagesReducer(state, resetEvent);
+        const newState = appReducer(state, resetEvent);
         expect(newState.messages.messages.has(9)).assertFalse();
         expect(newState.messages.messages.get(10)!.has('911')).assertTrue();
       });

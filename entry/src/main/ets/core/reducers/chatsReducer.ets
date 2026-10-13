@@ -5,6 +5,9 @@
 
 import { AppState, Chat, ChatLastMessage, ChatTypingInfo, ReducerAction } from '../model/AppState';
 import {
+  GroupAccessUpdatedEvent,
+  SupergroupBoostsUpdatedEvent,
+  SupergroupSlowmodeUpdatedEvent,
   NewChatEvent,
   ChatUpdatedEvent,
   ChatReadInboxEvent,
@@ -18,11 +21,11 @@ import {
 import { ChatActiveStoriesDto } from '../model/dto/StoryDto';
 import { ChatDto, ChatType as DtoChatType } from '../model/dto/ChatDto';
 import { compareInt64 } from '../utils/tdAccessors';
-import { cloneStateForChats, cloneChat } from '../utils/stateClone';
+import { cloneStateForChats, cloneChat, cloneGroupAccess } from '../utils/stateClone';
 
 // Events this reducer handles
 function isChatEvent(type: string): boolean {
-  return type === 'newChat' || type === 'chatUpdated' ||
+  return type === 'supergroupSlowmodeUpdated' || type === 'supergroupBoostsUpdated' || type === 'groupAccessUpdated' || type === 'newChat' || type === 'chatUpdated' ||
     type === 'chatReadInbox' || type === 'chatReadOutbox' ||
     type === 'chatListUnreadMessageCountChanged' ||
     type === 'chatsLoadStateChanged' || type === 'chatActiveStoriesUpdated' ||
@@ -63,7 +66,8 @@ function chatFromDto(dto: ChatDto): Chat {
   chat.archiveOrder = dto.archiveOrder;
   chat.supergroupId = dto.supergroupId;
   chat.basicGroupId = dto.basicGroupId;
-  chat.canSendBasicMessages = dto.canSendBasicMessages;
+  chat.canSendBasicMessages = dto.sendPermissions?.canSendBasicMessages ?? dto.canSendBasicMessages;
+  chat.sendPermissions = dto.sendPermissions?.clone();
 
   if (dto.photo) {
     chat.photoSmall = dto.photo.small;
@@ -155,10 +159,59 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
     return state;
   }
 
+  if (action.type === 'groupAccessUpdated') {
+    const access = (action as GroupAccessUpdatedEvent).access;
+    if (access.role === 'unknown' || !Number.isSafeInteger(access.groupId) || access.groupId <= 0 ||
+      (access.kind !== 'supergroup' && access.kind !== 'basicGroup')) return state;
+  }
+
+  if (action.type === 'supergroupBoostsUpdated') {
+    const boosts = (action as SupergroupBoostsUpdatedEvent).boosts;
+    if (!Number.isSafeInteger(boosts.groupId) || boosts.groupId <= 0 ||
+      !Number.isInteger(boosts.myBoostCount) || boosts.myBoostCount < 0 || boosts.myBoostCount > 2147483647 ||
+      !Number.isInteger(boosts.unrestrictBoostCount) || boosts.unrestrictBoostCount < 0 || boosts.unrestrictBoostCount > 2147483647) return state;
+  }
+
+  if (action.type === 'supergroupSlowmodeUpdated') {
+    const slow = (action as SupergroupSlowmodeUpdatedEvent).slowmode;
+    if (!Number.isSafeInteger(slow.groupId) || slow.groupId <= 0 ||
+      !Number.isInteger(slow.delaySeconds) || slow.delaySeconds < 0 || slow.delaySeconds > 3600 ||
+      !Number.isFinite(slow.expiresInSeconds) || slow.expiresInSeconds < 0 || slow.expiresInSeconds > 3601 ||
+      !Number.isFinite(slow.receivedElapsedMs) || slow.receivedElapsedMs < 0 ||
+      state.chats.supergroupAccess.get(slow.groupId)?.isSlowModeEnabled === false) return state;
+  }
+
   const newState = cloneStateForChats(state);
   let orderChanged = false;
 
   switch (action.type) {
+    case 'supergroupSlowmodeUpdated': {
+      const slow = (action as SupergroupSlowmodeUpdatedEvent).slowmode;
+      newState.chats.supergroupSlowmode.set(slow.groupId, slow.clone());
+      break;
+    }
+    case 'supergroupBoostsUpdated': {
+      const boosts = (action as SupergroupBoostsUpdatedEvent).boosts;
+      newState.chats.supergroupBoosts.set(boosts.groupId, boosts.clone());
+      break;
+    }
+    case 'groupAccessUpdated': {
+      const access = (action as GroupAccessUpdatedEvent).access;
+      const registry = access.kind === 'supergroup'
+        ? newState.chats.supergroupAccess : newState.chats.basicGroupAccess;
+      // Never retain the producer's mutable DTO as the state value.
+      const copy = cloneGroupAccess(access);
+      if (copy.isSlowModeEnabled === undefined) {
+        copy.isSlowModeEnabled = registry.get(access.groupId)?.isSlowModeEnabled;
+      }
+      registry.set(access.groupId, copy);
+      if (access.kind === 'supergroup' && copy.isSlowModeEnabled === false) {
+        // Disabling retires the old deadline; false -> true cannot revive it.
+        newState.chats.supergroupSlowmode.delete(access.groupId);
+      }
+      break;
+    }
+
     case 'newChat': {
       const event = action as NewChatEvent;
       const existing = newState.chats.chats.get(event.chatId);
@@ -228,6 +281,15 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         // Create a minimal placeholder; updateNewChat will fill it properly later.
         const placeholder = new Chat();
         placeholder.id = event.chatId;
+        if (event.updates.sendPermissions !== undefined) {
+          placeholder.sendPermissions = event.updates.sendPermissions.clone();
+          placeholder.canSendBasicMessages = placeholder.sendPermissions.canSendBasicMessages;
+        } else if (event.updates.canSendBasicMessages !== undefined) {
+          placeholder.canSendBasicMessages = event.updates.canSendBasicMessages;
+          if (placeholder.sendPermissions !== undefined) {
+            placeholder.sendPermissions.canSendBasicMessages = event.updates.canSendBasicMessages;
+          }
+        }
         if (event.updates.title !== undefined) {
           const nextTitle = event.updates.title.trim();
           if (nextTitle.length > 0) {
@@ -263,6 +325,15 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
       // Apply partial updates from ChatUpdateDto
       const updatedChat = cloneChat(existingChat);
 
+      if (event.updates.sendPermissions !== undefined) {
+        updatedChat.sendPermissions = event.updates.sendPermissions.clone();
+        updatedChat.canSendBasicMessages = updatedChat.sendPermissions.canSendBasicMessages;
+      } else if (event.updates.canSendBasicMessages !== undefined) {
+        updatedChat.canSendBasicMessages = event.updates.canSendBasicMessages;
+        if (updatedChat.sendPermissions !== undefined) {
+          updatedChat.sendPermissions.canSendBasicMessages = event.updates.canSendBasicMessages;
+        }
+      }
       if (event.updates.title !== undefined) {
         const nextTitle = event.updates.title.trim();
         if (nextTitle.length > 0 || updatedChat.title.trim().length === 0) {

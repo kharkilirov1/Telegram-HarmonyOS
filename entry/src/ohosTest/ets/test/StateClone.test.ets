@@ -26,6 +26,8 @@ import {
   FileTransfer
 } from '../../../main/ets/core/model/AppState';
 import { CustomEmojiTextEntity } from '../../../main/ets/core/model/AppCommand';
+import { ChatReadInboxEvent } from '../../../main/ets/core/model/AppEvent';
+import { chatsReducer } from '../../../main/ets/core/reducers/chatsReducer';
 
 /**
  * Unit tests for stateClone utilities — validates immutable cloning
@@ -62,6 +64,7 @@ export default function stateCloneTest() {
         chat.memberCount = 150;
         chat.description = 'A test group';
         chat.supergroupId = 200;
+        chat.canSendBasicMessages = false;
         chat.inviteLink = 'https://t.me/+abc';
         chat.administratorCount = 3;
 
@@ -95,6 +98,7 @@ export default function stateCloneTest() {
         expect(cloned.memberCount).assertEqual(150);
         expect(cloned.description).assertEqual('A test group');
         expect(cloned.supergroupId).assertEqual(200);
+        expect(cloned.canSendBasicMessages).assertFalse();
         expect(cloned.inviteLink).assertEqual('https://t.me/+abc');
         expect(cloned.administratorCount).assertEqual(3);
 
@@ -112,6 +116,34 @@ export default function stateCloneTest() {
         const cloned = cloneChat(chat);
         expect(cloned.id).assertEqual(101);
         expect(cloned.lastMessage).assertEqual(undefined);
+        expect(cloned.canSendBasicMessages).assertTrue();
+      });
+
+      it('should preserve revoked sending permission through a read update', 0, () => {
+        const state = new AppState();
+        const chat = new Chat();
+        chat.id = 101;
+        chat.type = 'supergroup';
+        chat.canSendBasicMessages = false;
+        chat.unreadCount = 3;
+        chat.lastReadInboxMessageId = '10';
+        state.chats.chats.set(chat.id, chat);
+
+        const event = new ChatReadInboxEvent();
+        event.chatId = chat.id;
+        event.unreadCount = 0;
+        event.lastReadInboxMessageId = '20';
+
+        const updated = chatsReducer(state, event);
+        const cloned = updated.chats.chats.get(chat.id)!;
+        expect(updated === state).assertFalse();
+        expect(cloned === chat).assertFalse();
+        expect(cloned.unreadCount).assertEqual(0);
+        expect(cloned.lastReadInboxMessageId).assertEqual('20');
+        expect(cloned.canSendBasicMessages).assertFalse();
+        expect(chat.canSendBasicMessages).assertFalse();
+        expect(chat.unreadCount).assertEqual(3);
+        expect(chat.lastReadInboxMessageId).assertEqual('10');
       });
 
       it('should produce independent clone — modifying clone does not affect original', 0, () => {

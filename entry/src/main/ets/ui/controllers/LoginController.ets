@@ -207,10 +207,8 @@ function parseTdError(errorCode: number, errorMessage: string): LoginError {
 
 export class LoginController {
   private static instance: LoginController | null = null;
-  private gateway: TdGatewayPort;
-
   private constructor() {
-    this.gateway = getTdGatewayAdapter();
+    // The singleton spans accounts; resolve an account-scoped adapter per command.
   }
 
   static getInstance(): LoginController {
@@ -223,10 +221,11 @@ export class LoginController {
   // ─── Send Phone Number ───
   async sendPhoneNumber(phone: string): Promise<SendCodeResult> {
     try {
+      const gateway: TdGatewayPort = getTdGatewayAdapter();
       hilog.info(DOMAIN, TAG, 'Sending phone number: %{public}s***', phone.substring(0, 4));
 
       const command = createSetPhoneNumberCommand(phone);
-      await this.gateway.send(command);
+      await gateway.send(command);
 
       // Успех — состояние обновится через AppStore
       const result = new SendCodeSuccess();
@@ -244,18 +243,19 @@ export class LoginController {
   // ─── Check Auth Code ───
   async checkCode(code: string): Promise<CheckCodeResult> {
     try {
-      const masked = code.length >= 2 ? code.substring(0, 2) + '***' : '***';
-      hilog.info(DOMAIN, TAG, 'Checking auth code: %{public}s (len=%{public}d)', masked, code.length);
+      const gateway: TdGatewayPort = getTdGatewayAdapter();
+      hilog.info(DOMAIN, TAG, 'Checking auth code');
 
       const command = createCheckAuthCodeCommand(code);
-      await this.gateway.send(command);
+      await gateway.send(command);
 
       const result = new CheckCodeSuccess();
       result.nextStep = 'ready';
       return result;
     } catch (e) {
       const err = e as Error;
-      hilog.error(DOMAIN, TAG, 'checkCode failed: %{public}s', err.message);
+      // A gateway error can echo the submitted credential; never log its text.
+      hilog.error(DOMAIN, TAG, 'checkCode failed');
       const failure = new CheckCodeFailure();
       // Extract numeric error code from TDLib error message (e.g. "PHONE_CODE_INVALID code: 400")
       const codeMatch = err.message.match(/code:\s*(\d+)/i);
@@ -268,10 +268,11 @@ export class LoginController {
   // ─── Check Password (2FA) ───
   async checkPassword(password: string): Promise<CheckPasswordResult> {
     try {
+      const gateway: TdGatewayPort = getTdGatewayAdapter();
       hilog.info(DOMAIN, TAG, 'Checking password');
 
       const command = createCheckAuthPasswordCommand(password);
-      await this.gateway.send(command);
+      await gateway.send(command);
 
       return new CheckPasswordSuccess();
     } catch (e) {
@@ -286,9 +287,10 @@ export class LoginController {
   // ─── Request Password Recovery ───
   async requestPasswordRecovery(): Promise<RecoveryResult> {
     try {
+      const gateway: TdGatewayPort = getTdGatewayAdapter();
       hilog.info(DOMAIN, TAG, 'Requesting password recovery');
       const command = createRequestPasswordRecoveryCommand();
-      await this.gateway.send(command);
+      await gateway.send(command);
       return new RecoverySuccess();
     } catch (e) {
       const err = e as Error;
@@ -301,9 +303,10 @@ export class LoginController {
   // ─── Request QR Code Login ───
   async requestQrLogin(): Promise<SendCodeResult> {
     try {
+      const gateway: TdGatewayPort = getTdGatewayAdapter();
       hilog.info(DOMAIN, TAG, 'Requesting QR code authentication');
       const command = new RequestQrCodeAuthCommand();
-      await this.gateway.send(command);
+      await gateway.send(command);
       const result = new SendCodeSuccess();
       result.codeInfo = this.createDefaultCodeInfo();
       return result;
@@ -319,29 +322,29 @@ export class LoginController {
   // ─── Logout / Auth Reset ───
   // Аналог auth.cancelCode (Android: TLRPC.TL_auth_cancelCode).
   // Вызывать при уходе с экрана ввода кода — сбрасывает ожидающий auth state на сервере.
-  // После успешного logOut TDLib автоматически эмитирует updateAuthorizationState: waitPhoneNumber.
-  // Не бросает исключение: logOut в pre-auth состоянии может вернуть ошибку от TDLib,
-  // но локальный сброс состояния всё равно произойдёт.
+  // logOut -> ok не подтверждает waitPhoneNumber: ждём реальные auth updates нового клиента.
+  // Ошибка должна дойти до UI; она не доказывает ни logout, ни локальный сброс.
   async logout(): Promise<void> {
     try {
+      const gateway: TdGatewayPort = getTdGatewayAdapter();
       hilog.info(DOMAIN, TAG, 'Выполняем logOut для сброса auth state на сервере');
       const command = createLogoutCommand();
-      await this.gateway.send(command);
-      hilog.info(DOMAIN, TAG, 'logOut успешно выполнен');
+      await gateway.send(command);
+      hilog.info(DOMAIN, TAG, 'logOut accepted; waiting for authoritative auth updates');
     } catch (e) {
-      const err = e as Error;
-      // TDLib может вернуть ошибку при logOut в pre-auth состоянии (waitCode, waitPassword).
-      // Это нормально — TDLib всё равно сбрасывает локальный auth state.
-      hilog.warn(DOMAIN, TAG, 'logOut завершился с ошибкой (ожидаемо в pre-auth): %{public}s', err.message);
+      hilog.warn(DOMAIN, TAG, 'logOut failed; retaining authoritative auth state');
+      const error: Error = e instanceof Error ? e : new Error(String(e));
+      throw error;
     }
   }
 
   // ─── Resend Code ───
   async resendCode(): Promise<SendCodeResult> {
     try {
+      const gateway: TdGatewayPort = getTdGatewayAdapter();
       hilog.info(DOMAIN, TAG, 'Resending code');
       const command = createResendAuthCodeCommand();
-      await this.gateway.send(command);
+      await gateway.send(command);
       const result = new SendCodeSuccess();
       result.codeInfo = this.createDefaultCodeInfo();
       return result;

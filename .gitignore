@@ -37,6 +37,10 @@ oh_modules/
 entry/.test/
 entry/.cxx/
 hvigor/
+# Required source bootstrap, not generated Hvigor metadata.
+!tools/hvigor/
+tools/hvigor/*
+!tools/hvigor/hvigor-ohos-plugin-compat.ts
 
 # Generated
 entry/oh-package-lock.json5

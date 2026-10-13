@@ -1,19 +1,20 @@
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
 $modeBar = Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgEntityKeyboardModeBar.ets'
-$stickerPanel = Get-Content (Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgComposerStickerPanel.ets') -Raw
-$emojiPanel = Get-Content (Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgComposerEmojiPanel.ets') -Raw
-$chatPage = Get-Content (Join-Path $root 'entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets') -Raw
-$commands = Get-Content (Join-Path $root 'entry/src/main/ets/core/model/AppCommand.ets') -Raw
-$serializer = Get-Content (Join-Path $root 'entry/src/main/ets/infra/td/serialization/CommandSerializer.ets') -Raw
-$useCase = Get-Content (Join-Path $root 'entry/src/main/ets/domain/usecases/stickerPanel.ets') -Raw
+$stickerPanel = Get-ChatContractContent (Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgComposerStickerPanel.ets') -Raw
+$emojiPanel = Get-ChatContractContent (Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgComposerEmojiPanel.ets') -Raw
+$chatPage = Get-ChatContractContent (Join-Path $root 'entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets') -Raw
+$commands = Get-ChatContractContent (Join-Path $root 'entry/src/main/ets/core/model/AppCommand.ets') -Raw
+$serializer = Get-ChatContractContent (Join-Path $root 'entry/src/main/ets/infra/td/serialization/CommandSerializer.ets') -Raw
+$useCase = Get-ChatContractContent (Join-Path $root 'entry/src/main/ets/domain/usecases/stickerPanel.ets') -Raw
 
 if (-not (Test-Path $modeBar)) {
   throw 'Missing production TgEntityKeyboardModeBar atom'
 }
 
-$modeBarSource = Get-Content $modeBar -Raw
+$modeBarSource = Get-ChatContractContent $modeBar -Raw
 foreach ($required in @('gifs', 'stickers', 'emoji', 'onModePress')) {
   if ($modeBarSource -notmatch [regex]::Escape($required)) {
     throw "Mode bar is missing $required"

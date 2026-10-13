@@ -1,3 +1,4 @@
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
@@ -8,11 +9,11 @@ $motionPath = Join-Path $root 'entry/src/main/ets/ui/tg_ui/utils/TgChatTopBarMot
 $specPath = Join-Path $root 'entry/src/main/ets/ui/tg_ui/spec/TgChatTopBar.md'
 $demoPath = Join-Path $root 'entry/src/main/ets/ui/tg_ui/demos/TgChatTopBarDemo.ets'
 
-$topBar = Get-Content -LiteralPath $topBarPath -Raw
-$page = Get-Content -LiteralPath $pagePath -Raw
-$tokens = Get-Content -LiteralPath $tokensPath -Raw
-$spec = Get-Content -LiteralPath $specPath -Raw
-$demo = Get-Content -LiteralPath $demoPath -Raw
+$topBar = Get-ChatContractContent -LiteralPath $topBarPath -Raw
+$page = Get-ChatContractContent -LiteralPath $pagePath -Raw
+$tokens = Get-ChatContractContent -LiteralPath $tokensPath -Raw
+$spec = Get-ChatContractContent -LiteralPath $specPath -Raw
+$demo = Get-ChatContractContent -LiteralPath $demoPath -Raw
 
 $requiredTopBarPatterns = @(
   "import { uiMaterial } from '@kit.ArkUI';",
@@ -106,7 +107,7 @@ foreach ($fragment in @('CHAT_TOP_BAR_CONTROL_SIZE: number = 38;',
 if (-not (Test-Path -LiteralPath $motionPath)) {
   throw 'TgChatTopBarMotionPolicy.ets is missing.'
 }
-$motion = Get-Content -LiteralPath $motionPath -Raw
+$motion = Get-ChatContractContent -LiteralPath $motionPath -Raw
 if (-not $motion.Contains('TransitionEffect.asymmetric') -or
     -not $motion.Contains('TransitionEffect.OPACITY') -or
     -not $motion.Contains('TransitionEffect.scale')) {

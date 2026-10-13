@@ -35,6 +35,10 @@ export struct TgChatBottomActionBarDemo {
           messageText: "Writing messages isn't allowed in this group."
         })
 
+        TgChatBottomActionBar({ mode: 'restricted', messageText: 'Loading...' })
+        TgChatBottomActionBar({ mode: 'action', actionText: 'Retry', onActionPress: (): void => {} })
+        TgChatBottomActionBar({ mode: 'restricted', messageText: 'This channel is unavailable.' })
+
         TgChatBottomActionBar({
           mode: 'action',
           actionText: 'Join',

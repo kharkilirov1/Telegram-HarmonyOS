@@ -1,4 +1,5 @@
 import { describe, it, expect } from '@ohos/hypium';
+import { fileUri } from '@kit.CoreFileKit';
 import {
   senderNameColor,
   PollOptionVO,
@@ -253,7 +254,7 @@ export default function chatTimelineVOTest() {
         expect(row.linkPreviewUrl).assertEqual('https://telegram.org/blog/example');
         expect(row.linkPreviewSiteName).assertEqual('Telegram');
         expect(row.linkPreviewDescription).assertEqual('Preview description');
-        expect(row.linkPreviewPhotoPath).assertEqual('file:///data/files/preview.jpg');
+        expect(row.linkPreviewPhotoPath).assertEqual(fileUri.getUriFromPath('/data/files/preview.jpg'));
         expect(row.linkPreviewPhotoThumbFileId).assertEqual(91);
         expect(row.linkPreviewShowLargeMedia).assertTrue();
       });

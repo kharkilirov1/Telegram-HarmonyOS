@@ -1,3 +1,4 @@
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
@@ -17,14 +18,14 @@ foreach ($path in @($policyPath, $composerPath, $controllerPath, $chatPagePath,
   }
 }
 
-$policy = Get-Content $policyPath -Raw
-$composer = Get-Content $composerPath -Raw
-$controller = Get-Content $controllerPath -Raw
-$chatPage = Get-Content $chatPagePath -Raw
-$chatState = Get-Content $chatStatePath -Raw
-$chatDto = Get-Content $chatDtoPath -Raw
-$normalizer = Get-Content $normalizerPath -Raw
-$tests = Get-Content $testPath -Raw
+$policy = Get-ChatContractContent $policyPath -Raw
+$composer = Get-ChatContractContent $composerPath -Raw
+$controller = Get-ChatContractContent $controllerPath -Raw
+$chatPage = Get-ChatContractContent $chatPagePath -Raw
+$chatState = Get-ChatContractContent $chatStatePath -Raw
+$chatDto = Get-ChatContractContent $chatDtoPath -Raw
+$normalizer = Get-ChatContractContent $normalizerPath -Raw
+$tests = Get-ChatContractContent $testPath -Raw
 
 foreach ($required in @(
     'reconcileCustomEmojiEntities',

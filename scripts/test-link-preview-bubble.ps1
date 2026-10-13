@@ -1,3 +1,4 @@
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
@@ -29,7 +30,7 @@ foreach ($name in $paths.Keys) {
 
 $source = @{}
 foreach ($name in $paths.Keys) {
-  $source[$name] = Get-Content -LiteralPath $paths[$name] -Raw
+  $source[$name] = Get-ChatContractContent -LiteralPath $paths[$name] -Raw
 }
 
 foreach ($pattern in @(

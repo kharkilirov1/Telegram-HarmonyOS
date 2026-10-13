@@ -397,6 +397,30 @@
       "value": "Cancel"
     },
     {
+      "name": "delete_message_title",
+      "value": "Delete message?"
+    },
+    {
+      "name": "delete_message_warning",
+      "value": "This action cannot be undone."
+    },
+    {
+      "name": "delete_message_for_me",
+      "value": "Delete for me"
+    },
+    {
+      "name": "delete_message_for_everyone",
+      "value": "Delete for everyone"
+    },
+    {
+      "name": "delete_message_unavailable",
+      "value": "This message cannot be deleted now."
+    },
+    {
+      "name": "delete_message_not_confirmed",
+      "value": "Deletion was not confirmed. Check the chat before retrying."
+    },
+    {
       "name": "share_contact",
       "value": "Share contact"
     },
@@ -2903,6 +2927,126 @@
     {
       "name": "permission_background_audio_reason",
       "value": "Keep music and voice messages playing in the background"
+    },
+    {
+      "name": "channel_access_unavailable",
+      "value": "This channel is unavailable."
+    },
+    {
+      "name": "forward_invalid_selection",
+      "value": "Select up to 100 valid messages to forward."
+    },
+    {
+      "name": "forward_partial_failed",
+      "value": "Some messages could not be forwarded."
+    },
+    {
+      "name": "forward_result_unknown",
+      "value": "Check the destination chat before forwarding again."
+    },
+    {
+      "name": "forward_source_checking",
+      "value": "Checking forwarding…"
+    },
+    {
+      "name": "forward_source_denied",
+      "value": "Forwarding unavailable"
+    },
+    {
+      "name": "forward_source_retry",
+      "value": "Retry forwarding check"
+    },
+    {
+      "name": "group_access_unavailable",
+      "value": "This group is unavailable."
+    },
+    {
+      "name": "edit_message_not_confirmed",
+      "value": "Edit was not confirmed. Your text is preserved. Check the message before retrying."
+    },
+    {
+      "name": "edit_message_unavailable",
+      "value": "This message cannot be edited now. Your text is preserved."
+    },
+    {
+      "name": "chat_open_not_confirmed",
+      "value": "Chat opening was not confirmed. Go back and open the chat again."
+    },
+    {
+      "name": "composer_album_unknown_title",
+      "value": "Sending result unknown"
+    },
+    {
+      "name": "composer_album_unknown_message",
+      "value": "Check the chat before sending these photos again. They may already have been sent."
+    },
+    {
+      "name": "composer_album_resend_title",
+      "value": "Send these photos again?"
+    },
+    {
+      "name": "composer_album_resend_message",
+      "value": "These photos may already have been sent. Sending again can create duplicates."
+    },
+    {
+      "name": "composer_album_resend_action",
+      "value": "Send again"
+    },
+    {
+      "name": "composer_photo_preview_photo",
+      "value": "Photo"
+    },
+    {
+      "name": "composer_photo_preview_move_earlier",
+      "value": "Move earlier"
+    },
+    {
+      "name": "composer_photo_preview_remove",
+      "value": "Remove photo"
+    },
+    {
+      "name": "composer_photo_preview_move_later",
+      "value": "Move later"
+    },
+    {
+      "name": "composer_photo_preview_loading",
+      "value": "Loading photo…"
+    },
+    {
+      "name": "composer_photo_preview_unavailable",
+      "value": "Photo unavailable"
+    },
+    {
+      "name": "composer_send_resend_title",
+      "value": "Send this message again?"
+    },
+    {
+      "name": "composer_send_resend_message",
+      "value": "This message may already have been sent. Sending again can create duplicates."
+    },
+    {
+      "name": "composer_send_result_unknown",
+      "value": "Check the chat before sending again. The message may already have been sent."
+    },
+    {
+      "name": "composer_media_resend_title",
+      "value": "Send these files again?"
+    },
+    {
+      "name": "composer_media_resend_message",
+      "value": "Some of these files may already have been sent. Sending again can create duplicates."
+    },
+    {
+      "name": "composer_media_result_unknown",
+      "value": "Check the chat before sending these files again. They may already have been sent."
+    },
+    {
+      "name": "composer_slowmode_wait",
+      "value": "Slow mode"
+    },
+    {
+      "name": "composer_voice_preview",
+      "value": "Voice message"
     }
   ]
 }

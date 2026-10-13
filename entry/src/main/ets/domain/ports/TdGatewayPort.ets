@@ -44,8 +44,10 @@ export class GatewayError extends AppError {
     message: string,
     technicalMessage: string = ''
   ) {
-    super(AppErrorKind.NETWORK, message, technicalMessage, 0, true);
+    super(code === GatewayErrorCode.INVALID_COMMAND ? AppErrorKind.UNKNOWN : AppErrorKind.NETWORK,
+      message, technicalMessage, 0, code !== GatewayErrorCode.INVALID_COMMAND);
     this.code = code;
+    this.requestRejected = code === GatewayErrorCode.NOT_INITIALIZED || code === GatewayErrorCode.INVALID_COMMAND;
   }
 }
 

@@ -64,9 +64,9 @@ export default function loadPinnedMessageTest() {
           '"caption":{"@type":"formattedText","text":"","entities":[]},"photo":{"@type":"photo",' +
           '"sizes":[' +
           '{"@type":"photoSize","width":90,"height":90,"photo":{"@type":"file","id":2,' +
-          '"local":{"@type":"localFile","path":"/data/thumb.jpg"}}},' +
+          '"local":{"@type":"localFile","is_downloading_completed":true,"path":"/data/thumb.jpg"}}},' +
           '{"@type":"photoSize","width":900,"height":900,"photo":{"@type":"file","id":3,' +
-          '"local":{"@type":"localFile","path":"/data/full.jpg"}}}]}}}'
+          '"local":{"@type":"localFile","is_downloading_completed":true,"path":"/data/full.jpg"}}}]}}}'
       );
 
       const info: PinnedMessageInfo = parsePinnedMessageInfo(response);
@@ -74,6 +74,22 @@ export default function loadPinnedMessageTest() {
       expect(info.preview).assertEqual('[Photo]');
       expect(info.hasThumbnail).assertTrue();
       expect(info.thumbnailPath).assertEqual('/data/thumb.jpg');
+    });
+
+    it('does not expose incomplete photo paths as panel thumbnails', 0, () => {
+      for (const completion of ['"is_downloading_completed":false,', '']) {
+        const response = TdObject.fromJSON(
+          '{"@type":"message","id":902,"chat_id":1,"date":1,"content":{"@type":"messagePhoto",' +
+            '"caption":{"@type":"formattedText","text":"","entities":[]},"photo":{"@type":"photo",' +
+            '"sizes":[{"@type":"photoSize","width":90,"height":90,"photo":{"@type":"file","id":2,' +
+            '"local":{"@type":"localFile",' + completion + '"path":"/data/partial.jpg"}}}]}}}'
+        );
+
+        const info: PinnedMessageInfo = parsePinnedMessageInfo(response);
+        expect(info.isAvailable).assertTrue();
+        expect(info.hasThumbnail).assertFalse();
+        expect(info.thumbnailPath).assertEqual('');
+      }
     });
 
     it('keeps the panel hidden for TDLib error responses', 0, () => {

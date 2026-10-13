@@ -1,3 +1,4 @@
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -44,16 +45,16 @@ $contracts = @(
 )
 
 foreach ($contract in $contracts) {
-  if (-not (Select-String -LiteralPath $contract.Path -SimpleMatch $contract.Pattern -Quiet)) {
+  if (-not (Select-ChatContractString -LiteralPath $contract.Path -SimpleMatch $contract.Pattern -Quiet)) {
     throw "Missing $($contract.Label): $($contract.Pattern)"
   }
 }
 
-if (Select-String -LiteralPath $chatPage -SimpleMatch 'this.showMediaGallery = true;' -Quiet) {
+if (Select-ChatContractString -LiteralPath $chatPage -SimpleMatch 'this.showMediaGallery = true;' -Quiet) {
   throw 'Gallery open must mutate visibility only inside animateMediaGalleryState().'
 }
 
-if (Select-String -LiteralPath $router -SimpleMatch '.geometryTransition(mediaGeometryTransitionId(this.messageId))' -Quiet) {
+if (Select-ChatContractString -LiteralPath $router -SimpleMatch '.geometryTransition(mediaGeometryTransitionId(this.messageId))' -Quiet) {
   throw 'The shared-element host must be the media surface, not the full captioned bubble shell.'
 }
 

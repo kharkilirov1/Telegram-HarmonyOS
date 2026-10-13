@@ -1,3 +1,4 @@
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -50,7 +51,7 @@ foreach ($file in $requiredFiles) {
   }
 }
 
-$composer = Get-Content -LiteralPath $composerPath -Raw -Encoding UTF8
+$composer = Get-ChatContractContent -LiteralPath $composerPath -Raw -Encoding UTF8
 $requiredComposerFragments = @(
   "import { uiMaterial } from '@kit.ArkUI';",
   "import { inputMethod } from '@kit.IMEKit';",
@@ -62,7 +63,9 @@ $requiredComposerFragments = @(
   'style: uiMaterial.ImmersiveStyle.THIN',
   'style: uiMaterial.ImmersiveStyle.REGULAR',
   'interactive: true',
-  '.backgroundBlurStyle(',
+  '.backdropBlur(this.capsuleBackdropBlur())',
+  'this.useBlur() ? TgUiTokens.GLASS_CAPSULE_BACKDROP_BLUR : 0',
+  'TgGlassPolicy.supportsNativeMaterial()',
   '.style(TextContentStyle.DEFAULT)',
   'LongPressGesture(',
   'PanGesture(',
@@ -130,7 +133,7 @@ if ($composer -notmatch 'this\.attachmentMenuOpen\s*=\s*false;[\s\S]*?this\.onAt
   throw 'Opening the emoji keyboard must close attachment and bot panels first.'
 }
 
-$tokens = Get-Content -LiteralPath $tokensPath -Raw -Encoding UTF8
+$tokens = Get-ChatContractContent -LiteralPath $tokensPath -Raw -Encoding UTF8
 foreach ($fragment in @('COMPOSER_BUTTON_SIZE: number = 34', 'COMPOSER_ICON_SIZE: number = 21',
     'COMPOSER_TEXT_SIZE: number = 16', 'COMPOSER_MIN_CAPSULE_HEIGHT: number = 34',
     'COMPOSER_CAPSULE_RADIUS: number = 17', 'COMPOSER_ELEMENT_GAP: number = 4',
@@ -148,7 +151,7 @@ foreach ($fragment in @('COMPOSER_BUTTON_SIZE: number = 34', 'COMPOSER_ICON_SIZE
     throw "Compact composer geometry contract missing: $fragment"
   }
 }
-$attachmentSheet = Get-Content -LiteralPath $attachmentSheetPath -Raw -Encoding UTF8
+$attachmentSheet = Get-ChatContractContent -LiteralPath $attachmentSheetPath -Raw -Encoding UTF8
 foreach ($fragment in @('export class TgAttachmentRecentItem', 'export struct TgAttachmentSheet',
     "columnsTemplate('1fr 1fr 1fr')", "columnsTemplate('1fr 1fr 1fr 1fr 1fr 1fr')",
     'Image(item.uri)', '@Event onRecentPress:',
@@ -163,8 +166,8 @@ foreach ($fragment in @('export class TgAttachmentRecentItem', 'export struct Tg
   }
 }
 
-$baseColors = Get-Content -LiteralPath $baseColorsPath -Raw -Encoding UTF8
-$darkColors = Get-Content -LiteralPath $darkColorsPath -Raw -Encoding UTF8
+$baseColors = Get-ChatContractContent -LiteralPath $baseColorsPath -Raw -Encoding UTF8
+$darkColors = Get-ChatContractContent -LiteralPath $darkColorsPath -Raw -Encoding UTF8
 if (-not $baseColors.Contains('"name": "attachment_sheet_bg"')) {
   throw 'Light attachment sheet surface resource is missing.'
 }
@@ -178,7 +181,7 @@ if (-not $darkColors.Contains('"name": "attachment_sheet_active_bg"')) {
   throw 'Dark selected attachment category resource is missing.'
 }
 
-$motionPolicy = Get-Content -LiteralPath $motionPolicyPath -Raw -Encoding UTF8
+$motionPolicy = Get-ChatContractContent -LiteralPath $motionPolicyPath -Raw -Encoding UTF8
 foreach ($fragment in @('export function composerPopupTransition(): TransitionEffect',
     'TransitionEffect.asymmetric(', 'TransitionEffect.OPACITY', 'TransitionEffect.translate(',
     'TransitionEffect.scale(', 'export function composerMenuLabelTransition(): TransitionEffect')) {
@@ -197,26 +200,26 @@ if ($composer -notmatch 'this\.buildTextCapsule\(\)\s*this\.buildActionButton\(\
   throw 'The external action slot must remain mounted after the text capsule.'
 }
 
-$flags = Get-Content -LiteralPath $featureFlagsPath -Raw -Encoding UTF8
+$flags = Get-ChatContractContent -LiteralPath $featureFlagsPath -Raw -Encoding UTF8
 if (-not $flags.Contains('USE_NATIVE_IMMERSIVE_COMPOSER_MATERIAL: boolean = true')) {
   throw 'Native immersive composer material feature flag is missing or disabled.'
 }
 
-$policy = Get-Content -LiteralPath $policyPath -Raw -Encoding UTF8
+$policy = Get-ChatContractContent -LiteralPath $policyPath -Raw -Encoding UTF8
 foreach ($mode in @('nativeImmersive', 'realtimeBlur', 'fallback')) {
   if (-not $policy.Contains($mode)) {
     throw "Composer material policy mode is missing: $mode"
   }
 }
 
-$policyTest = Get-Content -LiteralPath $policyTestPath -Raw -Encoding UTF8
+$policyTest = Get-ChatContractContent -LiteralPath $policyTestPath -Raw -Encoding UTF8
 foreach ($mode in @('nativeImmersive', 'realtimeBlur', 'fallback')) {
   if (-not $policyTest.Contains($mode)) {
     throw "Composer material policy test does not cover: $mode"
   }
 }
 
-$chatPage = Get-Content -LiteralPath $chatPagePath -Raw -Encoding UTF8
+$chatPage = Get-ChatContractContent -LiteralPath $chatPagePath -Raw -Encoding UTF8
 if (-not $chatPage.Contains('TgComposerInput({')) {
   throw 'The live chat page must still compose TgComposerInput.'
 }
@@ -247,14 +250,14 @@ foreach ($fragment in @('bottomInset: this.composerKeyboardPanelVisible() ? 0 : 
   }
 }
 
-$controller = Get-Content -LiteralPath $controllerPath -Raw -Encoding UTF8
+$controller = Get-ChatContractContent -LiteralPath $controllerPath -Raw -Encoding UTF8
 foreach ($fragment in @('cameraPicker.pick(', 'PickerMediaType.PHOTO', 'PickerMediaType.VIDEO')) {
   if (-not $controller.Contains($fragment)) {
     throw "CameraPicker composer contract missing: $fragment"
   }
 }
 foreach ($fragment in @('handleAttachmentMenuItemPress(index: number', 'openCameraAttachmentPicker(host)',
-    "openPhotoAttachmentPicker('photo', host)",
+    "openPhotoAttachmentPicker(host.getSendMediaUseCase('photo') !== undefined ? 'photo' : 'video', host)",
     'openDocumentAttachmentPicker(host)', 'loadRecentAttachmentMedia(',
     'photoAccessHelper.getPhotoAccessHelper(', 'getAssets(', 'PhotoKeys.DATE_ADDED',
     'getObjectByPosition(', 'fetchResult.close()')) {
@@ -268,7 +271,7 @@ foreach ($forbidden in @("import { promptAction } from '@kit.ArkUI';", 'showActi
   }
 }
 
-$voiceController = Get-Content -LiteralPath $voiceControllerPath -Raw -Encoding UTF8
+$voiceController = Get-ChatContractContent -LiteralPath $voiceControllerPath -Raw -Encoding UTF8
 foreach ($fragment in @('requestPermissionsFromUser(', 'media.createAVRecorder()', 'AUDIO_SOURCE_TYPE_MIC',
     'CFT_MPEG_4A', 'fd://', "params.mediaKind = 'voice'", 'releaseRecorder(')) {
   if (-not $voiceController.Contains($fragment)) {
@@ -276,7 +279,7 @@ foreach ($fragment in @('requestPermissionsFromUser(', 'media.createAVRecorder()
   }
 }
 
-$voicePolicy = Get-Content -LiteralPath $voicePolicyPath -Raw -Encoding UTF8
+$voicePolicy = Get-ChatContractContent -LiteralPath $voicePolicyPath -Raw -Encoding UTF8
 foreach ($fragment in @('TG_VOICE_CANCEL_THRESHOLD_VP: number = -72',
     'TG_VOICE_LOCK_THRESHOLD_VP: number = -72', 'TG_VOICE_MIN_DURATION_MS: number = 500')) {
   if (-not $voicePolicy.Contains($fragment)) {
@@ -284,17 +287,17 @@ foreach ($fragment in @('TG_VOICE_CANCEL_THRESHOLD_VP: number = -72',
   }
 }
 
-$serializer = Get-Content -LiteralPath $serializerPath -Raw -Encoding UTF8
+$serializer = Get-ChatContractContent -LiteralPath $serializerPath -Raw -Encoding UTF8
 if (-not $serializer.Contains('"@type":"inputMessageVoiceNote"')) {
   throw 'TDLib voice-note serialization contract is missing.'
 }
 
-$userDto = Get-Content -LiteralPath $userDtoPath -Raw -Encoding UTF8
+$userDto = Get-ChatContractContent -LiteralPath $userDtoPath -Raw -Encoding UTF8
 if (-not $userDto.Contains("=== 'userTypeBot'")) {
   throw 'TDLib userTypeBot persistence contract is missing.'
 }
 
-$botMenu = Get-Content -LiteralPath $botMenuPath -Raw -Encoding UTF8
+$botMenu = Get-ChatContractContent -LiteralPath $botMenuPath -Raw -Encoding UTF8
 foreach ($fragment in @('createGetUserFullInfoCommand(', "tdGetObject(response, 'bot_info')",
     "tdGetArray(botInfo, 'commands')")) {
   if (-not $botMenu.Contains($fragment)) {
@@ -324,7 +327,7 @@ if ($chatPage.Contains('showActionMenu(')) {
   throw 'Bot commands must use the composer-anchored popup instead of the system action menu.'
 }
 
-$messageActionsController = Get-Content -LiteralPath $messageActionsControllerPath -Raw -Encoding UTF8
+$messageActionsController = Get-ChatContractContent -LiteralPath $messageActionsControllerPath -Raw -Encoding UTF8
 foreach ($fragment in @('buildMessageActionItems(', 'handleMessageActionPress(')) {
   if (-not $messageActionsController.Contains($fragment)) {
     throw "Message action popup contract missing: $fragment"
@@ -337,7 +340,9 @@ foreach ($forbidden in @("import { promptAction } from '@kit.ArkUI';", 'showActi
 }
 foreach ($fragment in @('.bindPopup(this.messageActionsOpenId === entry.message.messageId',
     'builder: this.buildMessageActionsPopup', 'transition: composerPopupTransition()',
-    'this.handleMessageActionPress(index)')) {
+    'this.handleMessageActionPress(item)', '.enabled(item.enabled)',
+    'item.contextToken !== this.messageActionsGeneration',
+    'item.sourceMessageId !== entry.message.messageId')) {
   if (-not $chatPage.Contains($fragment)) {
     throw "Live message action popup integration missing: $fragment"
   }
@@ -358,7 +363,8 @@ foreach ($fragment in @('@Event onInputWillFocus: () => void',
     throw "Composer focus handoff contract missing: $fragment"
   }
 }
-foreach ($fragment in @('.padding({ bottom: this.composerTotalHeight })',
+foreach ($fragment in @('.contentEndOffset(this.composerTotalHeight)',
+    '.maintainVisibleContentPosition(true)',
     'private shouldKeepTimelineBottomAligned(): boolean',
     'private handleComposerWillFocus(): void',
     'private handleComposerFocusChange(focused: boolean): void',
@@ -368,11 +374,11 @@ foreach ($fragment in @('.padding({ bottom: this.composerTotalHeight })',
     'onInputFocusChange: (focused: boolean): void => {',
     'this.handleComposerFocusChange(focused);')) {
   if (-not $chatPage.Contains($fragment)) {
-    throw "Composer must resize the timeline viewport instead of covering it: $fragment"
+    throw "Under-glass timeline must preserve resting clearance and focus alignment: $fragment"
   }
 }
-if ($chatPage.Contains('.contentEndOffset(this.composerTotalHeight)')) {
-  throw 'Composer height must reduce the timeline viewport, not act only as a scroll-end offset.'
+if ($chatPage.Contains('.padding({ bottom: this.composerTotalHeight })')) {
+  throw 'Clipped viewport padding prevents messages scrolling beneath composer glass (contract 2026-08-29).'
 }
 
 foreach ($fragment in @('COMPOSER_CONTROL_BORDER_WIDTH', 'COMPOSER_CONTROL_ICON')) {
@@ -381,7 +387,7 @@ foreach ($fragment in @('COMPOSER_CONTROL_BORDER_WIDTH', 'COMPOSER_CONTROL_ICON'
   }
 }
 
-$demo = Get-Content -LiteralPath $demoPath -Raw -Encoding UTF8
+$demo = Get-ChatContractContent -LiteralPath $demoPath -Raw -Encoding UTF8
 foreach ($state in @('empty idle', 'multiline text', 'reply snippet', 'edit mode',
     'forward mode', 'selected attachment', 'disabled state', 'narrow container',
     'bot menu', 'bot menu typing collapse', 'voice recording', 'voice locked', 'voice sending')) {

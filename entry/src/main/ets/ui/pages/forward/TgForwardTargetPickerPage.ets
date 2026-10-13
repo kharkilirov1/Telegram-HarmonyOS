@@ -21,6 +21,8 @@ export enum ForwardTargetPickerMode {
 export class ForwardTargetPickerRouteParams {
   sourceChatId: number = 0;
   mode: ForwardTargetPickerMode = ForwardTargetPickerMode.Forward;
+  allowOrdinaryTargets: boolean = true;
+  allowSecretTargets: boolean = true;
 
   constructor(
     sourceChatId: number = 0,
@@ -46,6 +48,8 @@ export struct TgForwardTargetPickerPage {
   @Local pageStack: NavPathStack = new NavPathStack();
   @Local private sourceChatId: number = 0;
   @Local private mode: ForwardTargetPickerMode = ForwardTargetPickerMode.Forward;
+  @Local private allowOrdinaryTargets: boolean = false;
+  @Local private allowSecretTargets: boolean = false;
   @Local private searchQuery: string = '';
   @Local private filteredChats: ChatItemVO[] = [];
   @Local private filteredChatsCount: number = 0;
@@ -176,6 +180,8 @@ export struct TgForwardTargetPickerPage {
       if (!chat) {
         continue;
       }
+      if (this.mode === ForwardTargetPickerMode.Forward &&
+        !(chat.type === 'secret' ? this.allowSecretTargets : this.allowOrdinaryTargets)) continue;
       const item = buildChatItemVO(chat, state);
       if (normalizedQuery.length === 0 || this.matchesSearch(item, normalizedQuery)) {
         items.push(item);
@@ -249,6 +255,9 @@ export struct TgForwardTargetPickerPage {
       return;
     }
     try {
+      const chat = getAppCoreRuntime().getStore().getState().chats.chats.get(item.chatId);
+      if (chat === undefined || (this.mode === ForwardTargetPickerMode.Forward &&
+        !(chat.type === 'secret' ? this.allowSecretTargets : this.allowOrdinaryTargets))) return;
       this.isClosing = true;
       this.pageStack.pop(new ForwardTargetPickerResult(item.chatId, item.title));
     } catch (error) {
@@ -400,10 +409,17 @@ export struct TgForwardTargetPickerPage {
       this.pageStack = context.pathStack;
       const params = context.pathInfo.param as ForwardTargetPickerRouteParams;
       if (params) {
-        if (params.sourceChatId > 0) {
+        if (Number.isSafeInteger(params.sourceChatId) && params.sourceChatId !== 0) {
           this.sourceChatId = params.sourceChatId;
         }
         this.mode = params.mode;
+        this.allowOrdinaryTargets = params.allowOrdinaryTargets === true;
+        this.allowSecretTargets = params.allowSecretTargets === true;
+      }
+      try {
+        this.rebuildChats(getAppCoreRuntime().getStore().getState());
+      } catch (error) {
+        hilog.warn(DOMAIN, TAG, 'route rebuild failed: %{public}s', String(error));
       }
     })
     .onBackPressed((): boolean => {

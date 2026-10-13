@@ -1,3 +1,4 @@
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
@@ -7,11 +8,11 @@ $panelPath = Join-Path $root 'entry\src\main\ets\ui\tg_ui\atoms\TgPinnedMessageP
 $listPath = Join-Path $root 'entry\src\main\ets\ui\tg_ui\atoms\TgPinnedMessageList.ets'
 $testPath = Join-Path $root 'entry\src\ohosTest\ets\test\LoadPinnedMessage.test.ets'
 
-$useCase = Get-Content -LiteralPath $useCasePath -Raw
-$page = Get-Content -LiteralPath $pagePath -Raw
-$panel = Get-Content -LiteralPath $panelPath -Raw
-$list = Get-Content -LiteralPath $listPath -Raw
-$tests = Get-Content -LiteralPath $testPath -Raw
+$useCase = Get-ChatContractContent -LiteralPath $useCasePath -Raw
+$page = Get-ChatContractContent -LiteralPath $pagePath -Raw
+$panel = Get-ChatContractContent -LiteralPath $panelPath -Raw
+$list = Get-ChatContractContent -LiteralPath $listPath -Raw
+$tests = Get-ChatContractContent -LiteralPath $testPath -Raw
 
 function Assert-Contains([string] $Text, [string] $Needle, [string] $Label) {
   if (-not $Text.Contains($Needle)) {

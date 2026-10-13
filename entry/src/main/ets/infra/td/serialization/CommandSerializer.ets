@@ -14,7 +14,11 @@ import {
   OpenChatCommand,
   SendMessageCommand,
   SendMediaMessageCommand,
+  SendMediaAlbumCommand,
   EditMessageTextCommand,
+  EditMessageCaptionCommand,
+  EditMessageEntity,
+  EditMessageLinkPreviewOptions,
   DeleteMessagesCommand,
   ForwardMessagesCommand,
   SetChatMuteCommand,
@@ -40,11 +44,15 @@ import {
   SearchPublicChatsCommand,
   SearchCallMessagesCommand,
   GetChatCommand,
+  GetMessageCommand,
+  GetMessagePropertiesCommand,
   GetChatPinnedMessageCommand,
   GetRepliedMessageCommand,
   CloseChatCommand,
   SetTdlibOnlineCommand,
   GetUserFullInfoCommand,
+  GetSupergroupCommand,
+  GetBasicGroupCommand,
   GetSupergroupFullInfoCommand,
   GetBasicGroupFullInfoCommand,
   SearchChatMembersCommand,
@@ -92,7 +100,9 @@ COMMAND_SERIALIZATION_HANDLERS.set('loadActiveStories', serializeLoadActiveStori
 COMMAND_SERIALIZATION_HANDLERS.set('openChat', serializeOpenChat);
 COMMAND_SERIALIZATION_HANDLERS.set('sendMessage', serializeSendMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('sendMediaMessage', serializeSendMediaMessage);
+COMMAND_SERIALIZATION_HANDLERS.set('sendMediaAlbum', serializeSendMediaAlbum);
 COMMAND_SERIALIZATION_HANDLERS.set('editMessageText', serializeEditMessageText);
+COMMAND_SERIALIZATION_HANDLERS.set('editMessageCaption', serializeEditMessageCaption);
 COMMAND_SERIALIZATION_HANDLERS.set('deleteMessages', serializeDeleteMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('forwardMessages', serializeForwardMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('setChatMute', serializeSetChatMute);
@@ -117,11 +127,15 @@ COMMAND_SERIALIZATION_HANDLERS.set('searchChatsOnServer', serializeSearchChatsOn
 COMMAND_SERIALIZATION_HANDLERS.set('searchPublicChats', serializeSearchPublicChats);
 COMMAND_SERIALIZATION_HANDLERS.set('searchCallMessages', serializeSearchCallMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('getChat', serializeGetChat);
+COMMAND_SERIALIZATION_HANDLERS.set('getMessage', serializeGetMessage);
+COMMAND_SERIALIZATION_HANDLERS.set('getMessageProperties', serializeGetMessageProperties);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatPinnedMessage', serializeGetChatPinnedMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('getRepliedMessage', serializeGetRepliedMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('closeChat', serializeCloseChat);
 COMMAND_SERIALIZATION_HANDLERS.set('setTdlibOnline', serializeSetTdlibOnline);
 COMMAND_SERIALIZATION_HANDLERS.set('getUserFullInfo', serializeGetUserFullInfo);
+COMMAND_SERIALIZATION_HANDLERS.set('getSupergroup', serializeGetSupergroup);
+COMMAND_SERIALIZATION_HANDLERS.set('getBasicGroup', serializeGetBasicGroup);
 COMMAND_SERIALIZATION_HANDLERS.set('getSupergroupFullInfo', serializeGetSupergroupFullInfo);
 COMMAND_SERIALIZATION_HANDLERS.set('getBasicGroupFullInfo', serializeGetBasicGroupFullInfo);
 COMMAND_SERIALIZATION_HANDLERS.set('searchChatMembers', serializeSearchChatMembers);
@@ -243,14 +257,41 @@ function serializeSendMediaMessage(command: AnyAppCommand, result: SerializedCom
   setReplyToJsonIfNeeded(result.params, cmd.payload.replyToMessageId);
 }
 
+function serializeSendMediaAlbum(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SendMediaAlbumCommand;
+  result.method = 'sendMessageAlbum';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  const contents: string[] = [];
+  for (let index = 0; index < cmd.payload.localPaths.length; index++) {
+    contents.push(buildMediaInputContentJson('photo', cmd.payload.localPaths[index],
+      index === 0 ? cmd.payload.caption : '', 0, ''));
+  }
+  result.params.setString('_input_message_contents_json', '[' + contents.join(',') + ']');
+  result.params.setString('_topic_id_json', 'null');
+  result.params.setString('_options_json', 'null');
+  result.params.setString('_reply_to_json', 'null');
+  setReplyToJsonIfNeeded(result.params, cmd.payload.replyToMessageId);
+}
+
 function serializeEditMessageText(command: AnyAppCommand, result: SerializedCommand): void {
   const cmd = command as EditMessageTextCommand;
   result.method = 'editMessageText';
   result.params.setNumber('chat_id', cmd.payload.chatId);
   result.params.setString('_message_id_json', cmd.payload.messageId);
-  const text = escapeForJson(cmd.payload.text);
-  const inputContentJson = `{"@type":"inputMessageText","text":{"@type":"formattedText","text":"${text}","entities":[]},"clear_draft":true}`;
+  const textJson = buildEditFormattedTextJson(cmd.payload.text, cmd.payload.entities);
+  const previewJson = cmd.payload.linkPreviewOptions === undefined ? ''
+    : ',"link_preview_options":' + buildEditLinkPreviewOptionsJson(cmd.payload.linkPreviewOptions);
+  const inputContentJson = `{"@type":"inputMessageText","text":${textJson}${previewJson},"clear_draft":true}`;
   result.params.setString('_input_message_content_json', inputContentJson);
+}
+
+function serializeEditMessageCaption(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as EditMessageCaptionCommand;
+  result.method = 'editMessageCaption';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('_message_id_json', cmd.payload.messageId);
+  result.params.setString('_caption_json', buildEditFormattedTextJson(cmd.payload.caption, cmd.payload.entities));
+  result.params.setBool('show_caption_above_media', cmd.payload.showCaptionAboveMedia);
 }
 
 function serializeDeleteMessages(command: AnyAppCommand, result: SerializedCommand): void {
@@ -470,6 +511,20 @@ function serializeGetChatPinnedMessage(command: AnyAppCommand, result: Serialize
   result.params.setNumber('chat_id', cmd.payload.chatId);
 }
 
+function serializeGetMessage(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetMessageCommand;
+  result.method = 'getMessage';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('_message_id_json', cmd.payload.messageId);
+}
+
+function serializeGetMessageProperties(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetMessagePropertiesCommand;
+  result.method = 'getMessageProperties';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('_message_id_json', cmd.payload.messageId);
+}
+
 function serializeGetRepliedMessage(command: AnyAppCommand, result: SerializedCommand): void {
   const cmd = command as GetRepliedMessageCommand;
   result.method = 'getRepliedMessage';
@@ -495,6 +550,18 @@ function serializeGetUserFullInfo(command: AnyAppCommand, result: SerializedComm
   const cmd = command as GetUserFullInfoCommand;
   result.method = 'getUserFullInfo';
   result.params.setNumber('user_id', cmd.payload.userId);
+}
+
+function serializeGetSupergroup(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetSupergroupCommand;
+  result.method = 'getSupergroup';
+  result.params.setNumber('supergroup_id', cmd.payload.supergroupId);
+}
+
+function serializeGetBasicGroup(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetBasicGroupCommand;
+  result.method = 'getBasicGroup';
+  result.params.setNumber('basic_group_id', cmd.payload.basicGroupId);
 }
 
 function serializeGetSupergroupFullInfo(command: AnyAppCommand, result: SerializedCommand): void {
@@ -758,12 +825,9 @@ export function buildTdlibRequestJson(method: string, params: TdObject): string 
  * Экранирование строки для JSON.
  */
 function escapeForJson(str: string): string {
-  return str
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r')
-    .replace(/\t/g, '\\t');
+  // Callers add the surrounding quotes; keep JSON's full string escaping.
+  const quoted = JSON.stringify(str);
+  return quoted.substring(1, quoted.length - 1);
 }
 
 function buildImportedContactsJson(contacts: ImportedContactInput[]): string {
@@ -803,6 +867,49 @@ function buildStringArrayJson(values: string[]): string {
     }
   }
   return '[' + parts.join(',') + ']';
+}
+
+function buildEditFormattedTextJson(text: string, entities: EditMessageEntity[]): string {
+  const parts: string[] = [];
+  for (const entity of entities) {
+    // textEntity ranges use UTF-16 code units (td_api.tl:109), as does string.length.
+    if (!Number.isSafeInteger(entity.offset) || !Number.isSafeInteger(entity.length)
+      || entity.offset < 0 || entity.length <= 0 || entity.offset > text.length - entity.length) {
+      throw new Error('Invalid edit message entity range');
+    }
+    const type = TdObject.fromJSON(entity.typeJson);
+    const typeName = type.getTopLevelStringStrict('@type');
+    if (typeName === undefined || !/^textEntityType[A-Z][A-Za-z0-9]*$/.test(typeName)) {
+      throw new Error('Invalid edit message entity type');
+    }
+    // TDLib's JSON contract encodes int64 as strings. Reject numeric custom emoji
+    // IDs rather than silently rounding them through JSON.parse (td_json_client.h:19).
+    if (typeName === 'textEntityTypeCustomEmoji') {
+      const customEmojiId = type.getTopLevelStringStrict('custom_emoji_id');
+      if (customEmojiId === undefined || !/^-?[1-9][0-9]{0,18}$/.test(customEmojiId)) {
+        throw new Error('Invalid edit message entity type');
+      }
+      // CustomEmojiId::is_valid accepts every nonzero signed int64, including negative IDs.
+      const magnitude = customEmojiId.startsWith('-') ? customEmojiId.substring(1) : customEmojiId;
+      const maximum = customEmojiId.startsWith('-') ? '9223372036854775808' : '9223372036854775807';
+      if (magnitude.length === 19 && magnitude > maximum) {
+        throw new Error('Invalid edit message entity type');
+      }
+    }
+    // Canonicalize the validated object, not raw string interpolation. toJSON()
+    // on a parsed TdObject would serialize only its cache and lose type payloads.
+    const typeJson = JSON.stringify(JSON.parse(entity.typeJson) as Object);
+    parts.push(`{"@type":"textEntity","offset":${entity.offset},"length":${entity.length},"type":${typeJson}}`);
+  }
+  return `{"@type":"formattedText","text":${JSON.stringify(text)},"entities":[${parts.join(',')}]}`;
+}
+
+function buildEditLinkPreviewOptionsJson(options: EditMessageLinkPreviewOptions): string {
+  return '{"@type":"linkPreviewOptions","is_disabled":' + JSON.stringify(options.isDisabled)
+    + ',"url":' + JSON.stringify(options.url)
+    + ',"force_small_media":' + JSON.stringify(options.forceSmallMedia)
+    + ',"force_large_media":' + JSON.stringify(options.forceLargeMedia)
+    + ',"show_above_text":' + JSON.stringify(options.showAboveText) + '}';
 }
 
 function buildFormattedTextJson(text: string): string {

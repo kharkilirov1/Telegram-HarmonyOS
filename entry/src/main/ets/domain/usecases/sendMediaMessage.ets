@@ -2,10 +2,12 @@
 // Picker URI preparation stays UI/platform-owned; this use case accepts a TDLib-readable local path.
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { SendMediaAlbumUseCase } from './sendMediaAlbum';
 import { TdGatewayPort } from '../ports/TdGatewayPort';
 import { ChatId, MessageId } from '../../core/model/EntityId';
 import { createSendMediaMessageCommand } from '../../core/model/AppCommand';
-import { AppError, AppErrorKind } from '../../core/model/AppError';
+import { AppError, AppErrorKind, asWriteRequestError, isSilentTdlibError } from '../../core/model/AppError';
+import { TdObject } from '../../core/utils/tdAccessors';
 
 const TAG = 'SendMediaMessage';
 const DOMAIN = 0x0007;
@@ -68,9 +70,15 @@ function isSupportedMediaKind(mediaKind: string): boolean {
 
 export class SendMediaMessageUseCase {
   private gateway: TdGatewayPort;
+  private readonly photoAlbumUseCase: SendMediaAlbumUseCase;
 
   constructor(gateway: TdGatewayPort) {
     this.gateway = gateway;
+    this.photoAlbumUseCase = new SendMediaAlbumUseCase(gateway);
+  }
+
+  getPhotoAlbumUseCase(): SendMediaAlbumUseCase {
+    return this.photoAlbumUseCase;
   }
 
   async execute(params: SendMediaMessageParams): Promise<void> {
@@ -99,20 +107,21 @@ export class SendMediaMessageUseCase {
       params.waveformBase64
       );
 
-      await this.gateway.send(command);
+      const response = await this.gateway.send(command);
+      const id = response instanceof TdObject ? response.getTopLevelNumberStrict('id') : undefined;
+      if (!(response instanceof TdObject) || response.getTopLevelStringStrict('@type') !== 'message' ||
+        response.getTopLevelNumberStrict('chat_id') !== params.chatId || id === undefined ||
+        !Number.isSafeInteger(id) || id <= 0) {
+        throw new AppError(AppErrorKind.UNKNOWN, 'Sending result unknown', 'Invalid media acceptance response');
+      }
 
       hilog.info(DOMAIN, TAG, 'Media message send request completed');
     } catch (error) {
-      const err = error as Error;
-      hilog.error(DOMAIN, TAG, 'Failed to send media message: %{public}s', err.message);
-
-      throw new AppError(
-        AppErrorKind.UNKNOWN,
-        `Failed to send media message to chat ${params.chatId}`,
-        err.message,
-        0,
-        true
-      );
+      const failure = asWriteRequestError(error, 'Could not send media');
+      if (!isSilentTdlibError(failure)) {
+        hilog.error(DOMAIN, TAG, 'Failed to send media message: %{public}s', failure.message);
+      }
+      throw failure;
     }
   }
 }

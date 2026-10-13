@@ -2,23 +2,33 @@
 // Rule: component code must consume tokens from this file (no magic constants in atoms).
 
 export class TgUiTokens {
+  // Native selected-photo composer preview; dimensions do not imply iOS drag parity.
+  static readonly PHOTO_SELECTION_IMAGE_HEIGHT: number = 160;
+  static readonly PHOTO_SELECTION_THUMB_SIZE: number = 48;
+  static readonly PHOTO_SELECTION_CONTROL_HEIGHT: number = 44;
+  static readonly PHOTO_SELECTION_BORDER_WIDTH: number = 2;
   // ── Colors ──
   static readonly COLOR_BG_PRIMARY: Resource = $r('app.color.background_primary');
+  static readonly COLOR_BG_PRIMARY_RESOURCE_NAME: string = 'background_primary';
   static readonly COLOR_BG_SECONDARY: Resource = $r('app.color.background_secondary');
+  static readonly COLOR_BG_SECONDARY_RESOURCE_NAME: string = 'background_secondary';
   static readonly COLOR_CHAT_WALLPAPER_BASE: Resource = $r('app.color.chat_wallpaper_base');
   static readonly COLOR_SEPARATOR: Resource = $r('app.color.chatlist_separator');
+  static readonly COLOR_SEPARATOR_RESOURCE_NAME: string = 'chatlist_separator';
   static readonly CHAT_LIST_SURFACE_BG: Resource = $r('app.color.chat_list_surface_bg');
   static readonly CHAT_LIST_PINNED_SURFACE_BG: Resource = $r('app.color.chat_list_pinned_surface_bg');
   static readonly CHAT_LIST_SEARCH_SURFACE_BG: Resource = $r('app.color.chat_list_search_surface_bg');
   static readonly CHAT_LIST_SEPARATOR: Resource = $r('app.color.chat_list_separator');
 
   static readonly COLOR_TEXT_TITLE: Resource = $r('app.color.text_primary');
+  static readonly COLOR_TEXT_TITLE_RESOURCE_NAME: string = 'text_primary';
   static readonly COLOR_TEXT_PREVIEW: Resource = $r('app.color.text_secondary');
   static readonly COLOR_TEXT_META: Resource = $r('app.color.text_secondary');
   static readonly COLOR_TEXT_ERROR: Resource = $r('app.color.error_red');
   static readonly COLOR_OVERLAY_DIM: Resource = $r('app.color.overlay_dark');
 
   static readonly COLOR_ICON_PRIMARY: Resource = $r('app.color.telegram_blue');
+  static readonly COLOR_ICON_PRIMARY_RESOURCE_NAME: string = 'telegram_blue';
   static readonly COLOR_ICON_SECONDARY: Resource = $r('app.color.text_secondary');
   static readonly COLOR_ICON_MUTED: Resource = $r('app.color.text_secondary');
   static readonly COLOR_ICON_DISABLED: Resource = $r('app.color.text_secondary');

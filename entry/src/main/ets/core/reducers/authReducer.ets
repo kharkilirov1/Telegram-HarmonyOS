@@ -23,6 +23,7 @@ export function authReducer(state: AppState, action: ReducerAction): AppState {
     case 'authStateChanged': {
       const authEvent = action as AuthStateChangedEvent;
       newState.auth.status = authEvent.state;
+      newState.auth.error = authEvent.error;
 
       if (authEvent.state === 'waitPhoneNumber') {
         newState.auth.phoneNumber = '';

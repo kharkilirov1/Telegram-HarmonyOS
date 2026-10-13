@@ -9,6 +9,14 @@ import chatTimelineVOTest from './ChatTimelineVO.test';
 import textEngineTest from './TextEngine.test';
 import appStateModelsTest from './AppStateModels.test';
 import appErrorTest from './AppError.test';
+import gatewayErrorPropagationTest from './GatewayErrorPropagation.test';
+import writePathErrorsTest from './WritePathErrors.test';
+import writeResendDialogTest from './WriteResendDialog.test';
+import sequentialMediaSendTest from './SequentialMediaSend.test';
+import sequentialMediaDialogTest from './SequentialMediaDialog.test';
+import slowmodeTest from './Slowmode.test';
+import slowmodePolicyTest from './SlowmodePolicy.test';
+import slowmodeNativeTest from './SlowmodeNative.test';
 import authSideEffectTest from './AuthSideEffect.test';
 import loadCallsTest from './LoadCalls.test';
 import chatCommandsTest from './ChatCommands.test';
@@ -24,6 +32,7 @@ import tgComposerMaterialPolicyTest from './TgComposerMaterialPolicy.test';
 import tgVoiceRecordingPolicyTest from './TgVoiceRecordingPolicy.test';
 import loadBotMenuTest from './LoadBotMenu.test';
 import loadPinnedMessageTest from './LoadPinnedMessage.test';
+import pinnedMessageOwnershipTest from './PinnedMessageOwnership.test';
 import emojiKeyboardSearchTest from './EmojiKeyboardSearch.test';
 import stickerSearchTest from './StickerSearch.test';
 import gifInlineSearchTest from './GifInlineSearch.test';
@@ -54,6 +63,29 @@ import createBasicGroupChatTest from './CreateBasicGroupChat.test';
 import createChannelChatTest from './CreateChannelChat.test';
 import composeCreationModelTest from './ComposeCreationModel.test';
 import eventPipelineTest from './EventPipeline.test';
+import chatMediaDownloadControllerTest from './ChatMediaDownloadController.test';
+import appStoreSessionTest from './AppStoreSession.test';
+import liveChatPermissionsTest from './LiveChatPermissions.test';
+import groupPermissionPayloadTest from './GroupPermissionPayload.test';
+import forwardSendOwnershipTest from './ForwardSendOwnership.test';
+import forwardMessagesContractTest from './ForwardMessagesContract.test';
+import forwardEligibilityTest from './ForwardEligibility.test';
+import forwardSourceActionsTest from './ForwardSourceActions.test';
+import deleteMessagesSafetyTest from './DeleteMessagesSafety.test';
+import editMessagesSafetyTest from './EditMessagesSafety.test';
+import chatOpenLeaseTest from './ChatOpenLease.test';
+import basicGroupAccessTest from './BasicGroupAccess.test';
+import basicGroupMediaTest from './BasicGroupMedia.test';
+import supergroupBoostsTest from './SupergroupBoosts.test';
+
+import sendMediaAlbumTest from './SendMediaAlbum.test';
+import photoAlbumDialogTest from './PhotoAlbumDialog.test';
+import photoAttachmentFileIOTest from './PhotoAttachmentFileIO.test';
+import photoSelectionPreviewTest from './PhotoSelectionPreview.test';
+import chatScreenDecompositionTest from './ChatScreenDecomposition.test';
+import timelineUpdateDataSourceTest from './TimelineUpdateDataSource.test';
+import timelineUpdateOwnershipTest from './TimelineUpdateOwnership.test';
+import timelineUpdateNativeTest from './TimelineUpdateNative.test';
 
 export default function testsuite() {
   // Core state management
@@ -61,12 +93,34 @@ export default function testsuite() {
   stateCloneTest();
   appStateModelsTest();
   appErrorTest();
+  gatewayErrorPropagationTest();
+  writePathErrorsTest();
+  writeResendDialogTest();
+  sequentialMediaSendTest();
+  sequentialMediaDialogTest();
+  slowmodeTest();
+  slowmodePolicyTest();
+  slowmodeNativeTest();
   authSideEffectTest();
   chatCommandsTest();
   chatArchiveStateTest();
   activeStoriesStateTest();
   commandSerializerTest();
   filePipelineTest();
+  chatMediaDownloadControllerTest();
+  appStoreSessionTest();
+  liveChatPermissionsTest();
+  groupPermissionPayloadTest();
+  forwardSendOwnershipTest();
+  forwardMessagesContractTest();
+  forwardEligibilityTest();
+  forwardSourceActionsTest();
+  deleteMessagesSafetyTest();
+  editMessagesSafetyTest();
+  chatOpenLeaseTest();
+  basicGroupAccessTest();
+  basicGroupMediaTest();
+  supergroupBoostsTest();
 
   // Infrastructure
   tdGatewayTest();
@@ -95,6 +149,7 @@ export default function testsuite() {
   tgVoiceRecordingPolicyTest();
   loadBotMenuTest();
   loadPinnedMessageTest();
+  pinnedMessageOwnershipTest();
   emojiKeyboardSearchTest();
   stickerSearchTest();
   gifInlineSearchTest();
@@ -119,4 +174,14 @@ export default function testsuite() {
 
   // Text engine
   textEngineTest();
+
+  // Real device V2/session ownership and test-only chat composition fixture
+  chatScreenDecompositionTest();
+  sendMediaAlbumTest();
+  photoAlbumDialogTest();
+  photoAttachmentFileIOTest();
+  photoSelectionPreviewTest();
+  timelineUpdateDataSourceTest();
+  timelineUpdateOwnershipTest();
+  timelineUpdateNativeTest();
 }

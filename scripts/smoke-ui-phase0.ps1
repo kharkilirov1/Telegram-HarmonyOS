@@ -1,3 +1,4 @@
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -6,6 +7,7 @@ $phase0Files = @(
   'entry/src/main/ets/ui/pages/MainTabsPage.ets',
   'entry/src/main/ets/ui/pages/chatlist/ChatListPage.ets',
   'entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets',
+  'entry/src/main/ets/ui/pages/chat/ChatTopBarPresentation.ets',
   'entry/src/main/ets/ui/tg_ui/atoms/TgChatRow.ets',
   'entry/src/main/ets/ui/tg_ui/atoms/TgArchivedChatsRow.ets',
   'entry/src/main/ets/ui/tg_ui/atoms/TgChatMeta.ets',
@@ -26,7 +28,7 @@ foreach ($file in $phase0Files) {
     throw "Required file not found: $file"
   }
 
-  $matches = Select-String -Path $file -Pattern $hexPattern
+  $matches = Select-ChatContractString -Path $file -Pattern $hexPattern
   foreach ($match in $matches) {
     $hexViolations += "{0}:{1} -> {2}" -f $file, $match.LineNumber, $match.Line.Trim()
   }
@@ -59,6 +61,7 @@ $rootSearchDockFile = Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgRootS
 $tgUiFeatureFlagsFile = Join-Path $root 'entry/src/main/ets/ui/tg_ui/TgUiFeatureFlags.ets'
 $chatTopBarFile = Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgChatTopBar.ets'
 $chatScreenFile = Join-Path $root 'entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets'
+$topBarPresentationFile = Join-Path $root 'entry/src/main/ets/ui/pages/chat/ChatTopBarPresentation.ets'
 $messageMetaFile = Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgMessageMeta.ets'
 $messageMetaTextFile = Join-Path $root 'entry/src/main/ets/ui/tg_ui/utils/TgMessageMetaText.ets'
 $messageRouterFile = Join-Path $root 'entry/src/main/ets/ui/tg_ui/molecules/TgMessageRouter.ets'
@@ -68,7 +71,7 @@ $voiceBubbleFile = Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgVoiceBub
 $dateSeparatorFile = Join-Path $root 'entry/src/main/ets/ui/tg_ui/atoms/TgDateSeparator.ets'
 $chatTimelineFile = Join-Path $root 'entry/src/main/ets/ui/pages/chat/ChatTimelineVO.ets'
 $chatTimelineTestFile = Join-Path $root 'entry/src/ohosTest/ets/test/ChatTimelineVO.test.ets'
-$pendingChatUnreadSnapshotFile = Join-Path $root 'entry/src/main/ets/ui/pages/chat/PendingChatUnreadSnapshot.ets'
+$chatRouteParamsFile = Join-Path $root 'entry/src/main/ets/ui/pages/chat/ChatScreenRouteParams.ets'
 $baseStringResourceFile = Join-Path $root 'entry/src/main/resources/base/element/string.json'
 $ruStringResourceFile = Join-Path $root 'entry/src/main/resources/ru_RU/element/string.json'
 $zhStringResourceFile = Join-Path $root 'entry/src/main/resources/zh_CN/element/string.json'
@@ -105,13 +108,13 @@ $rootTabBarGeometryContracts = @(
   'export const ROOT_TAB_BAR_FALLBACK_CONTENT_INSET: number = 82;'
 )
 foreach ($contract in $rootTabBarGeometryContracts) {
-  if (-not (Select-String -Path $rootTabBarGeometryFile -SimpleMatch $contract)) {
+  if (-not (Select-ChatContractString -Path $rootTabBarGeometryFile -SimpleMatch $contract)) {
     Write-Error "RootTabBarGeometry contract declaration missing: $contract"
     exit 1
   }
 }
 
-$safeAreaSource = Get-Content -LiteralPath $safeAreaUtilsFile -Raw
+$safeAreaSource = Get-ChatContractContent -LiteralPath $safeAreaUtilsFile -Raw
 $safeAreaCompactSource = $safeAreaSource -replace '\s', ''
 $safeAreaGeometryImport = "import{computeRootTabContentBottomInset,ROOT_TAB_BAR_FALLBACK_CONTENT_INSET}from'./RootTabBarGeometry';"
 if (-not $safeAreaCompactSource.Contains($safeAreaGeometryImport)) {
@@ -139,7 +142,7 @@ $legacyRootTabSymbols = @(
 )
 foreach ($consumer in $rootTabContentConsumers) {
   foreach ($legacySymbol in $legacyRootTabSymbols) {
-    if (Select-String -LiteralPath $consumer -SimpleMatch $legacySymbol) {
+    if (Select-ChatContractString -LiteralPath $consumer -SimpleMatch $legacySymbol) {
       Write-Error "Root tab content consumer must not reference legacy geometry symbol ${legacySymbol}: $consumer"
       exit 1
     }
@@ -148,7 +151,7 @@ foreach ($consumer in $rootTabContentConsumers) {
 
 $rootContentPageImport = "import { ROOT_TAB_BAR_FALLBACK_CONTENT_INSET } from '../../utils/RootTabBarGeometry';"
 foreach ($page in $rootContentPages) {
-  $pageSource = Get-Content -LiteralPath $page -Raw
+  $pageSource = Get-ChatContractContent -LiteralPath $page -Raw
   if (-not $pageSource.Contains($rootContentPageImport)) {
     Write-Error "Root content page must import the exact shared fallback: $page"
     exit 1
@@ -160,7 +163,7 @@ foreach ($page in $rootContentPages) {
   }
 }
 
-if (Select-String -Path $mainTabsFile -Pattern '^\s*const TAB_BAR_(FLOATING_VISIBLE_HEIGHT|FLOATING_BOTTOM_MARGIN|BACKPLATE_HEIGHT)(?:\s*:\s*[^=]+)?\s*=') {
+if (Select-ChatContractString -Path $mainTabsFile -Pattern '^\s*const TAB_BAR_(FLOATING_VISIBLE_HEIGHT|FLOATING_BOTTOM_MARGIN|BACKPLATE_HEIGHT)(?:\s*:\s*[^=]+)?\s*=') {
   Write-Error 'MainTabsPage must not own local root tab-bar geometry constants.'
   exit 1
 }
@@ -182,18 +185,18 @@ $mainTabsGeometryContracts = @(
   '.expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])'
 )
 foreach ($contract in $mainTabsGeometryContracts) {
-  if (-not (Select-String -Path $mainTabsFile -SimpleMatch $contract)) {
+  if (-not (Select-ChatContractString -Path $mainTabsFile -SimpleMatch $contract)) {
     Write-Error "MainTabsPage native root tab contract missing: $contract"
     exit 1
   }
 }
 
-if (-not (Select-String -Path $chatRowFile -Pattern '@ComponentV2')) {
+if (-not (Select-ChatContractString -Path $chatRowFile -Pattern '@ComponentV2')) {
   Write-Error 'TgChatRow must be marked with @ComponentV2.'
   exit 1
 }
 
-$chatRowSource = Get-Content -LiteralPath $chatRowFile -Raw
+$chatRowSource = Get-ChatContractContent -LiteralPath $chatRowFile -Raw
 if ($chatRowSource -notmatch '(?s)Text\(this\.titleText\(\)\).*?\.textOverflow\(\{ overflow: TextOverflow\.Ellipsis \}\).*?\.flexShrink\(1\)') {
   Write-Error 'TgChatRow title must shrink intrinsically so title decorations stay adjacent instead of drifting to the meta edge.'
   exit 1
@@ -210,24 +213,25 @@ if ($chatRowSource.Contains('.width(TgUiTokens.CHAT_ROW_META_FIXED_WIDTH)')) {
   exit 1
 }
 
-if (-not (Select-String -LiteralPath $tgUiTokensFile -SimpleMatch 'static readonly CHAT_ROW_HEIGHT: number = 72;')) {
+if (-not (Select-ChatContractString -LiteralPath $tgUiTokensFile -SimpleMatch 'static readonly CHAT_ROW_HEIGHT: number = 72;')) {
   Write-Error 'ChatList rows must keep the current Telegram iOS 72vp density contract.'
   exit 1
 }
 
-if (-not (Select-String -LiteralPath $tgUiTokensFile -SimpleMatch 'static readonly BUBBLE_MAX_WIDTH_RATIO: number = 0.85;')) {
+if (-not (Select-ChatContractString -LiteralPath $tgUiTokensFile -SimpleMatch 'static readonly BUBBLE_MAX_WIDTH_RATIO: number = 0.85;')) {
   Write-Error 'Compact message bubbles must retain the Telegram iOS 0.85 maximum-width fill contract.'
   exit 1
 }
 
-$chatTopBarSource = Get-Content -LiteralPath $chatTopBarFile -Raw
-if (-not (Select-String -LiteralPath $tgUiTokensFile -SimpleMatch "static readonly CHAT_TOP_BAR_ACTION_FOREGROUND: Resource = `$r('app.color.text_primary');") -or
+$chatTopBarSource = Get-ChatContractContent -LiteralPath $chatTopBarFile -Raw
+if (-not (Select-ChatContractString -LiteralPath $tgUiTokensFile -SimpleMatch "static readonly CHAT_TOP_BAR_ACTION_FOREGROUND: Resource = `$r('app.color.text_primary');") -or
   ([regex]::Matches($chatTopBarSource, 'tintColor: TgUiTokens\.CHAT_TOP_BAR_ACTION_FOREGROUND')).Count -ne 3) {
   Write-Error 'TgChatTopBar back/search/close actions must retain their shipped iOS theme-foreground token.'
   exit 1
 }
 
-$chatScreenSource = Get-Content -LiteralPath $chatScreenFile -Raw
+$chatScreenSource = Get-ChatContractContent -LiteralPath $chatScreenFile -Raw
+$topBarPresentationSource = Get-ChatContractContent -LiteralPath $topBarPresentationFile -Raw
 $topBarSubtitleContracts = @(
   "localized(`$r('app.string.online').id, 'online')",
   "localized(`$r('app.string.member_role_bot').id, 'bot')",
@@ -236,18 +240,48 @@ $topBarSubtitleContracts = @(
   "localized(`$r('app.string.chat_preview_choosing_location').id, 'choosing location...')"
 )
 foreach ($contract in $topBarSubtitleContracts) {
-  if (-not $chatScreenSource.Contains($contract)) {
+  if (-not $topBarPresentationSource.Contains($contract)) {
     Write-Error "Chat top-bar subtitle localization contract missing: $contract"
     exit 1
   }
 }
-if ($chatScreenSource.Contains("return 'online';") -or
-  $chatScreenSource.Contains("actionLabel = 'recording") -or
-  $chatScreenSource.Contains("actionLabel = 'sending") -or
-  $chatScreenSource.Contains("actionLabel = 'choosing") -or
-  $chatScreenSource.Contains("actionLabel = 'playing")) {
+if ($topBarPresentationSource.Contains("return 'online';") -or
+  $topBarPresentationSource.Contains("actionLabel = 'recording") -or
+  $topBarPresentationSource.Contains("actionLabel = 'sending") -or
+  $topBarPresentationSource.Contains("actionLabel = 'choosing") -or
+  $topBarPresentationSource.Contains("actionLabel = 'playing")) {
   Write-Error 'Chat top-bar user/activity subtitles must not bypass app-language resources.'
   exit 1
+}
+if (-not $chatScreenSource.Contains("from './ChatTopBarPresentation'") -or
+  -not $chatScreenSource.Contains('this.applyChatSubtitlePresentation(chatSubtitlePresentation(') -or
+  -not $chatScreenSource.Contains('this.applyChatAvatarPresentation(chatAvatarPresentation(')) {
+  Write-Error 'Chat top-bar presentation helper is not wired into the page.'
+  exit 1
+}
+$topBarReactiveContracts = @(
+  '@Trace chatSubtitle:',
+  '@Trace chatSubtitleMode:',
+  '@Trace chatSubtitleSpinner:',
+  '@Trace chatAvatarInitials:',
+  '@Trace chatAvatarColorIndex:',
+  '@Trace chatAvatarImageSrc:',
+  '@Trace chatIsOnline:',
+  '@Trace chatTopBarTrailingAction:',
+  'subtitle: this.chatSubtitle,',
+  'subtitleMode: this.chatSubtitleMode,',
+  'showSubtitleSpinner: this.chatSubtitleSpinner,',
+  'avatarInitials: this.chatAvatarInitials,',
+  'avatarColorIndex: this.chatAvatarColorIndex,',
+  'avatarImageSrc: this.chatAvatarImageSrc,',
+  'isOnline: this.chatIsOnline,',
+  'trailingAction: this.chatTopBarTrailingAction,'
+)
+foreach ($contract in $topBarReactiveContracts) {
+  if (-not $chatScreenSource.Contains($contract)) {
+    Write-Error "Chat top-bar reactive field/param contract missing: $contract"
+    exit 1
+  }
 }
 
 $requiredTopBarSubtitleResources = @(
@@ -265,7 +299,7 @@ $requiredTopBarSubtitleResources = @(
   'chat_preview_playing_game'
 )
 foreach ($stringResourceFile in @($baseStringResourceFile, $ruStringResourceFile, $zhStringResourceFile)) {
-  $stringResources = Get-Content -LiteralPath $stringResourceFile -Raw | ConvertFrom-Json
+  $stringResources = Get-ChatContractContent -LiteralPath $stringResourceFile -Raw | ConvertFrom-Json
   foreach ($resourceName in $requiredTopBarSubtitleResources) {
     if (-not ($stringResources.string | Where-Object { $_.name -eq $resourceName -and $_.value.Length -gt 0 })) {
       Write-Error "Chat top-bar subtitle localization '$resourceName' missing: $stringResourceFile"
@@ -274,9 +308,9 @@ foreach ($stringResourceFile in @($baseStringResourceFile, $ruStringResourceFile
   }
 }
 
-$messageMetaSource = Get-Content -LiteralPath $messageMetaFile -Raw
-$messageMetaTextSource = Get-Content -LiteralPath $messageMetaTextFile -Raw
-$chatTimelineSource = Get-Content -LiteralPath $chatTimelineFile -Raw
+$messageMetaSource = Get-ChatContractContent -LiteralPath $messageMetaFile -Raw
+$messageMetaTextSource = Get-ChatContractContent -LiteralPath $messageMetaTextFile -Raw
+$chatTimelineSource = Get-ChatContractContent -LiteralPath $chatTimelineFile -Raw
 if (-not $messageMetaTextSource.Contains('export function composeMessageMetaText(') -or
   -not $messageMetaSource.Contains('Text(this.metaText())') -or
   -not $chatTimelineSource.Contains("row.editedText = message.editDate > 0")) {
@@ -284,14 +318,14 @@ if (-not $messageMetaTextSource.Contains('export function composeMessageMetaText
   exit 1
 }
 foreach ($stringResourceFile in @($baseStringResourceFile, $ruStringResourceFile, $zhStringResourceFile)) {
-  $stringResources = Get-Content -LiteralPath $stringResourceFile -Raw | ConvertFrom-Json
+  $stringResources = Get-ChatContractContent -LiteralPath $stringResourceFile -Raw | ConvertFrom-Json
   if (-not ($stringResources.string | Where-Object { $_.name -eq 'message_edited' -and $_.value.Length -gt 0 })) {
     Write-Error "Edited-message localization missing: $stringResourceFile"
     exit 1
   }
 }
 
-$archivedChatsRowSource = Get-Content -LiteralPath $archivedChatsRowFile -Raw
+$archivedChatsRowSource = Get-ChatContractContent -LiteralPath $archivedChatsRowFile -Raw
 if ($archivedChatsRowSource -notmatch '(?s)TgChatMeta\(\{.*?unreadCount: this\.unreadCount,.*?isMuted: true,') {
   Write-Error 'TgArchivedChatsRow must use the inactive unread capsule from the iOS group-reference contract.'
   exit 1
@@ -304,7 +338,7 @@ foreach ($requiredPreviewFile in @($chatItemVOFile, $chatPreviewTextTestFile)) {
   }
 }
 
-$chatItemVOSource = Get-Content -LiteralPath $chatItemVOFile -Raw
+$chatItemVOSource = Get-ChatContractContent -LiteralPath $chatItemVOFile -Raw
 if (-not (Test-Path -LiteralPath $chatItemVOTestFile) -or
   -not $chatItemVOSource.Contains("return status === 'online' && !isBot;")) {
   Write-Error 'ChatItemVO must suppress the ordinary online avatar marker for bot peers.'
@@ -317,12 +351,12 @@ foreach ($requiredMediaGalleryContractFile in @($mediaGalleryPolicyFile, $mediaG
     exit 1
   }
 }
-$mediaGalleryPolicySource = Get-Content -LiteralPath $mediaGalleryPolicyFile -Raw
-$mediaGalleryItemSource = Get-Content -LiteralPath $mediaGalleryItemFile -Raw
-$mediaGalleryPageSource = Get-Content -LiteralPath $mediaGalleryPageFile -Raw
-$mediaBubbleShellSource = Get-Content -LiteralPath $mediaBubbleShellFile -Raw
-$groupedPhotoBubbleSource = Get-Content -LiteralPath $groupedPhotoBubbleFile -Raw
-$videoBubbleSource = Get-Content -LiteralPath $videoBubbleFile -Raw
+$mediaGalleryPolicySource = Get-ChatContractContent -LiteralPath $mediaGalleryPolicyFile -Raw
+$mediaGalleryItemSource = Get-ChatContractContent -LiteralPath $mediaGalleryItemFile -Raw
+$mediaGalleryPageSource = Get-ChatContractContent -LiteralPath $mediaGalleryPageFile -Raw
+$mediaBubbleShellSource = Get-ChatContractContent -LiteralPath $mediaBubbleShellFile -Raw
+$groupedPhotoBubbleSource = Get-ChatContractContent -LiteralPath $groupedPhotoBubbleFile -Raw
+$videoBubbleSource = Get-ChatContractContent -LiteralPath $videoBubbleFile -Raw
 if (-not $mediaGalleryPolicySource.Contains("return 'downloadAndOpen';") -or
   -not $videoBubbleSource.Contains('resolveVisualMediaTapMode(') -or
   -not $mediaGalleryItemSource.Contains("minithumb: string = '';") -or
@@ -377,7 +411,7 @@ foreach ($resourceFile in @(
   (Join-Path $root 'entry/src/main/resources/ru_RU/element/string.json'),
   (Join-Path $root 'entry/src/main/resources/zh_CN/element/string.json')
 )) {
-  $resourceJson = Get-Content -LiteralPath $resourceFile -Raw | ConvertFrom-Json
+  $resourceJson = Get-ChatContractContent -LiteralPath $resourceFile -Raw | ConvertFrom-Json
   $resourceNames = @($resourceJson.string | ForEach-Object { $_.name })
   foreach ($resourceKey in $requiredPreviewResourceKeys) {
     if ($resourceNames -notcontains $resourceKey) {
@@ -387,52 +421,52 @@ foreach ($resourceFile in @(
   }
 }
 
-if (Select-String -Path $chatMetaFile -Pattern '(^|[^A-Za-z0-9_])Badge\(') {
+if (Select-ChatContractString -Path $chatMetaFile -Pattern '(^|[^A-Za-z0-9_])Badge\(') {
   Write-Error 'TgChatMeta must use the project-owned chat-list unread capsule, not the stock ArkUI Badge halo.'
   exit 1
 }
 
-if (Select-String -Path $chatMetaFile -Pattern 'UNREAD_BADGE_MAX_VISIBLE_COUNT|99\+') {
+if (Select-ChatContractString -Path $chatMetaFile -Pattern 'UNREAD_BADGE_MAX_VISIBLE_COUNT|99\+') {
   Write-Error 'TgChatMeta unread counts must use compact K/M formatting instead of 99+ clamping.'
   exit 1
 }
 
-if (-not (Select-String -Path $chatListPageFile -Pattern '\.reuseId\(')) {
+if (-not (Select-ChatContractString -Path $chatListPageFile -Pattern '\.reuseId\(')) {
   Write-Error 'ChatListPage must apply reuseId() for TgChatRow in LazyForEach.'
   exit 1
 }
 
-if (-not (Select-String -Path $mainTabsFile -Pattern 'HdsTabs\(')) {
+if (-not (Select-ChatContractString -Path $mainTabsFile -Pattern 'HdsTabs\(')) {
   Write-Error 'MainTabsPage must compose HdsTabs for the API23 shell.'
   exit 1
 }
 
-if (-not (Select-String -Path $mainTabsFile -Pattern 'barFloatingStyle\(')) {
+if (-not (Select-ChatContractString -Path $mainTabsFile -Pattern 'barFloatingStyle\(')) {
   Write-Error 'MainTabsPage must keep the native HDS floating tab bar (user decision, iOS 26 parity).'
   exit 1
 }
 
-if (-not (Select-String -Path $mainTabsFile -Pattern 'chatScreenVisible')) {
+if (-not (Select-ChatContractString -Path $mainTabsFile -Pattern 'chatScreenVisible')) {
   Write-Error 'MainTabsPage must react to chatScreenVisible so the root tab bar can be hidden on chat detail screens.'
   exit 1
 }
 
-if (-not (Select-String -Path $mainTabsFile -Pattern 'barHeight\(')) {
+if (-not (Select-ChatContractString -Path $mainTabsFile -Pattern 'barHeight\(')) {
   Write-Error 'MainTabsPage must collapse the HDS root tab bar height while a chat detail screen is visible.'
   exit 1
 }
 
-if (-not (Select-String -Path $mainTabsFile -Pattern '@kit\.UIDesignKit')) {
+if (-not (Select-ChatContractString -Path $mainTabsFile -Pattern '@kit\.UIDesignKit')) {
   Write-Error 'MainTabsPage must source HDS shell components from @kit.UIDesignKit.'
   exit 1
 }
 
-if (-not (Select-String -Path $chatListPageFile -Pattern 'TgChatListNavigationBar\(')) {
+if (-not (Select-ChatContractString -Path $chatListPageFile -Pattern 'TgChatListNavigationBar\(')) {
   Write-Error 'ChatListPage must compose TgChatListNavigationBar.'
   exit 1
 }
 
-if (-not (Select-String -Path $chatListNavFile -Pattern 'Search\(')) {
+if (-not (Select-ChatContractString -Path $chatListNavFile -Pattern 'Search\(')) {
   Write-Error 'TgChatListNavigationBar must compose a Search component.'
   exit 1
 }
@@ -448,7 +482,7 @@ $rootSearchDockContracts = @(
 )
 foreach ($contract in $rootSearchDockContracts) {
   if (-not (Test-Path -LiteralPath $contract.File) -or
-    -not (Select-String -LiteralPath $contract.File -SimpleMatch $contract.Text)) {
+    -not (Select-ChatContractString -LiteralPath $contract.File -SimpleMatch $contract.Text)) {
     Write-Error "Native HDS root Search mini-bar contract missing: $($contract.Text)"
     exit 1
   }
@@ -466,23 +500,23 @@ $storyContracts = @(
 )
 foreach ($contract in $storyContracts) {
   if (-not (Test-Path -LiteralPath $contract.File) -or
-    -not (Select-String -LiteralPath $contract.File -SimpleMatch $contract.Text)) {
+    -not (Select-ChatContractString -LiteralPath $contract.File -SimpleMatch $contract.Text)) {
     Write-Error "Real active-story ChatList contract missing: $($contract.Text)"
     exit 1
   }
 }
 
-if (-not (Select-String -Path $chatBackgroundFile -Pattern '@ComponentV2')) {
+if (-not (Select-ChatContractString -Path $chatBackgroundFile -Pattern '@ComponentV2')) {
   Write-Error 'TgChatBackground must be a ComponentV2 atom.'
   exit 1
 }
 
-if (-not (Select-String -Path $chatBackgroundFile -Pattern 'objectRepeat\(ImageRepeat\.XY\)')) {
+if (-not (Select-ChatContractString -Path $chatBackgroundFile -Pattern 'objectRepeat\(ImageRepeat\.XY\)')) {
   Write-Error 'TgChatBackground must repeat its qualified raster tile on both axes.'
   exit 1
 }
 
-$hitTestNoneCount = (Select-String -Path $chatBackgroundFile -Pattern 'HitTestMode\.None' -AllMatches |
+$hitTestNoneCount = (Select-ChatContractString -Path $chatBackgroundFile -Pattern 'HitTestMode\.None' -AllMatches |
   ForEach-Object { $_.Matches.Count } | Measure-Object -Sum).Sum
 if ($hitTestNoneCount -lt 2) {
   Write-Error 'TgChatBackground root and image must both reject timeline or chrome input.'
@@ -490,12 +524,12 @@ if ($hitTestNoneCount -lt 2) {
 }
 
 Add-Type -AssemblyName System.Drawing
-$baseColorResources = Get-Content -LiteralPath $baseColorResourceFile -Raw | ConvertFrom-Json
+$baseColorResources = Get-ChatContractContent -LiteralPath $baseColorResourceFile -Raw | ConvertFrom-Json
 $baseColorMap = @{}
 foreach ($colorResource in $baseColorResources.color) {
   $baseColorMap[$colorResource.name] = $colorResource.value
 }
-$darkColorResources = Get-Content -LiteralPath $darkColorResourceFile -Raw | ConvertFrom-Json
+$darkColorResources = Get-ChatContractContent -LiteralPath $darkColorResourceFile -Raw | ConvertFrom-Json
 $darkColorMap = @{}
 foreach ($colorResource in $darkColorResources.color) {
   $darkColorMap[$colorResource.name] = $colorResource.value
@@ -510,7 +544,7 @@ if ($baseColorMap['message_meta_outgoing'] -ne '#8E8E93' -or
   Write-Error 'Outgoing message meta must retain its bubble-aware light/dark semantic calibration.'
   exit 1
 }
-$tgUiTokensSource = Get-Content -LiteralPath $tgUiTokensFile -Raw
+$tgUiTokensSource = Get-ChatContractContent -LiteralPath $tgUiTokensFile -Raw
 foreach ($token in @(
   'MSG_META_TEXT_OUTGOING',
   'MSG_META_STATUS_SENT',
@@ -525,7 +559,7 @@ foreach ($token in @(
     exit 1
   }
 }
-$voiceBubbleSource = Get-Content -LiteralPath $voiceBubbleFile -Raw
+$voiceBubbleSource = Get-ChatContractContent -LiteralPath $voiceBubbleFile -Raw
 $voiceControlTokenContracts = @(
   "static readonly VOICE_BUBBLE_BUTTON_BG_INCOMING: Resource = `$r('app.color.telegram_blue');",
   "static readonly VOICE_BUBBLE_BUTTON_BG_OUTGOING: Resource = `$r('app.color.text_primary');",
@@ -596,7 +630,7 @@ foreach ($contract in $unreadMarkerTokenContracts) {
     exit 1
   }
 }
-$dateSeparatorSource = Get-Content -LiteralPath $dateSeparatorFile -Raw
+$dateSeparatorSource = Get-ChatContractContent -LiteralPath $dateSeparatorFile -Raw
 foreach ($contract in @(
   '@Param isService: boolean = false;',
   'return this.isService ? TgUiTokens.SERVICE_SEPARATOR_PADDING_V : TgUiTokens.DATE_SEPARATOR_PADDING_V;',
@@ -608,11 +642,11 @@ foreach ($contract in @(
     exit 1
   }
 }
-if (-not (Get-Content -LiteralPath $chatScreenFile -Raw).Contains('isService: true')) {
+if (-not (Get-ChatContractContent -LiteralPath $chatScreenFile -Raw).Contains('isService: true')) {
   Write-Error 'Live service-event entries must opt into the independent service capsule geometry.'
   exit 1
 }
-$chatScreenSource = Get-Content -LiteralPath $chatScreenFile -Raw
+$chatScreenSource = Get-ChatContractContent -LiteralPath $chatScreenFile -Raw
 foreach ($contract in @(
   '.height(TgUiTokens.UNREAD_MARKER_HEIGHT)',
   '.justifyContent(FlexAlign.Center)',
@@ -632,7 +666,7 @@ foreach ($contract in @(
     exit 1
   }
 }
-$chatTimelineTestSource = Get-Content -LiteralPath $chatTimelineTestFile -Raw
+$chatTimelineTestSource = Get-ChatContractContent -LiteralPath $chatTimelineTestFile -Raw
 foreach ($contract in @(
   'export function composeChatDateSeparatorLabel(',
   'export function formatChatDateSeparatorLabel(',
@@ -663,27 +697,51 @@ foreach ($contract in @(
     exit 1
   }
 }
-$pendingChatUnreadSnapshotSource = Get-Content -LiteralPath $pendingChatUnreadSnapshotFile -Raw
-$chatListSource = Get-Content -LiteralPath $chatListPageFile -Raw
-$archivedChatListSource = Get-Content -LiteralPath $archivedChatListPageFile -Raw
+$chatRouteParamsSource = Get-ChatContractContent -LiteralPath $chatRouteParamsFile -Raw
+$chatListSource = Get-ChatContractContent -LiteralPath $chatListPageFile -Raw
+$archivedChatListSource = Get-ChatContractContent -LiteralPath $archivedChatListPageFile -Raw
 foreach ($contract in @(
-  'static set(chatId: number, lastReadInboxMessageId: string, unreadCount: number): void {',
-  'static consume(chatId: number): ChatUnreadEntrySnapshot | undefined {'
+  'readonly entryUnreadCount?: number;',
+  'readonly entryLastReadInboxMessageId?: string;',
+  'constructor(chatId: number, chatTitle: string, store: AppStore, gateway: TdGatewayPort)',
+  'this.accountScope = store.createScope();',
+  'const chat = this.accountScope.getState().chats.chats.get(chatId);',
+  'this.entryUnreadCount = chat?.unreadCount;',
+  'this.entryLastReadInboxMessageId = chat?.lastReadInboxMessageId;'
 )) {
-  if (-not $pendingChatUnreadSnapshotSource.Contains($contract)) {
-    Write-Error "Unread entry-snapshot contract missing: $contract"
+  if (-not $chatRouteParamsSource.Contains($contract)) {
+    Write-Error "Canonical owner-bound unread entry-snapshot contract missing: $contract"
     exit 1
   }
 }
 foreach ($source in @($chatListSource, $archivedChatListSource)) {
-  if (-not $source.Contains('PendingChatUnreadSnapshot.set(')) {
-    Write-Error 'Chat-list unread snapshot must be captured before navigation.'
+  if (-not $source.Contains("import { ChatScreenRouteParams } from '../chat/ChatScreenRouteParams';") -or
+    $source.Contains('PendingChatUnreadSnapshot')) {
+    Write-Error 'Chat-list unread entry must use canonical owner-bound params, never the global pending snapshot.'
     exit 1
   }
 }
+$chatListOpen = [regex]::Match($chatListSource, '(?ms)^  private openChat\(item: ChatItemVO\): void \{.*?^  \}').Value
+$chatListRoute = [regex]::Match($chatListSource, '(?ms)^  private openChatRoute\(params: ChatScreenRouteParams\): void \{.*?^  \}').Value
+$archiveOpen = [regex]::Match($archivedChatListSource, '(?ms)^  private openChat\(item: ChatItemVO\): void \{.*?^  \}').Value
+if (-not $chatListOpen.Contains('const params = this.createChatRouteParams(item.chatId, item.title);') -or
+  -not $chatListOpen.Contains('if (params !== undefined) this.openChatRoute(params);') -or
+  -not $chatListSource.Contains('return new ChatScreenRouteParams(chatId, title, store, gateway);') -or
+  -not $archiveOpen.Contains('const params = new ChatScreenRouteParams(item.chatId, item.title, store, gateway);')) {
+  Write-Error 'Both chat-list callers must construct canonical unread params from their explicit captured owner.'
+  exit 1
+}
+$archiveCaptureIndex = $archiveOpen.IndexOf('const params = new ChatScreenRouteParams(')
+$archivePushIndex = $archiveOpen.IndexOf("this.pageStack.pushPathByName('TgChatScreenPage', params);")
+if ($archiveCaptureIndex -lt 0 -or $archivePushIndex -le $archiveCaptureIndex -or
+  -not $chatListRoute.Contains("navStack.pushPathByName('TgChatScreenPage', params);")) {
+  Write-Error 'Canonical unread entry params must be captured before push and passed unchanged to the destination.'
+  exit 1
+}
 foreach ($contract in @(
-  'PendingChatUnreadSnapshot.consume(this.activeChatId);',
-  'private hasRestoredUnreadBoundary: boolean = false;',
+  'const entryUnreadCount = route.entryUnreadCount ?? (entryChat ? entryChat.unreadCount : 0);',
+  "route.entryLastReadInboxMessageId ?? (entryChat ? entryChat.lastReadInboxMessageId : '0')",
+  'hasRestoredUnreadBoundary: boolean = false;',
   'const targetIndex = this.unreadRestoreIndex;',
   'this.listInitialIndex = this.unreadRestoreIndex;'
 )) {
@@ -692,12 +750,16 @@ foreach ($contract in @(
     exit 1
   }
 }
+if ($chatScreenSource.Contains('PendingChatUnreadSnapshot.consume(')) {
+  Write-Error 'Chat route initialization must not consume an unowned global unread snapshot.'
+  exit 1
+}
 if ($chatTimelineSource.Contains('UNREAD_TRACE')) {
   Write-Error 'Temporary unread diagnostics must not ship.'
   exit 1
 }
 foreach ($stringResourceFile in @($baseStringResourceFile, $ruStringResourceFile, $zhStringResourceFile)) {
-  $dateResourceSource = Get-Content -LiteralPath $stringResourceFile -Raw
+  $dateResourceSource = Get-ChatContractContent -LiteralPath $stringResourceFile -Raw
   foreach ($resourceName in @('chat_date_header', 'chat_date_header_year', 'chat_month_jan', 'chat_month_jul', 'chat_month_dec')) {
     if (-not $dateResourceSource.Contains('"name": "' + $resourceName + '"')) {
       Write-Error "Chat date-label localization missing $resourceName in $stringResourceFile"
@@ -716,7 +778,7 @@ foreach ($contract in $voiceLaneContracts) {
     exit 1
   }
 }
-$messageRouterSource = Get-Content -LiteralPath $messageRouterFile -Raw
+$messageRouterSource = Get-ChatContractContent -LiteralPath $messageRouterFile -Raw
 $voiceStatusCompactionContracts = @(
   'top: -TgUiTokens.VOICE_BUBBLE_STATUS_OVERLAP,',
   'bottom: TgUiTokens.VOICE_BUBBLE_STATUS_BOTTOM_INSET'
@@ -749,7 +811,7 @@ if ($sharedRadiusCount -lt 4 -or $messageRouterSource.Contains('.borderRadius(Tg
   Write-Error 'Contact, location, poll and non-visual media must share the timeline grouped-corner resolver.'
   exit 1
 }
-$bubbleTailSource = Get-Content -LiteralPath $bubbleTailFile -Raw
+$bubbleTailSource = Get-ChatContractContent -LiteralPath $bubbleTailFile -Raw
 foreach ($contract in @(
   'const w = this.getUIContext().vp2px(TgUiTokens.BUBBLE_TAIL_WIDTH);',
   'const h = this.getUIContext().vp2px(TgUiTokens.BUBBLE_TAIL_HEIGHT);'
@@ -759,7 +821,7 @@ foreach ($contract in @(
     exit 1
   }
 }
-$messageTimeContractDemoSource = Get-Content -LiteralPath $messageTimeContractDemoFile -Raw
+$messageTimeContractDemoSource = Get-ChatContractContent -LiteralPath $messageTimeContractDemoFile -Raw
 foreach ($contract in @(
   "groupingFlags: 'top'",
   "groupingFlags: 'middle'",
@@ -815,17 +877,17 @@ foreach ($tile in @($chatBackgroundLightTile, $chatBackgroundDarkTile)) {
   }
 }
 
-if (-not (Select-String -Path $chatScreenFile -Pattern 'TgChatTopBar\(')) {
+if (-not (Select-ChatContractString -Path $chatScreenFile -Pattern 'TgChatTopBar\(')) {
   Write-Error 'TgChatScreenPage must compose TgChatTopBar.'
   exit 1
 }
 
-if (-not (Select-String -Path $chatScreenFile -Pattern 'TgComposerInput\(')) {
+if (-not (Select-ChatContractString -Path $chatScreenFile -Pattern 'TgComposerInput\(')) {
   Write-Error 'TgChatScreenPage must compose TgComposerInput.'
   exit 1
 }
 
-if (-not (Select-String -Path $chatScreenFile -Pattern 'TgMessageRouter\(')) {
+if (-not (Select-ChatContractString -Path $chatScreenFile -Pattern 'TgMessageRouter\(')) {
   Write-Error 'TgChatScreenPage must compose TgMessageRouter.'
   exit 1
 }
@@ -843,11 +905,11 @@ foreach ($requiredProfileMembersFile in @(
   }
 }
 
-$profileSource = Get-Content -LiteralPath $profilePageFile -Raw
-$profileMembersSource = Get-Content -LiteralPath $profileMembersPageFile -Raw
-$profileMemberRowSource = Get-Content -LiteralPath $profileMemberRowFile -Raw
-$chatMembersUseCaseSource = Get-Content -LiteralPath $chatMembersUseCaseFile -Raw
-$profileRouteMapSource = Get-Content -LiteralPath $profileRouteMapFile -Raw
+$profileSource = Get-ChatContractContent -LiteralPath $profilePageFile -Raw
+$profileMembersSource = Get-ChatContractContent -LiteralPath $profileMembersPageFile -Raw
+$profileMemberRowSource = Get-ChatContractContent -LiteralPath $profileMemberRowFile -Raw
+$chatMembersUseCaseSource = Get-ChatContractContent -LiteralPath $chatMembersUseCaseFile -Raw
+$profileRouteMapSource = Get-ChatContractContent -LiteralPath $profileRouteMapFile -Raw
 
 if (-not $profileSource.Contains("pushPathByName('TgProfileMembersPage'")) {
   Write-Error 'TgProfilePage must navigate its Members disclosure to the live members destination.'
@@ -873,7 +935,7 @@ if (-not $profileRouteMapSource.Contains('"name": "TgProfileMembersPage"')) {
   exit 1
 }
 
-$chatScreenSource = Get-Content -LiteralPath $chatScreenFile -Raw
+$chatScreenSource = Get-ChatContractContent -LiteralPath $chatScreenFile -Raw
 $chatBackgroundRootPattern = 'Stack\(\{ alignContent: Alignment\.TopStart \}\) \{\s*TgChatBackground\(\)'
 if ($chatScreenSource -notmatch $chatBackgroundRootPattern) {
   Write-Error 'TgChatScreenPage must keep TgChatBackground as the first root Stack child.'
@@ -891,10 +953,10 @@ foreach ($replyHydrationFile in @(
     exit 1
   }
 }
-$replyHydrationCoordinatorSource = Get-Content -LiteralPath $replyHydrationCoordinatorFile -Raw
-$loadRepliedMessageSource = Get-Content -LiteralPath $loadRepliedMessageFile -Raw
-$commandSerializerSource = Get-Content -LiteralPath $commandSerializerFile -Raw
-$reducersIndexSource = Get-Content -LiteralPath $reducersIndexFile -Raw
+$replyHydrationCoordinatorSource = Get-ChatContractContent -LiteralPath $replyHydrationCoordinatorFile -Raw
+$loadRepliedMessageSource = Get-ChatContractContent -LiteralPath $loadRepliedMessageFile -Raw
+$commandSerializerSource = Get-ChatContractContent -LiteralPath $commandSerializerFile -Raw
+$reducersIndexSource = Get-ChatContractContent -LiteralPath $reducersIndexFile -Raw
 if (-not $chatScreenSource.Contains('scheduleMissingReplyHydration(state)') -or
   -not $replyHydrationCoordinatorSource.Contains('MAX_REPLY_HYDRATION_PER_SESSION') -or
   -not $loadRepliedMessageSource.Contains('createGetRepliedMessageCommand(chatId, replyingMessageId)') -or

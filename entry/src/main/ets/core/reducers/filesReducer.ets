@@ -175,6 +175,7 @@ function cloneMessageWithContent(msg: Message, newContent: MessageContent): Mess
   clone.isRead = msg.isRead;
   clone.isPending = msg.isPending;
   clone.editDate = msg.editDate;
+  clone.replyToChatId = msg.replyToChatId;
   clone.replyToMessageId = msg.replyToMessageId;
   clone.replyIsQuote = msg.replyIsQuote;
   clone.replyQuoteText = msg.replyQuoteText;

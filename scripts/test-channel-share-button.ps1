@@ -1,3 +1,4 @@
+. (Join-Path $PSScriptRoot "chat-screen-source.ps1")
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -16,13 +17,13 @@ foreach ($path in @($atomPath, $routerPath, $pagePath, $controllerPath, $tokensP
   }
 }
 
-$atom = Get-Content -LiteralPath $atomPath -Raw
-$router = Get-Content -LiteralPath $routerPath -Raw
-$page = Get-Content -LiteralPath $pagePath -Raw
-$controller = Get-Content -LiteralPath $controllerPath -Raw
-$tokens = Get-Content -LiteralPath $tokensPath -Raw
-$demo = Get-Content -LiteralPath $demoPath -Raw
-$passport = Get-Content -LiteralPath $passportPath -Raw
+$atom = Get-ChatContractContent -LiteralPath $atomPath -Raw
+$router = Get-ChatContractContent -LiteralPath $routerPath -Raw
+$page = Get-ChatContractContent -LiteralPath $pagePath -Raw
+$controller = Get-ChatContractContent -LiteralPath $controllerPath -Raw
+$tokens = Get-ChatContractContent -LiteralPath $tokensPath -Raw
+$demo = Get-ChatContractContent -LiteralPath $demoPath -Raw
+$passport = Get-ChatContractContent -LiteralPath $passportPath -Raw
 
 foreach ($fragment in @(
     'CHANNEL_SHARE_BUTTON_SIZE: number = 30',
