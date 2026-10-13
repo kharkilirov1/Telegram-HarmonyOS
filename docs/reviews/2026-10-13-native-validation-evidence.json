@@ -1,0 +1,202 @@
+{
+  "date": "2026-10-13",
+  "baseHead": "bbfc305d47b73657147e853cf1ff008e31d6e471",
+  "workspace": "C:\\Users\\Kharki\\Documents\\Codex\\2026-10-13\\task-2",
+  "sourceInputs": 768,
+  "unchangedSourceInputs": 759,
+  "projectionPaths": 105,
+  "sourceChanges": [
+    {
+      "path": "entry/src/main/ets/services/ConfigLocal.example.ets",
+      "beforeSha256": "9aec7a9ef0ff98844e89893ce1f582ab63d695382c982d465b3f790d1ac8455f",
+      "sha256": "2500e43e591f9a6c65440833099ddfaf50097ed12cacd3bfba2fa3cd13e77c97"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/profile/TgProfilePage.ets",
+      "beforeSha256": "fd1e3ad1af4ccfbcea63126221b5f1f6c9889df6a1d05486af0986fd2d016b06",
+      "sha256": "8ad4f19ba0711c6011c1e576bcddeff1273bb8434a38139469cd4e9ca280260d"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/List.test.ets",
+      "beforeSha256": "5ff033d5984a305b515b28f4ccde2f566db1c102488367c42f47850bf883d295",
+      "sha256": "5e6c9857c19e112e17f722f65551ffc21b02000d9a4a81e73142660108add526"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/PhotoSelectionPreview.test.ets",
+      "beforeSha256": "bc6f795c3c8353a712f1aa8682897e232b130128d56db75d7cd09b9be8990f22",
+      "sha256": "b5b18460cad2180e4d9dab1997973ea87c6eb8faefd680dea2725f84868043e5"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/SharedMediaThumbnailCoordinator.test.ets",
+      "beforeSha256": "23f848fa990d47e1deaa0cfb155104d186f3bf915442e699bc8a0ea00e609f53",
+      "sha256": "c02b7df9363fce271e3d37650e4b7da14d4c37f9001887c91d2220af21764b34"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/StabilizationNative.test.ets",
+      "beforeSha256": "81742efdc8a359d8ad044d04ae7cf4684e2af93e9d62c8f3be971212dfa32be0",
+      "sha256": "a47903fe16c9cd918a29f56300957765714aed9853a7f9813257843ec8102a7b"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/TgUnicodeEmojiCatalog.test.ets",
+      "beforeSha256": "c898d1590cb60f98615b243b03c51cfe42f4eb35f94182803b4344db55c4d321",
+      "sha256": "4a1c5c7a9c22d614401e9b699b5e1bd74e3edb9b3b5673988fc57de1da920a36"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/WriteResendDialog.test.ets",
+      "beforeSha256": "ba2e4f692ccbb23d079b002523bdc8e996489e8bf989cb575e01a5f2bfefad72",
+      "sha256": "1ae16cd82534c71505ce0e59b89a92182f220d8eb9758e139df1e7479744c0a4"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/testability/components/StabilizationFixture.ets",
+      "beforeSha256": "f2b4a28216d0e4d3e5bd48e4f63070c172c7195946f1687e2ca76c99c45ffe77",
+      "sha256": "42adbcfc88ab56355f814840dc7b491be5eacd781a836cc9e601df5d3f512009"
+    },
+    {
+      "path": "scripts/test-native-test-scheduling.cjs",
+      "beforeSha256": null,
+      "sha256": "b473e078005e3d122219a400d5b8ce523d5381d02de38a70af448245360a59f2"
+    },
+    {
+      "path": "scripts/test-native-keyboard-observation.cjs",
+      "beforeSha256": null,
+      "sha256": "05852949d9e5eaa1a9dead42ea8ce65ccfec4b36d98c016e346186e881a07dcc"
+    },
+    {
+      "path": "scripts/test-native-focused-window-observation.cjs",
+      "beforeSha256": null,
+      "sha256": "b74e837334d022f1e366fae0ea23f5cfcb896f36c551d9e9c72045e93876f55d"
+    },
+    {
+      "path": "scripts/test-native-member-search-ledger.cjs",
+      "beforeSha256": null,
+      "sha256": "96d361ca685f7ce4433d050067a2a763bb00ce3ba6f9be54e0630f079f65e6ca"
+    },
+    {
+      "path": "scripts/test-native-fixture-visibility.cjs",
+      "beforeSha256": null,
+      "sha256": "423f93f1332adfea5d59c6f111df60a44e33f2ac557a4c7478ad86d124bc31aa"
+    },
+    {
+      "path": "scripts/test-native-root-viewport.cjs",
+      "beforeSha256": null,
+      "sha256": "59d9fa2711a2f441960e229876a35d7d8928953990144720dc8d630d896059be"
+    },
+    {
+      "path": "scripts/test-native-thumbnail-completion.cjs",
+      "beforeSha256": null,
+      "sha256": "81cb5e2a6120f571a142b5b5c3f0f45136e2c20c60a3d0c5464c7ae365a1a65d"
+    },
+    {
+      "path": "scripts/test-native-photo-preview-viewport.cjs",
+      "beforeSha256": null,
+      "sha256": "d5d7f1a70cc248cf2d2c2fb53ee057a4f0fb29e8829802abeac3590b5ee0294e"
+    },
+    {
+      "path": "scripts/test-native-catalog-scheduling.cjs",
+      "beforeSha256": "86fb87edce833021330b633812628f300792b674ad466d5a14231acdfc15d318",
+      "sha256": "e2af7f4d413536a0f7bdbaedd06b5e797b8d928cdb19bbda9c679c79acf79adb"
+    }
+  ],
+  "originalHaps": [
+    {
+      "path": "C:\\Users\\Kharki\\Desktop\\Telegram-HarmonyOS\\entry\\build\\default\\outputs\\default\\entry-default-unsigned.hap",
+      "size": 87361687,
+      "sha256": "152226CA7DFA09F27D41A630E3578BD42BF20FE7C80B8DEB076DB050B01DE42C"
+    },
+    {
+      "path": "C:\\Users\\Kharki\\Desktop\\Telegram-HarmonyOS\\entry\\build\\default\\outputs\\ohosTest\\entry-ohosTest-unsigned.hap",
+      "size": 18239108,
+      "sha256": "41655535E47291D43F7D269FD20DA2C90BCF5B2DDBD0DA731F9577DB73A0AE41"
+    }
+  ],
+  "validationHaps": [
+    {
+      "path": "C:\\Users\\Kharki\\Documents\\Codex\\2026-10-13\\task-2\\native-validation\\entry\\build\\default\\outputs\\default\\entry-default-unsigned.hap",
+      "size": 90472400,
+      "sha256": "6B7BDD641FA8D9D415EEB48C201CA814D9B8837613B4F55596159B2B9FF4B354"
+    },
+    {
+      "path": "C:\\Users\\Kharki\\Documents\\Codex\\2026-10-13\\task-2\\native-validation\\entry\\build\\default\\outputs\\ohosTest\\entry-ohosTest-unsigned.hap",
+      "size": 18230164,
+      "sha256": "ABBBE6DA8D683473D0B18D5BEACF0A471C6321E8D05F05FE7966DBEEBC8D175C"
+    }
+  ],
+  "native": {
+    "full": {
+      "label": "oct13-full-candidate5",
+      "declaredTests": 1207,
+      "completed": 1207,
+      "statusCodes": {
+        "0": 1207
+      },
+      "nonPassing": [],
+      "terminalLines": [
+        "OHOS_REPORT_RESULT: stream=Tests run: 1207, Failure: 0, Error: 0, Pass: 1207, Ignore: 0",
+        "TestFinished-ResultCode: 0",
+        "TestFinished-ResultMsg: your test finished!!!"
+      ],
+      "allDeclaredPassed": true
+    },
+    "focused": {
+      "label": "oct13-focused-candidate4",
+      "declaredTests": 16,
+      "completed": 16,
+      "statusCodes": {
+        "0": 16
+      },
+      "nonPassing": [],
+      "terminalLines": [
+        "OHOS_REPORT_RESULT: stream=Tests run: 16, Failure: 0, Error: 0, Pass: 16, Ignore: 0",
+        "TestFinished-ResultCode: 0",
+        "TestFinished-ResultMsg: your test finished!!!"
+      ],
+      "allDeclaredPassed": true
+    },
+    "photo": {
+      "label": "oct13-photo-candidate5-budget240",
+      "declaredTests": 1,
+      "completed": 1,
+      "statusCodes": {
+        "0": 1
+      },
+      "nonPassing": [],
+      "terminalLines": [
+        "OHOS_REPORT_RESULT: stream=Tests run: 1, Failure: 0, Error: 0, Pass: 1, Ignore: 0",
+        "TestFinished-ResultCode: 0",
+        "TestFinished-ResultMsg: your test finished!!!"
+      ],
+      "allDeclaredPassed": true
+    },
+    "aggregateCaseTimeoutMs": 240000,
+    "commandLimitSeconds": 900,
+    "durationMs": 563208
+  },
+  "host": {
+    "suites": 91,
+    "passed": 91,
+    "failed": 0
+  },
+  "static": {
+    "finishedUtc": "2026-10-13T14:07:19.1867076Z",
+    "hostExit": 0,
+    "powershellStaticExit": 0,
+    "bashStaticExit": 0
+  },
+  "reviewScope": "Independent gpt-6-astra xhigh final review accepted frozen sources, official builds, 1207/1207 native, 91/91 host, static and preservation receipts without blocking findings; astra-final-review.md is retained in the task evidence directory.",
+  "limitations": [
+    "public dummy API credentials; no authenticated Telegram delivery",
+    "synthetic native fixtures; no real provider/microphone/camera acceptance",
+    "no current shipped-iOS parity claim",
+    "unsigned HAPs; signingConfigs unchanged",
+    "on-device HAP hashing denied; installed-file byte identity unverified"
+  ],
+  "rawEvidence": {
+    "full": "oct13-full-candidate5-test.log",
+    "fullCommand": "oct13-full-candidate5-command.json",
+    "prelaunch": "oct13-full-candidate5-prelaunch.json",
+    "install": "candidate5-install.log",
+    "host": "host-final-full.log",
+    "metadata": "production-final-preservation.json",
+    "faults": "final-native-fault-comparison.json"
+  }
+}

@@ -1,14 +1,15 @@
-# TODO — Telegram-HarmonyOS
+# TODO - Telegram-HarmonyOS
 
 ## Current checkpoint and remaining verification - 2026-10-13
 
-- [x] Review all 400 original changed files and the selected 39-path supplement; preserve 36 local historical artifacts without publishing their raw payloads.
-- [x] Fix startup Retry routing, detect unfinished async host suites, and make PowerShell contract reads tolerate CRLF; record fresh 82/83 host and passing PowerShell smoke results.
-- [ ] Confirm the published commit's Linux host/static CI; preserve the local MSYS failure in its own evidence.
-- [ ] Complete official SDK builds when the existing symlink EPERM environment blocker is resolved through an authorized setup.
-- [ ] Complete device/HDC, authenticated delivery, provider/microphone and current iOS checks under an approved working environment.
+- [x] Preserve the published 400-file review and 36 historical local artifacts; base dev@bbfc305.
+- [x] Confirm prior Linux CI host 83/83/static PASS (Hvigor skipped); complete fresh local host 91/91 and both static checks.
+- [x] Complete official main/ohosTest builds using original checkout and normal SDK/cache; EPERM from the separate copy is not a current build blocker.
+- [x] Install the complete isolated validation pair on the existing emulator and complete native 1207/1207, focused 16/16 and photo 1/1. Retain failed attempts and explicit 240-second whole-case photo budget.
+- [x] Complete independent final review and prepare this correction set for separate publication from the already-pushed source checkpoint; publication/CI receipts remain separate from native acceptance.
+- [ ] Complete authenticated delivery, real provider/microphone/camera checks, current shipped-iOS comparison and release signing.
 
-See [checkpoint scope and change map](../docs/reviews/2026-10-13-source-checkpoint.md). The current product direction is `PRODUCTION_PARITY_PLAN.md`. Older Active Phase R1/Release Track entries below are historical, not the current queue.
+See [native validation report](../docs/reviews/2026-10-13-native-validation.md) and the earlier [source checkpoint](../docs/reviews/2026-10-13-source-checkpoint.md). Current product direction remains PRODUCTION_PARITY_PLAN.md.
 
 ## Previous dated work
 

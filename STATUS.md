@@ -1,12 +1,12 @@
-# STATUS — Telegram-HarmonyOS
+# STATUS - Telegram-HarmonyOS
 
-## Current source checkpoint - 2026-10-13
+## Current build and native verification - 2026-10-13
 
-The reviewed checkpoint contains the original 400 changed paths plus the accepted 39-path supplement (419 unique paths), followed by three bounded review fixes. [Change map and verification](docs/reviews/2026-10-13-source-checkpoint.md) describe the exact scope.
+Published base: dev@bbfc305. Official main/ohosTest builds now pass in the original checkout. Final local host 91/91 and PowerShell/Bash static checks PASS; isolated existing-emulator full native **1207/1207 PASS**, focused 16/16 plus photo 1/1. Photo uses an explicit 240-second whole-case budget; the earlier 120-second timeout remains preserved.
 
-Fresh local verification: 82/83 host suites passed; the remaining Bash color-check suite is blocked by MSYS namespace access (0xC0000022). PowerShell UI smoke passed. Both official SDK build attempts stopped before compilation with symlink EPERM. Device/HDC, authenticated delivery, provider/microphone and current shipped-iOS acceptance remain open. This is a source checkpoint, not a release.
+Fixed stale profile bio rendering and bounded native test scheduling/viewport/request observation defects; all 1207 cases remain registered. The validation pair uses a separate credential-free bundle. The production bundle was not reinstalled, stopped or cleared; its package metadata is checked separately and private data was not inspected. All 36 historical artifacts remain local. Independent final review accepted this bounded correction set; publication is recorded separately in Git history and CI. [Changes, artifacts, failures and verification boundaries](docs/reviews/2026-10-13-native-validation.md).
 
-All previous PASS/ACCEPTED, installed-HAP and roadmap statements below describe their dated snapshots. They do not establish verification of this checkpoint. Historical evidence JSON/patch files and the crash dump remain local, preserved under exact ignore entries.
+Authenticated delivery, real provider/microphone/camera checks, current shipped-iOS acceptance and release signing remain open. Historical results below retain their original dates.
 
 ## Previous dated snapshots
 

@@ -1,12 +1,16 @@
-# LESSONS — repeated mistakes and project-specific pitfalls
+# LESSONS - repeated mistakes and project-specific pitfalls
 
-## Source checkpoint verification - 2026-10-13
+## Build and native verification - 2026-10-13
 
-- Bind review and publication to file hashes. Apply one selected supplement only after checking every preimage; preserve excluded local artifacts with exact paths instead of broad ignore patterns.
-- An async test can exit zero while its top-level Promise is unfinished. Watch that Promise at beforeExit, preserving rejection and deliberately pending fixture semantics.
-- Contract readers should normalize CRLF for LF-based assertions without rewriting application files. Native build, host checks, device execution and release readiness remain separate evidence.
-- Record dated current results in a short checkpoint block. Preserve historical receipts and do not carry their PASS claims forward without fresh validation.
-
+- Reproduce cache/permission failures in the actual checkout; a separate-copy EPERM does not prove the original build is blocked. Use normal approved execution without changing security/ACL settings.
+- Bind source, generated projection, packaged HAP and fresh-process execution to explicit hashes/receipts. Force compilation when external test imports are omitted from incremental invalidation. HDC exit zero does not establish Hypium PASS.
+- Zero-delay awaits may drain in one platform timer task. Preserve all callbacks/assertions and yield to a later event-loop turn; verify with native watchdog evidence.
+- Native focus/keyboard samples can straddle transitions. Discard inconsistent samples within existing deadlines; retain ownership and no-replay guards. Native text replacement can expose real debounce prefixes: validate exact request identities and stale replies.
+- A below-fold fixture text wait needs stable-ID visibility before an exact assertion. Capture failure state before finally cleanup; post-cleanup screenshots cannot establish the failing state.
+- ArkUI local builders receiving changing primitive values can retain stale text. One direct object parameter produces reactive builder proxies; verify the official compiler output and unchanged native assertion.
+- Await observable loader completion/publication instead of assuming timer duration proves completion. Keep concurrency/order assertions and negative controls.
+- Separate whole-case Hypium budgets from component wait bounds. Photo functional acceptance used 240s after a preserved 120s timeout; this does not establish 120s performance. Hypium timeout does not cancel callbacks: stop only the isolated bundle and verify a fresh process before continuing.
+- Preserve historical document bytes and local artifacts. Record current results in compact prefixes; authenticated delivery, synthetic fixtures and release readiness are separate claims.
 
 Last updated: 2026-10-02
 
