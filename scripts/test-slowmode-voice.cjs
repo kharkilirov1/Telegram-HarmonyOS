@@ -83,4 +83,4 @@ async function main() {
   if (args.includes('--expect-red')) assert.ok(failures.length > 0 && failures.every(x => x.type === 'AssertionError'), 'RED assertions only');
   else assert.equal(failures.length, 0);
 }
-main().catch(error => { console.error(error.stack); process.exitCode = 1; });
+require('./host-test-completion.cjs').guardSuite(main()).catch(error => { console.error(error.stack); process.exitCode = 1; });

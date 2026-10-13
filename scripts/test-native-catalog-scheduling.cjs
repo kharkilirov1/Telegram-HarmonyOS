@@ -48,7 +48,7 @@ async function execute(text) {
   return { fair, scheduledYields, callbacks: tests.length, assertions: trace.length,
     neutralAssertions: neutralTrace.length, assertionTraceSha256: createHash('sha256').update(JSON.stringify(trace)).digest('hex') };
 }
-(async () => {
+require('./host-test-completion.cjs').guardSuite((async () => {
   const result = await execute(original);
   if (argv.includes('--expect-red')) {
     assert.equal(result.fair, false, 'baseline must fail the event-loop fairness contract');
@@ -66,4 +66,4 @@ async function execute(text) {
     }
     console.log(JSON.stringify({ green: true, negativeControls: 2, ...result }));
   }
-})().catch(error => { console.error(error); process.exitCode = 1; });
+})()).catch(error => { console.error(error); process.exitCode = 1; });

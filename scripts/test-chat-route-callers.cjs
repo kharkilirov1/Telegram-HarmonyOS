@@ -392,7 +392,7 @@ test('failed A push clears own handoff after account switch without rolling back
   assert.equal(f.transfer.consumeFor(9, f.pushes[1][1].navigationToken), undefined);
   assert.equal(f.nav.activeChatOwnerToken, 987654); assert.equal(f.nav.activeChatTitle, 'B');
 });
-(async () => {
+require('./host-test-completion.cjs').guardSuite((async () => {
   let failed = 0;
   for (const { name, run } of tests) {
     try { await run(); console.log(`PASS ${name}`); }
@@ -403,4 +403,4 @@ test('failed A push clears own handoff after account switch without rolling back
   console.log(JSON.stringify({ passed: tests.length - failed, failed,
     mutant, mutationSites: [...mutationSites], sources: Object.fromEntries([...snapshots].map(([file, s]) => [file, hash(s)])), methods }));
   process.exitCode = failed ? 1 : 0;
-})().catch(error => { console.error('HARNESS_ERROR', error); process.exitCode = 2; });
+})()).catch(error => { console.error('HARNESS_ERROR', error); process.exitCode = 2; });

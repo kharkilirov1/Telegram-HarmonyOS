@@ -127,4 +127,4 @@ async function main() {
   console.log(JSON.stringify({ passed, failed: tests.length - passed }));
   process.exitCode = passed === tests.length ? 0 : 1;
 }
-main().catch(error => { console.error(error); process.exitCode = 2; });
+require('./host-test-completion.cjs').guardSuite(main()).catch(error => { console.error(error); process.exitCode = 2; });

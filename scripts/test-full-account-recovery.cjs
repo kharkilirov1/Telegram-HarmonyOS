@@ -107,4 +107,4 @@ async function main() {
   await bootstrapFailureScenario(true);
   console.log('3/3 full account recovery scenarios PASS');
 }
-main().catch(error => { console.error('FAIL full account recovery', error); process.exitCode = 1; });
+require('./host-test-completion.cjs').guardSuite(main()).catch(error => { console.error('FAIL full account recovery', error); process.exitCode = 1; });

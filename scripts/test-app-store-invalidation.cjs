@@ -367,4 +367,4 @@ async function main() {
   }
 }
 module.exports = { runSuite, actualSource, hash };
-if (require.main === module) main().catch(error => { console.error('HARNESS_ERROR', error); process.exitCode = 2; });
+if (require.main === module) require('./host-test-completion.cjs').guardSuite(main()).catch(error => { console.error('HARNESS_ERROR', error); process.exitCode = 2; });

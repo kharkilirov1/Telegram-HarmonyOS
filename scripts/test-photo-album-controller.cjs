@@ -186,4 +186,4 @@ async function main() {
   console.log(JSON.stringify({ cases: cases.length, passed: cases.length - failed, failed }));
   if (failed) process.exitCode = 1;
 }
-main().catch(e => { console.error(e); process.exitCode = 1; });
+require('./host-test-completion.cjs').guardSuite(main()).catch(e => { console.error(e); process.exitCode = 1; });

@@ -269,4 +269,4 @@ async function main() {
     controllerHash: createHash('sha256').update(controllerSource).digest('hex') }));
   process.exitCode = failed ? 1 : 0;
 }
-main().catch(error => { console.error('HARNESS_ERROR', error); process.exitCode = 2; });
+require('./host-test-completion.cjs').guardSuite(main()).catch(error => { console.error('HARNESS_ERROR', error); process.exitCode = 2; });

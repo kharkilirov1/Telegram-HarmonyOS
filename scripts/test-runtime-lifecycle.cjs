@@ -248,4 +248,4 @@ async function main() {
     runtimeSha256: createHash('sha256').update(fs.readFileSync(runtimePath)).digest('hex') }));
   process.exitCode = failed ? 1 : 0;
 }
-if (require.main === module) main().catch(error => { console.error('HARNESS_ERROR', error); process.exitCode = 2; });
+if (require.main === module) require('./host-test-completion.cjs').guardSuite(main()).catch(error => { console.error('HARNESS_ERROR', error); process.exitCode = 2; });

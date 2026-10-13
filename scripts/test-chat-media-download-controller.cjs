@@ -185,4 +185,4 @@ async function main() {
   process.exitCode = failed > 0 ? 1 : 0;
 }
 
-main().catch(error => { console.error('HARNESS_ERROR', error); process.exitCode = 2; });
+require('./host-test-completion.cjs').guardSuite(main()).catch(error => { console.error('HARNESS_ERROR', error); process.exitCode = 2; });

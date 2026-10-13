@@ -409,7 +409,7 @@ async function main() {
     actual: ['full page methods and lifecycle callbacks', 'AppStore scopes', 'ChatScreenRouteParams', 'ChatOpenLease'] }));
   process.exitCode = failed || !stable ? 1 : 0;
 }
-if (require.main === module) main().catch(error => { console.error(error.stack); process.exitCode = 1; });
+if (require.main === module) require('./host-test-completion.cjs').guardSuite(main()).catch(error => { console.error(error.stack); process.exitCode = 1; });
 // Raw full methods let the account integration suite inject the actual Global,
 // without importing this file's fake boundary or copying production behavior.
 module.exports = { fixture, mediaBoundary, methods, hashes, methodSource, entry, pageSourceHash: hash(source) };

@@ -237,7 +237,7 @@ if (!baseline) {
     atom.isDisabled = true; const before = events.length; atom.handleActionPress(); atom.handleAttachPress(); assert.equal(events.length, before);
   });
 }
-(async () => {
+require('./host-test-completion.cjs').guardSuite((async () => {
   const failures = []; let passed = 0;
   for (const test of tests) { try { await test.run(); passed++; } catch (error) { failures.push({ name: test.name, type: error.constructor.name, message: error.message }); } }
   const assertionFailures = failures.filter(x => x.type === 'AssertionError').length;
@@ -249,4 +249,4 @@ if (!baseline) {
   if (mutant) assert.ok(activatedMutations.length > 0, 'Mutation route must be activated');
   if (expectRed) assert.ok(failures.length > 0 && failures.length === assertionFailures, 'RED must contain behavior assertions only');
   else assert.equal(failures.length, 0, failures.map(x => x.name + ': ' + x.message).join('\n'));
-})().catch(error => { console.error(error.stack); process.exitCode = 1; });
+})()).catch(error => { console.error(error.stack); process.exitCode = 1; });

@@ -476,7 +476,7 @@ async function main() {
   process.exitCode = failed > 0 ? 1 : 0;
 }
 
-main().catch(error => {
+require('./host-test-completion.cjs').guardSuite(main()).catch(error => {
   console.error(error.code === 'ERR_ASSERTION' ? 'FAIL' : 'HARNESS_ERROR', error);
   process.exitCode = error.code === 'ERR_ASSERTION' ? 1 : 2;
 });

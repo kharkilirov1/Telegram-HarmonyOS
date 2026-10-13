@@ -61,4 +61,4 @@ async function mainTest() {
   console.log(JSON.stringify({ passed: tests.length - failed, failed, sources }));
   process.exitCode = failed ? 1 : 0;
 }
-mainTest().catch(error => { console.error('HARNESS_ERROR', error); process.exitCode = 2; });
+require('./host-test-completion.cjs').guardSuite(mainTest()).catch(error => { console.error('HARNESS_ERROR', error); process.exitCode = 2; });

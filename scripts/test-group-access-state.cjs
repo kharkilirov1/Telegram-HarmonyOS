@@ -397,4 +397,4 @@ async function main() {
   console.log(JSON.stringify({ passed: tests.length - failed, failed, total: tests.length, combined: process.argv.includes('--combined'), sources }));
   process.exitCode = failed ? 1 : 0;
 }
-main().catch(error => { console.error('HARNESS_ERROR', error); process.exitCode = 2; });
+require('./host-test-completion.cjs').guardSuite(main()).catch(error => { console.error('HARNESS_ERROR', error); process.exitCode = 2; });

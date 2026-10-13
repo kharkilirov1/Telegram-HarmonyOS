@@ -226,4 +226,4 @@ async function mainRun() {
   if(expectRed) assert.ok(failed>0,'Mutation/preimage must fail a behavioral assertion');
   else if(failed) process.exitCode=1;
 }
-mainRun().catch(error=>{console.error('HARNESS_ERROR',error.stack);process.exitCode=2;});
+require('./host-test-completion.cjs').guardSuite(mainRun()).catch(error=>{console.error('HARNESS_ERROR',error.stack);process.exitCode=2;});

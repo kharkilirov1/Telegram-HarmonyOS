@@ -263,7 +263,7 @@ add('bounded URI ledger saturation requires conservative confirmation for a fres
   f.dialogs[0].resolve({ index: 0 }); await write.settleWrites(); assert.equal(f.host.busy, false);
   assert.equal(f.host.attachments.join('|'), 'file:///fresh-after-saturation');
 }, 'host actual bounded consumption ledger integration');
-(async () => {
+require('./host-test-completion.cjs').guardSuite((async () => {
   const failures = []; let passed = 0;
   for (const test of tests) {
     try { await test.run(); passed++; } catch (error) {
@@ -278,4 +278,4 @@ add('bounded URI ledger saturation requires conservative confirmation for a fres
   console.log(JSON.stringify({ passed, failed: failures.length, assertionFailures, nativeCount, hostCount: tests.length - nativeCount, baseline, mutation, mutationCount }));
   if (expectRed) assert.ok(failures.length > 0 && failures.length === assertionFailures, 'RED must contain behavioral assertions only');
   else assert.equal(failures.length, 0, failures.map(value => value.name + ': ' + value.message).join('\n'));
-})().catch(error => { console.error(error.stack); process.exitCode = 1; });
+})()).catch(error => { console.error(error.stack); process.exitCode = 1; });

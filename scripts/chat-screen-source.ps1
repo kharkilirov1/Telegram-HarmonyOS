@@ -4,9 +4,13 @@ function Get-ChatContractContent {
     [switch]$Raw, [string]$Encoding)
   if ((Split-Path -Leaf $Path) -ne 'TgChatScreenPage.ets') {
     if ($PSBoundParameters.ContainsKey('Encoding')) {
-      return Get-Content -LiteralPath $Path -Raw:$Raw -Encoding $Encoding
+      $content = Get-Content -LiteralPath $Path -Raw:$Raw -Encoding $Encoding
+    } else {
+      $content = Get-Content -LiteralPath $Path -Raw:$Raw
     }
-    return Get-Content -LiteralPath $Path -Raw:$Raw
+    # Contract assertions use LF; Git checkouts may materialize CRLF on Windows.
+    if ($Raw -and $null -ne $content) { return $content.Replace("`r`n", "`n") }
+    return $content
   }
   $result = & node (Join-Path $PSScriptRoot 'chat-screen-source.cjs') --contract $Path
   if ($LASTEXITCODE -ne 0) { throw "Actual chat owner source reader failed: $Path" }

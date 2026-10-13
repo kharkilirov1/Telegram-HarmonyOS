@@ -408,4 +408,4 @@ async function main() {
   else if (process.argv.includes('--negative-controls')) await negativeControls();
 }
 module.exports = { fixture, deferred, flush, runCase, source };
-if (require.main === module) main().catch(error => { console.error(error); process.exitCode = 1; });
+if (require.main === module) require('./host-test-completion.cjs').guardSuite(main()).catch(error => { console.error(error); process.exitCode = 1; });
