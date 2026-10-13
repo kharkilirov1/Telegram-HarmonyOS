@@ -2,6 +2,7 @@
 // Old service-layer tests (MessagesController, PreferencesService, etc.) removed —
 // those modules no longer exist in the current architecture.
 
+import { beforeEachIt } from '@ohos/hypium';
 import messagesReducerTest from './MessagesReducer.test';
 import messageDtoParserTest from './MessageDtoParser.test';
 import stateCloneTest from './StateClone.test';
@@ -90,6 +91,13 @@ import stabilizationMessagesTest from './StabilizationMessages.test';
 import stabilizationNativeTest from './StabilizationNative.test';
 
 export default function testsuite() {
+  // Hypium inherits beforeEachIt into nested suites. A positive timeout lets
+  // the platform event handler run between cases; zero-delay timers can keep
+  // running inside one uv_timer_task and starve the application watchdog.
+  beforeEachIt(async () => {
+    await new Promise<void>((resolve) => { setTimeout(resolve, 16); });
+  });
+
   // Core state management
   messagesReducerTest();
   stateCloneTest();

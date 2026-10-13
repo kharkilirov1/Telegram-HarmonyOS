@@ -31,9 +31,10 @@ export default function tgUnicodeEmojiCatalogTest() {
           expect(emoji.includes('🏾')).assertFalse();
           expect(emoji.includes('🏿')).assertFalse();
           checkedCount++;
-          // Keep every assertion while giving native window/watchdog tasks a turn.
+          // Zero-delay timers can stay in one uv_timer_task on HarmonyOS.
+          // Keep every assertion, with a positive pause between bounded batches.
           if (checkedCount % 128 === 0) {
-            await new Promise<void>((resolve) => { setTimeout(() => resolve(), 0); });
+            await new Promise<void>((resolve) => { setTimeout(() => resolve(), 16); });
           }
         }
       }

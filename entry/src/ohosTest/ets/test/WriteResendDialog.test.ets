@@ -48,6 +48,7 @@ async function nativeTextFixtureReady(driver: Driver): Promise<void> {
 }
 
 async function requireResendText(driver: Driver, text: string): Promise<void> {
+  console.info('[WriteResendDialog] requireText=' + text + ' mutations=' + WriteResendFixture.state.mutations.toString() + ' busy=' + WriteResendFixture.state.busy.toString());
   const value = await driver.waitForComponent(ON.text(text), 5000);
   expect(value === undefined || value === null).assertFalse();
   if (value === undefined || value === null) throw new Error('Missing native text confirmation: ' + text);
@@ -61,7 +62,11 @@ async function clickResendText(driver: Driver, text: string): Promise<void> {
 async function clickTextFixture(driver: Driver): Promise<void> {
   const scroll = await driver.waitForComponent(ON.id('chat-test-fixture-scroll'), 5000);
   if (scroll === undefined || scroll === null) throw new Error('Native text fixture Scroll is not mounted');
-  const value = await scroll.scrollSearch(ON.id('write-resend-fixture-send'));
+  // scrollSearch may expose only the button at the viewport's bottom edge.
+  // Bring the fixture's final status row into view before the single click.
+  const tail = await scroll.scrollSearch(ON.id('write-resend-fixture-entities'));
+  if (tail === undefined || tail === null) throw new Error('Native text fixture status footer is not mounted');
+  const value = await driver.waitForComponent(ON.id('write-resend-fixture-send'), 5000);
   if (value === undefined || value === null) throw new Error('Native text fixture button is not mounted');
   await driver.assertComponentExist(ON.id('write-resend-fixture-send'));
   await value.click();

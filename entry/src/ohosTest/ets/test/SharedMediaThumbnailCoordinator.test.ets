@@ -19,6 +19,31 @@ class TestThumbTarget implements SharedMediaThumbnailTarget {
   }
 }
 
+// The pressure test controls loader completion and observes the coordinator's
+// URI publication. Wall-clock sleeps cannot prove that a later batch finished.
+class ControlledThumbTarget implements SharedMediaThumbnailTarget {
+  readonly thumbFileId: number;
+  readonly result: Promise<string>;
+  readonly published: Promise<void>;
+  private uri: string = '';
+  private finish: (uri: string) => void = (_uri: string): void => {};
+  private notifyPublished: () => void = (): void => {};
+
+  constructor(fileId: number) {
+    this.thumbFileId = fileId;
+    this.result = new Promise<string>((resolve: (uri: string) => void) => { this.finish = resolve; });
+    this.published = new Promise<void>((resolve: () => void) => { this.notifyPublished = resolve; });
+  }
+
+  get thumbUri(): string { return this.uri; }
+  set thumbUri(uri: string) {
+    this.uri = uri;
+    this.notifyPublished();
+  }
+
+  complete(): void { this.finish(`file://${this.thumbFileId}`); }
+}
+
 export default function sharedMediaThumbnailCoordinatorTest() {
   describe('SharedMediaThumbnailCoordinator', () => {
     it('requests only the visible range when no background queue was registered', 0, async () => {
@@ -65,25 +90,44 @@ export default function sharedMediaThumbnailCoordinatorTest() {
     it('keeps TDLib thumbnail pressure within the configured bound', 0, async () => {
       let active = 0;
       let peak = 0;
-      const targets: TestThumbTarget[] = [
-        new TestThumbTarget(11),
-        new TestThumbTarget(12),
-        new TestThumbTarget(13),
-        new TestThumbTarget(14)
+      const started: number[] = [];
+      const targets: ControlledThumbTarget[] = [
+        new ControlledThumbTarget(11),
+        new ControlledThumbTarget(12),
+        new ControlledThumbTarget(13),
+        new ControlledThumbTarget(14)
       ];
       const coordinator = new SharedMediaThumbnailCoordinator(async (fileId: number): Promise<string> => {
         active++;
         peak = Math.max(peak, active);
-        await sleep(20);
+        started.push(fileId);
+        const uri = await targets[fileId - 11].result;
         active--;
-        return `file://${fileId}`;
+        return uri;
       }, (_fileId: number, _reason: string): void => {}, 2);
 
-      coordinator.enqueue(targets);
-      await sleep(90);
-
-      expect(peak).assertEqual(2);
-      expect(targets[3].thumbUri).assertEqual('file://14');
+      try {
+        coordinator.enqueue(targets);
+        expect(active).assertEqual(2);
+        expect(started.join(',')).assertEqual('11,12');
+        targets[0].complete();
+        await targets[0].published;
+        expect(active).assertEqual(2);
+        expect(started.join(',')).assertEqual('11,12,13');
+        targets[1].complete();
+        await targets[1].published;
+        expect(active).assertEqual(2);
+        expect(started.join(',')).assertEqual('11,12,13,14');
+        targets[2].complete();
+        targets[3].complete();
+        await Promise.all([targets[2].published, targets[3].published]);
+        expect(active).assertEqual(0);
+        expect(peak).assertEqual(2);
+        expect(targets[3].thumbUri).assertEqual('file://14');
+      } finally {
+        coordinator.cancel();
+        for (const target of targets) target.complete();
+      }
     });
 
     it('does not mutate page targets after cancellation', 0, async () => {

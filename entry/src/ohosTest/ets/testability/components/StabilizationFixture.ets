@@ -35,7 +35,7 @@ export class StabilizationControlledPort implements TdGatewayPort {
       throw new Error('Fixture forbids command=' + command.type);
     }
     const request = new StabilizationRequest(command); this.requests.push(request);
-    console.info('[StabilizationNative] controlledCommand=' + command.type + ' request=' + this.requests.length.toString());
+    console.info('[StabilizationNative] controlledCommand=' + command.type + ' request=' + this.requests.length.toString() + ' commandJson=' + JSON.stringify(command));
     return new Promise<Object>((resolve, reject) => { request.resolve = resolve; request.reject = reject; });
   }
   subscribeUpdates(_handler: (event: AnyAppEvent) => void): () => void { return (): void => {}; }
@@ -57,6 +57,7 @@ class StartupControlledGateway implements TdGateway {
   initialize(): Promise<void> {
     this.initializeCalls++; this.state = 'initializing';
     console.info('[StabilizationNative] controlledInitialize=' + this.initializeCalls.toString());
+    console.info('[StabilizationNative] controlledInitializeStack=' + (new Error('controlled-initialize-origin').stack ?? 'unavailable'));
     return new Promise<void>((resolve, reject) => { this.resolveInitialize = resolve; this.rejectInitialize = reject; });
   }
   rejectStartup(): void { this.rejectInitialize?.(new AppError(AppErrorKind.NETWORK, 'Controlled startup rejection')); }

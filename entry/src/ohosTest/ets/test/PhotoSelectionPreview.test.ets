@@ -66,10 +66,17 @@ async function click(driver: Driver, id: string): Promise<void> {
   await component.click();
 }
 
-async function requireText(driver: Driver, text: string): Promise<void> {
+async function requireText(driver: Driver, text: string, fixtureId?: string): Promise<void> {
+  console.info('[PhotoSelectionPreview] requireText=' + text + ', sessionBusy=' +
+    PhotoSelectionPreviewFixture.session.isSendingMessage().toString() + ', composerBusy=' +
+    PhotoSelectionPreviewFixture.view.composer.isSending.toString());
+  // Fixture status rows are below the tall preview. Expose the stable row
+  // before the existing text wait; a matching label elsewhere is insufficient.
+  const footer = fixtureId === undefined ? undefined : await visible(driver, fixtureId);
   const component = await driver.waitForComponent(ON.text(text), 5000);
   if (component === undefined || component === null) throw new Error('Missing native preview text: ' + text);
   await driver.assertComponentExist(ON.text(text));
+  if (footer !== undefined) expect(await footer.getText()).assertEqual(text);
 }
 
 async function decoded(driver: Driver, uri: string): Promise<void> {
@@ -223,7 +230,7 @@ export default function photoSelectionPreviewTest() {
 
         // Busy is the real adapter -> canonical @Trace field, not fixture state.
         await click(driver, 'photo-preview-fixture-busy');
-        await requireText(driver, 'preview busy:true');
+        await requireText(driver, 'preview busy:true', 'photo-preview-fixture-busy-state');
         expect(PhotoSelectionPreviewFixture.view.composer.isSending).assertTrue();
         expect(session.isSendingMessage()).assertTrue();
         expect(await (await visible(driver, 'photo-preview-fixture-remove')).isEnabled()).assertFalse();
@@ -232,7 +239,7 @@ export default function photoSelectionPreviewTest() {
         expect(state.moveCalls).assertEqual(2);
         expect(state.removeCalls).assertEqual(1);
         await click(driver, 'photo-preview-fixture-busy');
-        await requireText(driver, 'preview busy:false');
+        await requireText(driver, 'preview busy:false', 'photo-preview-fixture-busy-state');
         expect(await (await visible(driver, 'photo-preview-fixture-remove')).isEnabled()).assertTrue();
 
         // Select the final item to verify its boundary and then remove it.
@@ -265,7 +272,7 @@ export default function photoSelectionPreviewTest() {
         await visible(driver, 'photo-preview-fixture-remove');
         expect(await driver.screenCap(PhotoSelectionPreviewFixture.screenshotPath('tg-photo-selection-preview-error.png'))).assertTrue();
         await click(driver, 'photo-preview-fixture-remove');
-        await requireText(driver, 'preview photos:0');
+        await requireText(driver, 'preview photos:0', 'photo-preview-fixture-count');
         expect(state.lastRemovedUri).assertEqual(state.missingUri);
         expect(session.getPendingAttachmentUris().length).assertEqual(0);
         expect(session.getPendingAttachmentKind()).assertEqual('');

@@ -8,7 +8,7 @@ import { window } from '@kit.ArkUI';
 import { GetSupergroupMembersCommand, SearchChatMembersCommand } from '../../../main/ets/core/model/AppCommand';
 import { TG_CHAT_SEARCH_INPUT_ID } from '../../../main/ets/ui/tg_ui/atoms/TgChatTopBar';
 import { SlowmodeNativeFixture } from '../testability/components/SlowmodeFixture';
-import { StabilizationNativeFixture, StabilizationUiOwnership } from '../testability/components/StabilizationFixture';
+import { StabilizationNativeFixture, StabilizationUiOwnership, StabilizationControlledPort, StabilizationRequest } from '../testability/components/StabilizationFixture';
 import { AppCoreRuntime } from '../../../main/ets/app/bootstrap/AppCoreRuntime';
 
 const CONTROLLED_IME_BUNDLE = 'com.huawei.hmos.inputmethod';
@@ -94,6 +94,17 @@ function checkNativeUiSampleAdmission(observation: NativeUiObservation): void {
 async function readFocusedBundle(driver: Driver, observation: NativeUiObservation): Promise<string | undefined> {
   checkNativeUiSampleAdmission(observation);
   observation.samples++;
+  // WindowFilter combines bundle and focus in one filtered native query.
+  // Keep the generic lookup for absent, IME, foreign, or changing focus.
+  let ownedFocused: UiWindow | undefined;
+  try { ownedFocused = await driver.findWindow({ bundleName: observation.bundleName, focused: true }); }
+  catch (error) { observation.phase = NativeUiPhase.Blocked; nativeUiTrace(observation, 'owned-focus-query-failed'); throw error as Error; }
+  checkNativeUiObservation(observation);
+  if (ownedFocused !== undefined && ownedFocused !== null) {
+    observation.staleHandles = 0; observation.focusedBundle = observation.bundleName;
+    nativeUiTrace(observation, 'focus-observed');
+    return observation.bundleName;
+  }
   let focused: UiWindow | undefined;
   try { focused = await driver.findWindow({ focused: true }); }
   catch (error) { observation.phase = NativeUiPhase.Blocked; nativeUiTrace(observation, 'findWindow-failed'); throw error as Error; }
@@ -333,7 +344,17 @@ async function rootReady(driver: Driver, shared?: NativeUiObservation): Promise<
       await acquireOwnedUiContext(driver, 0, observation); checkNativeUiObservation(observation);
       const root = await driver.waitForComponent(ON.id('chat-test-fixture-scroll'), Math.min(1000, observation.deadline - Date.now()));
       checkNativeUiObservation(observation);
-      if (root !== undefined && root !== null) { await acquireOwnedUiContext(driver, 0, observation); return; }
+      if (root !== undefined && root !== null) {
+        await acquireOwnedUiContext(driver, 0, observation);
+        // Case entry restores the fixture viewport before preparing a session.
+        // Back keeps its shared observation and existing root-return path.
+        if (shared === undefined) {
+          await scrollOwnedToTop(driver, root, 40000, 0, 'chat-test-fixture-scroll');
+          checkNativeUiObservation(observation);
+          await acquireOwnedUiContext(driver, 0, observation);
+        }
+        return;
+      }
       blockNativeUi(observation, 'Actual owned Index root is absent');
     }
     if (shared !== undefined) checkNativeUiObservation(shared);
@@ -418,12 +439,14 @@ function positiveKeyboardArea(area: window.AvoidArea, observation: NativeUiObser
 function readBackKeyboardArea(mainWindow: window.Window, observation: NativeUiObservation): boolean {
   checkNativeUiObservation(observation);
   const area = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_KEYBOARD);
+  nativeUiTrace(observation, 'keyboard-avoid-area-' + JSON.stringify(area));
   checkNativeUiObservation(observation);
   return positiveKeyboardArea(area, observation);
 }
 function verifyBackMainWindow(mainWindow: window.Window, ability: UIAbility, observation: NativeUiObservation): number {
   checkNativeUiObservation(observation);
   const properties = mainWindow.getWindowProperties(); checkNativeUiObservation(observation);
+  nativeUiTrace(observation, 'keyboard-main-bounds-' + JSON.stringify(properties.windowRect));
   // Legacy type=1 is shared with alerts; exact Stage identity proves the main window.
   const stage = ability.context.windowStage; checkNativeUiObservation(observation);
   const stageMain = stage.getMainWindowSync(); checkNativeUiObservation(observation);
@@ -450,6 +473,7 @@ async function readVisibleKeyboardPanel(driver: Driver, observation: NativeUiObs
     const bundle = await panel.getBundleName(); checkNativeUiObservation(observation);
     if (bundle !== CONTROLLED_IME_BUNDLE) blockNativeUi(observation, 'Keyboard window has foreign bundle');
     const bounds = await panel.getBounds(); checkNativeUiObservation(observation);
+    nativeUiTrace(observation, 'keyboard-panel-bounds-' + JSON.stringify(bounds));
     if (!Number.isFinite(bounds.left) || !Number.isFinite(bounds.top) || !Number.isFinite(bounds.right) || !Number.isFinite(bounds.bottom) ||
       bounds.right <= bounds.left || bounds.bottom <= bounds.top) blockNativeUi(observation, 'Keyboard window bounds are ambiguous');
     const focused = await panel.isFocused(); checkNativeUiObservation(observation);
@@ -493,7 +517,13 @@ async function readBackKeyboardSample(driver: Driver, observation: NativeUiObser
   if (finalFocus !== observation.bundleName) return sample;
   const after = readBackKeyboardArea(finalMainWindow, observation);
   if (before !== after) { nativeUiTrace(observation, 'keyboard-area-change-sample-discarded'); return sample; }
-  if (after !== panel) blockNativeUi(observation, 'Keyboard area/panel disagreement is ambiguous');
+  if (after !== panel) {
+    // WindowManager and UiTest snapshots can straddle keyboard show/hide.
+    // A disagreement is never permission to send Back: require a fresh pair
+    // of coherent samples under the same owner and existing bounded deadline.
+    nativeUiTrace(observation, 'keyboard-area-panel-disagreement-sample-discarded');
+    return sample;
+  }
   sample.state = after ? NativeBackKeyboardState.FixedKeyboard : NativeBackKeyboardState.Clear;
   sample.ability = ability; sample.windowId = windowId;
   nativeUiTrace(observation, after ? 'keyboard-combined-fixed-sample' : 'keyboard-combined-clear-sample');
@@ -576,7 +606,10 @@ async function absentText(driver: Driver, text: string): Promise<void> {
 async function repeatTap(driver: Driver, target: Component, targetId?: string): Promise<void> {
   const depth = StabilizationNativeFixture.navigationDepth(); const observation = new NativeUiObservation(depth);
   const declinedBefore = observation.cancelActions;
+  nativeUiTrace(observation, 'repeatTap-getBoundsCenter-enter');
   let point = await target.getBoundsCenter(); checkNativeUiObservation(observation);
+  nativeUiTrace(observation, 'repeatTap-getBoundsCenter-exit-' + point.x.toString() + '-' + point.y.toString());
+  nativeUiTrace(observation, 'repeatTap-owner-acquire-enter');
   await acquireOwnedUiContext(driver, depth, observation);
   const ownedTarget = observation.cancelActions === declinedBefore ? target :
     await refreshTargetAfterIme(driver, target, targetId, observation, declinedBefore);
@@ -585,6 +618,7 @@ async function repeatTap(driver: Driver, target: Component, targetId?: string): 
     point = await ownedTarget.getBoundsCenter(); checkNativeUiObservation(observation);
     await acquireOwnedUiContext(driver, depth, observation);
   }
+  nativeUiTrace(observation, 'repeatTap-owner-acquire-exit');
   recordOwnedAction(observation, 'repeatTap-component');
   try { await ownedTarget.click(); } catch (error) { observation.phase = NativeUiPhase.Blocked; nativeUiTrace(observation, 'repeatTap-component-failed-no-replay'); throw error as Error; }
   checkNativeUiIdentity(observation);
@@ -595,6 +629,76 @@ async function repeatTap(driver: Driver, target: Component, targetId?: string): 
   try { await driver.click(point.x, point.y); } catch (error) { observation.phase = NativeUiPhase.Blocked; nativeUiTrace(observation, 'repeatTap-coordinate-failed-no-replay'); throw error as Error; }
   checkNativeUiIdentity(observation);
 }
+// A native overwrite can expose deletion and typed prefixes to the real debounce.
+// Correlate every controlled request by scope, query and object identity.
+function nativeMembersRequestQuery(request: StabilizationRequest): string {
+  if (request.command.type === 'searchChatMembers') {
+    const payload = (request.command as SearchChatMembersCommand).payload;
+    if (payload.chatId !== -42 || payload.limit !== 200 || payload.filterKind !== 'all' || payload.query.length === 0)
+      throw new Error('Native members search request has unexpected scope/payload');
+    return payload.query;
+  }
+  if (request.command.type === 'getSupergroupMembers') {
+    const payload = (request.command as GetSupergroupMembersCommand).payload;
+    if (payload.supergroupId !== 77 || payload.offset !== 0 || payload.limit !== 100 || payload.filterKind !== 'all')
+      throw new Error('Native members reload request has unexpected scope/payload');
+    return '';
+  }
+  throw new Error('Native members input emitted an unrelated command');
+}
+class NativeMembersRequestSegment {
+  readonly port: StabilizationControlledPort = StabilizationNativeFixture.port();
+  readonly start: number = this.port.requests.length;
+  private readonly queries: string[];
+  private captured: StabilizationRequest[] = [];
+  private sealedEnd?: number;
+  private replied: Set<StabilizationRequest> = new Set();
+  constructor(queries: string[]) { this.queries = queries; }
+  terminal(): StabilizationRequest | undefined {
+    if (StabilizationNativeFixture.port() !== this.port) throw new Error('Native members request port owner changed');
+    const end = this.sealedEnd ?? this.port.requests.length;
+    if (this.port.requests.length < end || end < this.start + this.captured.length)
+      throw new Error('Native members request history was truncated');
+    let terminal: StabilizationRequest | undefined;
+    for (let index = this.start; index < end; index++) {
+      const request = this.port.requests[index];
+      const relative = index - this.start;
+      if (relative < this.captured.length && this.captured[relative] !== request)
+        throw new Error('Native members request identity changed');
+      if (relative === this.captured.length) this.captured.push(request);
+      const query = nativeMembersRequestQuery(request);
+      const step = this.queries.indexOf(query);
+      if (query === this.queries[this.queries.length - 1]) {
+        if (terminal !== undefined) throw new Error('Native members duplicate terminal query=' + query);
+        terminal = request;
+      }
+      if (step < 0) throw new Error('Native members unexpected input query=' + query);
+    }
+    return terminal;
+  }
+  seal(): StabilizationRequest {
+    const terminal = this.terminal();
+    if (terminal === undefined) throw new Error('Native members terminal query absent');
+    this.sealedEnd = this.port.requests.length;
+    return terminal;
+  }
+  assertNoNewRequests(): void {
+    this.terminal();
+    if (this.sealedEnd === undefined || this.port.requests.length !== this.sealedEnd)
+      throw new Error('Native members unexpected request after terminal query');
+  }
+  all(): StabilizationRequest[] { this.terminal(); return this.captured.slice(); }
+  reply(request: StabilizationRequest, firstId: number): void {
+    this.terminal();
+    const relative = this.captured.indexOf(request);
+    if (relative < 0 || this.port.requests[this.start + relative] !== request)
+      throw new Error('Native members reply lost exact request identity');
+    if (this.replied.has(request)) throw new Error('Native members request reply repeated');
+    this.replied.add(request);
+    StabilizationNativeFixture.replyMembers(this.start + relative, firstId, 1);
+  }
+}
+
 export default function stabilizationNativeTest() {
   const selection = abilityDelegatorRegistry.getArguments().parameters['-s nativeStabilizationSelection'];
   if (selection !== undefined && selection !== 'startup' && selection !== 'pagination') throw new Error('Invalid nativeStabilizationSelection');
@@ -665,20 +769,47 @@ export default function stabilizationNativeTest() {
       await open(driver, 'stabilization-open-members'); await waitCondition(driver, (): boolean => StabilizationNativeFixture.requestCount() === 1, 'initial members request');
       StabilizationNativeFixture.replyMembers(0, 1000, 100); await component(driver, 'profile_members_list');
       await clickOwnedComponent(driver, await component(driver, 'tg_chat_top_bar_search'), 1, 'members-search-open', 'tg_chat_top_bar_search'); const input = await controlledInputAfterFocus(driver, TG_CHAT_SEARCH_INPUT_ID);
-      await inputOwnedText(driver, input, 'old', 1, TG_CHAT_SEARCH_INPUT_ID); await waitCondition(driver, (): boolean => StabilizationNativeFixture.requestCount() === 2, 'old query request');
+      const oldRequests = new NativeMembersRequestSegment(['o', 'ol', 'old']);
+      await inputOwnedText(driver, input, 'old', 1, TG_CHAT_SEARCH_INPUT_ID);
+      await waitCondition(driver, (): boolean => oldRequests.terminal() !== undefined, 'exact old query request');
+      const oldRequest = oldRequests.seal();
+      expect(await ownedText(driver, input, 1)).assertEqual('old'); oldRequests.assertNoNewRequests();
       const replacementInput = await controlledInputAfterFocus(driver, TG_CHAT_SEARCH_INPUT_ID);
-      await inputOwnedText(driver, replacementInput, 'new', 1, TG_CHAT_SEARCH_INPUT_ID); StabilizationNativeFixture.replyMembers(1, 1000, 1);
-      await waitCondition(driver, (): boolean => StabilizationNativeFixture.requestCount() === 3, 'new query request');
-      const newQuery = StabilizationNativeFixture.port().requests[2].command as SearchChatMembersCommand; expect(newQuery.payload.query).assertEqual('new');
-      StabilizationNativeFixture.replyMembers(2, 1100, 1);
+      oldRequests.assertNoNewRequests();
+      const newRequests = new NativeMembersRequestSegment(['ol', 'o', '', 'n', 'ne', 'new']);
+      await inputOwnedText(driver, replacementInput, 'new', 1, TG_CHAT_SEARCH_INPUT_ID);
+      oldRequests.reply(oldRequest, 1000);
+      await waitCondition(driver, (): boolean => newRequests.terminal() !== undefined, 'exact new query request');
+      const newRequest = newRequests.seal();
+      expect(await ownedText(driver, replacementInput, 1)).assertEqual('new');
+      await absentText(driver, 'Member 1000');
+      newRequests.reply(newRequest, 1100);
       const currentMember = await ownedWaitForComponent(driver, ON.text('Member 1100'), 5000, 1);
       expect(currentMember !== undefined && currentMember !== null).assertTrue();
+      const staleIds: number[] = [];
+      const segments: NativeMembersRequestSegment[] = [oldRequests, newRequests];
+      for (const segment of segments) {
+        for (const request of segment.all()) {
+          if (request === oldRequest || request === newRequest) continue;
+          const staleId = 1010 + staleIds.length;
+          if (staleId >= 1100) throw new Error('Native members intermediate request budget exhausted');
+          staleIds.push(staleId); segment.reply(request, staleId);
+        }
+      }
       await dismissKnownImeFirstUse(driver, StabilizationNativeFixture.navigationDepth());
-      await absentText(driver, 'Member 1000'); expect(await ownedText(driver, replacementInput, 1)).assertEqual('new'); await screenshot(driver, 'members-search-current');
+      for (const staleId of staleIds) await absentText(driver, 'Member ' + staleId.toString());
+      await absentText(driver, 'Member 1000');
+      expect(await ownedText(driver, replacementInput, 1)).assertEqual('new');
+      const stillCurrent = await ownedWaitForComponent(driver, ON.text('Member 1100'), 5000, 1);
+      expect(stillCurrent !== undefined && stillCurrent !== null).assertTrue();
+      await screenshot(driver, 'members-search-current'); newRequests.assertNoNewRequests();
+      const closeRequests = new NativeMembersRequestSegment(['']);
       await clickOwnedComponent(driver, await component(driver, 'tg_chat_top_bar_search_close'), 1, 'members-search-close', 'tg_chat_top_bar_search_close');
-      await waitCondition(driver, (): boolean => StabilizationNativeFixture.requestCount() === 4, 'close search reload');
-      await back(driver); StabilizationNativeFixture.replyMembers(3, 1110, 1); await driver.delayMs(300);
-      await absentText(driver, 'Member 1110'); expect(StabilizationNativeFixture.navigationDepth()).assertEqual(0);
+      await waitCondition(driver, (): boolean => closeRequests.terminal() !== undefined, 'one close-search reload');
+      const closeRequest = closeRequests.seal(); closeRequests.assertNoNewRequests();
+      await back(driver); closeRequests.reply(closeRequest, 1110); await driver.delayMs(300);
+      await absentText(driver, 'Member 1110'); closeRequests.assertNoNewRequests();
+      expect(StabilizationNativeFixture.navigationDepth()).assertEqual(0);
     });
     registerNativeCase('actual profile error Retry renders formatted bio then clears revoked account details', 0, async () => {
       const driver = Driver.create(); await rootReady(driver); StabilizationNativeFixture.prepareProfiles();
