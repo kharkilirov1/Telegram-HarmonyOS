@@ -30,7 +30,7 @@ function deferred() {
 }
 function fixture(initial = 'waitCode') {
   const values = new Map(), writes = [], dispatched = [], listeners = new Set(), scopedListeners = new Set();
-  const timers = new Map(), cancelled = [], logoutRequests = [], recoveryRequests = [];
+  const timers = new Map(), cancelled = [], logoutRequests = [], recoveryRequests = [], startupRequests = [];
   let time = 0, nextTimer = 1, scopedReads = 0;
   let state = { auth: { status: initial, error: '' } };
   const StorageKeys = new Proxy({}, { get: (_, key) => key });
@@ -52,7 +52,8 @@ function fixture(initial = 'waitCode') {
       scopedReads++;
       return { ...lifecycle, subscribe(fn) { scopedListeners.add(fn); return () => scopedListeners.delete(fn); } };
     },
-    retryClientRecovery() { const request = deferred(); recoveryRequests.push(request); return request.promise; }
+    retryClientRecovery() { const request = deferred(); recoveryRequests.push(request); return request.promise; },
+    retryInitialStartup() { const request = deferred(); startupRequests.push(request); return request.promise; }
   };
   class NavPathStack {
     paths = ['account-A'];
@@ -74,7 +75,7 @@ function fixture(initial = 'waitCode') {
   const { LoginRouter } = load('ui/pages/login/LoginRouter.ets', deps, 'LoginRouter');
   return {
     page: new LoginRouterPage(), router: new LoginRouter(), values, writes, dispatched, listeners, scopedListeners,
-    timers, cancelled, logoutRequests, recoveryRequests, NavPathStack, scopedReads: () => scopedReads,
+    timers, cancelled, logoutRequests, recoveryRequests, startupRequests, NavPathStack, scopedReads: () => scopedReads,
     auth(status, error = '', notify = true) {
       const previous = state;
       state = { auth: { status, error } };
@@ -261,6 +262,60 @@ test('manual recovery calls safe runtime once and reports only generic local fai
   assert.equal(f.router.authStatus, 'closed', 'retry completion is not auth confirmation');
   assert.equal(f.dispatched.length, 0);
 });
+// Execute the guard and click expression extracted from the real builder.
+// This witnesses branch/action wiring, not ArkUI layout or native rendering.
+function retryBuilderBranch(router, kind) {
+  const source = fs.readFileSync(path.join(root, 'ui/pages/login/LoginRouter.ets'), 'utf8');
+  const start = source.indexOf(kind === 'recovery' ? 'if (this.hasRecoveryFailure())' :
+    'if (this.localError !== undefined');
+  assert.ok(start >= 0, 'real retry builder branch must exist');
+  const branch = source.slice(start);
+  const guard = branch.match(/^if \((.*?)\) \{/);
+  const action = branch.match(/\.onClick\(\(\) => \{ (.*?) \}\)/);
+  assert.ok(guard && action, 'real retry branch guard and click must be extractable');
+  return {
+    visible: new Function('return (' + guard[1] + ');').call(router),
+    click: () => new Function('return ' + action[1]).call(router)
+  };
+}
+
+test('failed initial startup retry renders only recovery retry and its click retries startup', async () => {
+  const f = fixture('notInitialized');
+  f.router.aboutToAppear();
+  f.auth('notInitialized', 'startup unavailable');
+  const first = retryBuilderBranch(f.router, 'recovery').click();
+  assert.equal(f.startupRequests.length, 1);
+  f.startupRequests[0].reject(new Error('startup retry unavailable'));
+  await first;
+  assert.deepEqual(f.router.localError, resource('app.string.action_failed'));
+  assert.equal(retryBuilderBranch(f.router, 'recovery').visible, true);
+  assert.equal(retryBuilderBranch(f.router, 'logout').visible, false,
+    'a failed startup must not expose an inert logout Retry');
+  const second = retryBuilderBranch(f.router, 'recovery').click();
+  assert.equal(f.startupRequests.length, 2, 'visible Retry must reach initial startup again');
+  assert.equal(f.logoutRequests.length, 0);
+  assert.equal(f.recoveryRequests.length, 0);
+  f.startupRequests[1].resolve();
+  await second;
+  assert.equal(f.router.authStatus, 'notInitialized', 'retry completion is not authentication');
+});
+
+test('failed pre-auth logout keeps its own visible retry and real click action', async () => {
+  const f = fixture('waitCode');
+  f.router.aboutToAppear();
+  const first = f.router.forceBackToPhone('wrong_number_pressed');
+  f.logoutRequests[0].reject(new Error('logout refused'));
+  await first;
+  assert.equal(retryBuilderBranch(f.router, 'recovery').visible, false);
+  assert.equal(retryBuilderBranch(f.router, 'logout').visible, true);
+  const second = retryBuilderBranch(f.router, 'logout').click();
+  assert.equal(f.logoutRequests.length, 2);
+  assert.equal(f.startupRequests.length, 0);
+  f.logoutRequests[1].resolve();
+  await second;
+  assert.equal(f.router.authStatus, 'waitCode', 'logout completion is not phone readiness');
+});
+
 test('manual recovery is refused outside terminal state', async () => {
   const f = fixture('ready');
   f.router.aboutToAppear();

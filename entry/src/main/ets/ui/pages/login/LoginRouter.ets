@@ -327,7 +327,7 @@ export struct LoginRouter {
       }
 
       // Keep the server-selected form mounted on logout failure; offer an explicit retry.
-      if (this.localError !== undefined && this.authStatus !== 'closed') {
+      if (this.localError !== undefined && this.authStatus !== 'closed' && this.authStatus !== 'notInitialized') {
         Column({ space: TgUiTokens.SPACE_12 }) {
           Text(this.localError)
             .fontSize(TgUiTokens.LOGIN_ERROR_SIZE)
