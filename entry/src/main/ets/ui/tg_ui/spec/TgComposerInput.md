@@ -28,6 +28,10 @@ UI-only scope for this atom. Message send, keyboard controller integration, medi
 - `caretRequestRevision: number`
 - `isDisabled: boolean`
 - `showAttachButton: boolean`
+- `sendEnabled: boolean`, `voiceEnabled: boolean` — отдельные read-only gates; blocked text/attachment intent сохраняет Send icon и никогда не запускает microphone.
+- `accessRetryVisible: boolean`, `accessRetryLabel: string`, `onAccessRetryPress` — native Button above the still-working composer when a failed supergroup FullInfo load leaves some per-kind rights unknown. Default hidden; does not clear draft or replace text/media controls. Parent owns bounded retry; actual callback rechecks visibility and disabled state. This is an explicit HarmonyOS recovery affordance, not a claimed pixel-identical iOS control. Host callback path is covered by `scripts/test-supergroup-boosts.cjs`; device layout/focus/contrast acceptance remains open.
+  - Demo: `TgComposerInputDemo` case 19, simulated retry without network; hides Retry, retains the draft and enables photo capability. iOS source grounding for accessory/input separation: `C:/Refs/Telegram/Telegram-iOS-current/submodules/TelegramUI/Components/Chat/ChatTextInputPanelNode/Sources/ChatTextInputPanelNode.swift:2849–2860`; the new native recovery button is not copied from iOS.
+- `attachmentPhotoEnabled`, `attachmentVideoEnabled`, `attachmentCategoryEnabled` — category/recent availability; parent supplies reactive @Local snapshot, callbacks revalidate fresh store rights.
 - `showEmojiButton: boolean`
 - `showReplySnippet: boolean`
 - `replyAuthor: string`
@@ -57,6 +61,16 @@ UI-only scope for this atom. Message send, keyboard controller integration, medi
   - `onEditCancelPress()`
   - `onForwardCancelPress()`
   - `onAttachmentCancelPress()`
+
+## Permission contract (2026-09-06)
+Media-only basic group retains composer; a caption uses the pending media permission, not text permission. For a forbidden text intent both submit and voice gesture are inert. Recent/category controls expose their disabled state; scalar props do not replace runtime dispatch guards. Host/native compile witness: `docs/reviews/2026-09-06-reliability-wave9.md`; current device/visual acceptance remains open.
+
+## Slow mode contract (2026-10-02)
+`slowmodeSeconds` is a presentation value from the account-scoped TDLib FullInfo receipt aged with device uptime. The trailing action displays `m:ss` for empty and populated drafts; `slowmodeLabel` also labels the empty placeholder and accessibility text. Active countdown blocks ordinary Send, attachment opening and recording start. Text, reply and selected attachments remain editable; their cancel controls remain available. `showEditSnippet` bypasses the countdown for existing-message edits.
+
+`voiceRecordingState: 'preview'` retains a stopped unsent recording when countdown blocks dispatch. It uses the existing Send/Delete controls and `voicePreviewLabel`; Send displays the timer while blocked. Expiry enables explicit Send without sending automatically. Account, chat, operation and permission guards remain controller-owned; timer ticks never change input revision, selection, reply, entities or attachment order.
+
+Timed expiry follows authoritative TDLib snapshots, with administrator/creator and qualifying boost exemptions. Scheduled-send and the distinct iOS pending-message slow-mode state are outside this timed countdown slice.
 
 ## State Matrix (demo)
 - empty idle (interactive)

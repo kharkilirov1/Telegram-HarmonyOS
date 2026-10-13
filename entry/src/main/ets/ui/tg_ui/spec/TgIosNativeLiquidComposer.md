@@ -82,6 +82,29 @@ border/background.
   without a controller flow remain visible but disabled.
 - Message long-press actions use the same glass row/radius/blur language and a
   4.7-row scrolling viewport, while remaining anchored to the pressed row.
+  Forward source checks have explicit loading / allowed / denied / retry states.
+  Loading and known denial keep a disabled row; unavailable properties expose an
+  explicit retry. This stable-row behavior is a Harmony adaptation: current iOS
+  `ChatInterfaceStateContextMenus.swift:1896-1903` omits an unavailable Forward.
+  No visual parity is inferred from host tests or compilation.
+  Each rendered action carries a stable action ID, source message ID and opening
+  token. Dispatch also checks account/use-case, source chat and lifecycle; dismiss
+  callbacks capture the opening token when binding, not when the event arrives.
+  Render keys include the ordinary-class snapshot's enabled/title state so a
+  loading row is replaced when eligibility resolves. New Reply/Edit/Forward
+  intents invalidate pending picker checks; picker routes intersect the whole
+  selection's ordinary/secret eligibility. Dispatch still performs fresh checks.
+- Delete opens a separate native confirmation, not an immediate revoke=true.
+  The offered self/everyone modes come from strict per-message TDLib properties;
+  Cancel is first and the chosen mode is mapped explicitly, never by index alone.
+  Fresh eligibility and account/chat/lifecycle/intent checks precede mutation.
+  Direct channel-share Forward cancels pending deletion too, without requiring
+  a source popup. No automatic retry, scope fallback or application-store delete.
+  Reference: current iOS Chat/ChatControllerLoadDisplayNode.swift:1969-2056 and
+  ChatControllerAdminBanUsers.swift:410-740 (TelegramUI/Sources). Native dialog is
+  a deliberate Harmony adaptation; Back/dismiss/layout need device acceptance.
+  iOS Undo and special Saved/scheduled/repeating/paid/giveaway flows are not yet
+  ported. TDLib Ok is not an atomic/per-message server receipt.
 - Menu-label removal/insertion and the resulting composer reflow use a 220ms
   `Curve.Smooth` layout transition. The bot context panel spans the chat width
   above the composer; bot, attachment and message-action surfaces share the
@@ -176,6 +199,14 @@ border/background.
   no placeholder command or URL is invented.
 
 ## Verification
+
+- Editing is distinct from sending a new message: with `showEditSnippet`, an empty text-message buffer keeps a disabled send glyph and cannot start microphone capture by tap or hold. For an existing media caption, page-owned `allowEmptyEdit` enables the same send action to remove the caption; its default is false and domain preflight rechecks the actual content kind. Page-owned access gates preserve editing while suppressing new sticker/GIF/attachment/forward sending, including stale callbacks after role changes.
+- This access/empty-edit correction requires fresh runtime acceptance; historical geometry captures below are not witnesses for it.
+
+- Wave15 edit submit keeps the buffer and edit mode until a strict matching TDLib Message result. Duplicate submit shares the page's send owner; old results cannot unlock another operation or clear newer typing. Canonical scheduled IDs and server text rebase only the edit identity/baseline, not selection or custom-emoji state.
+- Source kind, native-cache `can_be_edited`, caption placement and text preview options are read again at submit. Changed source text is an explicit conflict rather than an automatic rebase. Entity metadata uses received JSON, not the lazy getter cache; the plain-composer UTF-16 splice fallback preserves stable ranges and removes touched semantic/ambiguous styles. Full rich-text editing and multi-splice history remain open.
+- Draft retention is an intentional reliability adaptation: current iOS `ChatControllerLoadDisplayNode.swift:2302-2327` closes its editor before the RPC finishes; it is not a claim of literal iOS behavior parity. Previous compose-draft restoration, incoming-admin action discovery and full edit-menu eligibility remain separate gates.
+- `TgComposerInputDemo` state 20 renders the empty-caption action without an account or network. Tapping it must only change the local action label to `edit:remove-caption (local-only)`; no real message is edited. Device/Light-Dark/layout acceptance remains required.
 
 - `TgComposerMaterialPolicy.test.ets`
 - `TgVoiceRecordingPolicy.test.ets`

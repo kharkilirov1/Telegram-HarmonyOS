@@ -1,0 +1,61 @@
+# Independent final review: gateway error causes
+
+**FINAL ACCEPTED** for the bounded gateway/read-error stage and the exact 11 code/test paths in [feature-manifest-code-final.json](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/feature-manifest-code-final.json), SHA-256 `f41fdba9bc95b56d8dfe8de6c1b422a0a252498525a5243c32521b6d6561c76b`. No remaining P1/P2 was found within this scope. This accepts the isolated candidate and its evidence; it does not claim installation into the user's Desktop checkout.
+
+The selected reviewer configuration supplied by the parent is `gpt-6-astra`, `xhigh`. This records model selection, without attesting a hidden backend. The reviewer changed only reviewer artifacts and executed read-only host probes. Product, tests, project documentation, Desktop checkout, Git index/history and device state were not changed by this reviewer. No account, session secret, bootstrap, network or Telegram send was accessed or performed.
+
+## Source result
+
+The five product files retain the exact hashes accepted in [the substantive source review](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/astra-source-review.md). The complete manifest adds the new registered SDK suite, its host runner, registration, and three existing host dependency-fixture adjustments: 11 paths, two new files, seven overlaps with the captured dirty baseline. All actual before/after bytes independently match the manifest and immutable baseline. All seven entry files also match the sources in the SDK build tree.
+
+The adapter preserves the same typed AppError only after its current-client rejection guard. Success, pre-dispatch and stale client object/generation fences remain in place. GatewayError maps INVALID_COMMAND to UNKNOWN/non-retryable; warming NOT_INITIALIZED retains NETWORK/retryable behavior, while the existing expired-client override remains non-retryable. Untyped legacy fallback is preserved.
+
+LoadChats retains numeric 404 pagination exhaustion and the original technical cause when contextualizing other typed errors. LoadChatHistory preserves the same typed error after its current-request check and retains conditional bucket release. Current AUTH, RATE_LIMIT and non-retryable initial-history failures suppress both immediate automatic-retry paths and retire their own pending correction intent/timer.
+
+The readonly history identity is derived from existing instance lifecycle, window generation, bucket and latest reservation sequence. It creates no additional state owner or counter. Both UI completion branches require a newly acquired, nonempty and still-current identity, alongside the existing route/lifecycle/chat/use-case guards. The identity remains informative after release: an older rejection cannot cancel a newer completed request's correction, and an older success cannot replace a newer pending timer. Reset/sequence reuse, window replacement and invalidated stores cannot revive an old identity; skipped or deduplicated executes cannot claim someone else's reservation.
+
+The final test source and runner were reviewed substantively. Registration adds one import and one suite call. Existing host fixture edits inject the actual AppError dependencies needed by the new instanceof checks; existing assertions and callbacks are unchanged. The new runner loads actual ETS owners, records their source hashes, checks they remain unchanged, and applies named mutations only in memory.
+
+## Independent evidence
+
+The reviewer-authored [receipt auditor](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/astra-final-evidence-audit.py) completed with [PASS](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/astra-final-evidence-audit.json). It checks the underlying bytes and raw logs, rather than accepting their summary booleans. The final [runtime receipt](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/runtime-evidence-final.json) SHA-256 is `9dc709a6227c3dc517c1aa5b490e1724a59b6be596ee8f72633dadfe1c0c5402`.
+
+| Evidence | Independently verified result |
+| --- | --- |
+| Final 11-file manifest and five-file product manifest | Actual candidate/baseline hashes, sizes and new-file absence match; seven SDK entry files match |
+| Reviewer rerun of the final host runner | [73/73 PASS](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/astra-final-host-candidate.json); entire structured result equals the supplied final result, including 44 loaded-source hashes and actual Domain outcomes |
+| Same 73 callbacks on original baseline | 44 AssertionError failures, 29 controls pass; preimages match the immutable baseline |
+| Same callbacks on historical candidate v1 | Seven AssertionError failures, 66 controls pass; preimages match archived v1 hashes |
+| Historical cleanup without operation identity | Seven behavioral AssertionError failures, 66 controls pass |
+| 14 final behavioral mutations | Every mutation fails expected behavior assertions; no loader, missing-API or syntax failure is counted as RED |
+| Existing aggregate host and decomposition | [68/68 suites](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/host-full-candidate.log), [22/22 checks](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/decomposition.log); unique suite records and recorded source hashes verified |
+| Official SDK builds | [Main PASS, 28.489s](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/sdk-main-build.log); [ohosTest PASS, 35.018s](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/sdk-test-build.log) |
+| Existing smoke contracts | [PowerShell](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/smoke-ui-ps.log) and [Bash](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/smoke-ui-bash.log) both report the exact successful completion message |
+| New native suite | [60/60](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/native-gateway.log), failure/error/ignore all zero |
+| Focused native run | [76/76](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/native-focused.log), failure/error/ignore all zero |
+| Full native run | [984/984](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/native-full.log), failure/error/ignore all zero |
+
+The baseline, v1 and 14 mutant receipts were independently audited against the same ordered callback names/scopes, actual source/preimage hashes, individual AssertionError records and final test bytes. They were not all rerun by the reviewer at this final checkpoint. Their complete evidence is [test-regression-evidence.json](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/test-regression-evidence.json), SHA-256 `8a772f72ad838cb27c50de492ebd3af985f09198ce7e93d1c04707221a092c10`. Earlier independent reviewer probes additionally establish [25/25 gateway controls](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/astra-gateway-v2-candidate-green.json), with 16 baseline AssertionErrors and nine controls, and [16/16 adversarial history identity checks](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/astra-history-identity-adversarial.json), as described in the source review.
+
+All three raw native logs have unique and aligned start/completion identities, complete contiguous case counters, only success completion codes, exactly one matching numerical summary and valid final result markers. The 60 native case names equal the actual SDK callbacks executed by the host runner. The 60 cases are included in the 76-case run, and all 76 are included in the 984-case run. Their actual log hashes match both per-run evidence and the final runtime receipt.
+
+Both frozen HAPs equal their build outputs byte-for-byte. Their actual ZIP module manifests use the isolated bundle `com.telegram.harmonyos.chatrefactor20261001`; compiled ABC contains the new identity methods and the expected suite markers. [The install log](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/native-install.log) names both explicit HAP paths and reports two successful installations followed by AppMod completion. [HAP evidence](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/hap-evidence-final.json):
+
+- Main SHA-256: `75662b1cc49dc0899f08ca78e8e5cc5a98e399da755bc7da19a5cf677986f878`.
+- Test SHA-256: `5a7b988f3f194ab684005191ba8415e00953c56bbcbbc2f9cc7334f8a47ca2da`.
+
+The original user bundle's supplied public metadata before/after files are byte-identical: 29,386 bytes, SHA-256 `f8cf3347e682d4d5c4bb554567e97346655e7f7758c5900c03e093eb0def7f93`. This is a public-metadata preservation check; private account/session contents were not inspected. No process start-time inference is used as evidence of fresh code. Exact source/HAP correspondence, registration and runtime behavior supply the relevant evidence.
+
+## Historical findings and acceptance limits
+
+The [v1 HOLD](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/astra-source-review-v1-hold.md) and [timer-retirement assessment](/C:/Users/Kharki/Documents/Codex/2026-10-01/task-2/gateway-errors/astra-history-retirement-assessment.md) are historical and superseded by the final identity-based fix and current evidence. Snapshot arrival could formerly schedule correction despite terminal rejection. Cleanup based only on current loading state could then cancel a newer same-route request's intent after that newer request completed. Both findings are closed by the final guarded identity implementation and same-assertion regression tests. Their historical RED artifacts remain preserved; they are not present acceptance failures.
+
+An older shared host fixture lacked `state.users.users`, allowing purported successful empty responses to become caught NETWORK errors. Those old success labels are not accepted as proof of genuine success. The final SDK fixture uses actual createInitialAppState, and the final host observer explicitly requires actual Domain fulfillment with true for the relevant success cases. It attaches an observer, returns the original promise unchanged and restores the prototype. Seven such recorded outcome checks passed independently. This extra oracle is host-only; it is not falsely described as an assertion added to the native callbacks.
+
+The first ohosTest build failed on fixture nominal typing. Three fixture type declarations were corrected to AppError | Error; the final source compiled and ran successfully. That archived failed build is historical, not a successful build or a behavioral RED. The reviewer's receipt parser also needed the smoke log's actual lowercase completion wording; that was an audit-format correction, not a source or runtime defect.
+
+Native coverage executes actual AppError/GatewayError, read use cases, AppStore/reducers, route scope/lease and history coordinator with controlled read responses. Real correction timers are created; native assertions observe their ownership/state and cancel them in finally, without waiting 600ms for automatic dispatch. Synthetic snapshot arrival and route predicates remain explicit test boundaries. Host pipeline tests execute actual TdGateway send/JSON response classification/timeout, serializer and adapter with controlled readiness, native-send, dispatcher/bootstrap and timer delivery. Native execution does not establish authenticated TDLib transport reachability, a real account-switch race or actual Telegram delivery.
+
+The 406 raw-logging policy and text-send/forward consumer classification losses remain explicit follow-ups outside this bounded read slice. Legacy untyped fallback and media unknown-outcome/duplicate-confirmation behavior are unchanged. No parser rewrite, new UI flow, screenshot/iOS-pixel acceptance, automatic account action or general write-retry guarantee is claimed. The HarmonyOS documentation MCP was unavailable; local primary references and installed SDK/build evidence were used, and no new platform API was introduced.
+
+There is no remaining code/runtime acceptance blocker for this frozen scope. Any later source/test changes or project installation must retain their own manifest and preservation evidence.

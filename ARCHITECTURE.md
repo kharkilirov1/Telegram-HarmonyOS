@@ -1,6 +1,6 @@
 # ARCHITECTURE — Telegram-HarmonyOS
 
-Last updated: 2026-05-03
+Last updated: 2026-10-01
 
 ## 1. Scope
 - Telegram client for **HarmonyOS NEXT / API 23+** in the current forward HDS shell branch
@@ -34,6 +34,10 @@ UI action
   -> tdlib_napi.cpp
   -> TDLib
 ```
+
+### Photo album dispatch
+
+Existing 2–10 photo selection -> ChatPhotoAlbumController -> captured media use-case album getter -> SendMediaAlbumUseCase -> typed SendMediaAlbumCommand -> serializer sendMessageAlbum. Every local copy precedes the sole dispatch; route/account/permission/input revision guards own completion. Strict messages acceptance and explicit repeated-selection confirmation preserve TDLib upload/update ownership. See `docs/reviews/2026-10-01-photo-album-sending.md`.
 
 ### Update flow
 
@@ -87,7 +91,7 @@ entry/src/main/ets/
 ├── models/          # TDLib types and wrappers
 ├── services/        # local config such as ConfigLocal.ets
 └── ui/
-    ├── pages/       # shell pages, still mostly V1 components
+    ├── pages/       # active shell/chat pages use V2
     ├── components/  # legacy / auth components
     ├── controllers/ # login and UI controllers
     ├── theme/       # older theme layer
@@ -116,6 +120,37 @@ The UI does not mutate domain state directly. It reads through:
 ### Current split
 - **Shell pages** under `ui/pages/*` are now largely **`@ComponentV2`** ArkUI pages.
 - **tg_ui** is the Telegram design system/component library layered on top of that V2 runtime.
+
+### Active chat screen ownership
+- `ui/pages/chat/TgChatScreenPage.ets` owns one stable `ChatScreenSession` and `ChatScreenViewState`; its 164 lines wire destination/lifecycle and UI composition.
+- Six readonly `@ObservedV2` slices preserve all 112 former reactive fields and add canonical composer `isSending` (113 total `@Trace`): chrome, composer, panels, timeline, media, pinned/search. `ChatScreenContext` keeps operational handles/controllers and direct typed aliases to this one state; `UIContext`/navigation callbacks are lazy.
+- `ChatScreenSession` initializes context and exposes typed delegates. Cohesive route/lifecycle, timeline/history, composer/interaction, media/playback, panels/catalog and pinned/search modules own algorithms through narrow ports. The combined port exists only at composition. Store subscription, account/route/generation ownership and timeline transaction remain singular.
+- Seven V2 visual children own timeline viewport/row, composer, keyboard panels, popup, pinned/gallery composition. They receive observed slices and UI-only typed callbacks, without store/gateway/use-case/subscription access. `ChatScrollPositionCache` preserves the prior shared stable-key lifetime.
+- `ChatTimelineDataSource.applyDiff` snapshots the old array before in-place prepend so old positions/length and anchor tail remain stable. This is a separately tested baseline bug correction, not another timeline owner.
+- Source/body/composition parity and SDK gates: `docs/reviews/2026-10-01-chat-screen-decomposition.md`. No `presentation/viewmodels` layer was introduced.
+
+### Pinned request ownership
+- `ChatPinnedMessagesCoordinator` captures the existing `ChatScreenRouteParams` and its gateway. `LoadPinnedMessagesUseCase.executeSingle` keeps fallback on that captured gateway; legacy convenience helpers remain compatible.
+- Initial, fallback and page operations validate route object/chat/lifecycle/current account scope/lease before dispatch and every success/error publication. No new registry, store owner, subscriptions or Session interface was added.
+- Refresh invalidates page request/cursor; each page also captures its base summary request. Superseded callbacks cannot merge into a replacement snapshot or clear a newer busy flag. Evidence and acceptance limits: `docs/reviews/2026-10-01-pinned-account-ownership.md`.
+
+### Targeted timeline updates and scroll intent
+- `ChatTimelineDataSource` keeps stable identity separate from stamped render identity. Its ordered reconciliation removes absent rows descending, inserts ascending and notifies changed retained rows; invalid/ambiguous keys, retained reorder and no common stable identity fall back to reload. Protected existing fast paths and content comparator remain unchanged.
+- `ChatTimelineTransactionCoordinator` captures the visible stable anchor/prefix before projection application and arms the existing viewport guard/pagination block when that prefix changes. Native List maintains surviving content position; no manual compensation, new Context field or queue owner was introduced.
+- Append follow captures the old last-visible END gap and rechecks direction/range in the existing lifecycle-owned timer. Existing ordinary user-edge pagination and user unlock remain reachable.
+- Native acceptance is bounded to real List/Scroller with synthetic simple V2 rows; production bubble/media geometry, deleted anchors and authenticated flows are separate QA. Evidence: `docs/reviews/2026-10-01-chat-timeline-updates.md`.
+
+### Read-path gateway error causes
+- `TdGatewayAdapter` preserves typed `AppError` after stale-client validation; untyped failures retain legacy wrapping. `INVALID_COMMAND` is UNKNOWN/non-retryable; warming/not-initialized remains retryable and retired clients remain terminal.
+- `LoadChats` retains kind/code/retryability and technical detail; TDLib404 means list exhaustion. `LoadChatHistory` preserves typed causes after its request-owner check.
+- `ChatInitialHistoryCoordinator` uses readonly capture/current identity methods derived from existing lifecycle/window/bucket sequence maps. Both callbacks require a newly reserved current identity; terminal/auth/rate-limit errors retire only owned fallback intent/timers. No Context counter, new registry/store owner or transport lifecycle was added.
+- This accepts the bounded read path; send/forward error and TDLib406 policy remain separate. Evidence: `docs/reviews/2026-10-01-gateway-error-causes.md`.
+
+### Ordered photo selection and preparation
+- `ChatComposerState.pendingAttachmentUris` owns ordered identity for 1–10 photos. `TgPhotoSelectionPreview` owns only viewed URI and emits remove/move callbacks through existing binding/Session to guarded ComposerController setters; no store/backend access.
+- Operational sending aliases canonical `@Trace isSending`. Captured input revision, current mode/permission, route/account/usecase guards fence async picker, preparation and accepted cleanup. Single and album photos share bounded consumed-URI overlap confirmation; album dispatch remains one TDLib request.
+- `ChatAttachmentFilePreparer` owns unique staged paths and real native source FD finally. The default protected exact-handle observer is empty and exists for strict native verification; it does not replace native file operations. Unsubmitted files are discarded, submitted upload paths retained.
+- Native synthetic IO/UI and source ownership evidence: `docs/reviews/2026-10-01-photo-selection-preview.md`; provider/delivery/Dock/iOS acceptance remains separate.
 
 ### Current active tg_ui runtime path
 - **Root shell:** API23 `HdsTabs` + `HdsNavigation` in `MainTabsPage`; the old custom `TgTabBar` is no longer the active smoke contract in this forward branch. The HDS root tab bar must collapse while `navigationUIState.chatScreenVisible` is true so pushed chat detail screens keep their own bottom composer unobstructed.
@@ -146,9 +181,17 @@ The UI does not mutate domain state directly. It reads through:
 
 ## 8. Threading and safety invariants
 - TDLib callbacks are normalized onto the **main thread** before reducers/UI access.
+- Native receive payloads belong to a per-loop shared queue; TSFN carries only nullptr wakeups. One CallJs consumes at most one batch, without holding the queue mutex across JS. Ambiguous enqueue failures retry notifications without TDLib read-ahead; closing ends handle use. Null-env/null-callback teardown returns before context access. This does not establish the lifetime of the opaque TSFN during env destruction, or make stop/join equivalent to finalization.
+- Gateway establishes the receive path before allocating its integer TDLib client ID. During `destroying`, only that owner's close responses/Closed are processed privately on the already-main-thread NAPI delivery path; this transport-only retirement survives application dispatcher detachment and never forwards ordinary account updates.
+- A close timeout retains the client ID and consumer until public `authorizationStateClosed`; native receive stop is a separate Promise/join barrier. Neither close Ok nor consumer stop proves TDLib client release. Rejected native stop requires an explicit retry, not an automatic retry loop.
+- Recovery failure preserves pending/partially drained batches and rearms the bounded drain. Each batch retains its original client generation: stale ordinary traffic is dropped even after an immediate retry becomes ready, but current-client Closed remains retirement evidence across generation changes.
 - `AppStorage` is treated as UI-facing state; background work should move DTOs, not UI storage objects.
 - `LoadChatHistoryUseCase` and `LoadChatsUseCase` keep static caches and must be reset on runtime shutdown.
 - `EntryAbility.onMemoryLevel()` can clear caches and downgrade glass mode under memory pressure.
+
+- Mutating use-cases preserve typed errors and add per-request write-outcome provenance. Explicit request rejection is distinct from timeout/retirement/malformed response; only a valid Message in the target chat establishes acceptance for sending.
+- Existing composer owner delegates text to ChatTextSendController; it keeps bounded uncertain-intent counters, native explicit resend consent and revision/lifecycle guards. Forward ownership restores only known untouched intent; accepted comments are never replayed. Photo rejection removes only the current operation marker.
+- Code406 is gated before application message access, rendering or error payload logging, including nested send-failed normalization. Safe code/identity bookkeeping remains; upstream TDLib native logging is a separate boundary. Evidence: `docs/reviews/2026-10-02-send-forward-errors.md`.
 
 ## 9. External/runtime dependencies
 - Telegram credentials: `entry/src/main/ets/services/ConfigLocal.ets` (**gitignored**)
@@ -183,3 +226,11 @@ The UI does not mutate domain state directly. It reads through:
 - `scripts/smoke-ui-phase0.ps1`
 - `scripts/smoke-build.ps1`
 - HarmonyOS docs: `UIAbility`, `NavPathStack`, ArkUI `Search` `onChange/onSubmit`, `@ComponentV2`, `Repeat`/`reuseId` patterns
+
+## Sequential document/video write ownership - 2026-10-02
+
+The existing ChatComposerController composes ChatSequentialMediaController (252 lines) for already available document/video commands. One existing busy operation spans preparation and sequential writes. Strict accepted Message validation remains in the unchanged media use-case; the helper retires only its owned first URI after that acceptance, advances its expected input snapshot through the existing setters and consumes the first caption/reply once. Counted bounded URI marks require real native consent before overlapping uncertain resend. The prepared-file owner discards only unsubmitted or explicitly rejected copies. Route/account/lifecycle/use-case/input changes retire continuations; late document/camera picker results are equally guarded. ChatScreenContext advances its existing composer revision only on actual forward-mode boolean changes. No new global owner, retry queue, codec/media capability or dependency is introduced. Report: `docs/reviews/2026-10-02-document-video-resend.md`.
+
+## Timed slow-mode ownership - 2026-10-03
+
+Strict Supergroup/FullInfo DTOs feed an immutable account-scoped slow-mode map through normalization/events/reducer. Relative expiry anchors once to receipt STARTUP uptime. ChatSlowmodeController owns the route timer and traced countdown; ChatPermissionCoordinator computes fresh dispatch eligibility. Permission capability stays independent from temporary cooldown so accepted cleanup can complete. Singleflight hydration guards captured access/snapshot identity and performs one bounded fresh fetch when superseded. Typed foreground and route hide/show/teardown pause/recompute without autosend. Dock/atom display the countdown; final controller gates cover asynchronous sends and voice preview. Test-only `prepare-native-main-witness.cjs` creates an isolated SDK projection with shared main-module callbacks/fixtures and unchanged production Resource widgets; it never edits source/main metadata.

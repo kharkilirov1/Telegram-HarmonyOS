@@ -1,0 +1,3988 @@
+{
+  "date": "2026-10-13",
+  "baseline_head": "faf66b3e066afccdbbfa36442eb9122073f509b2",
+  "baseline_paths": 400,
+  "selected_supplement_paths": 39,
+  "baseline_supplement_unique_paths": 419,
+  "review_coverage": {
+    "runtime": 47,
+    "chat": 76,
+    "ui": 25,
+    "tests": 181,
+    "docs": 90
+  },
+  "file_hash_convention": "SHA-256 of reviewed working-file bytes; Git may normalize line endings when staging. This map and its companion report are not self-hashed.",
+  "files": [
+    {
+      "path": ".github/workflows/smoke.yml",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "4e2bc643d9f982372434301e0115676602b449e60ad7cf855fa6ecbbf7878116"
+    },
+    {
+      "path": ".gitignore",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "d9a2070166aefae1b6394791018efafef99e194c304aa9693d3a29590cc4c00a"
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "dd243d931dca6e084cd67c1edeb79447aa79d2e3db4045aad149502ef2b6188a"
+    },
+    {
+      "path": "DECISIONS.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "7d59b035316d010bfb5cbbee0f1278c31361fc3d88c215768dda3f6030b45aaa"
+    },
+    {
+      "path": "REFERENCES.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "a837eeaaf60a6b536a31b7b19ec1325973f0238417ef6f10788d5e496b600ef6"
+    },
+    {
+      "path": "STATUS.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "305612e13a19b6c68da0b0e07ce92a7dd2e6c2aba10feaf8da624b34bcbc72d6"
+    },
+    {
+      "path": "TASKS/AGENT_EXECUTION_PLAN.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "e48e45a34d9c5598f90d6f12cc3b4509f268efd15767da32f41f88af46538c09"
+    },
+    {
+      "path": "TASKS/CHAT_ACCESS_PLAN.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "734e761d2d4227d7cf10c653d546cfcb731f346feb8a81447962a3ee966199b6"
+    },
+    {
+      "path": "TASKS/CHAT_ROUTE_OWNERSHIP_PLAN.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "96bab7680ced742606332768229c3f0eba2de2449499e3ea944ad53a530fcbc9"
+    },
+    {
+      "path": "TASKS/CHAT_SCREEN_DECOMPOSITION_2026-10-01.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "3e6244d8d7ec0780eb7547562b5e093218d95075d521c5e7fe3b5731ea8c6b9e"
+    },
+    {
+      "path": "TASKS/CHAT_SCREEN_DECOMPOSITION_PLAN.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "4f70d7e341a201af8e7179c37ad5667b0862725e4abc9dac91c2d01e8c73d47a"
+    },
+    {
+      "path": "TASKS/CLIENT_RETIREMENT_2026-09-28.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "c839d9d479a66e043e78f117dc61c7156f78fcf8a9890dac3633af49386b999f"
+    },
+    {
+      "path": "TASKS/LESSONS.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "0b45504217de5b7f3c100da210b2bca03644235a05e44b222e02ec45e481c08e"
+    },
+    {
+      "path": "TASKS/MEDIA_ACCOUNT_OWNERSHIP_2026-09-28.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "400e561baf169c52d8de55d9369fcf44141980b9693eda4a3e578012b273e734"
+    },
+    {
+      "path": "TASKS/NATIVE_DELIVERY_2026-09-28.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "e98a7b61548bd3a6bdbf9f9c1e8274b93e68a335c0b3721f912a843d7c9a331a"
+    },
+    {
+      "path": "TASKS/NATIVE_LIFECYCLE_2026-09-28.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "923212b1fab5312fe816aa71c6bb2e5428cc1445cb9949218d357957d412bce8"
+    },
+    {
+      "path": "TASKS/PLAYBACK_OWNERSHIP_2026-09-28.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "b879b7be4456d02d6a87ae4fd1856ba42ff8bffa8943921739afdd38853e8045"
+    },
+    {
+      "path": "TASKS/PRODUCTION_PARITY_PLAN.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "c02bcb281c99a31ff3f8cc36dc746413061919fc9cf50160746efddc13f7dadb"
+    },
+    {
+      "path": "TASKS/RELIABILITY_NATIVE_MEDIA_2026-09-28.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "cbcc915d094ae9b4461b0498d30ed812826b233f7fdac815b483c77756fcf01d"
+    },
+    {
+      "path": "TASKS/REVIEW_REMEDIATION_2026-09-27.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "9b512a9416d78779b30ca8f2e8b4048ef6d6e7d6b1d92ab9ca27e1a5e71bb971"
+    },
+    {
+      "path": "TASKS/TDLIB_RECOVERY_PLAN.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "72d9f8750ea76b2116dd782a23ba5d4f7edb4f79a6b8939ae46a461445f2761a"
+    },
+    {
+      "path": "TASKS/TODO.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "ff9b7e74e90fb591ef42e2d13a1465335be562046325c450279fe261ea8a10fa"
+    },
+    {
+      "path": "docs/reviews/2026-09-05-ios-visual-reference-inventory.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "4a224c7ae4499081c887b29988b9f2a3593f3b540c914eff5802bfed83bccc47"
+    },
+    {
+      "path": "docs/reviews/2026-09-05-project-review.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "d1609a10ea59b32c537d65bb4dfc66a450162030cf1fd0a8c92e8e9cf500f578"
+    },
+    {
+      "path": "docs/reviews/2026-09-05-reliability-wave1.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "990fbc0cbe748a362fa123a6db13470fbd4ada78310b84ff90e4d721a85b9763"
+    },
+    {
+      "path": "docs/reviews/2026-09-05-reliability-wave2.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "bb4db6987a61eba44c0095568944d6eaf2f5d5b137fcd94589660ae083216b0c"
+    },
+    {
+      "path": "docs/reviews/2026-09-05-reliability-wave3.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "110f9008d271ac6b7b0ce887e59b35079e2405124054ad0c6060d3d5b4ea0241"
+    },
+    {
+      "path": "docs/reviews/2026-09-05-reliability-wave4.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "9b5ecd9453ec49d08d6464489c40858b58a12f50eab6508e668e3df196651412"
+    },
+    {
+      "path": "docs/reviews/2026-09-05-reliability-wave5.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "12015e56abab3be29d38e910bc53870284834bc13136d875c3829bc066f202d1"
+    },
+    {
+      "path": "docs/reviews/2026-09-05-reliability-wave6.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "7d908d581416248470fca874c0a90e00781c26688e358488f9631089f1aa88d2"
+    },
+    {
+      "path": "docs/reviews/2026-09-05-review-witness.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "e646eae6d0abe78e869fc331181a19766bd760d7f0a3b4f83cbf8506d41c1cad"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-native-open-count-gap.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "2e6e156eda469572a23fc7b0ade846c7515bb0803166795228e3b38fc05c1c99"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave10.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "d4b09229996a6a985b8239ff112064cf5480630f081a4bdad0b09a70e12ea493"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave11.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "4fc1af8451b0f6bcf659c106120d83be0af5f9154952cde0df2b79d0f0990712"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave12.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "cc48f934d6763fc25f8f9dc6899960a1ef3e17cb77d08ad5b70b2d26ac426f4a"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave13.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "2a910a701f85b15b63719304b56e2efbf8fc81ebb85115183d43e4f5535477ac"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave14.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "119666a1bf8a143577778b6b62df64b4df5150ee4ef3d892b64e1c7847e1c10e"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave15.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "9a8ddac4774e74ca1be41c203e761608e3daf195262a15b05b083319538a85f7"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave16.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "ad591fe3410e16cd44ae1292c8e404ef2f9289d08b06f0a999fee57b3ea63f9a"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave17.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "65fecaa69ad56c6a46a788dd2b1e53e858c07b9bb9a63d0762867187b74ec7fb"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave7.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "15cce675a2c7e8778961bb405391f74911ad3349ba9a91acd76241a5710c2fdc"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave8.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "e53ada4902aae1674d6ee211f9e2480cf31d336df5dd656cad7b300e123b09c6"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave9.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "43c47870c6934108c3db75449c0066a2e687849cb91bd08f266e4ae5c15f61ba"
+    },
+    {
+      "path": "docs/reviews/2026-09-27-chat-creation-auth-privacy-fix.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "d9b594e717fb3bd9f8db4fadd48c226a323cbb23a872626f34edbcf893864302"
+    },
+    {
+      "path": "docs/reviews/2026-09-27-chat-history-generation-fix.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "492281aaba6fcbbfe4cee65eaf1e5d2911b2ffc45cd068a7f73960d6a4dcc25b"
+    },
+    {
+      "path": "docs/reviews/2026-09-27-github-comparison.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "464ecd51183cab37c2259e91b3b266bd1bd6844f97fd883c8c9c5f6cd9768b6e"
+    },
+    {
+      "path": "docs/reviews/2026-09-27-history-independent-review.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "2fe5eb7f6df65d9e709426ebf58e4e635a642e62489c1c6c1d138a511838f78d"
+    },
+    {
+      "path": "docs/reviews/2026-09-27-mark-read-ci-review.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "ea2ecb0a84937b619b6ba29f51cc4f8173906673d2b99ea86cf9d47b3cf3e34c"
+    },
+    {
+      "path": "docs/reviews/2026-09-27-remediation.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "169860dac1eedd41e35dfb51fc9ee50c8c3a81a4b2dd3975a887296546a18330"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-client-retirement-remediation.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "912329b5a905f4ed8bf70752d207fd9871940f38420266db310311e117375895"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-feature-first-assessment.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "3c5c9ba00e6690da31578f7be8a33db84d699213d9d472aaeadf2ce7bc1e8e5b"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-global-media-ownership.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "7c1c4766f4ce3222cec216e1c64c299ae8e960bf3dc2dcf00cfea610a1e1cb29"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-media-account-independent-review.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "de1f218b4c9a6b795f1035f0ca619a138e7673190140d93797539dd583fa43ec"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-media-account-remediation.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "37f58d16853bff8771d0e5b9646f5cde83eb65c7c85d6b77e8aa944fdecd918c"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-media-page-ownership.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "2977f1b93df2cdb05dc53ea811d393960f506f5d8adb050cef2004e39bea1fcc"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-native-delivery-remediation.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "ff5d1cf2c4c311faf1674dbc4c837ad724e3352aadc97b0082b7eb29ad9ee252"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-native-env-cleanup-contract.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "67d8ad61b44ba3a918d96230b763ebc9143207fe44e685a58b6a6945f0304a6d"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-native-independent-review.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "38fa9a680b219a598fbe3746e88a7c8ae52474f5847ff057e4f8c39bd3435b7a"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-native-lifecycle-contract.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "3bafd2a07818923050f11fd1303d4343b7c3c8c2677a5916e114cf27f77df9a1"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-native-media-remediation.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "468c7b6287f8b7b6f7e62d727f96a3a425e1fb29b18568816bb7e36c1ccf0879"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-native-stop-remediation.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "674d48be9fab93b3bd8effb22eba9f3971bddbd04b0b32aaa6ec2feaaf7794fb"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-playback-controller-review.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "494a4d7fad5c8b3da83f3d98006e2df1ee85afc78063e586ae3637fa897a1b03"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-playback-remediation.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "88881a7bdebb0bb5a10f37c9776a494be6c781b5a715e63d4cb5139d7c9607f3"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-recording-independent-review.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "06ad471f2ad98a413a164209dc63f92a86ed598ee81059b930cd5ce4f70bc970"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-recording-ownership.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "8d5137e69afe4e6695e4b8201bcd593f4be120fae64a82a1d839403eae88f745"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-store-invalidation.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "77469a530666c412d50766231af6c91acf9f429d6af4688ccd4b664a5639a6c6"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-td-client-lifetime.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "d218d250c6262daa86e035c335a4658e0ef5b14e867094e05d71475ad81f4363"
+    },
+    {
+      "path": "docs/reviews/2026-09-29-attached-review-remediation.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "ac83325f85e096487c218ae3633bb01db9c2e89c8169bada844dc1ce61f340b0"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-chat-screen-decomposition.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "0a5628de50d9b075da2af1290280a6eb9b9d672d7da80aa44da4c0505e992318"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-chat-timeline-updates-chief-review.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "9e89d87eced2c55d1296578539fc87396741f27dcb22721da47188c006f7fd34"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-chat-timeline-updates.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "5122f250d6c457282a7dc4ec90f4dcd9ad0782e9fec07f324b0b2e23ec44b1de"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-gateway-error-causes-chief-review.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "28efcf7502424c8052666f8f3d80243916316b00d2f542e2708871e4d324f273"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-gateway-error-causes.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "2a5ff082e81b28d123d33f9cb76a22cec4c00cc87a6cd71352deb13ce2776813"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-local-readiness.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "4d3f87567cd1be2b37e8876122d38928ef4e0f6eb4f484b09c6ef509e32494f2"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-petrelgram-comparison.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "d7f91193e9914fc340e5694dd5768f04136b54f4ed940c6c03bb342556947afc"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-photo-album-astra-review.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "6c4f1d879e0099832934314d13dc57f08db1dc0ea53a62f3baafc569488ff429"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-photo-album-references.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "486be486e053014a4e3215d0fb59eb128e6347ad4f17ad7864ab61209e709ea6"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-photo-album-sending.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "07f3d9d9498c103ee2713f69f63df8b18df93d77978b7436d4621415c36da88c"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-photo-selection-preview-astra-review.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "efc7355e519e34c0550a80491c37ded8a1f484638c0da4164c0922b8563f9aaa"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-photo-selection-preview.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "d85c29e7b50551606182ce0fac751f5f40f32df4dadb57bdd9a2e19ffbab68eb"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-pinned-account-ownership-chief-review.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "4e7d41005ed546cd6d36b9ab7df21ef528cc0091d0050a3c081197ff091d34a4"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-pinned-account-ownership.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "4fdbb6a853bfd3c0b1dfece44701106824e31f4f1cffeaffac880f3531669237"
+    },
+    {
+      "path": "docs/reviews/2026-10-02-document-video-resend-chief-review.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "a029ae2d553c21d726edbee09264465657eb7fb6858d8c2bf1860ca25bf62670"
+    },
+    {
+      "path": "docs/reviews/2026-10-02-document-video-resend.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "e1ff556000cedf5bb62f6faa220939bb7fa0c75c151b7faa3dcacb48222bf4d3"
+    },
+    {
+      "path": "docs/reviews/2026-10-02-send-forward-errors-chief-review.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "7efc9bdf2e479547116b5956ddb8cd7d68dd22894dbfe29c7a26359d06be515c"
+    },
+    {
+      "path": "docs/reviews/2026-10-02-send-forward-errors.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "abf8082fdb4deb8671ff0da3013ffdd0ed4efb7340d09b69828de84bd1ad718f"
+    },
+    {
+      "path": "docs/reviews/2026-10-02-slow-mode-chief-review.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "2187e602d19bda7f1a6341ab91b4d19353df644443f3065e78bf78eeee75eea5"
+    },
+    {
+      "path": "docs/reviews/2026-10-02-slow-mode.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "9c6ed8dc373366c3d84984d5a36840e06ded57b2fbc637ea9e8967a038ddd79c"
+    },
+    {
+      "path": "entry/src/main/cpp/tdlib_napi.cpp",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "be9988f5012213cdb9e04db373abc473b1e8a9344d53d5f4590860e81012684f"
+    },
+    {
+      "path": "entry/src/main/cpp/tdlib_napi.h",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "deb40a5c3dafdae509318a1198ffe06c972bb8f0f6022fd57721b3036fcfe46e"
+    },
+    {
+      "path": "entry/src/main/ets/app/bootstrap/AppCoreRuntime.ets",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "8639269835d13da17bc51a3b3122a1c4e12ce614bb151434770c85db3d11d418"
+    },
+    {
+      "path": "entry/src/main/ets/app/bridge/AppStoreBridge.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "2021c5a850fd626a5da0fa7654ed1e7334ed7054a4a29ded7ea2c33c71e4c711"
+    },
+    {
+      "path": "entry/src/main/ets/core/events/normalizers/ChatNormalizer.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "e61e7c0430f9c53e77949362211f85f335f56a7496b1864e3df98b79657f8b96"
+    },
+    {
+      "path": "entry/src/main/ets/core/events/normalizers/MessageNormalizer.ets",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "fcf4e747dceded8c695c42272dac3a90ab35df23e86a8c767c0e13b385653da6"
+    },
+    {
+      "path": "entry/src/main/ets/core/model/AppCommand.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "9985bb4d0fea220d0f092ef90f38243c9c5c77d9242507be4dc18bf444c9160c"
+    },
+    {
+      "path": "entry/src/main/ets/core/model/AppError.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "6ce31104a96fc1deaa952653ed44255959914b8168e3ed2d6b9a6a96df27c530"
+    },
+    {
+      "path": "entry/src/main/ets/core/model/AppEvent.ets",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "650356733f536bc5c35a5609abe00a58da58a555a7e86a32ecd8ebc5e05bf133"
+    },
+    {
+      "path": "entry/src/main/ets/core/model/AppState.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "1cc3b03339228ba1982535b30eb27e6a02dd5dc25fe77f0b9e411845560bf86d"
+    },
+    {
+      "path": "entry/src/main/ets/core/model/UIStateModels.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "d6bca18828c4d1709b78929c95f2d40d19ebf99eb403e80f228e4330adb6c26d"
+    },
+    {
+      "path": "entry/src/main/ets/core/model/dto/ChatDto.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "09a411f4007075ba24a342deda3b863553f0b8c6b3bfb3e7634cfbbf171e9544"
+    },
+    {
+      "path": "entry/src/main/ets/core/model/dto/GroupAccessDto.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "e037763c3c25c61becb3acbbfbbfad5f5b9f26f1ad048acb2df83e082e0bcf27"
+    },
+    {
+      "path": "entry/src/main/ets/core/model/dto/MessageDto.ets",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "1a2d3390cec574de31f500df9d8572df2f48e44cd27f88254f09b64c76aaa64b"
+    },
+    {
+      "path": "entry/src/main/ets/core/reducers/authReducer.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "5c80a362d07b196a2c7f858cc22ad4ad0fcfc9f312b6f5483df546111a032858"
+    },
+    {
+      "path": "entry/src/main/ets/core/reducers/chatsReducer.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "69733eebb93500675706ec790dc5bf70a3155387a3d5b624ca83d7427d0703d0"
+    },
+    {
+      "path": "entry/src/main/ets/core/reducers/filesReducer.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "bc2f101ad8378ef677e582f2b273751c45b947d531f53a6df6774304457ea0f3"
+    },
+    {
+      "path": "entry/src/main/ets/core/reducers/index.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "14b0da44cc1f6665481b3f8d8e19b1606a96ecca5c737878326bee20866a3735"
+    },
+    {
+      "path": "entry/src/main/ets/core/reducers/messagesReducer.ets",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "67e5fde4063b3072d3e6c99adfeebae180585463ab089a266feb4f0aa546cd9e"
+    },
+    {
+      "path": "entry/src/main/ets/core/store/AppStore.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "cd598b4d56b08c99697599effb8915f04ad1e43ca558c53d4729530a8b1d261c"
+    },
+    {
+      "path": "entry/src/main/ets/core/utils/SlowmodeClock.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "ba53cceaeef0388cbe9286ab88d09c8219b9aee4cc06acb8e8260b4c45cfa4ca"
+    },
+    {
+      "path": "entry/src/main/ets/core/utils/stateClone.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "1d5d1eaab3620adf8d146651f4b640614dafd1e97ef9bc717ffd9fd0530234f5"
+    },
+    {
+      "path": "entry/src/main/ets/domain/ports/TdGatewayPort.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "2ce615e8bf02cb1dc8e1ee6b9c5d764863cfbc59a87ce113122c45ead7eacce1"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/ChatOpenLease.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "077b60111174025b6624d459265b8f05ed66c27446c941cec2ead4f1243d60ed"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/EditMessageFormatting.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "f6bbcf6123c0b901c765d19ffa797c66e0880fc32e421ff971f642b5025ac06d"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/chatMembers.ets",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "b7b8dc916ca77d5de049db36db549778d9e186a9a28a56eb50b1738a4f482364"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/createBasicGroupChat.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "82b3f6ec79d7207e38eb5035cc89368fd53374bac84e22bcc58b816eb58dc979"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/createChannelChat.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "e37330cfb1114640a6f1329edabdf31438c12f1748931fda772f85d6d419e4b6"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/deleteMessages.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "b27424dc7ffc23b80956f4462cedf28ad2470d360e661681bbc33a6e7d705d22"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/editMessage.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "cf729df407eb2f5a5384d16adc8d606e945748ae868a3138f5262dfe6817ec53"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/forwardMessages.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "ebbc0c611cc7acf0c9c1386a7ed037e08b175609d5f3e2d2c3852cfe2ad1bfe3"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/joinChat.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "f01878d59e21fefbd90730f9c723d9d7455be45e9d4f349fcd200f2e2986c26f"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/loadChatAccess.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "ba7d46b715723e54745b787f6092e459e208fda8ded34cd9547ec7e6db907763"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/loadChatHistory.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "c95aa3e461bdeac660417a9f45c99e17900dfbefad9138b302a99523285e5c3c"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/loadChats.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "9464e015db8cc53daf3e107d9e76f08f5fc9d24cd4a66f6fae637af62702747d"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/loadPinnedMessage.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "45f026f2ec6ad439b559d9c95c9f66367211123ac85338b5e044efcbee036f6b"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/loadProfileInfo.ets",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "b337848876f638c33302d99336deec6ae5770390604f4edbc9bed174d37fbf58"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/sendMediaAlbum.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "80d450e437d11feeba02e00c7c7ed04a7b4d6779963fcb1865edf30e854a661b"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/sendMediaMessage.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "cd45bd45c88485884e0fdbf17851568ae8c728e73c89af0f15ee0e47ac50e802"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/sendMessage.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "7db29a749605ac559621ff04075b02b16103ebf9e572de38908a814a3384c5f5"
+    },
+    {
+      "path": "entry/src/main/ets/domain/usecases/toggleChatUnread.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "6088483d74e8f52ce2fc581d715ed99ee17626eb4e060d524b62fa36620896fa"
+    },
+    {
+      "path": "entry/src/main/ets/entryability/EntryAbility.ets",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "ea99ef26186743785905053a6e16717c166360e8bde927599e39a33f442b7130"
+    },
+    {
+      "path": "entry/src/main/ets/infra/td/adapter/TdGatewayAdapter.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "993efcf674c563fc087ca4650309ea85960ac046f78dc48c4181c8999d5fdbcb"
+    },
+    {
+      "path": "entry/src/main/ets/infra/td/gateway/TdGateway.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "9cd97d9b2e4cd6043a63ab3b05ee135acfe0c8c48792d2ea9207676654f81078"
+    },
+    {
+      "path": "entry/src/main/ets/infra/td/serialization/CommandSerializer.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "4b9a29eb7f829fbfd2be16c87ae3835d5a33c58b4d2e0a7cc150a2d3789f6a38"
+    },
+    {
+      "path": "entry/src/main/ets/models/td/common/index.ets",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "9b38cf45342507ee22f8641858c4d51e65109c87752370922169008cc5853b86"
+    },
+    {
+      "path": "entry/src/main/ets/types/libtdlib_napi.d.ts",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "runtime",
+      "disposition": "include",
+      "working_sha256": "327461c21e790a9f41e2046813eeb01e944f3db0d13629cd410993dba74b4f37"
+    },
+    {
+      "path": "entry/src/main/ets/ui/controllers/LoginController.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "4c0a10b52a7d21b30754b0615a777f22d651cbeae749422d607741e70105e4f0"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/calls/CallsPage.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "8f1ffc500c0dcc04a1a8819a7d6e7b3174820b844a347f80e88dbb9bdd4ffe15"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatAccessController.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "fc985ebb45507612a672aed179b50e60ba75b84582a3f8cc6d092286b98f030d"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatAttachmentFilePreparer.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "a02d562da08cde71841a65df8fdfcb50d58fd63179d73f073f5c2705eb5a1780"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatBotMenuCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "b613fba28a0a11af1668234867759a6601b0baac68743b43029af3b9d6e76a2c"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatChromeState.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "5f6350e064c61b77c66eeff75e84202886570ffa69081c35a8193037849ce825"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatComposerActionBindings.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "3536fc1aad10e56debac3507f5cabbf204da99264495cd8e766f3caadbba6900"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatComposerController.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "54da2f1ca55bad08186cf606734a42c0231b676a78e95ecbd4e53ff8b9fa6209"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatComposerHostAdapters.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "91a805c5b52733c71f44fb1398cb31596cffbbfbe61eb7bf9cc17653addc6fd4"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatComposerState.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "f9fe69c01b60fa4ce7d6234877c307dea3b0fe796e1403cdc65f1ad5215c41ad"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatCustomEmojiCatalogCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "42b833be7cedcdb9518fd1718b26d414f4815a9bfce130db048e21b64d48a6f5"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatDeleteMessageController.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "d9682881fa44fdc7965efaf1607f4690d047c15aead2b10a58a48c25efbf4311"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatDraftCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "143ad7e0d2b7a99941f4d9db08e3394c064182ed2b0e5474f1af17a7cb237598"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatEditMessageController.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "420ed0ad8927f6550591c4e82aa1d1ea05dcc7176b0f7b930c30d5d003252880"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatEmojiSearchCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "d35b761d6312494e2da795ce0c0cc2d070f1f9a638134f4019b1545ede25d72e"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatForwardSourceController.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "149145508e3c2ea1e16df831af782ba7a5a3be9f1096118a1488cabcb2909ee6"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatGifSearchCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "b30629ee0f733fcde3957d9c30e48e710fe5ce8a8ff42aa65831bdd4b6859a1a"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatGroupedStickerPreviewCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "cf3e7c9a918363d4099d5bd971eb068edcaa286e3723db8e37a9256a72aa8aca"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatInitialHistoryCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "ce1e7891910344951400ea240b61a5996bb0af02ee159f0ee2c280426720215a"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatInputPanelPolicy.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "d70c679597b5550fe9a7a46406dbabf5b8a63f541c6d23a25026a912dfa9660b"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatMediaDownloadController.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "52cafa1142c48092ced5035301cdce528aa5cc12f8556dfad46fbecf284e9e1a"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatMediaDownloadCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "4498f09e72e77e33e1368af6a632cb8311947cc83b9d704ba878234db98b1934"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatMediaGalleryCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "16b7f3e9aa230f60e5b9040be881862b1df24857a20be242bbd8509c78ea130b"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatMediaOpenCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "705bb6bb01f24de4698903083d37d80108b45e622875d942d12442334425c7ca"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatMediaViewState.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "34e07342ba1f18baffefc41468a94f36fee5fb7cba83a215df7ca594947ab196"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatMessageActionHostAdapters.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "db13c411264fb0a7c6b29f68cb5c332de0c1bd9adc17ea7487431b27bed3adb5"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatMessageActionsController.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "ede3efa26a956c8d006e41bdd94c505e0c8ee7c8d0d4424a1b486d16e43aa52c"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatMessageJumpCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "ed58431c7de415cc957e96bd78bf75c3b4eee9b821f64cd74306d6d7189644ef"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatMessagePopupCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "9ae59fe4abdda25105cafbfe3934cd69245f5034076771c9218885417c3190ea"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatPageNavigationCoordinator.ets",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "49e737f1337cde66f93ff070f6ba2f86bb39f676a6b45f34be4e2e4b04a3ca05"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatPageTeardownCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "599049aebc0c7824358ad148f96b1aa6c967320a7c53e158252e7067ddccf710"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatPanelsState.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "d6373a56d7fd70d42706d3ea2a3c75f833fd3370bc50adfdbe84ec9c8b5901c9"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatPermissionCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "e247d945858ab8a96808688b8629d74a932fc7793efbc1a0a5ad396d0003bd0c"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatPhotoAlbumController.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "f8b8fa915cc46dd46287c65af04b0cb53c3abefcf3dfcc412adcd6ccfb95304c"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatPinnedMessagesCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "c1a8a342110981468624d94d75a966a6edf901453c3200872bd8e92fcf8be1aa"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatPinnedSearchState.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "706a9e0d9d4ce2ad777bd2395f1d810bec9d8b14f65df8e06dd0459c02f67eb1"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatPlaybackCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "8f7e8b3a539e80a90e268a64deee3dced22591fc9e20c25812b7dc07cc42848c"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatReplyHydrationCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "7ca004fcb0a21c330fb0852731f91a94db01e7228c887bd7659bd42db688eb68"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatRouteActivationCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "c8c9fbf635f71ba419ebc69812f463f2a1c8a65c8676962097315e79c692404d"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatRouteOwnershipCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "155b455f0bd4e46bd5fbb088e34739554ff1806abc81cfa4329e2ea211cc803f"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatScreenContext.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "199c14292f962b7578ae456a760d7da343a411712175e1cb0831688a7c595104"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatScreenRouteParams.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "978effd6dcf5f649f0d0744f2e0b906d60eefb23fba089625025231438624c59"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatScreenSession.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "889633d5f6c44d4d0dce4193bf285704ce22051554559cd6fc70c001b0a98b45"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatScreenSessionPorts.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "fccb94ed47f365bca498e7f45ae9654dda5c0ba97a8f10f799f5a2d55898831f"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatScreenViewBindings.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "481d1ee399a09629da4c9782b56ab3525fdbfe2ef2613e7f337e8ec76754709e"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatScreenViewEventHandlers.ets",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "36f75b17491129a745bf2e25940fd935a3e579026892037012000bbab3437bd5"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatScreenViewPorts.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "a0c8e47dd2923b2c8f35b4066608605ac91967254e4c32dc5ac833d303bb547d"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatScreenViewState.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "45a161890beaeecfd585b9fbbde85f3e4b7f4a1ce7233ae186f99c9183ce110b"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatScrollPositionCache.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "2e5d08f8917ec010780ecc977c4989531378d0a7c9ac959e23a364ea67957697"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatSearchPresentationCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "ede4b2a3d8e8cdeabe34f68e7138295f66d320d44bec9907766f8691e7957af6"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatSequentialMediaController.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "38813fdefa53db8aa4ba9425f92e1859ad89c0b608ca98e26f495409f7ae96d1"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatSharedMediaActionCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "a8d98eeb7eea5a83d62b4d346a1a483dfc1fb7cfa7dd58479157a2d46b2b0b03"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatSlowmodeController.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "de408da02fb3712275149823aa5c5649f1d9f6f45d95c6259fbf2fc99970cfa9"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatStickerCatalogCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "9763cee138f3d37660def76c986e86858a1a7d36e93bb79546687afc90a60b4e"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatStickerSearchBindings.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "f275fb4eb5478a6475568902d645f8a931e1c7c079273ee187b8074c237f8477"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatStickerSearchController.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "cfb35eb1e9e615ef383dd01476286e8d6711093a2ac3a3f00a8a73ee283dc003"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatTextSendController.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "a2a0d487e7a1a075cd2f59e7e0ed0d4c8941a2b2324e25c6f6ae3238904d960f"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatTimelineDataSource.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "f6939377f76c5a025963f8b4e8355cb88ee66e4ec86bbfb5473e54ba9ec1b16f"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatTimelinePaginationCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "8701d7ebe7562919f2facd0348a0c116b6110835a28270d8778e42d605a6525a"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatTimelineTransactionCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "4ce76fc88738c19bd2f782bb11787b166ae14f378e629f2e84b82bb47cbac85d"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatTimelineViewState.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "deb0806e90cd9cb6c7331529987b8f252ab94f5e227f523c043342bad1688826"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatTimelineViewportCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "f72484e87a595ebcd77df16ab1c803d786257bd522b32abaccd7df0adce022d5"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatTopBarCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "28ba281fc6145bb1d0858525ba07881e8920e381c000915da39daff209f65553"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatTopBarPresentation.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "cb43980ee74ffe7067a03cbda1363c6406b28766fbde32406d396bbe78004769"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatVoiceRecordingController.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "f1efa0e94294d0f85793bbd5d1b2c9ac6945d93ae969cbd7bba1463b8305aee7"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/ChatWindowGeometryCoordinator.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "3dd7a42d187936e16065beecb16a6beca888db2c707ad9129a3e203bab3ad9c9"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/GlobalMediaPlayback.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "80e201d1433ac95b84f9863a0adc9ef338d1dec415f8ad41cc6e9afb128f4fdb"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/PendingChatSearchSignal.ets",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "375c0973a58a8db02552ae1742bb02ebeb7b4fe1e2f7b538a3311140c5fe78ec"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/PendingForwardTransfer.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "b0646b30d1b91c15c5298a6ee5511e25c6c0bdf35f136c1a05779e9876cff1ca"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/TgChatComposerDock.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "89555e4b387fd64dbc19be357b2466dc98bcea3be536a4cd217afa0a14da0740"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/TgChatKeyboardPanels.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "c24bef739c02b156f1ec7d1c3453569bb1ceb9be6b832fb10f31a7f22e5a0aa0"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/TgChatMediaOverlay.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "cdbb68e608179b471331ceb2b0e151091c66a0dcbb2ecd177d31a6cf27b50b9e"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/TgChatMessageActionsPopup.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "35b81161bd4a6fbf06106f51abc6ea864be4f7f8cfd2525c635a8443aa26aeac"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/TgChatPinnedOverlay.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "50fbffba5ac96ea0700cbcbd6c78dac3e4d0fd032ed9cbde370cf7daa6a6cfea"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/TgChatScreenPage.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "d0115a3038290ae478657b0780f4e39182746ca6c4cc2319f8bb15239289baf2"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/TgChatTimelineRow.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "42058d66f7c17e377a3da9586360ae3c87a96380db5d569626356cd537e38142"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/TgChatTimelineViewport.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "cfd27dcefc073c8db1e3bd56e5ff806172b4f464763dc8fc4362ece3413c1c01"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chat/VoicePlaybackController.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "chat",
+      "disposition": "include",
+      "working_sha256": "496a9ddd8252dc775f434072014e1ff5e415524dbe0f24039841d1f0b64c9e92"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chatlist/ChatListPage.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "4a9d25e9f9869f020dda7daec3ec311483ef7218dbe748cb0b5138d8f69d4661"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/chatlist/TgArchivedChatsPage.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "83c9bfe724b68be9de3e59debe3a8f7c1fb60da11211b5b628b8d3e966d54792"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/contacts/ContactsPage.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "149b008ee6dd69ada130bd232cb51e98d63e4dfc7e3d5deda11894c71ec0905b"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/forward/TgForwardTargetPickerPage.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "b193d5bf878e0042a91cc6fe3d8923ecaff66721fe39264f670a1b370417ad89"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/login/LoginRouter.ets",
+      "original400": true,
+      "supplement": true,
+      "review_fix": true,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "229f86252bcab3eae059c33f1d30dd6bb7a14352b778e04ed28a504820f31d34"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/login/LoginRouterPage.ets",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "8085e49e027e18a97f4dc6e54189d0cefdc55e07a39006782bd458318f015bd6"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/profile/TgProfileMembersPage.ets",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "a1732fab0f60724eee3675e8e8574b93b4ee474bd1a54b2d78bcd09b9f306a49"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/profile/TgProfilePage.ets",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "fd1e3ad1af4ccfbcea63126221b5f1f6c9889df6a1d05486af0986fd2d016b06"
+    },
+    {
+      "path": "entry/src/main/ets/ui/pages/settings/SettingsPage.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "dcb2e01e3c02897e3adc96dee95f45153a824cd7d4e44b07c1eeae3ce09d1d53"
+    },
+    {
+      "path": "entry/src/main/ets/ui/tg_ui/atoms/TgAttachmentSheet.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "c241f0461ef72195119716a382a1bd5d1469c0a1031c045df2e78d61a42f3fd3"
+    },
+    {
+      "path": "entry/src/main/ets/ui/tg_ui/atoms/TgChatTopBar.ets",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "3931c414ac668c77602173887e2d7bfd94b1d55ae3cbc1342930373b4e88baeb"
+    },
+    {
+      "path": "entry/src/main/ets/ui/tg_ui/atoms/TgComposerInput.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "7dea21ff5d1d9d7e4a39b836de74fd6c79e7ebf94f853607642046a32d4a40e6"
+    },
+    {
+      "path": "entry/src/main/ets/ui/tg_ui/atoms/TgPhotoSelectionPreview.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "e99812a9dc19f9cdfb673a74faef030910b1989e2c26d9fedf37d8e1b01f7a23"
+    },
+    {
+      "path": "entry/src/main/ets/ui/tg_ui/atoms/TgProfileNavigationBar.ets",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "00c8c7cdfb10e52ab03a3ac1ebfa851847fb99b3b5676bccbd0ebc884a414cac"
+    },
+    {
+      "path": "entry/src/main/ets/ui/tg_ui/demos/TgChatBottomActionBarDemo.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "cc2c2571b7248029b4cb4bcaf4867eb530ab306b37ea6892f3ef5145a3e1f6af"
+    },
+    {
+      "path": "entry/src/main/ets/ui/tg_ui/demos/TgComposerInputDemo.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "84f39990e705580a4f85247b1e4617c1b86a2de5dd961d8654ad62d7ed9a015c"
+    },
+    {
+      "path": "entry/src/main/ets/ui/tg_ui/demos/TgPhotoSelectionPreviewDemo.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "2197672992d89a10732160e847cb5443b816b699c0540856b9cd90258254c4eb"
+    },
+    {
+      "path": "entry/src/main/ets/ui/tg_ui/spec/TgChatBottomActionBar.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "b9be49f518ac9eb23a7837cdb8dd298ec71aa8e2b110070c90b01494d0a23c73"
+    },
+    {
+      "path": "entry/src/main/ets/ui/tg_ui/spec/TgComposerInput.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "c09ee967969179c972d99f2c6cc2764116b475692e6baf7f9bf1f7e5d4d322f0"
+    },
+    {
+      "path": "entry/src/main/ets/ui/tg_ui/spec/TgGroupedPhotoBubble.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "f2d1ab9de1b35e1244bf875f2738a8bb31ffaeced791c07960b1b7e6b278438d"
+    },
+    {
+      "path": "entry/src/main/ets/ui/tg_ui/spec/TgIosNativeLiquidComposer.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "33f9d5c111db72a7acdd513126306e60da0abbce1ffb5979e48d3a0176cb1ffd"
+    },
+    {
+      "path": "entry/src/main/ets/ui/tg_ui/spec/TgPhotoSelectionPreview.md",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "docs",
+      "disposition": "include",
+      "working_sha256": "42effa9550c0da9db9af100c377c7e93a3d03b978758f91c47764839c64e18fe"
+    },
+    {
+      "path": "entry/src/main/ets/ui/tg_ui/tokens/TgUiTokens.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "5c5c9ef4e00456983c32bd134a9d20ac74b4bf54cc3f2f7f40deafd9d9f74522"
+    },
+    {
+      "path": "entry/src/main/ets/ui/tg_ui/utils/TgVoiceRecordingPolicy.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "a5f4a936171951a306dff7fb3b5d19e003446b8d31579db46433f3e127d14577"
+    },
+    {
+      "path": "entry/src/main/ets/ui/utils/SafeAreaUtils.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "2c1ce107eccbe23fb162935490317ac28cc8a3f5300cd8ad7b04010e04d78f49"
+    },
+    {
+      "path": "entry/src/main/resources/base/element/string.json",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "7e942e4971eb86dfe678885d99d0f842d79827b2c7f86766ff6c599aa6a84a4e"
+    },
+    {
+      "path": "entry/src/main/resources/ru_RU/element/string.json",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "0ffea4a02652d6dc0c6995bdd516ad27a6d216bc1a9810510d035b4eeab26cfd"
+    },
+    {
+      "path": "entry/src/main/resources/zh_CN/element/string.json",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "ui",
+      "disposition": "include",
+      "working_sha256": "ce8db79d2885e6c9cf10293a465d960d1d096d22b4bd0159fe2a578f0c116a4b"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/AppStoreSession.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "d65271fae4b35b3fd3946a69c3881594fc981943c575229854f0427815ba8d38"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/BasicGroupAccess.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "874c4ade632371ea17402a59264b1de31bff21932f874d46e2361ee3a3bafc1f"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/BasicGroupMedia.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "bf0142d03ab26116b5d1a3bf43a52650d144bd0a974d36bfe060cc937d3b6a61"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/ChatListUnreadBadge.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "4cad319f4d2637e38e0932202ae117d12cd2d111744b9389628a183be45238f7"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/ChatMediaDownloadController.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "038eb4bb31bf0465c864fb3d099662bf006cc4732164b2e6a0d50357b95ba700"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/ChatOpenLease.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "9a599b25267e68b14be2f2c22c8f39bd79d2c6c245d7fe0929690192fa92a1ef"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/ChatScreenDecomposition.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "83407e4669e14ea9755d5e67c45d003fb8405bca60f01795cde0fdcc7a4b5783"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/ChatTimelineVO.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "3d397aa66e526d7136e850ccf3961bd85f1ab3a56d1f1e83268ab17d8392112e"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/CommandSerializer.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "5df4205ef9105fb3f2e92cc3fd675737538d79cfb4886035ab40d3d712aa1bba"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/DeleteMessagesSafety.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "8cee54a33a54f1695f5451fac6455424e259fc101fb0d097871392d99bcc58b7"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/EditMessagesSafety.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "43b8ed917f4e3ef7ea9b219578ddcc8f5816969ffd3cd321665490e0932e61a3"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/FilePipeline.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "6fd07eddcd562170398f60f7fb85d6e80857ea3b8cdabb85ef91ebd4e95c2d53"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/ForwardEligibility.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "39fb390033c49f39f03a63329f843d728f40f348f72a525b3e76b4693b46ef34"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/ForwardMessagesContract.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "8df88e40ce8023fae7ec12c29eb70d98db3b04b6bd3a69bece1f67ed44fc9205"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/ForwardSendOwnership.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "3f172dd8cb91eb0a58a593a60df74a80b4834a630eb78eec52d7af87e124666d"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/ForwardSourceActions.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "c72b70f5a39c62d3b9585d37d770d34ae7269b6e3148662c320b23087338cad8"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/GatewayErrorPropagation.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "1746572c0523fbdf217eb98fdf73890889f882cb01a6498035955ef4f42375cc"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/GroupPermissionPayload.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "5e17d3eb01f4b08156bfc28cadd98289f554019967a23cf869df269b97046837"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/List.test.ets",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "5ff033d5984a305b515b28f4ccde2f566db1c102488367c42f47850bf883d295"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/LiveChatPermissions.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "4d99747425d92710c3bd545d89d14f9a9e9622409d147d7180cbbab26e24e3a4"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/LoadPinnedMessage.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "9de1e470e1fcd08c379c54877cb1f6df2e16a6246eac0f4c8eb75215c37f30fd"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/MessagesReducer.test.ets",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "c3c42a226875120361b300ff6c42bf2ee8eeca47ac4d9c8e388c6fbade15188b"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/PhotoAlbumDialog.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "8797f51972a36b9b88cb9a38295fcae05f84a2ae6d566544efa5ace85873451f"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/PhotoAttachmentFileIO.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "2a72b91fc39202c84986a6e0441b735ac04c80596c481103172c2556a8074897"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/PhotoSelectionPreview.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "bc6f795c3c8353a712f1aa8682897e232b130128d56db75d7cd09b9be8990f22"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/PinnedMessageOwnership.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "ea8ec55b061a9c618ff98f5f26a73afb155e529ebe632f2945e4354395cb41c9"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/SendMediaAlbum.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "70cc578816e5aacf2b70fae8f1741a2ee1b10a4d75c6e55f8181fe8412ffb0b6"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/SequentialMediaDialog.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "aa631b09776aee52fe473e9f053259b91b771cbb382c804d63b3e70c257e7075"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/SequentialMediaSend.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "a9f17d8afa80bb5a572f8782d620266931ff77f726269d139f44b00896cb16f5"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/Slowmode.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "fcba525c232c0f2b342f049862c3ead0a100ff9812acc02f547ff83ae2b6bc23"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/SlowmodeNative.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "a4d71c7a419b675a7a948c0e9676900627475eec94027b994510668fe8436412"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/SlowmodePolicy.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "5ce3c8f0ab4420252e635eefb403188302dfd208d348198aa3f07f76804fd403"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/StabilizationMessages.test.ets",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "824cbebdddb0fda7fbe2099f3d37b5c7616ab517222ba375f010e98ed19feddc"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/StabilizationNative.test.ets",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "81742efdc8a359d8ad044d04ae7cf4684e2af93e9d62c8f3be971212dfa32be0"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/StateClone.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "751eb94ce7c92de1a0f24792d1e7d428a6b106b9489220d3e2f93ab26fdbb6b9"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/SupergroupBoosts.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "efead192b6f932392d0ed52c8c55d37c3fd57ad96785b8b93bfdcb089f020674"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/TgUnicodeEmojiCatalog.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "c898d1590cb60f98615b243b03c51cfe42f4eb35f94182803b4344db55c4d321"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/TimelineUpdateDataSource.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "cf8adcdf2b8c9535a2f914fd8fdd560676bb48dbb0de6159462354c63551f308"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/TimelineUpdateNative.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "cebea442c9cd4be957f1027dd368680627e0b5e9be82520867eac7b2944c1c96"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/TimelineUpdateOwnership.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "8fb4102e0416d660171eb83b13ceccca15aaa0ec8d41a9d2179d1a4ba8ab6ef9"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/UseCases.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "0739f1531ea13a832935eba16808c4ba6c5755ec4fc086ea9de14bd0792b0914"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/WritePathErrors.test.ets",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "efba85aaa506e0fccceb2bc9c6302429ef5179af37abb5145de4b0d97e79ccf5"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/test/WriteResendDialog.test.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "ba2e4f692ccbb23d079b002523bdc8e996489e8bf989cb575e01a5f2bfefad72"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/testability/ChatScreenDecompositionFixture.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "c3ab6bd2be4ebfeafc0ef8cc5821ce995457f82e9456b72435ed3f9fd17e8436"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/testability/TestAbility.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "4d5863af5ed1476b622cc31a47a2ea1326fc20128e20a5bc7d96680501313420"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/testability/TimelineTransactionFixture.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "f531703a837bab089ec5efe5c190a11c913919a5c532d521c2af8ab186ee71f8"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/testability/TimelineUpdateInputs.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "9cf4a6f8e438722b126006dcd9c1b85cb12926681e1e4134730d048cceef1f53"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/testability/components/PhotoAlbumDialogFixture.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "50e49e1ba524cd28dbfe4f4c290d216bbd607312a12babaf4db78d4cf69931b7"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/testability/components/PhotoSelectionPreviewFixture.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "f9c7ee7442c3873272446f0eeccd2c3dcf22aa84674662f012c3a1f6548bc188"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/testability/components/SequentialMediaDialogFixture.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "8c7c04eee6ba0d8c3c3072f9b55d91a5210eb0514eb1dbfa6ea804d6f5e741bd"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/testability/components/SlowmodeFixture.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "fcb9868517c8cef2e1e2fcb063852c700c74faa9eed29443df2bc5581a56548c"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/testability/components/StabilizationFixture.ets",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "f2b4a28216d0e4d3e5bd48e4f63070c172c7195946f1687e2ca76c99c45ffe77"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/testability/components/TimelineUpdateFixture.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "5dfa4db158c87d1c9c41cb7133eb6e04ed1562df7b4d4965d5363e615358090b"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/testability/components/WriteResendFixture.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "6e61883fdf18cc684f08e3d401b9ba5382b1721936b79e80dc700f00ac2d3a63"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/testability/pages/Index.ets",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "06333f75f4bf290b2157c61a7e6af6fb8cfe4174509bb77e576f8dbe48302738"
+    },
+    {
+      "path": "entry/src/ohosTest/ets/testrunner/OpenHarmonyTestRunner.ets",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "b711a5641146d37fc7e32d785d44d8aef6cc1cd412a994af9aa1e1d637cb86d1"
+    },
+    {
+      "path": "scripts/audit-td-client-lifetime.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "8c83a3708d1b1bf1b742196f9e585fcf264acda88b18d831e3175b891f0a455f"
+    },
+    {
+      "path": "scripts/capture-emulator-scene-fault.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "b0abd0a32efbd6ee6f04b830ea779d0bbff22482e859e074889597ec9a352f05"
+    },
+    {
+      "path": "scripts/chat-screen-probe-signatures.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "9d784660f9f0e83d77a4b3174f893bdb6a1157e8ea31ff45b43d4dfdb1ed56a9"
+    },
+    {
+      "path": "scripts/chat-screen-source.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "9ed1144779b1b0046231d526fb91744cf635130e25a9554ba2eab678cfcf51ae"
+    },
+    {
+      "path": "scripts/chat-screen-source.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "a30e13ef6fb87793e1f735f324c95028982349e8f5b5081e863de2cfb4fe9803"
+    },
+    {
+      "path": "scripts/host-test-completion.cjs",
+      "original400": false,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "e222fdf711233b935fbb858728e7892c65316344850aa9a3c86f0b0979f69f3a"
+    },
+    {
+      "path": "scripts/native-bridge/bridge_test.cpp",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "d2bc5f677ffe626c2bdba82e55c3cf6867fc163ef59f7d6d4193a0aef0de357e"
+    },
+    {
+      "path": "scripts/native-bridge/delivery_test.cpp",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "7f2faaaac9e0b788b19535b00499cd2dfade980f319c73b1ce6ca16f3a0b607e"
+    },
+    {
+      "path": "scripts/native-bridge/include/hilog/log.h",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "5aa5ed43f470493e03281589dc349a21bed510678135e60444cc8e3910ab1a8e"
+    },
+    {
+      "path": "scripts/native-bridge/include/napi/native_api.h",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "1a9e21f289805bdf4080a2fdeae3f086d64f6f6fd7059e91bbcb1b2e9a823243"
+    },
+    {
+      "path": "scripts/native-bridge/include/td/telegram/td_json_client.h",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "e544ba48453e7d708f92c7f825b66b3e2d70d03784a310b6c702764ba4d97550"
+    },
+    {
+      "path": "scripts/prepare-native-main-witness.cjs",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "287a875c3aa7d8abda099045f8be978cd658490d7812bbdf3955deaa7c69ae1f"
+    },
+    {
+      "path": "scripts/run-host-tests.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "537ce44612edd4c3af23437994e93c1765ae4451123342a589db5c0dd8272fe7"
+    },
+    {
+      "path": "scripts/smoke-ui-phase0.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "439a6fc90e262b387f0f0558d30089c880d1e1f2f517203f01ddc63b4fb9edd1"
+    },
+    {
+      "path": "scripts/smoke-ui-phase0.sh",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "d9be0de125e84608311ac2620dbd2cebd7703eed658d1385f402b7d198072436"
+    },
+    {
+      "path": "scripts/stabilization-harness.cjs",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "faf6fe99e5de47474ce7f2a8aa9e5605def34001d2053d23778c9f29da7c76f2"
+    },
+    {
+      "path": "scripts/test-app-core-runtime.cjs",
+      "original400": true,
+      "supplement": true,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "e6dd81599d513a3e6cc1b99db8883924c2108eab7c087f4b629425dd1e72ae04"
+    },
+    {
+      "path": "scripts/test-app-store-invalidation.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "bc6c52a87e87e6b099aeae7fc873819be4bc11b7f6f885dc9e3d8d0b37863193"
+    },
+    {
+      "path": "scripts/test-app-store-session.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "67d824269f6090c626410efaf52273eb4fdde388715f2065d0266bcdcbe0d384"
+    },
+    {
+      "path": "scripts/test-auth-code-privacy.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "23bc79176ea7afc91058ffd5f3f6a191aeb964ad3b256c27fa93eaf786c7a665"
+    },
+    {
+      "path": "scripts/test-basic-group-access.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "b5a0856e00dba9950d5c9a5d3fb417d220189b7d4e4f535b190413b64b39edb7"
+    },
+    {
+      "path": "scripts/test-basic-group-media.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "741e553818acdb34d53d469b5fc0a9b1eb856a729a15d64759278fb30eeed24a"
+    },
+    {
+      "path": "scripts/test-build-bootstrap.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "7626096130927bcbd4ae90c7661bf3647323d6df6cb5d7fa0ccb21addd3eb8f8"
+    },
+    {
+      "path": "scripts/test-channel-access-integration.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "e7e407247583456631e2a5e0e1e45f716bf95477ece9bcd0ef5c9bca383e0db0"
+    },
+    {
+      "path": "scripts/test-channel-bubble-width.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "3804a6d0d5fa9c9022fb6c76128b4c94467df58e1664ac415783c7e5ed669f00"
+    },
+    {
+      "path": "scripts/test-channel-share-button.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "689cc24443e5d747c84ee81041bbb56f1dfb50c106f5171c1a65b4704eee5ebf"
+    },
+    {
+      "path": "scripts/test-chat-access-controller.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "275a63ac97fb3898bffa7f5c79ca2d02f47c994023bd2de7a224b432442bf135"
+    },
+    {
+      "path": "scripts/test-chat-creation.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "6e4b97467602c4abf5be54944a8c6e5a9ae2c571c39b8eff84d3176c0fa56613"
+    },
+    {
+      "path": "scripts/test-chat-draft-account-scope.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "b4367b7264cfbdf3d7bad93234bfb6bace7069fb7f2872f4665b327ea80deb15"
+    },
+    {
+      "path": "scripts/test-chat-history-generation.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "50a18001d921aa33b2f499c9f227e11d2223a63086d69b88d76adc991a33525b"
+    },
+    {
+      "path": "scripts/test-chat-input-panel.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "19d967c952aab091fce772c092d8502c5aa453ce436154a7f2201a9a6199c955"
+    },
+    {
+      "path": "scripts/test-chat-jump-ownership.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "c0752d33a18e9d034f5010c4d3ff34c5b0afa21c300f94042743d7a9293475a5"
+    },
+    {
+      "path": "scripts/test-chat-lifecycle-account-scope.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "f1494d9288f2ffed679d6c8a05b299d473d01650dee38bf1a496f531a8f25caf"
+    },
+    {
+      "path": "scripts/test-chat-list-mark-read.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "eb9da70d9b30f1e6c08e8b85b0a3f8adf47b2a333108488935904a568f150934"
+    },
+    {
+      "path": "scripts/test-chat-media-account-integration.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "24d39d7366ec42ae1afab456a08cf9bc027eaf5ba02e01e11bb8cbb2932375d0"
+    },
+    {
+      "path": "scripts/test-chat-media-download-controller.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "9efd05b459c9ec899ac718b21a8c5d150ece5fcb00b9a6d14c82bab1a61a22d9"
+    },
+    {
+      "path": "scripts/test-chat-media-page-ownership.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "5b02d1cc331bd2bff2c22264ee4f09588a964d0377f18242e3662aceaab2717c"
+    },
+    {
+      "path": "scripts/test-chat-open-lease.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "1dcfe5555b45243a39bf0a000e14e6d39333a30641962a6c88c247e2399771de"
+    },
+    {
+      "path": "scripts/test-chat-route-callers.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "76afec93b73c57717515d07426331353af9a2af83c9a59fd9e5e5144dbc4ece4"
+    },
+    {
+      "path": "scripts/test-chat-screen-decomposition.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "003fe194e9f0d0821b25475cb340c864421b3b230ea9628f9391f1a0b30b9dc1"
+    },
+    {
+      "path": "scripts/test-chat-search-polish.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "4952d4d9affec3b8021345cec8f785ef851b0fa0b293ebf195bb28582694b964"
+    },
+    {
+      "path": "scripts/test-chat-sticker-search-controller.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "1fece329a1425a098c770c943679d67100955152ba4c0f8c35b8357deebe2f16"
+    },
+    {
+      "path": "scripts/test-chat-top-bar-presentation.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "fc0ad5f071fd63dfe63c1e05fd43ac76108e8e454b34d1176bc0156071fb3fa0"
+    },
+    {
+      "path": "scripts/test-chatlist-compose-navigation.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "223d35ce87fdd1672c37fe7bdadab3fd93db2584b37eafe94e07fc471e7afa05"
+    },
+    {
+      "path": "scripts/test-chatlist-topbar.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "579fc798a200da50d08bb9e9e443fd26f89d98c1f7277bca79e0248450ef2317"
+    },
+    {
+      "path": "scripts/test-command-serializer-escaping.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "573304b22796762e007e9ba4aabfc209e11ad6ed9bc4f4aa6c21cca53fc7003f"
+    },
+    {
+      "path": "scripts/test-compose-creation.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "c97b7a5987e5b3b2c17365f3f94f9d2615928bc3ba1061051daaea1bb2cf5ca3"
+    },
+    {
+      "path": "scripts/test-custom-emoji-rich-editing.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "6215566f8b45d902c63da85663e0c53cfdfe92595dca99cc55bca06fac105bff"
+    },
+    {
+      "path": "scripts/test-delete-message-safety.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "5dfef97899cbd4c1d4bf19efce604c45d447a101702d5a07e95e1bb4e9436dec"
+    },
+    {
+      "path": "scripts/test-edit-message-safety.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "0b6c261e8ec5f714f61bb52ffab4a32aee35be378390486e4d1ccdc498200989"
+    },
+    {
+      "path": "scripts/test-edit-only-send-guard.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "d04fb9a395874bd726fd22eda2ac08125485e584a588cb7c932a3f4e8b9b4015"
+    },
+    {
+      "path": "scripts/test-emoji-keyword-search.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "2371b84d993e3ecd6ffda81e36b6c729f89614446f5d0731bebcc758a771700b"
+    },
+    {
+      "path": "scripts/test-emulator-capture.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "575cfdb8f603e25a56248a92993f2c8d2c0e7de2fc306c96c78b4cb2573e2d96"
+    },
+    {
+      "path": "scripts/test-entity-keyboard-parity.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "304db63f0d7e354d0e1befe951b0585976b7831fbc9b98a0d9e2b5ef74528911"
+    },
+    {
+      "path": "scripts/test-forward-eligibility.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "eff50703d7936ade3ca1cff7aba3f51bb50f6860b858ff35b34c5bd623a731b0"
+    },
+    {
+      "path": "scripts/test-forward-picker-polish.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "a8cec4c7d190604ebf2ba27c0f29f46b2d9e1e2b74c1b9eb09b28f4fc15dd8c2"
+    },
+    {
+      "path": "scripts/test-forward-result-contract.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "0566c9607d2176ce1282366821e2cddd2b50f39998be1c50652074e7ca70469b"
+    },
+    {
+      "path": "scripts/test-forward-send-ownership.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "af82e7f85e25ba9cab5d7627af3bd9f68950ecac5207a05f7aefa6e80c2e984a"
+    },
+    {
+      "path": "scripts/test-forward-source-actions.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "9b2395d457b4942094db738855cf9c1292eab555f0430ebadac6ee5e0eb6584c"
+    },
+    {
+      "path": "scripts/test-full-account-recovery.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "ac72be7b8f314a16c94eb98cfda06c95d200aca84e40d06cd1a633cebeb0b671"
+    },
+    {
+      "path": "scripts/test-gateway-error-propagation.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "edf50db777a957c58dd408453397043d7a54eeaf36a20889d1a1a080ceb805c7"
+    },
+    {
+      "path": "scripts/test-gif-inline-search.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "4f3bd026dd3c345432e19c96cdda70d1ad218d479e8fb367f43f76047aa6de1d"
+    },
+    {
+      "path": "scripts/test-global-media-ownership.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "ef284b91c6efa3ab5d71b6ac66686797cb05d875cd4c7469afa270e853c5a23e"
+    },
+    {
+      "path": "scripts/test-group-access-state.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "a17538b42c730a871687be6e51fb875c7820019c6059aeebc616a7c0d4feef51"
+    },
+    {
+      "path": "scripts/test-group-permission-payload.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "6cf50ca523f42b14e6c7feea927d740d3df364d2489e96524683850a86da7fff"
+    },
+    {
+      "path": "scripts/test-grouped-photo-album.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "3aae6c130a91036b24348300a47c10337b1e05dcb4be31485a817bad05b83095"
+    },
+    {
+      "path": "scripts/test-hds-action-bar-composer-demo.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "7ca36580718593bd6a125d7fd0476e194ccefc47fe3dc2dff025656af0dcb86f"
+    },
+    {
+      "path": "scripts/test-host-test-completion.cjs",
+      "original400": false,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "9595d2fb164888a2e9ae8da2b6159e275c9f7a1d22a9ea8e1955240276231572"
+    },
+    {
+      "path": "scripts/test-host-test-runner.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "43090dc1f0b3ba196aac35b536083aa9f5eae162918c36f2325cddc2f597dae0"
+    },
+    {
+      "path": "scripts/test-ios-chat-top-bar.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "f09d099965bd36a189a01e7a737cd21eadfefbf029b639e9259b65707a6f9364"
+    },
+    {
+      "path": "scripts/test-ios-emoji-keyboard.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "4aaaad54dd9566a031c2e3789980afd5219501249455200fe575e6f603269bd0"
+    },
+    {
+      "path": "scripts/test-ios-native-liquid-composer.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "da1118d6eb609feeed3108cd3ded6cf72bb60ededc380433c3ee466fe9a3e939"
+    },
+    {
+      "path": "scripts/test-ios-pinned-message-panel.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "ea97e52dc3a623f0e29c7730da9e9d4cb38e15e0c30fc3a789208769f6267bcd"
+    },
+    {
+      "path": "scripts/test-link-preview-bubble.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "1a53895a1d6dec0665e9b5147ef94931f19ad5cacfa7c7c91ed2cff0c3bb5783"
+    },
+    {
+      "path": "scripts/test-live-chat-permissions.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "376ef59f2a51087f7251a1c89cceba4cbbcd7d7cf98cee2aec6fb7af24f6df11"
+    },
+    {
+      "path": "scripts/test-live-permissions-review.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "c4a8d99c4e30e6961907f2d6c338fd9b95fb49f55a8be19954764485215dc1ec"
+    },
+    {
+      "path": "scripts/test-load-chat-access.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "c87c2dad17b2524ee82264e493a7faf22bfb358e529863c24c0b423b8e7183c7"
+    },
+    {
+      "path": "scripts/test-login-recovery.cjs",
+      "original400": true,
+      "supplement": true,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "2a5d9fe5452eaf43db730091ca162be32fd899d8f1b69a38015fcfee72b6d07d"
+    },
+    {
+      "path": "scripts/test-media-account-ownership.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "17293ba4294dde6416951a265231ab1ca6db4ba9b26b61d1a4bd761c4483d58f"
+    },
+    {
+      "path": "scripts/test-media-gallery-geometry-transition.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "6a3412c3e848c4351edf2a00fe10a9f3c40b6e4ca5aace62b2a58ca76b156edf"
+    },
+    {
+      "path": "scripts/test-media-playback-integration.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "3ce216cb0cbe0c3d2af4a134c28ebd0a179602d7160341d3cfc3c5f9cecc3470"
+    },
+    {
+      "path": "scripts/test-media-playback-ownership.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "70557ec870b64569c17e2fa182fed40c98385c1cdb79845bf827ee8179b4f323"
+    },
+    {
+      "path": "scripts/test-native-bridge.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "7d0308aa744a61d79290253886bab6c77c44b74de1693ea8e28786f000b08496"
+    },
+    {
+      "path": "scripts/test-native-catalog-scheduling.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "86fb87edce833021330b633812628f300792b674ad466d5a14231acdfc15d318"
+    },
+    {
+      "path": "scripts/test-native-delivery.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "4ff30a6788f099bd59de85b99d9c327bec5afb16bdb3629396c2c09cceff825f"
+    },
+    {
+      "path": "scripts/test-native-main-witness.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "a98685ca8f85c2824cd55d50f6c8c9b5ab9d41b104e4a9679e20b8dbecac8dc6"
+    },
+    {
+      "path": "scripts/test-pending-forward-route-owner.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "d6ec660a91af3f739d99eb9c3628665a5df6d2d92bac4d45f3876307dc37e2b9"
+    },
+    {
+      "path": "scripts/test-photo-album-controller.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "ae9e58bac20ea28850af536f08b29591759f586289ab3387d02a171f045adc09"
+    },
+    {
+      "path": "scripts/test-photo-preview-controller.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "d2a5a58283f6828ab75595a7a0d83bc51853198372d17a244bbb027fedf3e311"
+    },
+    {
+      "path": "scripts/test-pinned-message-navigation.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "692249c644b970331db60295015c9e199b9c46c1990ebe79987dbf8362883cd8"
+    },
+    {
+      "path": "scripts/test-pinned-message-ownership.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "6a7fb42ba5376105da1367a1a6c2034dbc4fe2238c82c496fc7ff01099aa6ddd"
+    },
+    {
+      "path": "scripts/test-profile-navigation-bar.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "7041818c0404446b85cac3e552bd6c3b5301de2057a1ea326dccdf4e67afa61b"
+    },
+    {
+      "path": "scripts/test-recovery-supersession.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "c52e52ad6963a480425272796d3654878f4afc7ed9954ac2d118dfb210481224"
+    },
+    {
+      "path": "scripts/test-retirement-queued-closed.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "a1b825cf27f163238e43d20025ef9c1bd19726d9de1cc397f69e62e99d1e3208"
+    },
+    {
+      "path": "scripts/test-runtime-account-recovery.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "bda6be769e6ba1d411d2d293106efaf7755408a27d35bcf22077e1c605c800e0"
+    },
+    {
+      "path": "scripts/test-runtime-client-retirement.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "088a9f2007c02c50e8778e28dc9738f51412bca89c2f26cff3696aeb71f2365e"
+    },
+    {
+      "path": "scripts/test-runtime-lifecycle.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "33008e70d9fbe0685a237cd1da2f0fe345f32060dea543ec885dc8cc7add6c35"
+    },
+    {
+      "path": "scripts/test-scroll-fab-unread.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "c2c19d2379f70323a2770537808336c560a983bf6f74b45ddf70daa4f1ab3f3c"
+    },
+    {
+      "path": "scripts/test-send-cleanup-ownership.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "842744775d0265ca20e64ff59ca5506672331755f4c2b09f581ed29f8022f9bb"
+    },
+    {
+      "path": "scripts/test-send-media-album.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "e90881b45fbb0b6a721430046435e85040426c04dd3f7bcbd5ef771d2deaabce"
+    },
+    {
+      "path": "scripts/test-sequential-media-send.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "29ac5583069b6d9d97e0990444a0183c65c2cb823b87734e442ef2f7b1147242"
+    },
+    {
+      "path": "scripts/test-slowmode-negative-controls.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "ade5913c5f97c09ea212c0dbddcea5702b4db95076dde3254d29ffdeb77b1a8b"
+    },
+    {
+      "path": "scripts/test-slowmode-voice.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "e7f8d7f7f2ed710e57ea3c9ca35520e83206cd8aca89046e4d2cdbf40b69e615"
+    },
+    {
+      "path": "scripts/test-slowmode.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "a2ed686321f91c0832675e4523df328313ba9d05ccb8024b9737ac3df0023a57"
+    },
+    {
+      "path": "scripts/test-smoke-hex-check.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "b2667543a89d93b507c95095ec3921dacf038d6c69664f837242923d49867c28"
+    },
+    {
+      "path": "scripts/test-stabilization-message-ids.cjs",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "d05786ac43b9a910e582c49d6faeb26ded65f5f2212534bafb8f308e9db3baa9"
+    },
+    {
+      "path": "scripts/test-stabilization-messages.cjs",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "507793bac1ada8d100f190677413e817ed172d79dcde746b9925ff6cfbc08f49"
+    },
+    {
+      "path": "scripts/test-stabilization-negative-controls.cjs",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "4adc2b687f7b777ba7d442fe81ec438ac53e899174136b80fbad0492a0a2cd25"
+    },
+    {
+      "path": "scripts/test-stabilization-profiles.cjs",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "4f65e3cbefdeaa19217323817c7cdbc2ca795c2aeb467a0066228c958d1bea7b"
+    },
+    {
+      "path": "scripts/test-stabilization-runtime.cjs",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "299f94a3d4ffb379f4f4288f5a6950ad04446da6ee30f1b56c8c07c615ddc740"
+    },
+    {
+      "path": "scripts/test-stabilization-search-intent.cjs",
+      "original400": false,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "2856cf524f532f08d2039a14d26d700f579448891619730a5b46c6fc86c49d4e"
+    },
+    {
+      "path": "scripts/test-state-clone-file-pipeline.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "6b8d8ac52af45224fac9a2b53078e5b0268514b0e6f15bda884510896d0ee530"
+    },
+    {
+      "path": "scripts/test-sticker-search.ps1",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "a5646602fa6c4a7775f884dc20c7a40a3df012a7a0d4773e176017af375dc253"
+    },
+    {
+      "path": "scripts/test-supergroup-boosts.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "c07ec59c70c59b7db02d85ae9db9618e89e7aee30b4b14e524bfbe5fe845c425"
+    },
+    {
+      "path": "scripts/test-td-client-retirement.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "819c521dd79110570c4ea087ef2c682161e83a15a5f62235af9924e318dae9bb"
+    },
+    {
+      "path": "scripts/test-td-gateway-adapter-session.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "c8f6df8a8527a7e4b5914be4bee7d5ac56760c95d409fe77028ee4dbaab974fd"
+    },
+    {
+      "path": "scripts/test-td-gateway-recovery.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "ed33d93b18d611e12106eb992b0b8606eac995a016321010c839377408fedc19"
+    },
+    {
+      "path": "scripts/test-td-stop-barrier.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "0812362e766b9cd31573e71244dd12adadfd8157f87df25be618ad1a342526d2"
+    },
+    {
+      "path": "scripts/test-timeline-updates.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "defe83e4d9f95573974eced3ad598ad883e110d730e93a5c7219ccf6c968399e"
+    },
+    {
+      "path": "scripts/test-ui-window-search-lifecycle.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "244027c12f25f1c5b31b3c18dc94c6023d8536749c2cf53d084f137b25d293c5"
+    },
+    {
+      "path": "scripts/test-unread-count-routing.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "052803c082fa3a0d981f55bf8332dd0b146315f8d18741a02d1f7c34042c5877"
+    },
+    {
+      "path": "scripts/test-voice-recording-ownership.cjs",
+      "original400": true,
+      "supplement": false,
+      "review_fix": true,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "b0b124f2886caeb4db758a5300e2e44bee67727b969d6da723b6f42156f4a48d"
+    },
+    {
+      "path": "scripts/test-write-path-errors.cjs",
+      "original400": true,
+      "supplement": true,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "4a1214909264b0f13d3662c642680add59cfe665541948c3a7e8d6452b907e4d"
+    },
+    {
+      "path": "tools/hvigor/hvigor-ohos-plugin-compat.ts",
+      "original400": true,
+      "supplement": false,
+      "review_fix": false,
+      "review_group": "tests",
+      "disposition": "include",
+      "working_sha256": "dd6f947592a8532c56e0f0f8988a734b0acd3f98f31a23b0342d88a946649cef"
+    }
+  ],
+  "preserved_local_artifacts": [
+    {
+      "path": "docs/reviews/2026-09-05-reliability-wave3-evidence.json",
+      "sha256": "0b701ba4740adfb79b1de7899fd8335041c6d117cf5af6f8fd0031bb12ac5839",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-05-reliability-wave4-evidence.json",
+      "sha256": "4318f3c76972f6bd9b784d2e22ae9f557610a921d7f57ab1151cd6137ac0c427",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-05-reliability-wave5-evidence.json",
+      "sha256": "9c0ae8281806f7534c3fb081b501d23a464d4e96a0cd3b0256749b5de5c9ddd3",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-05-reliability-wave6-evidence.json",
+      "sha256": "ca5bd261994df289c6fc93ab95d60c77300ddd697732cd68a2f1a4cf198651f9",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave10-evidence.json",
+      "sha256": "e7be65c1ea3228422c641c1fc51ed2b01d5c053d0fb74e37cd69ff65d572e08a",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave11-composer-cumulative.patch",
+      "sha256": "b2c4e76f244884ccfaa62b192b9d8d2fb4e819ccd3aea4f0c51e1e6e1a4c899d",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave11-evidence.json",
+      "sha256": "8333d3a82374f0ad430bc635e685035a3a7d3f644decf06989c4f41eec6d9a9c",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave12-evidence.json",
+      "sha256": "a7345d5bbf398919647cddd22bef91e2fe07e25144df28b9bfc9537d6cbbff93",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave13-evidence.json",
+      "sha256": "c32df93b3a53cb3e1f5aee1bdbb5103995b01aca4cf4c49a91596808f3bb2e97",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave14-evidence.json",
+      "sha256": "91ae62bf64acf30b2b67853b1200732b2aad7cec7544ce387c2bf599ba758aad",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave15-evidence.json",
+      "sha256": "de72048f22d46016695a8ab5e6370aa84870d9ba824252eacfb299400920366b",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave16-evidence.json",
+      "sha256": "e0f4957c83065af7187dd3d659c46426593434da3fd6a95ebdb7e8bc0b4d5de7",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave17-evidence.json",
+      "sha256": "f91e00d2990d06e8a3d2b7ac4c420fde2cff15a044c48599d2f585df82ad9724",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave7-evidence.json",
+      "sha256": "95534ffec66d9802fe9e72251692d31c4cc754ddb379f4dd537d42d93f383cd8",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave8-evidence.json",
+      "sha256": "7318a354ff9d7f9e011e1673cf88226a9a37a172f7996c652d83c2c89e91afca",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-06-reliability-wave9-evidence.json",
+      "sha256": "9d1864fda11afcfba1a9668a531a2f52f06b360be71c8b1b0f11a20e370b0768",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-27-github-comparison-evidence.json",
+      "sha256": "f86f0e0e5f768edcc9cee91c9f3abb6ddb8972b25eb9ca82a6260a10473edc15",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-27-remediation-evidence.json",
+      "sha256": "d4ba92bb00c95ef97b241b82767459ab3bf302408bc7ce673e1258cffefb7782",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-client-retirement-evidence.json",
+      "sha256": "23b4defbd9374e256072eccc78ebe092bf9145b076f0e2463192a0a92898475c",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-media-account-evidence.json",
+      "sha256": "5fe11ce63cd2e50e748635102e477c4fac0ee9ee4585e8ba3c37e382867ff57d",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-native-delivery-evidence.json",
+      "sha256": "7fc5a0e54f501b45868aaa350619edc78eb7f4932d10f877d9e990467a569240",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-native-delivery.patch",
+      "sha256": "6b3aab93f9afdda8a94661b930a25487f25de09e658e470111c7cb1223deb4ab",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-native-media-evidence.json",
+      "sha256": "cce841433e3c42554cb66c2149e7902f5180cd6b6e5a4ab1cba9c2f930aea04e",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-native-stop-evidence.json",
+      "sha256": "52ebab64d8aa035baf010a0fd4695db5a45922129865ca457f1a1e79011d9594",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-09-28-playback-evidence.json",
+      "sha256": "2a3708ea9e45073c6bc39a208a5273356225cc78a9bb04518445c6beee57356f",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-chat-screen-decomposition-evidence.json",
+      "sha256": "df7dd6bcecd9c207f6b5a41edb8bcf2e6f9bae1a36090089c904ae5c1ee732e9",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-chat-timeline-updates-evidence.json",
+      "sha256": "e7bada705c3fa3f8c1f783851befa4d32723229ec6cf316a0bfe679c77036047",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-gateway-error-causes-evidence.json",
+      "sha256": "0caa485480c1188026282b36ea2d4286fe4e18e8c09d175758a3b6ad692b847c",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-petrelgram-evidence.json",
+      "sha256": "8e537e155b3cf0932294fa85e9c771361d2b4f3599bf23aeadc34b5c3f1d2470",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-photo-album-evidence.json",
+      "sha256": "d4f9e61470b2c6cf9c61219a5d484fd99a0d51f806e550246dde0872cae0fb4d",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-photo-selection-preview-evidence.json",
+      "sha256": "efefe1b66be26d2d7c44888fbffdd82235fd8d919f1c640644bcb0b24c1f92d7",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-10-01-pinned-account-ownership-evidence.json",
+      "sha256": "5cca072d1c62db6a0b5d8c42544bf175480b79906041fd7615b69e8fc738834a",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-10-02-document-video-resend-evidence.json",
+      "sha256": "4783b019847728da81bf95e50985c5b41fffd45a90ccc219ebe6bac956fa9377",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-10-02-send-forward-errors-evidence.json",
+      "sha256": "e99d6fb69cb85036f051b30be95f7374c6210ef525f4415885e989d478aa4fa5",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "docs/reviews/2026-10-02-slow-mode-evidence.json",
+      "sha256": "f9caa5960be91d066958d68b34fffabda161465eae8a79c13906a277359cc4ce",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    },
+    {
+      "path": "du.exe.stackdump",
+      "sha256": "3a44f38bf185cbacd3713b3184ea0878f401c413753b07c5f9f25f2cd9b112af",
+      "disposition": "preserve locally; exact ignore entry; not published"
+    }
+  ]
+}

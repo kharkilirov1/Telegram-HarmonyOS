@@ -1,6 +1,6 @@
 # DECISIONS — Telegram-HarmonyOS
 
-Last updated: 2026-07-10
+Last updated: 2026-10-01
 
 This file records decisions that are already effectively accepted in the repo.
 
@@ -73,7 +73,7 @@ This file records decisions that are already effectively accepted in the repo.
 ## D14. API23 HDS root shell is the current forward branch target
 - **Decision:** After explicit user direction on 2026-05-03, continue the root shell through API23 `HdsTabs` / `HdsNavigation` instead of restoring the deleted custom `TgTabBar` as the active shell.
 - **Why:** The refreshed docs/SDK show the HDS tab/navigation path and `barFloatingStyle` are real API23 surfaces, and the project strategy already prefers Harmony-native shell/chrome when platform quality is sufficient.
-- **Consequence:** `build-profile.json5` now intentionally targets and declares compatibility with `6.1.0(23)`, and `scripts/smoke-ui-phase0.ps1` validates the HDS root-shell contract. Any future API22 fallback would be a separate deliberate compatibility track, not the current active smoke boundary.
+- **Consequence:** `build-profile.json5` now targets `26.0.0` and declares compatibility with `6.1.0(23)`, and `scripts/smoke-ui-phase0.ps1` validates the HDS root-shell contract. Any future API22 fallback would be a separate deliberate compatibility track, not the current active smoke boundary.
 
 ## D15. Heavy reference repositories live outside the workspace
 - **Decision:** Third-party references live under `C:\Refs\Telegram`; `REFERENCES.md` is the canonical pinned registry. No junction is created back into the project.
@@ -84,3 +84,32 @@ This file records decisions that are already effectively accepted in the repo.
 - **Decision:** Keep new HDS SDK surfaces native for tabs, navigation/material bars, safe areas and motion; implement Telegram-defining content as custom `tg_ui`. The accepted design is `docs/ai/HYBRID_NATIVE_CUSTOM_UI_DESIGN_2026-07-10.md`.
 - **Why:** The API23+ HDS material/navigation APIs already provide a high-quality platform identity, while the runtime iPhone comparison shows that rows, wallpaper, bubbles, media, pinned state and content density still require Telegram-specific rendering.
 - **Consequence:** Do not custom-paint a replacement for the active `HdsTabs` island. Prefer `HdsNavigation`/native bar hosts with custom builders where their state contract is sufficient; retain custom components when native migration would lose Telegram behavior. Each boundary move requires a focused capability demo and runtime witness before replacing the active path.
+
+## D17. One chat lifecycle owner with bounded feature and V2 visual composition
+- **Decision:** The chat page creates one Session and six stable observed presentation slices. Session delegates to cohesive feature modules through narrow typed ports; children receive models and UI callbacks only.
+- **Why:** Moving the old page into one giant controller or making one-method shards would retain the same coupling. A single operational context plus direct aliases preserves route/account/generation ownership and V2 reactivity while exposing actual feature boundaries.
+- **Consequence:** Keep one store subscriber, lifecycle/teardown order and timeline transaction; do not duplicate observed state or give visual children backend capabilities. Main page budget ≤700 and new production files ≤500 are this decomposition's accepted limits. Source parity, actual delegate negative controls, ArkTS compilation and SDK V2 rendering remain separate evidence. Report: `docs/reviews/2026-10-01-chat-screen-decomposition.md`.
+
+## D18. Group existing photo batches through TDLib with explicit uncertain resend
+- **Decision:** Existing 2-10 photo selections use one sendMessageAlbum, first caption and shared reply through the captured account gateway. Keep one-photo/document flows and existing photo-only receive renderer.
+- **Why:** Default album behavior follows current iOS source; preparing every file first prevents partial sequential sends. Post-dispatch ambiguity cannot establish a safe automatic retry.
+- **Consequence:** Preserve submitted selection markers across newer drafts/permission changes and require explicit repeat confirmation. Mixed/video and ordered preview are separate typed product slices. Source/runtime evidence: `docs/reviews/2026-10-01-photo-album-sending.md`.
+
+## D19. Ordered photo preview retains one selection owner and conservative repeat consent
+- **Decision:** Use canonical photo URI order for preview/edit/send, with native Image thumbnails and explicit earlier/later buttons. Share guarded send preparation and overlap consent for 1–10 photos; busy has one reactive composer backing.
+- **Why:** Reorder/subset/single and later accepted responses must not change URI identity, send an older snapshot, clear a newer mode, or silently bypass consumed-selection confirmation. Native platform APIs can preserve this behavior without importing reference runtime code.
+- **Consequence:** Keep caption/reply and route/account ownership in existing controllers. Bound duplicate bookkeeping conservatively; copy all before one album dispatch. Exact source-FD observer supports strict SDK close verification without replacing IO or probing denied proc paths. Real provider/delivery/current iOS parity and video/mixed media remain explicit follow-up acceptance. Report: `docs/reviews/2026-10-01-photo-selection-preview.md`.
+
+## D20. Preserve write uncertainty and require explicit text resend
+- **Decision:** Carry typed causes plus explicit rejection provenance through send/forward. Keep unknown write outcomes conservative; native Cancel/Send again consent applies to repeated uncertain text.
+- **Why:** Retryability is not proof that the server rejected a mutation. Restoring a full uncertain forward batch or clearing an older consumed marker can create duplicates.
+- **Consequence:** Preserve existing composer/account/lifecycle owners, original draft/entities/selection/reply and owned rollback. TDLib406 bypasses application message processing/display/logging before access. No automatic resend, new global queue, reference code import or delivery guarantee. Sequential document/video resend UX and upstream packaged TDLib logging remain separate. Report: `docs/reviews/2026-10-02-send-forward-errors.md`.
+
+## D21. Retire accepted sequential media and confirm uncertain remainder
+- **Decision:** Preserve only the remaining document/video selection after validated per-item acceptance. Require localized native Cancel/Send again for URI overlap with accepted/uncertain history in the existing owner.
+- **Why:** Retaining the full selection after partial acceptance replays the first file and its caption/reply. Retryability is not proof of rejection.
+- **Consequence:** Keep bounded counted marks, existing operation/input/account/lifecycle guards and prepared-file ownership. Known rejection releases only its current mark; first acceptance consumes caption/reply/entities/caret once. Forward-mode transitions advance the existing input revision. No automatic resend or new video feature. Report: `docs/reviews/2026-10-02-document-video-resend.md`.
+
+## D22. Authoritative timed slow-mode state
+
+Display relative FullInfo expiry anchored once to STARTUP uptime; gate new send/forward/media/record/normal-attach actions. Creator/admin and only positive qualifying boost thresholds are exempt. Preserve selected media and composer, retain stopped voice preview and owned accepted cleanup. Resume recomputes without autosend. The separate iOS pendingMessages state remains a follow-up requiring TDLib Message/update grounding. No setting/rate-limit bypass or guessed local server deadline.

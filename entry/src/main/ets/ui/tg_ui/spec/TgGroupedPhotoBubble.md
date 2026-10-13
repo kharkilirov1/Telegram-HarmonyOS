@@ -80,11 +80,13 @@ All per-cell arrays are index-aligned with `ChatMessageRowVO.sourceMessageIds`. 
 
 ## Interaction contract
 
-- A surface tap opens the gallery only when that exact photo has a local full resource.
-- A remote or paused photo tap requests only that cell's exact `fileId` and stays in chat; the
-  gallery must not open from a thumbnail/minithumb while the full photo is unavailable.
-- A fetching photo tap/control cancels only that cell. A failed or paused cell returns to the same
-  retryable idle affordance and a retry must not alter sibling progress.
+- Current source contract (`f6478db`, synchronized 2026-09-05): a surface tap opens the exact
+  album member immediately. An idle remote/paused member with a valid `fileId` also requests
+  that cell's download (`downloadAndOpen`); the gallery can display its preview and progress.
+- A surface tap on a fetching member opens the gallery without duplicating or cancelling its
+  transfer. The separate transfer control cancels/retries only that cell. A retry must not alter
+  sibling progress. This supersedes the old local-before-open contract below; current iOS
+  visual/interaction parity still needs a fresh side-by-side witness.
 - Page wiring resolves `sourceMessageIds[index]` and passes it to the existing
   `handleMediaGalleryOpen`, which computes the exact gallery index.
 - Gallery and shared-element identity use the real album member message ID plus semantic media
@@ -118,8 +120,8 @@ determinate per-cell progress, failure/retry and a narrow lane.
 - [x] Fresh API23 runtime: request/active progress remained isolated to one cell while a sibling
   remote cell kept its idle download affordance (`final-acceptance-v2/11-transfer-120.jpeg`).
 - [ ] Fresh runtime: cancel/retry remains isolated to one cell on sufficiently slow uncached media.
-- [x] iOS parity: a remote/paused photo requests download without opening the gallery; only a local
-  full photo opens.
+- [ ] Revalidate remote/paused/fetching surface taps against current iOS with the `f6478db`
+  immediate-open contract. The previous local-before-open acceptance no longer describes source.
 - [x] Visual parity: runtime cell bounds resolve internal album seams to `1 vp` on HarmonyOS.
 - [x] Fresh runtime motion: only the tapped cell expands and returns to its own frame
   (`final-acceptance-v2/17-open-mid.jpeg`, `19-close-mid.jpeg`).

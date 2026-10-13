@@ -1,4 +1,16 @@
-# AGENT EXECUTION PLAN — Telegram-HarmonyOS (Release Track v2)
+# AGENT EXECUTION PLAN — Telegram-HarmonyOS
+
+## Активный маршрут — 2026-09-05
+
+Исполнять **`TASKS/PRODUCTION_PARITY_PLAN.md`**: надёжность → существующий UI по актуальному iOS-референсу и уместные нативные элементы → недостающие функции и их UI → публикационная готовность.
+
+Это продолжение мандата production quality 08-31 и прямой задачи пользователя 09-05. Цель не ограничивается MVP или тегом v0.1.0. `STATUS.md` и `TASKS/TODO.md` содержат текущие доказательства и следующую работу; UI-контракт остаётся под правилами `AGENTS.md` / `DECISIONS.md`.
+
+**Ниже сохранён исторический Release Track v2. Его MVP-ограничения, отказ от fidelity и очередность больше не исполнять.**
+
+---
+
+## История: Release Track v2
 
 Last updated: 2026-07-02
 Previous plan: `TASKS/ARCHIVE/AGENT_EXECUTION_PLAN_2026-05-18.md` (archived — do not execute)

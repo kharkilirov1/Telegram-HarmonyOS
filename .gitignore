@@ -86,3 +86,43 @@ hs_err_pid*.log
 
 # CodeGenie AI assistant local memory
 /.codegenie/
+
+# Local historical receipts retained on disk (source checkpoint 2026-10-13).
+# Exact paths only; future evidence JSON/patch files remain eligible for review.
+/docs/reviews/2026-09-05-reliability-wave3-evidence.json
+/docs/reviews/2026-09-05-reliability-wave4-evidence.json
+/docs/reviews/2026-09-05-reliability-wave5-evidence.json
+/docs/reviews/2026-09-05-reliability-wave6-evidence.json
+/docs/reviews/2026-09-06-reliability-wave10-evidence.json
+/docs/reviews/2026-09-06-reliability-wave11-composer-cumulative.patch
+/docs/reviews/2026-09-06-reliability-wave11-evidence.json
+/docs/reviews/2026-09-06-reliability-wave12-evidence.json
+/docs/reviews/2026-09-06-reliability-wave13-evidence.json
+/docs/reviews/2026-09-06-reliability-wave14-evidence.json
+/docs/reviews/2026-09-06-reliability-wave15-evidence.json
+/docs/reviews/2026-09-06-reliability-wave16-evidence.json
+/docs/reviews/2026-09-06-reliability-wave17-evidence.json
+/docs/reviews/2026-09-06-reliability-wave7-evidence.json
+/docs/reviews/2026-09-06-reliability-wave8-evidence.json
+/docs/reviews/2026-09-06-reliability-wave9-evidence.json
+/docs/reviews/2026-09-27-github-comparison-evidence.json
+/docs/reviews/2026-09-27-remediation-evidence.json
+/docs/reviews/2026-09-28-client-retirement-evidence.json
+/docs/reviews/2026-09-28-media-account-evidence.json
+/docs/reviews/2026-09-28-native-delivery-evidence.json
+/docs/reviews/2026-09-28-native-delivery.patch
+/docs/reviews/2026-09-28-native-media-evidence.json
+/docs/reviews/2026-09-28-native-stop-evidence.json
+/docs/reviews/2026-09-28-playback-evidence.json
+/docs/reviews/2026-10-01-chat-screen-decomposition-evidence.json
+/docs/reviews/2026-10-01-chat-timeline-updates-evidence.json
+/docs/reviews/2026-10-01-gateway-error-causes-evidence.json
+/docs/reviews/2026-10-01-petrelgram-evidence.json
+/docs/reviews/2026-10-01-photo-album-evidence.json
+/docs/reviews/2026-10-01-photo-selection-preview-evidence.json
+/docs/reviews/2026-10-01-pinned-account-ownership-evidence.json
+/docs/reviews/2026-10-02-document-video-resend-evidence.json
+/docs/reviews/2026-10-02-send-forward-errors-evidence.json
+/docs/reviews/2026-10-02-slow-mode-evidence.json
+/du.exe.stackdump
+
