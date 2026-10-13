@@ -26,7 +26,7 @@ const mutants = {
   'typed-detail-lost': [[errorFile, "silent ? '' : typed?.technicalMessage ?? (error instanceof Error ? error.message : 'Write request failed')", "''"]],
   '406-classifier-unguarded': [[errorFile, "  if (code === 406) return tdlibRejectedError(AppErrorKind.TDLIB_ERROR, '', '', code, false);", '']],
   '406-gateway-read': [[main + 'infra/td/gateway/TdGateway.ets', "code === 406 ? '' : response.getString('message')", "response.getString('message')"]],
-  '406-normalizer-read': [[main + 'core/events/normalizers/MessageNormalizer.ets', "errorCode === 406 ? '' : tdGetString(errorObj, 'message')", "tdGetString(errorObj, 'message')"]],
+  '406-normalizer-read': [[main + 'core/events/normalizers/MessageNormalizer.ets', "code !== undefined && Number.isSafeInteger(code) && errorCode !== 406", "code !== undefined && Number.isSafeInteger(code)"]],
   'forward-unknown-replayed': [[main + 'ui/pages/chat/ChatMessageActionsController.ets', 'unknown ? [] : messageIds', 'messageIds']],
   'retired-client-called-rejected': [[main + 'infra/td/adapter/TdGatewayAdapter.ets', 'error.requestRejected = requestRejected;', 'error.requestRejected = true;']],
   'text-confirmation-skipped': [[textOwner, 'if (this.hasTextConsumption(chatId, lifecycleToken, useCase, key))', 'if (false && this.hasTextConsumption(chatId, lifecycleToken, useCase, key))']],
@@ -64,12 +64,13 @@ const commands = load(main + 'core/model/AppCommand.ets');
 const app = load(main + 'core/model/AppError.ets');
 const td = load(main + 'models/td/common/index.ets');
 const accessors = load(main + 'core/utils/tdAccessors.ets', td);
-const events = load(main + 'core/model/AppEvent.ets', accessors);
+const messageDtos = load(main + 'core/model/dto/MessageDto.ets', { ...td, ...accessors });
+const events = load(main + 'core/model/AppEvent.ets', { ...accessors, ...messageDtos });
 const state = load(main + 'core/model/AppState.ets');
 const clones = load(main + 'core/utils/stateClone.ets', state);
 const reply = load(main + 'core/utils/replyMessageKey.ets');
 const reducer = load(main + 'core/reducers/messagesReducer.ets', { ...state, ...events, ...clones, ...reply });
-const normalizer = load(main + 'core/events/normalizers/MessageNormalizer.ets', { ...events, ...td, ...accessors, ...platform });
+const normalizer = load(main + 'core/events/normalizers/MessageNormalizer.ets', { ...events, ...td, ...accessors, ...messageDtos, ...platform });
 const port = load(main + 'domain/ports/TdGatewayPort.ets', app);
 const dependencies = { ...commands, ...app, ...td, ...accessors, ...platform };
 const text = load(main + 'domain/usecases/sendMessage.ets', dependencies);

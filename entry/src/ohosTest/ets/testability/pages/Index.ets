@@ -12,6 +12,10 @@ import { SequentialMediaDialogFixtureView } from '../components/SequentialMediaD
 import { PhotoSelectionPreviewFixtureView } from '../components/PhotoSelectionPreviewFixture';
 import { TimelineUpdateFixture, TimelineUpdateFixtureView, TIMELINE_UPDATE_ROUTE } from '../components/TimelineUpdateFixture';
 import { SlowmodeNativeFixture, SlowmodeFixtureView } from '../components/SlowmodeFixture';
+import { StabilizationNativeFixture, StabilizationStartupFixtureView, StabilizationSearchStackChatView, STABILIZATION_STARTUP_ROUTE } from '../components/StabilizationFixture';
+import { TgProfileMembersPage } from '../../../../main/ets/ui/pages/profile/TgProfileMembersPage';
+import { TgProfilePage } from '../../../../main/ets/ui/pages/profile/TgProfilePage';
+import { AppCoreRuntime } from '../../../../main/ets/app/bootstrap/AppCoreRuntime';
 
 const EMPTY_CHAT_ROUTE = 'ChatScreenDecompositionEmptyRoute';
 const SLOWMODE_FIXTURE_ROUTE = 'SlowmodeNativeFixtureRoute';
@@ -43,10 +47,10 @@ struct ChatStateRenderProbe {
 @ComponentV2
 struct Index {
   @Local private pageStack: NavPathStack = new NavPathStack();
-  aboutToAppear(): void { SlowmodeNativeFixture.bindNavigation(this.pageStack); }
+  aboutToAppear(): void { SlowmodeNativeFixture.bindNavigation(this.pageStack); StabilizationNativeFixture.bindNavigation(this.pageStack); }
 
   @Builder
-  private chatDestination(name: string) {
+  private chatDestination(name: string, param: Object) {
     if (name === EMPTY_CHAT_ROUTE) {
       // No route parameter: real lifecycle guards leave account/transport unbound.
       TgChatScreenPage()
@@ -54,6 +58,16 @@ struct Index {
       TimelineUpdateFixtureView()
     } else if (name === SLOWMODE_FIXTURE_ROUTE) {
       NavDestination() { SlowmodeFixtureView() }.hideTitleBar(true)
+    } else if (name === STABILIZATION_STARTUP_ROUTE) {
+      if (param instanceof AppCoreRuntime) {
+        StabilizationStartupFixtureView({ runtimeOwner: param })
+      }
+    } else if (name === 'TgProfileMembersPage') {
+      TgProfileMembersPage()
+    } else if (name === 'TgProfilePage') {
+      TgProfilePage()
+    } else if (name === 'TgChatScreenPage') {
+      StabilizationSearchStackChatView()
     }
   }
 
@@ -62,6 +76,12 @@ struct Index {
       Scroll() {
       Column({ space: 16 }) {
         Text('Chat decomposition device fixture').fontSize(18)
+        Button('Open controlled startup').id('stabilization-open-startup').onClick(() => {
+          this.pageStack.pushPath({ name: STABILIZATION_STARTUP_ROUTE, param: StabilizationNativeFixture.runtime() }, false);
+        })
+        Button('Open controlled members').id('stabilization-open-members').onClick(() => { StabilizationNativeFixture.pushMembers(); })
+        Button('Open controlled profile').id('stabilization-open-profile').onClick(() => { StabilizationNativeFixture.pushProfile(); })
+        Button('Open controlled search STACK').id('stabilization-open-search-stack').onClick(() => { StabilizationNativeFixture.pushSearchStack(); })
         Button('Open mounted slowmode composer').id('slowmode-fixture-open-route').onClick(() => {
           SlowmodeNativeFixture.beforeRoutePush(this.pageStack);
           this.pageStack.pushPath({ name: SLOWMODE_FIXTURE_ROUTE }, false);

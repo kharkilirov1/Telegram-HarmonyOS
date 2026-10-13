@@ -5,7 +5,7 @@
 import { LoginRouter } from './LoginRouter';
 import { MainTabsPage } from '../MainTabsPage';
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
-import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
+import { AppCoreRuntime, getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN = 0x0003;
@@ -18,7 +18,8 @@ const POLL_INTERVAL_MS = 100;
 
 @Entry
 @ComponentV2
-struct LoginRouterPage {
+export struct LoginRouterPage {
+  @Param runtimeProvider: () => AppCoreRuntime = getAppCoreRuntime;
   pageStack: NavPathStack = new NavPathStack();
   @Local showMainUI: boolean = false;
 
@@ -38,7 +39,7 @@ struct LoginRouterPage {
       this.unsubscribe();
       this.unsubscribe = undefined;
     }
-    const store = getAppCoreRuntime().getLifecycleStore();
+    const store = this.runtimeProvider().getLifecycleStore();
     const subscriptionToken: number = this.pageLifecycleToken;
     let activeUnsubscribe: (() => void) | undefined = undefined;
     activeUnsubscribe = store.subscribe((state, prevState) => {
@@ -105,7 +106,7 @@ struct LoginRouterPage {
    */
   private waitForDataAndTransition(): void {
     if (this.unsubscribe === undefined || this.showMainUI || this.transitionTimerId !== -1 ||
-        getAppCoreRuntime().getLifecycleStore().getState().auth.status !== 'ready') {
+        this.runtimeProvider().getLifecycleStore().getState().auth.status !== 'ready') {
       return;
     }
     const transitionToken: number = this.pageLifecycleToken;
@@ -116,7 +117,7 @@ struct LoginRouterPage {
       if (!this.isCurrentTransitionCallback(transitionToken, transitionGeneration)) {
         return;
       }
-      if (getAppCoreRuntime().getLifecycleStore().getState().auth.status !== 'ready') {
+      if (this.runtimeProvider().getLifecycleStore().getState().auth.status !== 'ready') {
         this.showMainUI = false;
         this.invalidateTransition();
         this.clearAccountNavigation();
@@ -175,6 +176,7 @@ struct LoginRouterPage {
         Navigation(this.pageStack) {
           Column() {
             LoginRouter({
+              runtimeProvider: this.runtimeProvider,
               onAuthComplete: (): void => {
                 hilog.info(DOMAIN, TAG, 'Auth complete — waiting for data...');
                 this.waitForDataAndTransition();

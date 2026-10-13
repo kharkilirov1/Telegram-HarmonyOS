@@ -10,7 +10,7 @@ import {
   MessagesDeletedEvent,
   createNewMessageEvent
 } from '../../model/AppEvent';
-import { createMessageDtoFromTd, parseMessageContent } from '../../model/dto/MessageDto';
+import { createMessageDtoFromTd, getMessageChatId, getMessageId, parseMessageContent } from '../../model/dto/MessageDto';
 import { TdObject } from '../../../models/TdTypes';
 import {
   tdGetNumber, tdGetString, tdGetInt64, tdGetBoolean,
@@ -23,8 +23,8 @@ const TAG = 'MessageNormalizer';
 
 function handleNewMessage(events: AnyAppEvent[], update: TdObject): void {
   const message = tdGetObject(update, 'message');
-  const chatId = tdGetNumber(message, 'chat_id');
-  const messageId = tdGetInt64(message, 'id');
+  const chatId = getMessageChatId(message);
+  const messageId = getMessageId(message);
   if (!chatId || messageId === '0') return;
 
   try {
@@ -66,9 +66,9 @@ function handleMessageEdited(events: AnyAppEvent[], update: TdObject): void {
 
 function handleMessageSendSucceeded(events: AnyAppEvent[], update: TdObject): void {
   const message = tdGetObject(update, 'message');
-  const oldMessageId = tdGetInt64(update, 'old_message_id');
-  const chatId = tdGetNumber(message, 'chat_id');
-  if (!chatId || oldMessageId === '0') return;
+  const oldMessageId = getMessageId(update, 'old_message_id');
+  const chatId = getMessageChatId(message);
+  if (!chatId || oldMessageId === '0' || getMessageId(message) === '0') return;
 
   try {
     const messageDto = createMessageDtoFromTd(message);
@@ -86,23 +86,33 @@ function handleMessageSendSucceeded(events: AnyAppEvent[], update: TdObject): vo
 
 function handleMessageSendFailed(events: AnyAppEvent[], update: TdObject): void {
   const message = tdGetObject(update, 'message');
-  const oldMessageId = tdGetInt64(update, 'old_message_id');
-  const chatId = tdGetNumber(message, 'chat_id');
-  const messageId = tdGetInt64(message, 'id');
-  if (!chatId || oldMessageId === '0') return;
+  const oldMessageId = getMessageId(update, 'old_message_id');
+  const chatId = getMessageChatId(message);
+  const messageId = getMessageId(message);
+  if (!chatId || oldMessageId === '0' || messageId === '0') return;
 
-  const errorObj = tdGetObject(update, 'error');
-  const errorCode = tdGetNumber(errorObj, 'code');
-  const errorMessage = errorCode === 406 ? '' : tdGetString(errorObj, 'message');
+  const error = update.getTopLevelObjectStrict('error');
+  const code = error?.getTopLevelNumberStrict('code');
+  const errorCode = code !== undefined && Number.isSafeInteger(code) ? code : 0;
+  // No error-message accessor is called for code 406, including nested DTO state.
+  const errorMessage = code !== undefined && Number.isSafeInteger(code) && errorCode !== 406
+    ? (error?.getTopLevelStringStrict('message') ?? '') : '';
 
-  const event = new MessageSendFailedEvent();
-  event.chatId = chatId;
-  event.oldMessageId = oldMessageId;
-  event.messageId = messageId;
-  event.errorCode = errorCode;
-  event.errorMessage = errorMessage;
-  event.timestamp = Date.now();
-  events.push(event);
+  try {
+    const messageDto = createMessageDtoFromTd(message, errorCode === 406);
+    const event = new MessageSendFailedEvent();
+    event.chatId = chatId;
+    event.oldMessageId = oldMessageId;
+    event.messageId = messageId;
+    event.message = messageDto;
+    event.errorCode = errorCode;
+    event.errorMessage = errorMessage;
+    event.timestamp = Date.now();
+    events.push(event);
+  } catch (error) {
+    // Do not log raw parsing exceptions from a message carrying a sending error.
+    hilog.error(DOMAIN, TAG, 'Failed to parse messageSendFailed');
+  }
 }
 
 function handleMessagesHistory(events: AnyAppEvent[], update: TdObject): void {
@@ -110,8 +120,8 @@ function handleMessagesHistory(events: AnyAppEvent[], update: TdObject): void {
   const messages = tdGetArray(update, 'messages');
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
-    const chatId = tdGetNumber(msg, 'chat_id');
-    const messageId = tdGetInt64(msg, 'id');
+    const chatId = getMessageChatId(msg);
+    const messageId = getMessageId(msg);
     if (!chatId || messageId === '0') continue;
 
     try {

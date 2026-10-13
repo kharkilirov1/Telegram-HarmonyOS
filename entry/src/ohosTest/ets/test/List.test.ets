@@ -86,6 +86,8 @@ import chatScreenDecompositionTest from './ChatScreenDecomposition.test';
 import timelineUpdateDataSourceTest from './TimelineUpdateDataSource.test';
 import timelineUpdateOwnershipTest from './TimelineUpdateOwnership.test';
 import timelineUpdateNativeTest from './TimelineUpdateNative.test';
+import stabilizationMessagesTest from './StabilizationMessages.test';
+import stabilizationNativeTest from './StabilizationNative.test';
 
 export default function testsuite() {
   // Core state management
@@ -101,6 +103,8 @@ export default function testsuite() {
   slowmodeTest();
   slowmodePolicyTest();
   slowmodeNativeTest();
+  stabilizationMessagesTest();
+  stabilizationNativeTest();
   authSideEffectTest();
   chatCommandsTest();
   chatArchiveStateTest();

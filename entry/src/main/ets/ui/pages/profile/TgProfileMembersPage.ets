@@ -5,7 +5,7 @@ import { common } from '@kit.AbilityKit';
 import { window } from '@kit.ArkUI';
 import { fileUri } from '@kit.CoreFileKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
+import { ProfileLoadContext, captureProfileLoadContext } from '../../../domain/usecases/loadProfileInfo';
 import { ChatMembersFilterKind } from '../../../core/model/AppCommand';
 import { AppState, Chat, User } from '../../../core/model/AppState';
 import { localized } from '../../../core/utils/AppResource';
@@ -14,7 +14,6 @@ import {
   ChatMembersUseCase,
   createChatMembersUseCase
 } from '../../../domain/usecases/chatMembers';
-import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import {
   TgChatTopBar,
   TgChatTopBarSubtitleMode,
@@ -36,17 +35,20 @@ export class ProfileMembersRouteParams {
   supergroupId: number = 0;
   filterKind: ChatMembersFilterKind = 'all';
   expectedCount: number = 0;
+  readonly context: ProfileLoadContext;
 
   constructor(
     chatId: number,
     supergroupId: number = 0,
     filterKind: ChatMembersFilterKind = 'all',
-    expectedCount: number = 0
+    expectedCount: number = 0,
+    context?: ProfileLoadContext
   ) {
     this.chatId = chatId;
     this.supergroupId = supergroupId;
     this.filterKind = filterKind;
     this.expectedCount = expectedCount;
+    this.context = context ?? captureProfileLoadContext();
   }
 }
 
@@ -54,8 +56,11 @@ class DirectUserProfileRouteParams {
   chatId: number = 0;
   userId: number = 0;
 
-  constructor(userId: number) {
+  readonly context: ProfileLoadContext;
+
+  constructor(userId: number, context: ProfileLoadContext) {
     this.userId = userId;
+    this.context = context;
   }
 }
 
@@ -150,6 +155,13 @@ export struct TgProfileMembersPage {
   @Local private searchQuery: string = '';
 
   private useCase?: ChatMembersUseCase;
+  private routeContext?: ProfileLoadContext;
+  private scopeUnsubscribe?: () => void;
+  private isActive: boolean = false;
+  private nextOffset: number = 0;
+  private requestPending: boolean = false;
+  private loadMoreFailed: boolean = false;
+  private loadError?: Object;
   private descriptors: ChatMemberDescriptor[] = [];
   private dataSource: TgProfileMembersDataSource = new TgProfileMembersDataSource();
   private storeUnsubscribe?: () => void;
@@ -159,13 +171,8 @@ export struct TgProfileMembersPage {
 
   aboutToAppear(): void {
     this.isClosing = false;
-    this.useCase = createChatMembersUseCase(getTdGatewayAdapter());
-    const store = getAppCoreRuntime().getStore();
-    this.storeUnsubscribe = store.subscribe((state: AppState): void => {
-      if (this.descriptors.length > 0) {
-        this.rebuildRows(state);
-      }
-    });
+    this.isActive = true;
+    this.requestGeneration++;
     try {
       const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
       const mainWindow = context.windowStage?.getMainWindowSync();
@@ -179,13 +186,87 @@ export struct TgProfileMembersPage {
   }
 
   aboutToDisappear(): void {
-    this.requestGeneration++;
-    this.cancelSearchTimer();
+    this.isActive = false;
+    this.revokeRequests();
+    this.releaseRouteSubscriptions();
+    this.isClosing = false;
+  }
+
+  private releaseRouteSubscriptions(): void {
     if (this.storeUnsubscribe !== undefined) {
       this.storeUnsubscribe();
       this.storeUnsubscribe = undefined;
     }
-    this.isClosing = false;
+    if (this.scopeUnsubscribe !== undefined) {
+      this.scopeUnsubscribe();
+      this.scopeUnsubscribe = undefined;
+    }
+  }
+
+  private revokeRequests(): void {
+    this.requestGeneration++;
+    this.cancelSearchTimer();
+    this.requestPending = false;
+    this.isLoading = false;
+    this.isLoadingMore = false;
+  }
+
+  private clearRows(): void {
+    this.descriptors = [];
+    this.dataSource.replace([]);
+    this.rowCount = 0;
+    this.nextOffset = 0;
+    this.canLoadMore = false;
+    this.loadMoreFailed = false;
+    this.loadError = undefined;
+  }
+
+  private accountUnavailable(): void {
+    this.revokeRequests();
+    this.clearRows();
+    this.totalCount = 0;
+    this.searchQuery = '';
+    this.isSearchMode = false;
+    this.isLoading = false;
+    this.errorText = localized($r('app.string.profile_account_unavailable').id, 'This profile is no longer available for the current account');
+  }
+
+  private initializeRoute(params: ProfileMembersRouteParams): void {
+    this.revokeRequests();
+    this.releaseRouteSubscriptions();
+    this.clearRows();
+    this.searchQuery = '';
+    this.isSearchMode = false;
+    this.errorText = '';
+    this.chatId = params.chatId;
+    this.supergroupId = params.supergroupId;
+    this.filterKind = params.filterKind;
+    this.totalCount = params.expectedCount;
+    const owner = params.context;
+    this.routeContext = owner;
+    if (owner === undefined || !owner.isCurrent() || !Number.isSafeInteger(this.chatId) || this.chatId === 0) {
+      this.accountUnavailable();
+      return;
+    }
+    this.useCase = createChatMembersUseCase(owner.gateway);
+    this.scopeUnsubscribe = owner.store.subscribeScopeInvalidation((): void => {
+      if (this.isActive && this.routeContext === owner) this.accountUnavailable();
+    });
+    let activeUnsubscribe: (() => void) | undefined = undefined;
+    activeUnsubscribe = owner.store.subscribe((state: AppState): void => {
+      if (!this.isActive || this.isClosing || this.routeContext !== owner || !owner.isCurrent() ||
+        this.storeUnsubscribe !== activeUnsubscribe) return;
+      if (this.descriptors.length > 0) this.rebuildRows(state);
+    });
+    this.storeUnsubscribe = activeUnsubscribe;
+    this.loadMembers(true);
+  }
+
+  private isCurrentMembersRequest(generation: number, owner: ProfileLoadContext, chatId: number,
+    supergroupId: number, filterKind: ChatMembersFilterKind, query: string): boolean {
+    return this.isActive && !this.isClosing && this.routeContext === owner && owner.isCurrent() &&
+      generation === this.requestGeneration && this.chatId === chatId && this.supergroupId === supergroupId &&
+      this.filterKind === filterKind && this.searchQuery.trim() === query;
   }
 
   private cancelSearchTimer(): void {
@@ -290,115 +371,138 @@ export struct TgProfileMembersPage {
   }
 
   private mergeDescriptors(next: ChatMemberDescriptor[], reset: boolean): void {
-    if (reset) {
-      this.descriptors = next.slice();
-      return;
-    }
+    const merged = reset ? [] : this.descriptors.slice();
     const seen = new Set<string>();
-    for (let i = 0; i < this.descriptors.length; i++) {
-      seen.add(this.descriptors[i].stableKey());
-    }
-    const merged = this.descriptors.slice();
-    for (let i = 0; i < next.length; i++) {
-      const key = next[i].stableKey();
+    for (const descriptor of merged) seen.add(descriptor.stableKey());
+    for (const descriptor of next) {
+      const key = descriptor.stableKey();
       if (!seen.has(key)) {
         seen.add(key);
-        merged.push(next[i]);
+        merged.push(descriptor);
       }
     }
     this.descriptors = merged;
   }
 
-  private async loadMembers(reset: boolean): Promise<void> {
-    if (this.useCase === undefined || this.chatId === 0 || (!reset && (!this.canLoadMore || this.isLoadingMore))) {
+  private async loadMembers(reset: boolean, explicitRetry: boolean = false): Promise<void> {
+    const owner = this.routeContext;
+    const useCase = this.useCase;
+    if (owner === undefined || useCase === undefined || !this.isActive || this.isClosing || this.chatId === 0) return;
+    if (!owner.isCurrent()) {
+      this.accountUnavailable();
       return;
     }
+    if (this.requestPending || this.searchTimer >= 0 ||
+      (!reset && (!this.canLoadMore || this.isLoading || (this.loadMoreFailed && !explicitRetry)))) return;
     const generation = ++this.requestGeneration;
     const query = this.searchQuery.trim();
-    const offset = reset ? 0 : this.descriptors.length;
+    const chatId = this.chatId;
+    const supergroupId = this.supergroupId;
+    const filterKind = this.filterKind;
+    const offset = reset ? 0 : this.nextOffset;
+    this.requestPending = true;
+    this.errorText = '';
+    this.loadError = undefined;
+    this.loadMoreFailed = false;
     if (reset) {
       this.isLoading = true;
-      this.errorText = '';
       this.canLoadMore = false;
     } else {
       this.isLoadingMore = true;
     }
     try {
-      const result = await this.useCase.execute(
-        this.chatId,
-        this.supergroupId,
-        this.filterKind,
-        query,
-        offset,
-        PAGE_SIZE
-      );
-      if (generation !== this.requestGeneration) {
-        return;
-      }
+      const result = await useCase.execute(chatId, supergroupId, filterKind, query, offset, PAGE_SIZE);
+      if (!this.isCurrentMembersRequest(generation, owner, chatId, supergroupId, filterKind, query)) return;
+      const previousCount = reset ? 0 : this.descriptors.length;
       this.mergeDescriptors(result.members, reset);
+      this.nextOffset = offset + result.rawCount;
       this.totalCount = result.totalCount;
-      this.canLoadMore = result.canLoadMore;
-      this.rebuildRows(getAppCoreRuntime().getStore().getState());
+      // A non-progressing response must not trigger an incidental scroll loop.
+      this.canLoadMore = result.canLoadMore && result.rawCount > 0 && this.descriptors.length > previousCount;
+      this.rebuildRows(owner.store.getState());
       hilog.info(DOMAIN, TAG, 'Loaded %{public}d/%{public}d members query=%{public}s',
         this.rowCount, this.totalCount, query.length > 0 ? 'yes' : 'no');
     } catch (error) {
-      if (generation !== this.requestGeneration) {
-        return;
-      }
+      if (!this.isCurrentMembersRequest(generation, owner, chatId, supergroupId, filterKind, query)) return;
+      if (reset) this.clearRows();
+      this.loadError = error;
       this.errorText = localized($r('app.string.members_unavailable').id, 'Members are unavailable');
-      if (reset) {
-        this.descriptors = [];
-        this.dataSource.replace([]);
-        this.rowCount = 0;
-      }
-      hilog.warn(DOMAIN, TAG, 'Member load failed: %{public}s', String(error));
+      this.loadMoreFailed = !reset && this.rowCount > 0;
+      hilog.warn(DOMAIN, TAG, 'Member load unavailable');
     } finally {
-      if (generation === this.requestGeneration) {
+      if (this.isCurrentMembersRequest(generation, owner, chatId, supergroupId, filterKind, query)) {
+        this.requestPending = false;
         this.isLoading = false;
         this.isLoadingMore = false;
       }
     }
   }
 
+  private retryMembers(): void {
+    if (this.errorText.length === 0 || this.requestPending) return;
+    this.loadMembers(this.rowCount === 0, true);
+  }
+
   private scheduleSearch(query: string): void {
+    if (!this.isActive || this.isClosing || query === this.searchQuery) return;
+    if (this.routeContext === undefined || !this.routeContext.isCurrent()) {
+      this.accountUnavailable();
+      return;
+    }
+    this.revokeRequests();
     this.searchQuery = query;
-    this.cancelSearchTimer();
+    this.clearRows();
+    this.totalCount = 0;
+    this.errorText = '';
+    this.isLoading = true;
+    const generation = this.requestGeneration;
+    const owner = this.routeContext;
     this.searchTimer = setTimeout((): void => {
+      if (!this.isActive || this.isClosing || generation !== this.requestGeneration ||
+        this.routeContext !== owner || owner === undefined || !owner.isCurrent()) return;
       this.searchTimer = -1;
       this.loadMembers(true);
     }, SEARCH_DEBOUNCE_MS);
   }
 
   private closeSearch(): void {
-    this.cancelSearchTimer();
+    const hadQuery = this.searchQuery.length > 0;
+    this.revokeRequests();
     this.isSearchMode = false;
-    if (this.searchQuery.length > 0) {
+    if (hadQuery) {
       this.searchQuery = '';
+      this.clearRows();
+      this.totalCount = 0;
+      this.errorText = '';
+      this.loadMembers(true);
+    } else if (this.rowCount === 0) {
       this.loadMembers(true);
     }
   }
 
   private openUserProfile(userId: number): void {
-    if (userId === 0) {
+    if (userId <= 0 || this.routeContext === undefined || !this.routeContext.isCurrent() || !this.isActive || this.isClosing) {
       return;
     }
     try {
-      this.pageStack.pushPathByName('TgProfilePage', new DirectUserProfileRouteParams(userId));
+      this.pageStack.pushPathByName('TgProfilePage', new DirectUserProfileRouteParams(userId, this.routeContext));
     } catch (error) {
       hilog.error(DOMAIN, TAG, 'Failed to open member profile: %{public}s', String(error));
     }
   }
 
   private handleBackPress(): void {
-    if (this.isClosing) {
+    if (!this.isActive || this.isClosing) {
       return;
     }
     try {
       this.isClosing = true;
+      this.revokeRequests();
       this.pageStack.pop();
     } catch (error) {
       this.isClosing = false;
       hilog.error(DOMAIN, TAG, 'Failed to pop members page: %{public}s', String(error));
+      this.loadMembers(this.rowCount === 0, true);
     }
   }
 
@@ -436,6 +540,25 @@ export struct TgProfileMembersPage {
         .reuseId('tg_profile_member_row')
       }, (row: TgProfileMemberRowVO): string => row.stableId)
 
+      if (this.errorText.length > 0 && this.loadMoreFailed) {
+        ListItem() {
+          Column({ space: 8 }) {
+            Text(this.errorText)
+              .fontSize(15)
+              .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+              .textAlign(TextAlign.Center)
+            Text(localized($r('app.string.retry').id, 'Retry'))
+              .id('profile_members_more_retry')
+              .fontSize(16)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(TgUiTokens.COLOR_ICON_PRIMARY)
+              .padding({ left: 16, right: 16, top: 8, bottom: 8 })
+              .onClick((): void => { this.retryMembers(); })
+          }
+          .width('100%')
+          .padding({ top: 12, bottom: 12 })
+        }
+      }
       if (this.isLoadingMore) {
         ListItem() {
           Row() {
@@ -453,6 +576,7 @@ export struct TgProfileMembersPage {
     .layoutWeight(1)
     .edgeEffect(EdgeEffect.Spring)
     .scrollBar(BarState.Off)
+    .id('profile_members_list')
     .onScrollIndex((_first: number, last: number): void => {
       if (last >= this.rowCount - 8) {
         this.loadMembers(false);
@@ -464,17 +588,19 @@ export struct TgProfileMembersPage {
   private buildStateMessage(text: string, showRetry: boolean) {
     Column({ space: 12 }) {
       Text(text)
+        .id('profile_members_state')
         .fontSize(15)
         .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
         .textAlign(TextAlign.Center)
       if (showRetry) {
         Text(localized($r('app.string.retry').id, 'Retry'))
+          .id('profile_members_retry')
           .fontSize(16)
           .fontWeight(FontWeight.Medium)
           .fontColor(TgUiTokens.COLOR_ICON_PRIMARY)
           .padding({ left: 16, right: 16, top: 8, bottom: 8 })
           .onClick((): void => {
-            this.loadMembers(true);
+            this.retryMembers();
           })
       }
     }
@@ -491,7 +617,8 @@ export struct TgProfileMembersPage {
           title: this.pageTitle(),
           subtitle: this.pageSubtitle(),
           subtitleMode: TgChatTopBarSubtitleMode.Secondary,
-          trailingAction: TgChatTopBarTrailingAction.Search,
+          trailingAction: this.routeContext !== undefined && this.routeContext.isCurrent() ?
+            TgChatTopBarTrailingAction.Search : TgChatTopBarTrailingAction.None,
           topInset: this.topInset,
           isSearchMode: this.isSearchMode,
           searchQuery: this.searchQuery,
@@ -500,7 +627,9 @@ export struct TgProfileMembersPage {
             this.handleBackPress();
           },
           onSearchPress: (): void => {
-            this.isSearchMode = true;
+            if (this.isActive && !this.isClosing && this.routeContext !== undefined && this.routeContext.isCurrent()) {
+              this.isSearchMode = true;
+            }
           },
           onSearchQueryChange: (query: string): void => {
             this.scheduleSearch(query);
@@ -520,7 +649,7 @@ export struct TgProfileMembersPage {
           .layoutWeight(1)
           .justifyContent(FlexAlign.Center)
         } else if (this.errorText.length > 0 && this.rowCount === 0) {
-          this.buildStateMessage(this.errorText, true)
+          this.buildStateMessage(this.errorText, this.routeContext !== undefined && this.routeContext.isCurrent())
         } else if (this.rowCount === 0) {
           this.buildStateMessage(localized($r('app.string.search_no_results').id, 'No results found'), false)
         } else {
@@ -535,12 +664,10 @@ export struct TgProfileMembersPage {
     .onReady((context: NavDestinationContext): void => {
       this.pageStack = context.pathStack;
       const params = context.pathInfo.param as ProfileMembersRouteParams;
-      if (params !== undefined && params.chatId !== 0) {
-        this.chatId = params.chatId;
-        this.supergroupId = params.supergroupId;
-        this.filterKind = params.filterKind;
-        this.totalCount = params.expectedCount;
-        this.loadMembers(true);
+      if (params !== undefined) {
+        this.initializeRoute(params);
+      } else {
+        this.accountUnavailable();
       }
     })
     .onBackPressed((): boolean => {

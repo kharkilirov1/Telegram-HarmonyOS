@@ -83,6 +83,7 @@ export struct TgProfileNavigationBar {
       width: TgUiTokens.PROFILE_NAV_RESPONSE_SIZE,
       height: TgUiTokens.PROFILE_NAV_RESPONSE_SIZE
     })
+    .id(isSearch ? 'profile_search' : 'profile_back')
     .accessibilityText(this.actionAccessibilityText(isSearch))
     .onClick(() => this.handleAction(isSearch))
   }
@@ -108,6 +109,7 @@ export struct TgProfileNavigationBar {
       width: TgUiTokens.PROFILE_NAV_RESPONSE_SIZE,
       height: TgUiTokens.PROFILE_NAV_RESPONSE_SIZE
     })
+    .id(isSearch ? 'profile_search' : 'profile_back')
     .accessibilityText(this.actionAccessibilityText(isSearch))
     .onClick(() => this.handleAction(isSearch))
   }

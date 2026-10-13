@@ -3,6 +3,8 @@
 
 import { getTdGatewayAdapter } from '../../infra/td/adapter/TdGatewayAdapter';
 import { getAppCoreRuntime } from '../../app/bootstrap/AppCoreRuntime';
+import { AppStore } from '../../core/store/AppStore';
+import { TdGatewayPort } from '../ports/TdGatewayPort';
 import {
   createGetUserFullInfoCommand,
   createGetSupergroupFullInfoCommand,
@@ -15,44 +17,93 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 const DOMAIN = 0x0030;
 const TAG = 'loadProfileInfo';
 
-export async function loadUserFullInfo(userId: number): Promise<void> {
-  if (userId <= 0) return;
+export type ProfileLoadStatus = 'loaded' | 'unavailable' | 'stale' | 'invalid';
+
+export class ProfileLoadResult {
+  readonly status: ProfileLoadStatus;
+  readonly cause?: Object;
+
+  constructor(status: ProfileLoadStatus, cause?: Object) {
+    this.status = status;
+    this.cause = cause;
+  }
+}
+
+// Capture at navigation push or operation start, never after a transport wait.
+// createScope on a revoked view deliberately keeps its original account epoch.
+export class ProfileLoadContext {
+  readonly accountStore: AppStore;
+  readonly store: AppStore;
+  readonly gateway: TdGatewayPort;
+
+  constructor(store: AppStore, gateway: TdGatewayPort) {
+    this.accountStore = store;
+    this.store = store.createScope();
+    this.gateway = gateway;
+  }
+
+  isCurrent(): boolean {
+    return this.store.isScopeCurrent();
+  }
+}
+
+export function captureProfileLoadContext(): ProfileLoadContext {
+  const store = getAppCoreRuntime().getStore();
+  return new ProfileLoadContext(store, getTdGatewayAdapter());
+}
+
+async function dispatchProfileInfo(owner: ProfileLoadContext, event: AnyAppEvent): Promise<ProfileLoadResult> {
+  if (!owner.isCurrent()) return new ProfileLoadResult('stale');
+  await owner.store.dispatchBatch([event], (): boolean => owner.isCurrent());
+  return new ProfileLoadResult(owner.isCurrent() ? 'loaded' : 'stale');
+}
+
+export async function loadUserFullInfo(userId: number, context?: ProfileLoadContext): Promise<ProfileLoadResult> {
+  if (!Number.isSafeInteger(userId) || userId <= 0) return new ProfileLoadResult('invalid');
+  let owner: ProfileLoadContext | undefined = context;
   try {
-    const adapter = getTdGatewayAdapter();
-    const response = await adapter.send(createGetUserFullInfoCommand(userId));
-    const tdResponse = response as TdObject;
+    owner = owner ?? captureProfileLoadContext();
+    if (!owner.isCurrent()) return new ProfileLoadResult('stale');
+    const response = await owner.gateway.send(createGetUserFullInfoCommand(userId));
+    if (!owner.isCurrent()) return new ProfileLoadResult('stale');
+    if (!(response instanceof TdObject)) return new ProfileLoadResult('unavailable', new Error('Invalid profile response'));
+    const tdResponse = response;
     const responseType = tdGetString(tdResponse, '@type');
     if (responseType !== 'userFullInfo') {
       hilog.warn(DOMAIN, TAG, 'getUserFullInfo unexpected type: %{public}s', responseType);
-      return;
+      return new ProfileLoadResult('unavailable', new Error('Unexpected profile response type'));
     }
 
-    const bio = tdGetString(tdResponse, 'bio');
-    hilog.info(DOMAIN, TAG, 'getUserFullInfo userId=%{public}d bio="%{public}s"', userId, bio.substring(0, 50));
+    const bio = tdGetString(tdGetObject(tdResponse, 'bio'), 'text');
+    hilog.info(DOMAIN, TAG, 'getUserFullInfo loaded userId=%{public}d', userId);
 
     const event = new UserFullInfoEvent();
     event.userId = userId;
     event.bio = bio;
     event.timestamp = Date.now();
 
-    const events: AnyAppEvent[] = [event];
-    const runtime = getAppCoreRuntime();
-    runtime.getStore().dispatchBatch(events);
+    return await dispatchProfileInfo(owner, event);
   } catch (e) {
-    hilog.error(DOMAIN, TAG, 'getUserFullInfo failed for userId=%{public}d: %{public}s', userId, String(e));
+    if (owner !== undefined && !owner.isCurrent()) return new ProfileLoadResult('stale');
+    hilog.warn(DOMAIN, TAG, 'getUserFullInfo unavailable userId=%{public}d', userId);
+    return new ProfileLoadResult('unavailable', e);
   }
 }
 
-export async function loadSupergroupFullInfo(chatId: number, supergroupId: number): Promise<void> {
-  if (supergroupId <= 0) return;
+export async function loadSupergroupFullInfo(chatId: number, supergroupId: number, context?: ProfileLoadContext): Promise<ProfileLoadResult> {
+  if (!Number.isSafeInteger(chatId) || chatId === 0 || !Number.isSafeInteger(supergroupId) || supergroupId <= 0) return new ProfileLoadResult('invalid');
+  let owner: ProfileLoadContext | undefined = context;
   try {
-    const adapter = getTdGatewayAdapter();
-    const response = await adapter.send(createGetSupergroupFullInfoCommand(supergroupId));
-    const tdResponse = response as TdObject;
+    owner = owner ?? captureProfileLoadContext();
+    if (!owner.isCurrent()) return new ProfileLoadResult('stale');
+    const response = await owner.gateway.send(createGetSupergroupFullInfoCommand(supergroupId));
+    if (!owner.isCurrent()) return new ProfileLoadResult('stale');
+    if (!(response instanceof TdObject)) return new ProfileLoadResult('unavailable', new Error('Invalid profile response'));
+    const tdResponse = response;
     const responseType = tdGetString(tdResponse, '@type');
     if (responseType !== 'supergroupFullInfo') {
       hilog.warn(DOMAIN, TAG, 'getSupergroupFullInfo unexpected type: %{public}s', responseType);
-      return;
+      return new ProfileLoadResult('unavailable', new Error('Unexpected profile response type'));
     }
 
     const description = tdGetString(tdResponse, 'description');
@@ -77,26 +128,30 @@ export async function loadSupergroupFullInfo(chatId: number, supergroupId: numbe
     event.inviteLink = inviteLink;
     event.timestamp = Date.now();
 
-    const events: AnyAppEvent[] = [event];
-    const runtime = getAppCoreRuntime();
-    runtime.getStore().dispatchBatch(events);
+    return await dispatchProfileInfo(owner, event);
   } catch (e) {
-    hilog.error(DOMAIN, TAG, 'getSupergroupFullInfo failed: %{public}s', String(e));
+    if (owner !== undefined && !owner.isCurrent()) return new ProfileLoadResult('stale');
+    hilog.warn(DOMAIN, TAG, 'getSupergroupFullInfo unavailable');
+    return new ProfileLoadResult('unavailable', e);
   }
 }
 
 // Basic groups keep no member_count in full info — the count is the length of
 // the returned members list (TDLib basicGroupFullInfo contract).
-export async function loadBasicGroupFullInfo(chatId: number, basicGroupId: number): Promise<void> {
-  if (basicGroupId <= 0) return;
+export async function loadBasicGroupFullInfo(chatId: number, basicGroupId: number, context?: ProfileLoadContext): Promise<ProfileLoadResult> {
+  if (!Number.isSafeInteger(chatId) || chatId === 0 || !Number.isSafeInteger(basicGroupId) || basicGroupId <= 0) return new ProfileLoadResult('invalid');
+  let owner: ProfileLoadContext | undefined = context;
   try {
-    const adapter = getTdGatewayAdapter();
-    const response = await adapter.send(createGetBasicGroupFullInfoCommand(basicGroupId));
-    const tdResponse = response as TdObject;
+    owner = owner ?? captureProfileLoadContext();
+    if (!owner.isCurrent()) return new ProfileLoadResult('stale');
+    const response = await owner.gateway.send(createGetBasicGroupFullInfoCommand(basicGroupId));
+    if (!owner.isCurrent()) return new ProfileLoadResult('stale');
+    if (!(response instanceof TdObject)) return new ProfileLoadResult('unavailable', new Error('Invalid profile response'));
+    const tdResponse = response;
     const responseType = tdGetString(tdResponse, '@type');
     if (responseType !== 'basicGroupFullInfo') {
       hilog.warn(DOMAIN, TAG, 'getBasicGroupFullInfo unexpected type: %{public}s', responseType);
-      return;
+      return new ProfileLoadResult('unavailable', new Error('Unexpected profile response type'));
     }
 
     const description = tdGetString(tdResponse, 'description');
@@ -126,10 +181,10 @@ export async function loadBasicGroupFullInfo(chatId: number, basicGroupId: numbe
     event.inviteLink = inviteLink;
     event.timestamp = Date.now();
 
-    const events: AnyAppEvent[] = [event];
-    const runtime = getAppCoreRuntime();
-    runtime.getStore().dispatchBatch(events);
+    return await dispatchProfileInfo(owner, event);
   } catch (e) {
-    hilog.error(DOMAIN, TAG, 'getBasicGroupFullInfo failed: %{public}s', String(e));
+    if (owner !== undefined && !owner.isCurrent()) return new ProfileLoadResult('stale');
+    hilog.warn(DOMAIN, TAG, 'getBasicGroupFullInfo unavailable');
+    return new ProfileLoadResult('unavailable', e);
   }
 }

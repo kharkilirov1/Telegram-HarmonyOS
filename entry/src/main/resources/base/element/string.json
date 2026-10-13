@@ -3047,6 +3047,14 @@
     {
       "name": "composer_voice_preview",
       "value": "Voice message"
+    },
+    {
+      "name": "profile_unavailable",
+      "value": "Profile information is unavailable"
+    },
+    {
+      "name": "profile_account_unavailable",
+      "value": "This profile is no longer available for the current account"
     }
   ]
 }

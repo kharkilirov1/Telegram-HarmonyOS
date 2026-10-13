@@ -509,11 +509,15 @@ export default function messagesReducerTest() {
         const failEvent = new MessageSendFailedEvent();
         failEvent.chatId = 10;
         failEvent.oldMessageId = '1000';
+        failEvent.messageId = '1001';
+        failEvent.message = makeMessageDto('1001', 10, 'Authoritative failed msg');
         failEvent.errorCode = 400;
         failEvent.errorMessage = 'Bad request';
 
         const newState = messagesReducer(state, failEvent);
-        const msg = newState.messages.messages.get(10)!.get('1000')!;
+        const msg = newState.messages.messages.get(10)!.get('1001')!;
+        expect(newState.messages.messages.get(10)!.has('1000')).assertFalse();
+        expect(msg.content.text).assertEqual('Authoritative failed msg');
         expect(msg.sendStatus).assertEqual('failed');
         expect(msg.sendErrorCode).assertEqual(400);
         expect(msg.sendErrorMessage).assertEqual('Bad request');

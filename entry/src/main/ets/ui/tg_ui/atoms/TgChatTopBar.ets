@@ -122,6 +122,7 @@ export struct TgChatTopBar {
       width: TgUiTokens.CHAT_TOP_BAR_RESPONSE_SIZE,
       height: TgUiTokens.CHAT_TOP_BAR_RESPONSE_SIZE
     })
+    .id('tg_chat_top_bar_back')
     .onClick(() => this.onBackPress())
   }
 
@@ -146,6 +147,7 @@ export struct TgChatTopBar {
       width: TgUiTokens.CHAT_TOP_BAR_RESPONSE_SIZE,
       height: TgUiTokens.CHAT_TOP_BAR_RESPONSE_SIZE
     })
+    .id('tg_chat_top_bar_back')
     .onClick(() => this.onBackPress())
   }
 
@@ -296,6 +298,7 @@ export struct TgChatTopBar {
       width: TgUiTokens.CHAT_TOP_BAR_RESPONSE_SIZE,
       height: TgUiTokens.CHAT_TOP_BAR_RESPONSE_SIZE
     })
+    .id('tg_chat_top_bar_search')
     .onClick(() => this.onSearchPress())
   }
 
@@ -320,6 +323,7 @@ export struct TgChatTopBar {
       width: TgUiTokens.CHAT_TOP_BAR_RESPONSE_SIZE,
       height: TgUiTokens.CHAT_TOP_BAR_RESPONSE_SIZE
     })
+    .id('tg_chat_top_bar_search')
     .onClick(() => this.onSearchPress())
   }
 
@@ -444,6 +448,7 @@ export struct TgChatTopBar {
         iconSize: TgUiTokens.CHAT_TOP_BAR_ACTION_ICON_SIZE,
         tintColor: TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND
       })
+        .id('tg_chat_top_bar_search_close')
         .onClick(() => this.onSearchClose())
     }
     .width('100%')

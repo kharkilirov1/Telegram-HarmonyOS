@@ -16,11 +16,11 @@ const errors = [];
 const hilog = { info() {}, debug() {}, warn() {}, error(...args) { errors.push(args); } };
 const A = load('core/model/AppState.ets');
 const clone = load('core/utils/stateClone.ets', A);
-const M = load('core/model/dto/MessageDto.ets');
-const E = load('core/model/AppEvent.ets', M);
 const appErrors = load('core/model/AppError.ets');
 const { TdObject } = load('models/td/common/index.ets');
 const accessors = load('core/utils/tdAccessors.ets', { TdObject });
+const M = load('core/model/dto/MessageDto.ets', { TdObject, ...accessors });
+const E = load('core/model/AppEvent.ets', M);
 const replyKeys = load('core/utils/replyMessageKey.ets');
 const { messagesReducer } = load('core/reducers/messagesReducer.ets', { ...A, ...clone, ...replyKeys });
 const { usersReducer } = load('core/reducers/usersReducer.ets', { ...A, ...clone });
@@ -75,7 +75,7 @@ async function fixture(cachedUser = false) {
   const history = load('domain/usecases/loadChatHistory.ets', { ...appErrors, ...accessors, TdObject, hilog,
     getEventNormalizer: () => normalizer, createGetUserCommand: userId => ({ type: 'getUser', userId }) });
   const { AppCoreRuntime } = load('app/bootstrap/AppCoreRuntime.ets', {
-    ...appErrors, ...accessors, ...history, hilog, TdObject,
+    ...appErrors, ...accessors, ...M, ...history, hilog, TdObject,
     getTdGateway: () => gateway, getTdGatewayAdapter: () => adapter, getEventNormalizer: () => normalizer,
     AppStore: TestStore, appReducer: reduce,
     getMainThreadDispatcher: () => ({ subscribeUpdates() {}, unsubscribe() {} }),

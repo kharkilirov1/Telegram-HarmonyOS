@@ -3,6 +3,7 @@
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { chatUIState, navigationUIState } from '../../../core/model/UIStateModels';
 import { ProfileRouteParams } from '../profile/TgProfilePage';
+import { ProfileLoadContext } from '../../../domain/usecases/loadProfileInfo';
 import { ChatScreenRouteParams } from './ChatScreenRouteParams';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { uiObserver } from '@kit.ArkUI';
@@ -27,14 +28,18 @@ export interface ChatPageNavigationCoordinatorPort {
 }
 
 export function openProfile(host: ChatPageNavigationCoordinatorPort): void {
-    if (host.activeChatId === 0) return; // groups/channels have negative ids
+    if (host.activeChatId === 0 || !host.ownsNavigationContext()) return; // groups/channels have negative ids
+    const route = host.routeContext;
+    if (route === undefined || route.chatId !== host.activeChatId || !host.isRouteContextCurrent(route)) return;
     hilog.info(DOMAIN, TAG, 'openProfile chatId=%{public}d', host.activeChatId);
     const navStack: NavPathStack | undefined = host.bindNavigationStack();
     if (navStack === undefined) {
       hilog.error(DOMAIN, TAG, 'Navigation stack unavailable for profile page');
       return;
     }
-    const params = new ProfileRouteParams(host.activeChatId);
+    // Stack lookup can invoke callbacks; revalidate before preserving push ownership.
+    if (!host.ownsNavigationContext() || host.routeContext !== route || !host.isRouteContextCurrent(route)) return;
+    const params = new ProfileRouteParams(host.activeChatId, 0, new ProfileLoadContext(route.accountStore, route.gateway));
     try {
       navStack.pushPathByName('TgProfilePage', params);
     } catch (error) {

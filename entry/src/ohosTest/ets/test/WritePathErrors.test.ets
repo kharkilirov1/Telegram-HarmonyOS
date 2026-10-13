@@ -332,7 +332,8 @@ export default function writePathErrorsTest() {
         const state = createInitialAppState(); const pending = new Message(); pending.id = '100'; pending.chatId = 42;
         pending.isPending = true; pending.sendStatus = 'pending'; const pendingMap: Map<string, Message> = new Map();
         pendingMap.set('100', pending); state.messages.messages.set(42, pendingMap);
-        const reduced = messagesReducer(state, event); const failed = reduced.messages.messages.get(42)?.get('100');
+        const reduced = messagesReducer(state, event); const failed = reduced.messages.messages.get(42)?.get('101');
+        expect(reduced.messages.messages.get(42)?.has('100')).assertEqual(false);
         expect(failed?.isPending).assertEqual(false); expect(failed?.sendStatus).assertEqual('failed');
         expect(failed?.sendErrorCode).assertEqual(code); expect(failed?.sendErrorMessage).assertEqual(code === 406 ? '' : 'UPDATE_SECRET');
         expect(state.messages.messages.get(42)?.get('100')?.isPending).assertEqual(true);

@@ -145,6 +145,15 @@ export class TdObject {
   }
 
   /**
+   * Read a canonical decimal containing-field identity from received JSON.
+   * Preserves the raw numeric/string lexeme, bypassing Number/cache coercion and
+   * all nested fallback. This validates representation, not TDLib ID range.
+   */
+  getTopLevelInt64StringStrict(prop: string): string | undefined {
+    return extractTopLevelInt64ValueStrict(this.rawJson, prop);
+  }
+
+  /**
    * Get a top-level number property.
    * Falls back to exact top-level int64 extraction first, then converts to number.
    */
@@ -662,6 +671,73 @@ function extractTopLevelInt64Value(json: string, prop: string): string | null {
   }
 
   return null;
+}
+
+// Strict received identity extraction. JSON.parse validates syntax/object shape
+// only; its rounded numeric values are never read. The lexical scan locates real
+// containing keys (not quoted values), preserves decimal bytes and rejects
+// ambiguous duplicate fields. Legacy getters/extractors retain their semantics.
+function extractTopLevelInt64ValueStrict(json: string, prop: string): string | undefined {
+  if (!json) return undefined;
+  try {
+    const parsed = JSON.parse(json) as Record<string, Object> | null;
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return undefined;
+  } catch {
+    return undefined;
+  }
+
+  let objectDepth = 0;
+  let arrayDepth = 0;
+  let found = false;
+  let result: string | undefined;
+  for (let i = 0; i < json.length; i++) {
+    const char = json.charAt(i);
+    if (char === '"') {
+      let stringEnd = i + 1;
+      let escaped = false;
+      for (; stringEnd < json.length; stringEnd++) {
+        const stringChar = json.charAt(stringEnd);
+        if (escaped) {
+          escaped = false;
+        } else if (stringChar === '\\') {
+          escaped = true;
+        } else if (stringChar === '"') {
+          break;
+        }
+      }
+      if (stringEnd >= json.length) return undefined;
+      if (objectDepth === 1 && arrayDepth === 0) {
+        let colon = stringEnd + 1;
+        while (colon < json.length && /\s/.test(json.charAt(colon))) colon++;
+        // A depth-one quoted value such as {"other":"id","id":42}
+        // is not a key. Skip it and keep scanning the containing object.
+        if (json.charAt(colon) === ':') {
+          const key = JSON.parse(json.substring(i, stringEnd + 1)) as string;
+          if (key === prop) {
+            if (found) return undefined;
+            found = true;
+            let valueStart = colon + 1;
+            while (valueStart < json.length && /\s/.test(json.charAt(valueStart))) valueStart++;
+            let valueEnd = valueStart;
+            while (valueEnd < json.length && json.charAt(valueEnd) !== ',' && json.charAt(valueEnd) !== '}') valueEnd++;
+            const token = json.substring(valueStart, valueEnd).trim();
+            // Full token/delimiter validation excludes fractions, exponents,
+            // escaped digit strings, booleans, objects and prefix truncation.
+            const match = token.match(/^(?:"(0|-?[1-9][0-9]*)"|(0|-?[1-9][0-9]*))$/);
+            if (match === null) return undefined;
+            result = match[1] !== undefined ? match[1] : match[2];
+          }
+        }
+      }
+      i = stringEnd;
+      continue;
+    }
+    if (char === '{') objectDepth++;
+    else if (char === '}') objectDepth--;
+    else if (char === '[') arrayDepth++;
+    else if (char === ']') arrayDepth--;
+  }
+  return result;
 }
 
 /**

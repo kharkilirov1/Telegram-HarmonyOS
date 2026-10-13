@@ -33,9 +33,10 @@ function projectWitness(source, project, receiptPath) {
     .replace("from '../../../main/ets/core/model/UIStateModels'", "from '../core/model/UIStateModels'")
     .replace("from './components/SlowmodeFixture'", "from '../../../ohosTest/ets/testability/components/SlowmodeFixture'")
     .replace("loadContent('testability/pages/Index'", "loadContent('pages/NativeValidationFixture'");
-  const generatedPage = page.replaceAll("from '../../../../main/ets/ui/", "from '../ui/")
+  const generatedPage = page.replaceAll("from '../../../../main/ets/", "from '../")
     .replace("from '../ChatScreenDecompositionFixture'", "from '../../../ohosTest/ets/testability/ChatScreenDecompositionFixture'")
     .replaceAll("from '../components/", "from '../../../ohosTest/ets/testability/components/");
+  assert(!generatedPage.includes("../../../../main/ets/"), 'Unrelocated main-source import in witness page');
   assert(!generatedAbility.includes('AppCoreRuntime') && !generatedAbility.includes("loadContent('ui/pages/login"), 'Test ability must not bootstrap an account');
   const module = JSON.parse(read(source, main + '/module.json5'));
   assert(!module.module.abilities.some(a => a.name === 'TestAbility'), 'Source already contains validation ability');

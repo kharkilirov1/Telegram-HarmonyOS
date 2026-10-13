@@ -16,7 +16,8 @@ export class AppEvent {
 }
 
 // Type definitions for event states
-export type AuthState = 'waitPhoneNumber' | 'waitCode' | 'waitPassword' | 'waitRegistration' |
+// notInitialized is the local bootstrap/reset phase, not a TDLib authorization status.
+export type AuthState = 'notInitialized' | 'waitPhoneNumber' | 'waitCode' | 'waitPassword' | 'waitRegistration' |
   'waitTdlibParameters' | 'waitQrCode' | 'ready' | 'loggingOut' | 'closing' | 'closed';
 export type ConnectionState = 'updating' | 'ready' | 'connecting' | 'waitingForNetwork';
 
@@ -153,6 +154,7 @@ export class MessageSendFailedEvent extends AppEvent {
   chatId: ChatId = 0;
   oldMessageId: MessageId = '0';
   messageId: MessageId = '0';
+  message: MessageDto = new MessageDto();
   errorCode: number = 0;
   errorMessage: string = '';
 }

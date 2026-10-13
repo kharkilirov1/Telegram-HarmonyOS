@@ -8,6 +8,7 @@ import { PendingSharedMediaAction, PendingSharedMediaActionSignal } from './Pend
 import { PendingChatSearchSignal } from './PendingChatSearchSignal';
 import { CustomEmojiTextEntity } from '../../../core/model/AppCommand';
 import { MediaGalleryItem } from '../../../models/MediaGalleryItem';
+import { AppStore } from '../../../core/store/AppStore';
 
 export interface HandleTimelineScrollIndexPort {
   blockAutoPaginationUntilUserScroll: boolean;
@@ -54,6 +55,8 @@ export interface HandleNavReadyPort {
 
 export interface HandleNavShownPort {
   activeChatId: number;
+  accountStore?: AppStore;
+  routeContext?: ChatScreenRouteParams;
   beginSharedMediaAction(action: PendingSharedMediaAction): void;
   jumpToMessageId(messageId: string): void;
   openSearch(): void;
@@ -145,7 +148,12 @@ export function handleNavShown(host: HandleNavShownPort): void {
       host.jumpToMessageId(pendingId);
     }
   }
-  if (PendingChatSearchSignal.consume(host.activeChatId)) {
+  const store = host.accountStore;
+  const route = host.routeContext;
+  const searchOwner = store !== undefined && route !== undefined &&
+    route.accountStore === store && route.chatId === host.activeChatId && route.isCurrentAccount(store)
+    ? store : undefined;
+  if (PendingChatSearchSignal.consume(host.activeChatId, searchOwner)) {
     host.openSearch();
   }
 }

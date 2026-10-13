@@ -179,6 +179,10 @@ export class MessageDto {
   isOutgoing: boolean = false;
   isRead: boolean = false;
   isPending: boolean = false;
+  // Authoritative TDLib state retained when new/history messages are hydrated.
+  sendingState: 'none' | 'pending' | 'failed' = 'none';
+  sendErrorCode: number = 0;
+  sendErrorMessage: string = '';
   editDate: number = 0;
   replyToChatId: ChatId = 0;
   replyToMessageId: MessageId = '0';
@@ -453,8 +457,43 @@ function applyLinkPreview(contentDto: MessageContentDto, contentObj: TdObject): 
   contentDto.linkPreviewPhotoThumbUniqueId = photoThumb.uniqueId;
 }
 
+// Message owns its target chat; sender/reply/forward chat IDs are different fields.
+export function getMessageChatId(tdMessage: TdObject): ChatId {
+  const chatId = tdMessage.getTopLevelNumberStrict('chat_id');
+  return chatId !== undefined && Number.isSafeInteger(chatId) && chatId !== 0 ? chatId : 0;
+}
+
+// TDLib's wire message ID is int53, but existing application consumers also
+// retain lossless opaque decimal IDs. Preserve that internal representation
+// without granting backend validity or borrowing a nested media identity.
+export function getMessageId(tdMessage: TdObject, field: string = 'id'): MessageId {
+  const identity = tdMessage.getTopLevelInt64StringStrict(field);
+  return identity !== undefined && /^-?[1-9][0-9]*$/.test(identity) ? identity : '0';
+}
+
+function applySendingState(messageDto: MessageDto, tdMessage: TdObject, suppressErrorMessage: boolean): void {
+  const sendingState = tdMessage.getTopLevelObjectStrict('sending_state');
+  if (sendingState === undefined) return;
+  const stateType = sendingState.getTopLevelStringStrict('@type');
+  if (stateType === 'messageSendingStatePending') {
+    messageDto.sendingState = 'pending';
+    messageDto.isPending = true;
+  } else if (stateType === 'messageSendingStateFailed') {
+    messageDto.sendingState = 'failed';
+    const error = sendingState.getTopLevelObjectStrict('error');
+    if (error === undefined) return;
+    const code = error.getTopLevelNumberStrict('code');
+    if (code === undefined || !Number.isSafeInteger(code)) return;
+    messageDto.sendErrorCode = code;
+    // Screen both the nested cause and an update-level 406 before message access.
+    if (code !== 406 && !suppressErrorMessage) {
+      messageDto.sendErrorMessage = error.getTopLevelStringStrict('message') ?? '';
+    }
+  }
+}
+
 // Helper to create DTO from raw TDLib message object
-export function createMessageDtoFromTd(tdMessage: TdObject): MessageDto {
+export function createMessageDtoFromTd(tdMessage: TdObject, suppressErrorMessage: boolean = false): MessageDto {
   const content = tdGetObject(tdMessage, 'content');
   const parsedContent = parseMessageContent(content);
 
@@ -469,8 +508,8 @@ export function createMessageDtoFromTd(tdMessage: TdObject): MessageDto {
   }
 
   const messageDto = new MessageDto();
-  messageDto.id = tdGetInt64(tdMessage, 'id');
-  messageDto.chatId = tdGetNumber(tdMessage, 'chat_id');
+  messageDto.id = getMessageId(tdMessage);
+  messageDto.chatId = getMessageChatId(tdMessage);
   messageDto.senderId = senderId;
   messageDto.senderChatId = senderChatId;
   messageDto.mediaAlbumId = tdGetInt64(tdMessage, 'media_album_id');
@@ -481,6 +520,7 @@ export function createMessageDtoFromTd(tdMessage: TdObject): MessageDto {
   messageDto.timestamp = tdDate > 0 ? tdDate : Math.floor(Date.now() / 1000);
   messageDto.isOutgoing = tdGetBoolean(tdMessage, 'is_outgoing');
   messageDto.isRead = tdGetBoolean(tdMessage, 'is_read');
+  applySendingState(messageDto, tdMessage, suppressErrorMessage);
   messageDto.editDate = tdGetNumber(tdMessage, 'edit_date');
 
   const replyTo = tdGetObject(tdMessage, 'reply_to');
@@ -823,6 +863,9 @@ export function applyMessageUpdate(message: MessageDto, update: MessageUpdateDto
   updatedMessage.isOutgoing = message.isOutgoing;
   updatedMessage.isRead = message.isRead;
   updatedMessage.isPending = message.isPending;
+  updatedMessage.sendingState = message.sendingState;
+  updatedMessage.sendErrorCode = message.sendErrorCode;
+  updatedMessage.sendErrorMessage = message.sendErrorMessage;
   updatedMessage.editDate = message.editDate;
   updatedMessage.replyToChatId = message.replyToChatId;
   updatedMessage.replyToMessageId = message.replyToMessageId;

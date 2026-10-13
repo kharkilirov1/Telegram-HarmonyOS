@@ -3023,6 +3023,14 @@
     {
       "name": "composer_voice_preview",
       "value": "语音消息"
+    },
+    {
+      "name": "profile_unavailable",
+      "value": "无法加载个人资料"
+    },
+    {
+      "name": "profile_account_unavailable",
+      "value": "此个人资料已不适用于当前账号"
     }
   ]
 }

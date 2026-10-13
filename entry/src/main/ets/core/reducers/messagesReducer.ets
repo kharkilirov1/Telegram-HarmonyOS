@@ -193,14 +193,16 @@ function messageFromDto(dto: MessageDto): Message {
   message.timestamp = dto.timestamp;
   message.isOutgoing = dto.isOutgoing;
   message.isRead = dto.isRead;
-  message.isPending = dto.isPending;
+  message.isPending = dto.sendingState === 'failed' ? false : dto.isPending;
   message.editDate = dto.editDate;
   message.replyToChatId = dto.replyToChatId;
   message.replyToMessageId = dto.replyToMessageId;
   message.replyIsQuote = dto.replyIsQuote;
   message.replyQuoteText = dto.replyQuoteText;
   message.replyQuoteOffset = dto.replyQuoteOffset;
-  message.sendStatus = dto.isPending ? 'pending' : 'none';
+  message.sendStatus = dto.sendingState === 'failed' ? 'failed' : (message.isPending ? 'pending' : 'none');
+  message.sendErrorCode = dto.sendErrorCode;
+  message.sendErrorMessage = dto.sendErrorCode === 406 ? '' : dto.sendErrorMessage;
   return message;
 }
 
@@ -459,23 +461,20 @@ export function messagesReducer(state: AppState, action: ReducerAction): AppStat
 
     case 'messageSendFailed': {
       const event = action as MessageSendFailedEvent;
+      if (event.message.id === '0' || event.message.chatId !== event.chatId ||
+        event.message.id !== event.messageId) break;
 
-      // Mark the old pending message as failed (keep it so user can retry)
-      const chatMessages = newState.messages.messages.get(event.chatId);
-      if (!chatMessages) break;
-
-      const pending = chatMessages.get(event.oldMessageId);
-      if (!pending) break;
-
-      const failedMessage = cloneMessage(pending);
+      // TDLib retires the old unsent ID before emitting the authoritative failed
+      // Message. Its new local ID/content must also own later delete/history updates.
+      const chatMessages = getChatMessages(newState, event.chatId);
+      chatMessages.delete(event.oldMessageId);
+      const failedMessage = messageFromDto(event.message);
       failedMessage.isPending = false;
       failedMessage.sendStatus = 'failed';
       failedMessage.sendErrorCode = event.errorCode;
-      failedMessage.sendErrorMessage = event.errorMessage;
-
-      const newChatMessages = new Map<string, Message>(chatMessages);
-      newChatMessages.set(event.oldMessageId, failedMessage);
-      newState.messages.messages.set(event.chatId, newChatMessages);
+      failedMessage.sendErrorMessage = event.errorCode === 406 ? '' : event.errorMessage;
+      chatMessages.set(failedMessage.id, failedMessage);
+      newState.messages.messages.set(event.chatId, chatMessages);
       break;
     }
 

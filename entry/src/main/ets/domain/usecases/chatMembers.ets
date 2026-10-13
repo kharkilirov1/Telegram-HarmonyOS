@@ -32,6 +32,8 @@ export class ChatMemberDescriptor {
 export class ChatMembersResult {
   totalCount: number = 0;
   members: ChatMemberDescriptor[] = [];
+  // TDLib offset counts raw returned users, not filtered/deduplicated rows.
+  rawCount: number = 0;
   canLoadMore: boolean = false;
 }
 
@@ -60,6 +62,7 @@ export function parseChatMembersResponse(response: TdObject, offset: number = 0)
 
   result.totalCount = tdGetNumber(response, 'total_count');
   const members = tdGetArray(response, 'members');
+  result.rawCount = members.length;
   for (let i = 0; i < members.length; i++) {
     const member = members[i];
     const sender = tdGetObject(member, 'member_id');
@@ -79,7 +82,7 @@ export function parseChatMembersResponse(response: TdObject, offset: number = 0)
     descriptor.isAnonymous = tdGetBoolean(status, 'is_anonymous');
     result.members.push(descriptor);
   }
-  result.canLoadMore = offset + result.members.length < result.totalCount;
+  result.canLoadMore = offset + result.rawCount < result.totalCount;
   return result;
 }
 

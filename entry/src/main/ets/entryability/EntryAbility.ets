@@ -16,9 +16,12 @@ const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {
   private mainWindow: window.Window | null = null;
+  private abilityLifecycleToken: number = 0;
 
-  async onCreate(): Promise<void> {
+  onCreate(): void {
     hilog.info(DOMAIN, TAG, 'onCreate');
+    this.abilityLifecycleToken += 1;
+    const abilityToken: number = this.abilityLifecycleToken;
 
     // Инициализируем глобальный контекст для доступа к ресурсам
     setAppContext(this.context);
@@ -26,26 +29,28 @@ export default class EntryAbility extends UIAbility {
     // Сохраняем текущий colorMode для UI-слоя
     AppStorage.setOrCreate<number>('colorMode', this.context.config.colorMode ?? ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT);
 
-    // Initialize AppCoreRuntime (TdGateway + EventNormalizer + AppStore)
+    // UIAbility creation is synchronous. The stable runtime owns completion/error,
+    // including a page mounted while initialization is still pending.
     try {
       const runtime = getAppCoreRuntime();
-      await runtime.initialize();
-      AppStorage.setOrCreate<string>(StorageKeys.GLASS_MODE, 'auto');
-      hilog.info(DOMAIN, TAG, 'AppCoreRuntime initialized');
+      runtime.initialize().then((): void => {
+        if (abilityToken !== this.abilityLifecycleToken) return;
+        AppStorage.setOrCreate<string>(StorageKeys.GLASS_MODE, 'auto');
+        hilog.info(DOMAIN, TAG, 'AppCoreRuntime initialized');
+      }, (error: Error): void => {
+        if (abilityToken !== this.abilityLifecycleToken) return;
+        hilog.error(DOMAIN, TAG, 'Failed to initialize AppCoreRuntime: %{public}s', error.message);
+      });
     } catch (error) {
       const err: BusinessError = error as BusinessError;
       hilog.error(DOMAIN, TAG, 'Failed to initialize AppCoreRuntime: %{public}s', err.message);
-      try {
-        await resetAppCoreRuntime();
-      } catch (resetError) {
-        hilog.warn(DOMAIN, TAG, 'Runtime reset after initialization failure failed: %{public}s',
-          String(resetError));
-      }
     }
   }
 
   async onDestroy(): Promise<void> {
     hilog.info(DOMAIN, TAG, 'onDestroy');
+    this.abilityLifecycleToken += 1;
+    this.mainWindow = null;
 
     // Reset runtime singleton without creating a new runtime during teardown.
     try {
@@ -55,7 +60,7 @@ export default class EntryAbility extends UIAbility {
     }
   }
 
-  async onWindowStageCreate(windowStage: window.WindowStage): Promise<void> {
+  onWindowStageCreate(windowStage: window.WindowStage): void {
     hilog.info(DOMAIN, TAG, 'onWindowStageCreate');
 
     try {

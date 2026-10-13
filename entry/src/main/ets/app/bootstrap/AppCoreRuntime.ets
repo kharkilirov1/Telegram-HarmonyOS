@@ -26,12 +26,23 @@ import { resetLoadChatsUseCase } from '../../domain/usecases/loadChats';
 import { createDownloadAvatarsUseCase, resetDownloadAvatarsUseCase } from '../../domain/usecases/downloadAvatars';
 import { createDownloadMessageMediaUseCase, resetDownloadMessageMediaUseCase } from '../../domain/usecases/downloadMessageMedia';
 import { ChatUpdateDto, extractLastMessage } from '../../core/model/dto/ChatDto';
+import { getMessageChatId, getMessageId } from '../../core/model/dto/MessageDto';
 import { tdGetNumber, tdGetObject, tdGetString } from '../../core/utils/tdAccessors';
 import { resetMessageCacheManager } from '../../core/utils/MessageLruCache';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { TdGatewayPort } from '../../domain/ports/TdGatewayPort';
 
 const DOMAIN = 0x0003;
 const TAG = 'AppCoreRuntime';
+
+// Platform/transport composition. Account state and lifecycle remain owned here.
+export interface AppCoreRuntimeBindings {
+  gateway: TdGateway;
+  adapter: TdGatewayPort;
+  startAuthSideEffect: (store: AppStore) => void;
+  stopAuthSideEffect: () => void;
+  handleRawUpdate: (rawJson: string) => void;
+}
 
 export class PipelineStats {
   isRunning: boolean = false;
@@ -43,6 +54,7 @@ export class PipelineStats {
 }
 
 export class AppCoreRuntime {
+  private bindings?: AppCoreRuntimeBindings;
   private gateway: TdGateway;
   private normalizer: EventNormalizer;
   private store: AppStore;
@@ -53,23 +65,51 @@ export class AppCoreRuntime {
   private isRunning: boolean = false;
   private lifecycleToken: number = 0;
   private initializationTask?: Promise<void>;
+  private initialStartupRetryTask?: Promise<void>;
   private shutdownTask?: Promise<void>;
+  private retired: boolean = false;
   private unsubscribeGateway?: () => void;
 
-  constructor() {
-    this.gateway = getTdGateway();
+  constructor(bindings?: AppCoreRuntimeBindings) {
+    this.bindings = bindings;
+    this.gateway = bindings ? bindings.gateway : getTdGateway();
     this.normalizer = getEventNormalizer();
     this.store = new AppStore(appReducer);
     this.accountStore = this.store.createScope();
-    this.liveHistoryHydrator = createLoadChatHistoryUseCase(this.accountStore, getTdGatewayAdapter());
+    this.liveHistoryHydrator = createLoadChatHistoryUseCase(this.accountStore, this.getGatewayAdapter());
   }
 
   private refreshGatewayReferences(): void {
-    this.gateway = getTdGateway();
-    this.liveHistoryHydrator = createLoadChatHistoryUseCase(this.accountStore, getTdGatewayAdapter());
+    this.gateway = this.bindings ? this.bindings.gateway : getTdGateway();
+    this.liveHistoryHydrator = createLoadChatHistoryUseCase(this.accountStore, this.getGatewayAdapter());
+  }
+
+  private getGatewayAdapter(): TdGatewayPort {
+    return this.bindings ? this.bindings.adapter : getTdGatewayAdapter();
+  }
+
+  private resetGatewayAdapter(): void {
+    if (!this.bindings) resetTdGatewayAdapter();
+  }
+
+  private startAuthServices(): void {
+    if (this.bindings) {
+      this.bindings.startAuthSideEffect(this.accountStore);
+    } else {
+      setAuthSideEffectStore(this.accountStore);
+      startAuthSideEffect();
+    }
+  }
+
+  private stopAuthServices(): void {
+    if (this.bindings) this.bindings.stopAuthSideEffect();
+    else stopAuthSideEffect();
   }
 
   initialize(): Promise<void> {
+    if (this.retired) {
+      return Promise.reject(new AppError(AppErrorKind.NETWORK, 'Runtime owner has been retired'));
+    }
     // Never start a new generation while the previous destroy/cleanup owns the dispatcher.
     if (this.shutdownTask) return this.shutdownTask.then((): Promise<void> => this.initialize());
     if (this.initializationTask) return this.initializationTask;
@@ -112,8 +152,8 @@ export class AppCoreRuntime {
       const dispatcher = getMainThreadDispatcher();
       dispatcher.subscribeUpdates((rawJson: string) => {
         // Это выполняется на MAIN THREAD — безопасно для Normalizer + Store
-        const gatewayImpl = TdGatewayImpl.getInstance();
-        gatewayImpl.handleUpdateOnMainThread(rawJson);
+        if (this.bindings) this.bindings.handleRawUpdate(rawJson);
+        else TdGatewayImpl.getInstance().handleUpdateOnMainThread(rawJson);
       });
 
       // 2. Подписываемся на parsed обновления из Gateway (уже на main thread)
@@ -142,17 +182,16 @@ export class AppCoreRuntime {
       hilog.info(DOMAIN, TAG, 'AppStoreBridge initialized');
 
       // 6. AuthSideEffect: auto-send TDLib params + resolve user
-      setAuthSideEffectStore(this.accountStore);
-      startAuthSideEffect();
+      this.startAuthServices();
       hilog.info(DOMAIN, TAG, 'AuthSideEffect started');
 
       // 7. Avatar download watcher
-      const avatarUseCase = createDownloadAvatarsUseCase(this.accountStore, getTdGatewayAdapter());
+      const avatarUseCase = createDownloadAvatarsUseCase(this.accountStore, this.getGatewayAdapter());
       avatarUseCase.start();
       hilog.info(DOMAIN, TAG, 'DownloadAvatars watcher started');
 
       // 8. Message media download watcher
-      const mediaUseCase = createDownloadMessageMediaUseCase(this.accountStore, getTdGatewayAdapter());
+      const mediaUseCase = createDownloadMessageMediaUseCase(this.accountStore, this.getGatewayAdapter());
       mediaUseCase.start();
       hilog.info(DOMAIN, TAG, 'DownloadMessageMedia watcher started');
 
@@ -164,10 +203,11 @@ export class AppCoreRuntime {
       }
       this.isRunning = false;
       this.lifecycleToken++;
+      const failureToken: number = this.lifecycleToken;
       this.accountToken++;
       this.store.invalidateScopes();
       this.gateway.setClientRecoveryHooks(undefined);
-      stopAuthSideEffect();
+      this.stopAuthServices();
       resetAppStoreBridge();
       resetDownloadAvatarsUseCase();
       resetDownloadMessageMediaUseCase();
@@ -184,10 +224,16 @@ export class AppCoreRuntime {
         hilog.warn(DOMAIN, TAG, 'Gateway cleanup after initialize failure failed: %{public}s',
           String(cleanupError));
       } finally {
-        resetTdGatewayAdapter();
+        this.resetGatewayAdapter();
         getMainThreadDispatcher().unsubscribe();
         this.refreshGatewayReferences();
       }
+      // Keep the lifecycle store mounted before/after onCreate completion.
+      // Cleanup owns the old client until it settles; technical details stay in logs.
+      const failure = createAuthStateChangedEvent('notInitialized');
+      failure.error = 'AppCore startup failed';
+      await this.store.dispatch(failure, (): boolean =>
+        !this.retired && failureToken === this.lifecycleToken);
       const err = error as Error;
       hilog.error(DOMAIN, TAG, 'Failed to initialize: %{public}s', err.message);
       throw new AppError(
@@ -219,13 +265,13 @@ export class AppCoreRuntime {
     // This prefix must stay synchronous: rejected old requests resume in microtasks.
     this.accountToken++;
     const accountToken = this.accountToken;
-    stopAuthSideEffect();
+    this.stopAuthServices();
     resetDownloadAvatarsUseCase();
     resetDownloadMessageMediaUseCase();
     resetMessageCacheManager();
     LoadChatHistoryUseCase.resetState();
     resetLoadChatsUseCase();
-    resetTdGatewayAdapter();
+    this.resetGatewayAdapter();
     const reset = this.store.resetStateQueued();
     resetAccountNavigationContext();
     await reset;
@@ -239,10 +285,9 @@ export class AppCoreRuntime {
   private completeClientRestart(runtimeToken: number): void {
     if (!this.isCurrentRun(runtimeToken)) return;
     this.refreshGatewayReferences();
-    setAuthSideEffectStore(this.accountStore);
-    startAuthSideEffect();
-    createDownloadAvatarsUseCase(this.accountStore, getTdGatewayAdapter()).start();
-    createDownloadMessageMediaUseCase(this.accountStore, getTdGatewayAdapter()).start();
+    this.startAuthServices();
+    createDownloadAvatarsUseCase(this.accountStore, this.getGatewayAdapter()).start();
+    createDownloadMessageMediaUseCase(this.accountStore, this.getGatewayAdapter()).start();
   }
 
   private handleClientRestartFailure(error: AppError, runtimeToken: number): void {
@@ -267,6 +312,46 @@ export class AppCoreRuntime {
       throw new AppError(AppErrorKind.NETWORK, 'Runtime is not running');
     }
     await this.gateway.retryClosedClient();
+  }
+
+  retryInitialStartup(): Promise<void> {
+    if (this.retired) {
+      return Promise.reject(new AppError(AppErrorKind.NETWORK, 'Runtime owner has been retired'));
+    }
+    if (this.initialStartupRetryTask) return this.initialStartupRetryTask;
+    const auth = this.store.getState().auth;
+    if (this.initializationTask && auth.error.length === 0) return this.initializationTask;
+    if (this.isRunning || auth.status !== 'notInitialized' || auth.error.length === 0) {
+      return Promise.reject(new AppError(AppErrorKind.NETWORK, 'Initial startup is not awaiting retry'));
+    }
+    // Publish the single flight before cleanup callbacks can re-enter Retry.
+    const pendingInitialize = this.initializationTask;
+    const task = Promise.resolve().then(async (): Promise<void> => {
+      if (pendingInitialize) {
+        // Failure notification can precede the rejected task's final continuation.
+        try { await pendingInitialize; } catch (_) { /* explicit Retry owns the next attempt */ }
+      }
+      if (this.shutdownTask || this.gateway.getState() === 'destroying') {
+        await this.shutdown();
+      }
+      // Ability teardown may join that same retirement; it must never restart its owner.
+      if (this.retired) {
+        throw new AppError(AppErrorKind.NETWORK, 'Runtime owner has been retired');
+      }
+      await this.initialize();
+    });
+    this.initialStartupRetryTask = task;
+    const clearTask = (): void => {
+      if (this.initialStartupRetryTask === task) this.initialStartupRetryTask = undefined;
+    };
+    task.then(clearTask, clearTask);
+    return task;
+  }
+
+  retire(): Promise<void> {
+    // Permanent singleton/ability retirement differs from reusable shutdown().
+    this.retired = true;
+    return this.shutdown();
   }
 
   private setupPipeline(runtimeToken: number): void {
@@ -333,8 +418,8 @@ export class AppCoreRuntime {
     }
 
     const message = tdGetObject(rawUpdate, 'message');
-    const chatId = tdGetNumber(message, 'chat_id');
-    if (!chatId) {
+    const chatId = getMessageChatId(message);
+    if (!chatId || getMessageId(message) === '0') {
       return;
     }
 
@@ -415,7 +500,7 @@ export class AppCoreRuntime {
     this.store.invalidateScopes();
     this.gateway.setClientRecoveryHooks(undefined);
 
-    stopAuthSideEffect();
+    this.stopAuthServices();
     resetAppStoreBridge();
     resetDownloadAvatarsUseCase();
     resetDownloadMessageMediaUseCase();
@@ -441,7 +526,7 @@ export class AppCoreRuntime {
       }
       await this.gateway.destroy();
     } finally {
-      resetTdGatewayAdapter();
+      this.resetGatewayAdapter();
       getMainThreadDispatcher().unsubscribe();
       this.refreshGatewayReferences();
     }
@@ -484,7 +569,7 @@ export function resetAppCoreRuntime(): Promise<void> {
     rejectTask = reject;
   });
   resetTask = task;
-  const shutdown = runtimeInstance ? runtimeInstance.shutdown() : Promise.resolve();
+  const shutdown = runtimeInstance ? runtimeInstance.retire() : Promise.resolve();
   shutdown.then((): void => {
     runtimeInstance = null;
     resetTask = undefined;

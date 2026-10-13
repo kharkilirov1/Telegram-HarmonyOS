@@ -5,13 +5,14 @@
 
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, User, Chat } from '../../../core/model/AppState';
-import { loadUserFullInfo, loadSupergroupFullInfo, loadBasicGroupFullInfo } from '../../../domain/usecases/loadProfileInfo';
+import { loadUserFullInfo, loadSupergroupFullInfo, loadBasicGroupFullInfo, ProfileLoadContext, ProfileLoadResult, ProfileLoadStatus, captureProfileLoadContext } from '../../../domain/usecases/loadProfileInfo';
 import { TgAvatar } from '../../tg_ui/atoms/TgAvatar';
 import { TgProfileNavigationBar } from '../../tg_ui/atoms/TgProfileNavigationBar';
 import { SharedMediaRouteParams } from './TgSharedMediaPage';
 import { ProfileMembersRouteParams } from './TgProfileMembersPage';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { PendingChatSearchSignal } from '../chat/PendingChatSearchSignal';
+import { ChatScreenRouteParams } from '../chat/ChatScreenRouteParams';
 import { localized } from '../../../core/utils/AppResource';
 import { fileUri } from '@kit.CoreFileKit';
 import { window } from '@kit.ArkUI';
@@ -27,10 +28,12 @@ declare function px2vp(value: number): number;
 export class ProfileRouteParams {
   chatId: number = 0;
   userId: number = 0;
+  readonly context: ProfileLoadContext;
 
-  constructor(chatId: number, userId: number = 0) {
+  constructor(chatId: number, userId: number = 0, context?: ProfileLoadContext) {
     this.chatId = chatId;
     this.userId = userId;
+    this.context = context ?? captureProfileLoadContext();
   }
 }
 
@@ -137,6 +140,15 @@ export struct TgProfilePage {
   private storeUnsubscribe: (() => void) | undefined = undefined;
   private pageLifecycleToken: number = 0;
   private isClosing: boolean = false;
+  private isActive: boolean = false;
+  private routeContext?: ProfileLoadContext;
+  private scopeUnsubscribe?: () => void;
+  private requestGeneration: number = 0;
+  private requestPending: boolean = false;
+  private loadError?: Object;
+  @Local private loadState: ProfileLoadStatus | 'loading' = 'loading';
+  @Local private errorText: string = '';
+  @Local private hasPeer: boolean = false;
 
   private isGroupOrChannel(): boolean {
     return this.chatType === 'supergroup' || this.chatType === 'channel' || this.chatType === 'group';
@@ -145,6 +157,7 @@ export struct TgProfilePage {
   aboutToAppear(): void {
     try {
       this.isClosing = false;
+      this.isActive = true;
       this.pageLifecycleToken++;
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
       const windowStage = context.windowStage;
@@ -158,76 +171,150 @@ export struct TgProfilePage {
     }
   }
 
+  private clearPresentation(): void {
+    this.hasPeer = false;
+    this.title = '';
+    this.subtitle = '';
+    this.avatarInitials = '';
+    this.avatarImageSrc = '';
+    this.avatarColor = TgUiTokens.AVATAR_COLOR_5;
+    this.isOnline = false;
+    this.phoneNumber = '';
+    this.username = '';
+    this.bio = '';
+    this.chatType = 'private';
+    this.memberCount = 0;
+    this.administratorCount = 0;
+    this.supergroupId = 0;
+    this.description = '';
+    this.inviteLink = '';
+    this.isMuted = false;
+    this.isVerified = false;
+    this.isPremium = false;
+  }
+
+  private releaseProfileSubscriptions(): void {
+    if (this.storeUnsubscribe !== undefined) this.storeUnsubscribe();
+    if (this.scopeUnsubscribe !== undefined) this.scopeUnsubscribe();
+    this.storeUnsubscribe = undefined;
+    this.scopeUnsubscribe = undefined;
+  }
+
+  private accountUnavailable(): void {
+    this.requestGeneration++;
+    this.requestPending = false;
+    this.loadError = undefined;
+    this.clearPresentation();
+    this.loadState = 'stale';
+    this.errorText = localized($r('app.string.profile_account_unavailable').id, 'This profile is no longer available for the current account');
+  }
+
   private loadProfile(chatId: number): void {
-    if (chatId === 0) return; // groups/channels have negative ids
-    this.chatId = chatId;
-    this.profileUserId = 0;
-
-    const runtime = getAppCoreRuntime();
-    const state = runtime.getStore().getState();
-    this.applyState(state);
-
-    if (this.storeUnsubscribe !== undefined) {
-      this.storeUnsubscribe();
-      this.storeUnsubscribe = undefined;
-    }
-    const lifecycleToken: number = this.pageLifecycleToken;
-    const profileChatId: number = chatId;
-    let activeUnsubscribe: (() => void) | undefined = undefined;
-    activeUnsubscribe = runtime.getStore().subscribe((newState: AppState) => {
-      if (lifecycleToken !== this.pageLifecycleToken ||
-        this.chatId !== profileChatId ||
-        this.storeUnsubscribe !== activeUnsubscribe) {
-        return;
-      }
-      this.applyState(newState);
-    });
-    this.storeUnsubscribe = activeUnsubscribe;
-
-    // Fetch full info from TDLib
-    const chat = state.chats.chats.get(chatId);
-    if (chat) {
-      if ((chat.type === 'private' || chat.type === 'secret') && chat.peerUserId > 0) {
-        loadUserFullInfo(chat.peerUserId);
-      } else if ((chat.type === 'supergroup' || chat.type === 'channel') && chat.supergroupId > 0) {
-        loadSupergroupFullInfo(chatId, chat.supergroupId);
-      } else if (chat.type === 'group' && chat.basicGroupId > 0) {
-        loadBasicGroupFullInfo(chatId, chat.basicGroupId);
-      }
-    }
+    this.bindProfile(chatId, 0);
   }
 
   private loadUserProfile(userId: number): void {
-    if (userId <= 0) return;
-    this.chatId = 0;
-    this.profileUserId = userId;
-    this.chatType = 'private';
+    this.bindProfile(0, userId);
+  }
 
-    const runtime = getAppCoreRuntime();
-    this.applyState(runtime.getStore().getState());
-    if (this.storeUnsubscribe !== undefined) {
-      this.storeUnsubscribe();
-      this.storeUnsubscribe = undefined;
+  private bindProfile(chatId: number, userId: number): void {
+    this.requestGeneration++;
+    this.requestPending = false;
+    this.releaseProfileSubscriptions();
+    this.clearPresentation();
+    this.loadError = undefined;
+    this.errorText = '';
+    this.chatId = chatId;
+    this.profileUserId = userId;
+    const owner = this.routeContext;
+    if (owner === undefined || !owner.isCurrent() ||
+      !Number.isSafeInteger(chatId) || !Number.isSafeInteger(userId) || (chatId === 0 && userId <= 0)) {
+      this.accountUnavailable();
+      return;
     }
+    this.applyState(owner.store.getState());
     const lifecycleToken = this.pageLifecycleToken;
-    const targetUserId = userId;
+    this.scopeUnsubscribe = owner.store.subscribeScopeInvalidation((): void => {
+      if (this.isActive && this.routeContext === owner) this.accountUnavailable();
+    });
     let activeUnsubscribe: (() => void) | undefined = undefined;
-    activeUnsubscribe = runtime.getStore().subscribe((state: AppState): void => {
-      if (lifecycleToken !== this.pageLifecycleToken ||
-        this.profileUserId !== targetUserId ||
-        this.storeUnsubscribe !== activeUnsubscribe) {
-        return;
-      }
+    activeUnsubscribe = owner.store.subscribe((state: AppState): void => {
+      if (!this.isActive || this.isClosing || !owner.isCurrent() || this.routeContext !== owner ||
+        lifecycleToken !== this.pageLifecycleToken || this.chatId !== chatId || this.profileUserId !== userId ||
+        this.storeUnsubscribe !== activeUnsubscribe) return;
       this.applyState(state);
     });
     this.storeUnsubscribe = activeUnsubscribe;
-    loadUserFullInfo(userId);
+    this.requestFullInfo();
+  }
+
+  private ownsProfileRequest(generation: number, owner: ProfileLoadContext, lifecycleToken: number,
+    chatId: number, userId: number): boolean {
+    return this.isActive && !this.isClosing && this.routeContext === owner && owner.isCurrent() &&
+      generation === this.requestGeneration && lifecycleToken === this.pageLifecycleToken &&
+      this.chatId === chatId && this.profileUserId === userId;
+  }
+
+  private async requestFullInfo(): Promise<void> {
+    if (this.requestPending || !this.isActive || this.isClosing) return;
+    const owner = this.routeContext;
+    if (owner === undefined || !owner.isCurrent()) {
+      this.accountUnavailable();
+      return;
+    }
+    const generation = ++this.requestGeneration;
+    const lifecycleToken = this.pageLifecycleToken;
+    const chatId = this.chatId;
+    const userId = this.profileUserId;
+    const state = owner.store.getState();
+    const chat = state.chats.chats.get(chatId);
+    this.requestPending = true;
+    this.loadState = 'loading';
+    this.errorText = '';
+    this.loadError = undefined;
+    try {
+      let result = new ProfileLoadResult('invalid');
+      if (chatId === 0 && userId > 0) {
+        result = await loadUserFullInfo(userId, owner);
+      } else if (chat !== undefined) {
+        if ((chat.type === 'private' || chat.type === 'secret') && chat.peerUserId > 0) {
+          result = await loadUserFullInfo(chat.peerUserId, owner);
+        } else if ((chat.type === 'supergroup' || chat.type === 'channel') && chat.supergroupId > 0) {
+          result = await loadSupergroupFullInfo(chatId, chat.supergroupId, owner);
+        } else if (chat.type === 'group' && chat.basicGroupId > 0) {
+          result = await loadBasicGroupFullInfo(chatId, chat.basicGroupId, owner);
+        }
+      }
+      if (!this.ownsProfileRequest(generation, owner, lifecycleToken, chatId, userId)) return;
+      this.applyState(owner.store.getState());
+      this.loadError = result.cause;
+      this.loadState = result.status === 'loaded' && this.hasPeer ? 'loaded' : 'unavailable';
+      this.errorText = this.loadState === 'loaded' ? '' :
+        localized($r('app.string.profile_unavailable').id, 'Profile information is unavailable');
+    } catch (error) {
+      if (!this.ownsProfileRequest(generation, owner, lifecycleToken, chatId, userId)) return;
+      this.loadError = error;
+      this.loadState = 'unavailable';
+      this.errorText = localized($r('app.string.profile_unavailable').id, 'Profile information is unavailable');
+    } finally {
+      if (this.ownsProfileRequest(generation, owner, lifecycleToken, chatId, userId)) this.requestPending = false;
+    }
+  }
+
+  private retryProfile(): void {
+    if (this.loadState === 'unavailable' || this.loadState === 'invalid') this.requestFullInfo();
   }
 
   private applyState(state: AppState): void {
+    this.clearPresentation();
     if (this.chatId === 0 && this.profileUserId > 0) {
       const directUser = state.users.users.get(this.profileUserId);
-      if (directUser === undefined) return;
+      if (directUser === undefined) {
+        this.loadState = 'unavailable';
+        this.errorText = localized($r('app.string.profile_unavailable').id, 'Profile information is unavailable');
+        return;
+      }
+      this.hasPeer = true;
       const directName = (directUser.firstName + ' ' + directUser.lastName).trim();
       this.title = directName.length > 0 ? directName :
         (directUser.username.length > 0 ? '@' + directUser.username :
@@ -251,7 +338,13 @@ export struct TgProfilePage {
       return;
     }
     const chat = state.chats.chats.get(this.chatId);
-    if (!chat) return;
+    if (chat === undefined || ((chat.type === 'private' || chat.type === 'secret') &&
+      state.users.users.get(chat.peerUserId) === undefined)) {
+      this.loadState = 'unavailable';
+      this.errorText = localized($r('app.string.profile_unavailable').id, 'Profile information is unavailable');
+      return;
+    }
+    this.hasPeer = true;
 
     this.chatType = chat.type;
     this.isMuted = chat.muteForSeconds > 0;
@@ -295,12 +388,12 @@ export struct TgProfilePage {
   }
 
   aboutToDisappear(): void {
+    this.isActive = false;
     this.isClosing = false;
     this.pageLifecycleToken++;
-    if (this.storeUnsubscribe) {
-      this.storeUnsubscribe();
-      this.storeUnsubscribe = undefined;
-    }
+    this.requestGeneration++;
+    this.requestPending = false;
+    this.releaseProfileSubscriptions();
   }
 
   private openSharedMedia(): void {
@@ -308,7 +401,8 @@ export struct TgProfilePage {
   }
 
   private openSharedMediaFiltered(filterType: string): void {
-    if (this.chatId === 0) return;
+    if (this.chatId === 0 || !this.hasPeer || !this.isActive || this.isClosing ||
+      this.routeContext === undefined || !this.routeContext.isCurrent()) return;
     try {
       this.pageStack.pushPathByName('TgSharedMediaPage', new SharedMediaRouteParams(this.chatId, filterType));
     } catch (error) {
@@ -317,14 +411,16 @@ export struct TgProfilePage {
   }
 
   private openMembers(filterKind: 'all' | 'administrators'): void {
-    if (this.chatId === 0) return;
+    if (this.chatId === 0 || !this.hasPeer || !this.isActive || this.isClosing ||
+      this.routeContext === undefined || !this.routeContext.isCurrent()) return;
     const expectedCount = filterKind === 'administrators' ? this.administratorCount : this.memberCount;
     try {
       this.pageStack.pushPathByName('TgProfileMembersPage', new ProfileMembersRouteParams(
         this.chatId,
         this.supergroupId,
         filterKind,
-        expectedCount
+        expectedCount,
+        this.routeContext
       ));
     } catch (error) {
       hilog.error(DOMAIN, TAG, 'Failed to push profile members: %{public}s', String(error));
@@ -332,7 +428,7 @@ export struct TgProfilePage {
   }
 
   private handleBackPress(): void {
-    if (this.isClosing) {
+    if (!this.isActive || this.isClosing) {
       hilog.warn(DOMAIN, TAG, 'Ignoring duplicate profile back pop while closing');
       return;
     }
@@ -344,24 +440,90 @@ export struct TgProfilePage {
           return;
         }
         this.isClosing = true;
+        this.requestGeneration++;
+        this.requestPending = false;
         navStack.pop();
       } catch (error) {
         this.isClosing = false;
         hilog.error(DOMAIN, TAG, 'Failed to pop profile page: %{public}s', String(error));
+        this.requestFullInfo();
       }
     }
   }
 
   private openChatSearch(): void {
-    if (this.chatId === 0) {
-      return;
-    }
-    PendingChatSearchSignal.set(this.chatId);
+    const owner = this.routeContext;
+    if (this.chatId === 0 || !this.hasPeer || !this.isActive || this.isClosing ||
+      owner === undefined || !owner.isCurrent()) return;
+    const chatId = this.chatId;
+    const lifecycleToken = this.pageLifecycleToken;
+    const navStack = this.pageStack;
+    let token = 0;
     try {
-      this.pageStack.popToName('TgChatScreenPage');
+      // popToName chooses the first name from the bottom, which may be another
+      // chat. Return only to the nearest live route for this account and peer.
+      const names = navStack.getAllPathName();
+      let targetIndex = -1;
+      let targetRoute: ChatScreenRouteParams | undefined = undefined;
+      for (let index = names.length - 1; index >= 0; index--) {
+        if (names[index] !== 'TgChatScreenPage') continue;
+        const route: ChatScreenRouteParams | undefined =
+          navStack.getParamByIndex(index) as ChatScreenRouteParams | undefined;
+        if (route instanceof ChatScreenRouteParams && route.chatId === chatId &&
+          route.isCurrentAccount(owner.accountStore)) {
+          targetIndex = index;
+          targetRoute = route;
+          break;
+        }
+      }
+      if (targetRoute === undefined || !owner.isCurrent() || this.routeContext !== owner ||
+        lifecycleToken !== this.pageLifecycleToken || this.chatId !== chatId || this.pageStack !== navStack ||
+        !this.isActive || this.isClosing || navStack.getParamByIndex(targetIndex) !== targetRoute ||
+        navStack.getAllPathName()[targetIndex] !== 'TgChatScreenPage') return;
+      token = PendingChatSearchSignal.set(chatId, owner.accountStore, owner.store);
+      if (token === 0) return;
+      // A setter/navigation callback may have changed the account or target.
+      const targetStillMatches = navStack.getParamByIndex(targetIndex) === targetRoute &&
+        navStack.getAllPathName()[targetIndex] === 'TgChatScreenPage';
+      if (!targetStillMatches || !owner.isCurrent() || this.routeContext !== owner ||
+        lifecycleToken !== this.pageLifecycleToken || this.chatId !== chatId || this.pageStack !== navStack ||
+        !this.isActive || this.isClosing || !targetRoute.isCurrentAccount(owner.accountStore)) {
+        PendingChatSearchSignal.clear(token);
+        return;
+      }
+      this.isClosing = true;
+      navStack.popToIndex(targetIndex);
     } catch (error) {
+      PendingChatSearchSignal.clear(token);
+      if (this.routeContext === owner && lifecycleToken === this.pageLifecycleToken) this.isClosing = false;
       hilog.error(DOMAIN, TAG, 'Failed to return to chat search: %{public}s', String(error));
     }
+  }
+
+  @Builder
+  private buildProfileLoadState() {
+    Column({ space: 12 }) {
+      if (this.loadState === 'loading') {
+        LoadingProgress().width(32).height(32)
+      } else if (this.errorText.length > 0) {
+        Text(this.errorText)
+          .id('profile_state')
+          .fontSize(15)
+          .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+          .textAlign(TextAlign.Center)
+        if (this.loadState === 'unavailable' && this.routeContext !== undefined && this.routeContext.isCurrent()) {
+          Text(localized($r('app.string.retry').id, 'Retry'))
+            .id('profile_retry')
+            .fontSize(16)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(TgUiTokens.COLOR_ICON_PRIMARY)
+            .padding({ left: 16, right: 16, top: 8, bottom: 8 })
+            .onClick((): void => { this.retryProfile(); })
+        }
+      }
+    }
+    .width('100%')
+    .padding(24)
   }
 
   // ─── Builders ───
@@ -372,6 +534,7 @@ export struct TgProfilePage {
       Row() {
         Column() {
           Text(value)
+            .id(label === 'bio' ? 'profile_bio' : 'profile_info_' + label)
             .fontSize(17)
             .fontColor(TgUiTokens.COLOR_ICON_PRIMARY)
             .maxLines(5)
@@ -404,6 +567,7 @@ export struct TgProfilePage {
       Row() {
         Column() {
           Text(value)
+            .id(label === 'bio' ? 'profile_bio' : 'profile_info_' + label)
             .fontSize(17)
             .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
             .maxLines(5)
@@ -512,6 +676,7 @@ export struct TgProfilePage {
       })
 
       Text(this.title)
+        .id('profile_header')
         .fontSize(28)
         .fontWeight(FontWeight.Medium)
         .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
@@ -666,7 +831,7 @@ export struct TgProfilePage {
         // the system title bar remains hidden because it overlaps the status bar.
         TgProfileNavigationBar({
           topInset: this.topInset,
-          showSearch: this.chatId !== 0,
+          showSearch: this.chatId !== 0 && this.hasPeer && this.routeContext !== undefined && this.routeContext.isCurrent(),
           backAccessibilityText: localized($r('app.string.accessibility_back').id, 'Back'),
           searchAccessibilityText: localized($r('app.string.search_in_chat').id, 'Search in chat'),
           onBackPress: (): void => {
@@ -680,7 +845,12 @@ export struct TgProfilePage {
         Scroll() {
           Column() {
             // Header (avatar + name + status)
-            this.buildHeader()
+            if (this.hasPeer) {
+              this.buildHeader()
+            }
+            if (this.loadState === 'loading' || this.errorText.length > 0) {
+              this.buildProfileLoadState()
+            }
 
             // Info section
             if (this.isGroupOrChannel()) {
@@ -696,7 +866,7 @@ export struct TgProfilePage {
             }
 
             // Direct member profiles have no chat-owned settings yet.
-            if (this.chatId !== 0) {
+            if (this.chatId !== 0 && this.hasPeer) {
               this.buildNotificationsSection()
             }
 
@@ -705,7 +875,7 @@ export struct TgProfilePage {
               this.buildMembersSection()
             }
 
-            if (this.chatId !== 0) {
+            if (this.chatId !== 0 && this.hasPeer) {
               this.buildSharedMediaSection()
             }
 
@@ -728,12 +898,15 @@ export struct TgProfilePage {
     .onReady((context: NavDestinationContext) => {
       hilog.info(DOMAIN, TAG, 'onReady');
       const params = context.pathInfo.param as ProfileRouteParams;
+      this.pageStack = context.pathStack;
+      this.routeContext = params?.context;
       if (params && params.chatId !== 0) {
         this.loadProfile(params.chatId);
       } else if (params && params.userId > 0) {
         this.loadUserProfile(params.userId);
+      } else {
+        this.accountUnavailable();
       }
-      this.pageStack = context.pathStack;
     })
     .onBackPressed((): boolean => {
       this.handleBackPress();

@@ -10,7 +10,7 @@ import { QrLoginPage } from './QrLoginPage';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { CodeType, LoginController } from '../../controllers/LoginController';
-import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
+import { AppCoreRuntime, getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 // ─── Auth Context ───
@@ -27,6 +27,7 @@ export class AuthContext {
 
 @ComponentV2
 export struct LoginRouter {
+  @Param runtimeProvider: () => AppCoreRuntime = getAppCoreRuntime;
   @Event onAuthComplete: () => void = (): void => {};
 
   // ─── Local state (V2: @Local вместо @StorageLink) ───
@@ -62,7 +63,7 @@ export struct LoginRouter {
     if (this.unsubscribe === undefined || this.forceBackInFlight || this.recoveryInFlight) {
       return;
     }
-    const authStatus: string = getAppCoreRuntime().getLifecycleStore().getState().auth.status;
+    const authStatus: string = this.runtimeProvider().getLifecycleStore().getState().auth.status;
     if (authStatus !== 'waitCode' && authStatus !== 'waitPassword' && authStatus !== 'waitQrCode' &&
         authStatus !== 'waitRegistration' && authStatus !== 'waitEmailAddress' && authStatus !== 'waitEmailCode') {
       return;
@@ -88,9 +89,7 @@ export struct LoginRouter {
   }
 
   private async retryRecovery(): Promise<void> {
-    const runtime = getAppCoreRuntime();
-    if (this.unsubscribe === undefined || this.recoveryInFlight || this.forceBackInFlight ||
-        runtime.getLifecycleStore().getState().auth.status !== 'closed') {
+    if (this.unsubscribe === undefined || this.recoveryInFlight || this.forceBackInFlight) {
       return;
     }
     const requestToken: number = this.pageLifecycleToken;
@@ -99,7 +98,13 @@ export struct LoginRouter {
     this.recoveryInFlight = true;
     this.localError = undefined;
     try {
-      await runtime.retryClientRecovery();
+      const runtime = this.runtimeProvider();
+      const auth = runtime.getLifecycleStore().getState().auth;
+      if (auth.status === 'notInitialized' && auth.error.length > 0) {
+        await runtime.retryInitialStartup();
+      } else if (auth.status === 'closed') {
+        await runtime.retryClientRecovery();
+      }
     } catch (error) {
       if (this.isCurrentRouterContinuation(requestToken) && requestSerial === this.recoveryRequestSerial) {
         this.localError = $r('app.string.action_failed');
@@ -113,12 +118,12 @@ export struct LoginRouter {
   }
 
   private hasRecoveryFailure(): boolean {
-    return this.authStatus === 'closed' &&
+    return (this.authStatus === 'closed' || this.authStatus === 'notInitialized') &&
       (this.authError.length > 0 || this.localError !== undefined) && !this.recoveryInFlight;
   }
 
   private syncFromAppStorage(): void {
-    const auth = getAppCoreRuntime().getLifecycleStore().getState().auth;
+    const auth = this.runtimeProvider().getLifecycleStore().getState().auth;
     if (this.authStatus !== auth.status) {
       this.resetLocalActions();
     }
@@ -153,7 +158,7 @@ export struct LoginRouter {
     try {
       const subscriptionToken: number = this.pageLifecycleToken;
       let activeUnsubscribe: (() => void) | undefined = undefined;
-      activeUnsubscribe = getAppCoreRuntime().getLifecycleStore().subscribe(() => {
+      activeUnsubscribe = this.runtimeProvider().getLifecycleStore().subscribe(() => {
         if (!this.isCurrentRouterContinuation(subscriptionToken) || this.unsubscribe !== activeUnsubscribe) {
           return;
         }
@@ -183,10 +188,12 @@ export struct LoginRouter {
       if (this.hasRecoveryFailure()) {
         Column({ space: TgUiTokens.SPACE_16 }) {
           Text($r('app.string.action_failed'))
+            .id('loginRecoveryError')
             .fontSize(TgUiTokens.LOGIN_ERROR_SIZE)
             .fontColor(TgUiTokens.LOGIN_ERROR_COLOR)
             .textAlign(TextAlign.Center)
           Button($r('app.string.retry'))
+            .id('loginRecoveryRetry')
             .height(TgUiTokens.LOGIN_BUTTON_HEIGHT)
             .borderRadius(TgUiTokens.LOGIN_BUTTON_RADIUS)
             .fontSize(TgUiTokens.LOGIN_BUTTON_TEXT_SIZE)

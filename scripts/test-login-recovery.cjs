@@ -13,7 +13,7 @@ function load(relative, deps = {}, component) {
     assert.ok(end > 0, `builder boundary exists: ${relative}`);
     source = source.slice(0, end) + '\n}\n';
     source = source.replace(/^\s*@(Entry|ComponentV2)\s*$/gm, '')
-      .replace(/@(Local|Event)\s+/g, '').replace(/\bstruct\b/g, 'class');
+      .replace(/@(Local|Event|Param)\s+/g, '').replace(/\bstruct\b/g, 'class');
   }
   const names = component ? [component] : [...source.matchAll(/^export\s+(?:class|function)\s+(\w+)/gm)].map(m => m[1]);
   const js = stripTypeScriptTypes(source.replace(/^import[\s\S]*?;\s*/gm, '').replace(/^export\s+/gm, ''),
