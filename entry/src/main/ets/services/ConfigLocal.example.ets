@@ -5,3 +5,4 @@
 
 export const TELEGRAM_API_ID: number = 0;
 export const TELEGRAM_API_HASH: string = '';
+export const USE_TEST_DC: boolean = false;
