@@ -9,7 +9,7 @@ import { getTdGatewayAdapter } from '../../infra/td/adapter/TdGatewayAdapter';
 import { TdObject } from '../../models/td/common';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { getAppContext } from '../../core/utils/AppResource';
-import { AppError } from '../model/AppError';
+import { AppError, classifyTdlibError, isSilentTdlibError, normalizeAppError } from '../model/AppError';
 import { AppStore } from '../store/AppStore';
 import { createMyUserResolvedEvent } from '../model/AppEvent';
 import { common } from '@kit.AbilityKit';
@@ -181,8 +181,9 @@ class AuthSideEffect {
       await getTdGatewayAdapter().send(createSetTdlibOnlineCommand(true));
       hilog.info(DOMAIN, TAG, 'TDLib option online=true acknowledged');
     } catch (error) {
-      const err = error as AppError;
-      hilog.warn(DOMAIN, TAG, 'declareSessionOnline failed: %{public}s', err.message);
+      if (isSilentTdlibError(error)) return;
+      const err: AppError = normalizeAppError(error);
+      hilog.warn(DOMAIN, TAG, 'declareSessionOnline failed: kind=%{public}s code=%{public}d', err.kind, err.tdlibCode);
     }
   }
 
@@ -205,8 +206,9 @@ class AuthSideEffect {
       hilog.info(DOMAIN, TAG, 'Service chat %{public}d subscribed for login-code delivery',
         TELEGRAM_SERVICE_CHAT_ID);
     } catch (error) {
-      const err = error as AppError;
-      hilog.warn(DOMAIN, TAG, 'ensureServiceChatKnown failed: %{public}s', err.message);
+      if (isSilentTdlibError(error)) return;
+      const err: AppError = normalizeAppError(error);
+      hilog.warn(DOMAIN, TAG, 'ensureServiceChatKnown failed: kind=%{public}s code=%{public}d', err.kind, err.tdlibCode);
     }
   }
 
@@ -233,12 +235,13 @@ class AuthSideEffect {
       if (!this.isCurrentRun(token)) {
         return;
       }
-      const err = error as AppError;
+      if (isSilentTdlibError(error)) return;
+      const err: AppError = normalizeAppError(error);
       if (err.tdlibCode === 404) {
         hilog.info(DOMAIN, TAG, 'Chats cache warmup reached end of dialogs immediately');
         return;
       }
-      hilog.error(DOMAIN, TAG, 'Chats cache warmup failed: code=%{public}d msg=%{public}s', err.tdlibCode, err.message);
+      hilog.error(DOMAIN, TAG, 'Chats cache warmup failed: kind=%{public}s code=%{public}d', err.kind, err.tdlibCode);
     }
   }
 
@@ -257,7 +260,7 @@ class AuthSideEffect {
 
       if (responseType === 'user') {
         const userId: number = response.getTopLevelNumber('id');
-        hilog.info(DOMAIN, TAG, 'getMe resolved: userId=' + userId);
+        hilog.info(DOMAIN, TAG, 'getMe resolved');
 
         const store: AppStore | null = storeRef;
         if (!store) {
@@ -265,7 +268,7 @@ class AuthSideEffect {
           return;
         }
         if (!userId || userId <= 0) {
-          hilog.error(DOMAIN, TAG, 'getMe: invalid userId=' + userId);
+          hilog.error(DOMAIN, TAG, 'getMe: invalid user identity');
           return;
         }
         await store.dispatch(createMyUserResolvedEvent(userId));
@@ -275,15 +278,17 @@ class AuthSideEffect {
         hilog.info(DOMAIN, TAG, 'myUserResolved dispatched');
       } else if (responseType === 'error') {
         const code: number = response.getNumber('code');
-        const message: string = response.getString('message');
-        hilog.error(DOMAIN, TAG, 'getMe error: code=' + code + ' message=' + message);
+        if (code === 406) return;
+        const err: AppError = classifyTdlibError(code, response.getString('message'));
+        hilog.error(DOMAIN, TAG, 'getMe error: kind=%{public}s code=%{public}d', err.kind, err.tdlibCode);
       }
     } catch (error) {
       if (!this.isCurrentRun(token)) {
         return;
       }
-      const err = error as AppError;
-      hilog.error(DOMAIN, TAG, 'getMe failed: ' + err.message + ' | tdlib: ' + err.technicalMessage + ' | code: ' + err.tdlibCode);
+      if (isSilentTdlibError(error)) return;
+      const err: AppError = normalizeAppError(error);
+      hilog.error(DOMAIN, TAG, 'getMe failed: kind=%{public}s code=%{public}d', err.kind, err.tdlibCode);
     }
   }
 
@@ -317,7 +322,7 @@ class AuthSideEffect {
     const filesDir: string = context.filesDir;
 
     if (!databaseDir || !filesDir) {
-      hilog.error(DOMAIN, TAG, 'Invalid paths: databaseDir=%{public}s filesDir=%{public}s', databaseDir, filesDir);
+      hilog.error(DOMAIN, TAG, 'Invalid TDLib storage paths');
       return;
     }
 
@@ -372,23 +377,29 @@ class AuthSideEffect {
         hilog.info(DOMAIN, TAG, 'setTdlibParameters accepted');
       } else if (responseType === 'error') {
         const code: number = response.getNumber('code');
+        if (code === 406) return;
         const message: string = response.getString('message');
         if (code === 400 && message.toLowerCase().indexOf('unexpected settdlibparameters') >= 0) {
           this.tdlibParamsAccepted = true;
           hilog.info(DOMAIN, TAG, 'Duplicate setTdlibParameters ignored (already accepted by TDLib)');
+          return;
         }
-        hilog.error(DOMAIN, TAG, 'setTdlibParameters error: code=' + code + ' message=' + message);
+        const err: AppError = classifyTdlibError(code, message);
+        hilog.error(DOMAIN, TAG, 'setTdlibParameters error: kind=%{public}s code=%{public}d', err.kind, err.tdlibCode);
       }
     } catch (error) {
       if (!this.isCurrentRun(token)) {
         return;
       }
-      const err = error as AppError;
-      if (err.tdlibCode === 400 && err.technicalMessage.toLowerCase().indexOf('unexpected settdlibparameters') >= 0) {
+      if (isSilentTdlibError(error)) return;
+      const err: AppError = normalizeAppError(error);
+      if (err.tdlibCode === 400 && typeof err.technicalMessage === 'string' &&
+        err.technicalMessage.toLowerCase().indexOf('unexpected settdlibparameters') >= 0) {
         this.tdlibParamsAccepted = true;
         hilog.info(DOMAIN, TAG, 'Duplicate setTdlibParameters ignored (already accepted by TDLib)');
+        return;
       }
-      hilog.error(DOMAIN, TAG, 'setTdlibParameters failed: ' + err.message + ' | tdlib: ' + err.technicalMessage + ' | code: ' + err.tdlibCode);
+      hilog.error(DOMAIN, TAG, 'setTdlibParameters failed: kind=%{public}s code=%{public}d', err.kind, err.tdlibCode);
     } finally {
       if (this.isCurrentRun(token)) {
         this.tdlibParamsInFlight = false;

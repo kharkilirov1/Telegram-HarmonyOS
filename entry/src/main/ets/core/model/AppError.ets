@@ -55,6 +55,13 @@ export class AppError extends Error {
   }
 }
 
+// Preserve typed causes; untyped catches must not assume TDLib fields exist.
+// Callers check silent 406 before inspecting any message or detail.
+export function normalizeAppError(error: Object): AppError {
+  if (error instanceof AppError) return error;
+  return new AppError(AppErrorKind.UNKNOWN, error instanceof Error ? error.message : 'Unexpected failure');
+}
+
 export function isSilentTdlibError(error: Object): boolean {
   return error instanceof AppError && error.tdlibCode === 406;
 }

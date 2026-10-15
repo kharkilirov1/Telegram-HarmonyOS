@@ -57,8 +57,8 @@ export class MainThreadDispatcher {
         handler(rawJson);
       } catch (error) {
         this.handlerErrorCount++;
-        hilog.error(DOMAIN, TAG, 'Update handler failed, total handler errors: %{public}d, error: %{public}s',
-          this.handlerErrorCount, String(error));
+        hilog.error(DOMAIN, TAG, 'Update handler failed, total handler errors: %{public}d',
+          this.handlerErrorCount);
       }
     } else {
       this.droppedCount++;
@@ -78,8 +78,8 @@ export class MainThreadDispatcher {
         handler(rawJson);
       } catch (error) {
         this.handlerErrorCount++;
-        hilog.error(DOMAIN, TAG, 'Response handler failed, total handler errors: %{public}d, error: %{public}s',
-          this.handlerErrorCount, String(error));
+        hilog.error(DOMAIN, TAG, 'Response handler failed, total handler errors: %{public}d',
+          this.handlerErrorCount);
       }
     } else {
       this.droppedCount++;

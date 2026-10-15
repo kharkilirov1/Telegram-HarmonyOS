@@ -15,7 +15,7 @@ import { AnyAppCommand } from '../../../core/model/AppCommand';
 import { AnyAppEvent } from '../../../core/model/AppEvent';
 import { serializeCommand } from '../serialization/CommandSerializer';
 import { TdObject } from '../../../models/TdTypes';
-import { AppError, isSilentTdlibError } from '../../../core/model/AppError';
+import { AppError, isSilentTdlibError, normalizeAppError } from '../../../core/model/AppError';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const TAG = 'TdGatewayAdapter';
@@ -86,17 +86,15 @@ export class TdGatewayAdapter implements TdGatewayPort {
         throw this.expiredClientError();
       }
       if (isSilentTdlibError(error)) throw error as AppError;
-      const err = error as Error;
-      const appErr = error as AppError;
-      const detail = appErr.technicalMessage ? appErr.technicalMessage : err.message;
-      hilog.error(DOMAIN, TAG, 'Command %{public}s failed: %{public}s (tdlib: %{public}s code: %{public}d)',
-        serialized.method, err.message, detail, appErr.tdlibCode ?? 0);
+      const err: AppError = normalizeAppError(error);
+      hilog.error(DOMAIN, TAG, 'Command %{public}s failed: kind=%{public}s code=%{public}d',
+        serialized.method, err.kind, err.tdlibCode);
       if (error instanceof AppError) {
         throw error;
       }
       throw new GatewayError(
         GatewayErrorCode.CONNECTION_FAILED,
-        err.message,
+        err.userMessage,
         serialized.method
       );
     }

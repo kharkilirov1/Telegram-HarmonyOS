@@ -4,11 +4,7 @@
 import { ChatId } from '../EntityId';
 import { GroupSendPermissionsDto } from './GroupAccessDto';
 import { TdObject, tdGetString, tdGetNumber, tdGetBoolean, tdGetInt64, tdGetObject, tdGetArray, tdHasKeys } from '../../utils/tdAccessors';
-import { hilog } from '@kit.PerformanceAnalysisKit';
 import { CustomEmojiTextEntity } from '../AppCommand';
-
-const DTO_DOMAIN = 0x0003;
-const DTO_TAG = 'ChatDto';
 
 export enum ChatType {
   PRIVATE = 'private',
@@ -138,9 +134,6 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   if (type === ChatType.PRIVATE) {
     chatDto.peerUserId = tdGetNumber(tdTypeObj, 'user_id');
   }
-
-  hilog.info(DTO_DOMAIN, DTO_TAG, 'chatFromTd id=%{public}d title="%{public}s" type=%{public}s',
-    chatDto.id, chatDto.title || '(empty)', tdGetString(tdGetObject(tdChat, 'type'), '@type'));
 
   // Preserve independent main/archive positions. A chat can move between lists
   // through two separate updateChatPosition events, so neither position may
