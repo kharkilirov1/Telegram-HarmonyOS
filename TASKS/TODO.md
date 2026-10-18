@@ -1,5 +1,21 @@
 # TODO - Telegram-HarmonyOS
 
+## Receive stabilization checkpoint - 2026-10-15
+
+- [x] Correct scoped privacy/error boundaries with actual-source regressions.
+- [x] Bound native/ArkTS admitted and consumed credits; preserve pre-JS batches and forbid uncertain replay.
+- [x] Verify off-owner join plus finalizer/submission barrier, ordinary real-module close/Closed/stop and async Ability retirement.
+- [x] Complete fresh candidate12 host95/95/static after the host-only amendment and verify inheritance of all four successful source11 SDK builds/HAPs; retain candidate9 focus16/build evidence and failed full2 without upgrading their scope.
+- [x] Complete isolated native-postfull-v3 pair builds/install, final native focus19/19 and full1208/1208; preserve earlier receive1/1/UI16/16/retirement scope.
+- [ ] Older unlogged keyboard mismatch and Slowmode title-wait cause remain UNCLASSIFIED. New primitive-empty observations use the shared owned-context transition contract; diagnostics and later PASS do not retrospectively establish either old cause.
+- [ ] Photo marker coverage remains PARTIAL; separate Hypium PASS does not create a missing instrumented terminal boundary.
+- [ ] Obtain a direct active framework-main napi_env cleanup witness; ordinary retirement and Worker proofs do not substitute.
+- [ ] Complete authenticated/provider/microphone/camera/current shipped-iOS/release-signing acceptance.
+
+[Current evidence](../docs/reviews/2026-10-15-receive-stabilization.md); publication/remote CI are separate Git receipts. Earlier checkpoints retain their original scope.
+
+## Previous dated work
+
 ## Current checkpoint and remaining verification - 2026-10-13
 
 - [x] Preserve the published 400-file review and 36 historical local artifacts; base dev@bbfc305.
@@ -11,7 +27,6 @@
 
 See [native validation report](../docs/reviews/2026-10-13-native-validation.md) and the earlier [source checkpoint](../docs/reviews/2026-10-13-source-checkpoint.md). Current product direction remains PRODUCTION_PARITY_PLAN.md.
 
-## Previous dated work
 
 
 Last updated: 2026-10-02

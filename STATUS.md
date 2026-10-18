@@ -1,5 +1,13 @@
 # STATUS - Telegram-HarmonyOS
 
+## Receive and privacy stabilization - 2026-10-15
+
+Scoped receive/privacy corrections are accepted locally. Fresh candidate12 host95/95 and static checks follow the host-only expectation amendment. Both official main/ohosTest builds remain source11 builds; explicit inheritance proves all937 other recorded inputs and four preserved HAPs unchanged. The rebuilt isolated native-postfull-v3 pair/install, final native focus19/19 and full1208/1208 PASS are separate gates. Earlier failed full/diagnostic runs remain preserved, including candidate9 full2 with1195 PASS/1 Failure/12 Errors. The older unlogged keyboard mismatch and Slowmode title-wait cause remain UNCLASSIFIED despite later PASS; primitive-empty ownership uses one bounded unknown-evidence contract without granting input. Earlier native receive1/1, UI16/16 and ordinary async Ability close/Closed/ACK/join/finalizer retirement retain their named artifact/date scope. Native/ArkTS credits cover active parsing; uncertain delivery is never replayed.
+
+Photo observation records remain PARTIAL despite separate Hypium PASS; active framework-main environment cleanup remains NO_WITNESS. Authenticated/provider/release acceptance remains open. Main app/session and36 historical artifacts were preserved. [Evidence, dates and exact limits](docs/reviews/2026-10-15-receive-stabilization.md). Earlier dated results below are historical.
+
+## Previous dated snapshots
+
 ## Current build and native verification - 2026-10-13
 
 Published base: dev@bbfc305. Official main/ohosTest builds now pass in the original checkout. Final local host 91/91 and PowerShell/Bash static checks PASS; isolated existing-emulator full native **1207/1207 PASS**, focused 16/16 plus photo 1/1. Photo uses an explicit 240-second whole-case budget; the earlier 120-second timeout remains preserved.
@@ -8,7 +16,6 @@ Fixed stale profile bio rendering and bounded native test scheduling/viewport/re
 
 Authenticated delivery, real provider/microphone/camera checks, current shipped-iOS acceptance and release signing remain open. Historical results below retain their original dates.
 
-## Previous dated snapshots
 
 
 Snapshot date: 2026-10-03 (target API 26; compatible API 23; refactor SDK/UI проверен в отдельном emulator bundle; authenticated acceptance открыт)

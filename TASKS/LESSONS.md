@@ -1,5 +1,17 @@
 # LESSONS - repeated mistakes and project-specific pitfalls
 
+## Receive ownership and evidence - 2026-10-15
+
+- Callback admission is not consumption. Keep count/UTF8-byte credit through active parsing and release references before exact epoch/batch ACK. Bound builder/lookahead separately and never call a payload cap total RSS.
+- Join is not finalization. Wait for real TSFN finalizer plus producer/control/submission retirement; retain the owner on uncertain cleanup failures. Do not join the JS owner thread.
+- Pre-JS conversion can retry a retained batch within a finite budget; possible JS effects and ambiguous insertion cannot be replayed. Faulted writes retain unknown outcome and must not auto-resend.
+- Runtime trace interpreters need negative controls for missing/duplicate/mixed/order-inconsistent events and actual Closed consumption. Process disappearance does not prove env cleanup; a coherent Photo prefix remains PARTIAL without its own terminal marker.
+- SDK compilation catches native-return type inference and event spelling missed by host transforms. Preserve assertions, source deltas and failed attempts. Main artifact reuse requires unchanged main inputs; a generated fixture in the isolated main still requires rebuilding.
+- Hash verification preserves a prior test's scope and date; it is not a new test execution. Fresh candidate12 host95/95 covers the host-only follow-up; source11 SDK builds are inherited only through explicit input/artifact identity; preserved Photo52/29/footer3+15 controls retain October14 execution.
+- Observe causal completion rather than a fixed sleep over dependently scheduled loaders. Keep exact order/publication assertions and bounded failure. Remove redundant UI RPC work inside the same ownership/deadline contract; do not reclassify a foreign owner as transient merely because a later run passes.
+- Filter console markers by their real JSAPP tag and current PID/time; buffered historical failures and HDC exit0 are not the current result. Preserve failed attempts and state each acceptance boundary.
+
+
 ## Build and native verification - 2026-10-13
 
 - Reproduce cache/permission failures in the actual checkout; a separate-copy EPERM does not prove the original build is blocked. Use normal approved execution without changing security/ACL settings.
