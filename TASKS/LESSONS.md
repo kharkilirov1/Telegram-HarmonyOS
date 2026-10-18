@@ -1,5 +1,11 @@
 # LESSONS - repeated mistakes and project-specific pitfalls
 
+Layout: three dated blocks come first, newest first. After them the numbered lessons run in
+descending number order, 161 down to 83, with 162–163 appended at the end because they were written
+after 161 rather than inserted. The numbers are stable identifiers — code, docs and reviews cite
+them directly ("lesson 121", "LESSON 84") — so never renumber. A new lesson takes the next free
+number and goes at the top of the numbered section.
+
 ## Receive scheduling and causal proof - 2026-10-18
 
 - A native send-to-receive duration includes credit waiting before td_receive; it is not server latency. Clip and union wait intervals in the same clock domain, retain shared intervals across concurrent requests without summing them, and distinguish outstanding from already-admitted batches.
