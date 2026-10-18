@@ -1,5 +1,18 @@
 # TODO - Telegram-HarmonyOS
 
+## Receive scheduling and main checkpoint - 2026-10-18
+
+- [x] Reproduce/fix bounded first progress and admitted-backlog pacing without deadline/FIFO/credit changes; pass15 new regressions,96 host suites (94+2), static, official builds, isolated comparison and75 SDK tests with Astra review.
+- [x] Obtain user authorization, install exact e32101bd official main preserving session, and observe getMe/profile/chat list/existing history/Back/cold/warm/background-resume with no messages or new login.
+- [x] Localize diagnostic-main delays using request/native/delivery/drain/ACK/Promise/store evidence in two separate processes: first4 correlated timeouts predominantly overlap native count-credit waiting; second10 timeout tokens remain partially covered at120s. Preserve second initial history failure and later ordinary-reopen success.
+- [ ] Separate consumer work, intentional pacing, scheduler/logging overhead and TDLib response-ready timing before selecting another production fix. Main reliability remains PARTIAL; no unequal-window speedup comparison.
+- [x] Execute specifically authorized30-HAP permanent deletion after exact path/size/SHA256 checks:1,508,061,896bytes removed,10 retained HAPs verified; preserve all sources/logs/reports/non-HAP artifacts.
+
+- [x] Build/review bounded diagnostics: official main/ohosTest, isolated matched-source pair, actual120-request native trace and75 nearby SDK checks. Restore939 public source inputs and retain failed v1/v2 build evidence.
+- [x] Obtain exact3ef90f95 main authorization, replace once without clearing data, and capture both fresh authenticated scenarios. Astra accepted scoped diagnostic evidence; no new fixed HAP is proposed. Report any later fixed candidate before another main replacement. [Runtime evidence](../docs/reviews/2026-10-18-main-diagnostic-runtime.md).
+
+[Main evidence](../docs/reviews/2026-10-18-main-receive-acceptance.md). Candidate stays local/unpublished; prior dated checkpoints retain their scope.
+
 ## Receive stabilization checkpoint - 2026-10-15
 
 - [x] Correct scoped privacy/error boundaries with actual-source regressions.

@@ -1,5 +1,21 @@
 # LESSONS - repeated mistakes and project-specific pitfalls
 
+## Receive scheduling and causal proof - 2026-10-18
+
+- A native send-to-receive duration includes credit waiting before td_receive; it is not server latency. Clip and union wait intervals in the same clock domain, retain shared intervals across concurrent requests without summing them, and distinguish outstanding from already-admitted batches.
+- If a selected batch reaches Ark only after timeout, its later admission-to-dispatch residence cannot alone explain that deadline failure. Preserve source-ready and observer-effect unknowns; wall-time spans are not CPU time.
+- Keep a120s terminal cutoff PARTIAL even when earlier request prefixes are coherent. Preserve initial empty-history failure when a later ordinary UI reopen succeeds; neither outcome establishes continuous smoothness.
+
+- Bounded diagnostic volume does not establish zero timing cost: synchronous HiLog, native locks, clocks and Promise observers can perturb the measured application. Trace evidence describes the instrumented candidate; historical causality needs controls when observer cost could explain delay.
+- Match official/isolated diagnostic source hashes and SDK artifact/install/fresh-process receipts. Retain failed compiler attempts; ArkTS rejects static-method this references and may require explicit native-result type annotations. A run without capacity-wait/store records does not validate those runtime branches.
+
+- Functional getMe/profile/history success does not clear remaining main request timeouts. Deduplicate overlapping captures by PID/correlation; unequal workloads/windows are not a speedup metric. Four queued batches at timeout do not establish the delivery-stage cause.
+- Installed hilog accepts at most10 tags: split larger focused sets into disjoint groups, reject CLI errors, and retain invalid captures explicitly. A new PID plus post-launch onCreate is the app-init witness; ps STIME alone can predate the launch.
+- HAP cleanup requires an exact extension/path/size/hash proposal and preservation of current/rollback/test pairs. Keep non-HAP evidence; do not turn approval of inventory into deletion authorization.
+- A time-budget guard before the first transfer can starve work; parsing followed by continue is not transfer progress. Guarantee meaningful progress while retaining finite item/batch limits even with a frozen or backward clock.
+- Admission capacity being full is a symptom, not a causal diagnosis. Trace selected native receive/publish/JS admission/dispatch/ACK/Promise and compare progress-only versus pacing-only. Do not extend deadlines or remove memory bounds to hide an admitted-wait timeout.
+- Keep native steady-clock and Ark uptime durations separate. Frame callbacks must occur inside actual work, not only readiness/cleanup, and do not by themselves establish smooth presentation/input. Verify the expected baseline failure phase after safety gates; ordinary Hypium class-name noise is not a malformed diagnostic marker. Preserve failed captures and parser versions.
+
 ## Receive ownership and evidence - 2026-10-15
 
 - Callback admission is not consumption. Keep count/UTF8-byte credit through active parsing and release references before exact epoch/batch ACK. Bound builder/lookahead separately and never call a payload cap total RSS.
