@@ -9,7 +9,7 @@ import { ChatScreenDecompositionFixture } from '../ChatScreenDecompositionFixtur
 import { PhotoAlbumDialogFixtureView } from '../components/PhotoAlbumDialogFixture';
 import { WriteResendFixtureView } from '../components/WriteResendFixture';
 import { SequentialMediaDialogFixtureView } from '../components/SequentialMediaDialogFixture';
-import { PhotoSelectionPreviewFixtureView } from '../components/PhotoSelectionPreviewFixture';
+import { PhotoSelectionPreviewFixture, PhotoSelectionPreviewFixtureView } from '../components/PhotoSelectionPreviewFixture';
 import { TimelineUpdateFixture, TimelineUpdateFixtureView, TIMELINE_UPDATE_ROUTE } from '../components/TimelineUpdateFixture';
 import { SlowmodeNativeFixture, SlowmodeFixtureView } from '../components/SlowmodeFixture';
 import { StabilizationNativeFixture, StabilizationStartupFixtureView, StabilizationSearchStackChatView, STABILIZATION_STARTUP_ROUTE } from '../components/StabilizationFixture';
@@ -46,6 +46,7 @@ struct ChatStateRenderProbe {
 @Entry
 @ComponentV2
 struct Index {
+  private photoViewportOwner: number = -1;
   @Local private pageStack: NavPathStack = new NavPathStack();
   aboutToAppear(): void { SlowmodeNativeFixture.bindNavigation(this.pageStack); StabilizationNativeFixture.bindNavigation(this.pageStack); }
 
@@ -73,7 +74,7 @@ struct Index {
 
   build() {
     Navigation(this.pageStack) {
-      Scroll() {
+      Scroll(PhotoSelectionPreviewFixture.viewportScroller) {
       Column({ space: 16 }) {
         Text('Chat decomposition device fixture').fontSize(18)
         Button('Open controlled startup').id('stabilization-open-startup').onClick(() => {
@@ -118,6 +119,8 @@ struct Index {
       .id('chat-test-fixture-scroll')
       .width('100%')
       .height('100%')
+      .onAppear(() => { this.photoViewportOwner = PhotoSelectionPreviewFixture.bindViewport(this.getUIContext()); })
+      .onDisAppear(() => PhotoSelectionPreviewFixture.unbindViewport(this.photoViewportOwner))
     }
     .navDestination(this.chatDestination)
     .mode(NavigationMode.Stack)

@@ -3,11 +3,12 @@ import { Component, Driver, ON, abilityDelegatorRegistry } from '@kit.TestKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { fileIo } from '@kit.CoreFileKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { TimelineTransactionFixture, TimelineScrollEvent } from '../testability/TimelineTransactionFixture';
+import { TimelineTransactionFixture, TimelineScrollEvent, timelineTimingNow } from '../testability/TimelineTransactionFixture';
 import { TimelineUpdateFixture } from '../testability/components/TimelineUpdateFixture';
 
 class NativeTimelineMeasurement {
   phase: string = '';
+  observationGeneration: number = 0;
   identity: string = '';
   index: number = -1;
   time: number = 0;
@@ -25,6 +26,24 @@ class NativeTimelineMeasurement {
   olderCalls: number = 0;
   newerCalls: number = 0;
   events: TimelineScrollEvent[] = [];
+}
+
+class NativeTimelineObservation {
+  deadline: number = 0;
+  generation: number = 0;
+  samples: number = 0;
+  acquisitions: number = 0;
+  row?: Component;
+  list?: Component;
+}
+
+async function waitForDisappearance(fixture: TimelineTransactionFixture): Promise<void> {
+  let timeoutId: number = -1;
+  try {
+    await Promise.race<void>([fixture.disappeared, new Promise<void>((_resolve, reject) => {
+      timeoutId = setTimeout(() => reject(new Error('Native timeline disappearance timeout')), 5000) as number;
+    })]);
+  } finally { if (timeoutId >= 0) clearTimeout(timeoutId); }
 }
 
 async function fixtureRootReady(driver: Driver): Promise<void> {
@@ -55,10 +74,11 @@ async function fixtureRootReady(driver: Driver): Promise<void> {
   throw new Error('Native timeline mount timeout: ' + diagnostic);
 }
 
-async function required(driver: Driver, id: string): Promise<Component> {
-  const component = await driver.waitForComponent(ON.id(id), 5000);
+async function required(driver: Driver, id: string, timeout: number = 5000, deadline: number = 0): Promise<Component> {
+  const component = await driver.waitForComponent(ON.id(id), timeout);
   expect(component !== undefined && component !== null).assertTrue();
   if (component === undefined || component === null) throw new Error('Missing native timeline component: ' + id);
+  if (deadline > 0 && Date.now() >= deadline) throw new Error('Native timeline observation deadline');
   await driver.assertComponentExist(ON.id(id));
   return component;
 }
@@ -82,40 +102,78 @@ async function openTimeline(driver: Driver): Promise<TimelineTransactionFixture>
 // No scrollSearch, scrollToIndex or gesture is allowed in this measurement: a
 // failed retention must not be repaired by the test while finding the anchor.
 async function measure(driver: Driver, fixture: TimelineTransactionFixture,
-  id: number, phase: string): Promise<NativeTimelineMeasurement> {
-  const component = await required(driver, 'timeline-update-msg_' + id.toString());
-  const bounds = await component.getBounds();
-  const listBounds = await (await required(driver, 'timeline-update-list')).getBounds();
-  const index = fixture.indexOf(id);
-  expect(index >= 0).assertTrue();
-  const rect = fixture.listScroller.getItemRect(index);
-  expect(bounds.bottom > bounds.top && bounds.right > bounds.left).assertTrue();
-  expect(rect.width > 0 && rect.height > 0).assertTrue();
-  expect(bounds.bottom > listBounds.top && bounds.top < listBounds.bottom).assertTrue();
-  const result = new NativeTimelineMeasurement();
-  result.phase = phase; result.identity = 'msg_' + id.toString(); result.index = index; result.time = Date.now();
-  result.screenLeft = bounds.left; result.screenTop = bounds.top; result.screenRight = bounds.right; result.screenBottom = bounds.bottom;
-  result.itemX = rect.x; result.itemY = rect.y; result.itemWidth = rect.width; result.itemHeight = rect.height;
-  result.listTop = listBounds.top; result.listBottom = listBounds.bottom; result.count = fixture.dataSource.totalCount();
-  result.olderCalls = fixture.olderCalls; result.newerCalls = fixture.newerCalls; result.events = fixture.events.slice();
-  return result;
+  id: number, phase: string, observation: NativeTimelineObservation): Promise<NativeTimelineMeasurement> {
+  while (true) {
+    if (Date.now() >= observation.deadline) throw new Error('Native timeline observation deadline');
+    if (!fixture.mounted || TimelineUpdateFixture.current !== fixture) throw new Error('Native timeline owner changed');
+    try {
+      if (observation.row === undefined) {
+        observation.acquisitions++;
+        observation.row = await required(driver, 'timeline-update-msg_' + id.toString(), Math.max(1, observation.deadline - Date.now()), observation.deadline);
+      }
+      if (Date.now() >= observation.deadline) throw new Error('Native timeline observation deadline');
+      const bounds = await observation.row.getBounds();
+      if (Date.now() >= observation.deadline) throw new Error('Native timeline observation deadline');
+      if (observation.list === undefined) {
+        observation.acquisitions++;
+        observation.list = await required(driver, 'timeline-update-list', Math.max(1, observation.deadline - Date.now()), observation.deadline);
+      }
+      if (Date.now() >= observation.deadline) throw new Error('Native timeline observation deadline');
+      const listBounds = await observation.list.getBounds();
+      if (!fixture.mounted || TimelineUpdateFixture.current !== fixture) throw new Error('Native timeline owner changed');
+      if (Date.now() >= observation.deadline) throw new Error('Native timeline observation deadline');
+      const index = fixture.indexOf(id);
+      expect(index >= 0).assertTrue();
+      const rect = fixture.listScroller.getItemRect(index);
+      expect(bounds.bottom > bounds.top && bounds.right > bounds.left).assertTrue();
+      expect(rect.width > 0 && rect.height > 0).assertTrue();
+      expect(bounds.bottom > listBounds.top && bounds.top < listBounds.bottom).assertTrue();
+      const result = new NativeTimelineMeasurement();
+      result.observationGeneration = observation.generation;
+      result.phase = phase; result.identity = 'msg_' + id.toString(); result.index = index; result.time = Date.now();
+      result.screenLeft = bounds.left; result.screenTop = bounds.top; result.screenRight = bounds.right; result.screenBottom = bounds.bottom;
+      result.itemX = rect.x; result.itemY = rect.y; result.itemWidth = rect.width; result.itemHeight = rect.height;
+      result.listTop = listBounds.top; result.listBottom = listBounds.bottom; result.count = fixture.dataSource.totalCount();
+      result.olderCalls = fixture.olderCalls; result.newerCalls = fixture.newerCalls; result.events = fixture.events.slice();
+      observation.samples++;
+      return result;
+    } catch (error) {
+      if ((error as BusinessError).code !== 17000004) throw error as Error;
+      // Only this SDK stale/invisible-handle error permits reacquisition. Never
+      // move the viewport or reset the existing invocation deadline.
+      observation.row = undefined; observation.list = undefined; observation.generation++;
+    }
+  }
 }
 
 async function settled(driver: Driver, fixture: TimelineTransactionFixture,
   id: number, phase: string): Promise<NativeTimelineMeasurement> {
   const deadline = Date.now() + 5000;
-  let prior = await measure(driver, fixture, id, phase);
-  let stable = 0;
-  while (Date.now() < deadline) {
-    await driver.delayMs(100);
-    const current = await measure(driver, fixture, id, phase);
-    if (Math.abs(prior.screenTop - current.screenTop) <= 1 && Math.abs(prior.itemY - current.itemY) <= 0.5 &&
-      prior.index === current.index && prior.count === current.count) stable++;
-    else stable = 0;
-    prior = current;
-    if (stable >= 3) return current;
+  const observation = new NativeTimelineObservation(); observation.deadline = deadline;
+  const startMono = timelineTimingNow();
+  let stable: number = 0;
+  let completed: boolean = false;
+  try {
+    let prior = await measure(driver, fixture, id, phase, observation);
+    while (Date.now() < deadline) {
+      await driver.delayMs(100);
+      const current = await measure(driver, fixture, id, phase, observation);
+      if (Math.abs(prior.screenTop - current.screenTop) <= 1 && Math.abs(prior.itemY - current.itemY) <= 0.5 &&
+        prior.index === current.index && prior.count === current.count &&
+        prior.observationGeneration === current.observationGeneration) stable++;
+      else stable = 0;
+      prior = current;
+      if (stable >= 3) { completed = true; return current; }
+    }
+    throw new Error('Native timeline layout did not settle for ' + phase);
+  } finally {
+    try {
+      console.info('[TimelineTiming] ' + JSON.stringify({ format: 'observation-v1', event: 'settled-end',
+        phase: phase, fixtureId: fixture.timingId, startMono: startMono, endMono: timelineTimingNow(),
+        deadlineWall: deadline, wall: Date.now(), samples: observation.samples, stable: stable,
+        acquisitions: observation.acquisitions, staleReacquisitions: observation.generation, completed: completed }));
+    } catch (_) {}
   }
-  throw new Error('Native timeline layout did not settle for ' + phase);
 }
 
 function retained(before: NativeTimelineMeasurement, after: NativeTimelineMeasurement): void {
@@ -259,12 +317,23 @@ export default function timelineUpdateNativeTest() {
       const driver = Driver.create(); let opened = false;
       try {
         const old = await openTimeline(driver); opened = true;
-        old.queueApply([10, 20], 1500);
+        old.timingEnabled = true;
+        const releaseOldApply = old.captureQueuedApply([10, 20]);
+        expect(old.queuedApplyDeliveries).assertEqual(0);
+        old.traceTiming('back-enter');
         await driver.pressBack(); opened = false;
+        old.traceTiming('back-return');
+        await waitForDisappearance(old);
+        old.traceTiming('disappearance-observed');
         const current = await openTimeline(driver); opened = true;
+        current.timingEnabled = true;
+        current.traceTiming('new-mount', old.timingId);
         expect(current !== old).assertTrue();
-        await driver.delayMs(1600);
+        releaseOldApply();
+        expect(old.queuedApplyDeliveries).assertEqual(1);
         old.onScrollIndex(2, 8);
+        old.traceTiming('old-before-assert', current.timingId);
+        current.traceTiming('current-before-assert', old.timingId);
         expect(old.dataSource.totalCount()).assertEqual(81);
         expect(current.dataSource.totalCount()).assertEqual(81);
         expect(old.olderCalls).assertEqual(0);

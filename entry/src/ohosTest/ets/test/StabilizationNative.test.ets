@@ -301,8 +301,10 @@ async function scrollOwnedToBottom(driver: Driver, target: Component, speed: num
   try { await ownedTarget.scrollToBottom(speed); } catch (error) { observation.phase = NativeUiPhase.Blocked; nativeUiTrace(observation, 'scrollToBottom-failed-no-replay'); throw error as Error; }
   checkNativeUiIdentity(observation);
 }
-async function scrollOwnedToTop(driver: Driver, target: Component, speed: number, expectedDepth: number, targetId: string): Promise<void> {
-  const observation = new NativeUiObservation(expectedDepth);
+async function scrollOwnedToTop(driver: Driver, target: Component, speed: number, expectedDepth: number, targetId: string,
+  shared?: NativeUiObservation): Promise<void> {
+  const observation = shared ?? new NativeUiObservation(expectedDepth);
+  if (observation.expectedDepth !== expectedDepth) blockNativeUi(observation, 'Native UI transaction depth mismatch');
   const ownedTarget = await prepareOwnedGestureTarget(driver, target, targetId, observation);
   recordOwnedAction(observation, 'scrollToTop');
   try { await ownedTarget.scrollToTop(speed); } catch (error) { observation.phase = NativeUiPhase.Blocked; nativeUiTrace(observation, 'scrollToTop-failed-no-replay'); throw error as Error; }
@@ -345,12 +347,13 @@ async function rootReady(driver: Driver, shared?: NativeUiObservation): Promise<
       const root = await driver.waitForComponent(ON.id('chat-test-fixture-scroll'), Math.min(1000, observation.deadline - Date.now()));
       checkNativeUiObservation(observation);
       if (root !== undefined && root !== null) {
-        await acquireOwnedUiContext(driver, 0, observation);
-        // Case entry restores the fixture viewport before preparing a session.
+        // Case entry shares its owner/deadline with the gesture's target proof.
         // Back keeps its shared observation and existing root-return path.
         if (shared === undefined) {
-          await scrollOwnedToTop(driver, root, 40000, 0, 'chat-test-fixture-scroll');
+          await scrollOwnedToTop(driver, root, 40000, 0, 'chat-test-fixture-scroll', observation);
           checkNativeUiObservation(observation);
+          await acquireOwnedUiContext(driver, 0, observation);
+        } else {
           await acquireOwnedUiContext(driver, 0, observation);
         }
         return;
@@ -462,15 +465,37 @@ function verifyBackMainWindow(mainWindow: window.Window, ability: UIAbility, obs
   if (observation.backWindowId !== undefined && observation.backWindowId !== properties.id) blockNativeUi(observation, 'Back main-window identity changed');
   return properties.id;
 }
+function keyboardWindowDiagnostic(observation: NativeUiObservation, event: string): void {
+  // Diagnostic logging must not replace the native observation result.
+  try { nativeUiTrace(observation, event); } catch (_) {}
+}
 async function readVisibleKeyboardPanel(driver: Driver, observation: NativeUiObservation): Promise<boolean | undefined> {
   checkNativeUiObservation(observation);
   let panel: UiWindow | undefined;
+  keyboardWindowDiagnostic(observation, 'keyboard-window-query-enter');
   try { panel = await driver.findWindow({ bundleName: CONTROLLED_IME_BUNDLE }); }
   catch (error) { observation.phase = NativeUiPhase.Blocked; nativeUiTrace(observation, 'keyboard-window-query-failed'); throw error as Error; }
+  keyboardWindowDiagnostic(observation, panel === undefined || panel === null ? 'keyboard-window-query-return-absent' : 'keyboard-window-query-return-handle');
   checkNativeUiObservation(observation);
   if (panel === undefined || panel === null) { observation.keyboardPanel = 'absent'; return false; }
   try {
-    const bundle = await panel.getBundleName(); checkNativeUiObservation(observation);
+    keyboardWindowDiagnostic(observation, 'keyboard-window-bundle-enter');
+    const bundle = await panel.getBundleName();
+    const bundleKind: string = bundle === undefined ? 'undefined' : bundle === null ? 'null' :
+      typeof bundle !== 'string' ? 'non-string' : bundle.length === 0 ? 'empty' : 'value';
+    keyboardWindowDiagnostic(observation, 'keyboard-window-bundle-return-type=' + typeof bundle +
+      '-kind=' + bundleKind + '-value=' + (typeof bundle === 'string' ? JSON.stringify(bundle) :
+        bundle === undefined ? 'undefined' : bundle === null ? 'null' : '<non-string>'));
+    checkNativeUiObservation(observation);
+    if (bundle === '' && (observation.keyboardDismissActions === 0 || observation.keyboardDismissActions === 1) &&
+      observation.navigationBackActions === 0 && !observation.keyboardAreaPositive) {
+      // An empty owner under the current owned context is unknown, never proof of an absent keyboard.
+      // The caller has just checked app focus/Ability/Stage identity and area.
+      observation.keyboardStaleHandles++; observation.keyboardPanel = 'empty-owner-under-owned-context';
+      nativeUiTrace(observation, 'keyboard-empty-owner-sample-invalidated');
+      if (observation.keyboardStaleHandles >= 3) blockNativeUi(observation, 'Back keyboard invalidated-sample limit exhausted');
+      return undefined;
+    }
     if (bundle !== CONTROLLED_IME_BUNDLE) blockNativeUi(observation, 'Keyboard window has foreign bundle');
     const bounds = await panel.getBounds(); checkNativeUiObservation(observation);
     nativeUiTrace(observation, 'keyboard-panel-bounds-' + JSON.stringify(bounds));

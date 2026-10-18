@@ -61,6 +61,70 @@ export class PhotoSelectionPreviewFixture {
     (): UIContext => PhotoSelectionPreviewFixture.mountedContext(), () => undefined);
   private static filesDir: string = '';
 
+  // Test-only root viewport. This binding exists before Prepare is clicked.
+  static readonly viewportScroller: Scroller = new Scroller();
+  private static viewportContext?: UIContext;
+  private static viewportGeneration: number = 0;
+
+  static bindViewport(context: UIContext): number {
+    PhotoSelectionPreviewFixture.viewportContext = context;
+    PhotoSelectionPreviewFixture.viewportGeneration++;
+    return PhotoSelectionPreviewFixture.viewportGeneration;
+  }
+
+  static unbindViewport(owner: number): void {
+    if (owner !== PhotoSelectionPreviewFixture.viewportGeneration) return;
+    PhotoSelectionPreviewFixture.viewportContext = undefined;
+    PhotoSelectionPreviewFixture.viewportGeneration++;
+  }
+
+  static viewportOwner(): number {
+    if (PhotoSelectionPreviewFixture.viewportContext === undefined) throw new Error('Photo fixture viewport is not mounted');
+    return PhotoSelectionPreviewFixture.viewportGeneration;
+  }
+
+  static assertViewportOwner(owner: number): void {
+    if (PhotoSelectionPreviewFixture.viewportContext === undefined || owner !== PhotoSelectionPreviewFixture.viewportGeneration) {
+      throw new Error('Photo fixture viewport owner changed');
+    }
+  }
+
+  static positionInViewport(id: string, owner: number): void {
+    PhotoSelectionPreviewFixture.assertViewportOwner(owner);
+    if (!/^photo-preview-fixture-(prepare|reset|busy|missing|ten|image|position|strip|move-earlier|move-later|remove|error|count|busy-state|decoded|demo|thumb-[0-9]|ordinal-[0-9])$/.test(id)) {
+      throw new Error('Unexpected photo fixture viewport target: ' + id);
+    }
+    // Vertical positioning reveals the strip; native bounds still prove child clipping.
+    const nested = id.startsWith('photo-preview-fixture-thumb-') || id.startsWith('photo-preview-fixture-ordinal-');
+    const targetId = nested ? 'photo-preview-fixture-strip' : id;
+    const context = PhotoSelectionPreviewFixture.viewportContext!;
+    const utils = context.getComponentUtils();
+    const viewport = utils.getRectangleById('chat-test-fixture-scroll');
+    const target = utils.getRectangleById(targetId);
+    const values: number[] = [viewport.windowOffset.x, viewport.windowOffset.y, viewport.size.width, viewport.size.height,
+      target.windowOffset.x, target.windowOffset.y, target.size.width, target.size.height];
+    if (values.some((value: number): boolean => !Number.isFinite(value))) throw new Error('Invalid photo fixture layout coordinates');
+    // A just-created component may not have laid out yet. The native observation deadline is shared across retries.
+    if (viewport.size.width <= 0 || viewport.size.height <= 0 || target.size.width <= 0 || target.size.height <= 0) return;
+    if (target.size.height > viewport.size.height || target.windowOffset.x < viewport.windowOffset.x ||
+      target.windowOffset.x + target.size.width > viewport.windowOffset.x + viewport.size.width) {
+      throw new Error('Photo fixture target cannot fit the viewport: ' + id);
+    }
+    const topDelta = target.windowOffset.y - viewport.windowOffset.y;
+    const bottomDelta = topDelta + target.size.height - viewport.size.height;
+    const deltaPx = topDelta < 0 ? topDelta : (bottomDelta > 0 ? bottomDelta : 0);
+    if (deltaPx === 0) return;
+    const offset = PhotoSelectionPreviewFixture.viewportScroller.currentOffset();
+    if (offset === undefined || offset === null) throw new Error('Photo fixture Scroller is not bound');
+    const deltaVp = context.px2vp(deltaPx);
+    if (!Number.isFinite(offset.xOffset) || !Number.isFinite(offset.yOffset) || !Number.isFinite(deltaVp)) {
+      throw new Error('Invalid photo fixture scroll offset');
+    }
+    PhotoSelectionPreviewFixture.assertViewportOwner(owner);
+    PhotoSelectionPreviewFixture.viewportScroller.scrollTo({ xOffset: offset.xOffset,
+      yOffset: Math.max(0, offset.yOffset + deltaVp), animation: false });
+  }
+
   private static mountedContext(): UIContext {
     if (PhotoSelectionPreviewFixture.uiContext === undefined) throw new Error('Preview fixture UIContext is not mounted');
     return PhotoSelectionPreviewFixture.uiContext;

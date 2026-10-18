@@ -1,3 +1,4 @@
+import { systemDateTime } from '@kit.BasicServicesKit';
 import { AppState, Chat, Message, createInitialAppState } from '../../../main/ets/core/model/AppState';
 import { ChatTimelineDataSource } from '../../../main/ets/ui/pages/chat/ChatTimelineDataSource';
 import { ChatTimelineEntryVO } from '../../../main/ets/ui/pages/chat/ChatTimelineVO';
@@ -12,6 +13,11 @@ import {
   isNearBottomPaginationEdge, maybeUnlockAutoPagination, handleTimelineTouch, shouldSuppressLoadOlder,
   refreshScrollToBottomVisibility, schedulePaginationRecheck
 } from '../../../main/ets/ui/pages/chat/ChatTimelineViewportCoordinator';
+
+export function timelineTimingNow(): number {
+  try { return systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false); }
+  catch (_) { return -1; }
+}
 
 export class TimelineScrollEvent {
   kind: string = '';
@@ -28,6 +34,9 @@ export class TimelineScrollEvent {
 // records intent and must never reach an account, gateway or app bootstrap.
 export class TimelineTransactionFixture implements ChatTimelineTransactionCoordinatorPort,
   HandleTimelineScrollIndexPort, ChatTimelineViewportCoordinatorPort {
+  private static timingSequence: number = 0;
+  readonly timingId: number = ++TimelineTransactionFixture.timingSequence;
+  timingEnabled: boolean = false;
   readonly dataSource: ChatTimelineDataSource = new ChatTimelineDataSource();
   readonly recorder: TimelineUpdateRecorder = new TimelineUpdateRecorder(this.dataSource, false);
   readonly events: TimelineScrollEvent[] = [];
@@ -79,8 +88,13 @@ export class TimelineTransactionFixture implements ChatTimelineTransactionCoordi
   onActiveDrag?: () => void;
   activeDragUpdateCount: number = 0;
   private lifecycleTimers: number[] = [];
+  readonly disappeared: Promise<void>;
+  private resolveDisappearance?: () => void;
+  queuedApplyDeliveries: number = 0;
 
   constructor() {
+    // Registered before native navigation, resolved only by actual disposal.
+    this.disappeared = new Promise<void>((resolve) => { this.resolveDisappearance = resolve; });
     this.dataSource.registerDataChangeListener(this.recorder);
     const chat = new Chat(); chat.id = this.activeChatId; chat.type = 'group';
     chat.title = 'Synthetic timeline'; chat.unreadCount = 0;
@@ -136,22 +150,47 @@ export class TimelineTransactionFixture implements ChatTimelineTransactionCoordi
     this.bottomCalls++;
     this.listScroller.scrollToIndex(this.dataSource.totalCount() - 1, false, ScrollAlign.END);
   }
-  scheduleLifecycleTask(delayMs: number, task: () => void): void {
+  traceTiming(event: string, relatedId: number = -1): void {
+    if (!this.timingEnabled) return;
+    try {
+      console.info('[TimelineTiming] ' + JSON.stringify({ format: 'held-v1', event: event,
+        mono: timelineTimingNow(), fixtureId: this.timingId, relatedId: relatedId,
+        token: this.pageLifecycleToken, mounted: this.mounted, count: this.dataSource.totalCount(),
+        deliveries: this.queuedApplyDeliveries }));
+    } catch (_) {}
+  }
+  captureLifecycleTask(task: () => void): () => void {
     const token = this.pageLifecycleToken;
-    const id = setTimeout(() => { if (this.mounted && token === this.pageLifecycleToken) task(); }, delayMs) as number;
+    return (): void => { if (this.mounted && token === this.pageLifecycleToken) task(); };
+  }
+  scheduleLifecycleTask(delayMs: number, task: () => void): void {
+    const guarded = this.captureLifecycleTask(task);
+    const id = setTimeout(guarded, delayMs) as number;
     this.lifecycleTimers.push(id);
   }
   dispose(): void {
+    this.traceTiming('dispose-enter');
     this.mounted = false; this.pageLifecycleToken++;
     this.onActiveDrag = undefined;
     for (const id of this.lifecycleTimers) clearTimeout(id);
     this.lifecycleTimers = [];
     if (this.paginationRecheckTimerId >= 0) clearTimeout(this.paginationRecheckTimerId);
     this.paginationRecheckTimerId = -1;
+    this.traceTiming('dispose-return');
+    this.resolveDisappearance?.();
   }
   // Test-only queued input ownership. This tests the isolated fixture boundary,
   // not the real Session's navigation/account lifecycle.
   queueApply(ids: number[], delayMs: number): void { this.scheduleLifecycleTask(delayMs, () => this.apply(ids)); }
+  captureQueuedApply(ids: number[]): () => void {
+    this.traceTiming('held-capture');
+    const guarded = this.captureLifecycleTask(() => this.apply(ids));
+    return (): void => {
+      this.queuedApplyDeliveries++; this.traceTiming('held-release-enter');
+      guarded();
+      this.traceTiming('held-release-return');
+    };
+  }
   clearPendingMediaDownloads(): void {}
   computeInitialIndex(_total: number): void {}
   fulfillPendingJump(): void {}

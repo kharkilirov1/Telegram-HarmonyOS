@@ -1,7 +1,8 @@
 import { describe, it, expect } from '@ohos/hypium';
-import { Driver, ON, abilityDelegatorRegistry, Point } from '@kit.TestKit';
+import { Driver, ON, abilityDelegatorRegistry, Point, Rect } from '@kit.TestKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { UIAbility } from '@kit.AbilityKit';
+import { window } from '@kit.ArkUI';
 import { localized } from '../../../main/ets/core/utils/AppResource';
 import { navigationUIState } from '../../../main/ets/core/model/UIStateModels';
 import { SlowmodeNativeFixture } from '../testability/components/SlowmodeFixture';
@@ -60,7 +61,102 @@ async function slowmodeAction(driver: Driver): Promise<Point> {
   const text = await countdown.getText();
   expect(/^[0-9]+:[0-9]{2}$/.test(text)).assertTrue();
   console.info('[SlowmodeNative] actualCountdownText=' + text);
-  return countdown.getBoundsCenter();
+  const point = await countdown.getBoundsCenter();
+  try { slowmodeResendLog('capturedCountdown point=' + point.x.toString() + ',' + point.y.toString()); } catch (diagnosticError) {}
+  return point;
+}
+// Exact native action acquisition; captured countdown coordinates are evidence only.
+async function clickCurrentSlowmodeAction(driver: Driver, capturedAction: Point): Promise<void> {
+  const started = Date.now(); let awaitedOperations: number = 0;
+  const fixture = SlowmodeNativeFixture.fixture();
+  const generation = SlowmodeNativeFixture.routeGeneration();
+  const bundleName = abilityDelegatorRegistry.getArguments().bundleName;
+  const moduleName = $r('app.color.background_primary').moduleName;
+  if (!bundleName || !moduleName) throw new Error('Slowmode action has no expected bundle/module');
+  const delegator = abilityDelegatorRegistry.getAbilityDelegator();
+  let ownerAbility: UIAbility | undefined;
+  let ownerWindowId: number = 0;
+  const checkOwner = (): void => {
+    if (SlowmodeNativeFixture.fixture() !== fixture || SlowmodeNativeFixture.state.page !== fixture.page ||
+      SlowmodeNativeFixture.routeGeneration() !== generation || SlowmodeNativeFixture.navigationDepth() !== 1)
+      throw new Error('Slowmode action fixture owner changed');
+    if (ownerAbility !== undefined && ownerWindowId !== 0 &&
+      ownerAbility.context.windowStage.getMainWindowSync().getWindowProperties().id !== ownerWindowId)
+      throw new Error('Slowmode action Stage owner changed');
+  };
+  const checkAbility = async (): Promise<UIAbility> => {
+    awaitedOperations++;
+    const ability = await delegator.getCurrentTopAbility(); checkOwner();
+    if (ability === undefined || ability === null || ability.context.abilityInfo.name !== 'TestAbility' ||
+      ability.context.abilityInfo.bundleName !== bundleName || ability.context.currentHapModuleInfo.name !== moduleName ||
+      (ownerAbility !== undefined && ownerAbility !== ability)) throw new Error('Slowmode action ability owner changed');
+    ownerAbility = ability; return ability;
+  };
+  const observeOwner = async (): Promise<Rect> => {
+    const ability = await checkAbility(); checkOwner();
+    awaitedOperations++;
+    const main = await window.getLastWindow(ability.context); checkOwner();
+    const properties = main.getWindowProperties();
+    const stage = ability.context.windowStage.getMainWindowSync().getWindowProperties();
+    if (!Number.isSafeInteger(properties.id) || properties.id <= 0 || properties.id !== stage.id ||
+      (ownerWindowId !== 0 && properties.id !== ownerWindowId)) throw new Error('Slowmode action main-window identity mismatch');
+    ownerWindowId = properties.id;
+    awaitedOperations++;
+    const focused = await driver.findWindow({ bundleName: bundleName, focused: true }); checkOwner();
+    if (focused === undefined || focused === null) throw new Error('Slowmode action has no owned focused window');
+    const bounds = properties.windowRect;
+    return { left: bounds.left, top: bounds.top, right: bounds.left + bounds.width, bottom: bounds.top + bounds.height };
+  };
+  const positive = (rect: Rect): boolean => Number.isFinite(rect.left) && Number.isFinite(rect.top) &&
+    Number.isFinite(rect.right) && Number.isFinite(rect.bottom) && rect.right > rect.left && rect.bottom > rect.top;
+  const contains = (outer: Rect, inner: Rect): boolean => positive(outer) && positive(inner) &&
+    inner.left >= outer.left && inner.right <= outer.right && inner.top >= outer.top && inner.bottom <= outer.bottom;
+  checkOwner(); await observeOwner(); checkOwner();
+  const dockSelector = ON.id('slowmode-fixture-dock').inWindow(bundleName);
+  awaitedOperations++;
+  const docks = await driver.findComponents(dockSelector); checkOwner();
+  if (docks === undefined || docks === null || docks.length !== 1) throw new Error('Slowmode action Dock is not unique');
+  awaitedOperations++;
+  const targets = await driver.findComponents(ON.id('tg_composer_action').inWindow(bundleName).within(dockSelector)); checkOwner();
+  if (targets === undefined || targets === null || targets.length !== 1) throw new Error('Slowmode action target is not unique');
+  const target = targets[0];
+  awaitedOperations++;
+  const enabled = await target.isEnabled(); checkOwner();
+  awaitedOperations++;
+  const clickable = await target.isClickable(); checkOwner();
+  if (!enabled || !clickable) throw new Error('Slowmode action native target is not enabled/clickable');
+  awaitedOperations++;
+  const dockBounds = await docks[0].getBounds(); checkOwner();
+  awaitedOperations++;
+  const bounds = await target.getBounds(); checkOwner();
+  // Two fresh owner observations after the target/property lookups; no snapshot atomicity is assumed.
+  await observeOwner(); checkOwner();
+  const ownerBounds = await observeOwner(); checkOwner();
+  if (!contains(dockBounds, bounds) || !contains(ownerBounds, bounds)) throw new Error('Slowmode action is clipped or has invalid bounds');
+  const submitEligible = fixture.page.composerCanSubmit();
+  if (fixture.page.isSending || fixture.page.composerSlowmodeSeconds !== 0 || !submitEligible)
+    throw new Error('Slowmode action model is not ready for one manual send');
+  try {
+    slowmodeResendLog('currentAction captured=' + capturedAction.x.toString() + ',' + capturedAction.y.toString() +
+      ' freshBounds=' + bounds.left.toString() + ',' + bounds.top.toString() + ',' + bounds.right.toString() + ',' + bounds.bottom.toString() +
+      ' freshCenter=' + ((bounds.left + bounds.right) / 2).toString() + ',' + ((bounds.top + bounds.bottom) / 2).toString() +
+      ' generation=' + generation.toString() + ' mainWindow=' + ownerWindowId.toString() +
+      ' awaitedOperations=' + awaitedOperations.toString() + ' elapsedWallMs=' + (Date.now() - started).toString() +
+      ' modelSlowmode=' + fixture.page.composerSlowmodeSeconds.toString() + ' submitEligible=' + submitEligible.toString());
+  } catch (diagnosticError) {}
+  slowmodeResendPhase('current-action-enter', capturedAction);
+  checkOwner();
+  awaitedOperations++;
+  await target.click(); checkOwner();
+  slowmodeResendPhase('current-action-native-return', capturedAction);
+  // A successful send can open an owned native dialog; retain Ability/Stage/focus proof without treating that dialog as the main Window.
+  await checkAbility(); checkOwner();
+  awaitedOperations++;
+  const focusedAfter = await driver.findWindow({ bundleName: bundleName, focused: true }); checkOwner();
+  if (focusedAfter === undefined || focusedAfter === null) throw new Error('Slowmode action lost owned focus after click');
+  slowmodeResendLog('currentAction completed awaitedOperations=' + awaitedOperations.toString() +
+    ' elapsedWallMs=' + (Date.now() - started).toString());
+  slowmodeResendPhase('current-action-return', capturedAction);
 }
 async function prepareNativeInput(driver: Driver, unknown: boolean = false): Promise<void> {
   await SlowmodeNativeFixture.assertNativeColorContext();
@@ -164,6 +260,41 @@ async function waitNativeDialogDismissed(driver: Driver, title: string, confirm:
   }
   throw new Error('Actual native resend dialog did not disappear after its selected action');
 }
+// Diagnostic reads only: model state is not proof that the native atom is ready.
+function slowmodeResendLog(message: string): void {
+  try { console.info('[SlowmodeNative] ' + message); } catch (error) {}
+}
+function slowmodeResendPhase(phase: string, action?: Point): void {
+  try {
+    const fixture = SlowmodeNativeFixture.fixture();
+    slowmodeResendLog('resendPhase=' + phase + ' wallMs=' + Date.now().toString() +
+      ' generation=' + SlowmodeNativeFixture.routeGeneration().toString() +
+      ' depth=' + SlowmodeNativeFixture.navigationDepth().toString() +
+      ' modelBusy=' + fixture.page.isSending.toString() +
+      ' modelSlowmode=' + fixture.page.composerSlowmodeSeconds.toString() +
+      ' mutations=' + SlowmodeNativeFixture.state.mutations.toString() +
+      ' gatewayRequests=' + fixture.gateway.requests.length.toString() +
+      ' preparations=' + fixture.composer.preparations.length.toString() +
+      ' pendingAttachments=' + fixture.page.pendingAttachmentUris.length.toString() +
+      ' capturedAction=' + (action === undefined ? 'unavailable' : action.x.toString() + ',' + action.y.toString()));
+  } catch (error) { slowmodeResendLog('resendPhase=' + phase + ' stateUnavailable'); }
+}
+async function nativeResendFailureGeometry(driver: Driver): Promise<void> {
+  // Fixed IDs in the synthetic route; no target search, interaction or retry.
+  for (const id of ['slowmode-fixture-dock', 'tg_chat_composer_text_input']) {
+    slowmodeResendLog('failureGeometry query-enter id=' + id);
+    try {
+      const components = await driver.findComponents(ON.id(id));
+      slowmodeResendLog('failureGeometry query-return id=' + id + ' count=' + (components?.length ?? 0).toString());
+      if (components !== undefined && components !== null && components.length === 1) {
+        slowmodeResendLog('failureGeometry bounds-enter id=' + id);
+        const bounds = await components[0].getBounds();
+        slowmodeResendLog('failureGeometry bounds-return id=' + id + ' rect=' +
+          bounds.left.toString() + ',' + bounds.top.toString() + ',' + bounds.right.toString() + ',' + bounds.bottom.toString());
+      }
+    } catch (error) { slowmodeResendLog('failureGeometry unavailable id=' + id); }
+  }
+}
 async function nativeDialogEvidence(driver: Driver, title: string, cancel: string, confirm: string, name: string): Promise<void> {
   console.info('[SlowmodeNative] dialogEvidence=' + name + ' title=' + title + ' cancel=' + cancel + ' confirm=' + confirm +
     ' busy=' + SlowmodeNativeFixture.fixture().page.isSending.toString());
@@ -201,8 +332,19 @@ async function waitNativeApplicationState(driver: Driver, ability: UIAbility, fo
   throw new Error('Actual TestAbility lifecycle state and typed callback did not converge');
 }
 async function waitMutation(driver: Driver, count: number): Promise<void> {
-  const component = await driver.waitForComponent(ON.text('slowmode mutations:' + count.toString()), 5000);
-  if (component === undefined || component === null) throw new Error('Slowmode mutation count did not reach ' + count.toString());
+  try {
+    const component = await driver.waitForComponent(ON.text('slowmode mutations:' + count.toString()), 5000);
+    if (component === undefined || component === null) throw new Error('Slowmode mutation count did not reach ' + count.toString());
+  } catch (error) {
+    slowmodeResendPhase('mutation-label-failed-' + count.toString());
+    try {
+      const path = SlowmodeNativeFixture.screenshotPath('mutation-label-failed-' + count.toString());
+      slowmodeResendLog('mutationFailure screenshot-enter=' + path);
+      const captured = await driver.screenCap(path);
+      slowmodeResendLog('mutationFailure screenshot-return captured=' + captured.toString());
+    } catch (diagnosticError) { slowmodeResendLog('mutationFailure screenshot-unavailable'); }
+    throw error as Error;
+  }
 }
 async function waitIdle(driver: Driver): Promise<void> {
   const deadline = Date.now() + 5000;
@@ -234,12 +376,20 @@ export default function slowmodeNativeTest(): void {
         await SlowmodeNativeFixture.cooldown('8'); requireInputSetupSealed();
         const action = await slowmodeAction(driver); const f = SlowmodeNativeFixture.fixture();
         expect(f.page.composerSlowmodeSeconds > 0).assertTrue(); preserved();
-        await driver.click(action.x, action.y); expect(f.gateway.requests.length).assertEqual(0);
-        await driver.click(attach.x, attach.y); expect(f.composer.recentLoads).assertEqual(0);
+        if (f.page.composerSlowmodeSeconds <= 0) throw new Error('Blocked action witness is inconclusive: cooldown expired before click');
+        slowmodeResendPhase('blocked-action-click-enter', action);
+        await driver.click(action.x, action.y);
+        slowmodeResendPhase('blocked-action-click-return', action);
+        if (f.page.composerSlowmodeSeconds <= 0) throw new Error('Blocked action witness is inconclusive: cooldown expired during click');
+        expect(f.gateway.requests.length).assertEqual(0);
+        if (f.page.composerSlowmodeSeconds <= 0) throw new Error('Blocked attachment witness is inconclusive: cooldown expired before click');
+        await driver.click(attach.x, attach.y);
+        if (f.page.composerSlowmodeSeconds <= 0) throw new Error('Blocked attachment witness is inconclusive: cooldown expired during click');
+        expect(f.composer.recentLoads).assertEqual(0);
         expect(f.composer.preparations.length).assertEqual(0); preserved(); await screenshot(driver, 'countdown');
         await waitSlowmode(driver, true); expect(f.page.composerSlowmodeSeconds).assertEqual(0);
         expect(f.gateway.requests.length).assertEqual(0); preserved(); await screenshot(driver, 'expired');
-        await driver.click(action.x, action.y); await waitMutation(driver, 1); await waitIdle(driver);
+        await clickCurrentSlowmodeAction(driver, action); await waitMutation(driver, 1); await waitIdle(driver);
         expect(f.composer.preparations.length).assertEqual(1); expect(f.page.pendingAttachmentUris.length).assertEqual(0);
         expect(f.page.composerDraftText).assertEqual(''); expect(f.page.replyToMessageId).assertEqual('0');
         completed = true;
@@ -252,15 +402,32 @@ export default function slowmodeNativeTest(): void {
       const confirm = localized($r('app.string.composer_album_resend_action').id, 'Send again');
       console.info('[SlowmodeNative] nativeResendLabels title=' + title + ' cancel=' + cancel + ' confirm=' + confirm);
       let completed = false;
+      let resendPhase = 'prepare'; let diagnosticAction: Point | undefined;
       try {
+        slowmodeResendPhase(resendPhase);
         await prepareNativeInput(driver, true); await SlowmodeNativeFixture.cooldown('30'); requireInputSetupSealed();
-        const action = await slowmodeAction(driver); await SlowmodeNativeFixture.expire(); await waitSlowmode(driver, true);
-        await driver.click(action.x, action.y); await waitMutation(driver, 1); await waitIdle(driver); preserved();
-        await driver.click(action.x, action.y); await waitNativeLabel(driver, title); await clickNativeLabel(driver, cancel); await waitIdle(driver);
+        const action = await slowmodeAction(driver); diagnosticAction = action;
+        resendPhase = 'action-captured'; slowmodeResendPhase(resendPhase, action);
+        await SlowmodeNativeFixture.expire(); await waitSlowmode(driver, true);
+        resendPhase = 'initial-click-enter'; slowmodeResendPhase(resendPhase, action);
+        await clickCurrentSlowmodeAction(driver, action);
+        resendPhase = 'initial-click-return'; slowmodeResendPhase(resendPhase, action);
+        await waitMutation(driver, 1); await waitIdle(driver); preserved();
+        resendPhase = 'first-resend-click-enter'; slowmodeResendPhase(resendPhase, action);
+        await clickCurrentSlowmodeAction(driver, action);
+        resendPhase = 'first-title-wait-enter'; slowmodeResendPhase(resendPhase, action);
+        await waitNativeLabel(driver, title);
+        resendPhase = 'first-title-wait-return'; slowmodeResendPhase(resendPhase, action);
+        await clickNativeLabel(driver, cancel); await waitIdle(driver);
         await waitNativeDialogDismissed(driver, title, confirm);
         preserved(); expect(SlowmodeNativeFixture.fixture().composer.preparations.length).assertEqual(1);
-        await driver.click(action.x, action.y); await waitNativeLabel(driver, title);
+        resendPhase = 'second-resend-click-enter'; slowmodeResendPhase(resendPhase, action);
+        await clickCurrentSlowmodeAction(driver, action);
+        resendPhase = 'second-title-wait-enter'; slowmodeResendPhase(resendPhase, action);
+        await waitNativeLabel(driver, title);
+        resendPhase = 'second-title-wait-return'; slowmodeResendPhase(resendPhase, action);
         await waitNativeLabel(driver, confirm); expect(SlowmodeNativeFixture.fixture().page.isSending).assertTrue();
+        resendPhase = 'cooldown-confirm'; slowmodeResendPhase(resendPhase, action);
         await SlowmodeNativeFixture.cooldown('30');
         await nativeDialogEvidence(driver, title, cancel, confirm, 'resend-before-cooldown-confirm');
         await clickNativeConfirmation(driver, title, cancel, confirm); await waitIdle(driver);
@@ -268,12 +435,29 @@ export default function slowmodeNativeTest(): void {
         preserved(); expect(SlowmodeNativeFixture.state.mutations).assertEqual(1);
         expect(SlowmodeNativeFixture.fixture().composer.preparations.length).assertEqual(1); await screenshot(driver, 'resend-blocked');
         await SlowmodeNativeFixture.expire(); await waitSlowmode(driver, true); expect(SlowmodeNativeFixture.state.mutations).assertEqual(1);
-        SlowmodeNativeFixture.acceptNextWrites(); await driver.click(action.x, action.y); await waitNativeLabel(driver, title);
+        SlowmodeNativeFixture.acceptNextWrites();
+        resendPhase = 'third-resend-click-enter'; slowmodeResendPhase(resendPhase, action);
+        await clickCurrentSlowmodeAction(driver, action);
+        resendPhase = 'third-title-wait-enter'; slowmodeResendPhase(resendPhase, action);
+        await waitNativeLabel(driver, title);
+        resendPhase = 'third-title-wait-return'; slowmodeResendPhase(resendPhase, action);
         await screenshot(driver, 'resend-confirmation'); await clickNativeConfirmation(driver, title, cancel, confirm);
         await waitMutation(driver, 2); await waitIdle(driver); await waitNativeDialogDismissed(driver, title, confirm);
         expect(SlowmodeNativeFixture.fixture().composer.preparations.length).assertEqual(2);
         expect(SlowmodeNativeFixture.fixture().page.pendingAttachmentUris.length).assertEqual(0);
         completed = true;
+        resendPhase = 'completed'; slowmodeResendPhase(resendPhase, action);
+      } catch (error) {
+        // Preserve the original failing phase before any diagnostic native RPC.
+        slowmodeResendLog('originalFailure phase=' + resendPhase);
+        slowmodeResendPhase('failed-' + resendPhase, diagnosticAction);
+        try {
+          await nativeResendFailureGeometry(driver);
+          await nativeDialogEvidence(driver, title, cancel, confirm, 'resend-' + resendPhase + '-failure');
+        } catch (diagnosticError) {
+          slowmodeResendLog('failureEvidenceUnavailable phase=' + resendPhase);
+        }
+        throw error as Error;
       } finally {
         try {
           const modal = await driver.findComponents(ON.text(title));

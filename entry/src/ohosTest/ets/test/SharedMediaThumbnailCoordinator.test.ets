@@ -67,24 +67,38 @@ export default function sharedMediaThumbnailCoordinatorTest() {
 
     it('prioritizes the newly visible range ahead of background work', 0, async () => {
       const started: number[] = [];
-      const targets: TestThumbTarget[] = [
-        new TestThumbTarget(1),
-        new TestThumbTarget(2),
-        new TestThumbTarget(3),
-        new TestThumbTarget(4)
+      const targets: ControlledThumbTarget[] = [
+        new ControlledThumbTarget(1),
+        new ControlledThumbTarget(2),
+        new ControlledThumbTarget(3),
+        new ControlledThumbTarget(4)
       ];
       const coordinator = new SharedMediaThumbnailCoordinator(async (fileId: number): Promise<string> => {
         started.push(fileId);
-        await sleep(15);
-        return `file://${fileId}`;
+        return targets[fileId - 1].result;
       }, (_fileId: number, _reason: string): void => {}, 1);
 
-      coordinator.enqueue(targets);
-      coordinator.prioritizeRange(targets, 3, 3);
-      await sleep(90);
-
-      expect(started.join(',')).assertEqual('1,4,2,3');
-      expect(targets[3].thumbUri).assertEqual('file://4');
+      try {
+        coordinator.enqueue(targets);
+        expect(started.join(',')).assertEqual('1');
+        coordinator.prioritizeRange(targets, 3, 3);
+        expect(started.join(',')).assertEqual('1');
+        targets[0].complete();
+        await targets[0].published;
+        expect(started.join(',')).assertEqual('1,4');
+        targets[3].complete();
+        await targets[3].published;
+        expect(started.join(',')).assertEqual('1,4,2');
+        targets[1].complete();
+        await targets[1].published;
+        expect(started.join(',')).assertEqual('1,4,2,3');
+        targets[2].complete();
+        await targets[2].published;
+        expect(targets[3].thumbUri).assertEqual('file://4');
+      } finally {
+        coordinator.cancel();
+        for (const target of targets) target.complete();
+      }
     });
 
     it('keeps TDLib thumbnail pressure within the configured bound', 0, async () => {

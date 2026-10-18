@@ -342,6 +342,7 @@ export struct TgComposerInput {
     Row() {
       this.buildActionIcon()
     }
+    .id('tg_composer_action')
     .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
     .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
     .flexShrink(0)
@@ -396,6 +397,7 @@ export struct TgComposerInput {
     Row() {
       this.buildActionIcon()
     }
+    .id('tg_composer_action')
     .width(TgUiTokens.COMPOSER_BUTTON_SIZE)
     .height(TgUiTokens.COMPOSER_BUTTON_SIZE)
     .flexShrink(0)

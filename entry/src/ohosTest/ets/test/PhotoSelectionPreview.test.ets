@@ -1,82 +1,141 @@
 import { describe, it, expect } from '@ohos/hypium';
 import { Component, Driver, ON, abilityDelegatorRegistry } from '@kit.TestKit';
-import { BusinessError } from '@kit.BasicServicesKit';
+import { BusinessError, systemDateTime } from '@kit.BasicServicesKit';
 import { localized } from '../../../main/ets/core/utils/AppResource';
 import { PhotoSelectionPreviewFixture } from '../testability/components/PhotoSelectionPreviewFixture';
 
 async function testAbilityReady(driver: Driver): Promise<void> {
   const delegator = abilityDelegatorRegistry.getAbilityDelegator();
   const deadline = Date.now() + 10000;
-  let waiting = true;
-  let timeoutId: number = -1;
   let diagnostic = 'TestAbility has not become current';
-  const ready = async (): Promise<void> => {
-    while (waiting && Date.now() < deadline) {
-      let currentTestAbility = false;
-      try {
-        const ability = await delegator.getCurrentTopAbility();
-        if (!waiting) break;
-        if (ability === undefined || ability === null || ability.context === undefined || ability.context === null) {
-          diagnostic = 'Current ability is unavailable';
-        } else if (ability.context.abilityInfo.name !== 'TestAbility' || ability.context.currentHapModuleInfo.name !== $r('app.color.background_primary').moduleName) {
-          diagnostic = 'Current ability is ' + ability.context.abilityInfo.name + '/' + ability.context.currentHapModuleInfo.name;
-        } else currentTestAbility = true;
-      } catch (error) {
-        const native = error as BusinessError;
-        if (native.code !== 16000100) throw new Error('Cannot obtain native TestAbility: ' + native.message);
-        diagnostic = native.message;
-      }
-      if (currentTestAbility) {
-        // Driver failures propagate; only the expected early GetTop error is retried.
-        const scrolls = await driver.findComponents(ON.id('chat-test-fixture-scroll'));
-        if (!waiting) break;
-        if (scrolls !== undefined && scrolls !== null && scrolls.length > 0) return;
-        diagnostic = 'TestAbility is current but its Scroll is not mounted';
-      }
-      // Yield the ability's event loop so WindowStage/loadContent can finish.
-      await new Promise<void>((resolve) => { setTimeout(() => resolve(), 100); });
+  const checkDeadline = (): void => {
+    if (Date.now() >= deadline) {
+      throw new Error('Native TestAbility/Scroll readiness timeout after 10000 ms: ' + diagnostic);
     }
-    throw new Error('Native TestAbility/Scroll readiness timeout: ' + diagnostic);
   };
-  const timeout = new Promise<void>((_resolve, reject) => {
-    timeoutId = setTimeout(() => {
-      waiting = false;
-      reject(new Error('Native TestAbility/Scroll readiness timeout after 10000 ms: ' + diagnostic));
-    }, 10000);
-  });
-  try { await Promise.race([ready(), timeout]); }
-  finally {
-    waiting = false;
-    clearTimeout(timeoutId);
+  // SDK requests have no cancellation parameter. Retire each started request
+  // before failing; the unchanged 10s threshold is not a wall-time guarantee.
+  while (Date.now() < deadline) {
+    let currentTestAbility = false;
+    try {
+      const ability = await delegator.getCurrentTopAbility();
+      if (ability === undefined || ability === null || ability.context === undefined || ability.context === null) {
+        diagnostic = 'Current ability is unavailable';
+      } else if (ability.context.abilityInfo.name !== 'TestAbility' || ability.context.currentHapModuleInfo.name !== $r('app.color.background_primary').moduleName) {
+        diagnostic = 'Current ability is ' + ability.context.abilityInfo.name + '/' + ability.context.currentHapModuleInfo.name;
+      } else currentTestAbility = true;
+    } catch (error) {
+      const native = error as BusinessError;
+      if (native.code !== 16000100) throw new Error('Cannot obtain native TestAbility: ' + native.message);
+      diagnostic = native.message;
+    }
+    // The completed top-ability request is retired before a timeout can escape.
+    checkDeadline();
+    if (currentTestAbility) {
+      // Driver failures propagate; only the expected early GetTop error is retried.
+      const scrolls = await driver.findComponents(ON.id('chat-test-fixture-scroll'));
+      // Never accept a late mount, and never abandon its in-flight native query.
+      checkDeadline();
+      if (scrolls !== undefined && scrolls !== null && scrolls.length > 0) return;
+      diagnostic = 'TestAbility is current but its Scroll is not mounted';
+    }
+    // Yield the ability's event loop so WindowStage/loadContent can finish.
+    await new Promise<void>((resolve) => { setTimeout(() => resolve(), 100); });
   }
+  throw new Error('Native TestAbility/Scroll readiness timeout after 10000 ms: ' + diagnostic);
+}
+
+// Bounded by actual helper calls; failures in timing must not change the UI result.
+let photoRpcSequence: number = 0;
+function photoRpcTiming(sequence: number, id: string, operation: string, event: string): void {
+  try {
+    const mono = systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false);
+    console.info('[PhotoSelectionPreview] RPC ' + JSON.stringify({ sequence: sequence,
+      id: id, operation: operation, event: event, mono: mono }));
+  } catch (_) {}
+}
+async function photoRpc<T>(id: string, operation: string, action: () => Promise<T>): Promise<T> {
+  const sequence = ++photoRpcSequence;
+  photoRpcTiming(sequence, id, operation, 'enter');
+  let completed: boolean = false;
+  try { const result = await action(); completed = true; return result; }
+  finally { photoRpcTiming(sequence, id, operation, completed ? 'return' : 'throw'); }
 }
 
 async function visible(driver: Driver, id: string): Promise<Component> {
-  const scroll = await driver.waitForComponent(ON.id('chat-test-fixture-scroll'), 5000);
-  if (scroll === undefined || scroll === null) throw new Error('Test fixture Scroll is not mounted');
-  const component = await scroll.scrollSearch(ON.id(id));
-  if (component === undefined || component === null) throw new Error('Missing native preview component: ' + id);
-  await driver.assertComponentExist(ON.id(id));
-  return component;
+  const deadline = Date.now() + 5000;
+  const owner = PhotoSelectionPreviewFixture.viewportOwner();
+  const check = (): void => {
+    PhotoSelectionPreviewFixture.assertViewportOwner(owner);
+    if (Date.now() >= deadline) throw new Error('Native photo viewport deadline: ' + id);
+  };
+  const nested = id.startsWith('photo-preview-fixture-thumb-') || id.startsWith('photo-preview-fixture-ordinal-');
+  while (Date.now() < deadline) {
+    check();
+    PhotoSelectionPreviewFixture.positionInViewport(id, owner);
+    try {
+      check();
+      const scroll = await photoRpc(id, 'Driver.waitForComponent(root)',
+        () => driver.waitForComponent(ON.id('chat-test-fixture-scroll'), deadline - Date.now()));
+      check();
+      if (scroll === undefined || scroll === null) throw new Error('Test fixture Scroll is not mounted');
+      const component = await photoRpc(id, 'Driver.findComponent', () => driver.findComponent(ON.id(id)));
+      check();
+      if (component === undefined || component === null) continue;
+      const bounds = await photoRpc(id, 'Component.getBounds(candidate)', () => component.getBounds());
+      check();
+      const viewport = await photoRpc(id, 'Component.getBounds(root)', () => scroll.getBounds());
+      check();
+      if (!(bounds.right > bounds.left && bounds.bottom > bounds.top &&
+        viewport.right > viewport.left && viewport.bottom > viewport.top &&
+        bounds.left >= viewport.left && bounds.right <= viewport.right &&
+        bounds.top >= viewport.top && bounds.bottom <= viewport.bottom)) continue;
+      if (nested) {
+        const strip = await photoRpc(id, 'Driver.findComponent(strip)', () => driver.findComponent(ON.id('photo-preview-fixture-strip')));
+        check();
+        if (strip === undefined || strip === null) continue;
+        const clip = await photoRpc(id, 'Component.getBounds(strip)', () => strip.getBounds());
+        check();
+        if (!(clip.right > clip.left && clip.bottom > clip.top && bounds.left >= clip.left && bounds.right <= clip.right &&
+          bounds.top >= clip.top && bounds.bottom <= clip.bottom)) continue;
+      }
+      await photoRpc(id, 'Driver.assertComponentExist', () => driver.assertComponentExist(ON.id(id)));
+      check();
+      return component;
+    } catch (error) {
+      if ((error as BusinessError).code !== 17000004) throw error as Error;
+      // A rekeyed native handle is reacquired under this same owner and deadline.
+    }
+  }
+  throw new Error('Native photo viewport deadline: ' + id);
 }
 
 async function click(driver: Driver, id: string): Promise<void> {
+  const owner = PhotoSelectionPreviewFixture.viewportOwner();
   const component = await visible(driver, id);
-  expect(await component.isEnabled()).assertTrue();
-  await component.click();
+  PhotoSelectionPreviewFixture.assertViewportOwner(owner);
+  expect(await photoRpc(id, 'Component.isEnabled', () => component.isEnabled())).assertTrue();
+  PhotoSelectionPreviewFixture.assertViewportOwner(owner);
+  await photoRpc(id, 'Component.click', () => component.click());
+  PhotoSelectionPreviewFixture.assertViewportOwner(owner);
 }
 
 async function requireText(driver: Driver, text: string, fixtureId?: string): Promise<void> {
+  const owner = PhotoSelectionPreviewFixture.viewportOwner();
   console.info('[PhotoSelectionPreview] requireText=' + text + ', sessionBusy=' +
     PhotoSelectionPreviewFixture.session.isSendingMessage().toString() + ', composerBusy=' +
     PhotoSelectionPreviewFixture.view.composer.isSending.toString());
   // Fixture status rows are below the tall preview. Expose the stable row
   // before the existing text wait; a matching label elsewhere is insufficient.
   const footer = fixtureId === undefined ? undefined : await visible(driver, fixtureId);
-  const component = await driver.waitForComponent(ON.text(text), 5000);
+  PhotoSelectionPreviewFixture.assertViewportOwner(owner);
+  const component = await photoRpc(fixtureId ?? text, 'Driver.waitForComponent(text)', () => driver.waitForComponent(ON.text(text), 5000));
+  PhotoSelectionPreviewFixture.assertViewportOwner(owner);
   if (component === undefined || component === null) throw new Error('Missing native preview text: ' + text);
-  await driver.assertComponentExist(ON.text(text));
-  if (footer !== undefined) expect(await footer.getText()).assertEqual(text);
+  await photoRpc(fixtureId ?? text, 'Driver.assertComponentExist(text)', () => driver.assertComponentExist(ON.text(text)));
+  PhotoSelectionPreviewFixture.assertViewportOwner(owner);
+  if (footer !== undefined) expect(await photoRpc(fixtureId ?? text, 'Component.getText(footer)', () => footer.getText())).assertEqual(text);
+  PhotoSelectionPreviewFixture.assertViewportOwner(owner);
 }
 
 async function decoded(driver: Driver, uri: string): Promise<void> {
@@ -290,7 +349,8 @@ export default function photoSelectionPreviewTest() {
         expect(session.getPendingAttachmentUris().length).assertEqual(10);
         expect(session.getPendingAttachmentUris().join('|')).assertEqual(state.sampleUris.join('|'));
         const strip = await visible(driver, 'photo-preview-fixture-strip');
-        const tenth = await strip.scrollSearch(ON.id('photo-preview-fixture-thumb-9'), false);
+        const tenth = await photoRpc('photo-preview-fixture-thumb-9', 'Component.scrollSearch(horizontal)',
+          () => strip.scrollSearch(ON.id('photo-preview-fixture-thumb-9'), false));
         if (tenth === undefined || tenth === null) throw new Error('Native ten-photo strip does not expose thumbnail 10');
         await driver.assertComponentExist(ON.id('photo-preview-fixture-thumb-9'));
         expect(await tenth.isEnabled()).assertTrue();
