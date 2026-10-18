@@ -59,6 +59,10 @@ parse/dispatch/store/listener/render work, scheduler contention and synchronous 
 partitioned, and TDLib response-ready timing is unobserved. Capacity being full is a symptom, not a
 diagnosis; deadlines and memory bounds must not be relaxed to hide an admitted-wait timeout.
 
+The iOS reference was refreshed on 2026-10-18 (`master` @ `f1dd7a2`, 31 572 commits). All 82 source
+paths cited from these docs still resolve, but **59 of the 82 files changed upstream**, so their
+line-number citations are unverified until re-read. See the refresh log in `REFERENCES.md`.
+
 ## Project facts
 
 - **Branch:** `dev` is canonical, tracks `origin/dev`. `main` untouched; dev→main decision deferred.

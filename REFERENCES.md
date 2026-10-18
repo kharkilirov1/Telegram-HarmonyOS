@@ -2,6 +2,7 @@
 
 Last verified: **2026-07-10** (original registry).
 Petrelgram entry verified: **2026-10-01**; other pins were not refreshed.
+Telegram iOS current refreshed: **2026-10-18** (see the refresh log below).
 
 Heavy third-party reference trees live outside this repository under:
 
@@ -25,7 +26,7 @@ future clones.
 
 | Reference | Canonical local path | Origin / snapshot | Pinned state | License boundary | Role |
 |---|---|---|---|---|---|
-| Telegram iOS current | `C:\Refs\Telegram\Telegram-iOS-current` | `https://github.com/TelegramMessenger/Telegram-iOS.git` | `master` @ `6e370e06d147b091b07903071cb1b8a22152492d` | No root license file in checkout; inspect upstream terms before reuse | Primary source-level iOS UI reference |
+| Telegram iOS current | `C:\Refs\Telegram\Telegram-iOS-current` | `https://github.com/TelegramMessenger/Telegram-iOS.git` | `master` @ `f1dd7a2dbd02cbbf513e75d5695d8d36d1cf5838` (2026-10-07, refreshed 2026-10-18) | No root license file in checkout; inspect upstream terms before reuse | Primary source-level iOS UI reference |
 | Telegram iOS old snapshot | `C:\Refs\Telegram\Telegram-iOS-snapshot-2026-02-10` | ZIP/source snapshot, no `.git` | README SHA-256 `A4FBB531084525F0BAE35A2E1D09E6347E9F8B760ABB6F52CFB84867ABC86B49` | No root license file | Historical pre-refresh comparisons only |
 | Telegram Android | `C:\Refs\Telegram\telegram-android` | `https://github.com/DrKLO/Telegram.git` | `master` @ `ce8c61c47ec48a84014c8d1d0592f0e22a9dbb22` | GPL-2.0 | Telegram behavior fallback |
 | Nekogram | `C:\Refs\Telegram\Nekogram` | `https://github.com/Nekogram/Nekogram.git` | `main` @ `c17b0a46c7741cad18bed64e02cc7b05fad4d74a` | GPL-2.0 | Extra feature/state and edge-case reference |
@@ -33,6 +34,33 @@ future clones.
 | HarmonyOS codelabs | `C:\Refs\Telegram\HarmonyOS-Codelabs` | `https://gitcode.com/openharmony/codelabs.git` | `master` @ `c151753a7316873091cb065a5c9cbd79c6ea713c` | No root license file; inspect per-sample notices | Platform examples |
 | ArkGram RE | `C:\Refs\Telegram\ArkGram-RE` | HAP-derived reverse reconstruction v1.0.1, no `.git` | preserved 2026-07-10 | No license; no code/assets reuse | Clean-room HarmonyOS behavior comparison only |
 | Petrelgram | `C:\Refs\Telegram\Petrelgram` | `https://github.com/miramira8295/Petrelgram.git` | `main` @ `a5e1ec763b08d549630a58f9efe96677bb3245de` (shallow clone, 2026-10-01) | Root Apache-2.0; native dependencies and mascot assets have separate notices/terms | Secondary HarmonyOS/TDLib implementation and feature reference; not the iOS visual contract |
+
+## Refresh log
+
+### 2026-10-18 — Telegram iOS current
+
+`master` `6e370e06` (2026-06-05) → `f1dd7a2dbd02cbbf513e75d5695d8d36d1cf5838` (2026-10-07),
+a fast-forward of 31 572 commits and 15 401 changed files. The clone stayed clean and is now
+level with `origin/master`.
+
+Verified after the refresh:
+
+- All 82 source paths cited from this repository's docs still exist in the new tree — 0 missing.
+- **59 of those 82 files changed upstream**, some heavily (`ChatTextInputPanelNode.swift` +990/−754,
+  `ChatHistoryListNode.swift` +685/−252, `ChatMessageBubbleItemNode.swift` +553/−200,
+  `ChatController.swift` +498/−138). Every line-number citation into those files is therefore
+  **unverified**: the path resolves, the line probably does not point at the same code.
+
+Not done, and not claimed: re-checking line-level citations, re-comparing component passports, and
+re-confirming that any ported constant still matches the new source. Treat a line citation into a
+changed file as a lead, not a fact, until it is re-read.
+
+### Petrelgram — do not refresh
+
+Upstream removed the source tree in `6f11b33` (2026-10-13, "move source to Petrel, keep historical
+release attachments"): the diff from the pinned `a5e1ec7` to `origin/main` deletes 1 280 files and
+506 242 lines, leaving essentially a README. The pinned clone is the last state that contains the
+source. A `git pull` here would destroy the reference, not update it.
 
 ## Petrelgram inspection boundary
 
@@ -57,8 +85,10 @@ After a deliberate refresh:
 
 1. update the pinned commit in this file;
 2. verify every cited source path still exists;
-3. compare affected component passports before changing ArkTS;
-4. rerun the narrow UI smoke/build relevant to resulting project edits.
+3. for every cited file that changed upstream, re-read the line-number citations — a resolving path
+   says nothing about whether the cited line still holds the cited code;
+4. compare affected component passports before changing ArkTS;
+5. rerun the narrow UI smoke/build relevant to resulting project edits.
 
 The Telegram iOS clone intentionally leaves 13 native/build submodules
 uninitialized because the project uses it for UI source inspection, not iOS
