@@ -142,17 +142,11 @@ export class TdGatewayImpl implements TdGateway {
   private drainScheduled: boolean = false;
   private drainTimerId: number = -1;
   private static readonly DRAIN_BUDGET_MS = 8;
-  // Нулевые/малые фиксированные задержки ненадёжны: ohos loop handler прокачивает
-  // дозревшие таймеры внутри одного uv_timer_task, и цепочка слайсов сливается в
-  // непрерывную блокировку main thread (THREAD_BLOCK_6S). Следующий слайс
-  // планируется с задержкой >= фактической длительности предыдущего (пейсинг):
-  // дрейн занимает не более ~50% времени main thread при любом размере элементов.
+  // Zero/tiny timers can share one OH uv_timer_task (THREAD_BLOCK_6S).
+  // Yield in proportion to measured synchronous work, with the existing cap.
+  // Do not multiply by backlog age: admitted responses share request deadlines.
   private static readonly DRAIN_YIELD_MS = 2;
-  // Эскалация пауз при шторме (P4-d, freeze 2026-07-08): пейсинга elapsed×1 мало —
-  // watcher/history/ArkUI-таймеры дозревают в паузе и продлевают ту же uv-фазу,
-  // main thread остаётся CPU-bound 6+ секунд. Подряд идущие «горячие» слайсы
-  // (упёрлись в бюджет) удлиняют паузу мультипликативно до жёсткого потолка,
-  // гарантируя watchdog/vsync окна даже при непрерывном притоке батчей.
+  // Retained as the downstream congestion signal, not a pacing multiplier.
   private drainHotStreak: number = 0;
   private static readonly DRAIN_BACKOFF_CAP_MS = 250;
 
@@ -981,18 +975,26 @@ export class TdGatewayImpl implements TdGateway {
 
   private drainSlice(dispatcher: MainThreadDispatcher): void {
     const sliceStart = systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false);
+    let transferred = 0;
+    let loadedBatches = 0;
     try {
-      while (this.deliveryFaultCode === 0 &&
-        systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false) - sliceStart < TdGatewayImpl.DRAIN_BUDGET_MS) {
+      // Clock access, preemption or parsing may consume the budget before an
+      // item runs. Guarantee one transfer, then honor the time/item bounds.
+      while (this.deliveryFaultCode === 0 && transferred < MAX_BATCH_RESPONSES &&
+        (transferred === 0 ||
+          systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false) - sliceStart < TdGatewayImpl.DRAIN_BUDGET_MS)) {
         if (this.drainIndex >= this.drainItems.length) {
           this.finishActiveBatch();
           if (this.deliveryFaultCode !== 0) return;
+          if (loadedBatches >= MAX_OUTSTANDING_BATCHES) break;
           const nextBatch = this.pendingBatchQueue.shift();
           if (nextBatch === undefined) { this.drainHotStreak = 0; return; }
           this.loadBatchForDrain(nextBatch);
+          loadedBatches++;
           continue;
         }
         this.transferNextItem(dispatcher);
+        transferred++;
         if (this.drainResetRequested) {
           this.drainResetRequested = false;
           this.finishActiveBatch();
@@ -1003,7 +1005,7 @@ export class TdGatewayImpl implements TdGateway {
       if (this.activeBatch || this.pendingBatchQueue.length > 0) {
         const elapsed = systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false) - sliceStart;
         this.drainHotStreak++;
-        const backoff = Math.min(TdGatewayImpl.DRAIN_BACKOFF_CAP_MS, elapsed * (1 + this.drainHotStreak));
+        const backoff = Math.min(TdGatewayImpl.DRAIN_BACKOFF_CAP_MS, elapsed * 2);
         this.scheduleDrain(dispatcher, Math.max(TdGatewayImpl.DRAIN_YIELD_MS, backoff));
       } else this.drainHotStreak = 0;
     } catch {
