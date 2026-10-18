@@ -14,6 +14,7 @@
 - HAP cleanup requires an exact extension/path/size/hash proposal and preservation of current/rollback/test pairs. Keep non-HAP evidence; do not turn approval of inventory into deletion authorization.
 - A time-budget guard before the first transfer can starve work; parsing followed by continue is not transfer progress. Guarantee meaningful progress while retaining finite item/batch limits even with a frozen or backward clock.
 - Admission capacity being full is a symptom, not a causal diagnosis. Trace selected native receive/publish/JS admission/dispatch/ACK/Promise and compare progress-only versus pacing-only. Do not extend deadlines or remove memory bounds to hide an admitted-wait timeout.
+- The host runner must be executed with Node >=24, as CI does: five chat suites assert it and report HARNESS_ERROR with zero executed cases under Node 22, which reads like a regression in unrelated code. Reproduce a suspected suite failure at the previous commit before blaming the candidate, and never read a suite verdict from a piped `tail` — the pipe returns its own exit status and hides a failing run.
 - Keep native steady-clock and Ark uptime durations separate. Frame callbacks must occur inside actual work, not only readiness/cleanup, and do not by themselves establish smooth presentation/input. Verify the expected baseline failure phase after safety gates; ordinary Hypium class-name noise is not a malformed diagnostic marker. Preserve failed captures and parser versions.
 
 ## Receive ownership and evidence - 2026-10-15

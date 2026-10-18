@@ -11,7 +11,7 @@
 - [x] Build/review bounded diagnostics: official main/ohosTest, isolated matched-source pair, actual120-request native trace and75 nearby SDK checks. Restore939 public source inputs and retain failed v1/v2 build evidence.
 - [x] Obtain exact3ef90f95 main authorization, replace once without clearing data, and capture both fresh authenticated scenarios. Astra accepted scoped diagnostic evidence; no new fixed HAP is proposed. Report any later fixed candidate before another main replacement. [Runtime evidence](../docs/reviews/2026-10-18-main-diagnostic-runtime.md).
 
-[Main evidence](../docs/reviews/2026-10-18-main-receive-acceptance.md). Candidate stays local/unpublished; prior dated checkpoints retain their scope.
+[Main evidence](../docs/reviews/2026-10-18-main-receive-acceptance.md). Candidate source is published to origin/dev; it stays uninstalled over the authenticated main and unreleased. Prior dated checkpoints retain their scope.
 
 ## Receive stabilization checkpoint - 2026-10-15
 
