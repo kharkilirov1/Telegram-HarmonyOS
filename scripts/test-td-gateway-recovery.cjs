@@ -29,7 +29,12 @@ const observed = promise => {
 };
 async function fixture(hooks, initialize = true) {
   const logs = [], sends = [], callbacks = [], timers = new Map();
-  let nextTimer = 0, created = 0, stopped = 0;
+  let nextTimer = 0, created = 0, stopped = 0, receiveEpoch = 0, batchId = 0;
+  const watchdogs = new Map(), admitted = new Set(), incoming = [];
+  const clock = { now: () => performance.now() };
+  function pumpNative() {
+    while (incoming.length && admitted.size < 4) { const item = incoming.shift(); if (item.callback(...item.args)) admitted.add(`${item.args[1]}:${item.args[2]}`); }
+  }
   const hilog = { info() {}, warn() {}, debug() {}, error(...args) { logs.push(args); } };
   const { TdObject } = load('models/td/common/index.ets');
   const errors = load('core/model/AppError.ets');
@@ -37,12 +42,24 @@ async function fixture(hooks, initialize = true) {
   const dispatcher = new MainThreadDispatcher();
   const native = {
     createClient() { return ++created; },
-    startReceiveLoop(callback) { callbacks.push(callback); },
-    stopReceiveLoop() { stopped++; },
+    startReceiveLoop(callback) {
+      const epoch = ++receiveEpoch; batchId = 0;
+      callbacks.push((json, callbackEpoch = epoch, id = ++batchId, bytes = Buffer.byteLength(json)) => {
+        incoming.push({ callback, args: [json, callbackEpoch, id, bytes] });
+        pumpNative();
+      });
+      return epoch;
+    },
+    ackReceiveBatch(epoch, id) { const key = `${epoch}:${id}`; const found = admitted.has(key); admitted.delete(key); return found; },
+    getReceiveLoopStatus() { return 1; },
+    stopReceiveLoop() { stopped++; admitted.clear(); return Promise.resolve(); },
     send(id, json) { sends.push({ id, request: JSON.parse(json) }); }
   };
   const { TdGatewayImpl, getMethodTimeout } = load('infra/td/gateway/TdGateway.ets', {
     ...errors, TdObject, hilog, tdlib: native, getMainThreadDispatcher: () => dispatcher,
+    systemDateTime: { TimeType: { STARTUP: 0 }, getUptime: () => clock.now() },
+    setInterval(fn, ms) { const id = ++nextTimer; watchdogs.set(id, { fn, ms }); return id; },
+    clearInterval(id) { watchdogs.delete(id); },
     setTimeout(fn, ms) { const id = ++nextTimer; timers.set(id, { fn, ms }); return id; },
     clearTimeout(id) { timers.delete(id); }
   });
@@ -52,12 +69,13 @@ async function fixture(hooks, initialize = true) {
   // Recovery assertions below still require the hook to engage (not a fixture fallback).
   if (hooks && gateway.setClientRecoveryHooks) gateway.setClientRecoveryHooks(hooks);
   if (initialize) await gateway.initialize();
-  const f = { gateway, dispatcher, native, sends, callbacks, timers, logs, TdObject, getMethodTimeout,
+  const f = { gateway, dispatcher, native, sends, callbacks, timers, logs, TdObject, getMethodTimeout, clock,
     created: () => created, stopped: () => stopped,
-    emit(value) { callbacks[0](JSON.stringify(value)); },
+    emit(value) { return callbacks.at(-1)(JSON.stringify(Array.isArray(value) ? value : [value])); },
     drainSync() {
       let budget = 100;
       for (;;) {
+        pumpNative();
         const entry = [...timers].find(([, timer]) => timer.ms <= 250);
         if (!entry) return;
         assert.ok(--budget > 0, 'drain must be bounded');
@@ -155,7 +173,7 @@ test('native Closed invokes synchronous invalidation barrier; bootstrap and hook
   f.cleanDispatcher();
 });
 
-test('old client responses cannot steal new @extra through batch, single fallback or direct dispatcher', async () => {
+test('old client responses cannot steal new @extra through batch, single-envelope batch or direct dispatcher', async () => {
   const f = await fixture(hooks());
   f.emit([auth(1, 'Closed')]); await f.flush(); await f.settleBootstrap();
   const result = observed(f.gateway.send('getMe'));
@@ -388,7 +406,7 @@ test('rejected account barrier cannot create clients and is observable; manual r
   assert.equal(before, 2); assert.equal(after, 1); assert.equal(f.created(), 2);
 });
 
-test('single fallback Closed engages the same automatic recovery path', async () => {
+test('single-envelope batch Closed engages the same automatic recovery path', async () => {
   let before = 0;
   const f = await fixture(hooks({ beforeRestart: async () => { before++; } }));
   f.emit(auth(1, 'Closed')); await f.flush();

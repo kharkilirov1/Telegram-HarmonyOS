@@ -122,6 +122,7 @@ function pipeline(options={}) {
   const timers=new Map(), requests=[]; let sequence=0,gateway,origin;
   const raw=execute(read(main+'infra/td/gateway/TdGateway.ets'),main+'infra/td/gateway/TdGateway.ets',{
     ...app,...td,hilog,
+    systemDateTime: { TimeType: { STARTUP: 0 }, getUptime: () => performance.now() },
     classifyTdlibError:(code,detail)=>{origin=app.classifyTdlibError(code,detail);return origin;},
     getMainThreadDispatcher:()=>{throw new Error('Native dispatcher/bootstrap forbidden');},
     setTimeout:(callback,delay)=>{timers.set(++sequence,{callback,delay});return sequence;},clearTimeout:id=>timers.delete(id),

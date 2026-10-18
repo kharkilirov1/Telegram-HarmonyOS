@@ -12,10 +12,19 @@ import { TdObject } from '../../../models/TdTypes';
 import { getMainThreadDispatcher, MainThreadDispatcher } from '../../threading/MainThreadDispatcher';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import tdlib from 'libtdlib_napi.so';
+import { systemDateTime } from '@kit.BasicServicesKit';
 
 const DOMAIN = 0x0002;
 const TAG = 'TdGateway';
 const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
+const MAX_BATCH_RESPONSES = 50;
+const MAX_BATCH_BYTES = 8 * 1024 * 1024;
+const MAX_OUTSTANDING_BATCHES = 4;
+const MAX_OUTSTANDING_BYTES = 16 * 1024 * 1024;
+enum ReceiveStatus { Stopped = 0, Running = 1, Stopping = 2, Oversize = 100,
+  Allocation = 101, Marshalling = 102, Notification = 103, Admission = 104,
+  JsInvocation = 105, Protocol = 106, Environment = 107 }
+let processRequestCounter: number = 0;
 
 const METHOD_TIMEOUT_MAP: Record<string, number> = {
   'getChats': 15000,
@@ -49,6 +58,9 @@ type GatewayState = 'idle' | 'initializing' | 'ready' | 'closed' | 'recovering' 
 interface QueuedTdBatch {
   json: string;
   generation: number;
+  epoch: number;
+  batchId: number;
+  utf8Bytes: number;
 }
 
 export interface ClientRecoveryHooks {
@@ -113,7 +125,15 @@ export class TdGatewayImpl implements TdGateway {
   private clientRetirementPending: boolean = false;
   private updateHandlers: Set<(update: TdObject) => void> = new Set();
   private pendingRequests: Map<string, PendingRequest> = new Map();
-  private requestCounter: number = 0;
+  private receiveEpoch: number = 0;
+  private lastBatchId: number = 0;
+  private deliveryFaultCode: number = 0;
+  private receiveWatchdogId: number = -1;
+  private admittedBatchCount: number = 0;
+  private admittedBatchBytes: number = 0;
+  private activeBatch?: QueuedTdBatch;
+  private dispatchingItem: boolean = false;
+  private drainResetRequested: boolean = false;
   private timeoutCount: number = 0;
   private pendingBatchQueue: QueuedTdBatch[] = [];
   private drainItems: Object[] = [];
@@ -170,6 +190,7 @@ export class TdGatewayImpl implements TdGateway {
   }
 
   async initialize(): Promise<void> {
+    if (this.deliveryFaultCode !== 0) throw this.deliveryError(true);
     if (this.state === 'destroying') {
       throw this.clientInvalidatedError();
     }
@@ -206,21 +227,20 @@ export class TdGatewayImpl implements TdGateway {
       // Own even a partially started receiver before entering the native boundary.
       // Do not allocate a TDLib ID until its receive path is available.
       this.receiveLoopStarted = true;
-      tdlib.startReceiveLoop((batchJson: string) => {
-        if (loopGeneration !== this.receiveLoopGeneration) return;
-        try {
-          this.enqueueBatch(batchJson, dispatcher);
-        } catch (error) {
-          Logger.error('Error in receive loop relay', String(error));
-        }
+      this.receiveEpoch = tdlib.startReceiveLoop((batchJson: string, epoch: number, batchId: number, utf8Bytes: number): boolean => {
+        if (loopGeneration !== this.receiveLoopGeneration) return false;
+        return this.enqueueBatch(batchJson, epoch, batchId, utf8Bytes, dispatcher);
       });
+      if (!Number.isSafeInteger(this.receiveEpoch) || this.receiveEpoch <= 0) throw new Error('Invalid native receive epoch');
+      this.lastBatchId = 0;
+      this.startReceiveWatchdog();
 
       this.clientId = tdlib.createClient();
       if (!Number.isInteger(this.clientId) || this.clientId <= 0) {
         this.clientId = 0;
         throw new Error('Invalid native client ID');
       }
-      Logger.info(`Created native client with ID: ${this.clientId}`);
+      Logger.info(`Created native client generation=${this.clientGeneration}`);
       this.state = 'ready';
       Logger.info('Gateway initialized with MainThreadDispatcher bridge');
     } catch (error) {
@@ -237,6 +257,7 @@ export class TdGatewayImpl implements TdGateway {
   }
 
   retryClosedClient(): Promise<void> {
+    if (this.deliveryFaultCode !== 0) return Promise.reject(this.deliveryError(true));
     if (this.state === 'destroying' || this.state === 'idle') {
       return Promise.reject(this.clientInvalidatedError());
     }
@@ -349,6 +370,7 @@ export class TdGatewayImpl implements TdGateway {
   }
 
   async send(method: string, params: TdObject = new TdObject()): Promise<TdObject> {
+    if (this.deliveryFaultCode !== 0) throw this.deliveryError(true);
     if (!method || method.length === 0) {
       throw new AppError(AppErrorKind.UNKNOWN, 'Cannot send: method is empty', '', 0, false);
     }
@@ -375,8 +397,13 @@ export class TdGatewayImpl implements TdGateway {
     const generation = this.clientGeneration;
 
     return new Promise((resolve: (value: TdObject) => void, reject: (error: AppError) => void) => {
-      this.requestCounter = (this.requestCounter + 1) % Number.MAX_SAFE_INTEGER;
-      const requestId: string = `req_${Date.now()}_${this.requestCounter}`;
+      if (processRequestCounter >= Number.MAX_SAFE_INTEGER) {
+        reject(new AppError(AppErrorKind.NETWORK, 'Request identity exhausted', '', 0, false, true));
+        return;
+      }
+      processRequestCounter++;
+      const requestId: string = `req_${processRequestCounter}_g${generation}`;
+      const startedAt = systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false);
 
       const request = new TdObject();
       if (params) {
@@ -390,6 +417,8 @@ export class TdGatewayImpl implements TdGateway {
       const timeoutId: number = setTimeout(() => {
         if (generation !== this.clientGeneration) return;
         if (this.pendingRequests.has(requestId)) {
+          const elapsed = systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false) - startedAt;
+          Logger.warn(`Request timeout method=${method} correlation=${requestId} elapsedMs=${elapsed} epoch=${this.receiveEpoch} queuedBatches=${this.admittedBatchCount} queuedBytes=${this.admittedBatchBytes}`);
           this.timeoutCount++;
           this.pendingRequests.delete(requestId);
           reject(new AppError(AppErrorKind.NETWORK, `Request ${method} timed out after ${timeoutMs}ms`, '', 0, true));
@@ -483,6 +512,7 @@ export class TdGatewayImpl implements TdGateway {
   }
 
   destroy(): Promise<void> {
+    if (this.deliveryFaultCode !== 0 && this.clientId > 0) return Promise.reject(this.deliveryError());
     if (this.shutdownPromise) return this.shutdownPromise;
     if (this.state === 'idle') return Promise.resolve();
     return this.beginShutdown(true);
@@ -605,6 +635,7 @@ export class TdGatewayImpl implements TdGateway {
     // Detach dispatcher only after the close command/closed-state wait has had a
     // chance to receive response/update callbacks during the destroying state.
     dispatcher.unsubscribe();
+    this.stopReceiveWatchdog();
     this.receiveLoopGeneration++;
     this.receiveLoopStarted = false;
 
@@ -631,6 +662,7 @@ export class TdGatewayImpl implements TdGateway {
       }
     }
 
+    this.receiveEpoch = 0;
     this.clientId = 0;
     this.state = 'idle';
     if (graceful) TdGatewayImpl.instance = null;
@@ -667,7 +699,7 @@ export class TdGatewayImpl implements TdGateway {
       if (this.pendingRequests.has(requestId)) {
         this.resolvePendingRequest(requestId, rawObject);
       } else {
-        Logger.warn(`Stale response ignored for missing request: ${requestId}`);
+        Logger.warn('Stale response ignored for missing request');
       }
       return;
     }
@@ -818,95 +850,182 @@ export class TdGatewayImpl implements TdGateway {
   // обработка блокировала main thread (THREAD_BLOCK_6S на холодном старте).
   // Дрейн работает и в состоянии 'destroying' — close-flow ждёт
   // authorizationStateClosed через тот же конвейер.
-  private enqueueBatch(batchJson: string, dispatcher: MainThreadDispatcher): void {
-    if (this.clientId <= 0 || this.state === 'idle' || this.state === 'initializing' || this.state === 'closed') return;
-    const batch: QueuedTdBatch = { json: batchJson, generation: this.clientGeneration };
-    this.pendingBatchQueue.push(batch);
-    this.scheduleDrain(dispatcher);
+  private deliveryError(neverDispatched: boolean = false): AppError {
+    return new AppError(AppErrorKind.NETWORK, 'TDLib delivery stopped. Request outcome may be unknown.',
+      `receiveEpoch=${this.receiveEpoch};fault=${this.deliveryFaultCode}`, 0, false, neverDispatched);
+  }
+
+  private stopReceiveWatchdog(): void {
+    if (this.receiveWatchdogId !== -1) clearInterval(this.receiveWatchdogId);
+    this.receiveWatchdogId = -1;
+  }
+
+  private startReceiveWatchdog(): void {
+    this.stopReceiveWatchdog();
+    const epoch = this.receiveEpoch;
+    this.receiveWatchdogId = setInterval(() => {
+      if (epoch !== this.receiveEpoch || this.deliveryFaultCode !== 0 || !this.receiveLoopStarted) return;
+      try {
+        const status: number = tdlib.getReceiveLoopStatus();
+        if (epoch !== this.receiveEpoch) return;
+        if (!Number.isInteger(status) || status !== ReceiveStatus.Running) {
+          this.failDelivery(status >= ReceiveStatus.Oversize && status <= ReceiveStatus.Environment ? status : ReceiveStatus.Environment);
+        }
+      } catch {
+        if (epoch === this.receiveEpoch) this.failDelivery(ReceiveStatus.Environment);
+      }
+    }, 250) as number;
+  }
+
+  private failDelivery(code: number): void {
+    if (this.deliveryFaultCode !== 0) return;
+    this.deliveryFaultCode = code;
+    this.state = 'failed';
+    this.clientGeneration++;
+    this.receiveLoopGeneration++;
+    this.stopReceiveWatchdog();
+    this.resetBatchDrain(false);
+    this.rejectPending(this.deliveryError());
+    Logger.error(`Receive delivery fault epoch=${this.receiveEpoch} code=${code}`);
+    // Stop the transport without manufacturing Closed or losing the live client.
+    // Explicit client recovery is prohibited while that retirement is unknown.
+    try {
+      tdlib.stopReceiveLoop().then(() => {
+        this.receiveLoopStarted = false;
+      }).catch(() => {
+        Logger.error(`Receive stop incomplete epoch=${this.receiveEpoch} code=${code}`);
+      });
+    } catch {
+      Logger.error(`Receive stop unavailable epoch=${this.receiveEpoch} code=${code}`);
+    }
+    if (this.recoveryHooks) {
+      try { this.recoveryHooks.onFailure(this.deliveryError()); } catch {
+        Logger.error('Receive delivery failure observer failed');
+      }
+    }
+  }
+
+  private enqueueBatch(batchJson: string, epoch: number, batchId: number, utf8Bytes: number,
+    dispatcher: MainThreadDispatcher): boolean {
+    if (epoch !== this.receiveEpoch || this.deliveryFaultCode !== 0 || !this.receiveLoopStarted) return false;
+    if (!Number.isSafeInteger(epoch) || epoch <= 0 || !Number.isSafeInteger(batchId) || batchId <= this.lastBatchId ||
+      !Number.isSafeInteger(utf8Bytes) || utf8Bytes < 2 || utf8Bytes > MAX_BATCH_BYTES ||
+      typeof batchJson !== 'string' || batchJson.length > utf8Bytes ||
+      this.admittedBatchCount >= MAX_OUTSTANDING_BATCHES ||
+      utf8Bytes > MAX_OUTSTANDING_BYTES - this.admittedBatchBytes) {
+      this.failDelivery(ReceiveStatus.Protocol);
+      return false;
+    }
+    const batch: QueuedTdBatch = { json: batchJson, generation: this.clientGeneration, epoch, batchId, utf8Bytes };
+    try {
+      this.pendingBatchQueue.push(batch);
+      this.admittedBatchCount++;
+      this.admittedBatchBytes += utf8Bytes;
+      this.lastBatchId = batchId;
+      this.scheduleDrain(dispatcher);
+      return true;
+    } catch {
+      this.failDelivery(ReceiveStatus.Admission);
+      return false;
+    }
+  }
+
+  private releaseBatch(batch: QueuedTdBatch): void {
+    batch.json = '';
+    if (this.deliveryFaultCode !== 0 || batch.epoch !== this.receiveEpoch) return;
+    this.admittedBatchCount--;
+    this.admittedBatchBytes -= batch.utf8Bytes;
+    try {
+      if (!tdlib.ackReceiveBatch(batch.epoch, batch.batchId)) this.failDelivery(ReceiveStatus.Protocol);
+    } catch {
+      this.failDelivery(ReceiveStatus.Protocol);
+    }
+  }
+
+  private finishActiveBatch(): void {
+    const batch = this.activeBatch;
+    this.activeBatch = undefined;
+    this.drainItems = [];
+    this.drainIndex = 0;
+    this.drainItemsGeneration = -1;
+    if (batch) this.releaseBatch(batch);
   }
 
   private rearmBatchDrain(dispatcher: MainThreadDispatcher): void {
     if (this.drainTimerId !== -1) clearTimeout(this.drainTimerId);
     this.drainTimerId = -1;
     this.drainScheduled = false;
-    if (this.drainIndex < this.drainItems.length || this.pendingBatchQueue.length > 0) {
-      this.scheduleDrain(dispatcher);
-    }
+    if (this.activeBatch || this.pendingBatchQueue.length > 0) this.scheduleDrain(dispatcher);
   }
 
   private scheduleDrain(dispatcher: MainThreadDispatcher,
     delayMs: number = TdGatewayImpl.DRAIN_YIELD_MS): void {
-    if (this.drainScheduled) {
-      return;
-    }
+    if (this.drainScheduled || this.deliveryFaultCode !== 0) return;
     this.drainScheduled = true;
     const generation = this.clientGeneration;
     this.drainTimerId = setTimeout(() => {
-      if (generation !== this.clientGeneration) {
-        // Destroy keeps queued close-flow envelopes, but invalidates old timer callbacks.
-        return;
-      }
+      if (generation !== this.clientGeneration || this.deliveryFaultCode !== 0) return;
       this.drainTimerId = -1;
       this.drainScheduled = false;
       this.drainSlice(dispatcher);
     }, delayMs) as number;
   }
 
+  private transferNextItem(dispatcher: MainThreadDispatcher): void {
+    const obj = this.drainItems[this.drainIndex] as Record<string, Object>;
+    this.drainIndex++;
+    this.dispatchingItem = true;
+    try { this.dispatchItem(obj, dispatcher, this.drainItemsGeneration); }
+    finally { this.dispatchingItem = false; }
+  }
+
   private drainSlice(dispatcher: MainThreadDispatcher): void {
-    const sliceStart = Date.now();
-    while (Date.now() - sliceStart < TdGatewayImpl.DRAIN_BUDGET_MS) {
-      if (this.drainIndex >= this.drainItems.length) {
-        this.drainItems = [];
-        this.drainIndex = 0;
-        const nextBatch = this.pendingBatchQueue.shift();
-        if (nextBatch === undefined) {
-          this.drainHotStreak = 0;
-          return;
+    const sliceStart = systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false);
+    try {
+      while (this.deliveryFaultCode === 0 &&
+        systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false) - sliceStart < TdGatewayImpl.DRAIN_BUDGET_MS) {
+        if (this.drainIndex >= this.drainItems.length) {
+          this.finishActiveBatch();
+          if (this.deliveryFaultCode !== 0) return;
+          const nextBatch = this.pendingBatchQueue.shift();
+          if (nextBatch === undefined) { this.drainHotStreak = 0; return; }
+          this.loadBatchForDrain(nextBatch);
+          continue;
         }
-        this.loadBatchForDrain(nextBatch, dispatcher);
-        continue;
+        this.transferNextItem(dispatcher);
+        if (this.drainResetRequested) {
+          this.drainResetRequested = false;
+          this.finishActiveBatch();
+        }
       }
-      const obj = this.drainItems[this.drainIndex] as Record<string, Object>;
-      this.drainIndex++;
-      this.dispatchItem(obj, dispatcher, this.drainItemsGeneration);
-    }
-    if (this.drainIndex < this.drainItems.length || this.pendingBatchQueue.length > 0) {
-      const elapsed = Date.now() - sliceStart;
-      this.drainHotStreak++;
-      const backoff = Math.min(
-        TdGatewayImpl.DRAIN_BACKOFF_CAP_MS,
-        elapsed * (1 + this.drainHotStreak)
-      );
-      this.scheduleDrain(dispatcher, Math.max(TdGatewayImpl.DRAIN_YIELD_MS, backoff));
-    } else {
-      this.drainHotStreak = 0;
+      if (this.drainIndex >= this.drainItems.length) this.finishActiveBatch();
+      if (this.deliveryFaultCode !== 0) return;
+      if (this.activeBatch || this.pendingBatchQueue.length > 0) {
+        const elapsed = systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false) - sliceStart;
+        this.drainHotStreak++;
+        const backoff = Math.min(TdGatewayImpl.DRAIN_BACKOFF_CAP_MS, elapsed * (1 + this.drainHotStreak));
+        this.scheduleDrain(dispatcher, Math.max(TdGatewayImpl.DRAIN_YIELD_MS, backoff));
+      } else this.drainHotStreak = 0;
+    } catch {
+      this.failDelivery(ReceiveStatus.Protocol);
     }
   }
 
-  /**
-   * Сигнал шторма для фоновых потребителей main thread (media watcher и т.п.):
-   * очередь батчей непуста или дрейн подряд упирается в бюджет.
-   */
   isDrainCongested(): boolean {
     return this.pendingBatchQueue.length > 0 || this.drainHotStreak > 0;
   }
 
-  private loadBatchForDrain(batch: QueuedTdBatch, dispatcher: MainThreadDispatcher): void {
-    let parsed: Object;
-    try {
-      parsed = JSON.parse(batch.json) as Object;
-    } catch {
-      Logger.error('Malformed batch JSON');
+  private loadBatchForDrain(batch: QueuedTdBatch): void {
+    this.activeBatch = batch;
+    const parsed = JSON.parse(batch.json) as Object;
+    batch.json = '';
+    if (!Array.isArray(parsed) || parsed.length > MAX_BATCH_RESPONSES) {
+      this.failDelivery(ReceiveStatus.Protocol);
       return;
     }
-    if (Array.isArray(parsed)) {
-      this.drainItems = parsed as Object[];
-      this.drainItemsGeneration = batch.generation;
-      this.drainIndex = 0;
-      return;
-    }
-    // Same identity validation for the single-object NAPI fallback.
-    this.dispatchItem(parsed as Record<string, Object>, dispatcher, batch.generation);
+    this.drainItems = parsed as Object[];
+    this.drainItemsGeneration = batch.generation;
+    this.drainIndex = 0;
   }
 
   private dispatchItem(obj: Record<string, Object>, dispatcher: MainThreadDispatcher, generation: number): void {
@@ -930,17 +1049,30 @@ export class TdGatewayImpl implements TdGateway {
     }
   }
 
-  private resetBatchDrain(): void {
-    if (this.drainTimerId !== -1) {
-      clearTimeout(this.drainTimerId);
-      this.drainTimerId = -1;
-    }
+  private resetBatchDrain(returnCredits: boolean = true): void {
+    if (this.drainTimerId !== -1) clearTimeout(this.drainTimerId);
+    this.drainTimerId = -1;
     this.drainScheduled = false;
+    const retired = this.pendingBatchQueue;
     this.pendingBatchQueue = [];
-    this.drainItems = [];
-    this.drainItemsGeneration = -1;
-    this.drainIndex = 0;
     this.drainHotStreak = 0;
+    if (returnCredits && this.dispatchingItem) {
+      // The current synchronous transfer still owns a parsed-item reference.
+      this.drainResetRequested = true;
+    } else if (returnCredits) this.finishActiveBatch();
+    else {
+      this.activeBatch = undefined;
+      this.drainItems = [];
+      this.drainIndex = 0;
+      this.drainItemsGeneration = -1;
+      this.drainResetRequested = false;
+      this.admittedBatchCount = 0;
+      this.admittedBatchBytes = 0;
+    }
+    for (const batch of retired) {
+      batch.json = '';
+      if (returnCredits) this.releaseBatch(batch);
+    }
   }
 
 }

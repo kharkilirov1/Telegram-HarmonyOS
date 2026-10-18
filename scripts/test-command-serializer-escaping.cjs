@@ -60,6 +60,7 @@ const useCase = load('domain/usecases/sendMessage.ets', { ...C, ...errors, TdObj
 const nativeCalls = [];
 const { TdGatewayImpl } = load('infra/td/gateway/TdGateway.ets', {
   ...errors, TdObject, hilog,
+    systemDateTime: { TimeType: { STARTUP: 0 }, getUptime: () => performance.now() },
   tdlib: { send(clientId, json) { nativeCalls.push({ clientId, json }); } }
 });
 const gateway = TdGatewayImpl.getInstance();

@@ -27,6 +27,7 @@ import downloadMessageMediaTest from './DownloadMessageMedia.test';
 import userDtoTest from './UserDto.test';
 import filePipelineTest from './FilePipeline.test';
 import tdGatewayTest from './TdGateway.test';
+import nativeReceiveFlowTest from './NativeReceiveFlow.test';
 import eventNormalizerTest from './EventNormalizer.test';
 import rootTabBarGeometryTest from './RootTabBarGeometry.test';
 import tgComposerMaterialPolicyTest from './TgComposerMaterialPolicy.test';
@@ -136,6 +137,7 @@ export default function testsuite() {
 
   // Infrastructure
   tdGatewayTest();
+  nativeReceiveFlowTest();
   eventNormalizerTest();
   eventPipelineTest();
 

@@ -101,6 +101,7 @@ function pipeline() {
   const requests = [], timers = new Map(); let sequence = 0;
   const raw = load(main + 'infra/td/gateway/TdGateway.ets', {
     ...app, ...td, hilog, getMainThreadDispatcher: () => { throw new Error('Native bootstrap forbidden'); },
+    systemDateTime: { TimeType: { STARTUP: 0 }, getUptime: () => performance.now() },
     setTimeout: (callback, delay) => { timers.set(++sequence, { callback, delay }); return sequence; }, clearTimeout: id => timers.delete(id),
     tdlib: { send: (client, json) => requests.push({ client, json: JSON.parse(json) }) }
   });

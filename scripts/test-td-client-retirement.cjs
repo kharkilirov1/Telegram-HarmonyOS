@@ -32,7 +32,7 @@ async function setup(initialize = true) {
   };
   f.deliver = envelopes => {
     assert.ok(f.callbacks.length > 0, 'native receive callback exists');
-    f.callbacks.at(-1)(JSON.stringify(envelopes));
+    f.emit(envelopes); // The native ABI carries arrays, including single-envelope fixture inputs.
   };
   if (initialize) {
     const init = observed(f.gateway.initialize());
@@ -305,7 +305,7 @@ async function negativeControls() {
   const originalBytes = originalRead(gatewayPath);
   const source = originalBytes.toString('utf8').replace(/\r\n/g, '\n');
   const allocate = '      this.clientId = tdlib.createClient();\n';
-  const start = '      tdlib.startReceiveLoop((batchJson: string) => {';
+  const start = '      this.receiveEpoch = tdlib.startReceiveLoop((batchJson: string, epoch: number, batchId: number, utf8Bytes: number): boolean => {';
   const privateRoute = `    if (this.state === 'destroying') {
       // Runtime can unsubscribe its dispatcher after a failed shutdown. Keep only
       // this owner's close responses/Closed on the already-main-thread NAPI path;

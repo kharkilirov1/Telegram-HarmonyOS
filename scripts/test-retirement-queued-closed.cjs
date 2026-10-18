@@ -30,7 +30,7 @@ async function setup() {
   assert.equal(deadlines.length, 1, 'one actual bootstrap timeout');
   f.deadline = deadlines[0];
   f.failures = failures;
-  f.deliver = value => f.callbacks.at(-1)(JSON.stringify(value));
+  f.deliver = value => f.emit(value);
   return f;
 }
 
@@ -71,11 +71,11 @@ function partialDrain(f) {
   });
   const [id, timer] = [...f.timers].find(([, value]) => value.ms <= 250);
   f.timers.delete(id);
-  const realNow = Date.now, epoch = realNow();
+  const realNow = f.clock.now, epoch = realNow();
   // Deterministic subscriber cost exhausts the actual production drain budget.
   // Neither dispatch logic nor generation/scheduling logic is replaced.
-  Date.now = () => epoch + elapsed;
-  try { timer.fn(); } finally { Date.now = realNow; unsubscribe(); }
+  f.clock.now = () => epoch + elapsed;
+  try { timer.fn(); } finally { f.clock.now = realNow; unsubscribe(); }
   assert.equal(delivered, 1, 'actual first update must be dispatched');
   assert.equal(f.gateway.drainIndex, 1, 'drain actually stopped after first item');
   assert.equal(f.gateway.drainScheduled, true, 'old-generation continuation is scheduled');
@@ -91,7 +91,7 @@ for (const single of [false, true]) {
   });
 }
 
-test('timeout preserves current Closed behind a foreign batch and single-object fallback', async () => {
+test('timeout preserves current Closed behind a foreign batch and single-envelope batch', async () => {
   const f = await setup();
   f.deliver([auth(1, 'Closed'), auth(3, 'Closed')]);
   f.deliver(auth(2, 'Closed'));

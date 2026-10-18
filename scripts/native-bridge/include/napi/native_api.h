@@ -45,3 +45,16 @@ napi_status napi_create_async_work(napi_env, napi_value, napi_value,
     napi_async_execute_callback, napi_async_complete_callback, void*, napi_async_work*);
 napi_status napi_queue_async_work(napi_env, napi_async_work);
 napi_status napi_delete_async_work(napi_env, napi_async_work);
+
+struct uv_loop_s; using uv_loop_t = uv_loop_s;
+using napi_async_cleanup_hook_handle = void*;
+using napi_async_cleanup_hook = void (*)(napi_async_cleanup_hook_handle, void*);
+napi_status napi_create_double(napi_env, double, napi_value*);
+napi_status napi_get_boolean(napi_env, bool, napi_value*);
+napi_status napi_get_value_bool(napi_env, napi_value, bool*);
+napi_status napi_create_object(napi_env, napi_value*);
+napi_status napi_set_named_property(napi_env, napi_value, const char*, napi_value);
+napi_status napi_is_exception_pending(napi_env, bool*);
+napi_status napi_get_uv_event_loop(napi_env, uv_loop_t**);
+napi_status napi_add_async_cleanup_hook(napi_env, napi_async_cleanup_hook, void*, napi_async_cleanup_hook_handle*);
+napi_status napi_remove_async_cleanup_hook(napi_async_cleanup_hook_handle);

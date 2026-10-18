@@ -9,6 +9,9 @@ static napi_value Init(napi_env env, napi_value exports) {
         { "execute", nullptr, tdlib_napi::Execute, nullptr, nullptr, nullptr, napi_default, nullptr },
         { "startReceiveLoop", nullptr, tdlib_napi::StartReceiveLoop, nullptr, nullptr, nullptr, napi_default, nullptr },
         { "stopReceiveLoop", nullptr, tdlib_napi::StopReceiveLoop, nullptr, nullptr, nullptr, napi_default, nullptr },
+        { "ackReceiveBatch", nullptr, tdlib_napi::AckReceiveBatch, nullptr, nullptr, nullptr, napi_default, nullptr },
+        { "getReceiveLoopStatus", nullptr, tdlib_napi::GetReceiveLoopStatus, nullptr, nullptr, nullptr, napi_default, nullptr },
+        { "getReceiveLoopStats", nullptr, tdlib_napi::GetReceiveLoopStats, nullptr, nullptr, nullptr, napi_default, nullptr },
         { "getTdlibInfo", nullptr, tdlib_napi::GetTdlibInfo, nullptr, nullptr, nullptr, napi_default, nullptr },
     };
 

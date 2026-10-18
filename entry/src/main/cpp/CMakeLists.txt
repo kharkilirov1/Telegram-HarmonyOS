@@ -81,6 +81,7 @@ target_include_directories(tdlib_napi PRIVATE
 
 # Link against NAPI and TDLib
 target_link_libraries(tdlib_napi PUBLIC
+    libuv.so
     libace_napi.z.so
     libhilog_ndk.z.so
 )

@@ -30,8 +30,12 @@ napi_value Execute(napi_env env, napi_callback_info info);
 // Args: (function callback)
 napi_value StartReceiveLoop(napi_env env, napi_callback_info info);
 
+napi_value AckReceiveBatch(napi_env env, napi_callback_info info);
+napi_value GetReceiveLoopStatus(napi_env env, napi_callback_info info);
+napi_value GetReceiveLoopStats(napi_env env, napi_callback_info info);
+
 // Request stop without blocking ArkTS. Returns Promise<void>, settled after the
-// background thread is joined. A failed stop must be retried before restarting.
+// producer is joined AND its TSFN is finalized. A failed stop must be retried before restarting.
 napi_value StopReceiveLoop(napi_env env, napi_callback_info info);
 
 // Returns a JSON string with TDLib build-time diagnostics:
