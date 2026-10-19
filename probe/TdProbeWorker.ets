@@ -1,4 +1,3 @@
-/// <reference path="../types/libtdlib_napi.d.ts" />
 import { worker } from '@kit.ArkTS';
 import { ProbeRunner, ProbeSummary } from '../probe/ProbeRunner';
 
@@ -6,9 +5,13 @@ import { ProbeRunner, ProbeSummary } from '../probe/ProbeRunner';
 
 const port = worker.workerPort;
 
+// Signal that the module is loaded, so the main thread can open the measurement
+// window only after cold start is out of the way.
+port.postMessage('ready');
+
 port.onmessage = (): void => {
   const runner: ProbeRunner = new ProbeRunner('worker', (summary: ProbeSummary): void => {
     port.postMessage(JSON.stringify(summary));
   });
-  runner.startSynthetic(161, 8);
+  runner.start(161, 8);
 };

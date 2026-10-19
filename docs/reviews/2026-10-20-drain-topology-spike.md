@@ -1,87 +1,95 @@
 # Drain topology spike — 2026-10-20
 
-**Question:** does moving the receive drain off the main thread actually change anything on this
-target, or is the whole direction an assumption?
+**Question:** does moving the receive drain off the main thread change anything measurable on this
+target?
 
-**Answer: the apparatus works, one number moves in the predicted direction, and the result is not
-yet a measurement you can decide on.** What follows separates what was observed from what was not.
+**Answer: no, not on this workload.** With the confounds removed, the main-thread arm and the worker
+arm are indistinguishable. The earlier 20 % delta reported in the first version of this note was an
+arrival-timing artefact, and it is retracted below.
 
 ---
 
-## 1. What ran
+## 1. Design
 
-Isolated bundle `com.telegram.harmonyos.nativevalidation20261020`, installed beside the accepted
-`com.telegram.harmonyos` and removed afterwards. API24 x86_64 emulator.
+Isolated bundle `com.telegram.harmonyos.nativevalidation20261020` on the API24 x86_64 emulator,
+installed beside the accepted `com.telegram.harmonyos` and removed afterwards.
 
 Identical drain code in both arms — the only difference is the thread that owns it:
 
-- batches arrive, each response costs **8 ms** of synchronous consumer work,
-- the drain yields once it has spent **8 ms** in a slice, guaranteeing one transfer per turn,
-- 161 items in 21 batches, emitted back to back so the queue can build up,
-- a main-thread frame load runs throughout: 6 ms of work every 16 ms, never yielding early.
+- **21 batches × 8 items, 161 responses, filled synchronously before the drain starts.** Arrival
+  timing is therefore identical in both arms, which removes the confound that made a slow drain
+  stamp batches later and look faster per batch.
+- **8 ms of synchronous consumer work per response**, mirroring the project's measured figure.
+- **8 ms slice budget with a guaranteed first transfer**, i.e. the drain that is already committed.
+- **Measurement opens 5 s after launch**, so window load is not attributed to the drain.
+- **Worker cold start is outside the window**: the worker posts `ready` on module load and the main
+  thread starts the clock only after that.
+- Four runs per arm, each a fresh process (`aa force-stop` + `aa start`).
 
-Work floor: 161 × 8 ms = **1288 ms**. Everything above that is scheduling.
-
-Harness source is preserved in `probe/` at the repository root — deliberately outside `entry/`, so it
-is version-controlled but not compiled into the app.
-
----
-
-## 2. Results
-
-### Burst arrival (21 batches × 8 items, back to back)
-
-| Arm | elapsed | max batch latency | max backlog | frame ticks | worst frame gap |
-|---|---|---|---|---|---|
-| worker | **3941 ms** | 3754 ms | 19 | 1 | 0 ms |
-| main | **4743 ms** | 2151 ms | 19 | 85 | **2332 ms** |
-
-### Trickle arrival (1 item per 2 ms, 161 batches)
-
-| Arm | elapsed | max batch latency | max backlog | frame ticks | worst frame gap |
-|---|---|---|---|---|---|
-| worker | 4580 ms | 546 ms | 1 | 1 | 0 ms |
-| main | 8646 ms | 247 ms | 1 | 98 | **5308 ms** |
+Work floor: 161 × 8 ms = **1288 ms**. Anything above that is scheduling.
 
 ---
 
-## 3. What the numbers support
+## 2. Result
 
-**Supported:** on the burst workload the main-thread arm took **20 % longer** (4743 vs 3941 ms) for
-identical work, and during that run the main thread stopped for **2.3 s** — the `THREAD_BLOCK_6S`
-family the project has already hit five times.
+| Run | main | worker |
+|---|---|---|
+| 1 | 1984 ms | 1821 ms |
+| 2 | 2163 ms | 2514 ms |
+| 3 | 2462 ms | 2925 ms |
+| 4 | 2948 ms | 2960 ms |
+| **mean** | **2389 ms** | **2555 ms** |
+| range | 1984–2948 | 1821–2960 |
 
-**Not supported:** any claim about the worker arm's frame behaviour. Its frame counter recorded
-**1 tick**, so `worst frame gap = 0` means "the loop never ran", not "nothing stalled". The metric is
-dead in that arm and must not be read as a clean bill of health.
+The ranges overlap almost completely. **No difference is demonstrated.** The worker arm's mean is
+7 % higher, which is smaller than the spread within either arm.
 
-**Not supported:** `max batch latency` as a comparison. It is *lower* on main (2151 vs 3754 ms) for a
-confounded reason: with frames stealing time, batches are stamped later, so the interval from arrival
-to ack shrinks even though the whole run takes longer. Latency measured from arrival is only
-comparable when arrival timing is independent of the drain — it is not here.
+Both arms finished with `maxBacklog = 21` and `items = 161` — the workload was identical and fully
+drained in both.
 
-**Not supported:** anything about capacity. Backlog peaked at 19 in both arms, so neither arm
-exercised the 4-batch admission limit that the original defect was about.
+### Why the overhead is where it is
+
+Measured 2389 ms against a 1288 ms work floor leaves ~1100 ms of scheduling across 161 yields, about
+**7 ms per yield**. That is the emulator's timer cost, and it is a function of *how many times the
+drain yields*, not of *which thread it yields on*. Moving threads cannot reduce it, which is exactly
+what the numbers show.
 
 ---
 
-## 4. The native source could not be exercised at all
+## 3. Retraction
 
-The first design drove real TDLib through `startReceiveLoop`. It produced **zero responses**:
+The first version of this note (commit `992e281`) reported main 4743 ms versus worker 3941 ms, a
+20 % delta in the predicted direction, plus a 2332 ms main-thread frame stall. All three of those
+figures are withdrawn:
 
-```
-TDLib client created: 1
-TDLib send: getOption      (×161)
-```
+- The batches were emitted from a timer **while** the drain ran, so a slow drain delayed its own
+  arrival stamps and shortened the measured arrival-to-ack interval. The main arm's `maxBatchLatency`
+  was *lower* than the worker's (2151 vs 3754 ms) for that reason. Filling the queue up front
+  removes the effect.
+- The worker arm was carrying its own cold start inside the measured window.
+- The frame stall came from window load, not from the drain: with a 5 s settle delay, main-thread
+  frame gaps fall to 37–237 ms across runs.
 
-161 sends, no batches, ever. The client is unauthenticated — `ConfigLocal.ets` carries dummy API
-credentials by design — and TDLib does not answer a client that never reaches a ready authorization
-state. The earlier harness that reported 161 `getOption` responses presumably ran with real
-credentials, which are not in this repository and must not be committed.
+A metric that moves in the predicted direction for the wrong reason is worse than no metric.
 
-This is the same external gate as authenticated delivery, showing up where it was not expected:
-**the drain cannot be measured against live TDLib without an authorized client.** The synthetic
-source was built to route around it, and the price is that arrival timing is now modelled, not real.
+---
+
+## 4. What was not measured, and why
+
+**Live TDLib arrivals.** The first design drove the real receive loop. It produced zero responses:
+161 `tdlib.send` calls, no batches ever. TDLib does not answer a client that never reaches a ready
+authorization state, and `ConfigLocal.ets` carries dummy API credentials by design. Arrival timing is
+modelled here, not observed. Measuring the real path needs an authorized client, which is the same
+external gate as authenticated delivery.
+
+**Frame behaviour in the worker arm.** The frame counter records 1 tick there, in every run. On an
+otherwise idle ArkTS thread this emulator throttles timers, so `maxGap = 0` means the loop never ran.
+The metric is unusable in that arm and must not be read as a clean bill of health. Only the main arm
+produced usable frame numbers (37–237 ms worst gap).
+
+**Admission limits.** `MAX_OUTSTANDING_BATCHES = 4` was never exercised: the queue is filled by the
+probe, not by the native admission path, so the 4-batch ceiling and its `failDelivery` branch are
+outside this measurement entirely.
 
 ---
 
@@ -95,35 +103,36 @@ if (items >= expected) { finish(true); }
 pump();          // ← idle: schedules another slice immediately, forever
 ```
 
-That spins a zero-delay timer loop on the thread it is supposed to be measuring, and it starved the
-app's own `AppCoreRuntime` initialization (`TDLib init failed: TDLib receive owner is not retired`).
-Fixed by returning to idle and letting the next `accept()` re-arm the pump. Worth recording because
-the same shape is easy to write by accident in production code.
+That spins a zero-delay timer loop on the thread it is supposed to measure, and it starved the app's
+own initialization (`TDLib init failed: TDLib receive owner is not retired`). Fixed by returning to
+idle and letting the next fill re-arm the pump.
 
 ---
 
-## 6. What the next iteration needs
+## 6. What this means for the project
 
-1. **A main-thread load that does not depend on the window.** The frame counter's collapse in the
-   worker arm tracks the window state, not the drain. Drive the load from a timer that starts after
-   `onWindowStageCreate` settles, and verify it ticks before trusting a gap of 0.
-2. **Arrival timing decoupled from the drain.** Stamp each batch at emission and measure drain
-   duration per batch, not arrival-to-ack.
-3. **Real arrivals, or an explicit statement that this is a model.** Either obtain credentials for an
-   authorized client in an isolated bundle, or write "synthetic" on the result and stop calling it a
-   TDLib measurement.
+The direction was reasonable and is now measured rather than assumed. On a pre-loaded backlog with
+the current drain, the thread that owns the work does not matter; what matters is the number of
+yields, and that number is unchanged by relocating the drain.
 
-Until (1) and (2) are done, the 20 % delta is a lead, not a finding.
+This is consistent with the project's own earlier finding that 88–93 % of the request interval sits
+in native capacity waiting — not in the consumer. Relocating the consumer cannot move time that was
+never spent in the consumer.
+
+**Do not open a production change on the strength of this spike.** If the drain is to be revisited at
+all, the next question is not "which thread" but "why 161 responses cost ~1100 ms of scheduling", and
+that is a question about the yield path, not about threading.
 
 ---
 
 ## 7. State
 
-All wiring reverted: `AppScope/app.json5`, `entry/src/main/ets/entryability/EntryAbility.ets`,
-`entry/build-profile.json5`. Probe bundle uninstalled. Only `com.telegram.harmonyos` remains on the
-emulator, `firstInstallTime` unchanged at `1788721575252`.
+App wiring reverted (`AppScope/app.json5`, `EntryAbility.ets`, `entry/build-profile.json5`), probe
+bundle uninstalled, only `com.telegram.harmonyos` remains with `firstInstallTime` unchanged at
+`1788721575252`.
 
-Harness kept in `probe/` — `ProbeRunner.ets`, `FrameLoad.ets`, `TdProbeWorker.ets`. To rebuild it,
-declare the worker in `entry/build-profile.json5` under `buildOption.sourceOption.workers`, set the
-bundle name to an isolated `com.telegram.harmonyos.nativevalidation<yyyymmdd>`, and call
-`runProbe()` from `EntryAbility.onCreate`.
+Harness kept in `probe/` outside `entry/`: `ProbeRunner.ets` (prefilled queue, per-batch drain and
+wait timing), `FrameLoad.ets` (heartbeat-emitting main-thread load), `TdProbeWorker.ets` (ready
+handshake). To rebuild: declare the worker under `buildOption.sourceOption.workers`, set an isolated
+`com.telegram.harmonyos.nativevalidation<yyyymmdd>` bundle name, and call `runProbe()` from
+`EntryAbility.onCreate`.
