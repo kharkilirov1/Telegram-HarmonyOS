@@ -47,6 +47,20 @@ export class FrameLoad {
 
   stop(): FrameStats {
     this.running = false;
+    return this.peek();
+  }
+
+  // Zero the counters without breaking the running tick chain, so one window of
+  // a longer run can be attributed to a single variant.
+  resetStats(): void {
+    this.maxGap = 0;
+    this.ticks = 0;
+    this.heartbeats = 0;
+    this.startedAt = Date.now();
+    this.last = this.startedAt;
+  }
+
+  peek(): FrameStats {
     const stats: FrameStats = {
       ticks: this.ticks,
       maxGapMs: this.maxGap,

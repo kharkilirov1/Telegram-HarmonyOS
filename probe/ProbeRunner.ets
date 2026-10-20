@@ -14,7 +14,6 @@
 // nothing. Arrival timing is modelled here, not observed.
 
 const ITEM_WORK_MS: number = 8;
-const SLICE_BUDGET_MS: number = 8;
 const WATCHDOG_MS: number = 60000;
 
 class Batch {
@@ -50,6 +49,7 @@ function busy(ms: number): void {
 export class ProbeRunner {
   private readonly mode: string;
   private readonly onDone: (summary: ProbeSummary) => void;
+  private readonly budgetMs: number;
   private expected: number = 0;
   private queue: Batch[] = [];
   private items: number = 0;
@@ -62,9 +62,10 @@ export class ProbeRunner {
   private draining: boolean = false;
   private finished: boolean = false;
 
-  constructor(mode: string, onDone: (summary: ProbeSummary) => void) {
+  constructor(mode: string, onDone: (summary: ProbeSummary) => void, budgetMs: number) {
     this.mode = mode;
     this.onDone = onDone;
+    this.budgetMs = budgetMs;
   }
 
   start(total: number, batchSize: number): void {
@@ -100,7 +101,7 @@ export class ProbeRunner {
     const sliceStart: number = Date.now();
     let transferred: number = 0;
     while (this.queue.length > 0 &&
-      (transferred === 0 || Date.now() - sliceStart < SLICE_BUDGET_MS)) {
+      (transferred === 0 || Date.now() - sliceStart < this.budgetMs)) {
       const batch: Batch = this.queue[0];
       if (batch.touchedAt === 0) {
         batch.touchedAt = Date.now();
