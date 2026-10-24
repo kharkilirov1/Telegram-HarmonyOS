@@ -24,6 +24,7 @@ import { LoadChatHistoryUseCase, LoadChatHistoryParams, createLoadChatHistoryUse
 import { createMarkChatReadUseCase, MarkChatReadUseCase } from '../../../domain/usecases/markChatRead';
 import { createLoadRepliedMessageUseCase, LoadRepliedMessageUseCase } from '../../../domain/usecases/loadRepliedMessage';
 import { ReplyHydrationCoordinator } from './ReplyHydrationCoordinator';
+import { typingActivityRemainingMs } from './ChatTopBarPresentation';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN = 0x0021;
@@ -220,6 +221,14 @@ export function activateChatRoute(host: ChatRouteActivationCoordinatorPort): voi
         }
         // Preserve the first owned state before coalescing can skip over a read update.
         host.captureInitialHistorySnapshot(_newState);
+        const activityRefreshDelay = chatActivityRefreshDelay(host.activeChatId, _newState, _prevState,
+          Date.now());
+        if (activityRefreshDelay > 0) {
+          scheduleLifecycleTask(host, activityRefreshDelay, (): void => {
+            if (host.accountStore !== store) return;
+            host.updateChatTopBarData(store.getState());
+          });
+        }
         if (_newState.files.transfers !== _prevState.files.transfers) {
           host.refreshGroupedStickerHomePreviews(_newState);
         }
@@ -256,6 +265,23 @@ export function activateChatRoute(host: ChatRouteActivationCoordinatorPort): voi
       host.aboutToDisappear();
       hilog.error(DOMAIN, TAG, 'Chat route activation failed: %{public}s', String(e));
     }
+  }
+
+export function chatActivityRefreshDelay(activeChatId: number, newState: AppState,
+  prevState: AppState, now: number): number {
+    // One bounded re-derivation at the activity deadline for the open chat only.
+    // TDLib sends no cancel when a peer simply stops typing, so without this the
+    // header would keep the last "typing" subtitle until some unrelated store
+    // change arrived.
+    if (activeChatId === 0) {
+      return 0;
+    }
+    const next = newState.chats.typingActions.get(activeChatId);
+    if (next === undefined || next === prevState.chats.typingActions.get(activeChatId)) {
+      return 0;
+    }
+    const remaining = typingActivityRemainingMs(next, now);
+    return remaining > 0 ? remaining : 0;
   }
 
 export function shouldReactToStoreChange(host: ChatRouteActivationCoordinatorPort, newState: AppState, prevState: AppState): boolean {

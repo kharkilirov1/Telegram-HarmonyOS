@@ -234,6 +234,12 @@ export class TgUiTokens {
   static readonly CHAT_TOP_BAR_SUBTITLE_SIZE: number = 12;
   static readonly CHAT_TOP_BAR_SPINNER_SIZE: number = 11;
   static readonly CHAT_TOP_BAR_SPINNER_GAP: number = 4;
+  // iOS typing indicator: ChatTypingActivityContentNode.swift draws three 3pt
+  // dots with a 11/2pt centre pitch to the left of the activity text.
+  static readonly CHAT_TOP_BAR_TYPING_DOT_SIZE: number = 3;
+  static readonly CHAT_TOP_BAR_TYPING_DOT_PITCH: number = 5.5;
+  static readonly CHAT_TOP_BAR_TYPING_DOT_GAP: number =
+    TgUiTokens.CHAT_TOP_BAR_TYPING_DOT_PITCH - TgUiTokens.CHAT_TOP_BAR_TYPING_DOT_SIZE;
   static readonly CHAT_TOP_BAR_ACTION_FOREGROUND: Resource = $r('app.color.text_primary');
   static readonly CHAT_TOP_BAR_SUBTITLE_ACCENT: Resource = $r('app.color.telegram_blue');
   static readonly CHAT_TOP_BAR_BORDER_WIDTH: number = 0.5;

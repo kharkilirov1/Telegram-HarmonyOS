@@ -12,6 +12,11 @@ export const TG_CHAT_SEARCH_INPUT_ID: string = 'tg_chat_search_input';
 export enum TgChatTopBarSubtitleMode {
   Secondary = 'secondary',
   Online = 'online',
+  // Peer activity with a typing indicator: the atom owns the dots, the page owns
+  // the already localized actor/action text.
+  Typing = 'typing',
+  // Peer activity without a typing indicator (uploading, recording, ...) and
+  // connection state; both are accent colored.
   Activity = 'activity',
 }
 
@@ -81,6 +86,7 @@ export struct TgChatTopBar {
   private subtitleColor(): ResourceColor {
     switch (this.subtitleMode) {
       case TgChatTopBarSubtitleMode.Online:
+      case TgChatTopBarSubtitleMode.Typing:
       case TgChatTopBarSubtitleMode.Activity:
         return TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT;
       default:
@@ -165,6 +171,30 @@ export struct TgChatTopBar {
   }
 
   @Builder
+  private buildTypingDot() {
+    Row()
+      .width(TgUiTokens.CHAT_TOP_BAR_TYPING_DOT_SIZE)
+      .height(TgUiTokens.CHAT_TOP_BAR_TYPING_DOT_SIZE)
+      .backgroundColor(this.subtitleColor())
+      .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
+  }
+
+  // iOS puts three dots to the left of the activity text and pulses their radius
+  // over 0.7s (ChatTypingActivityContentNode.swift). The dots are static here; the
+  // pulse is registered as debt because its frame cost cannot be witnessed yet.
+  @Builder
+  private buildTypingDots() {
+    Row({ space: TgUiTokens.CHAT_TOP_BAR_TYPING_DOT_GAP }) {
+      this.buildTypingDot()
+      this.buildTypingDot()
+      this.buildTypingDot()
+    }
+    .alignItems(VerticalAlign.Center)
+    .hitTestBehavior(HitTestMode.None)
+    .accessibilityLevel('no')
+  }
+
+  @Builder
   private buildTitleContent() {
     Column() {
       Text(this.title)
@@ -182,6 +212,9 @@ export struct TgChatTopBar {
               .width(TgUiTokens.CHAT_TOP_BAR_SPINNER_SIZE)
               .height(TgUiTokens.CHAT_TOP_BAR_SPINNER_SIZE)
               .color(this.subtitleColor())
+          }
+          if (this.subtitleMode === TgChatTopBarSubtitleMode.Typing) {
+            this.buildTypingDots()
           }
           Text(this.subtitle)
             .fontSize(TgUiTokens.CHAT_TOP_BAR_SUBTITLE_SIZE)

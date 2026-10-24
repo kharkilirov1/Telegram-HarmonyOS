@@ -5,6 +5,7 @@ import { AppState, Chat, Message } from '../../../core/model/AppState';
 import { compareInt64 } from '../../../core/utils/tdAccessors';
 import { getString } from '../../../core/utils/AppResource';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
+import { CHAT_ACTIVITY_TTL_MS } from '../chat/ChatTopBarPresentation';
 import { fileUri } from '@kit.CoreFileKit';
 
 // Convert sandbox path to file:// URI for Image component
@@ -165,7 +166,7 @@ function localizedPreviewKind(kind: ChatPreviewKind): string {
     case 'sendingVideoNote':
       return localizedString($r('app.string.chat_preview_sending_video_note').id, 'sending video message...');
     case 'typing':
-      return localizedString($r('app.string.typing').id, 'typing') + '...';
+      return localizedString($r('app.string.typing').id, 'typing…');
     case 'message':
     default:
       return localizedString($r('app.string.message_placeholder').id, 'Message');
@@ -547,9 +548,9 @@ export function buildChatItemVO(chat: Chat, state: AppState): ChatItemVO {
     vo.formattedTime = formatMessageTime(lastMessageSnapshot.timestamp);
   }
 
-  // Typing indicator — expires after 6 seconds
+  // Typing indicator — the same activity deadline the chat header uses.
   const typingInfo = state.chats.typingActions.get(chat.id);
-  if (typingInfo && (Date.now() - typingInfo.timestamp) < 6000) {
+  if (typingInfo && (Date.now() - typingInfo.timestamp) < CHAT_ACTIVITY_TTL_MS) {
     vo.isTyping = true;
     vo.previewPrefix = '';
     vo.previewPrefixStyle = 'none';

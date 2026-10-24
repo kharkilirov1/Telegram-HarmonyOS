@@ -1,9 +1,19 @@
 // Pure header derivation. Route ownership, access observation and @Local publication stay in the page.
 
 import { fileUri } from '@kit.CoreFileKit';
-import { AppState, Chat } from '../../../core/model/AppState';
+import { AppState, Chat, ChatTypingInfo } from '../../../core/model/AppState';
 import { localized, localizedPlural } from '../../../core/utils/AppResource';
 import { TgChatTopBarSubtitleMode, TgChatTopBarTrailingAction } from '../../tg_ui/atoms/TgChatTopBar';
+
+// TDLib re-sends an input activity about every 3s while the peer keeps typing and
+// sends no cancel when they simply stop. iOS expires an activity 8s after its last
+// update (TelegramCore/Sources/State/PeerInputActivityManager.swift:327-335), so the
+// subtitle must fall back on its own instead of waiting for an unrelated store change.
+export const CHAT_ACTIVITY_TTL_MS: number = 8000;
+
+export function typingActivityRemainingMs(info: ChatTypingInfo, now: number): number {
+  return info.timestamp + CHAT_ACTIVITY_TTL_MS - now;
+}
 
 export class ChatAvatarPresentation {
   initials: string = '';
@@ -50,11 +60,11 @@ function formatUserStatus(status: string): string {
   return '';
 }
 
-function formatTypingSubtitle(actionType: string, subjectName: string = ''): string {
+function formatTypingSubtitle(actionType: string): string {
   let actionLabel: string = '';
   switch (actionType) {
     case 'typing':
-      actionLabel = localized($r('app.string.typing').id, 'typing...');
+      actionLabel = localized($r('app.string.typing').id, 'typing…');
       break;
     case 'recordingVideo':
       actionLabel = localized($r('app.string.chat_preview_recording_video').id, 'recording video...');
@@ -93,10 +103,10 @@ function formatTypingSubtitle(actionType: string, subjectName: string = ''): str
       actionLabel = localized($r('app.string.chat_preview_sending_video_note').id, 'sending video message...');
       break;
     default:
-      actionLabel = localized($r('app.string.typing').id, 'typing...');
+      actionLabel = localized($r('app.string.typing').id, 'typing…');
       break;
   }
-  return subjectName.length > 0 ? `${subjectName} ${actionLabel}` : actionLabel;
+  return actionLabel;
 }
 
 function formatConnectionSubtitle(status: string): string {
@@ -157,16 +167,20 @@ export function chatSubtitlePresentation(chat: Chat | undefined, state: AppState
   }
 
   const typingInfo = state.chats.typingActions.get(chatId);
-  if (typingInfo && (now() - typingInfo.timestamp) < 6000) {
+  if (typingInfo !== undefined && typingActivityRemainingMs(typingInfo, now()) > 0) {
+    // iOS shows the sender's name alone for a group or channel and the localized
+    // action label for a one-to-one chat: ChatTitleComponent.swift:686-688 takes
+    // `items.first.peer.compactDisplayTitle`, the CloudUser/SecretChat branch takes
+    // the activity string.
     let actorName: string = '';
     if (chat.peerUserId <= 0 && typingInfo.senderUserId > 0) {
       const sender = state.users.users.get(typingInfo.senderUserId);
-      actorName = sender
-        ? (sender.firstName.length > 0 ? sender.firstName : sender.username)
-        : '';
+      actorName = sender !== undefined
+        ? (sender.firstName.length > 0 ? sender.firstName : sender.username) : '';
     }
-    result.subtitle = formatTypingSubtitle(typingInfo.actionType, actorName);
-    result.mode = TgChatTopBarSubtitleMode.Activity;
+    result.subtitle = actorName.length > 0 ? actorName : formatTypingSubtitle(typingInfo.actionType);
+    result.mode = typingInfo.actionType === 'typing'
+      ? TgChatTopBarSubtitleMode.Typing : TgChatTopBarSubtitleMode.Activity;
   }
 
   if (state.connection.status !== 'ready') {

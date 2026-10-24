@@ -305,7 +305,7 @@ async function main({ fixturesOnly = false, draftMutant = false,
       if (name === 'createMarkChatReadUseCase') return markRead.createMarkChatReadUseCase(...args);
       return call;
     }]));
-    const deps = { ...C, ...errors, ...emoji, ...factories, ...td, ChatScreenRouteParams,
+    const moduleDeps = { ...C, ...errors, ...emoji, ...factories, ...td, ChatScreenRouteParams,
       LoadChatHistoryParams: history.LoadChatHistoryParams,
       hilog, DOMAIN: 0x21, TAG: 'TgChatScreenPage', ...constants,
       localized: (_id, fallback) => fallback, $r: id => ({ id }),
@@ -329,6 +329,20 @@ async function main({ fixturesOnly = false, draftMutant = false,
       resolveReplyPreview: (messages, id) => {
         f.presentationReads.push({ kind: 'preview', id }); return messages.get(id)?.fixturePreview ?? '';
       } };
+    // Extracted page methods keep real module scope: non-delegate owner helpers are
+    // injected from their actual modules instead of being silently absent.
+    const topBarPresentation = load('ui/pages/chat/ChatTopBarPresentation.ets', {
+      ...A, fileUri: { getUriFromPath: () => '' },
+      localized: moduleDeps.localized, localizedPlural: (_id, _count, fallback) => fallback,
+      $r: moduleDeps.$r,
+      TgChatTopBarSubtitleMode: { Secondary: 'secondary', Online: 'online', Typing: 'typing', Activity: 'activity' },
+      TgChatTopBarTrailingAction: { None: 'none', Search: 'search', Avatar: 'avatar' }
+    });
+    const sourceBoundary = require('./chat-screen-source.cjs');
+    const ownerHelpers = sourceBoundary.helperBindings(
+      sourceBoundary.sourceGraph(path.join(root, pageFile)),
+      { ...moduleDeps, typingActivityRemainingMs: topBarPresentation.typingActivityRemainingMs });
+    const deps = { ...moduleDeps, ...ownerHelpers };
     f.transfer = load('ui/pages/chat/PendingForwardTransfer.ets').pendingForwardTransfer;
     const actions = load('ui/pages/chat/ChatMessageActionsController.ets', {
       hilog, localized: deps.localized, $r: deps.$r, pendingForwardTransfer: f.transfer });

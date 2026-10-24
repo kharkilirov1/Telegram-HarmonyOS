@@ -51,7 +51,8 @@ const localized = (id, fallback) => `${id}|${fallback}`;
 const localizedPlural = (id, count, fallback) => `${id}|${count}|${fallback}`;
 const $r = id => ({ id });
 const fileUri = { getUriFromPath: value => `file://${value}` };
-const TgChatTopBarSubtitleMode = { Secondary: 'secondary', Online: 'online', Activity: 'activity' };
+const TgChatTopBarSubtitleMode = { Secondary: 'secondary', Online: 'online', Typing: 'typing',
+  Activity: 'activity' };
 const TgChatTopBarTrailingAction = { Search: 'search', Avatar: 'avatar' };
 class Chat {}
 const now = 100000;
@@ -79,7 +80,7 @@ if (!baseline) {
   const js = stripTypeScriptTypes(source.replace(/^import[\s\S]*?;\s*/gm, '')
     .replace(/^export\s+/gm, ''), { mode: 'transform' });
   helper = new Function(...bindingNames,
-    `${js}\nreturn { chatAvatarPresentation, chatSubtitlePresentation };`)(...bindingValues);
+    `${js}\nreturn { chatAvatarPresentation, chatSubtitlePresentation, CHAT_ACTIVITY_TTL_MS };`)(...bindingValues);
 }
 
 const names = ['updateChatTopBarData'];
@@ -143,6 +144,9 @@ function check(actual, expected) {
 }
 const secondary = TgChatTopBarSubtitleMode.Secondary;
 const activity = TgChatTopBarSubtitleMode.Activity;
+const typingMode = TgChatTopBarSubtitleMode.Typing;
+// The activity deadline comes from the production module, not from the fixture.
+const activityTtlMs = helper.CHAT_ACTIVITY_TTL_MS ?? 8000;
 check(run({ chatValue: null }).presentation, {
   subtitle: '', mode: secondary, spinner: false, initials: '', colorIndex: 0,
   imageSrc: '', online: false, trailing: 'search'
@@ -181,16 +185,25 @@ const emptyGroupResult = run({ chatValue: emptyGroup, activeChatId: -300 });
 check(emptyGroupResult.presentation.subtitle, 'app.string.group_label|group');
 check(emptyGroupResult.loadCalls, [['basic', -300, 3]]);
 const typing = { actionType: 'recordingVoice', senderUserId: 66, timestamp: now - 1 };
+// A group subtitle carries only the sender (iOS ChatTitleComponent group branch),
+// never the one-to-one activity label.
 check(run({ chatValue: group, activeChatId: -100, typing }).presentation, {
-  subtitle: 'Alice app.string.chat_preview_recording_voice|recording voice...',
+  subtitle: 'Alice',
   mode: activity, spinner: false, initials: 'TC', colorIndex: -4,
   imageSrc: '', online: false, trailing: 'avatar'
 });
 check(run({ chatValue: group, activeChatId: -100,
-  typing: { ...typing, timestamp: now - 6000 } }).presentation.subtitle,
+  typing: { ...typing, timestamp: now - (activityTtlMs - 1) } }).presentation.subtitle, 'Alice');
+check(run({ chatValue: group, activeChatId: -100,
+  typing: { ...typing, timestamp: now - (activityTtlMs + 1) } }).presentation.subtitle,
   'app.plural.group_members_count_plural|42|42 members');
+// A one-to-one chat keeps the sender in the title and shows the activity text.
+check(run({ typing: { actionType: 'typing', senderUserId: 66, timestamp: now - 1 } }).presentation, {
+  subtitle: 'app.string.typing|typing…', mode: typingMode, spinner: false,
+  initials: 'AB', colorIndex: 7, imageSrc: 'file:///avatar', online: true, trailing: 'search'
+});
 const actions = [
-  ['typing', 'app.string.typing|typing...'],
+  ['typing', 'app.string.typing|typing…'],
   ['recordingVideo', 'app.string.chat_preview_recording_video|recording video...'],
   ['uploadingVideo', 'app.string.chat_preview_sending_video|sending video...'],
   ['recordingVoice', 'app.string.chat_preview_recording_voice|recording voice...'],
@@ -203,12 +216,15 @@ const actions = [
   ['playingGame', 'app.string.chat_preview_playing_game|playing game...'],
   ['recordingVideoNote', 'app.string.chat_preview_recording_video_note|recording video message...'],
   ['uploadingVideoNote', 'app.string.chat_preview_sending_video_note|sending video message...'],
-  ['unknownAction', 'app.string.typing|typing...']
+  ['unknownAction', 'app.string.typing|typing…']
 ];
 for (const [actionType, label] of actions) {
-  check(run({ chatValue: group, activeChatId: -100,
-    typing: { actionType, senderUserId: 66, timestamp: now - 1 } }).presentation.subtitle,
-  `Alice ${label}`);
+  const direct = run({ typing: { actionType, senderUserId: 66, timestamp: now - 1 } }).presentation;
+  check(direct.subtitle, label);
+  check(direct.mode, actionType === 'typing' ? typingMode : activity);
+  const grouped = run({ chatValue: group, activeChatId: -100,
+    typing: { actionType, senderUserId: 66, timestamp: now - 1 } }).presentation;
+  check(grouped.subtitle, 'Alice');
 }
 check(run({ chatValue: group, activeChatId: -100, typing,
   connection: 'waitingForNetwork' }).presentation.subtitle,
@@ -227,7 +243,7 @@ const typingActive = run({ existingPage: reconnected.page, chatValue: group,
   activeChatId: -100, typing });
 check(typingActive.presentation.mode, activity);
 const typingExpired = run({ existingPage: typingActive.page, chatValue: group,
-  activeChatId: -100, typing: { ...typing, timestamp: now - 6000 } });
+  activeChatId: -100, typing: { ...typing, timestamp: now - (activityTtlMs + 1) } });
 check(typingExpired.presentation.subtitle,
   'app.plural.group_members_count_plural|42|42 members');
 check(typingExpired.presentation.mode, secondary);

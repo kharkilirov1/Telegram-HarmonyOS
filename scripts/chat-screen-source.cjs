@@ -85,6 +85,49 @@ function fullExport(source, name) {
   assert.ok(full.endsWith('}'), `complete production export: ${name}`);
   return full;
 }
+// Owner modules can hold helpers that are not Session delegates. They stay part of
+// the production contract, so the contract text and the executable helper bindings
+// must expose them; otherwise a page re-created from this boundary silently loses
+// the helper and throws inside a real subscription callback.
+function helperExportNames(source, delegateNames) {
+  return [...source.matchAll(/^export (?:async )?function (\w+)\(/gm)]
+    .map(match => match[1])
+    .filter(name => !delegateNames.has(name));
+}
+function helperExportText(source, name) {
+  const matches = [...source.matchAll(new RegExp(`^export (?:async )?function ${name}\\(`, 'gm'))];
+  if (matches.length !== 1) return undefined;
+  const start = matches[0].index;
+  const next = /^export\s/m.exec(source.slice(start + matches[0][0].length));
+  let end = next ? start + matches[0][0].length + next.index : source.length;
+  let text = source.slice(start, end);
+  // A leading comment block belongs to the next export, not to this one.
+  for (;;) {
+    const trimmed = text.replace(/\s+$/, '');
+    const withoutComment = trimmed.replace(/(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/)$/, '').replace(/\s+$/, '');
+    if (withoutComment === trimmed) break;
+    text = withoutComment;
+  }
+  return text.endsWith('}') ? text : undefined;
+}
+function helperBindings(graph, deps = {}) {
+  const delegateNames = new Set(graph.delegates.keys());
+  const bindings = {};
+  for (const { source } of graph.delegates.values()) {
+    const names = helperExportNames(source, delegateNames)
+      .filter(name => !Object.hasOwn(bindings, name));
+    if (names.length === 0) continue;
+    const code = source.replace(/^import[\s\S]*?;\s*/gm, '').replace(/^export /gm, '');
+    // Same collision rule as compileExports: an injected fixture value never
+    // shadows a module-declared constant of the same name.
+    const locals = new Set([...code.matchAll(/^const (\w+)\b/gm)].map(match => match[1]));
+    const injected = Object.fromEntries(Object.entries(deps).filter(([key]) => !locals.has(key)));
+    const compiled = new Function(...Object.keys(injected), stripTypeScriptTypes(code, { mode: 'transform' }) +
+      `\nreturn {${names.join(',')}};`)(...Object.values(injected));
+    Object.assign(bindings, compiled);
+  }
+  return bindings;
+}
 function sourceGraph(pageFile, { requireSplit = true, transform = source => source } = {}) {
   const read = file => transform(raw(file), file);
   const page = read(pageFile);
@@ -186,7 +229,25 @@ function probeSource(graph) {
     // for legacy class-method extraction without substituting any behavior.
     return '  ' + item.signature + ' ' + (item.extra ? body.replace(/\n/g, '\n  ') : body);
   });
-  return [...constants.values()].join('\n') + '\n' + methods.join('\n\n');
+  // Non-delegate owner helpers are part of the same module scope. Keep them in the
+  // contract text with the same receiver bridge; `helperBindings` is the executable
+  // counterpart for harnesses that inject module symbols.
+  const delegateNames = new Set(graph.delegates.keys());
+  const helperMethods = [];
+  for (const { source } of graph.delegates.values()) {
+    for (const name of helperExportNames(source, delegateNames)) {
+      if (probes.some(item => item.name === name)) continue;
+      const text = helperExportText(source, name);
+      if (text === undefined) continue;
+      const bodyAt = text.indexOf('{');
+      const header = text.slice(0, bodyAt).trim();
+      const signature = receiverBridge(header.replace(/^export (async )?function /, '$1')
+        .replace(/\(host: \w+(?:,\s*)?/, '(')).trim();
+      helperMethods.push('  ' + signature + ' ' + receiverBridge(text.slice(bodyAt)));
+    }
+  }
+  return [...constants.values()].join('\n') + '\n' + methods.join('\n\n') +
+    (helperMethods.length > 0 ? '\n\n' + helperMethods.join('\n\n') : '');
 }
 function contractSource(graph, { bindings = true } = {}) {
   const behaviorFiles = new Set([...graph.delegates.values()].map(item => item.file));
@@ -260,7 +321,7 @@ function compileExports(graph, deps, mutate = source => source, probeOverrides =
     { mode: 'transform' }) + '\nreturn ActualSessionDelegates;')(...Object.values(bindings));
   return { modules, Session };
 }
-module.exports = { sourceGraph, probeSource, contractSource, readChatSource, fieldInitializers, compileExports, fullExport, imports, importedFile, raw, receiverBridge };
+module.exports = { sourceGraph, probeSource, contractSource, readChatSource, fieldInitializers, compileExports, fullExport, helperBindings, imports, importedFile, raw, receiverBridge };
 if (require.main === module) {
   assert.equal(process.argv[2], '--contract');
   const graph = sourceGraph(path.resolve(process.argv[3]), { requireSplit: false });
