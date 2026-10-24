@@ -1,9 +1,10 @@
 # ARCHITECTURE — Telegram-HarmonyOS
 
-Last updated: 2026-10-01
+Last updated: 2026-10-24
 
 ## 1. Scope
-- Telegram client for **HarmonyOS NEXT / API 23+** in the current forward HDS shell branch
+- Telegram client for **HarmonyOS NEXT** — compatible from **API 23** (`compatibleSdkVersion 6.1.0(23)`),
+  built against **API 26** (`targetSdkVersion 26.0.0`) in the current forward HDS shell branch
 - UI built in **ArkTS/ArkUI**
 - Telegram backend integration via **TDLib** through a native **NAPI** bridge
 - Primary target devices from `entry/src/main/module.json5`: `phone`, `tablet`, `2in1`
@@ -202,22 +203,18 @@ The UI does not mutate domain state directly. It reads through:
 - Build tooling: DevEco Studio / `hvigorw`
 
 ## 10. Canonical docs
-- Operator rules: `AGENTS.md`
+- Operator rules: local `AGENTS.md` / `CLAUDE.md` (not versioned; see `.gitignore`)
 - External reference registry and pinned revisions: `REFERENCES.md`
 - Current state: `STATUS.md`
 - Accepted choices: `DECISIONS.md`
 - Current work: `TASKS/TODO.md`
-- Deep migration history:
-  - `docs/ai/AI_MEMORY.md`
-- `docs/ai/UI_MIGRATION_PLAN.md`
-- `docs/ai/ATOM_ROADMAP.md`
-- `docs/ai/MASTER_PLAN_TELEGRAM_UI.md`
-- `docs/ai/UPPER_CHROME_V2_ARCHITECTURE.md`
+- Execution route and exit criteria: `TASKS/AGENT_EXECUTION_PLAN.md`, `TASKS/PRODUCTION_PARITY_PLAN.md`
+- Dated evidence: `docs/reviews/INDEX.md`; measurement harness: `probe/README.md`
+- **Archive** (frozen, not maintained — `DECISIONS.md` D25): `docs/ai/*`, `TASKS/ARCHIVE/*`
 
 ## 11. Sources used for this file
 - `README.md`
-- `PROJECT_ANALYSIS.md`
-- `docs/ai/AI_MEMORY.md`
+- `docs/ai/AI_MEMORY.md` (archive input; see D25)
 - `entry/src/main/module.json5`
 - `entry/src/main/ets/entryability/EntryAbility.ets`
 - `entry/src/main/ets/app/bootstrap/AppCoreRuntime.ets`
