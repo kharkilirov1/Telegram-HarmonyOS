@@ -16,6 +16,125 @@ const DOMAIN = 0x0021;
 const TAG = 'TgTgsPlayer';
 const READ_CHUNK_BYTES = 65536;
 
+// Which surface asks for a TGS renderer. Telegram iOS ties playback to item
+// visibility (`ChatMessageAnimatedStickerItemNode.updateVisibility`: isPlaying =
+// visibilityStatus && !forceStopAnimations) and reuses a per-resource cache path
+// (`MediaBox.shortLivedResourceCachePathPrefix`). This enum keeps that rule in
+// one place so the timeline row (D13), the sticker viewer (F6) and custom emoji
+// (D16) share it instead of growing private copies.
+export enum TgsPlaybackSurface {
+  Timeline = 'timeline',
+  StickerViewer = 'stickerViewer',
+  CustomEmoji = 'customEmoji',
+  PanelPreview = 'panelPreview'
+}
+
+// Decoded payloads are shared: the same sticker can be on screen twice and a
+// re-entry must not gunzip + stringify the same file again. Identity is the
+// TDLib fileId, which survives renames of the local path.
+const TGS_DECODED_CACHE_LIMIT: number = 8;
+// Every live instance owns a Canvas, an animation timeline and a frame
+// callback. The API23 emulator cannot absorb an unbounded set of them, so
+// admission is explicit and the over-budget sticker keeps a still frame.
+const TGS_MAX_CONCURRENT_PLAYERS: number = 4;
+
+export class TgsPlaybackPolicy {
+  private static decodedJson: Map<number, string> = new Map<number, string>();
+  private static decodedOrder: number[] = [];
+  private static playingCount: number = 0;
+
+  // Witness key for hilog: file identity, never the mutable local path.
+  static keyFor(fileId: number): string {
+    return 'file:' + fileId.toString();
+  }
+
+  static recallDecoded(fileId: number): string {
+    if (fileId <= 0) {
+      return '';
+    }
+    const cached = TgsPlaybackPolicy.decodedJson.get(fileId);
+    if (cached === undefined) {
+      return '';
+    }
+    // A read is a use: the touched key becomes the most recent one, so the
+    // eviction victim is the entry that has gone longest without a renderer.
+    const existing = TgsPlaybackPolicy.decodedOrder.indexOf(fileId);
+    if (existing >= 0) {
+      TgsPlaybackPolicy.decodedOrder.splice(existing, 1);
+      TgsPlaybackPolicy.decodedOrder.push(fileId);
+    }
+    return cached;
+  }
+
+  static rememberDecoded(fileId: number, json: string): void {
+    if (fileId <= 0 || json.length === 0) {
+      return;
+    }
+    const existing = TgsPlaybackPolicy.decodedOrder.indexOf(fileId);
+    if (existing >= 0) {
+      TgsPlaybackPolicy.decodedOrder.splice(existing, 1);
+    }
+    TgsPlaybackPolicy.decodedOrder.push(fileId);
+    TgsPlaybackPolicy.decodedJson.set(fileId, json);
+    while (TgsPlaybackPolicy.decodedOrder.length > TGS_DECODED_CACHE_LIMIT) {
+      const evicted = TgsPlaybackPolicy.decodedOrder.shift();
+      if (evicted !== undefined) {
+        TgsPlaybackPolicy.decodedJson.delete(evicted);
+      }
+    }
+  }
+
+  static decodedCacheSize(): number {
+    return TgsPlaybackPolicy.decodedJson.size;
+  }
+
+  static decodedCacheLimit(): number {
+    return TGS_DECODED_CACHE_LIMIT;
+  }
+
+  // Panel previews stay static: an animated grid of TGS players is exactly the
+  // workload that overloads the emulator GPU path (see the slice report).
+  static allowsAnimation(surface: TgsPlaybackSurface): boolean {
+    return surface === TgsPlaybackSurface.Timeline ||
+      surface === TgsPlaybackSurface.StickerViewer ||
+      surface === TgsPlaybackSurface.CustomEmoji;
+  }
+
+  // Playback needs a visible node on a surface that is allowed to animate.
+  // The decoded cache is a separate concern and stays keyed by fileId only.
+  static shouldPlay(visible: boolean, surface: TgsPlaybackSurface): boolean {
+    return visible && TgsPlaybackPolicy.allowsAnimation(surface);
+  }
+
+  static acquirePlayer(): boolean {
+    if (TgsPlaybackPolicy.playingCount >= TGS_MAX_CONCURRENT_PLAYERS) {
+      return false;
+    }
+    TgsPlaybackPolicy.playingCount += 1;
+    return true;
+  }
+
+  static releasePlayer(): void {
+    if (TgsPlaybackPolicy.playingCount > 0) {
+      TgsPlaybackPolicy.playingCount -= 1;
+    }
+  }
+
+  static playingPlayers(): number {
+    return TgsPlaybackPolicy.playingCount;
+  }
+
+  static maxConcurrentPlayers(): number {
+    return TGS_MAX_CONCURRENT_PLAYERS;
+  }
+
+  static reset(): void {
+    TgsPlaybackPolicy.decodedJson.clear();
+    TgsPlaybackPolicy.decodedOrder = [];
+    TgsPlaybackPolicy.playingCount = 0;
+  }
+}
+
 // Names must be unique per living instance: the same sticker can appear in
 // several messages, and lottie.destroy(name) is name-scoped.
 let tgsInstanceSeq = 0;
@@ -23,6 +142,7 @@ let tgsInstanceSeq = 0;
 @ComponentV2
 export struct TgTgsPlayer {
   @Param tgsPath: string = '';
+  @Param fileId: number = 0;
   @Param renderWidth: number = 160;
   @Param renderHeight: number = 160;
 
@@ -32,7 +152,10 @@ export struct TgTgsPlayer {
   private anim: AnimationItem | undefined = undefined;
   private animName: string = '';
   private loadedForPath: string = '';
+  private loadingForPath: string = '';
   private loadedJson: string = '';
+  private canvasReady: boolean = false;
+  private playing: boolean = false;
   private nativeAnimation: TgRlottieAnimation | undefined = undefined;
   private nativeImageData: ImageData | undefined = undefined;
   private nativeWidth: number = 0;
@@ -71,12 +194,21 @@ export struct TgTgsPlayer {
   }
 
   aboutToDisappear(): void {
+    this.stopPlayback();
     this.stopNativePlayback();
     this.destroyAnim();
     lottie.unbindContext2dFromCoordinator(this.ctx);
   }
 
+  // A row can be recycled onto another sticker without being recreated; the
+  // Canvas is ready at that point, so the load has to be re-driven here.
+  @Monitor('tgsPath')
+  onTgsPathChange(): void {
+    this.loadAndPlay();
+  }
+
   private destroyAnim(): void {
+    this.stopPlayback();
     this.destroyNativeAnimation();
     if (this.animName.length > 0) {
       try {
@@ -122,15 +254,27 @@ export struct TgTgsPlayer {
         this.nativeFrameSubscribed = true;
       }
       this.getUIContext().runScopedTask(() => {
-        if (this.nativeVisible && this.nativeAnimation !== undefined && !this.nativePlaybackStarted) {
+        if (!this.nativeVisible || this.nativeAnimation === undefined || this.nativePlaybackStarted) {
+          return;
+        }
+        // Admission is taken in the frame where the loop actually starts so a
+        // deferred task cannot leave an unused slot behind.
+        if (!TgsPlaybackPolicy.acquirePlayer()) {
+          return;
+        }
+        try {
           this.nativeDisplaySync.start();
           this.nativePlaybackStarted = true;
           hilog.info(DOMAIN, TAG, 'native rlottie DisplaySync started at %{public}d Hz',
             TgUiTokens.TGS_PLAYBACK_FRAME_RATE);
+        } catch (startError) {
+          TgsPlaybackPolicy.releasePlayer();
+          hilog.warn(DOMAIN, TAG, 'native DisplaySync start failed: %{public}s', String(startError));
+          this.fallbackAfterNativeRenderFailure();
         }
       });
     } catch (error) {
-      hilog.warn(DOMAIN, TAG, 'native DisplaySync start failed: %{public}s', String(error));
+      hilog.warn(DOMAIN, TAG, 'native DisplaySync setup failed: %{public}s', String(error));
       this.fallbackAfterNativeRenderFailure();
     }
   }
@@ -143,6 +287,7 @@ export struct TgTgsPlayer {
       }
       this.nativePlaybackStarted = false;
       this.nativeEpochNs = 0;
+      TgsPlaybackPolicy.releasePlayer();
       hilog.info(DOMAIN, TAG, 'native rlottie DisplaySync stopped');
     }
     if (this.nativeFrameSubscribed) {
@@ -205,7 +350,7 @@ export struct TgTgsPlayer {
       hilog.info(DOMAIN, TAG,
         'native rlottie engaged handle=%{public}d frames=%{public}d fps=%{public}s size=%{public}dx%{public}d',
         animation.handle, animation.frameCount, animation.frameRate.toFixed(2), width, height);
-      this.startNativePlayback();
+      this.startPlayback();
       return true;
     } catch (error) {
       hilog.warn(DOMAIN, TAG, 'native rlottie create failed: %{public}s', String(error));
@@ -220,6 +365,8 @@ export struct TgTgsPlayer {
       container: this.ctx,
       renderer: 'canvas',
       loop: true,
+      // autoplay draws the first frame; playback is then paused/played by the
+      // policy, so an offscreen row never keeps a loop running.
       autoplay: true,
       name: this.animName,
       frameRate: TgUiTokens.TGS_PLAYBACK_FRAME_RATE,
@@ -239,6 +386,58 @@ export struct TgTgsPlayer {
     } catch (error) {
       hilog.warn(DOMAIN, TAG, 'fallback activation failed: %{public}s', String(error));
     }
+  }
+
+  private pauseAnimation(): void {
+    const animation = this.anim;
+    if (animation === undefined) {
+      return;
+    }
+    try {
+      animation.pause();
+    } catch (_e) {
+    }
+  }
+
+  // Single admission point for both renderers: the policy owns visibility and
+  // the concurrency budget, so neither path can start an extra renderer.
+  private startPlayback(): void {
+    if (!TgsPlaybackPolicy.shouldPlay(this.nativeVisible, TgsPlaybackSurface.Timeline)) {
+      this.stopPlayback();
+      return;
+    }
+    if (this.nativeAnimation !== undefined) {
+      this.startNativePlayback();
+      return;
+    }
+    const animation = this.anim;
+    if (animation === undefined || this.animName.length === 0 || this.playing) {
+      return;
+    }
+    if (!TgsPlaybackPolicy.acquirePlayer()) {
+      // Over-budget stickers hold their current frame; the next visibility
+      // change retries admission instead of spawning another renderer.
+      this.pauseAnimation();
+      return;
+    }
+    try {
+      animation.play();
+      this.playing = true;
+      hilog.info(DOMAIN, TAG, 'tgs playback started key=%{public}s players=%{public}d',
+        TgsPlaybackPolicy.keyFor(this.fileId), TgsPlaybackPolicy.playingPlayers());
+    } catch (error) {
+      TgsPlaybackPolicy.releasePlayer();
+      hilog.warn(DOMAIN, TAG, 'tgs playback start failed: %{public}s', String(error));
+    }
+  }
+
+  private stopPlayback(): void {
+    this.stopNativePlayback();
+    if (this.playing) {
+      this.playing = false;
+      TgsPlaybackPolicy.releasePlayer();
+    }
+    this.pauseAnimation();
   }
 
   // Timeline hands us the same file:// URI it feeds to Image; zlib only
@@ -282,14 +481,23 @@ export struct TgTgsPlayer {
 
   private async loadAndPlay(): Promise<void> {
     const path = this.tgsPath;
-    if (path.length === 0 || this.loadedForPath === path) {
+    if (!this.canvasReady || path.length === 0 || this.loadedForPath === path ||
+      this.loadingForPath === path) {
       return;
     }
+    this.loadingForPath = path;
     this.destroyAnim();
     try {
-      const json = await this.readTgsJson(path);
-      if (this.tgsPath !== path) {
-        return; // param changed while reading — a newer load owns the canvas
+      let json = TgsPlaybackPolicy.recallDecoded(this.fileId);
+      if (json.length === 0) {
+        json = await this.readTgsJson(path);
+        if (this.tgsPath !== path) {
+          return; // param changed while reading — a newer load owns the canvas
+        }
+        TgsPlaybackPolicy.rememberDecoded(this.fileId, json);
+      }
+      if (json.length === 0) {
+        return;
       }
       tgsInstanceSeq += 1;
       this.animName = 'tgs_' + tgsInstanceSeq.toString();
@@ -298,9 +506,14 @@ export struct TgTgsPlayer {
         this.startLottieFallback(json);
       }
       this.loadedForPath = path;
+      this.startPlayback();
     } catch (error) {
-      hilog.debug(DOMAIN, TAG, 'tgs load failed for %{public}s: %{public}s',
-        path, String(error));
+      // A decode failure used to be debug-only, so a sticker that rendered
+      // nothing left no trace in a default hilog capture.
+      hilog.warn(DOMAIN, TAG, 'tgs decode failed for %{public}s (key=%{public}s): %{public}s',
+        path, TgsPlaybackPolicy.keyFor(this.fileId), String(error));
+    } finally {
+      this.loadingForPath = '';
     }
   }
 
@@ -312,12 +525,13 @@ export struct TgTgsPlayer {
       .onVisibleAreaChange([0.0], (isVisible: boolean) => {
         this.nativeVisible = isVisible;
         if (isVisible) {
-          this.startNativePlayback();
+          this.startPlayback();
         } else {
-          this.stopNativePlayback();
+          this.stopPlayback();
         }
       })
       .onReady(() => {
+        this.canvasReady = true;
         this.loadAndPlay();
       })
   }

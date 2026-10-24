@@ -112,6 +112,7 @@ export struct TgChatTimelineRow {
         isAudioPlaying: this.bindings.isActiveAudioEntry(this.entry) ? this.media.activeAudioPlaying : false,
         audioPlaybackProgress: this.bindings.isActiveAudioEntry(this.entry) ? this.media.activeAudioProgress : 0,
         stickerPath: this.entry.message.stickerPath,
+        stickerFileId: this.entry.message.stickerFileId,
         stickerThumbnailPath: this.entry.message.stickerThumbnailPath,
         stickerWidth: this.entry.message.stickerWidth,
         stickerHeight: this.entry.message.stickerHeight,

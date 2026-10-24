@@ -167,6 +167,7 @@ export struct TgMessageRouter {
 
   // ── Sticker ──
   @Param stickerPath: string = '';
+  @Param stickerFileId: number = 0;
   @Param stickerThumbnailPath: string = '';
   @Param stickerWidth: number = 0;
   @Param stickerHeight: number = 0;
@@ -1006,6 +1007,7 @@ export struct TgMessageRouter {
           Stack({ alignContent: Alignment.BottomEnd }) {
             TgStickerView({
               stickerPath: this.stickerPath,
+              stickerFileId: this.stickerFileId,
               stickerThumbnailPath: this.stickerThumbnailPath,
               isOutgoing: this.isOutgoing,
               isAnimatedSticker: this.isAnimatedSticker,

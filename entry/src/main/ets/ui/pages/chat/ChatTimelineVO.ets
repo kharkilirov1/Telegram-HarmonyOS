@@ -221,6 +221,7 @@ export class ChatMessageRowVO {
 
   // Sticker
   stickerPath: string = '';
+  stickerFileId: number = 0;
   stickerThumbnailPath: string = '';
   stickerEmoji: string = '';
   stickerWidth: number = 0;
@@ -1061,6 +1062,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
 
   // Sticker — convert path
   row.stickerPath = toFileUri(resolveContentPath(content.stickerPath, content.stickerFileId, state, content.stickerUniqueId));
+  row.stickerFileId = content.stickerFileId;
   row.stickerThumbnailPath = toFileUri(content.stickerThumbnailPath);
   row.stickerEmoji = content.stickerEmoji;
   row.stickerWidth = content.stickerWidth;

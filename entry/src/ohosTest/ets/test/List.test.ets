@@ -38,6 +38,7 @@ import pinnedMessageOwnershipTest from './PinnedMessageOwnership.test';
 import emojiKeyboardSearchTest from './EmojiKeyboardSearch.test';
 import stickerSearchTest from './StickerSearch.test';
 import gifInlineSearchTest from './GifInlineSearch.test';
+import tgsPlaybackPolicyTest from './TgsPlaybackPolicy.test';
 import chatArchiveStateTest from './ChatArchiveState.test';
 import searchChatMessagesTest from './SearchChatMessages.test';
 import tgCustomEmojiDraftPolicyTest from './TgCustomEmojiDraftPolicy.test';
@@ -52,6 +53,7 @@ import pendingSharedMediaActionSignalTest from './PendingSharedMediaActionSignal
 import chatMembersTest from './ChatMembers.test';
 import chatPreviewTextTest from './ChatPreviewText.test';
 import chatItemVOTest from './ChatItemVO.test';
+import chatHeaderStatusTest from './ChatHeaderStatus.test';
 import tgMediaGalleryPolicyTest from './TgMediaGalleryPolicy.test';
 import replyHydrationCoordinatorTest from './ReplyHydrationCoordinator.test';
 import loadRepliedMessageTest from './LoadRepliedMessage.test';
@@ -167,6 +169,7 @@ export default function testsuite() {
   emojiKeyboardSearchTest();
   stickerSearchTest();
   gifInlineSearchTest();
+  tgsPlaybackPolicyTest();
   searchChatMessagesTest();
   tgCustomEmojiDraftPolicyTest();
   chatDraftEntitiesTest();
@@ -180,6 +183,7 @@ export default function testsuite() {
   chatMembersTest();
   chatPreviewTextTest();
   chatItemVOTest();
+  chatHeaderStatusTest();
   composeContactModelTest();
   composeCreationModelTest();
   tgMediaGalleryPolicyTest();

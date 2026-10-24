@@ -6,6 +6,7 @@ import { TgTgsPlayer } from './TgTgsPlayer';
 @ComponentV2
 export struct TgStickerView {
   @Param stickerPath: string | Resource = '';
+  @Param stickerFileId: number = 0;
   @Param stickerThumbnailPath: string = '';
   @Param isOutgoing: boolean = false;
   @Param isAnimatedSticker: boolean = false;
@@ -108,6 +109,7 @@ export struct TgStickerView {
       if (this.hasSticker()) {
         TgTgsPlayer({
           tgsPath: typeof this.stickerPath === 'string' ? this.stickerPath as string : '',
+          fileId: this.stickerFileId,
           renderWidth: this.computedStickerWidth(),
           renderHeight: this.computedStickerHeight()
         })
