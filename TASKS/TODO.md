@@ -5,6 +5,57 @@ are in `TASKS/ARCHIVE/TODO-history-2026-10-18.md`. Every open item from that arc
 below, some merged where they were duplicates; two of them (the 08-29 bars slice, the commit
 decision over 265 dirty paths) are closed by later work and stay in the archive only.
 
+## Рабочие инструменты
+
+- `TASKS/CAPABILITY_MATRIX.md` — что бывает и в каком состоянии; вход в любой срез.
+- `TASKS/WORKMAP.md` — 1–3 среза «сейчас»; перегенерируется после закрытия.
+- `TASKS/SLICE_PROTOCOL.md` — как делается срез; `TASKS/SLICE_TEMPLATE.md` — шаблон плана.
+- Строка матрицы в статусе `unverified` — сначала верификация, потом работа.
+
+## Debt
+
+Долг оформляется только здесь, по `SLICE_PROTOCOL` §9: что не сделано, почему не сейчас, владелец,
+триггер возврата, видимое пользователю последствие. Пока долг открыт, строка матрицы остаётся
+`partial` и срез не закрыт.
+
+- (пока пусто)
+- [ ] **C2 typing: пульсация точек 0,7 s.** Сейчас точки статические (tokens-first). Владелец:
+  typing-slice. Триггер: появится witness стоимости кадров и способ проверить остановку
+  `animateTo({iterations: -1})` при выходе из чата. Последствие: индикатор чуть менее «живой», чем iOS.
+- [ ] **C2 typing: мульти-typing в группе (2/3+ печатающих).** Модель `chats.typingActions` хранит одного
+  отправителя на чат; нужен список отправителей в `AppState` + reducer и формат
+  «A и B печатают…» / «A и ещё N». Владелец: lead (отдельный срез). Триггер: первый дефект-репорт
+  «в группе видно только последнего печатающего». Последствие: неполный паритет с iOS.
+- [ ] **D13: панель стикеров статична.** iOS анимирует видимые ячейки грида
+  (`ChatMediaInputStickerGridItem.swift:431`), у нас статично by design. Владелец: sticker-slice.
+  Триггер: дешёвый способ измерить бюджет кадров на эмуляторе или нативная поверхность без
+  Canvas-upload. Последствие: панель выглядит беднее iOS.
+- [ ] **D13: нативный рендерер TGS за токеном.** Замерено 3.736 против 2.371 cores на API23; нужен
+  surface/XComponent без `putImageData`. Владелец: sticker-slice. Триггер: появление такого
+  surface в SDK. Последствие: загрузка CPU на слабых устройствах.
+- [x] **Witness D13 (стикеры) — снят 2026-10-25.** На HVD API24 в чате `HUAWEI Chat`: живой старт TGS
+  (`tgs playback started key=file:11696 players=1`), повторный старт после ухода/возврата без повторного
+  декода (кеш по `fileId`), анимация подтверждена diff'ом двух кадров (3 274 px только в области
+  стикера). D13 → `available`. Ограничение: покадровое соответствие iOS-таймингу не сверялось.
+- [ ] **Witness C2 (typing) — блокер подтверждён тремя раундами.** Нужен второй участник, который
+  начнёт печатать в открытом чате; на одном аккаунте состояние не воспроизводится. Попытки:
+  2026-10-25 (1) эмулятор + on-device тесты 8/8 — визуального кадра нет; (2) повторный прогон — нет
+  участника; (3) прогон в группе `HUAWEI Chat` (906 участников): 25 дампов `uitest dumpLayout` за
+  ~4 минуты, ни одного `печатает`/`typing` в дереве. Владелец: lead. Триггер: второй аккаунт или
+  второй клиент. C2 остаётся `partial`, срез не закрыт.
+- [ ] **Наблюдение 2026-10-25: `LIFECYCLE_TIMEOUT` на холодном старте debug-сборки.** HVD API24,
+  первый `aa start` после установки: `sysfreeze-com.telegram.harmonyos ... Reason:LIFECYCLE_TIMEOUT`,
+  приложение не вышло на передний план, второй запуск поднялся нормально. Не воспроизводилось на
+  release (её нет) и на устройстве. Владелец: lead. Триггер: появление подписанной release-сборки —
+  прогнать холодный старт с faultlogger; до этого — наблюдение, не диагноз.
+  **Попытка 2026-10-25 (вечер):** первая — гость завис (`Guest no response, delta: 32`,
+  `FreezeCrash: system freeze`), HAP не установился. Вторая — при подавленном `emulator-crash-service`
+  HVD поднялся, HAP + ohosTest установлены, устройство на залогиненной сессии; on-device тесты
+  **`ChatHeaderStatus` 8/8** и **`TgsPlaybackPolicy` 12/12** прошли. Визуальный witness всё равно не
+  снят: история чатов не загрузилась («Сообщений пока нет» + тост «Открытие чата не подтверждено»
+  в двух чатах, даже через 30 s), поэтому в таймлайне не было ни стикеров, ни набора. Нужны:
+  загружаемая история (или File chat со стикером) и второй участник для typing.
+
 ## Active checkpoint — 2026-10-23
 
 - [x] (2026-10-18) Bounded first progress and admitted-backlog pacing without touching deadlines, FIFO
@@ -76,6 +127,20 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
   the 2026-10-18 pacing change has not been through a new `THREAD_BLOCK_6S` watch yet.
 
 ### Product and UI backlog
+
+### Defects found by the 2026-10-25 matrix audit
+
+- [ ] **Dead control: профиль → Toggle «Notifications» без `.onChange`** (`TgProfilePage.ets:749-752`).
+  Пользователь видит переключатель, который ничего не делает — по `SLICE_PROTOCOL` §9 это
+  запрещённый долг, чинить в ближайшем срезе (либо связать с `setChatNotificationSettings`, либо
+  убрать до реализации). [Отчёт](../docs/reviews/2026-10-25-matrix-verification.md)
+- [ ] **Dead row: «Data and Storage» открывается в пустоту** (`SettingsPage.ets:260-266`, без
+  `onRowClick`, storage-API отсутствует). Либо экран, либо убрать строку; сейчас это мёртвый конец.
+- [ ] **Dead wiring: `attachmentMenuLabels` вычисляется, но не рендерится** (`TgAttachmentSheet.ets:28`,
+  `ChatComposerController.ets:83-98`) — 3 из 6 категорий выключены; проверить, что скрытые пункты
+  не рисуются обещанием функциональности.
+- [ ] **Unused DTO `TdAutoDownloadSettings`** (`models/td/system/index.ets:13-26`) — либо использовать
+  в H4, либо удалить, чтобы не создавать ложного впечатления готовности.
 
 - [ ] **Notifications and push with inline reply.** No `notificationManager` / `wantAgent` / push code
   exists in `entry/` (checked 2026-10-23), while the reachable competitor ships a push extension with

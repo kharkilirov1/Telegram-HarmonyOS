@@ -71,6 +71,59 @@ Documentation and repository structure were reconciled; no product code changed.
 - **Hygiene.** Removed a stale crash dump and an empty `presentation/viewmodels/` stub; documented that
   `AGENTS.md`/`CLAUDE.md` are intentionally not versioned.
 
+## Engineering protocol — 2026-10-25
+
+Введён обязательный цикл среза и инструменты планирования; код продукта не менялся.
+
+- `TASKS/SLICE_PROTOCOL.md` — преflight (статус/референс/доки), разбор iOS-эталона, швы для
+  связанных фич без спекулятивных абстракций, тест до реализации, implementation, gates,
+  side-by-side с iOS, Definition of Done, реестр долга.
+- `TASKS/SLICE_TEMPLATE.md` — шаблон плана среза (референс → контракт → швы → состояния → тест →
+  приёмка).
+- `TASKS/CAPABILITY_MATRIX.md` — 105 строк по пользовательским возможностям iOS: 34 `available`,
+  41 `partial`, 17 `missing`, 9 `unverified`, 3 `frozen`, 1 `blocked`. У каждой строки — код-доказательство
+  и связанные фичи; `available` без witness не ставится.
+- `TASKS/WORKMAP.md` — M0 (верифицировать 9 `unverified` строк), S1 (typing indicator, C2),
+  S2 (стикеры/TGS, D13).
+- `TASKS/TODO.md` — добавлен раздел **Debt**: долг с владельцем и триггером, иначе срез не закрыт.
+- Правила зашиты в `AGENT_EXECUTION_PLAN` (preflight + глобальные правила), `AGENTS.md`/`CLAUDE.md`
+  (memory pack), `README` (карта документов).
+
+## Slice wave — 2026-10-25
+
+Первый прогон по `SLICE_PROTOCOL`, три агента параллельно + design-срез от lead.
+
+- **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
+  `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0. Матрица: 34 `available`, 45 `partial`,
+  22 `missing`, 3 `frozen`, 1 `blocked`.
+- **S1 + S1.1 (typing-slice).** TTL активности 8 s по iOS, откат по дедлайну без новых store-change,
+  группа — только имя, приватный — текст активности, статические точки из токенов, «печатает…» в
+  трёх локалях, единый TTL в шапке и списке. Восстановлен harness `chat-screen-source.cjs` для
+  не-delegate helper'ов. Host 96/96, smoke и build зелёные. **C2 остаётся `partial`:**
+  визуальный witness требует второго аккаунта/клиента.
+- **S2 (sticker-slice).** `TgsPlaybackPolicy`: играть только видимое, поверхность (панель — никогда),
+  LRU-кеш распакованного Lottie по `fileId`, бюджет 4 инстанса, `@Monitor('tgsPath')`, pass-through
+  `fileId` до плеера, warn-лог провала декода. Найдены причины «живой рендер не пойман» и перегруза
+  API23. Build + 4 статических TGS-контракта зелёные. **D13 остаётся `partial`** до witness.
+- **S3 (lead).** Дизайн reactions: контракт TDLib (`setMessageReactions`, `updateMessageReactions`),
+  швы в VO/команды, состояния, разбиение S3a–S3d —
+  `docs/specs/2026-10-25-reactions-design.md`.
+- **Долги** внесены в `TASKS/TODO.md` §Debt: пульсация точек, мульти-typing, статичная панель стикеров,
+  нативный TGS-рендерер, witness C2/D13; плюс мёртвые контролы из аудита — отдельными дефектами.
+- `harmonyos_docs` MCP в этой сессии недоступен (только colab/rea/rea-linux) — оба агента
+  зафиксировали это ограничением, новых ArkUI API не вводили.
+- **Witness: D13 закрыт, C2 открыт.** Второй подъём HVD (watchdog подавлен) дал стабильный гост;
+  HAP + ohosTest установлены, сессия залогинена. On-device тесты: `ChatHeaderStatus` 8/8,
+  `TgsPlaybackPolicy` 12/12. В чате `HUAWEI Chat` пойман живой TGS-цикл: `tgs playback started
+  key=file:11696 players=1`, повторный вход — снова старт, но без повторного декода (кеш по `fileId`);
+  diff двух кадров через 700 мс различается только в области стикера (3 274 px) — анимация живая.
+  **D13 → `available`.** Для C2 третья попытка (группа `HUAWEI Chat`, 906 участников, 25 дампов
+  layout за ~4 мин) не поймала ни одного события набора — нужен второй участник, поэтому C2 остаётся
+  `partial`, а цель помечена блокером по этому пункту.
+- **Наблюдение:** первый `aa start` на этом прогоне дал `sysfreeze ... LIFECYCLE_TIMEOUT` (debug HAP,
+  эмулятор); второй запуск поднялся нормально. Записано наблюдением в `TASKS/TODO.md` §Debt, не
+  диагнозом: release-сборки нет, на устройстве не проверялось.
+
 ## Checkpoint — 2026-10-18
 
 **Receive scheduling correction.** The drain tested its 8 ms budget before transferring, so a single
