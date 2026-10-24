@@ -1,10 +1,30 @@
 # LESSONS - repeated mistakes and project-specific pitfalls
 
-Layout: three dated blocks come first, newest first. After them the numbered lessons run in
+Layout: five dated blocks come first, newest first. After them the numbered lessons run in
 descending number order, 161 down to 83, with 162–163 appended at the end because they were written
 after 161 rather than inserted. The numbers are stable identifiers — code, docs and reviews cite
 them directly ("lesson 121", "LESSON 84") — so never renumber. A new lesson takes the next free
 number and goes at the top of the numbered section.
+
+## Docs drift and repository hygiene - 2026-10-24
+
+- When the mandate changes, the old rule that contradicts it must be **deleted**, not merely outranked by a newer paragraph lower in the same file. `AGENTS.md`/`CLAUDE.md` said "production quality by the iOS reference" while `TASKS/AGENT_EXECUTION_PLAN.md` still carried "pixel-level fidelity is not a release goal" and a `v0.1.0` target that `STATUS.md` said was withdrawn; agents could follow either.
+- Resolve authority with a **scoped** rule, not with another priority claim. `DECISIONS` D3 said the master plan wins, `CLAUDE.md` said `docs/ai` is archive, and `TASKS/TODO.md` carried the question as an open user decision for weeks. D25 fixed it by scope: active sources are the plan/queue/decisions, `docs/ai/*` is archive, and `MASTER_PLAN_TELEGRAM_UI.md` governs only the `tg_ui` visual contract.
+- History needs a home and an index. `TASKS/` mixed 17 documents of which 10 were historical; moving them to `TASKS/ARCHIVE/` (with `ARCHIVE/INDEX.md` saying what each was and "do not execute") is what makes the active set readable. References from dated reports break on such moves — accept it and say so in the index, because a checkpoint records the tree as it was.
+- Dead links in dated reports are **by design** (build outputs, offline evidence, absolute `C:/...` paths). Do not "fix" a checkpoint; write a new dated report. The same rule keeps `docs/ai/*` frozen.
+- `git status` alone hides ignored junk: an untracked disk-cleanup crash dump and an empty `presentation/viewmodels/.gitkeep` survived for weeks. Check `git status --ignored`, empty directories, and whether the docs still reference files that no longer exist.
+- Keep the local-only rule files honest: `AGENTS.md`/`CLAUDE.md` are gitignored by design, so the README has to say where a fresh clone finds the source of truth instead of assuming those files exist.
+
+## Probe modelling and measurement labels - 2026-10-23
+
+- A synthetic harness must copy the shipped policy, not just the work loop. The drain yields at `max(2, min(250, elapsed * 2))`; a probe that yields with a zero delay measures a different system, and a budget sweep run on it produced a gradient (37 % faster at 64 ms) that the real model cannot have — the saved scheduling returns as a longer mandated pause. Read `TdGateway.ets` against the harness before generalising from it.
+- Never label a number "measured" unless an instrument records it. The sweep's "measured hop counts" were `ceil(work / budget)` computed by hand; adding a slice counter to the runner is what made that a measurement.
+- Check the provenance of a calibration constant. The 8 ms "consumer work per response" started as an *injected artificial* delay in the 2026-10-18 diagnostics; a model calibrated on its own injection is only self-consistent, and two later notes quoted it as the project's measured figure.
+- A harness outside the build and outside lint rots silently: a missing constructor argument survived two commits in `probe/TdProbeWorker.ets`. Keep a runnable entry point (`probe/ProbeEntry.ets`), update the worker when a signature changes, and say in the README that nothing compiles the directory.
+- Competitor claims must be re-checked field by field against the retained artifact. The ArkGram note carried `3.2 / 3000002`, `compileSdk 26.0.0.105 / Release`, a push action that does not exist, a SQLite claim where only preferences are present, and "seven versions behind" for a five-version gap; the artifact says 1.0.1 / `26.0.0.23` / `Beta1`. Absence of a string in one file is also not absence from the product — record which file was scanned.
+- A corrected model still has to be *run*, and a reasoned prediction can be directionally right and quantitatively wrong. The shipped yield model was predicted "roughly flat in the budget"; measured on the emulator it is −18 % from 8 → 64 ms, ~2.8–3.1× slower than the zero-delay model, with a non-monotone frame ordering (207 / 285 / 216 / 130 ms). Predictions about magnitude are not results: state them as predictions, then measure, then rewrite the conclusion.
+- Emulator availability is not emulator stability: this HVD guest kernel-panicked twice while the host was stopping/restarting it, each cycle costing a full image re-verify, and the measurement only fits inside a stable boot window. Start the HVD, wait for `bootevent.boot.completed`, unlock the screen before `aa start` (a locked screen fails with code 10106102), and keep a continuous `hdc shell hilog` capture so a late guest panic does not erase the rows.
+- Record the host with the measurement, not just the device. These timings came from a 2014 Xeon E5-2687W v3 with 8.7 GB free RAM and `C:` at 96.9 % full — that inflates exactly what a scheduling probe measures (timer cost), so its absolute numbers are an upper bound, not app behaviour, and the disk pressure is why only cold boots work and why a restart costs ~6 minutes. Host load, free RAM and free disk belong in the report beside the workload, and a timer-dominated result from such a host can only claim shape and ordering, never magnitudes.
 
 ## Receive scheduling and causal proof - 2026-10-18
 
@@ -47,7 +67,7 @@ number and goes at the top of the numbered section.
 - Separate whole-case Hypium budgets from component wait bounds. Photo functional acceptance used 240s after a preserved 120s timeout; this does not establish 120s performance. Hypium timeout does not cancel callbacks: stop only the isolated bundle and verify a fresh process before continuing.
 - Preserve historical document bytes and local artifacts. Record current results in compact prefixes; authenticated delivery, synthetic fixtures and release readiness are separate claims.
 
-Last updated: 2026-10-02
+Last updated: 2026-10-23
 
 ## 161. Mutation certainty belongs to each dispatched request
 
