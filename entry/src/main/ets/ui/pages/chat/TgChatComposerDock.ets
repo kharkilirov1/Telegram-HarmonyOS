@@ -112,7 +112,6 @@ export struct TgChatComposerDock {
               attachmentKind: this.composer.pendingAttachmentKind,
               attachmentTitle: this.composer.pendingAttachmentTitle,
               attachmentPreview: this.composer.pendingAttachmentPreview,
-              attachmentMenuLabels: this.bindings.composerAttachmentMenuLabels(),
               attachmentRecentItems: this.panels.attachmentRecentItems,
               attachmentRecentLoading: this.panels.attachmentRecentLoading,
               emojiPanelOpen: this.bindings.composerKeyboardPanelVisible(),

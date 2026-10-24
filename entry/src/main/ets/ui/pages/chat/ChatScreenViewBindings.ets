@@ -36,7 +36,6 @@ export class ChatScreenViewBindings implements ChatMessageActionsPopupPort, Chat
   movePendingPhoto(uri: string, direction: number): void { this.session.movePendingPhoto(uri, direction); }
   closeSearch(): void { this.session.closeSearch(); }
   composerAllows(kind: string): boolean { return this.session.composerAllows(kind); }
-  composerAttachmentMenuLabels(): string[] { return this.session.composerAttachmentMenuLabels(); }
   composerCanSubmit(): boolean { return this.session.composerCanSubmit(); }
   composerKeyboardPanelVisible(): boolean { return this.session.composerKeyboardPanelVisible(); }
   effectiveAlbumPhotoDownloadFailed(entry: ChatTimelineEntryVO, downloadRevision: number): boolean[] { return this.session.effectiveAlbumPhotoDownloadFailed(entry); }

@@ -67,7 +67,6 @@ export struct TgComposerInput {
   @Param attachmentPhotoEnabled: boolean = true;
   @Param attachmentVideoEnabled: boolean = true;
   @Param attachmentCategoryEnabled: boolean[] = [true, true, true, false, false, false];
-  @Param attachmentMenuLabels: string[] = ['Camera', 'Photo', 'Video', 'Document'];
   @Param attachmentRecentItems: TgAttachmentRecentItem[] = [];
   @Param attachmentRecentLoading: boolean = false;
   @Param emojiPanelOpen: boolean = false;

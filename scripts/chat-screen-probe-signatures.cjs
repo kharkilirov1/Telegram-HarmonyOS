@@ -1271,11 +1271,6 @@ module.exports = [
     "arguments": []
   },
   {
-    "name": "composerAttachmentMenuLabels",
-    "signature": "private composerAttachmentMenuLabels(): string[]",
-    "arguments": []
-  },
-  {
     "name": "handleComposerAttachmentMenuItemPress",
     "signature": "private handleComposerAttachmentMenuItemPress(index: number): void",
     "arguments": [

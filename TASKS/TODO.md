@@ -128,20 +128,6 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
 
 ### Product and UI backlog
 
-### Defects found by the 2026-10-25 matrix audit
-
-- [ ] **Dead control: профиль → Toggle «Notifications» без `.onChange`** (`TgProfilePage.ets:749-752`).
-  Пользователь видит переключатель, который ничего не делает — по `SLICE_PROTOCOL` §9 это
-  запрещённый долг, чинить в ближайшем срезе (либо связать с `setChatNotificationSettings`, либо
-  убрать до реализации). [Отчёт](../docs/reviews/2026-10-25-matrix-verification.md)
-- [ ] **Dead row: «Data and Storage» открывается в пустоту** (`SettingsPage.ets:260-266`, без
-  `onRowClick`, storage-API отсутствует). Либо экран, либо убрать строку; сейчас это мёртвый конец.
-- [ ] **Dead wiring: `attachmentMenuLabels` вычисляется, но не рендерится** (`TgAttachmentSheet.ets:28`,
-  `ChatComposerController.ets:83-98`) — 3 из 6 категорий выключены; проверить, что скрытые пункты
-  не рисуются обещанием функциональности.
-- [ ] **Unused DTO `TdAutoDownloadSettings`** (`models/td/system/index.ets:13-26`) — либо использовать
-  в H4, либо удалить, чтобы не создавать ложного впечатления готовности.
-
 - [ ] **Notifications and push with inline reply.** No `notificationManager` / `wantAgent` / push code
   exists in `entry/` (checked 2026-10-23), while the reachable competitor ships a push extension with
   an inline-reply token. Needs a provider/AGC decision before implementation.

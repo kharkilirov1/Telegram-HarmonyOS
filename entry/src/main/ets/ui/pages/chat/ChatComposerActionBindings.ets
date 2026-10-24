@@ -4,7 +4,6 @@ import { TgAttachmentRecentItem } from '../../tg_ui/atoms/TgAttachmentSheet';
 import { CustomEmojiCellVO } from '../../tg_ui/atoms/TgComposerEmojiPanel';
 import { ChatComposerController, ChatComposerControllerHost } from './ChatComposerController';
 import { ChatVoiceRecordingController, ChatVoiceRecordingHost } from './ChatVoiceRecordingController';
-import { localized } from '../../../core/utils/AppResource';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN = 0x0021;
@@ -91,15 +90,6 @@ export function handleAttachmentMenuOpenChange(host: ChatComposerActionBindingsP
 
 export function composerKeyboardPanelVisible(host: ChatComposerActionBindingsPort): boolean {
     return host.showComposerEmojiPanel || host.showComposerStickerPanel;
-  }
-
-export function composerAttachmentMenuLabels(host: ChatComposerActionBindingsPort): string[] {
-    return [
-      localized($r('app.string.attach_camera').id, 'Camera'),
-      localized($r('app.string.photo').id, 'Photo'),
-      localized($r('app.string.video').id, 'Video'),
-      localized($r('app.string.document_label').id, 'Document')
-    ];
   }
 
 export function handleComposerAttachmentMenuItemPress(host: ChatComposerActionBindingsPort, index: number): void {

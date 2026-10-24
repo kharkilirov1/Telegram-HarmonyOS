@@ -6,6 +6,8 @@
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, User, Chat } from '../../../core/model/AppState';
 import { loadUserFullInfo, loadSupergroupFullInfo, loadBasicGroupFullInfo, ProfileLoadContext, ProfileLoadResult, ProfileLoadStatus, captureProfileLoadContext } from '../../../domain/usecases/loadProfileInfo';
+import { createSetChatMuteUseCase, SetChatMuteUseCase, MUTE_FOREVER } from '../../../domain/usecases/setChatMute';
+import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { TgAvatar } from '../../tg_ui/atoms/TgAvatar';
 import { TgProfileNavigationBar } from '../../tg_ui/atoms/TgProfileNavigationBar';
 import { SharedMediaRouteParams } from './TgSharedMediaPage';
@@ -139,6 +141,9 @@ export struct TgProfilePage {
   @Local private description: string = '';
   @Local private inviteLink: string = '';
   @Local private isMuted: boolean = false;
+  // Owned by the page and dropped on teardown: the toggle must send a real TDLib command instead of
+  // flipping a local boolean that no other surface ever sees.
+  @Local private muteUseCase: SetChatMuteUseCase | undefined = undefined;
   @Local private isVerified: boolean = false;
   @Local private isPremium: boolean = false;
 
@@ -165,6 +170,7 @@ export struct TgProfilePage {
       this.isClosing = false;
       this.isActive = true;
       this.pageLifecycleToken++;
+      this.muteUseCase = createSetChatMuteUseCase(getTdGatewayAdapter());
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
       const windowStage = context.windowStage;
       if (windowStage) {
@@ -399,6 +405,7 @@ export struct TgProfilePage {
     this.pageLifecycleToken++;
     this.requestGeneration++;
     this.requestPending = false;
+    this.muteUseCase = undefined;
     this.releaseProfileSubscriptions();
   }
 
@@ -635,29 +642,50 @@ export struct TgProfilePage {
     }
   }
 
-  @Builder
-  private buildSwitchRow(label: string, isOn: boolean, showSeparator: boolean = false) {
-    Column() {
-      Row() {
-        Text(label)
-          .fontSize(TgUiTokens.FONT_TITLE_SIZE)
-          .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
-          .layoutWeight(1)
-
-        Toggle({ type: ToggleType.Switch, isOn: isOn })
-          .selectedColor(TgUiTokens.COLOR_ICON_PRIMARY)
-      }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 10, bottom: 10 })
-      .alignItems(VerticalAlign.Center)
-
-      if (showSeparator) {
-        Divider()
-          .strokeWidth(0.5)
-          .color(TgUiTokens.COLOR_SEPARATOR)
-          .margin({ left: 16 })
-      }
+  // A switch that silently flips a local flag is worse than no switch: this row sends the same
+  // SetChatMute command the chat list already uses, so the state survives a reopen and the peer
+  // actually stops notifying.
+  private applyNotificationsToggle(isOn: boolean): void {
+    const useCase = this.muteUseCase;
+    const chatId = this.chatId;
+    const scheduledToken = this.pageLifecycleToken;
+    this.isMuted = !isOn;
+    if (!useCase || chatId === 0) {
+      return;
     }
+    const work = isOn ? useCase.unmute(chatId) : useCase.mute(chatId, MUTE_FOREVER);
+    work.then(() => {
+      if (scheduledToken !== this.pageLifecycleToken) {
+        return;
+      }
+      hilog.info(DOMAIN, TAG, 'Notifications %{public}s for chat %{public}d',
+        isOn ? 'enabled' : 'muted', chatId);
+    }).catch((error: Error) => {
+      if (scheduledToken !== this.pageLifecycleToken) {
+        return;
+      }
+      this.isMuted = !isOn;
+      hilog.error(DOMAIN, TAG, 'Failed to update notifications: %{public}s', error.message);
+    });
+  }
+
+  @Builder
+  private buildNotificationsRow() {
+    Row() {
+      Text('Notifications')
+        .fontSize(TgUiTokens.FONT_TITLE_SIZE)
+        .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+        .layoutWeight(1)
+
+      Toggle({ type: ToggleType.Switch, isOn: !this.isMuted })
+        .selectedColor(TgUiTokens.COLOR_ICON_PRIMARY)
+        .onChange((isOn: boolean) => {
+          this.applyNotificationsToggle(isOn);
+        })
+    }
+    .width('100%')
+    .padding({ left: 16, right: 16, top: 10, bottom: 10 })
+    .alignItems(VerticalAlign.Center)
   }
 
   @Builder
@@ -748,7 +776,7 @@ export struct TgProfilePage {
   @Builder
   private buildNotificationsSection() {
     Column() {
-      this.buildSwitchRow('Notifications', !this.isMuted)
+      this.buildNotificationsRow()
     }
     .width('100%')
     .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)

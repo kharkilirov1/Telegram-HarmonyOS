@@ -45,7 +45,7 @@
 |---|---|---|---|---|---|
 | B1 | Загрузка и порядок списка | `available` | `loadChats.ets`, `ChatListPage.ets` (9/12) | `Components/ChatList` | B2, B10 |
 | B2 | Закрепление чатов | `available` | `toggleChatPinned.ets` (21/6) | `ChatList` | B12 |
-| B3 | Mute / настройки уведомлений чата | `partial` | `CommandSerializer.ets`, `TgChatRowDemo.ets` (13/1) | `ChatNotificationSettings` | H3 |
+| B3 | Mute / настройки уведомлений чата | `partial` | `SetChatMuteCommand` + `SetChatMuteUseCase`; включён из списка чатов и из профиля (`TgProfilePage.ets` toggle → `applyNotificationsToggle` → `mute/unmute`, откат при ошибке); host-guard `test-dead-controls.cjs`. Нет экрана тонких настроек уведомлений | `ChatNotificationSettings` | H3 |
 | B4 | Unread-бейджи | `available` | 44 файла / 10 тестов | `BadgeComponent` | B9, B12 |
 | B5 | Свайпы по строке (read/pin/mute/delete) | `partial` | `ChatListPage.ets`, `TgArchivedChatsPage.ets` (2/0) | `Components/ChatList` | B2, B3 |
 | B6 | Контекстное меню чата | `missing` | нет: long-press по строке отсутствует (`TgChatRow.ets` без обработчиков нажатий), в `ChatListPage.ets:1453-1467` только `.swipeAction` + `.onClick`; `bindContextMenu` / `Menu` по всему `entry/src/main/ets` — 0 совпадений | `ChatListUI/Sources/ChatContextMenus.swift` | B2, B5; шов — готовые use-case pin/mute/delete/archive |
@@ -112,7 +112,7 @@
 
 | # | Возможность | Статус | Доказательство | iOS-референс | Связанные / шов |
 |---|---|---|---|---|---|
-| E1 | Меню вложений | `partial` | меню есть: `TgComposerInput.ets:861-883` + `bindSheet` `:1500-1514`, поверхность `TgAttachmentSheet.ets:237-260`; работают 3 из 6 категорий — `ChatComposerController.ets:83-98` (галерея/камера/файл), location/poll/contact выключены дефолтом `TgAttachmentSheet.ets:28`; witness нет | `ChatControllerOpenAttachmentMenu` | E5, E6; шов — `categoryEnabled` + `handleAttachmentMenuItemPress` |
+| E1 | Меню вложений | `partial` | единственный источник категорий — `TgAttachmentSheet.ets` (`categoryEnabled`); мёртвая проводка `attachmentMenuLabels` удалена (`test-dead-controls.cjs`).  меню есть: `TgComposerInput.ets:861-883` + `bindSheet` `:1500-1514`, поверхность `TgAttachmentSheet.ets:237-260`; работают 3 из 6 категорий — `ChatComposerController.ets:83-98` (галерея/камера/файл), location/poll/contact выключены дефолтом `TgAttachmentSheet.ets:28`; witness нет | `ChatControllerOpenAttachmentMenu` | E5, E6; шов — `categoryEnabled` + `handleAttachmentMenuItemPress` |
 | E2 | Подпись к медиа (caption) | `available` | 40/31 | `ChatInputNode` | D1 |
 | E3 | Превью reply/edit | `available` | `ChatComposerController.ets` | `ChatInputNode` | D2, D3 |
 | E4 | Запись голосового (UI) | `partial` | 26/17 | `Chat/Recording*` | D28 |
@@ -152,7 +152,7 @@
 | H1 | Экран настроек | `partial` | `SettingsPage.ets` (31/5) | `Sources/Settings*` | H2–H9 |
 | H2 | Приватность | `partial` | `SettingsPage.ets` (1/2) | `Sources/Privacy*` | H1 |
 | H3 | Настройки уведомлений | `partial` | `CommandSerializer.ets` (7/3) | `Sources/Notifications*` | B3, I1 |
-| H4 | Данные и хранилище | `missing` | нет: строка «Data and Storage» существует без обработчика — `SettingsPage.ets:260-266`; экрана, `clearCache`/`storageStats`/auto-download-настроек нет; DTO `TdAutoDownloadSettings` объявлен и нигде не используется — `models/td/system/index.ets:13-26` | `Sources/Storage*` | F2 |
+| H4 | Данные и хранилище | `missing` | нет: мёртвая строка «Data and Storage» удалена из `SettingsPage.ets` (2026-10-25), неиспользуемые DTO `TdAutoDownloadSettings`/`Presets` удалены; экрана, `clearCache`/`storageStats`/auto-download-настроек нет объявлен и нигде не используется — `models/td/system/index.ets:13-26` | `Sources/Storage*` | F2 |
 | H5 | Устройства/сессии | `missing` | нет | `Sources/Sessions*` | A4 |
 | H6 | Тёмная тема/акценты | `partial` | `accentColorsReducer.ets`, `colorMode` (12/2) | `Sources/Theme*` | J8 |
 | H7 | Язык интерфейса | `partial` | 15/8 | `Sources/Localization*` | J6 |

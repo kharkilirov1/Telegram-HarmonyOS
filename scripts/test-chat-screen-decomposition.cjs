@@ -78,7 +78,7 @@ function verifyBindingPayloads(candidateGraph) {
 }
 let bindingPayloadChecks = 0;
 check('all original methods and UI events are bound to actual exported functions', () => {
-  assert.equal(graph.delegates.size, 287);
+  assert.equal(graph.delegates.size, 286);
   assert.match(graph.page, /new ChatScreenSession\(\s*this\.view/);
   assert.match(graph.page, /this\.session\.aboutToAppear\(\)/);
   assert.match(graph.page, /this\.session\.aboutToDisappear\(\)/);

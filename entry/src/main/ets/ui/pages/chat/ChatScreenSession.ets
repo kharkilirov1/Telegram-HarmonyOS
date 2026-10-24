@@ -135,7 +135,7 @@ import {
 } from './ChatMessagePopupCoordinator';
 import {
   setStickerPanelVisible as delegateSetStickerPanelVisible, openStickerSettings as delegateOpenStickerSettings, handleSendMessage as delegateHandleSendMessage, handleComposerAttachPress as delegateHandleComposerAttachPress,
-  handleAttachmentMenuOpenChange as delegateHandleAttachmentMenuOpenChange, composerKeyboardPanelVisible as delegateComposerKeyboardPanelVisible, composerAttachmentMenuLabels as delegateComposerAttachmentMenuLabels, handleComposerAttachmentMenuItemPress as delegateHandleComposerAttachmentMenuItemPress,
+  handleAttachmentMenuOpenChange as delegateHandleAttachmentMenuOpenChange, composerKeyboardPanelVisible as delegateComposerKeyboardPanelVisible, handleComposerAttachmentMenuItemPress as delegateHandleComposerAttachmentMenuItemPress,
   handleAttachmentRecentPress as delegateHandleAttachmentRecentPress, handleComposerEmojiPress as delegateHandleComposerEmojiPress, handleComposerKeyboardModePress as delegateHandleComposerKeyboardModePress, handleComposerVoicePress as delegateHandleComposerVoicePress,
   handleVoiceRecordStart as delegateHandleVoiceRecordStart, handleVoiceRecordSend as delegateHandleVoiceRecordSend, handleVoiceRecordCancel as delegateHandleVoiceRecordCancel, handleVoiceRecordLock as delegateHandleVoiceRecordLock,
   handleComposerEmojiSelected as delegateHandleComposerEmojiSelected, handleComposerSelectionChange as delegateHandleComposerSelectionChange, handleCustomEmojiSelected as delegateHandleCustomEmojiSelected, handleComposerStickerPress as delegateHandleComposerStickerPress,
@@ -404,7 +404,6 @@ export class ChatScreenSession extends ChatScreenContext implements ChatScreenSe
   handleComposerAttachPress(): void { delegateHandleComposerAttachPress(this); }
   handleAttachmentMenuOpenChange(isOpen: boolean): void { delegateHandleAttachmentMenuOpenChange(this, isOpen); }
   composerKeyboardPanelVisible(): boolean { return delegateComposerKeyboardPanelVisible(this); }
-  composerAttachmentMenuLabels(): string[] { return delegateComposerAttachmentMenuLabels(this); }
   handleComposerAttachmentMenuItemPress(index: number): void { delegateHandleComposerAttachmentMenuItemPress(this, index); }
   handleAttachmentRecentPress(item: TgAttachmentRecentItem): void { delegateHandleAttachmentRecentPress(this, item); }
   handleComposerEmojiPress(): void { delegateHandleComposerEmojiPress(this); }

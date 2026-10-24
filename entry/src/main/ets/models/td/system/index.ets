@@ -10,22 +10,6 @@ export interface TdSecretChat {
   user_id?: number;
 }
 
-export interface TdAutoDownloadSettings {
-  is_auto_download_enabled?: boolean;
-  max_photo_file_size?: number;
-  max_video_file_size?: number;
-  max_other_file_size?: number;
-  video_upload_bitrate?: number;
-  preload_large_videos?: boolean;
-  preload_next_audio?: boolean;
-}
-
-export interface TdAutoDownloadSettingsPresets {
-  low?: TdAutoDownloadSettings;
-  medium?: TdAutoDownloadSettings;
-  high?: TdAutoDownloadSettings;
-}
-
 export interface TdPassportAuthorizationForm {
   id?: number;
   required_elements?: Object[];

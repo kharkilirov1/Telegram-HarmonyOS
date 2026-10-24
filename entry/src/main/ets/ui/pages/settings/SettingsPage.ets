@@ -258,13 +258,6 @@ export struct SettingsPage {
               showSeparator: true
             })
             TgSettingsRow({
-              title: localized($r('app.string.settings_data_storage').id, 'Data and Storage'),
-              symbolRes: $r('sys.symbol.folder_fill'),
-              iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_GREEN,
-              trailingType: TgSettingsTrailing.Arrow,
-              showSeparator: true
-            })
-            TgSettingsRow({
               title: localized($r('app.string.settings_appearance').id, 'Appearance'),
               symbolRes: $r('sys.symbol.moon_fill'),
               iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_BLUE,

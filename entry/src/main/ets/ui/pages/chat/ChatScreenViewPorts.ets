@@ -75,7 +75,6 @@ export interface ChatComposerDockPort extends ChatKeyboardPanelsPort {
   removePendingPhoto(uri: string): void;
   movePendingPhoto(uri: string, direction: number): void;
   composerAllows(kind: string): boolean;
-  composerAttachmentMenuLabels(): string[];
   composerCanSubmit(): boolean;
   composerKeyboardPanelVisible(): boolean;
   goToNewerSearchResult(): void;

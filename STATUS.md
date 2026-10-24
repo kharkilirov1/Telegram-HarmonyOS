@@ -2,7 +2,7 @@
 
 Current state only. Every superseded dated snapshot, and the pre-compaction version of this file,
 lives in `TASKS/ARCHIVE/STATUS-history-2026-10-18.md`. Reports referenced here are immutable
-checkpoints — see `docs/reviews/INDEX.md` for all 78 of them.
+checkpoints — see `docs/reviews/INDEX.md` for all 81 of them.
 
 ## Where it stands — 2026-10-23
 
@@ -93,8 +93,13 @@ Documentation and repository structure were reconciled; no product code changed.
 
 Первый прогон по `SLICE_PROTOCOL`, три агента параллельно + design-срез от lead.
 
+- **S4 (lead).** Мёртвые контролы из аудита закрыты: Toggle «Notifications» в профиле теперь отправляет
+  `SetChatMuteCommand` (откат при ошибке, токен страницы), строка «Data and Storage» удалена до
+  появления экрана, мёртвая проводка `attachmentMenuLabels` вырезана из шести файлов, неиспользуемые
+  DTO `TdAutoDownloadSettings`/`Presets` удалены. Новый host-guard `scripts/test-dead-controls.cjs`
+  не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
-  `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0. Матрица: 34 `available`, 45 `partial`,
+  `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0. Матрица: 35 `available`, 44 `partial`,
   22 `missing`, 3 `frozen`, 1 `blocked`.
 - **S1 + S1.1 (typing-slice).** TTL активности 8 s по iOS, откат по дедлайну без новых store-change,
   группа — только имя, приватный — текст активности, статические точки из токенов, «печатает…» в

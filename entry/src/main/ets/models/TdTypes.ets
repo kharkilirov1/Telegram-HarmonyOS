@@ -105,8 +105,6 @@ export {
 // System types
 export {
   TdSecretChat,
-  TdAutoDownloadSettings,
-  TdAutoDownloadSettingsPresets,
   TdPassportAuthorizationForm,
   TdSession,
   TdSessions,
