@@ -50,6 +50,9 @@ TASKS/                       # plan, queue, lessons; ARCHIVE/ holds history
 |---|---|
 | [`STATUS.md`](STATUS.md) | current state, last checkpoint, what is proven and what is not |
 | [`TASKS/TODO.md`](TASKS/TODO.md) | **active queue**: open gates, backlog, decisions needed from the user |
+| [`TASKS/WORKMAP.md`](TASKS/WORKMAP.md) | what is being done right now: 1–3 slices |
+| [`TASKS/CAPABILITY_MATRIX.md`](TASKS/CAPABILITY_MATRIX.md) | what exists and in which state (status + evidence) |
+| [`TASKS/SLICE_PROTOCOL.md`](TASKS/SLICE_PROTOCOL.md) | how one slice is done: reference, seams, test, implementation, comparison |
 | [`TASKS/AGENT_EXECUTION_PLAN.md`](TASKS/AGENT_EXECUTION_PLAN.md) | canonical route; what to do in which order |
 | [`TASKS/PRODUCTION_PARITY_PLAN.md`](TASKS/PRODUCTION_PARITY_PLAN.md) | per-phase exit criteria and evidence boundaries |
 | [`TASKS/LESSONS.md`](TASKS/LESSONS.md) | numbered lessons and dated blocks — pitfalls that already cost time |

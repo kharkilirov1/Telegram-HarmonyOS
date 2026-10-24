@@ -1,6 +1,6 @@
 # Review reports — index
 
-78 dated reports, newest first. Each report is an immutable checkpoint: it records what was
+81 dated reports, newest first. Each report is an immutable checkpoint: it records what was
 verified on its date and what stayed open. Verdicts live inside the reports, not in this table —
 do not read a title as a PASS. A report may carry a dated corrections block (for example the
 2026-10-21 drain and competitor notes, corrected on 2026-10-23); the original result stays visible
@@ -11,10 +11,13 @@ Two things are dead **by design** inside old reports: links to build outputs
 They were valid on their date. Do not "fix" a report to match today's tree — write a new dated report
 in this directory and let it supersede the old one (`DECISIONS.md` D25).
 
-## 2026-10 (33)
+## 2026-10 (36)
 
 | Date | Report | Title |
 |---|---|---|
+| 2026-10-25 | [2026-10-25-typing-indicator.md](2026-10-25-typing-indicator.md) | Typing indicator slice — TTL 8 s, deadline rollback, static dots (witness pending) |
+| 2026-10-25 | [2026-10-25-stickers-tgs.md](2026-10-25-stickers-tgs.md) | Stickers/TGS slice — visibility policy, fileId cache, instance budget (witness pending) |
+| 2026-10-25 | [2026-10-25-matrix-verification.md](2026-10-25-matrix-verification.md) | Capability matrix — nine `unverified` rows verified against code |
 | 2026-10-23 | [2026-10-23-drain-yield-model-rerun.md](2026-10-23-drain-yield-model-rerun.md) | Drain yield-model re-run — shipped pacing measured on the emulator |
 | 2026-10-21 | [2026-10-21-arkgram-analysis.md](2026-10-21-arkgram-analysis.md) | ArkGram competitor analysis — 2026-10-21 (corrected 2026-10-23) |
 | 2026-10-21 | [2026-10-21-drain-budget-sweep.md](2026-10-21-drain-budget-sweep.md) | Drain slice budget sweep — recommendation withdrawn 2026-10-23 |
