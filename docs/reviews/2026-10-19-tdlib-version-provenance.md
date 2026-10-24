@@ -88,8 +88,17 @@ Neither finding blocks it.
 
 ---
 
-## 4. What was not done
+## 4. What was not done — superseded on 2026-10-23
 
-The submodule was **not** re-pinned to `11e254af6`. That change would make source and binary
-agree on paper, affects no runtime behaviour (headers come from `third_party`), and is a
-one-line decision for the owner rather than an agent's call.
+The first version of this note said the submodule was **not** re-pinned to `11e254af6` and that the
+decision belonged to the owner rather than an agent.
+
+That is no longer the state of the repository. Commit `6867a48` (2026-10-19 22:23, i.e. before this
+note was committed at 2026-10-20 03:14) pinned the submodule at
+`11e254af695060d8890024dd7faa1cc2d6685ef8`, whose `CMakeLists.txt` declares `1.8.61`; the submodule
+working tree is clean. The pin now matches the version the prebuilt binary reports.
+
+What the re-pin does **not** do: it does not reproduce the shipped binary. Any revision between the
+1.8.61 bump and the 1.8.62 bump reports `1.8.61`, and the exact upstream revision that produced
+`third_party/tdlib/lib/*/libtdjson.so` is still unrecorded. Rebuilding from the pin gives *a* 1.8.61,
+not *the* 1.8.61. That provenance gap stays open; only the version-mismatch half of it is closed.

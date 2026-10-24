@@ -12,7 +12,7 @@ The correction guarantees one meaningful transfer when available, then respects 
 
 ## Same-fixture native comparison
 
-Both paired diagnostic builds use the same generated-only instrumentation and credential-free isolated bundle `com.telegram.harmonyos.nativevalidation20261014`, on the existing API24 x86_64 emulator. No AppCoreRuntime/AuthSideEffect or account initialization is created. A fresh actual gateway sends 161 `getOption(version)` requests, with measured 8 ms synchronous consumer work per response and the normal 30 s request timeout. The selected token is last in the native admission and drain order. A separate 45 s observation window allows recording late consumption and actual cleanup; it does not extend a request deadline.
+Both paired diagnostic builds use the same generated-only instrumentation and credential-free isolated bundle `com.telegram.harmonyos.nativevalidation20261014`, on the existing API24 x86_64 emulator. No AppCoreRuntime/AuthSideEffect or account initialization is created. A fresh actual gateway sends 161 `getOption(version)` requests, with **8 ms of injected, artificial synchronous consumer work per response** and the normal 30 s request timeout. That quantum models a slow consumer; it is not an observation of the real parse/dispatch cost, and the later drain notes that quote "the measured 8 ms" misread it (corrected 2026-10-23). The selected token is last in the native admission and drain order. A separate 45 s observation window allows recording late consumption and actual cleanup; it does not extend a request deadline.
 
 | Measured result | Baseline PID20660 | Candidate PID22960 |
 | --- | ---: | ---: |

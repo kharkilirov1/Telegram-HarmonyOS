@@ -1,5 +1,21 @@
 # Drain topology spike — 2026-10-20
 
+> **Corrections — 2026-10-23.** The retraction in §3 stands; four supporting details did not.
+>
+> 1. **`maxBacklog` was not evidence.** The harness records the deepest queue observed, and the queue
+>    was prefilled, so both arms reporting `maxBacklog = 21` only repeats the fill size. That the
+>    workload was identical rests on `items = 161` and on the code, not on this counter.
+> 2. **The "7 ms per yield" is platform timer cost under a zero-delay hand-off.** The harness yields
+>    with `setTimeout(..., 0)`, while the shipped drain schedules the next slice at
+>    `max(2, min(250, elapsed × 2))`. Production addends that mandated pause to every yield, so the
+>    figure describes the emulator's timer overhead, not the drain's cost per turn.
+> 3. **The frame numbers do not agree with the next note.** This note reports 37–237 ms worst main-arm
+>    gap; the [budget sweep](2026-10-21-drain-budget-sweep.md) reports 102–630 ms for the same nominal
+>    8 ms configuration. The difference is unexplained and the sweep's cross-budget frame comparison
+>    inherits it. Neither number should be quoted without the other.
+> 4. **The rebuild recipe in §7 was incomplete** and the retained worker file did not compile (a
+>    constructor argument was missing after the budget became a parameter). Both are fixed; see §7.
+
 **Question:** does moving the receive drain off the main thread change anything measurable on this
 target?
 
@@ -19,7 +35,9 @@ Identical drain code in both arms — the only difference is the thread that own
 - **21 batches × 8 items, 161 responses, filled synchronously before the drain starts.** Arrival
   timing is therefore identical in both arms, which removes the confound that made a slow drain
   stamp batches later and look faster per batch.
-- **8 ms of synchronous consumer work per response**, mirroring the project's measured figure.
+- **8 ms of synchronous consumer work per response** — an injected quantum, not the observed
+  parse/dispatch cost (see Corrections and
+  [receive-latency](2026-10-18-receive-latency.md)).
 - **8 ms slice budget with a guaranteed first transfer**, i.e. the drain that is already committed.
 - **Measurement opens 5 s after launch**, so window load is not attributed to the drain.
 - **Worker cold start is outside the window**: the worker posts `ready` on module load and the main
@@ -44,15 +62,17 @@ Work floor: 161 × 8 ms = **1288 ms**. Anything above that is scheduling.
 The ranges overlap almost completely. **No difference is demonstrated.** The worker arm's mean is
 7 % higher, which is smaller than the spread within either arm.
 
-Both arms finished with `maxBacklog = 21` and `items = 161` — the workload was identical and fully
-drained in both.
+Both arms finished with `items = 161` — the workload was identical and fully drained in both. (The
+note also cited `maxBacklog = 21` for this; that counter only repeats the fill size, see
+Corrections 1.)
 
 ### Why the overhead is where it is
 
 Measured 2389 ms against a 1288 ms work floor leaves ~1100 ms of scheduling across 161 yields, about
-**7 ms per yield**. That is the emulator's timer cost, and it is a function of *how many times the
-drain yields*, not of *which thread it yields on*. Moving threads cannot reduce it, which is exactly
-what the numbers show.
+**7 ms per yield**. That is the emulator's timer cost under a *zero-delay* hand-off, and it is a
+function of *how many times* the drain yields, not of *which thread it yields on*. Moving threads
+cannot reduce it, which is exactly what the numbers show. The shipped drain also inserts its own
+delay (`max(2, min(250, elapsed × 2))`), which this harness does not model — see Corrections 2.
 
 ---
 
@@ -85,7 +105,8 @@ external gate as authenticated delivery.
 **Frame behaviour in the worker arm.** The frame counter records 1 tick there, in every run. On an
 otherwise idle ArkTS thread this emulator throttles timers, so `maxGap = 0` means the loop never ran.
 The metric is unusable in that arm and must not be read as a clean bill of health. Only the main arm
-produced usable frame numbers (37–237 ms worst gap).
+produced usable frame numbers (37–237 ms worst gap) — and the next note, same nominal configuration,
+reports 102–630 ms instead. The two are not reconciled; see Corrections 3.
 
 **Admission limits.** `MAX_OUTSTANDING_BATCHES = 4` was never exercised: the queue is filled by the
 probe, not by the native admission path, so the 4-batch ceiling and its `failDelivery` branch are
@@ -133,6 +154,14 @@ bundle uninstalled, only `com.telegram.harmonyos` remains with `firstInstallTime
 
 Harness kept in `probe/` outside `entry/`: `ProbeRunner.ets` (prefilled queue, per-batch drain and
 wait timing), `FrameLoad.ets` (heartbeat-emitting main-thread load), `TdProbeWorker.ets` (ready
-handshake). To rebuild: declare the worker under `buildOption.sourceOption.workers`, set an isolated
-`com.telegram.harmonyos.nativevalidation<yyyymmdd>` bundle name, and call `runProbe()` from
-`EntryAbility.onCreate`.
+handshake), `ProbeEntry.ets` (entry point with the 5 s settle delay), `probe/README.md` (status and
+constraints).
+
+To rebuild: set an isolated `com.telegram.harmonyos.nativevalidation<yyyymmdd>` bundle name, copy the
+files you need under `entry/src/main/ets/`, declare the worker under
+`buildOption.sourceOption.workers`, and call `ProbeEntry.runMainArm(8)` from `EntryAbility.onCreate`.
+For the worker arm, `TdProbeWorker.ets` and `ProbeRunner.ets` must be copied into the **same**
+directory (`ets/workers/`), because the worker imports `./ProbeRunner` — the earlier version of this
+recipe pointed at a path back into `probe/`, which does not exist once the worker is relocated. The
+retained worker file also lacked its `budgetMs` argument after the budget became a constructor
+parameter; that is fixed. Revert the wiring afterwards; nothing under `entry/` imports `probe/`.
