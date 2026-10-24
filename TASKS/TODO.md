@@ -5,18 +5,35 @@ are in `TASKS/ARCHIVE/TODO-history-2026-10-18.md`. Every open item from that arc
 below, some merged where they were duplicates; two of them (the 08-29 bars slice, the commit
 decision over 265 dirty paths) are closed by later work and stay in the archive only.
 
-## Active checkpoint — 2026-10-18
+## Active checkpoint — 2026-10-23
 
-- [x] Bounded first progress and admitted-backlog pacing without touching deadlines, FIFO or credits:
-  15 regressions, 96 host suites, static, official builds, isolated native comparison, 75 SDK tests.
-- [x] Install the exact official main over the existing session and observe getMe / profile / chat
-  list / history / Back / cold and warm resume, with no messages and no new login.
-- [x] Localize diagnostic-main delay across two separate processes; preserve the second initial
-  history failure and the later ordinary reopen that succeeded.
-- [x] Authorized 30-HAP permanent deletion after exact path/size/SHA-256 checks (1 508 061 896 bytes).
-- [ ] **Separate consumer work, intentional pacing, scheduler/logging overhead and TDLib
-  response-ready timing before choosing another production fix.** Main reliability stays PARTIAL;
-  no speedup claim across unequal windows.
+- [x] (2026-10-18) Bounded first progress and admitted-backlog pacing without touching deadlines, FIFO
+  or credits: 15 regressions, 96 host suites, static, official builds, isolated native comparison, 75
+  SDK tests.
+- [x] (2026-10-18) Install the exact official main over the existing session and observe getMe /
+  profile / chat list / history / Back / cold and warm resume, with no messages and no new login.
+- [x] (2026-10-18) Localize diagnostic-main delay across two separate processes; preserve the second
+  initial history failure and the later ordinary reopen that succeeded.
+- [x] (2026-10-18) Authorized 30-HAP permanent deletion after exact path/size/SHA-256 checks
+  (1 508 061 896 bytes).
+- [x] Decide whether the receive drain should move off the main thread: **no** — Worker arm and main
+  arm are indistinguishable on a prefilled backlog; the cost follows the number of yields, not the
+  thread. [Report](../docs/reviews/2026-10-20-drain-topology-spike.md)
+- [x] Decide whether `DRAIN_BUDGET_MS` should change: **no** — the 2026-10-21 sweep was corrected on
+  2026-10-23 (zero-delay yield vs the shipped `max(2, min(250, elapsed × 2))`, arithmetic hop counts,
+  injected 8 ms quantum); recommendation withdrawn, constant stays 8.
+  [Report](../docs/reviews/2026-10-21-drain-budget-sweep.md)
+- [x] Re-check the competitor note against the retained artifact and correct it (1.0.1, not 3.2).
+  [Report](../docs/reviews/2026-10-21-arkgram-analysis.md)
+- [x] Re-run the budget sweep in the shipped yield model on the emulator (2026-10-23): shipped pacing
+  is ~2.8–3.1× slower than the zero-delay model, 8 → 64 ms buys −18 % (not −27 %), frame gaps are
+  non-monotone (207 / 285 / 216 / 130 ms), all 24 rows completed.
+  [Report](../docs/reviews/2026-10-23-drain-yield-model-rerun.md)
+- [ ] **Separate real consumer work (parse/dispatch/store/render) from intentional pacing,
+  scheduler/logging overhead and TDLib response-ready timing.** The synthetic 8 ms quantum was
+  injected, not observed, so it is not a consumer-cost figure; the shipped-pacing shape is now
+  measured (2026-10-23), the work quantum is still not. A real-device scroll-under-load check comes
+  next. Main reliability stays PARTIAL; no speedup claim across unequal windows.
 
 ## Open gates
 
@@ -36,6 +53,8 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
 ### Runtime unknowns — need measurement, not code
 
 - [ ] The main-timeout boundary above (pacing vs parse/dispatch/store/render vs scheduler vs logging).
+  Drain thread placement and slice budget are excluded — closed on 2026-10-23, see the active
+  checkpoint.
 - [ ] Older unlogged keyboard mismatch and Slowmode title-wait: **UNCLASSIFIED**, and later PASSes do
   not retroactively establish either cause.
 - [ ] Photo marker coverage stays **PARTIAL**; a separate Hypium PASS does not create the missing
@@ -58,6 +77,9 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
 
 ### Product and UI backlog
 
+- [ ] **Notifications and push with inline reply.** No `notificationManager` / `wantAgent` / push code
+  exists in `entry/` (checked 2026-10-23), while the reachable competitor ships a push extension with
+  an inline-reply token. Needs a provider/AGC decision before implementation.
 - [ ] **Island Player Suite** (пласт, spec `docs/specs/2026-07-22-island-player-suite-design.md`,
   order approved 2026-07-22) — the ordered feature list inside the spec is still unexecuted.
 - [ ] Chat-state actions: kicked → red "Delete and Exit"; per-user `bannedRights` (needs a
@@ -86,9 +108,10 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
 - [ ] Evaluate top-level vs nested `TdObject.getString` on real consumers, fixing only with a focused
   RED; do not rewrite the regex parser from one demonstration. Localize the hardcoded actions as a
   separate UI slice.
-- [ ] Minor contract drift: `D14` (target 23 vs 26 in `build-profile.json5`); the `.reuseId()`
-  contract in `smoke-ui-phase0.ps1:400` against lesson 84; `HYBRID_DESIGN:89-92`; the fate of the
-  API 22-era `MASTER_PLAN`.
+- [ ] Minor contract drift: legacy `minAPIVersion`/`targetAPIVersion` (`22`/`22`) in
+  `AppScope/app.json5` against `compatibleSdkVersion 6.1.0(23)` / `targetSdkVersion 26.0.0` in
+  `build-profile.json5`; the `.reuseId()` contract in `smoke-ui-phase0.ps1:400` against lesson 84;
+  `HYBRID_DESIGN:89-92`.
 - [ ] Full clean-checkout build; mark-read must keep failing explicitly when the committed target is
   unknown rather than reading an earlier one.
 
@@ -98,8 +121,9 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
   decision, not a fix — and must not be used to hide an admitted-wait timeout.
 - [ ] Logo: pick one of the four SVGs in `design/logo/` and replace the DevEco layered placeholder.
   Research artefacts are archived in `design/logo/research/`.
-- [ ] Canon winner: `AGENTS.md` rule 5 + `DECISIONS` D3 ("MASTER_PLAN wins") vs `CLAUDE.md`
-  ("docs/ai is an archive"). One of them has to lose.
+- [x] Canon winner: resolved by `DECISIONS.md` D25 — active sources are `STATUS`/`TODO`/agent plan/
+  parity plan/`DECISIONS`, `docs/ai/*` is a frozen archive, and `MASTER_PLAN_TELEGRAM_UI.md` governs
+  only the `tg_ui` visual contract.
 - [ ] Auto-hide the floating tab bar on scroll (`HdsTabsController.bindScroller` + HdsTabsMiniBar) —
   behavioural decision.
 

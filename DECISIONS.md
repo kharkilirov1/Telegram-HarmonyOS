@@ -1,6 +1,6 @@
 # DECISIONS — Telegram-HarmonyOS
 
-Last updated: 2026-10-01
+Last updated: 2026-10-23
 
 This file records decisions that are already effectively accepted in the repo.
 
@@ -15,9 +15,9 @@ This file records decisions that are already effectively accepted in the repo.
 - **Consequence:** Non-trivial UI work starts from a current screenshot/video baseline, then current iOS source inspection, platform mapping, spec, atom/demo, and integration. The old 2026-02 snapshot is historical only.
 
 ## D3. `docs/ai/MASTER_PLAN_TELEGRAM_UI.md` is the frozen UI contract
-- **Decision:** Master plan wins if smaller docs disagree.
-- **Why:** It prevents drift between agent sessions.
-- **Consequence:** `UI_MIGRATION_PLAN.md`, `AI_MEMORY.md`, or ad-hoc notes are secondary.
+- **Decision:** For the **`tg_ui` visual contract** the master plan wins over older UI notes. It does not govern process, roadmap or release rules — that scope is defined by D25.
+- **Why:** It prevents drift between agent sessions on visual decisions, without letting an archived document outrank the active plan.
+- **Consequence:** `UI_MIGRATION_PLAN.md`, `AI_MEMORY.md` or ad-hoc notes are secondary **for visual decisions**; the rest of `docs/ai/*` is archive and is not maintained.
 
 ## D4. Migrate UI atom-first, not screen-first
 - **Decision:** Required flow is `SPEC -> DEMO -> ATOM -> INTEGRATION`.
@@ -113,3 +113,21 @@ This file records decisions that are already effectively accepted in the repo.
 ## D22. Authoritative timed slow-mode state
 
 Display relative FullInfo expiry anchored once to STARTUP uptime; gate new send/forward/media/record/normal-attach actions. Creator/admin and only positive qualifying boost thresholds are exempt. Preserve selected media and composer, retain stopped voice preview and owned accepted cleanup. Resume recomputes without autosend. The separate iOS pendingMessages state remains a follow-up requiring TDLib Message/update grounding. No setting/rate-limit bypass or guessed local server deadline.
+
+## D23. Receive-drain threading and slice budget stay as shipped
+
+- **Decision:** Do not relocate the receive drain to a Worker and do not retune `DRAIN_BUDGET_MS` (stays 8 ms). Both questions are closed as of 2026-10-21…23.
+- **Why:** With the arrival-timing confound removed, the main-thread and worker arms are indistinguishable on a prefilled backlog. The budget sweep that appeared to favour a larger slice was corrected on 2026-10-23 (zero-delay yield, arithmetic hop counts, injected 8 ms quantum) and then re-measured in the shipped model on the emulator: the shipped drain costs ~2.8–3.1× the zero-delay model, 8 → 64 ms buys −18 % instead of −27 %, and the frame-gap ordering is non-monotone (207 / 285 / 216 / 130 ms). The gain is real but about half of what was claimed, and the measurement itself is timer-dominated on a 2014 Xeon with a 97 %-full disk, so its absolute values are an upper bound, not phone behaviour.
+- **Consequence:** Do not open a production change on synthetic evidence. The next step is a real-device scroll-under-load measurement with the same harness (`YIELD_SHIPPED`), not another wiring change and not a constant change. The remaining open question is the real per-response consumer cost (parse/dispatch/store/render), which would rescale the whole curve. Reports: `docs/reviews/2026-10-20-drain-topology-spike.md`, `docs/reviews/2026-10-21-drain-budget-sweep.md`, `docs/reviews/2026-10-23-drain-yield-model-rerun.md`.
+
+## D24. Production quality by the iOS reference is the goal; `v0.1.0` is not
+
+- **Decision:** The target is production quality against the current iOS reference — visual and behavioural fidelity included. The `v0.1.0` release tag is no longer a separate goal, and "pixel-level fidelity is not a release goal" is retracted.
+- **Why:** The user mandate of 2026-08-31 replaced the minimal-release framing of Release Track v2. `STATUS.md` already said the tag goal was withdrawn, while `TASKS/AGENT_EXECUTION_PLAN.md` still carried the old rule, so agents could follow either.
+- **Consequence:** `TASKS/AGENT_EXECUTION_PLAN.md` was rewritten on 2026-10-24 and Release Track v2 moved to `TASKS/ARCHIVE/AGENT_EXECUTION_PLAN_release-track-v2_2026-07-02.md` (not to be executed). Release packaging remains a phase, but as "publication readiness", not as the product definition.
+
+## D25. Documentation authority is scoped, not absolute
+
+- **Decision:** Active sources are `STATUS.md`, `TASKS/TODO.md`, `TASKS/AGENT_EXECUTION_PLAN.md`, `TASKS/PRODUCTION_PARITY_PLAN.md`, `DECISIONS.md`, `ARCHITECTURE.md`, `REFERENCES.md` and `docs/reviews/INDEX.md`. `docs/ai/*` is a frozen archive and is not maintained. `docs/ai/MASTER_PLAN_TELEGRAM_UI.md` governs only the `tg_ui` visual contract; it does not override active process documents.
+- **Why:** `AGENTS.md` rule 5 and `DECISIONS` D3 said the master plan wins, while `CLAUDE.md` and the agent plan called `docs/ai` an archive. The two rules could not both be true, and the repo is too large for agents to resolve it per task.
+- **Consequence:** `AGENTS.md`/`CLAUDE.md` were aligned to this scope on 2026-10-24; `TASKS/TODO.md` no longer carries the "canon winner" question. Archived material (`docs/ai/*`, `TASKS/ARCHIVE/*`) may reference dead build artifacts and absolute paths by design and must not be "refreshed" — a correction is a new dated report.
