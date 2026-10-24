@@ -1,0 +1,18 @@
+Host used for the 2026-10-23 drain yield-model run
+==================================================
+
+CPU      Intel Xeon E5-2687W v3 (Haswell-EP, 2014), 10 cores / 20 threads, base 3.10 GHz
+RAM      32 GB total, 8.7 GB free while the emulator was running (guest is configured with 6 GB)
+Disk     C: 930.4 GB, 28.5 GB free (96.9 % full)
+OS       Windows 11 Pro for Workstations, build 26200
+Emulator Pura 90 Pro Max HVD, HarmonyOS 6.1.1(24), x86_64; instance 7.02 GB in 29 files,
+         system images 56.04 GB
+
+Consequences observed during the run
+------------------------------------
+- Cold boot only: `bootmode "snapshot"` is rejected ("Hot boot is not enable"), so every restart
+  re-verifies the system images (system.img alone took 347 s).
+- The guest kernel-panicked twice ("sysrq triggered crash") while the host was stopping and
+  restarting the HVD; the measurement boot itself stayed up for the whole run.
+- All timings in probe-rows.txt are from this host. Timer/scheduling cost dominates the measured
+  drain, so the absolute values are host-bound and must not be read as app behaviour on a phone.

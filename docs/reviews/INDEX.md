@@ -1,13 +1,26 @@
 # Review reports — index
 
-72 dated reports, newest first. Each report is an immutable checkpoint: it records what was
+78 dated reports, newest first. Each report is an immutable checkpoint: it records what was
 verified on its date and what stayed open. Verdicts live inside the reports, not in this table —
-do not read a title as a PASS.
+do not read a title as a PASS. A report may carry a dated corrections block (for example the
+2026-10-21 drain and competitor notes, corrected on 2026-10-23); the original result stays visible
+and the correction says what it changed.
 
-## 2026-10 (27)
+Two things are dead **by design** inside old reports: links to build outputs
+(`entry/build/**/*.hap`), offline evidence JSON, and absolute `C:/Users/...` or `C:/Refs/...` paths.
+They were valid on their date. Do not "fix" a report to match today's tree — write a new dated report
+in this directory and let it supersede the old one (`DECISIONS.md` D25).
+
+## 2026-10 (33)
 
 | Date | Report | Title |
 |---|---|---|
+| 2026-10-23 | [2026-10-23-drain-yield-model-rerun.md](2026-10-23-drain-yield-model-rerun.md) | Drain yield-model re-run — shipped pacing measured on the emulator |
+| 2026-10-21 | [2026-10-21-arkgram-analysis.md](2026-10-21-arkgram-analysis.md) | ArkGram competitor analysis — 2026-10-21 (corrected 2026-10-23) |
+| 2026-10-21 | [2026-10-21-drain-budget-sweep.md](2026-10-21-drain-budget-sweep.md) | Drain slice budget sweep — recommendation withdrawn 2026-10-23 |
+| 2026-10-20 | [2026-10-20-drain-topology-spike.md](2026-10-20-drain-topology-spike.md) | Drain topology spike — null result (corrected 2026-10-23) |
+| 2026-10-20 | [2026-10-20-worker-napi-probe.md](2026-10-20-worker-napi-probe.md) | Worker NAPI probe — 2026-10-20 |
+| 2026-10-19 | [2026-10-19-tdlib-version-provenance.md](2026-10-19-tdlib-version-provenance.md) | TDLib version provenance and emulator precondition — 2026-10-19 |
 | 2026-10-18 | [2026-10-18-receive-latency.md](2026-10-18-receive-latency.md) | Bounded receive scheduling correction — 2026-10-18 |
 | 2026-10-18 | [2026-10-18-main-receive-acceptance.md](2026-10-18-main-receive-acceptance.md) | Main receive-candidate acceptance - 2026-10-18 |
 | 2026-10-18 | [2026-10-18-main-diagnostic-runtime.md](2026-10-18-main-diagnostic-runtime.md) | Main diagnostic runtime - 2026-10-18 |

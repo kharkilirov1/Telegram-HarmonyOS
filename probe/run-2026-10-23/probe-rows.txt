@@ -1,0 +1,31 @@
+10-24 03:12:53.347  3933  3933 I A00000/Probe: PROBE_SWEEP immediate round=1
+10-24 03:13:00.609  3933  3933 I A00000/Probe: PROBE_ROW {"round":1,"model":"immediate","budget":8,"slices":161,"elapsed":2125,"maxDrain":156,"maxGap":41,"completed":true}
+10-24 03:13:03.360  3933  3933 I A00000/Probe: PROBE_ROW {"round":1,"model":"immediate","budget":16,"slices":82,"elapsed":1949,"maxDrain":256,"maxGap":99,"completed":true}
+10-24 03:13:05.737  3933  3933 I A00000/Probe: PROBE_ROW {"round":1,"model":"immediate","budget":32,"slices":41,"elapsed":1570,"maxDrain":92,"maxGap":58,"completed":true}
+10-24 03:13:07.956  3933  3933 I A00000/Probe: PROBE_ROW {"round":1,"model":"immediate","budget":64,"slices":21,"elapsed":1418,"maxDrain":70,"maxGap":79,"completed":true}
+10-24 03:13:08.758  3933  3933 I A00000/Probe: PROBE_SWEEP shipped round=2
+10-24 03:13:19.077  3933  3933 I A00000/Probe: PROBE_ROW {"round":2,"model":"shipped","budget":8,"slices":161,"elapsed":5318,"maxDrain":376,"maxGap":121,"completed":true}
+10-24 03:13:25.132  3933  3933 I A00000/Probe: PROBE_ROW {"round":2,"model":"shipped","budget":16,"slices":83,"elapsed":5252,"maxDrain":614,"maxGap":324,"completed":true}
+10-24 03:13:31.078  3933  3933 I A00000/Probe: PROBE_ROW {"round":2,"model":"shipped","budget":32,"slices":43,"elapsed":5126,"maxDrain":262,"maxGap":187,"completed":true}
+10-24 03:13:36.017  3933  3933 I A00000/Probe: PROBE_ROW {"round":2,"model":"shipped","budget":64,"slices":21,"elapsed":4029,"maxDrain":299,"maxGap":110,"completed":true}
+10-24 03:13:36.821  3933  3933 I A00000/Probe: PROBE_SWEEP immediate round=3
+10-24 03:13:43.607  3933  3933 I A00000/Probe: PROBE_ROW {"round":3,"model":"immediate","budget":8,"slices":161,"elapsed":1786,"maxDrain":88,"maxGap":22,"completed":true}
+10-24 03:13:46.199  3933  3933 I A00000/Probe: PROBE_ROW {"round":3,"model":"immediate","budget":16,"slices":81,"elapsed":1779,"maxDrain":86,"maxGap":26,"completed":true}
+10-24 03:13:48.547  3933  3933 I A00000/Probe: PROBE_ROW {"round":3,"model":"immediate","budget":32,"slices":41,"elapsed":1545,"maxDrain":77,"maxGap":45,"completed":true}
+10-24 03:13:50.762  3933  3933 I A00000/Probe: PROBE_ROW {"round":3,"model":"immediate","budget":64,"slices":21,"elapsed":1408,"maxDrain":64,"maxGap":70,"completed":true}
+10-24 03:13:51.564  3933  3933 I A00000/Probe: PROBE_SWEEP shipped round=4
+10-24 03:14:02.304  3933  3933 I A00000/Probe: PROBE_ROW {"round":4,"model":"shipped","budget":8,"slices":161,"elapsed":5738,"maxDrain":396,"maxGap":193,"completed":true}
+10-24 03:14:08.652  3933  3933 I A00000/Probe: PROBE_ROW {"round":4,"model":"shipped","budget":16,"slices":83,"elapsed":5546,"maxDrain":515,"maxGap":287,"completed":true}
+10-24 03:14:13.812  3933  3933 I A00000/Probe: PROBE_ROW {"round":4,"model":"shipped","budget":32,"slices":41,"elapsed":4357,"maxDrain":153,"maxGap":301,"completed":true}
+10-24 03:14:19.010  3933  3933 I A00000/Probe: PROBE_ROW {"round":4,"model":"shipped","budget":64,"slices":22,"elapsed":4394,"maxDrain":390,"maxGap":122,"completed":true}
+10-24 03:14:19.812  3933  3933 I A00000/Probe: PROBE_SWEEP immediate round=5
+10-24 03:14:26.756  3933  3933 I A00000/Probe: PROBE_ROW {"round":5,"model":"immediate","budget":8,"slices":161,"elapsed":1938,"maxDrain":219,"maxGap":85,"completed":true}
+10-24 03:14:29.325  3933  3933 I A00000/Probe: PROBE_ROW {"round":5,"model":"immediate","budget":16,"slices":81,"elapsed":1768,"maxDrain":82,"maxGap":22,"completed":true}
+10-24 03:14:31.653  3933  3933 I A00000/Probe: PROBE_ROW {"round":5,"model":"immediate","budget":32,"slices":41,"elapsed":1528,"maxDrain":70,"maxGap":38,"completed":true}
+10-24 03:14:33.912  3933  3933 I A00000/Probe: PROBE_ROW {"round":5,"model":"immediate","budget":64,"slices":21,"elapsed":1455,"maxDrain":95,"maxGap":79,"completed":true}
+10-24 03:14:34.712  3933  3933 I A00000/Probe: PROBE_SWEEP shipped round=6
+10-24 03:14:45.044  3933  3933 I A00000/Probe: PROBE_ROW {"round":6,"model":"shipped","budget":8,"slices":161,"elapsed":5327,"maxDrain":405,"maxGap":308,"completed":true}
+10-24 03:14:51.600  3933  3933 I A00000/Probe: PROBE_ROW {"round":6,"model":"shipped","budget":16,"slices":83,"elapsed":5545,"maxDrain":433,"maxGap":244,"completed":true}
+10-24 03:14:57.517  3933  3933 I A00000/Probe: PROBE_ROW {"round":6,"model":"shipped","budget":32,"slices":43,"elapsed":5116,"maxDrain":572,"maxGap":160,"completed":true}
+10-24 03:15:03.286  3933  3933 I A00000/Probe: PROBE_ROW {"round":6,"model":"shipped","budget":64,"slices":23,"elapsed":4968,"maxDrain":545,"maxGap":157,"completed":true}
+10-24 03:15:04.088  3933  3933 I A00000/Probe: PROBE_DONE
