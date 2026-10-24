@@ -9,9 +9,9 @@
 - [x] Execute specifically authorized30-HAP permanent deletion after exact path/size/SHA256 checks:1,508,061,896bytes removed,10 retained HAPs verified; preserve all sources/logs/reports/non-HAP artifacts.
 
 - [x] Build/review bounded diagnostics: official main/ohosTest, isolated matched-source pair, actual120-request native trace and75 nearby SDK checks. Restore939 public source inputs and retain failed v1/v2 build evidence.
-- [x] Obtain exact3ef90f95 main authorization, replace once without clearing data, and capture both fresh authenticated scenarios. Astra accepted scoped diagnostic evidence; no new fixed HAP is proposed. Report any later fixed candidate before another main replacement. [Runtime evidence](../docs/reviews/2026-10-18-main-diagnostic-runtime.md).
+- [x] Obtain exact3ef90f95 main authorization, replace once without clearing data, and capture both fresh authenticated scenarios. Astra accepted scoped diagnostic evidence; no new fixed HAP is proposed. Report any later fixed candidate before another main replacement. [Runtime evidence](../../docs/reviews/2026-10-18-main-diagnostic-runtime.md).
 
-[Main evidence](../docs/reviews/2026-10-18-main-receive-acceptance.md). Candidate source is published to origin/dev; it stays uninstalled over the authenticated main and unreleased. Prior dated checkpoints retain their scope.
+[Main evidence](../../docs/reviews/2026-10-18-main-receive-acceptance.md). Candidate source is published to origin/dev; it stays uninstalled over the authenticated main and unreleased. Prior dated checkpoints retain their scope.
 
 ## Receive stabilization checkpoint - 2026-10-15
 
@@ -25,7 +25,7 @@
 - [ ] Obtain a direct active framework-main napi_env cleanup witness; ordinary retirement and Worker proofs do not substitute.
 - [ ] Complete authenticated/provider/microphone/camera/current shipped-iOS/release-signing acceptance.
 
-[Current evidence](../docs/reviews/2026-10-15-receive-stabilization.md); publication/remote CI are separate Git receipts. Earlier checkpoints retain their original scope.
+[Current evidence](../../docs/reviews/2026-10-15-receive-stabilization.md); publication/remote CI are separate Git receipts. Earlier checkpoints retain their original scope.
 
 ## Previous dated work
 
@@ -38,7 +38,7 @@
 - [x] Complete independent final review and prepare this correction set for separate publication from the already-pushed source checkpoint; publication/CI receipts remain separate from native acceptance.
 - [ ] Complete authenticated delivery, real provider/microphone/camera checks, current shipped-iOS comparison and release signing.
 
-See [native validation report](../docs/reviews/2026-10-13-native-validation.md) and the earlier [source checkpoint](../docs/reviews/2026-10-13-source-checkpoint.md). Current product direction remains PRODUCTION_PARITY_PLAN.md.
+See [native validation report](../../docs/reviews/2026-10-13-native-validation.md) and the earlier [source checkpoint](../../docs/reviews/2026-10-13-source-checkpoint.md). Current product direction remains PRODUCTION_PARITY_PLAN.md.
 
 
 
