@@ -54,6 +54,12 @@ export struct TgMessageRouter {
   @Param quoteCollapsedFlags: boolean[] = [];
   @Param textEntities: TextEntity[] = [];
 
+  // ── Reactions (S3b, read-only footer) ──
+  @Param reactionEmojis: string[] = [];
+  @Param reactionCounts: number[] = [];
+  @Param reactionChosenFlags: boolean[] = [];
+  @Param reactionHiddenCount: number = 0;
+
   // ── Link preview ──
   @Param linkPreviewUrl: string = '';
   @Param linkPreviewDisplayUrl: string = '';
@@ -1084,6 +1090,10 @@ export struct TgMessageRouter {
             this.onReplyPress();
           },
           expandedQuoteIndices: this.expandedQuoteIndices,
+          reactionEmojis: this.reactionEmojis,
+          reactionCounts: this.reactionCounts,
+          reactionChosenFlags: this.reactionChosenFlags,
+          reactionHiddenCount: this.reactionHiddenCount,
           onQuoteToggle: (quoteIndex: number): void => {
             this.expandedQuoteIndices = this.expandedQuoteIndices.includes(quoteIndex)
               ? this.expandedQuoteIndices.filter((idx: number): boolean => idx !== quoteIndex)

@@ -1512,4 +1512,23 @@ export class TgUiTokens {
   static readonly ICON_RES_SETTINGS: Resource = $r('app.media.ic_settings');
   static readonly ICON_RES_ARROW_RIGHT: Resource = $r('app.media.ic_arrow_right');
   static readonly ICON_RES_MUSIC: Resource = $r('app.media.ic_music');
+
+  // ── Reactions footer (S3b) ──
+  // Pill geometry follows iOS ReactionButtonComponent: a 30 pt high pill with an 8 pt side inset
+  // and 6 pt spacing between pills (ChatMessageReactionsFooterContentNode itemSpacing = 6).
+  static readonly REACTION_CHIP_HEIGHT: number = 30;
+  static readonly REACTION_CHIP_RADIUS: number = 15;
+  static readonly REACTION_CHIP_PADDING_H: number = 8;
+  static readonly REACTION_CHIP_GAP: number = 6;
+  static readonly REACTION_CHIP_COUNT_SIZE: number = 13;
+  static readonly REACTION_CHIP_COUNT_WEIGHT: FontWeight = FontWeight.Medium;
+  static readonly REACTION_CHIP_EMOJI_SIZE: number = 14;
+  static readonly REACTION_FOOTER_TOP_GAP: number = 4;
+  // Custom emoji chips are not renderable yet (D16); the footer shows a neutral placeholder instead
+  // of a wrong glyph.
+  static readonly REACTION_CUSTOM_EMOJI_FALLBACK: string = '◌';
+  static readonly REACTION_CHIP_BG: Resource = $r('app.color.reaction_chip_bg');
+  static readonly REACTION_CHIP_BG_CHOSEN: Resource = $r('app.color.reaction_chip_bg_chosen');
+  static readonly REACTION_CHIP_TEXT: Resource = $r('app.color.reaction_chip_text');
+  static readonly REACTION_CHIP_TEXT_CHOSEN: Resource = $r('app.color.reaction_chip_text_chosen');
 }

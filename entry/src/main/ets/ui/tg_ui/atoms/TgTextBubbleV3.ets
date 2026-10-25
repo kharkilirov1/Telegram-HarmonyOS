@@ -8,6 +8,7 @@ import { TextEntity } from '../../../core/model/AppState'
 import { TgTextBodyV3 } from './TgTextBodyV3'
 import { TgReplySnippet } from './TgReplySnippet'
 import { TgMessageMeta, TgMessageSendStatus } from './TgMessageMeta'
+import { TgReactionsFooter } from './TgReactionsFooter'
 import { TgLinkPreviewBubble } from './TgLinkPreviewBubble'
 
 @ComponentV2
@@ -61,6 +62,12 @@ export struct TgTextBubbleV3 {
   @Param timeText: string = ''
   @Param editedText: string = ''
   @Param sendStatus: TgMessageSendStatus = TgMessageSendStatus.None
+
+  // ── Reactions (S3b, read-only) ──
+  @Param reactionEmojis: string[] = []
+  @Param reactionCounts: number[] = []
+  @Param reactionChosenFlags: boolean[] = []
+  @Param reactionHiddenCount: number = 0
 
   // ── Visual ──
   @Param containerWidth: number = 360
@@ -229,6 +236,16 @@ export struct TgTextBubbleV3 {
           this.buildTextContent()
           if (!this.linkPreviewShowAboveText) {
             this.buildLinkPreview()
+          }
+
+          // Reactions sit between content and the meta row: below the text, above the corner meta.
+          if (this.reactionEmojis.length > 0) {
+            TgReactionsFooter({
+              emojis: this.reactionEmojis,
+              counts: this.reactionCounts,
+              chosenFlags: this.reactionChosenFlags,
+              hiddenCount: this.reactionHiddenCount
+            })
           }
 
           // Separate meta row when not inline

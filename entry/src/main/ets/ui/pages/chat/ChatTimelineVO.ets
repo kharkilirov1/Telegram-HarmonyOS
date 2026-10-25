@@ -5,6 +5,7 @@ import { compareInt64 } from '../../../core/utils/tdAccessors';
 import { getString } from '../../../core/utils/AppResource';
 import { resolveReplyLookupKey } from '../../../core/utils/replyMessageKey';
 import { TgMessageSendStatus } from '../../tg_ui/atoms/TgMessageMeta';
+import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { fileUri } from '@kit.CoreFileKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
@@ -134,6 +135,10 @@ export class ChatMessageRowVO {
   // Reactions: visible chips are already ordered (chosen first, then count) and capped; the hidden
   // count feeds "+N". Empty when the message has no reactions — the footer then does not render.
   reactionChips: ReactionChipVO[] = [];
+  // Primitive projection for the footer atom (atoms take primitives, never page VOs).
+  reactionEmojis: string[] = [];
+  reactionCounts: number[] = [];
+  reactionChosenFlags: boolean[] = [];
   reactionHiddenCount: number = 0;
   hasReactions: boolean = false;
 
@@ -1168,6 +1173,10 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   });
   row.reactionHiddenCount = packedReactions.hidden;
   row.hasReactions = packedReactions.total > 0;
+  row.reactionEmojis = row.reactionChips.map((chip: ReactionChipVO): string =>
+    chip.isCustom() ? TgUiTokens.REACTION_CUSTOM_EMOJI_FALLBACK : chip.emoji);
+  row.reactionCounts = row.reactionChips.map((chip: ReactionChipVO): number => chip.count);
+  row.reactionChosenFlags = row.reactionChips.map((chip: ReactionChipVO): boolean => chip.chosen);
 
   const entry = new ChatTimelineEntryVO();
   entry.kind = 'message';

@@ -99,6 +99,12 @@ Documentation and repository structure were reconciled; no product code changed.
   VO `ReactionChipVO` с stamp'ом в ключе строки только при наличии реакций. Host-тест
   `test-reactions-model.cjs`; D10 → `partial` (рендер и постановка — S3b/S3c). Гейты: host **98/98**,
   оба smoke, hvigor BUILD SUCCESSFUL.
+- **S3b (lead).** Подвал реакций: атом `TgReactionsFooter` на примитивах (Flex wrap, «+N»,
+  кастомный эмодзи → нейтральный глиф, акцент только для своей реакции), токены и цвета light/dark,
+  паспорт и demo. Врезан в текстовый бабл через `TgChatTimelineRow → TgMessageRouter →
+  TgTextBubbleV3`; строка пересобирается по reaction-stamp. Host-контракт
+  `test-reactions-footer.cjs`. **D10 остаётся `partial`:** медиа-баблы (S3b.1), постановка (S3c) и
+  пикер (S3d) не сделаны; witness не снят. Гейты: host **99/99**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **S4 (lead).** Мёртвые контролы из аудита закрыты: Toggle «Notifications» в профиле теперь отправляет
   `SetChatMuteCommand` (откат при ошибке, токен страницы), строка «Data and Storage» удалена до
   появления экрана, мёртвая проводка `attachmentMenuLabels` вырезана из шести файлов, неиспользуемые

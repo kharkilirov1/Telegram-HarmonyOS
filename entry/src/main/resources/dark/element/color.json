@@ -65,6 +65,22 @@
       "value": "#2C2C2E"
     },
     {
+      "name": "reaction_chip_bg",
+      "value": "#1FFFFFFF"
+    },
+    {
+      "name": "reaction_chip_bg_chosen",
+      "value": "#3D3390EC"
+    },
+    {
+      "name": "reaction_chip_text",
+      "value": "#EBEBF5"
+    },
+    {
+      "name": "reaction_chip_text_chosen",
+      "value": "#64B5F6"
+    },
+    {
       "name": "attachment_sheet_bg",
       "value": "#F2203040"
     },
