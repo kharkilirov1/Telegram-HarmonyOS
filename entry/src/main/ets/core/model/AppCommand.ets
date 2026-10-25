@@ -275,6 +275,16 @@ export class SetChatMutePayload {
   muteForSeconds: number = 0; // 0 = unmute, >0 = mute duration
 }
 
+// setMessageReactions chat_id message_id reaction_types:vector<ReactionType> is_big = Ok
+// Reaction types are chip keys ('emoji:👍' / 'custom:<id>') so one string list survives the layer
+// boundary; the serializer expands them into the td_api objects.
+export class SetMessageReactionsPayload {
+  chatId: ChatId = 0;
+  messageId: MessageId = '0';
+  reactionKeys: string[] = [];
+  isBig: boolean = false;
+}
+
 export class ToggleChatPinnedPayload {
   chatId: ChatId = 0;
   isPinned: boolean = false;
@@ -611,6 +621,11 @@ export class SetChatMuteCommand extends AppCommand {
   payload: SetChatMutePayload = new SetChatMutePayload();
 }
 
+export class SetMessageReactionsCommand extends AppCommand {
+  type: string = 'setMessageReactions';
+  payload: SetMessageReactionsPayload = new SetMessageReactionsPayload();
+}
+
 export class JoinChatPayload {
   chatId: ChatId = 0; // TDLib joinChat takes the chat id (chat_id:int53)
 }
@@ -809,6 +824,7 @@ export type AnyAppCommand =
   | DeleteMessagesCommand
   | ForwardMessagesCommand
   | SetChatMuteCommand
+  | SetMessageReactionsCommand
   | JoinChatCommand
   | ToggleChatPinnedCommand
   | AddChatToListCommand
@@ -1225,6 +1241,15 @@ export function createSetChatMuteCommand(chatId: ChatId, muteForSeconds: number)
   const cmd = new SetChatMuteCommand();
   cmd.payload.chatId = chatId;
   cmd.payload.muteForSeconds = muteForSeconds;
+  return cmd;
+}
+
+export function createSetMessageReactionsCommand(chatId: ChatId, messageId: MessageId,
+  reactionKeys: string[]): SetMessageReactionsCommand {
+  const cmd = new SetMessageReactionsCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.messageId = messageId;
+  cmd.payload.reactionKeys = reactionKeys.slice();
   return cmd;
 }
 

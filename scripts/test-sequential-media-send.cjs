@@ -106,7 +106,7 @@ const context = load(main + 'ui/pages/chat/ChatScreenContext.ets', {
   ...composer, ...actions, ...view, ChatTimelineDataSource: class {}, Scroller: class {},
   ReplyHydrationCoordinator: class {}, ChatMediaDownloadController: class {}, PendingMediaOpenIntent: class {},
   ChatVoiceRecordingController: class {}, ChatForwardSourceController: class {}, ChatSearchController: class {}, ChatStickerSearchController: class {},
-  ChatSlowmodeController: class {}
+  ChatSlowmodeController: class {}, ChatReactionController: class {}
 });
 const adapters = load(main + 'ui/pages/chat/ChatComposerHostAdapters.ets');
 const actionAdapters = load(main + 'ui/pages/chat/ChatMessageActionHostAdapters.ets', actions);

@@ -22,6 +22,7 @@ import {
   DeleteMessagesCommand,
   ForwardMessagesCommand,
   SetChatMuteCommand,
+  SetMessageReactionsCommand,
   JoinChatCommand,
   ToggleChatPinnedCommand,
   AddChatToListCommand,
@@ -106,6 +107,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('editMessageCaption', serializeEditMessageCap
 COMMAND_SERIALIZATION_HANDLERS.set('deleteMessages', serializeDeleteMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('forwardMessages', serializeForwardMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('setChatMute', serializeSetChatMute);
+COMMAND_SERIALIZATION_HANDLERS.set('setMessageReactions', serializeSetMessageReactions);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
 COMMAND_SERIALIZATION_HANDLERS.set('addChatToList', serializeAddChatToList);
@@ -318,6 +320,44 @@ function serializeSetChatMute(command: AnyAppCommand, result: SerializedCommand)
   result.params.setNumber('chat_id', cmd.payload.chatId);
   const settingsJson = `{"@type":"chatNotificationSettings","use_default_mute_for":false,"mute_for":${cmd.payload.muteForSeconds}}`;
   result.params.setString('_notification_settings_json', settingsJson);
+}
+
+// setMessageReactions chat_id:int53 message_id:int53 reaction_types:vector<ReactionType> is_big
+// (td_api.tl:11643). Chip keys are expanded here so the command layer never knows td_api shapes.
+function buildReactionTypesJson(reactionKeys: string[]): string {
+  const parts: string[] = [];
+  for (const key of reactionKeys) {
+    if (key.startsWith('emoji:')) {
+      const emoji = key.substring('emoji:'.length);
+      if (emoji.length === 0) {
+        throw new Error('Invalid reaction emoji key');
+      }
+      parts.push(`{"@type":"reactionTypeEmoji","emoji":${JSON.stringify(emoji)}}`);
+      continue;
+    }
+    if (key.startsWith('custom:')) {
+      const customEmojiId = key.substring('custom:'.length);
+      // TDLib encodes int64 as a decimal string; reject anything that could round.
+      if (!/^-?[1-9][0-9]{0,18}$/.test(customEmojiId)) {
+        throw new Error('Invalid custom reaction id');
+      }
+      parts.push(`{"@type":"reactionTypeCustomEmoji","custom_emoji_id":${JSON.stringify(customEmojiId)}}`);
+      continue;
+    }
+    throw new Error('Unsupported reaction key');
+  }
+  return '[' + parts.join(',') + ']';
+}
+
+function serializeSetMessageReactions(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SetMessageReactionsCommand;
+  result.method = 'setMessageReactions';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  // TDLib JSON expects int64 as a decimal string; a bare value would be emitted as a JSON number and
+  // lose precision for large ids.
+  result.params.setString('_message_id_json', JSON.stringify(cmd.payload.messageId));
+  result.params.setString('_reaction_types_json', buildReactionTypesJson(cmd.payload.reactionKeys));
+  result.params.setBool('is_big', cmd.payload.isBig);
 }
 
 function serializeJoinChat(command: AnyAppCommand, result: SerializedCommand): void {

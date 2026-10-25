@@ -38,6 +38,7 @@ export struct TgChatTimelineRow {
         quoteCollapsedFlags: this.entry.message.quoteCollapsedFlags,
         textEntities: this.entry.message.textEntities,
         reactionEmojis: this.entry.message.reactionEmojis,
+        reactionKeys: this.entry.message.reactionKeys,
         reactionCounts: this.entry.message.reactionCounts,
         reactionChosenFlags: this.entry.message.reactionChosenFlags,
         reactionHiddenCount: this.entry.message.reactionHiddenCount,
@@ -185,6 +186,9 @@ export struct TgChatTimelineRow {
         },
         onAudioTap: (audioPath: string, audioFileId: number, mimeType: string): void => {
           this.bindings.handleAudioTap(audioPath, audioFileId, mimeType, this.entry.message.messageId);
+        },
+        onReactionPress: (key: string): void => {
+          this.bindings.toggleMessageReaction(this.entry.message.messageId, key);
         },
         onReplyPress: (): void => {
           if (this.entry.message.replyToMessageId !== '0') {

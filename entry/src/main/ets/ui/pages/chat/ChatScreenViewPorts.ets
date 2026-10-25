@@ -23,6 +23,7 @@ export interface ChatTimelineRowPort extends ChatMessageActionsPopupPort {
   handleAudioTap(audioPath: string, audioFileId: number, mimeType: string, messageId?: string ): void;
   handleDocumentTap(documentPath: string, documentFileId: number, mimeType: string, messageId?: string ): void;
   handleMediaGalleryOpen(messageId: string): void;
+  toggleMessageReaction(messageId: string, key: string): void;
   handleVoiceSeek(messageId: string, progress: number): void;
   handleVoiceTap(messageId: string, voicePath: string, voiceFileId: number): void;
   isActiveAudioEntry(entry: ChatTimelineEntryVO): boolean;

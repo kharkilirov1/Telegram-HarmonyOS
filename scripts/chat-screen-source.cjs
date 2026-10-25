@@ -18,7 +18,9 @@ const eventArguments = {
   handleGalleryIndexChange: ['index'],
   handleNavReady: ['context'],
   handleNavShown: [],
-  handleNavBackPressed: []
+  handleNavBackPressed: [],
+  // S3c: a reaction tap carries the chip key; the controller owns optimistic state and rollback.
+  toggleMessageReaction: ['messageId', 'key']
 };
 const PAGE = 'TgChatScreenPage.ets';
 const normalize = text => text.replaceAll('\r\n', '\n');

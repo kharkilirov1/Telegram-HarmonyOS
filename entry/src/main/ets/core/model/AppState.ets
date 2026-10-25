@@ -559,3 +559,42 @@ export function applyReactionDelta(chips: ReactionChipData[], actorIsMe: boolean
   }
   return next;
 }
+
+// Optimistic toggle for one chip: the current account is adding the reaction when the chip was not
+// chosen, or removing it when it was. Counts move by one; an emptied chip disappears. Multiple
+// chosen chips stay possible because TDLib reaction types are a vector.
+export function toggleReactionChips(chips: ReactionChipData[], key: string): ReactionChipData[] {
+  const next = chips.map((chip: ReactionChipData) => chip.clone());
+  const index = findReactionChip(next, key);
+  if (index < 0) {
+    const created = reactionChipFromKey(key);
+    if (created === undefined) {
+      return next;
+    }
+    created.chosen = true;
+    next.push(created);
+    return next;
+  }
+  const chip = next[index];
+  if (chip.chosen) {
+    chip.chosen = false;
+    chip.count -= 1;
+    if (chip.count <= 0) {
+      next.splice(index, 1);
+    }
+    return next;
+  }
+  chip.chosen = true;
+  chip.count += 1;
+  return next;
+}
+
+export function chosenReactionKeys(chips: ReactionChipData[]): string[] {
+  const keys: string[] = [];
+  for (const chip of chips) {
+    if (chip.chosen) {
+      keys.push(chip.key);
+    }
+  }
+  return keys;
+}

@@ -11,10 +11,11 @@ const read = (file) => fs.readFileSync(path.join(etsRoot, file), 'utf8');
 
 const atom = read('ui/tg_ui/atoms/TgReactionsFooter.ets');
 assert.match(atom, /export struct TgReactionsFooter/, 'atom must exist');
-for (const param of ['emojis: string[]', 'counts: number[]', 'chosenFlags: boolean[]', 'hiddenCount: number']) {
+for (const param of ['emojis: string[]', 'keys: string[]', 'counts: number[]', 'chosenFlags: boolean[]', 'hiddenCount: number']) {
   assert.ok(atom.includes(param), `footer must take primitive ${param}`);
 }
-assert.ok(!/^\s*@Event\s/m.test(atom), 'read-only footer must not expose an event before S3c');
+assert.match(atom, /@Event onReactionPress: \(key: string\)/, 'S3c tap reports the chip key');
+assert.match(atom, /this.onReactionPress\(key\)/, 'a tap forwards the key, not an index');
 assert.match(atom, /Flex\(\{ wrap: FlexWrap\.Wrap \}\)/, 'chips wrap inside narrow bubbles');
 assert.match(atom, /'\s*\+\s*' \+ this\.hiddenCount\.toString\(\)/, '"+N" comes from the hidden count');
 assert.match(atom, /REACTION_CHIP_BG_CHOSEN/, 'chosen chip uses the accent tint token');

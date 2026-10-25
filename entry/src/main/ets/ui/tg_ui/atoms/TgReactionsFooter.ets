@@ -13,10 +13,15 @@ import { TgUiTokens } from '../tokens/TgUiTokens';
 export struct TgReactionsFooter {
   // Display glyphs for the visible chips, in the order the VO packed them.
   @Param emojis: string[] = [];
+  // Chip keys in the same order; a tap reports the key so the controller never guesses the type.
+  @Param keys: string[] = [];
   @Param counts: number[] = [];
   @Param chosenFlags: boolean[] = [];
   // Chips beyond the visible cap; rendered as "+N" so the row stays one line.
   @Param hiddenCount: number = 0;
+
+  // S3c: tap toggles one chip; the controller performs the optimistic update and rollback.
+  @Event onReactionPress: (key: string) => void = (_: string) => {};
 
   private hasChips(): boolean {
     return this.emojis.length > 0;
@@ -46,6 +51,12 @@ export struct TgReactionsFooter {
     .backgroundColor(this.chipBackground(index))
     .borderRadius(TgUiTokens.REACTION_CHIP_RADIUS)
     .margin({ right: TgUiTokens.REACTION_CHIP_GAP, bottom: TgUiTokens.REACTION_CHIP_GAP })
+    .onClick(() => {
+      const key = index < this.keys.length ? this.keys[index] : '';
+      if (key.length > 0) {
+        this.onReactionPress(key);
+      }
+    })
   }
 
   @Builder

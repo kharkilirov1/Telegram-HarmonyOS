@@ -65,6 +65,7 @@ export struct TgTextBubbleV3 {
 
   // ── Reactions (S3b, read-only) ──
   @Param reactionEmojis: string[] = []
+  @Param reactionKeys: string[] = []
   @Param reactionCounts: number[] = []
   @Param reactionChosenFlags: boolean[] = []
   @Param reactionHiddenCount: number = 0
@@ -77,6 +78,7 @@ export struct TgTextBubbleV3 {
   // ── Events ──
   @Event onReplyTap: () => void = () => {}
   @Event onQuoteToggle: (quoteIndex: number) => void = (_: number) => {}
+  @Event onReactionPress: (key: string) => void = (_: string) => {}
 
   // ── Computed helpers ──
 

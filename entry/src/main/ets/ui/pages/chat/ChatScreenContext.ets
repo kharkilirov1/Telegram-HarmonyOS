@@ -18,6 +18,7 @@ import { TgVoiceRecordingState } from '../../tg_ui/utils/TgVoiceRecordingPolicy'
 import { ChatMessageActionsController } from './ChatMessageActionsController';
 import { ChatForwardSourceController } from './ChatForwardSourceController';
 import { ChatSearchController } from './ChatSearchController';
+import { ChatReactionController } from './ChatReactionController';
 import { ChatStickerSearchController } from './ChatStickerSearchController';
 import { PendingSharedMediaAction } from './PendingSharedMediaActionSignal';
 import { SendMessageUseCase } from '../../../domain/usecases/sendMessage';
@@ -84,6 +85,7 @@ export class ChatScreenContext {
   accountStore?: AppStore;
   routeAccountStore?: AppStore;
   chatGateway?: TdGatewayPort;
+  reactionController: ChatReactionController = new ChatReactionController();
   routeContext?: ChatScreenRouteParams;
   routeActivated: boolean = false;
   routeDataStarted: boolean = false;

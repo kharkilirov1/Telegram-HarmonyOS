@@ -18,11 +18,12 @@
 | S4 | Мёртвые контролы | B3, E1, H4 | профильный Toggle → `SetChatMuteCommand`; строка «Data and Storage» удалена; мёртвая проводка `attachmentMenuLabels` удалена; DTO `TdAutoDownloadSettings` удалены; guard `test-dead-controls.cjs` |
 | S3a | Reactions — данные | D10 | модель чипов + парсер TDLib + события/reducer + VO + `test-reactions-model.cjs`; D10 → `partial` |
 | S3b | Reactions — подвал (текст) | D10 | атом `TgReactionsFooter` + токены/цвета + spec/demo + интеграция в текстовый бабл + `test-reactions-footer.cjs` |
+| S3c | Reactions — постановка | D10 | команда + сериализатор + use case + `ChatReactionController` (optimistic/откат, guard) + тап по чипу + `test-reactions-send.cjs` |
 
 ## Следующие срезы (в порядке)
 
-1. **S3c. Постановка реакции.** `SetMessageReactionsCommand` + serializer + optimistic/откат.
-   Дизайн: `docs/specs/2026-10-25-reactions-design.md`.
+1. **S3d. Пикер реакций.** Меню доступных реакций из `available_reactions` + быстрые реакции;
+   дизайн: `docs/specs/2026-10-25-reactions-design.md`.
 2. **S3b.1. Подвал в медиа-баблах.** Тот же атом в фото/видео/документ/аудио баблах (долг записан).
 3. **S5. Непрочитанный разделитель (C6) + панель выделения (C9).** Малые UI-срезы с готовыми швами.
 4. **S6. Saved Messages (D7)** — отсутствующая базовая возможность чат-листа.
@@ -30,6 +31,8 @@
 
 ## Требуют внешних условий (не начинать)
 
+- **Witness D10:** поставить/снять реакцию на живом аккаунте (эмулятор + чат с сообщениями);
+  до этого S3c проверен host-контрактами, не устройством.
 - **Witness C2:** второй аккаунт/устройство, которое начнёт печатать.
 - **Witness D13:** стабильный запуск эмулятора + стикер в доступном чате; логи
   `tgs playback started key=file:<id>`.

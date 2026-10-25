@@ -137,6 +137,7 @@ export class ChatMessageRowVO {
   reactionChips: ReactionChipVO[] = [];
   // Primitive projection for the footer atom (atoms take primitives, never page VOs).
   reactionEmojis: string[] = [];
+  reactionKeys: string[] = [];
   reactionCounts: number[] = [];
   reactionChosenFlags: boolean[] = [];
   reactionHiddenCount: number = 0;
@@ -1175,6 +1176,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   row.hasReactions = packedReactions.total > 0;
   row.reactionEmojis = row.reactionChips.map((chip: ReactionChipVO): string =>
     chip.isCustom() ? TgUiTokens.REACTION_CUSTOM_EMOJI_FALLBACK : chip.emoji);
+  row.reactionKeys = row.reactionChips.map((chip: ReactionChipVO): string => chip.key);
   row.reactionCounts = row.reactionChips.map((chip: ReactionChipVO): number => chip.count);
   row.reactionChosenFlags = row.reactionChips.map((chip: ReactionChipVO): boolean => chip.chosen);
 

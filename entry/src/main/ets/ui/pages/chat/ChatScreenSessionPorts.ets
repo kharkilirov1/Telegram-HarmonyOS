@@ -30,6 +30,7 @@ import { ChatGifSearchCoordinatorPort } from './ChatGifSearchCoordinator';
 import { ChatDraftCoordinatorPort } from './ChatDraftCoordinator';
 import { ChatPageNavigationCoordinatorPort } from './ChatPageNavigationCoordinator';
 import { ChatInitialHistoryCoordinatorPort } from './ChatInitialHistoryCoordinator';
+import { ChatReactionHost } from './ChatReactionController';
 import { HandleTimelineScrollIndexPort, HandleComposerTextChangePort, HandleComposerAreaChangePort, HandleGalleryIndexChangePort, HandleNavReadyPort, HandleNavShownPort, HandleNavBackPressedPort } from './ChatScreenViewEventHandlers';
 
 // Composition-only nominal contract. Features and UI accept their own narrower ports.
@@ -42,6 +43,7 @@ export interface ChatScreenSessionPorts extends
   ChatMediaGalleryCoordinatorPort, ChatMessagePopupCoordinatorPort, ChatComposerActionBindingsPort, ChatCustomEmojiCatalogCoordinatorPort,
   ChatEmojiSearchCoordinatorPort, ChatStickerCatalogCoordinatorPort, ChatStickerSearchBindingsPort, ChatGroupedStickerPreviewCoordinatorPort,
   ChatGifSearchCoordinatorPort, ChatDraftCoordinatorPort, ChatPageNavigationCoordinatorPort, ChatInitialHistoryCoordinatorPort,
+  ChatReactionHost,
   HandleTimelineScrollIndexPort, HandleComposerTextChangePort, HandleComposerAreaChangePort, HandleGalleryIndexChangePort,
   HandleNavReadyPort, HandleNavShownPort, HandleNavBackPressedPort {
 }

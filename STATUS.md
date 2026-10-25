@@ -103,8 +103,15 @@ Documentation and repository structure were reconciled; no product code changed.
   кастомный эмодзи → нейтральный глиф, акцент только для своей реакции), токены и цвета light/dark,
   паспорт и demo. Врезан в текстовый бабл через `TgChatTimelineRow → TgMessageRouter →
   TgTextBubbleV3`; строка пересобирается по reaction-stamp. Host-контракт
-  `test-reactions-footer.cjs`. **D10 остаётся `partial`:** медиа-баблы (S3b.1), постановка (S3c) и
-  пикер (S3d) не сделаны; witness не снят. Гейты: host **99/99**, оба smoke, hvigor BUILD SUCCESSFUL.
+  `test-reactions-footer.cjs`. **D10 остаётся `partial`:** медиа-баблы (S3b.1), пикер (S3d) и
+  witness не сделаны. Гейты: host **99/99**, оба smoke, hvigor BUILD SUCCESSFUL.
+- **S3c (lead).** Постановка/снятие реакции: `SetMessageReactionsCommand` + сериализатор
+  (`reactionTypeEmoji` / `reactionTypeCustomEmoji`, int64 строкой, `is_big=false`), use case и
+  `ChatReactionController` — оптимистичный снимок записывается до отправки, при ошибке
+  восстанавливается предыдущий, guard по токену страницы и по парному тапу, в TDLib уходят только
+  chosen-ключи. Тап по чипу доведён от атома до контроллера через session/ports. Host-контракт
+  `test-reactions-send.cjs`. Гейты: host **100/100**, оба smoke, hvigor BUILD SUCCESSFUL.
+  **D10 остаётся `partial`:** S3b.1 (медиа-баблы), S3d (пикер) и runtime-witness.
 - **S4 (lead).** Мёртвые контролы из аудита закрыты: Toggle «Notifications» в профиле теперь отправляет
   `SetChatMuteCommand` (откат при ошибке, токен страницы), строка «Data and Storage» удалена до
   появления экрана, мёртвая проводка `attachmentMenuLabels` вырезана из шести файлов, неиспользуемые

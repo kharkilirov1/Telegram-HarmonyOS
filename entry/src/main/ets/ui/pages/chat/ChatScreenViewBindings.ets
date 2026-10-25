@@ -74,6 +74,7 @@ export class ChatScreenViewBindings implements ChatMessageActionsPopupPort, Chat
   handleGalleryIndexChange(index: number): void { this.session.handleGalleryIndexChange(index); }
   handleGifSearchQueryChange(query: string): void { this.session.handleGifSearchQueryChange(query); }
   handleMediaGalleryOpen(messageId: string): void { this.session.handleMediaGalleryOpen(messageId); }
+  toggleMessageReaction(messageId: string, key: string): void { this.session.toggleMessageReaction(messageId, key); }
   handleMessageActionPress(item: ChatMessageActionItem): void { this.session.handleMessageActionPress(item); }
   handlePinnedListItemPress(index: number): void { this.session.handlePinnedListItemPress(index); }
   handlePinnedMessageClose(): void { this.session.handlePinnedMessageClose(); }

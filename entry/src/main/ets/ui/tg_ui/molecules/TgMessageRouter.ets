@@ -56,6 +56,7 @@ export struct TgMessageRouter {
 
   // ── Reactions (S3b, read-only footer) ──
   @Param reactionEmojis: string[] = [];
+  @Param reactionKeys: string[] = [];
   @Param reactionCounts: number[] = [];
   @Param reactionChosenFlags: boolean[] = [];
   @Param reactionHiddenCount: number = 0;
@@ -149,6 +150,7 @@ export struct TgMessageRouter {
     (_: string, __: number, ___: string) => {};
   // Tap on the reply snippet — the page jumps to the original message
   @Event onReplyPress: () => void = () => {};
+  @Event onReactionPress: (key: string) => void = (_: string) => {};
   @Event onChannelSharePress: () => void = () => {};
 
   // ── Voice ──
@@ -1091,9 +1093,13 @@ export struct TgMessageRouter {
           },
           expandedQuoteIndices: this.expandedQuoteIndices,
           reactionEmojis: this.reactionEmojis,
+          reactionKeys: this.reactionKeys,
           reactionCounts: this.reactionCounts,
           reactionChosenFlags: this.reactionChosenFlags,
           reactionHiddenCount: this.reactionHiddenCount,
+          onReactionPress: (key: string): void => {
+            this.onReactionPress(key);
+          },
           onQuoteToggle: (quoteIndex: number): void => {
             this.expandedQuoteIndices = this.expandedQuoteIndices.includes(quoteIndex)
               ? this.expandedQuoteIndices.filter((idx: number): boolean => idx !== quoteIndex)

@@ -92,7 +92,7 @@ const view = load('ui/pages/chat/ChatScreenViewState.ets', slices);
 const context = load('ui/pages/chat/ChatScreenContext.ets', { ...view, ...composer, ...actions, ChatTimelineDataSource: class {}, Scroller: class {},
   ReplyHydrationCoordinator: class {}, ChatMediaDownloadController: class {}, PendingMediaOpenIntent: class {}, ChatVoiceRecordingController: class {},
   ChatForwardSourceController: class {}, ChatSearchController: class {}, ChatStickerSearchController: class {},
-  ChatSlowmodeController: slowmode.ChatSlowmodeController || class {} });
+  ChatSlowmodeController: slowmode.ChatSlowmodeController || class {}, ChatReactionController: class {} });
 const sessionSource = read('ui/pages/chat/ChatScreenSession.ets');
 const names = ['canUseComposer', 'canSendNewMessages', 'composerCanSubmit', 'getSendUseCase', 'getSendMediaUseCase',
   ...Object.keys(adapters).filter(name => sessionSource.includes('  ' + name + '(') && !['getSendUseCase', 'getSendMediaUseCase'].includes(name))];
