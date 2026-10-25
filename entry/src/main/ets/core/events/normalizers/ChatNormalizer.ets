@@ -4,6 +4,7 @@
 import {
   AnyAppEvent,
   ChatActionEvent,
+  ChatAvailableReactionsUpdatedEvent,
   ChatListUnreadMessageCountChangedEvent,
   ChatReadInboxEvent,
   ChatReadOutboxEvent,
@@ -21,7 +22,8 @@ import {
   extractLastMessage,
   extractChatListPosition,
   extractChatPhoto,
-  extractCustomEmojiTextEntities
+  extractCustomEmojiTextEntities,
+  parseChatAvailableReactions
 } from '../../model/dto/ChatDto';
 import { GroupKind, GroupSendPermissionsDto, createGroupAccessDtoFromTd, createSupergroupBoostsDtoFromTd, createSupergroupSlowmodeDtoFromTd } from '../../model/dto/GroupAccessDto';
 import { TdObject } from '../../../models/TdTypes';
@@ -404,5 +406,20 @@ export function registerChatHandlers(
   handlers.set('updateChatUnreadMentionCount', handleChatUnreadMentionCount);
   handlers.set('updateChatNotificationSettings', handleChatNotificationSettings);
   handlers.set('updateChatAccentColors', handleChatAccentColors);
+  handlers.set('updateChatAvailableReactions', handleChatAvailableReactions);
   handlers.set('updateChatAction', handleChatAction);
+}
+
+// updateChatAvailableReactions chat_id available_reactions (td_api.tl:9613).
+function handleChatAvailableReactions(events: AnyAppEvent[], update: TdObject): void {
+  const chatId = tdGetNumber(update, 'chat_id');
+  if (!chatId) return;
+  const parsed = parseChatAvailableReactions(tdGetObject(update, 'available_reactions'));
+  const event = new ChatAvailableReactionsUpdatedEvent();
+  event.chatId = chatId;
+  event.reactionKeys = parsed.keys;
+  event.allReactions = parsed.all;
+  event.maxReactionCount = parsed.maxCount;
+  event.timestamp = Date.now();
+  events.push(event);
 }

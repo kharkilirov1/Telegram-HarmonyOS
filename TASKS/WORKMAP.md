@@ -19,11 +19,13 @@
 | S3a | Reactions — данные | D10 | модель чипов + парсер TDLib + события/reducer + VO + `test-reactions-model.cjs`; D10 → `partial` |
 | S3b | Reactions — подвал (текст) | D10 | атом `TgReactionsFooter` + токены/цвета + spec/demo + интеграция в текстовый бабл + `test-reactions-footer.cjs` |
 | S3c | Reactions — постановка | D10 | команда + сериализатор + use case + `ChatReactionController` (optimistic/откат, guard) + тап по чипу + `test-reactions-send.cjs` |
+| S3d | Reactions — пикер (быстрый ряд) | D10 | `available_reactions` в `ChatDto`/`Chat` + `availableReactionKeys`/`chatAllowsReactions` + атом `TgReactionPicker` + spec/demo + ряд в попапе действий + `test-reactions-availability.cjs`/`-picker` |
 
 ## Следующие срезы (в порядке)
 
-1. **S3d. Пикер реакций.** Меню доступных реакций из `available_reactions` + быстрые реакции;
-   дизайн: `docs/specs/2026-10-25-reactions-design.md`.
+1. **S3d.1. Пикер: recent/popular и кастомные эмодзи.** `getMessageAvailableReactions`
+   (`top_reactions`/`recent_reactions`/`popular_reactions`) + выбор кастомного эмодзи из паков.
+   Дизайн: `docs/specs/2026-10-25-reactions-design.md`.
 2. **S3b.1. Подвал в медиа-баблах.** Тот же атом в фото/видео/документ/аудио баблах (долг записан).
 3. **S5. Непрочитанный разделитель (C6) + панель выделения (C9).** Малые UI-срезы с готовыми швами.
 4. **S6. Saved Messages (D7)** — отсутствующая базовая возможность чат-листа.

@@ -26,7 +26,8 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
     action.type === 'chatReadInbox' || action.type === 'chatReadOutbox' ||
     action.type === 'chatListUnreadMessageCountChanged' ||
     action.type === 'chatsLoadStateChanged' || action.type === 'chatAction' ||
-    action.type === 'chatFullInfo' || action.type === 'chatActiveStoriesUpdated') {
+    action.type === 'chatFullInfo' || action.type === 'chatActiveStoriesUpdated' ||
+    action.type === 'chatAvailableReactionsUpdated') {
     return chatsReducer(state, action);
   }
 

@@ -111,7 +111,16 @@ Documentation and repository structure were reconciled; no product code changed.
   восстанавливается предыдущий, guard по токену страницы и по парному тапу, в TDLib уходят только
   chosen-ключи. Тап по чипу доведён от атома до контроллера через session/ports. Host-контракт
   `test-reactions-send.cjs`. Гейты: host **100/100**, оба smoke, hvigor BUILD SUCCESSFUL.
-  **D10 остаётся `partial`:** S3b.1 (медиа-баблы), S3d (пикер) и runtime-witness.
+  **D10 остаётся `partial`:** S3b.1 (медиа-баблы) и runtime-witness.
+- **S3d (lead).** Пикер реакций: `chat.available_reactions` парсится в `ChatDto`/`Chat`
+  (`chatAvailableReactionsAll` / `Some`, `updateChatAvailableReactions`), модель
+  `availableReactionKeys` берёт дефолтный ряд iOS (12 реакций) при «all»/неизвестном чате, иначе —
+  серверный список с капом 12; `chatAllowsReactions` скрывает пикер, когда чат запрещает реакции.
+  Атом `TgReactionPicker` (горизонтальный скролл, токены, spec+demo) врезан над меню действий:
+  long-press → попап → тап закрывает меню и уходит в S3c-контроллер. Host-контракты
+  `test-reactions-availability.cjs` + `test-reactions-picker.cjs`. Гейты: host **102/102**, оба
+  smoke, hvigor BUILD SUCCESSFUL. **D10 остаётся `partial`:** S3b.1 (медиа-баблы), recent/popular
+  и кастомные эмодзи в пикере (S3d.1), теги, runtime-witness.
 - **S4 (lead).** Мёртвые контролы из аудита закрыты: Toggle «Notifications» в профиле теперь отправляет
   `SetChatMuteCommand` (откат при ошибке, токен страницы), строка «Data and Storage» удалена до
   появления экрана, мёртвая проводка `attachmentMenuLabels` вырезана из шести файлов, неиспользуемые

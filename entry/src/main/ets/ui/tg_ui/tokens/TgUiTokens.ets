@@ -1531,4 +1531,9 @@ export class TgUiTokens {
   static readonly REACTION_CHIP_BG_CHOSEN: Resource = $r('app.color.reaction_chip_bg_chosen');
   static readonly REACTION_CHIP_TEXT: Resource = $r('app.color.reaction_chip_text');
   static readonly REACTION_CHIP_TEXT_CHOSEN: Resource = $r('app.color.reaction_chip_text_chosen');
+  // Picker row above the message actions popup (S3d): a 44 pt strip with 28 pt pills.
+  static readonly REACTION_PICKER_HEIGHT: number = 44;
+  static readonly REACTION_PICKER_PILL_SIZE: number = 28;
+  static readonly REACTION_PICKER_GLYPH_SIZE: number = 16;
+  static readonly REACTION_PICKER_PADDING_H: number = 12;
 }

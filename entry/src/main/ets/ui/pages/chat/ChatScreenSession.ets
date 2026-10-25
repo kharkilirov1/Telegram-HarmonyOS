@@ -31,6 +31,7 @@ import { ChatScreenContext } from './ChatScreenContext';
 import { ChatScreenViewState } from './ChatScreenViewState';
 import { ChatScreenSessionPorts } from './ChatScreenSessionPorts';
 import { toggleMessageReaction as delegateToggleMessageReaction } from './ChatReactionController';
+import { messageActionReactionKeys as delegateMessageActionReactionKeys, handleMessageActionReaction as delegateHandleMessageActionReaction } from './ChatMessagePopupCoordinator';
 import {
   getActiveChatId as delegateGetActiveChatId, getLifecycleToken as delegateGetLifecycleToken, getChatUIContext as delegateGetChatUIContext, getSendUseCase as delegateGetSendUseCase,
   getSendMediaUseCase as delegateGetSendMediaUseCase, setVoiceRecordingState as delegateSetVoiceRecordingState, isSendingMessage as delegateIsSendingMessage, setSendingMessage as delegateSetSendingMessage,
@@ -377,6 +378,8 @@ export class ChatScreenSession extends ChatScreenContext implements ChatScreenSe
   buildMediaGalleryItems(): MediaGalleryItem[] { return delegateBuildMediaGalleryItems(this); }
   handleMediaGalleryOpen(messageId: string): void { delegateHandleMediaGalleryOpen(this, messageId); }
   toggleMessageReaction(messageId: string, key: string): void { delegateToggleMessageReaction(this, messageId, key); }
+  messageActionReactionKeys(): string[] { return delegateMessageActionReactionKeys(this); }
+  handleMessageActionReaction(key: string): void { delegateHandleMessageActionReaction(this, key); }
   animateMediaGalleryState(isVisible: boolean, sourceMessageId: string = '0'): void { delegateAnimateMediaGalleryState(this, isVisible, sourceMessageId); }
   refreshOpenMediaGalleryItems(): void { delegateRefreshOpenMediaGalleryItems(this); }
   startReply(messageId: string, author: string, preview: string, isQuote: boolean = false): void { delegateStartReply(this, messageId, author, preview, isQuote); }

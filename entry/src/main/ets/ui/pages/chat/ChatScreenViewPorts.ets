@@ -9,6 +9,9 @@ import { ChatMessageActionItem } from './ChatMessageActionsController';
 
 export interface ChatMessageActionsPopupPort {
   handleMessageActionPress(item: ChatMessageActionItem): void;
+  // S3d: the reaction row above the actions; availability is chat-level state.
+  messageActionReactionKeys(): string[];
+  handleMessageActionReaction(key: string): void;
   messageActionItems(forwardState: string): ChatMessageActionItem[];
   messageActionsPopupHeight(forwardState: string): number;
   messageActionsPopupWidth(): number;

@@ -53,6 +53,11 @@ export class ChatDto {
   // composer (iOS Subscriber/Restricted panels, ChatInterfaceStateInputPanels.swift)
   canSendBasicMessages: boolean = true;
   sendPermissions?: GroupSendPermissionsDto;
+  // chat.available_reactions (td_api.tl:3255): the single source for the reaction picker and for
+  // hiding the footer when reactions are unavailable. Keys use the same chip encoding as messages.
+  availableReactionKeys: string[] = [];
+  availableReactionsAll: boolean = false;
+  maxReactionCount: number = 0;
 }
 
 export function extractCustomEmojiTextEntities(formattedText: TdObject): CustomEmojiTextEntity[] {
@@ -179,6 +184,11 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   if (tdHasKeys(photoObj)) {
     chatDto.photo = extractChatPhoto(photoObj);
   }
+
+  const availableReactions = parseChatAvailableReactions(tdGetObject(tdChat, 'available_reactions'));
+  chatDto.availableReactionKeys = availableReactions.keys;
+  chatDto.availableReactionsAll = availableReactions.all;
+  chatDto.maxReactionCount = availableReactions.maxCount;
 
   return chatDto;
 }
@@ -366,4 +376,50 @@ export function applyChatUpdate(chat: ChatDto, update: ChatUpdateDto): ChatDto {
   }
 
   return updatedChat;
+}
+
+// ─── chat.available_reactions ──────────────────────────────────────────────
+// chatAvailableReactionsAll / chatAvailableReactionsSome (td_api.tl:3181-3184). Keys use the same
+// chip encoding as message reactions ('emoji:👍' / 'custom:<id>'), so the picker and the footer share
+// one vocabulary. The parser mirrors MessageDto.parseReactionTypeKey on purpose: ChatDto must not
+// depend on MessageDto (that module is injected separately by many host suites), and the drift is
+// caught by test-reactions-availability.cjs, which feeds both parsers the same fixtures.
+
+export class ChatAvailableReactionsDto {
+  keys: string[] = [];
+  all: boolean = false;
+  maxCount: number = 0;
+}
+
+export function parseChatReactionTypeKey(tdReactionType: TdObject): string {
+  const type = tdGetString(tdReactionType, '@type');
+  if (type === 'reactionTypeEmoji') {
+    const emoji = tdGetString(tdReactionType, 'emoji');
+    return emoji.length > 0 ? 'emoji:' + emoji : '';
+  }
+  if (type === 'reactionTypeCustomEmoji') {
+    const customEmojiId = tdGetInt64(tdReactionType, 'custom_emoji_id');
+    return customEmojiId !== '0' ? 'custom:' + customEmojiId : '';
+  }
+  return '';
+}
+
+export function parseChatAvailableReactions(tdAvailable: TdObject): ChatAvailableReactionsDto {
+  const parsed = new ChatAvailableReactionsDto();
+  const type = tdGetString(tdAvailable, '@type');
+  parsed.maxCount = tdGetNumber(tdAvailable, 'max_reaction_count');
+  if (type === 'chatAvailableReactionsAll') {
+    parsed.all = true;
+    return parsed;
+  }
+  if (type !== 'chatAvailableReactionsSome') {
+    return parsed;
+  }
+  for (const tdReactionType of tdGetArray(tdAvailable, 'reactions')) {
+    const key = parseChatReactionTypeKey(tdReactionType);
+    if (key.length > 0 && !parsed.keys.includes(key)) {
+      parsed.keys.push(key);
+    }
+  }
+  return parsed;
 }

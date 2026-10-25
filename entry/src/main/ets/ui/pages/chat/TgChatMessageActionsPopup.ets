@@ -4,6 +4,7 @@ import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { ChatMessageActionItem } from './ChatMessageActionsController';
 import { ChatTimelineViewState } from './ChatTimelineViewState';
 import { ChatMessageActionsPopupPort } from './ChatScreenViewPorts';
+import { TgReactionPicker } from '../../tg_ui/atoms/TgReactionPicker';
 
 @ComponentV2
 export struct TgChatMessageActionsPopup {
@@ -11,7 +12,20 @@ export struct TgChatMessageActionsPopup {
   @Require @Param bindings: ChatMessageActionsPopupPort;
 
   build() {
-    List() {
+    Column() {
+      if (this.bindings.messageActionReactionKeys().length > 0) {
+        TgReactionPicker({
+          keys: this.bindings.messageActionReactionKeys(),
+          onReactionPress: (key: string): void => {
+            this.bindings.handleMessageActionReaction(key);
+          }
+        })
+        Divider()
+          .height(TgUiTokens.COMPOSER_BOT_POPUP_SEPARATOR_WIDTH)
+          .color(TgUiTokens.COLOR_SEPARATOR)
+      }
+
+      List() {
       ForEach(this.bindings.messageActionItems(this.timeline.messageActionsForwardState), (item: ChatMessageActionItem, index: number) => {
         ListItem() {
           Column() {
@@ -51,8 +65,11 @@ export struct TgChatMessageActionsPopup {
       }, (item: ChatMessageActionItem) =>
         `${item.contextToken}:${item.sourceMessageId}:${item.id}:${item.enabled}:${item.title}`)
     }
+      .width(this.bindings.messageActionsPopupWidth())
+      .height(this.bindings.messageActionsPopupHeight(this.timeline.messageActionsForwardState))
+      .scrollBar(BarState.Off)
+    }
     .width(this.bindings.messageActionsPopupWidth())
-    .height(this.bindings.messageActionsPopupHeight(this.timeline.messageActionsForwardState))
-    .scrollBar(BarState.Off)
+    .alignItems(HorizontalAlign.Start)
   }
 }

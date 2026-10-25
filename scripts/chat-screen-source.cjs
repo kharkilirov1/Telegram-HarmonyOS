@@ -20,7 +20,10 @@ const eventArguments = {
   handleNavShown: [],
   handleNavBackPressed: [],
   // S3c: a reaction tap carries the chip key; the controller owns optimistic state and rollback.
-  toggleMessageReaction: ['messageId', 'key']
+  toggleMessageReaction: ['messageId', 'key'],
+  // S3d: the popup asks for the chat's available reaction keys, then reports the picked one.
+  messageActionReactionKeys: [],
+  handleMessageActionReaction: ['key']
 };
 const PAGE = 'TgChatScreenPage.ets';
 const normalize = text => text.replaceAll('\r\n', '\n');

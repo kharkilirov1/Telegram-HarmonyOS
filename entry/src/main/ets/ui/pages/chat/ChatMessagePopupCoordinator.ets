@@ -5,8 +5,10 @@ import { ChatTimelineEntryVO } from './ChatTimelineVO';
 import { ChatMessageActionItem, ChatMessageActionsController, ChatMessageActionsHost } from './ChatMessageActionsController';
 import { ChatForwardSourceController } from './ChatForwardSourceController';
 import { ForwardMessagesUseCase } from '../../../domain/usecases/forwardMessages';
+import { ChatReactionHost, toggleMessageReaction } from './ChatReactionController';
+import { Chat, availableReactionKeys, chatAllowsReactions } from '../../../core/model/AppState';
 
-export interface ChatMessagePopupCoordinatorPort extends ChatMessageActionsHost {
+export interface ChatMessagePopupCoordinatorPort extends ChatMessageActionsHost, ChatReactionHost {
   activeChatId: number;
   botMenuOpen: boolean;
   forwardSourceCtrl: ChatForwardSourceController;
@@ -166,3 +168,25 @@ export function handlePinMessage(host: ChatMessagePopupCoordinatorPort, messageI
 export function handleDeleteMessage(host: ChatMessagePopupCoordinatorPort, messageId: string): void {
     host.messageActionsCtrl.handleDeleteMessage(messageId, host);
   }
+
+export function messageActionReactionKeys(host: ChatMessagePopupCoordinatorPort): string[] {
+  // S3d: availability is chat-level state parsed from chat.available_reactions, so the picker never
+  // offers a reaction TDLib would reject.
+  if (!host.hasActiveChatState() || host.activeChatId === 0 || host.accountStore === undefined) {
+    return [];
+  }
+  const chat = host.accountStore.getState().chats.chats.get(host.activeChatId);
+  return chatAllowsReactions(chat) ? availableReactionKeys(chat) : [];
+}
+
+export function handleMessageActionReaction(host: ChatMessagePopupCoordinatorPort, key: string): void {
+  // The popup closes first so the optimistic footer update is visible instead of being blocked by
+  // the menu; the controller owns sending and rollback.
+  const entry = host.messageActionsEntry;
+  if (entry === undefined || key.length === 0) {
+    return;
+  }
+  const messageId = entry.message.messageId;
+  host.closeMessageActions();
+  toggleMessageReaction(host, messageId, key);
+}

@@ -15,6 +15,7 @@ import {
   ChatListUnreadMessageCountChangedEvent,
   ChatsLoadStateChangedEvent,
   ChatActiveStoriesUpdatedEvent,
+  ChatAvailableReactionsUpdatedEvent,
   ChatActionEvent,
   ChatFullInfoEvent
 } from '../model/AppEvent';
@@ -68,6 +69,9 @@ function chatFromDto(dto: ChatDto): Chat {
   chat.basicGroupId = dto.basicGroupId;
   chat.canSendBasicMessages = dto.sendPermissions?.canSendBasicMessages ?? dto.canSendBasicMessages;
   chat.sendPermissions = dto.sendPermissions?.clone();
+  chat.availableReactionKeys = dto.availableReactionKeys.slice();
+  chat.availableReactionsAll = dto.availableReactionsAll;
+  chat.maxReactionCount = dto.maxReactionCount;
 
   if (dto.photo) {
     chat.photoSmall = dto.photo.small;
@@ -460,6 +464,19 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
       newState.chats.orderedStoryChatIds = rebuildOrderedStoryChatIds(
         newState.chats.activeStoriesByChatId
       );
+      break;
+    }
+
+    case 'chatAvailableReactionsUpdated': {
+      const event = action as ChatAvailableReactionsUpdatedEvent;
+      const existingChat = newState.chats.chats.get(event.chatId);
+      if (existingChat) {
+        const updatedChat = cloneChat(existingChat);
+        updatedChat.availableReactionKeys = event.reactionKeys.slice();
+        updatedChat.availableReactionsAll = event.allReactions;
+        updatedChat.maxReactionCount = event.maxReactionCount;
+        newState.chats.chats.set(event.chatId, updatedChat);
+      }
       break;
     }
 

@@ -120,6 +120,15 @@ export class ChatActiveStoriesUpdatedEvent extends AppEvent {
   activeStories: ChatActiveStoriesDto = new ChatActiveStoriesDto();
 }
 
+// updateChatAvailableReactions (td_api.tl:9613): the chat-level list the reaction picker shows.
+export class ChatAvailableReactionsUpdatedEvent extends AppEvent {
+  type: string = 'chatAvailableReactionsUpdated';
+  chatId: ChatId = 0;
+  reactionKeys: string[] = [];
+  allReactions: boolean = false;
+  maxReactionCount: number = 0;
+}
+
 export class ReplyMessageHydratedEvent extends AppEvent {
   type: string = 'replyMessageHydrated';
   contextChatId: ChatId = 0;
@@ -308,6 +317,7 @@ export type AnyAppEvent =
   | ChatListUnreadMessageCountChangedEvent
   | ChatsLoadStateChangedEvent
   | ChatActiveStoriesUpdatedEvent
+  | ChatAvailableReactionsUpdatedEvent
   | NewMessageEvent
   | ReplyMessageHydratedEvent
   | MessageUpdatedEvent

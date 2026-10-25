@@ -75,6 +75,10 @@ export class Chat {
   sendPermissions?: GroupSendPermissionsDto;
   inviteLink: string = '';
   administratorCount: number = 0;
+  // chat.available_reactions — the picker source and the reason a missing list means "no reactions".
+  availableReactionKeys: string[] = [];
+  availableReactionsAll: boolean = false;
+  maxReactionCount: number = 0;
 }
 
 // Typing indicator per chat
@@ -597,4 +601,38 @@ export function chosenReactionKeys(chips: ReactionChipData[]): string[] {
     }
   }
   return keys;
+}
+
+// ─── Reaction availability / picker model ───────────────────────────────────
+// iOS ChatEntityKeyboardInputNode.swift:231 — the fallback row when a chat allows any reaction.
+export const DEFAULT_QUICK_REACTION_KEYS: string[] = [
+  'emoji:👍', 'emoji:👎', 'emoji:😍', 'emoji:😂', 'emoji:😯', 'emoji:😕',
+  'emoji:😢', 'emoji:😡', 'emoji:💪', 'emoji:👏', 'emoji:🙈', 'emoji:😒'
+];
+// The picker never shows more pills than one comfortable row on a phone.
+export const MAX_PICKER_REACTION_KEYS: number = 12;
+
+// The single place that answers "which reactions can this chat use". A missing chat, the explicit
+// "all reactions" mode and an unavailable list all fall back to the iOS default row; a "some" list is
+// returned as-is so the picker never offers an emoji the server would reject.
+export function availableReactionKeys(chat: Chat | undefined): string[] {
+  if (chat === undefined) {
+    return DEFAULT_QUICK_REACTION_KEYS.slice();
+  }
+  if (chat.availableReactionsAll || chat.availableReactionKeys.length === 0) {
+    return DEFAULT_QUICK_REACTION_KEYS.slice();
+  }
+  return chat.availableReactionKeys.slice(0, MAX_PICKER_REACTION_KEYS);
+}
+
+// Reactions cannot be used at all when the chat explicitly forbids them: a "some" list that is
+// empty or a max count of zero. An absent chat is treated as "unknown" and keeps the default row.
+export function chatAllowsReactions(chat: Chat | undefined): boolean {
+  if (chat === undefined) {
+    return true;
+  }
+  if (chat.maxReactionCount === 0 && !chat.availableReactionsAll && chat.availableReactionKeys.length === 0) {
+    return false;
+  }
+  return chat.maxReactionCount > 0 || chat.availableReactionsAll || chat.availableReactionKeys.length > 0;
 }
