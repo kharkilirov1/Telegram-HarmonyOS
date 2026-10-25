@@ -85,7 +85,7 @@
 | D7 | Избранное (Saved Messages) | `missing` | нет | `ChatList` | B1 |
 | D8 | Закрепление сообщения | `available` | `ChatMessageActionsController.ets` (9/6) | `Chat/PinnedMessage*` | C4 |
 | D9 | Пометить непрочитанным | `available` | `toggleChatUnread.ets` (3/3) | `ChatList` | B4 |
-| D10 | Реакции | `missing` | нет: `sendReaction` отсутствует | `ChatControllerOpenMessageReactionContextMenu` | D13, C9 |
+| D10 | Реакции | `partial` | S3a (данные, 2026-10-25): `Message.reactions` (`AppState.ets`), парсер `parseReactionSnapshot`/`parseReactionTypeKeys` (`MessageDto.ets`) из `interaction_info` и `updateMessageReactions`, инкремент `updateMessageReaction` через `applyReactionDelta`, чистая раскладка `sortReactionChips`/`packReactionChips` (chosen → count → key, кап 6 + «+N»), VO `ReactionChipVO` + `reactionRenderStamp` в `ChatTimelineVO`. Host `test-reactions-model.cjs`, suite 98/98. **Не готово:** рендер подвала (S3b), `setMessageReactions` (S3c), пикер (S3d) | `ChatControllerOpenMessageReactionContextMenu`, `ChatMessageReactionsFooterContentNode` | D13, C9; шов — `ReactionChipVO`/`ReactionsVO` |
 | D11 | Комментарии/треды | `missing` | только упоминание в селекторах | `ChatControllerOpenMessageReplies` | D10 |
 | D12 | Опросы | `available` | `TgPollBubble.ets` (21/12) | `Chat/Poll*` | D14 |
 | D13 | Стикеры | `available` | `TgsPlaybackPolicy` (`TgTgsPlayer.ets:41`): только видимое, поверхность (`timeline`/`stickerViewer`/`customEmoji`; панель — никогда), LRU-кеш распакованного Lottie по `fileId` (8), бюджет 4 инстанса, `@Monitor('tgsPath')`; pass-through `fileId`; тест 12 кейсов. **Device 2026-10-25:** `TgsPlaybackPolicy` 12/12; `hilog`: `using @ohos/lottie fallback for tgs_1` → `tgs playback started key=file:11696 players=1` (дважды, второй раз без повторного декода — кеш) ; два кадра через 700 мс различаются только в области стикера (3 274 px, bbox 256–470×1984–2199) — анимация живая | `Components/Chat/Sticker*` | D10, F6; шов `TgsPlaybackSurface` для D16/F6 |
@@ -188,8 +188,8 @@
 ## Итог и следующий шаг
 
 - `available`: 35 строк — есть код, тесты и работающий сценарий.
-- `partial`: 44 — код есть, но не сверено с iOS или неполно.
-- `missing`: 22 — кода нет.
+- `partial`: 45 — код есть, но не сверено с iOS или неполно.
+- `missing`: 21 — кода нет.
 - `unverified`: 0 — девять прежних строк разобраны 2026-10-25; остальные 96 имели статус раньше.
 - `frozen`: 3 (VoIP, мультиаккаунт, секретные чаты), `blocked`: 1 (push) — не вкладываться.
 

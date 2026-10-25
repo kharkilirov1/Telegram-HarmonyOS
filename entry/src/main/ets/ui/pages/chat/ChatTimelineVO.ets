@@ -1,4 +1,5 @@
-import { AppState, Chat, FileTransfer, Message, MessageQuoteEntity, TextEntity, User } from '../../../core/model/AppState';
+import { AppState, Chat, FileTransfer, Message, MessageQuoteEntity, ReactionChipData, TextEntity, User, packReactionChips } from '../../../core/model/AppState';
+
 import { selectChatMessagesForChatView } from '../../../domain/selectors/messageSelectors';
 import { compareInt64 } from '../../../core/utils/tdAccessors';
 import { getString } from '../../../core/utils/AppResource';
@@ -100,6 +101,20 @@ export class PollOptionVO {
   isChosen: boolean = false;
 }
 
+// One reaction pill of the message footer (S3b renders it, the footer itself is not part of S3a).
+export class ReactionChipVO {
+  key: string = '';
+  // Emoji glyph for a standard reaction; empty for a custom emoji chip.
+  emoji: string = '';
+  customEmojiId: string = '0';
+  count: number = 0;
+  chosen: boolean = false;
+
+  isCustom(): boolean {
+    return this.customEmojiId !== '0';
+  }
+}
+
 export class ChatMessageRowVO {
   messageId: string = '0';
   // All source ids represented by this row. Photo albums collapse several
@@ -115,6 +130,12 @@ export class ChatMessageRowVO {
   quoteOffsets: number[] = [];
   quoteLengths: number[] = [];
   quoteCollapsedFlags: boolean[] = [];
+
+  // Reactions: visible chips are already ordered (chosen first, then count) and capped; the hidden
+  // count feeds "+N". Empty when the message has no reactions — the footer then does not render.
+  reactionChips: ReactionChipVO[] = [];
+  reactionHiddenCount: number = 0;
+  hasReactions: boolean = false;
 
   // Sender name (group chats — incoming messages only)
   senderName: string = '';
@@ -1135,6 +1156,19 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
     }
   }
 
+  const packedReactions = packReactionChips(message.reactions);
+  row.reactionChips = packedReactions.visible.map((chip: ReactionChipData): ReactionChipVO => {
+    const vo = new ReactionChipVO();
+    vo.key = chip.key;
+    vo.emoji = chip.emoji;
+    vo.customEmojiId = chip.customEmojiId;
+    vo.count = chip.count;
+    vo.chosen = chip.chosen;
+    return vo;
+  });
+  row.reactionHiddenCount = packedReactions.hidden;
+  row.hasReactions = packedReactions.total > 0;
+
   const entry = new ChatTimelineEntryVO();
   entry.kind = 'message';
   entry.stableKey = 'msg_' + message.id;
@@ -1143,6 +1177,11 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   entry.key = entry.stableKey + '_s' + mediaRenderStamp(row).toString()
     + '_r' + replyRenderStamp(row).toString()
     + '_e' + message.editDate.toString();
+  // Only rows that actually carry reactions pay for another stamp: appending it unconditionally
+  // would rewrite the LazyForEach key of every message and churn the whole list on upgrade.
+  if (row.hasReactions || row.reactionHiddenCount > 0) {
+    entry.key = entry.key + '_x' + reactionRenderStamp(row).toString();
+  }
   entry.message = row;
   return entry;
 }
@@ -1203,6 +1242,19 @@ function stringRenderStamp(value: string): number {
 // @ComponentV2 @Param values inside a LazyForEach row are not refreshed by a
 // data notification alone on the current runtime. Reply hydration therefore
 // needs a compact key delta, just like media download state and edited text.
+function reactionRenderStamp(row: ChatMessageRowVO): number {
+  if (!row.hasReactions && row.reactionHiddenCount === 0) {
+    return 0;
+  }
+  let hash = row.reactionHiddenCount | 0;
+  for (const chip of row.reactionChips) {
+    hash = ((hash * 31) + stringRenderStamp(chip.key)) | 0;
+    hash = ((hash * 31) + chip.count) | 0;
+    hash = ((hash * 31) + (chip.chosen ? 1 : 0)) | 0;
+  }
+  return hash;
+}
+
 function replyRenderStamp(row: ChatMessageRowVO): number {
   if (!row.showReplySnippet) {
     return 0;

@@ -93,14 +93,20 @@ Documentation and repository structure were reconciled; no product code changed.
 
 Первый прогон по `SLICE_PROTOCOL`, три агента параллельно + design-срез от lead.
 
+- **S3a (lead).** Данные реакций: `Message.reactions` + чистая модель в `AppState` (порядок chosen →
+  count → key, кап 6 + «+N», инкрементальный `applyReactionDelta`), парсер TDLib-снимка и типов в
+  `MessageDto`, события `messageReactionsUpdated`/`messageReactionChanged` в normalizer и reducer,
+  VO `ReactionChipVO` с stamp'ом в ключе строки только при наличии реакций. Host-тест
+  `test-reactions-model.cjs`; D10 → `partial` (рендер и постановка — S3b/S3c). Гейты: host **98/98**,
+  оба smoke, hvigor BUILD SUCCESSFUL.
 - **S4 (lead).** Мёртвые контролы из аудита закрыты: Toggle «Notifications» в профиле теперь отправляет
   `SetChatMuteCommand` (откат при ошибке, токен страницы), строка «Data and Storage» удалена до
   появления экрана, мёртвая проводка `attachmentMenuLabels` вырезана из шести файлов, неиспользуемые
   DTO `TdAutoDownloadSettings`/`Presets` удалены. Новый host-guard `scripts/test-dead-controls.cjs`
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
-  `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0. Матрица: 35 `available`, 44 `partial`,
-  22 `missing`, 3 `frozen`, 1 `blocked`.
+  `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0. Матрица: 35 `available`, 45 `partial`,
+  21 `missing`, 3 `frozen`, 1 `blocked`.
 - **S1 + S1.1 (typing-slice).** TTL активности 8 s по iOS, откат по дедлайну без новых store-change,
   группа — только имя, приватный — текст активности, статические точки из токенов, «печатает…» в
   трёх локалях, единый TTL в шапке и списке. Восстановлен harness `chat-screen-source.cjs` для

@@ -142,6 +142,26 @@ export class MessageContentUpdatedEvent extends AppEvent {
   newContent: MessageContentDto = new MessageContentDto();
 }
 
+// Full snapshot from `updateMessageReactions`: replace the stored chips.
+export class MessageReactionsUpdatedEvent extends AppEvent {
+  type: string = 'messageReactionsUpdated';
+  chatId: ChatId = 0;
+  messageId: MessageId = '0';
+  reactionKeys: string[] = [];
+  reactionCounts: number[] = [];
+  reactionChosen: boolean[] = [];
+}
+
+// Incremental change from `updateMessageReaction`: one actor's old/new reaction types.
+export class MessageReactionChangedEvent extends AppEvent {
+  type: string = 'messageReactionChanged';
+  chatId: ChatId = 0;
+  messageId: MessageId = '0';
+  actorId: UserId = 0;
+  removedKeys: string[] = [];
+  addedKeys: string[] = [];
+}
+
 export class MessageSendSucceededEvent extends AppEvent {
   type: string = 'messageSendSucceeded';
   chatId: ChatId = 0;
@@ -292,6 +312,8 @@ export type AnyAppEvent =
   | ReplyMessageHydratedEvent
   | MessageUpdatedEvent
   | MessageContentUpdatedEvent
+  | MessageReactionsUpdatedEvent
+  | MessageReactionChangedEvent
   | MessageSendSucceededEvent
   | MessageSendFailedEvent
   | MessagesDeletedEvent

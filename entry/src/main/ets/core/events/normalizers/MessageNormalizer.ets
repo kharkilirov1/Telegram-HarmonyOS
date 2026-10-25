@@ -8,9 +8,12 @@ import {
   MessageSendSucceededEvent,
   MessageSendFailedEvent,
   MessagesDeletedEvent,
+  MessageReactionsUpdatedEvent,
+  MessageReactionChangedEvent,
   createNewMessageEvent
 } from '../../model/AppEvent';
-import { createMessageDtoFromTd, getMessageChatId, getMessageId, parseMessageContent } from '../../model/dto/MessageDto';
+import { createMessageDtoFromTd, getMessageChatId, getMessageId, parseMessageContent, parseReactionSnapshot, parseReactionTypeKeys } from '../../model/dto/MessageDto';
+
 import { TdObject } from '../../../models/TdTypes';
 import {
   tdGetNumber, tdGetString, tdGetInt64, tdGetBoolean,
@@ -47,6 +50,41 @@ function handleMessageContent(events: AnyAppEvent[], update: TdObject): void {
   event.chatId = chatId;
   event.messageId = messageId;
   event.newContent = contentDto;
+  event.timestamp = Date.now();
+  events.push(event);
+}
+
+// `updateMessageReactions` carries the full chip list for the message; replacing is correct because
+// TDLib also sends it after a local setMessageReactions acknowledgement.
+function handleMessageReactions(events: AnyAppEvent[], update: TdObject): void {
+  const chatId = tdGetNumber(update, 'chat_id');
+  const messageId = tdGetInt64(update, 'message_id');
+  if (!chatId || messageId === '0') return;
+
+  const snapshot = parseReactionSnapshot(tdGetObject(update, 'reactions'));
+  const event = new MessageReactionsUpdatedEvent();
+  event.chatId = chatId;
+  event.messageId = messageId;
+  event.reactionKeys = snapshot.keys;
+  event.reactionCounts = snapshot.counts;
+  event.reactionChosen = snapshot.chosen;
+  event.timestamp = Date.now();
+  events.push(event);
+}
+
+// `updateMessageReaction` describes one actor's change: counts move by one, `chosen` follows the
+// current account only. The reducer owns that comparison because the normalizer is stateless.
+function handleMessageReactionChanged(events: AnyAppEvent[], update: TdObject): void {
+  const chatId = tdGetNumber(update, 'chat_id');
+  const messageId = tdGetInt64(update, 'message_id');
+  if (!chatId || messageId === '0') return;
+
+  const event = new MessageReactionChangedEvent();
+  event.chatId = chatId;
+  event.messageId = messageId;
+  event.actorId = tdGetNumber(update, 'actor_id');
+  event.removedKeys = parseReactionTypeKeys(tdGetArray(update, 'old_reaction_types'));
+  event.addedKeys = parseReactionTypeKeys(tdGetArray(update, 'new_reaction_types'));
   event.timestamp = Date.now();
   events.push(event);
 }
@@ -157,6 +195,8 @@ export function registerMessageHandlers(
 ): void {
   handlers.set('updateNewMessage', handleNewMessage);
   handlers.set('updateMessageContent', handleMessageContent);
+  handlers.set('updateMessageReactions', handleMessageReactions);
+  handlers.set('updateMessageReaction', handleMessageReactionChanged);
   handlers.set('updateMessageEdited', handleMessageEdited);
   handlers.set('updateMessageSendSucceeded', handleMessageSendSucceeded);
   handlers.set('updateMessageSendFailed', handleMessageSendFailed);

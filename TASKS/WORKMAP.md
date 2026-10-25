@@ -16,15 +16,17 @@
 | S2 | Стикеры/TGS | D13 | политика видимости, кеш по `fileId`, бюджет 4, `@Monitor`; witness снят на устройстве, D13 → `available` |
 | S3 | Reactions | D10 | дизайн-документ `docs/specs/2026-10-25-reactions-design.md`, код не писался |
 | S4 | Мёртвые контролы | B3, E1, H4 | профильный Toggle → `SetChatMuteCommand`; строка «Data and Storage» удалена; мёртвая проводка `attachmentMenuLabels` удалена; DTO `TdAutoDownloadSettings` удалены; guard `test-dead-controls.cjs` |
+| S3a | Reactions — данные | D10 | модель чипов + парсер TDLib + события/reducer + VO + `test-reactions-model.cjs`; D10 → `partial` |
 
 ## Следующие срезы (в порядке)
 
-1. **S3a. Reactions — данные.** Normalizer + DTO + VO + чистые функции раскладки, без UI.
-   Строка D10. Контракт: `setMessageReactions`, `updateMessageReactions`, `updateMessageReaction`,
-   `messageInteractionInfo`. Дизайн: `docs/specs/2026-10-25-reactions-design.md`.
-2. **S5. Непрочитанный разделитель (C6) + панель выделения (C9).** Малые UI-срезы с готовыми швами.
-3. **S6. Saved Messages (D7)** — отсутствующая базовая возможность чат-листа.
-4. **S7. Папки чатов (B7)** — крупный срез списка, делать после стабилизации списка.
+1. **S3b. Reactions — подвал бабла (read-only).** Рендер `ReactionChipVO`/`+N` в бабле, состояния §5
+   дизайна, пересчёт высоты бабла и scroll-anchor. Дизайн:
+   `docs/specs/2026-10-25-reactions-design.md`.
+2. **S3c. Постановка реакции.** `SetMessageReactionsCommand` + serializer + optimistic/откат.
+3. **S5. Непрочитанный разделитель (C6) + панель выделения (C9).** Малые UI-срезы с готовыми швами.
+4. **S6. Saved Messages (D7)** — отсутствующая базовая возможность чат-листа.
+5. **S7. Папки чатов (B7)** — крупный срез списка, делать после стабилизации списка.
 
 ## Требуют внешних условий (не начинать)
 

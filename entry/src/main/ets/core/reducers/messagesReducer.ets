@@ -2,12 +2,14 @@
 // Pure function, no side effects
 // Uses real data from DTOs instead of hardcoded values
 
-import { AppState, Message, MessageContent, MessageQuoteEntity, TextEntity, MessageSendStatus, PollOption, ReducerAction } from '../model/AppState';
+import { AppState, Message, MessageContent, MessageQuoteEntity, TextEntity, MessageSendStatus, PollOption, ReducerAction, buildReactionChips, applyReactionDelta } from '../model/AppState';
 import {
   NewMessageEvent,
   ReplyMessageHydratedEvent,
   MessageUpdatedEvent,
   MessageContentUpdatedEvent,
+  MessageReactionsUpdatedEvent,
+  MessageReactionChangedEvent,
   MessageSendSucceededEvent,
   MessageSendFailedEvent,
   MessagesDeletedEvent,
@@ -20,7 +22,8 @@ import { createAssociatedMessageKey } from '../utils/replyMessageKey';
 // Events this reducer handles
 function isMessageEvent(type: string): boolean {
   return type === 'newMessage' || type === 'replyMessageHydrated' || type === 'messageUpdated' ||
-    type === 'messageContentUpdated' || type === 'messageSendSucceeded' ||
+    type === 'messageContentUpdated' || type === 'messageReactionsUpdated' ||
+    type === 'messageReactionChanged' || type === 'messageSendSucceeded' ||
     type === 'messageSendFailed' || type === 'messagesDeleted' ||
     type === 'chatMessagesReset';
 }
@@ -190,6 +193,7 @@ function messageFromDto(dto: MessageDto): Message {
   message.senderChatId = dto.senderChatId;
   message.mediaAlbumId = dto.mediaAlbumId;
   message.content = contentFromDto(dto.content);
+  message.reactions = buildReactionChips(dto.reactionKeys, dto.reactionCounts, dto.reactionChosen);
   message.timestamp = dto.timestamp;
   message.isOutgoing = dto.isOutgoing;
   message.isRead = dto.isRead;
@@ -336,6 +340,7 @@ function cloneMessage(msg: Message): Message {
   clonedContent.pollType = msg.content.pollType;
   clonedContent.pollOptions = msg.content.pollOptions;
   clone.content = clonedContent;
+  clone.reactions = msg.reactions.map((chip) => chip.clone());
   clone.timestamp = msg.timestamp;
   clone.isOutgoing = msg.isOutgoing;
   clone.isRead = msg.isRead;
@@ -437,6 +442,40 @@ export function messagesReducer(state: AppState, action: ReducerAction): AppStat
       const updated = cloneMessage(existing);
       updated.content = contentFromDto(event.newContent);
 
+      const newChatMessages = new Map<string, Message>(chatMessages);
+      newChatMessages.set(event.messageId, updated);
+      newState.messages.messages.set(event.chatId, newChatMessages);
+      break;
+    }
+
+    case 'messageReactionsUpdated': {
+      const event = action as MessageReactionsUpdatedEvent;
+      const chatMessages = newState.messages.messages.get(event.chatId);
+      if (!chatMessages) break;
+
+      const existing = chatMessages.get(event.messageId);
+      if (!existing) break;
+
+      const updated = cloneMessage(existing);
+      updated.reactions = buildReactionChips(event.reactionKeys, event.reactionCounts, event.reactionChosen);
+      const newChatMessages = new Map<string, Message>(chatMessages);
+      newChatMessages.set(event.messageId, updated);
+      newState.messages.messages.set(event.chatId, newChatMessages);
+      break;
+    }
+
+    case 'messageReactionChanged': {
+      const event = action as MessageReactionChangedEvent;
+      const chatMessages = newState.messages.messages.get(event.chatId);
+      if (!chatMessages) break;
+
+      const existing = chatMessages.get(event.messageId);
+      if (!existing) break;
+
+      const updated = cloneMessage(existing);
+      const actorIsMe = event.actorId !== 0 && event.actorId === newState.auth.userId;
+      updated.reactions = applyReactionDelta(updated.reactions, actorIsMe,
+        event.removedKeys, event.addedKeys);
       const newChatMessages = new Map<string, Message>(chatMessages);
       newChatMessages.set(event.messageId, updated);
       newState.messages.messages.set(event.chatId, newChatMessages);

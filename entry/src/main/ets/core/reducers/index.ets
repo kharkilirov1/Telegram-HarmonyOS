@@ -33,7 +33,9 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
   // Messages
   if (action.type === 'newMessage' || action.type === 'replyMessageHydrated' ||
     action.type === 'messageUpdated' ||
-    action.type === 'messageContentUpdated' || action.type === 'messageSendSucceeded' ||
+    action.type === 'messageContentUpdated' || action.type === 'messageReactionsUpdated' ||
+    action.type === 'messageReactionChanged' ||
+    action.type === 'messageSendSucceeded' ||
     action.type === 'messageSendFailed' || action.type === 'messagesDeleted' ||
     action.type === 'chatMessagesReset') {
     return messagesReducer(state, action);

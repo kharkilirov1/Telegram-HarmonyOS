@@ -175,6 +175,9 @@ export class MessageDto {
   senderChatId: ChatId = 0;
   mediaAlbumId: MessageId = '0';
   content: MessageContentDto = new MessageContentDto();
+  reactionKeys: string[] = [];
+  reactionCounts: number[] = [];
+  reactionChosen: boolean[] = [];
   timestamp: number = 0;
   isOutgoing: boolean = false;
   isRead: boolean = false;
@@ -515,6 +518,13 @@ export function createMessageDtoFromTd(tdMessage: TdObject, suppressErrorMessage
   messageDto.mediaAlbumId = tdGetInt64(tdMessage, 'media_album_id');
 
   messageDto.content = parsedContent;
+  // History messages carry reactions inside interaction_info (messages created later arrive with
+  // updateMessageReactions); parsing both keeps the footer correct after a cold start.
+  const reactionSnapshot = parseReactionSnapshot(
+    tdGetObject(tdGetObject(tdMessage, 'interaction_info'), 'reactions'));
+  messageDto.reactionKeys = reactionSnapshot.keys;
+  messageDto.reactionCounts = reactionSnapshot.counts;
+  messageDto.reactionChosen = reactionSnapshot.chosen;
 
   const tdDate = tdGetNumber(tdMessage, 'date');
   messageDto.timestamp = tdDate > 0 ? tdDate : Math.floor(Date.now() / 1000);
@@ -884,4 +894,61 @@ export function applyMessageUpdate(message: MessageDto, update: MessageUpdateDto
   }
 
   return updatedMessage;
+}
+
+// ─── Reactions parsing (TDLib shapes, primitives only) ──────────────────────
+// The DTO layer keeps primitive arrays so no extra module is needed by the host harness; AppState
+// turns them into chips (`buildReactionChips`). Both the message hydration path and the normalizer
+// use these functions, so `reactionTypeEmoji` / `reactionTypeCustomEmoji` are spelled in one place.
+
+const TD_REACTION_TYPE_EMOJI = 'reactionTypeEmoji';
+const TD_REACTION_TYPE_CUSTOM_EMOJI = 'reactionTypeCustomEmoji';
+
+export class ReactionSnapshot {
+  keys: string[] = [];
+  counts: number[] = [];
+  chosen: boolean[] = [];
+}
+
+export function parseReactionTypeKey(tdReactionType: TdObject): string {
+  const type = tdGetString(tdReactionType, '@type');
+  if (type === TD_REACTION_TYPE_EMOJI) {
+    const emoji = tdGetString(tdReactionType, 'emoji');
+    return emoji.length > 0 ? 'emoji:' + emoji : '';
+  }
+  if (type === TD_REACTION_TYPE_CUSTOM_EMOJI) {
+    const customEmojiId = tdGetInt64(tdReactionType, 'custom_emoji_id');
+    return customEmojiId !== '0' ? 'custom:' + customEmojiId : '';
+  }
+  return '';
+}
+
+export function parseReactionTypeKeys(tdReactionTypes: TdObject[]): string[] {
+  const keys: string[] = [];
+  for (const tdReactionType of tdReactionTypes) {
+    const key = parseReactionTypeKey(tdReactionType);
+    if (key.length > 0 && !keys.includes(key)) {
+      keys.push(key);
+    }
+  }
+  return keys;
+}
+
+// `messageReactions` is a full snapshot: one entry per chip with its aggregate count.
+export function parseReactionSnapshot(tdReactions: TdObject): ReactionSnapshot {
+  const snapshot = new ReactionSnapshot();
+  for (const tdReaction of tdGetArray(tdReactions, 'reactions')) {
+    const key = parseReactionTypeKey(tdGetObject(tdReaction, 'type'));
+    if (key.length === 0) {
+      continue;
+    }
+    const totalCount = tdGetNumber(tdReaction, 'total_count');
+    if (totalCount <= 0) {
+      continue;
+    }
+    snapshot.keys.push(key);
+    snapshot.counts.push(totalCount);
+    snapshot.chosen.push(tdGetBoolean(tdReaction, 'is_chosen'));
+  }
+  return snapshot;
 }

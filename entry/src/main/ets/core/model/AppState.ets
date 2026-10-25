@@ -285,6 +285,8 @@ export class Message {
   sendStatus: MessageSendStatus = 'none';
   sendErrorCode: number = 0;
   sendErrorMessage: string = '';
+  // Reaction chips in TDLib order; sorting and overflow happen in the VO, never in state.
+  reactions: ReactionChipData[] = [];
 }
 
 // Pending message
@@ -394,3 +396,166 @@ export const initialAppState: AppState = createInitialAppState();
 
 // Type guard for reducer actions
 export type ReducerAction = AnyAppEvent;
+
+// ─── Reactions ───────────────────────────────────────────────────────────────
+// Chips live in state next to the message; ordering, overflow and incremental counting are pure
+// helpers here so the reducer, the timeline VO and tests share one implementation without extra
+// module boundaries that the host harness would have to inject separately.
+
+export const REACTION_KEY_EMOJI_PREFIX: string = 'emoji:';
+export const REACTION_KEY_CUSTOM_PREFIX: string = 'custom:';
+// iOS packs at most six pills per row before collapsing the rest into "+N"
+// (ReactionRowPackingTests exercises 1...6); the same cap keeps the footer stable.
+export const MAX_VISIBLE_REACTION_CHIPS: number = 6;
+
+export class ReactionChipData {
+  key: string = '';
+  emoji: string = '';
+  customEmojiId: string = '0';
+  count: number = 0;
+  chosen: boolean = false;
+
+  isCustom(): boolean {
+    return this.customEmojiId !== '0';
+  }
+
+  clone(): ReactionChipData {
+    const copy = new ReactionChipData();
+    copy.key = this.key;
+    copy.emoji = this.emoji;
+    copy.customEmojiId = this.customEmojiId;
+    copy.count = this.count;
+    copy.chosen = this.chosen;
+    return copy;
+  }
+}
+
+export function emojiReactionKey(emoji: string): string {
+  return REACTION_KEY_EMOJI_PREFIX + emoji;
+}
+
+export function customReactionKey(customEmojiId: string): string {
+  return REACTION_KEY_CUSTOM_PREFIX + customEmojiId;
+}
+
+export function reactionChipFromKey(key: string): ReactionChipData | undefined {
+  const chip = new ReactionChipData();
+  if (key.startsWith(REACTION_KEY_EMOJI_PREFIX)) {
+    const emoji = key.substring(REACTION_KEY_EMOJI_PREFIX.length);
+    if (emoji.length === 0) {
+      return undefined;
+    }
+    chip.key = key;
+    chip.emoji = emoji;
+    chip.count = 1;
+    return chip;
+  }
+  if (key.startsWith(REACTION_KEY_CUSTOM_PREFIX)) {
+    const customEmojiId = key.substring(REACTION_KEY_CUSTOM_PREFIX.length);
+    if (customEmojiId.length === 0 || customEmojiId === '0') {
+      return undefined;
+    }
+    chip.key = key;
+    chip.customEmojiId = customEmojiId;
+    chip.count = 1;
+    return chip;
+  }
+  return undefined;
+}
+
+// Builds the state representation from the primitive snapshot the normalizer parses out of TDLib.
+export function buildReactionChips(keys: string[], counts: number[], chosen: boolean[]): ReactionChipData[] {
+  const chips: ReactionChipData[] = [];
+  for (let index = 0; index < keys.length; index++) {
+    const chip = reactionChipFromKey(keys[index]);
+    if (chip === undefined) {
+      continue;
+    }
+    chip.count = index < counts.length ? counts[index] : 1;
+    chip.chosen = index < chosen.length ? chosen[index] : false;
+    if (chip.count > 0) {
+      chips.push(chip);
+    }
+  }
+  return chips;
+}
+
+// Chosen chips come first so the sender's own reaction never hides behind "+N"; equal counts keep a
+// deterministic order by key so a re-render does not reshuffle the row.
+export function sortReactionChips(chips: ReactionChipData[]): ReactionChipData[] {
+  const sorted = chips.map((chip: ReactionChipData) => chip.clone());
+  sorted.sort((left: ReactionChipData, right: ReactionChipData): number => {
+    if (left.chosen !== right.chosen) {
+      return left.chosen ? -1 : 1;
+    }
+    if (left.count !== right.count) {
+      return right.count - left.count;
+    }
+    return left.key < right.key ? -1 : (left.key > right.key ? 1 : 0);
+  });
+  return sorted;
+}
+
+export class PackedReactions {
+  visible: ReactionChipData[] = [];
+  hidden: number = 0;
+  total: number = 0;
+}
+
+export function packReactionChips(chips: ReactionChipData[],
+  maxVisible: number = MAX_VISIBLE_REACTION_CHIPS): PackedReactions {
+  const packed = new PackedReactions();
+  const sorted = sortReactionChips(chips);
+  packed.total = sorted.length;
+  const limit = maxVisible > 0 ? maxVisible : 0;
+  packed.visible = sorted.slice(0, limit);
+  packed.hidden = sorted.length > limit ? sorted.length - limit : 0;
+  return packed;
+}
+
+function findReactionChip(chips: ReactionChipData[], key: string): number {
+  for (let index = 0; index < chips.length; index++) {
+    if (chips[index].key === key) {
+      return index;
+    }
+  }
+  return -1;
+}
+
+// Incremental update from `updateMessageReaction`: TDLib sends one actor's old and new reaction
+// types. Counts move by one per type; `chosen` tracks the current account only.
+export function applyReactionDelta(chips: ReactionChipData[], actorIsMe: boolean,
+  removedKeys: string[], addedKeys: string[]): ReactionChipData[] {
+  const next = chips.map((chip: ReactionChipData) => chip.clone());
+  for (const key of removedKeys) {
+    const index = findReactionChip(next, key);
+    if (index < 0) {
+      continue;
+    }
+    const chip = next[index];
+    chip.count -= 1;
+    if (actorIsMe) {
+      chip.chosen = false;
+    }
+    if (chip.count <= 0) {
+      next.splice(index, 1);
+    }
+  }
+  for (const key of addedKeys) {
+    const index = findReactionChip(next, key);
+    if (index >= 0) {
+      next[index].count += 1;
+      if (actorIsMe) {
+        next[index].chosen = true;
+      }
+      continue;
+    }
+    const created = reactionChipFromKey(key);
+    if (created === undefined) {
+      continue;
+    }
+    created.chosen = actorIsMe;
+    next.push(created);
+  }
+  return next;
+}
