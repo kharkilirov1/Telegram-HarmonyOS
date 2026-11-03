@@ -237,6 +237,38 @@
       "value": "Завершить все другие сеансы"
     },
     {
+      "name": "settings_blocked_users",
+      "value": "Заблокированные"
+    },
+    {
+      "name": "blocked_loading",
+      "value": "Загрузка…"
+    },
+    {
+      "name": "blocked_load_failed",
+      "value": "Не удалось загрузить список"
+    },
+    {
+      "name": "blocked_retry",
+      "value": "Повторить"
+    },
+    {
+      "name": "blocked_empty",
+      "value": "Нет заблокированных"
+    },
+    {
+      "name": "blocked_unblock",
+      "value": "Разблокировать"
+    },
+    {
+      "name": "blocked_user_fallback",
+      "value": "Пользователь"
+    },
+    {
+      "name": "blocked_chat_fallback",
+      "value": "Чат"
+    },
+    {
       "name": "sessions_loading",
       "value": "Загрузка…"
     },

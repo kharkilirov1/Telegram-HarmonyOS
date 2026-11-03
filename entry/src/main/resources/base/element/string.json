@@ -237,6 +237,38 @@
       "value": "Terminate All Other Sessions"
     },
     {
+      "name": "settings_blocked_users",
+      "value": "Blocked Users"
+    },
+    {
+      "name": "blocked_loading",
+      "value": "Loading…"
+    },
+    {
+      "name": "blocked_load_failed",
+      "value": "Could not load blocked users"
+    },
+    {
+      "name": "blocked_retry",
+      "value": "Retry"
+    },
+    {
+      "name": "blocked_empty",
+      "value": "No blocked users"
+    },
+    {
+      "name": "blocked_unblock",
+      "value": "Unblock"
+    },
+    {
+      "name": "blocked_user_fallback",
+      "value": "User"
+    },
+    {
+      "name": "blocked_chat_fallback",
+      "value": "Chat"
+    },
+    {
       "name": "sessions_loading",
       "value": "Loading…"
     },

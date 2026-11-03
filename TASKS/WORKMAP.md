@@ -35,10 +35,12 @@
 | S8b.2 | Add to folder в контекстном меню (B6) | B6 | `addChatToList(chatListFolder)` в payload/сериализаторе, `MoveChatToListUseCase.addToFolder`, `selectAddToFolderTargets`, секция папок в меню, `chat_context_add_to_folder`; контракт расширен |
 | S9 | Устройства/сессии (H5) | H5 | `getActiveSessions`/`terminateSession` (команды, сериализатор), `SessionDto` + точный int64 через `getTopLevelRawObjectArrayStrict`, `LoadSessionsUseCase`, `TgSessionsPage` + route + строка Settings → Devices, `sessions_*` в 3 локалях, контракт; H5 → `partial` |
 | S9b | Сессии — Active/Web и завершение всех (H5) | H5 | `sessionType` в DTO, `sessionSelectors` (web-типы, секции, canTerminateOthers), `terminateAllOtherSessions` (команда/сериализатор/use case), две секции и destructive-строка в странице, строки в 3 локалях, контракт расширен |
+| S10 | Заблокированные пользователи (H8) | H8 | `getBlockedMessageSenders`/`setMessageSenderBlockList` (block → main, unblock → null), `BlockedSenderDto`, `LoadBlockedSendersUseCase`, `TgBlockedUsersPage` + route + строка Settings, `blocked_*` в 3 локалях, контракт; H8 → `partial` |
 
 ## Следующие срезы (в порядке)
 
-1. **S9c. Сессии — 2FA и подтверждение новых сеансов (H5).** Привязка пароля, подтверждение подозрительных входов.
+1. **S10b. Заблокированные — пагинация и блокировка из профиля (H8).** «Показать ещё», block-действие в профиле, blockListStories.
+2. **S9c. Сессии — 2FA и подтверждение новых сеансов (H5).**
 2. **S8b.3. Контекстное меню — пункты по типу чата (B6).** Join (только search-контекст в iOS), Select.
 2. **S7b.4. Папки чатов — экран настроек и folder link preview (B7).**
 2. **S7b.4. Папки чатов — экран настроек и folder link preview (B7).**

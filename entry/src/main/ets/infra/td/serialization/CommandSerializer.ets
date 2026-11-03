@@ -6,6 +6,7 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
   AnyAppCommand,
+  GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
   TerminateAllOtherSessionsCommand,
   TerminateSessionCommand,
   SetPhoneNumberCommand,
@@ -114,6 +115,8 @@ COMMAND_SERIALIZATION_HANDLERS.set('setMessageReactions', serializeSetMessageRea
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageAvailableReactions', serializeGetMessageAvailableReactions);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
+COMMAND_SERIALIZATION_HANDLERS.set('getBlockedMessageSenders', serializeGetBlockedMessageSenders);
+COMMAND_SERIALIZATION_HANDLERS.set('setMessageSenderBlockList', serializeSetMessageSenderBlockList);
 COMMAND_SERIALIZATION_HANDLERS.set('getActiveSessions', serializeGetActiveSessions);
 COMMAND_SERIALIZATION_HANDLERS.set('terminateSession', serializeTerminateSession);
 COMMAND_SERIALIZATION_HANDLERS.set('terminateAllOtherSessions', serializeTerminateAllOtherSessions);
@@ -393,6 +396,25 @@ function serializeToggleChatIsPinned(command: AnyAppCommand, result: SerializedC
   result.params.setString('_chat_list_json', cmd.payload.chatList === 'archive'
     ? '{"@type":"chatListArchive"}'
     : '{"@type":"chatListMain"}');
+}
+
+function serializeGetBlockedMessageSenders(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetBlockedMessageSendersCommand;
+  result.method = 'getBlockedMessageSenders';
+  result.params.setString('_block_list_json', cmd.payload.blockList === 'stories'
+    ? '{"@type":"blockListStories"}' : '{"@type":"blockListMain"}');
+  result.params.setNumber('offset', cmd.payload.offset);
+  result.params.setNumber('limit', cmd.payload.limit);
+}
+
+function serializeSetMessageSenderBlockList(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SetMessageSenderBlockListCommand;
+  result.method = 'setMessageSenderBlockList';
+  result.params.setString('_sender_id_json', cmd.payload.senderType === 'chat'
+    ? '{"@type":"messageSenderChat","chat_id":' + cmd.payload.senderId.toString() + '}'
+    : '{"@type":"messageSenderUser","user_id":' + cmd.payload.senderId.toString() + '}');
+  // TDLib unblocks with a null block list (td_api.tl:13175); blockListMain blocks.
+  result.params.setString('_block_list_json', cmd.payload.blocked ? '{"@type":"blockListMain"}' : 'null');
 }
 
 function serializeGetActiveSessions(_command: AnyAppCommand, result: SerializedCommand): void {

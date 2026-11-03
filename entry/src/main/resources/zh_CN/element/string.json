@@ -237,6 +237,38 @@
       "value": "终止所有其他会话"
     },
     {
+      "name": "settings_blocked_users",
+      "value": "已屏蔽用户"
+    },
+    {
+      "name": "blocked_loading",
+      "value": "加载中…"
+    },
+    {
+      "name": "blocked_load_failed",
+      "value": "无法加载屏蔽列表"
+    },
+    {
+      "name": "blocked_retry",
+      "value": "重试"
+    },
+    {
+      "name": "blocked_empty",
+      "value": "没有已屏蔽用户"
+    },
+    {
+      "name": "blocked_unblock",
+      "value": "取消屏蔽"
+    },
+    {
+      "name": "blocked_user_fallback",
+      "value": "用户"
+    },
+    {
+      "name": "blocked_chat_fallback",
+      "value": "聊天"
+    },
+    {
       "name": "sessions_loading",
       "value": "加载中…"
     },

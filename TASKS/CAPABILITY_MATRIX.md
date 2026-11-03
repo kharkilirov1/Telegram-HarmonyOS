@@ -157,7 +157,7 @@
 | H5 | Устройства/сессии | `partial` | Экран `TgSessionsPage` (Settings → Devices, route `TgSessionsPage`): `getActiveSessions` → `SessionDto` (int64 id сохраняется точным, флаги current/password_pending, устройство, приложение, IP/страна, last active), текущий сеанс помечен и не завершается, `terminateSession` через `promptAction`-подтверждение и перезагрузку списка. Команды/сериализатор `getActiveSessions`/`terminateSession` (int64 как точный JSON-литерал), use case `LoadSessionsUseCase`, строки `sessions_*` в base/ru/zh, контракт `test-sessions.cjs`. Разделы как в iOS: `sessionSelectors` делит сеансы на Active/Web по `sessionType` (браузеры Brave/Chrome/Edge/Firefox/Opera/Safari/Vivaldi), «Terminate All Other Sessions» через `terminateAllOtherSessions` (показывается только при наличии других сеансов). Нет: привязка к 2FA-паролю, подтверждение новых сеансов, iOS-раскладка карточек и witness | `ActiveSessions*`, `WebSessions*` | A4 |
 | H6 | Тёмная тема/акценты | `partial` | `accentColorsReducer.ets`, `colorMode` (12/2) | `Sources/Theme*` | J8 |
 | H7 | Язык интерфейса | `partial` | 15/8 | `Sources/Localization*` | J6 |
-| H8 | Заблокированные пользователи | `missing` | нет | `Sources/Privacy*` | H2 |
+| H8 | Заблокированные пользователи | `partial` | Экран `TgBlockedUsersPage` (Settings → Blocked Users, route зарегистрирован): `getBlockedMessageSenders(blockListMain, offset, limit)` → `BlockedSenderDto` (user/chat), имена резолвятся из `AppState` (users/chats, иначе fallback с id), разблокировка через `setMessageSenderBlockList(sender_id, null)` после подтверждения и перезагрузки списка; состояния loading/error/retry/empty. Команды/сериализатор (blockListMain/Stories, null-блок для unblock), use case `LoadBlockedSendersUseCase` (валидация пагинга), строки `blocked_*`/`settings_blocked_users` в 3 локалях, контракт `test-blocked-users.cjs`. Нет: пагинация «показать ещё», блокировка из профиля, blockListStories UI, iOS-карточки и witness | `Sources/Privacy*` | H2 |
 | H9 | Энергосбережение | `missing` | нет | `Sources/PowerSaving*` | H1 |
 
 ## I. Уведомления, звонки, stories
@@ -189,8 +189,8 @@
 ## Итог и следующий шаг
 
 - `available`: 35 строк — есть код, тесты и работающий сценарий.
-- `partial`: 51 — код есть, но не сверено с iOS или неполно.
-- `missing`: 15 — кода нет.
+- `partial`: 52 — код есть, но не сверено с iOS или неполно.
+- `missing`: 14 — кода нет.
 - `unverified`: 0 — девять прежних строк разобраны 2026-10-25; остальные 96 имели статус раньше.
 - `frozen`: 3 (VoIP, мультиаккаунт, секретные чаты), `blocked`: 1 (push) — не вкладываться.
 

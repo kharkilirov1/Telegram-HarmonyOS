@@ -300,6 +300,22 @@ export class AddChatToListPayload {
   folderId: number = 0;
 }
 
+export type BlockListKind = 'main' | 'stories';
+
+export class GetBlockedMessageSendersPayload {
+  blockList: BlockListKind = 'main';
+  offset: number = 0;
+  limit: number = 100;
+}
+
+export class SetMessageSenderBlockListPayload {
+  senderType: 'user' | 'chat' = 'user';
+  // int53 sender id (user_id or chat_id), safe to carry as a number.
+  senderId: number = 0;
+  // true -> blockListMain, false -> null (unblock).
+  blocked: boolean = false;
+}
+
 export class TerminateSessionPayload {
   // TDLib session.id is int64: carried as a decimal string to avoid JS precision loss.
   sessionId: string = '0';
@@ -667,6 +683,16 @@ export class AddChatToListCommand extends AppCommand {
   payload: AddChatToListPayload = new AddChatToListPayload();
 }
 
+export class GetBlockedMessageSendersCommand extends AppCommand {
+  type: string = 'getBlockedMessageSenders';
+  payload: GetBlockedMessageSendersPayload = new GetBlockedMessageSendersPayload();
+}
+
+export class SetMessageSenderBlockListCommand extends AppCommand {
+  type: string = 'setMessageSenderBlockList';
+  payload: SetMessageSenderBlockListPayload = new SetMessageSenderBlockListPayload();
+}
+
 export class GetActiveSessionsCommand extends AppCommand {
   type: string = 'getActiveSessions';
 }
@@ -864,6 +890,8 @@ export type AnyAppCommand =
   | JoinChatCommand
   | ToggleChatPinnedCommand
   | AddChatToListCommand
+  | GetBlockedMessageSendersCommand
+  | SetMessageSenderBlockListCommand
   | GetActiveSessionsCommand
   | TerminateAllOtherSessionsCommand
   | TerminateSessionCommand
@@ -1330,6 +1358,30 @@ export function createAddChatToListCommand(
   cmd.payload.chatId = chatId;
   cmd.payload.chatList = chatList;
   cmd.payload.folderId = folderId;
+  return cmd;
+}
+
+export function createGetBlockedMessageSendersCommand(
+  blockList: BlockListKind = 'main',
+  offset: number = 0,
+  limit: number = 100
+): GetBlockedMessageSendersCommand {
+  const cmd = new GetBlockedMessageSendersCommand();
+  cmd.payload.blockList = blockList;
+  cmd.payload.offset = offset;
+  cmd.payload.limit = limit;
+  return cmd;
+}
+
+export function createSetMessageSenderBlockListCommand(
+  senderType: 'user' | 'chat',
+  senderId: number,
+  blocked: boolean
+): SetMessageSenderBlockListCommand {
+  const cmd = new SetMessageSenderBlockListCommand();
+  cmd.payload.senderType = senderType;
+  cmd.payload.senderId = senderId;
+  cmd.payload.blocked = blocked;
   return cmd;
 }
 

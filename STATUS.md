@@ -81,7 +81,7 @@ Documentation and repository structure were reconciled; no product code changed.
 - `TASKS/SLICE_TEMPLATE.md` — шаблон плана среза (референс → контракт → швы → состояния → тест →
   приёмка).
 - `TASKS/CAPABILITY_MATRIX.md` — 105 строк по пользовательским возможностям iOS: 35 `available`,
-  51 `partial`, 15 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
+  52 `partial`, 14 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
   код-доказательство и связанные фичи; `available` без witness не ставится.
 - `TASKS/WORKMAP.md` — M0 (верифицировать 9 `unverified` строк), S1 (typing indicator, C2),
   S2 (стикеры/TGS, D13).
@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S10 (lead).** H8 «Заблокированные пользователи» из `missing` → `partial`. Экран
+  `TgBlockedUsersPage` (Settings → Blocked Users, отдельная строка и route): список из
+  `getBlockedMessageSenders`, имена из `AppState` (user first+last или @username, chat title, иначе
+  fallback с id), разблокировка через `setMessageSenderBlockList` с null-блок-листом после
+  подтверждения и с перезагрузкой; состояния loading/error/retry/empty. Контракт
+  `test-blocked-users.cjs`: DTO user/chat (включая мусорные записи и null-слоты), проводка команд
+  (blockListMain/Stories, block vs null), use case (валидация пагинга до gateway, unblock, пустой
+  ответ), экран/route/settings/локали. Гейты: host **112/112**, оба smoke, hvigor BUILD SUCCESSFUL.
+  **Осталось (H8):** «показать ещё», блокировка из профиля, blockListStories UI, iOS-карточки,
+  witness.
 - **S9b (lead).** H5: разделы и завершение всех. `SessionDto.sessionType` + `sessionSelectors`
   (`isWebSession`, `splitSessionsByKind`, `canTerminateOthers`) делят список на Active/Web по
   `sessionType*` (браузеры Brave/Chrome/Edge/Firefox/Opera/Safari/Vivaldi — web, остальные — app);

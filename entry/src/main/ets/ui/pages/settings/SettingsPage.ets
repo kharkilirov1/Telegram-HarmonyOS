@@ -44,6 +44,7 @@ export struct SettingsPage {
   @Event onOpenSavedMessages: () => void = (): void => {};
   // Devices lives on the root navigation stack, like Saved Messages.
   @Event onOpenDevices: () => void = (): void => {};
+  @Event onOpenBlockedUsers: () => void = (): void => {};
 
   private unsubscribe?: () => void;
   private pageLifecycleToken: number = 0;
@@ -231,6 +232,16 @@ export struct SettingsPage {
               showSeparator: true,
               onRowClick: (): void => {
                 this.onOpenDevices();
+              }
+            })
+            TgSettingsRow({
+              title: localized($r('app.string.settings_blocked_users').id, 'Blocked Users'),
+              iconRes: TgUiTokens.ICON_RES_CONTACT,
+              iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_RED,
+              trailingType: TgSettingsTrailing.Arrow,
+              showSeparator: true,
+              onRowClick: (): void => {
+                this.onOpenBlockedUsers();
               }
             })
             TgSettingsRow({

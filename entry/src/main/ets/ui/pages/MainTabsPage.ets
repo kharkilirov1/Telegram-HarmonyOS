@@ -935,6 +935,9 @@ export struct MainTabsPage {
             },
             onOpenDevices: (): void => {
               this.chatDetailNavStack.pushPathByName('TgSessionsPage', undefined);
+            },
+            onOpenBlockedUsers: (): void => {
+              this.chatDetailNavStack.pushPathByName('TgBlockedUsersPage', undefined);
             }
           })
         }

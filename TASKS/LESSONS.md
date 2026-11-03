@@ -746,3 +746,12 @@ Last updated: 2026-10-23
   promises an action with no effect.
 - Grouping by TDLib `sessionType*` (17 values) must default unknown/app types to Active, never to Web:
   misclassifying an app login as a browser session hides a real security entry.
+
+## 183. TDLib unblocking is a null block list, not a separate method
+
+- `setMessageSenderBlockList(sender_id, block_list)` blocks when block_list is blockListMain and
+  unblocks when it is null (td_api.tl:13175). There is no remove/unblock method in this scheme.
+- The `_block_list_json` param expands raw, so the serializer writes the literal `null`; quoting it
+  would send `"null"` and TDLib would reject the request.
+- List payloads carry identifiers only: the blocked-users page resolves names from AppState and
+  falls back to a localized label plus the id rather than showing a blank row.
