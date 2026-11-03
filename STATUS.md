@@ -80,8 +80,8 @@ Documentation and repository structure were reconciled; no product code changed.
   side-by-side с iOS, Definition of Done, реестр долга.
 - `TASKS/SLICE_TEMPLATE.md` — шаблон плана среза (референс → контракт → швы → состояния → тест →
   приёмка).
-- `TASKS/CAPABILITY_MATRIX.md` — 105 строк по пользовательским возможностям iOS: 35 `available`,
-  54 `partial`, 12 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
+- `TASKS/CAPABILITY_MATRIX.md` — 105 строк по пользовательским возможностям iOS: 36 `available`,
+  53 `partial`, 12 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
   код-доказательство и связанные фичи; `available` без witness не ставится.
 - `TASKS/WORKMAP.md` — M0 (верифицировать 9 `unverified` строк), S1 (typing indicator, C2),
   S2 (стикеры/TGS, D13).
@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S12b (lead).** C10 закрыт до `available`: в шапке чата появилась «…»-капсула
+  (`@Param showMoreAction` + `@Event onMorePress`, нативный material и fallback, theme-foreground
+  токен), не заменяющая поиск; открывает `showActionMenu` с Chat Info (профиль), Mute/Unmute
+  (`SetChatMuteUseCase`), Clear History и Delete Chat (`deleteChatHistory`, remove=true для удаления,
+  revoke), подтверждения/тосты, после удаления — выход из чата. Состояние читается из live-store
+  (`activeChatId`), не из догадки. Контракт `test-chat-header-actions.cjs`; оба smoke обновлены:
+  theme-foreground-токен теперь пинится на 4 действия (back/search/more/close). Гейты: host
+  **117/117**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток: Share Contact/Report, роли, witness.
 - **S13f (lead).** B7: редактирование invite-ссылки. `editChatFolderInviteLink` (команда,
   сериализатор, `editLink` в use case с trim имени и проверкой ссылки), UI: тап по строке ссылки
   открывает инлайн-редактор имени (TextInput + Save/Cancel), после сохранения — тост и перезагрузка

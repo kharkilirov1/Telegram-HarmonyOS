@@ -16,6 +16,13 @@ import { TgChatComposerDock } from './TgChatComposerDock';
 import { TgChatPinnedOverlay } from './TgChatPinnedOverlay';
 import { TgChatMediaOverlay } from './TgChatMediaOverlay';
 import { NavigationUIState, navigationUIState } from '../../../core/model/UIStateModels';
+import { promptAction } from '@kit.ArkUI';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
+import { AppState, Chat } from '../../../core/model/AppState';
+import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
+import { createSetChatMuteUseCase, MUTE_FOREVER } from '../../../domain/usecases/setChatMute';
+import { createDeleteChatHistoryUseCase } from '../../../domain/usecases/deleteChatHistory';
 
 @ComponentV2
 export struct TgChatScreenPage {
@@ -24,12 +31,139 @@ export struct TgChatScreenPage {
   private session: ChatScreenSession = new ChatScreenSession(
     this.view, () => this.getUIContext(), () => this.queryNavigationInfo());
   private bindings: ChatScreenViewBindings = new ChatScreenViewBindings(this.session);
+  private pageLifecycleToken: number = 0;
+
+  private activeChat(): Chat | undefined {
+    const chatId = this.view.chrome.activeChatId;
+    if (chatId <= 0) {
+      return undefined;
+    }
+    try {
+      const state: AppState = getAppCoreRuntime().getStore().getState();
+      return state.chats.chats.get(chatId);
+    } catch (_error) {
+      return undefined;
+    }
+  }
+
+  private isActiveChatMuted(): boolean {
+    const chat = this.activeChat();
+    return chat !== undefined && chat.muteForSeconds > 0;
+  }
+
+  private showChatActionToast(message: string): void {
+    this.getUIContext().getPromptAction().showToast({ message: message, duration: 2000 });
+  }
+
+  private openChatActions(): void {
+    const chatId = this.view.chrome.activeChatId;
+    if (chatId <= 0) {
+      return;
+    }
+    const muteTitle: string = this.isActiveChatMuted()
+      ? localized($r('app.string.profile_unmute').id, 'Unmute')
+      : localized($r('app.string.profile_mute').id, 'Mute');
+    this.getUIContext().getPromptAction().showActionMenu({
+      title: this.view.chrome.title,
+      buttons: [
+        { text: localized($r('app.string.chat_actions_info').id, 'Chat Info'),
+          color: TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND },
+        { text: muteTitle, color: TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND },
+        { text: localized($r('app.string.profile_clear_history').id, 'Clear History'),
+          color: TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND },
+        { text: localized($r('app.string.profile_delete_chat').id, 'Delete Chat'),
+          color: TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE }
+      ]
+    }).then((result: promptAction.ActionMenuSuccessResponse) => {
+      if (result.index === 0) {
+        this.bindings.openProfile();
+      } else if (result.index === 1) {
+        this.toggleActiveChatMute(chatId);
+      } else if (result.index === 2) {
+        this.confirmChatDeletion(chatId, false);
+      } else if (result.index === 3) {
+        this.confirmChatDeletion(chatId, true);
+      }
+    }).catch((error: Error) => {
+      hilog.warn(0x003b, 'TgChatScreenPage', 'Chat actions failed: %{public}s', error.message);
+    });
+  }
+
+  private toggleActiveChatMute(chatId: number): void {
+    const token: number = this.pageLifecycleToken;
+    const nextMuted: boolean = !this.isActiveChatMuted();
+    try {
+      const useCase = createSetChatMuteUseCase(getTdGatewayAdapter());
+      const work = nextMuted ? useCase.mute(chatId, MUTE_FOREVER) : useCase.unmute(chatId);
+      work.then(() => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        this.showChatActionToast(nextMuted
+          ? localized($r('app.string.profile_mute').id, 'Mute')
+          : localized($r('app.string.profile_unmute').id, 'Unmute'));
+      }).catch((error: Error) => {
+        hilog.error(0x003b, 'TgChatScreenPage', 'Chat mute failed: %{public}s', error.message);
+      });
+    } catch (error) {
+      hilog.error(0x003b, 'TgChatScreenPage', 'Mute use case init failed: %{public}s', String(error));
+    }
+  }
+
+  private confirmChatDeletion(chatId: number, removeChat: boolean): void {
+    const title: string = removeChat
+      ? localized($r('app.string.profile_delete_chat').id, 'Delete Chat')
+      : localized($r('app.string.profile_clear_history').id, 'Clear History');
+    const message: string = removeChat
+      ? localized($r('app.string.profile_delete_chat_confirm').id, 'Delete this chat and all its messages?')
+      : localized($r('app.string.profile_clear_history_confirm').id,
+        'Delete all messages in this chat? The chat itself stays in the list.');
+    this.getUIContext().getPromptAction().showDialog({
+      title: title,
+      message: message,
+      buttons: [
+        { text: localized($r('app.string.cancel').id, 'Cancel'), color: TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND },
+        { text: title, color: TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE }
+      ]
+    }).then((result: promptAction.ShowDialogSuccessResponse) => {
+      if (result.index !== 1) {
+        return;
+      }
+      this.executeChatDeletion(chatId, removeChat);
+    }).catch((error: Error) => {
+      hilog.warn(0x003b, 'TgChatScreenPage', 'Delete dialog failed: %{public}s', error.message);
+    });
+  }
+
+  private executeChatDeletion(chatId: number, removeChat: boolean): void {
+    const token: number = this.pageLifecycleToken;
+    try {
+      const useCase = createDeleteChatHistoryUseCase(getTdGatewayAdapter());
+      useCase.execute(chatId, removeChat, removeChat).then(() => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        this.showChatActionToast(removeChat
+          ? localized($r('app.string.profile_chat_deleted_toast').id, 'Chat deleted')
+          : localized($r('app.string.profile_history_cleared_toast').id, 'History cleared'));
+        if (removeChat) {
+          this.bindings.handleBackPress();
+        }
+      }).catch((error: Error) => {
+        hilog.error(0x003b, 'TgChatScreenPage', 'Delete chat failed: %{public}s', error.message);
+      });
+    } catch (error) {
+      hilog.error(0x003b, 'TgChatScreenPage', 'Delete use case init failed: %{public}s', String(error));
+    }
+  }
 
   aboutToAppear(): void {
     this.session.aboutToAppear();
+    this.pageLifecycleToken += 1;
   }
 
   aboutToDisappear(): void {
+    this.pageLifecycleToken += 1;
     this.session.aboutToDisappear();
   }
 
@@ -95,6 +229,7 @@ export struct TgChatScreenPage {
           avatarImageSrc: this.view.chrome.chatAvatarImageSrc,
           isOnline: this.view.chrome.chatIsOnline,
           trailingAction: this.view.chrome.chatTopBarTrailingAction,
+          showMoreAction: this.view.chrome.activeChatId > 0,
           onBackPress: (): void => {
             this.bindings.handleBackPress();
           },
@@ -106,6 +241,9 @@ export struct TgChatScreenPage {
           },
           onSearchPress: (): void => {
             this.bindings.openSearch();
+          },
+          onMorePress: (): void => {
+            this.openChatActions();
           },
           isSearchMode: this.view.pinnedSearch.isSearchMode,
           searchQuery: this.view.pinnedSearch.searchQuery,

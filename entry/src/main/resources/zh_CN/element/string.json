@@ -525,6 +525,10 @@
       "value": "已屏蔽用户"
     },
     {
+      "name": "chat_actions_info",
+      "value": "聊天信息"
+    },
+    {
       "name": "profile_mute",
       "value": "静音"
     },

@@ -869,3 +869,12 @@ Last updated: 2026-10-23
   then trust the suite result.
 - Invite links keep `chat_ids: []` on create/edit from this UI, which TDLib reads as "all folder
   chats"; a restricted link needs explicit ids, so the UI must not pretend to offer the restriction.
+
+## 196. Smoke pins are contracts — update them with the change, not around it
+
+- `smoke-ui-phase0` counted exactly three theme-foreground tints in TgChatTopBar; a fourth legitimate
+  action turned that into a failure. The right move is to bump the pinned count and the message to
+  name the new action, in both the .sh and .ps1 variants — not to use a different token to dodge the
+  check.
+- Adding a second capsule next to the trailing one is a param (`showMoreAction`), not a new enum case:
+  replacing `Search` with `More` would have removed search from the header.

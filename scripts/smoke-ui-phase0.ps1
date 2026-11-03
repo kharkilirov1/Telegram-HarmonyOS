@@ -225,8 +225,8 @@ if (-not (Select-ChatContractString -LiteralPath $tgUiTokensFile -SimpleMatch 's
 
 $chatTopBarSource = Get-ChatContractContent -LiteralPath $chatTopBarFile -Raw
 if (-not (Select-ChatContractString -LiteralPath $tgUiTokensFile -SimpleMatch "static readonly CHAT_TOP_BAR_ACTION_FOREGROUND: Resource = `$r('app.color.text_primary');") -or
-  ([regex]::Matches($chatTopBarSource, 'tintColor: TgUiTokens\.CHAT_TOP_BAR_ACTION_FOREGROUND')).Count -ne 3) {
-  Write-Error 'TgChatTopBar back/search/close actions must retain their shipped iOS theme-foreground token.'
+  ([regex]::Matches($chatTopBarSource, 'tintColor: TgUiTokens\.CHAT_TOP_BAR_ACTION_FOREGROUND')).Count -ne 4) {
+  Write-Error 'TgChatTopBar back/search/more/close actions must retain their shipped iOS theme-foreground token.'
   exit 1
 }
 

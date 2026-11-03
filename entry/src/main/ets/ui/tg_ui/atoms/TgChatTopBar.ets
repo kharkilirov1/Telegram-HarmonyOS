@@ -24,6 +24,8 @@ export enum TgChatTopBarTrailingAction {
   None = 'none',
   Search = 'search',
   Avatar = 'avatar',
+  // Chat actions menu (the iOS "..." entry point).
+  More = 'more',
 }
 
 @ComponentV2
@@ -38,6 +40,8 @@ export struct TgChatTopBar {
   @Param avatarImageSrc: string = '';
   @Param isOnline: boolean = false;
   @Param trailingAction: TgChatTopBarTrailingAction = TgChatTopBarTrailingAction.Search;
+  // Extra "..." capsule shown left of the trailing one (chat actions entry point).
+  @Param showMoreAction: boolean = false;
   @Param glassMode: string = TgGlassPolicy.MODE_AUTO;
   @Param isSearchMode: boolean = false;
   @Param searchQuery: string = '';
@@ -48,6 +52,7 @@ export struct TgChatTopBar {
   @Event onTitlePress: () => void = (): void => {};
   @Event onAvatarPress: () => void = (): void => {};
   @Event onSearchPress: () => void = (): void => {};
+  @Event onMorePress: () => void = (): void => {};
   @Event onSearchQueryChange: (query: string) => void = (_query: string): void => {};
   @Event onSearchClose: () => void = (): void => {};
 
@@ -362,6 +367,82 @@ export struct TgChatTopBar {
   }
 
   @Builder
+  private buildMoreIcon() {
+    TgIcon({
+      src: TgUiTokens.ICON_RES_MORE,
+      iconSize: TgUiTokens.CHAT_TOP_BAR_ACTION_ICON_SIZE,
+      tintColor: TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND
+    })
+  }
+
+  @Builder
+  private buildNativeMoreActionCapsule() {
+    Row() {
+      this.buildMoreIcon()
+    }
+    .width(TgUiTokens.CHAT_TOP_BAR_CONTROL_SIZE)
+    .height(TgUiTokens.CHAT_TOP_BAR_CONTROL_SIZE)
+    .justifyContent(FlexAlign.Center)
+    .alignItems(VerticalAlign.Center)
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.THIN,
+      colorInvert: true,
+      applyShadow: true,
+      interactive: true
+    }))
+    .margin({ right: TgUiTokens.CHAT_TOP_BAR_CAPSULE_GAP })
+    .borderRadius(TgUiTokens.CHAT_TOP_BAR_CONTROL_RADIUS)
+    .clip(true)
+    .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.88 })
+    .responseRegion({
+      x: this.responseRegionOffset(),
+      y: this.responseRegionOffset(),
+      width: TgUiTokens.CHAT_TOP_BAR_RESPONSE_SIZE,
+      height: TgUiTokens.CHAT_TOP_BAR_RESPONSE_SIZE
+    })
+    .id('chat_top_bar_more')
+    .onClick(() => this.onMorePress())
+  }
+
+  @Builder
+  private buildFallbackMoreActionCapsule() {
+    Row() {
+      this.buildMoreIcon()
+    }
+    .width(TgUiTokens.CHAT_TOP_BAR_CONTROL_SIZE)
+    .height(TgUiTokens.CHAT_TOP_BAR_CONTROL_SIZE)
+    .justifyContent(FlexAlign.Center)
+    .alignItems(VerticalAlign.Center)
+    .backgroundColor(this.capsuleBg())
+    .backdropBlur(this.capsuleBackdropBlur())
+    .border({ width: TgUiTokens.CHAT_TOP_BAR_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
+    .borderRadius(TgUiTokens.CHAT_TOP_BAR_CONTROL_RADIUS)
+    .clip(true)
+    .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.88 })
+    .responseRegion({
+      x: this.responseRegionOffset(),
+      y: this.responseRegionOffset(),
+      width: TgUiTokens.CHAT_TOP_BAR_RESPONSE_SIZE,
+      height: TgUiTokens.CHAT_TOP_BAR_RESPONSE_SIZE
+    })
+    .id('chat_top_bar_more')
+    .onClick(() => this.onMorePress())
+  }
+
+  @Builder
+  private buildMoreActionCapsule() {
+    if (deviceInfo.apiAvailable('26.0.0')) {
+      if (this.useNativeMaterial()) {
+        this.buildNativeMoreActionCapsule()
+      } else {
+        this.buildFallbackMoreActionCapsule()
+      }
+    } else {
+      this.buildFallbackMoreActionCapsule()
+    }
+  }
+
+  @Builder
   private buildSearchActionCapsule() {
     if (deviceInfo.apiAvailable('26.0.0')) {
       if (this.useNativeMaterial()) {
@@ -619,10 +700,15 @@ export struct TgChatTopBar {
             })
             .transition(chatTopBarContentTransition())
 
+            if (this.showMoreAction) {
+              this.buildMoreActionCapsule()
+            }
             if (this.trailingAction === TgChatTopBarTrailingAction.Avatar) {
               this.buildAvatarCapsule()
             } else if (this.trailingAction === TgChatTopBarTrailingAction.Search) {
               this.buildSearchActionCapsule()
+            } else if (this.trailingAction === TgChatTopBarTrailingAction.More) {
+              this.buildMoreActionCapsule()
             } else {
               Blank()
                 .width(TgUiTokens.CHAT_TOP_BAR_CONTROL_SIZE)

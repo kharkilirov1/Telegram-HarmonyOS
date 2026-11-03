@@ -525,6 +525,10 @@
       "value": "Заблокированные"
     },
     {
+      "name": "chat_actions_info",
+      "value": "Информация о чате"
+    },
+    {
       "name": "profile_mute",
       "value": "Выключить уведомления"
     },

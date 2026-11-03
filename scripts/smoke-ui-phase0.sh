@@ -240,8 +240,8 @@ if ! grep -Fq 'static readonly BUBBLE_MAX_WIDTH_RATIO: number = 0.85;' "$TG_UI_T
 fi
 
 if ! grep -Fq "static readonly CHAT_TOP_BAR_ACTION_FOREGROUND: Resource = \$r('app.color.text_primary');" "$TG_UI_TOKENS" ||
-   [[ "$(grep -Fc 'tintColor: TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND' "$CHAT_TOP_BAR")" -ne 3 ]]; then
-  echo "ERROR: TgChatTopBar back/search/close actions must retain their shipped iOS theme-foreground token." >&2
+   [[ "$(grep -Fc 'tintColor: TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND' "$CHAT_TOP_BAR")" -ne 4 ]]; then
+  echo "ERROR: TgChatTopBar back/search/more/close actions must retain their shipped iOS theme-foreground token." >&2
   exit 1
 fi
 

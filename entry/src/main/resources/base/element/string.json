@@ -525,6 +525,10 @@
       "value": "Blocked Users"
     },
     {
+      "name": "chat_actions_info",
+      "value": "Chat Info"
+    },
+    {
       "name": "profile_mute",
       "value": "Mute"
     },
