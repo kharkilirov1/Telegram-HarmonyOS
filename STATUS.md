@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S13c (lead).** B7: include-флаги в редакторе папки. Раньше `ChatFolderDto` читал 5 include-флагов
+  (contacts/non-contacts/bots/groups/channels), но UI их не показывал и не отправлял. Теперь все 10
+  флагов переключаются, сбрасываются при создании, подгружаются из `getChatFolder` при
+  редактировании и уходят в `chatFolder` JSON. Контракт `test-chat-folder-settings.cjs`: true-значения
+  всех include-флагов в wire (create), их сохранение в edit-payload, проводка страницы и 5 строк в
+  3 локалях. Гейты: host **116/116**, оба smoke, hvigor BUILD SUCCESSFUL.
+  **Осталось (B7):** выбор конкретных чатов (`included_chat_ids`), shareable-ссылки, folder link
+  preview, witness.
 - **S13b (lead).** B7: чтение полной папки. Закрыт долг «редактор не видит флаги»: `getChatFolder`
   (td_api.tl:12051) → `ChatFolderDto` (name, icon, color_id, is_shareable, pinned/included/excluded
   int53 через `TdObject.getTopLevelRawItemArrayStrict`, 7 include + 3 exclude флагов);

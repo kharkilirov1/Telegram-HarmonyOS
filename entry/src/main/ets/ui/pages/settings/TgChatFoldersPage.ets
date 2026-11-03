@@ -38,6 +38,11 @@ export struct TgChatFoldersPage {
   @Local private excludeMuted: boolean = false;
   @Local private excludeRead: boolean = false;
   @Local private excludeArchived: boolean = false;
+  @Local private includeContacts: boolean = false;
+  @Local private includeNonContacts: boolean = false;
+  @Local private includeBots: boolean = false;
+  @Local private includeGroups: boolean = false;
+  @Local private includeChannels: boolean = false;
   @Local private isBusy: boolean = false;
   @Local private isLoadingFolder: boolean = false;
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
@@ -100,6 +105,15 @@ export struct TgChatFoldersPage {
     this.excludeMuted = false;
     this.excludeRead = false;
     this.excludeArchived = false;
+    this.resetIncludeFlags();
+  }
+
+  private resetIncludeFlags(): void {
+    this.includeContacts = false;
+    this.includeNonContacts = false;
+    this.includeBots = false;
+    this.includeGroups = false;
+    this.includeChannels = false;
   }
 
   private startEdit(folder: ChatFolderInfo): void {
@@ -108,6 +122,7 @@ export struct TgChatFoldersPage {
     this.excludeMuted = false;
     this.excludeRead = false;
     this.excludeArchived = false;
+    this.resetIncludeFlags();
     this.loadFolderFlags(folder.id);
   }
 
@@ -129,6 +144,11 @@ export struct TgChatFoldersPage {
         this.excludeMuted = folder.excludeMuted;
         this.excludeRead = folder.excludeRead;
         this.excludeArchived = folder.excludeArchived;
+        this.includeContacts = folder.includeContacts;
+        this.includeNonContacts = folder.includeNonContacts;
+        this.includeBots = folder.includeBots;
+        this.includeGroups = folder.includeGroups;
+        this.includeChannels = folder.includeChannels;
       })
       .catch((error: Error) => {
         if (token !== this.pageLifecycleToken) {
@@ -145,6 +165,11 @@ export struct TgChatFoldersPage {
     draft.excludeMuted = this.excludeMuted;
     draft.excludeRead = this.excludeRead;
     draft.excludeArchived = this.excludeArchived;
+    draft.includeContacts = this.includeContacts;
+    draft.includeNonContacts = this.includeNonContacts;
+    draft.includeBots = this.includeBots;
+    draft.includeGroups = this.includeGroups;
+    draft.includeChannels = this.includeChannels;
     return draft;
   }
 
@@ -337,6 +362,26 @@ export struct TgChatFoldersPage {
               this.buildFlagRow(localized($r('app.string.folders_exclude_archived').id, 'Exclude archived'),
                 this.excludeArchived, (): void => {
                   this.excludeArchived = !this.excludeArchived;
+                })
+              this.buildFlagRow(localized($r('app.string.folders_include_contacts').id, 'Include contacts'),
+                this.includeContacts, (): void => {
+                  this.includeContacts = !this.includeContacts;
+                })
+              this.buildFlagRow(localized($r('app.string.folders_include_non_contacts').id, 'Include non-contacts'),
+                this.includeNonContacts, (): void => {
+                  this.includeNonContacts = !this.includeNonContacts;
+                })
+              this.buildFlagRow(localized($r('app.string.folders_include_bots').id, 'Include bots'),
+                this.includeBots, (): void => {
+                  this.includeBots = !this.includeBots;
+                })
+              this.buildFlagRow(localized($r('app.string.folders_include_groups').id, 'Include groups'),
+                this.includeGroups, (): void => {
+                  this.includeGroups = !this.includeGroups;
+                })
+              this.buildFlagRow(localized($r('app.string.folders_include_channels').id, 'Include channels'),
+                this.includeChannels, (): void => {
+                  this.includeChannels = !this.includeChannels;
                 })
 
               Row() {

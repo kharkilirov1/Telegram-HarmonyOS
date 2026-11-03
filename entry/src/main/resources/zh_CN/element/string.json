@@ -281,6 +281,26 @@
       "value": "删除此文件夹？聊天仍保留在列表中。"
     },
     {
+      "name": "folders_include_contacts",
+      "value": "包含联系人"
+    },
+    {
+      "name": "folders_include_non_contacts",
+      "value": "包含非联系人"
+    },
+    {
+      "name": "folders_include_bots",
+      "value": "包含机器人"
+    },
+    {
+      "name": "folders_include_groups",
+      "value": "包含群组"
+    },
+    {
+      "name": "folders_include_channels",
+      "value": "包含频道"
+    },
+    {
       "name": "folders_exclude_muted",
       "value": "排除静音聊天"
     },

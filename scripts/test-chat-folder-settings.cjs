@@ -50,6 +50,21 @@ function draft(overrides = {}) {
   assert.equal(create.folder.exclude_archived, false);
   assert.equal(create.folder.include_groups, false);
 
+  const includeAll = JSON.parse(serializer.buildTdlibRequestJson('createChatFolder',
+    serializer.serializeCommand(C.createChatFolderCommand(draft({
+      title: 'All',
+      includeContacts: true,
+      includeNonContacts: true,
+      includeBots: true,
+      includeGroups: true,
+      includeChannels: true
+    }))).params));
+  assert.equal(includeAll.folder.include_contacts, true);
+  assert.equal(includeAll.folder.include_non_contacts, true);
+  assert.equal(includeAll.folder.include_bots, true);
+  assert.equal(includeAll.folder.include_groups, true);
+  assert.equal(includeAll.folder.include_channels, true);
+
   // Quotes and backslashes must not break the raw JSON object.
   const quoted = JSON.parse(serializer.buildTdlibRequestJson('createChatFolder',
     serializer.serializeCommand(C.createChatFolderCommand(draft({ title: 'A"B\\C' }))).params));
@@ -141,10 +156,13 @@ async function checkUseCase() {
   assert.equal(sent[0].type, 'createChatFolder');
   assert.equal(sent[0].payload.title, 'Work', 'the title is trimmed before sending');
 
-  await useCase.editFolder(3, draft({ title: 'Home', excludeRead: true }));
+  await useCase.editFolder(3, draft({ title: 'Home', excludeRead: true,
+    includeContacts: true, includeChannels: true }));
   assert.equal(sent[1].type, 'editChatFolder');
   assert.equal(sent[1].payload.folderId, 3);
   assert.equal(sent[1].payload.draft.excludeRead, true);
+  assert.equal(sent[1].payload.draft.includeContacts, true);
+  assert.equal(sent[1].payload.draft.includeChannels, true);
 
   await useCase.deleteFolder(4);
   assert.equal(sent[2].type, 'deleteChatFolder');
@@ -183,6 +201,14 @@ async function checkUseCase() {
   assert.match(page, /useCase\.fetchFolder\(folderId\)/);
   assert.match(page, /this\.excludeMuted = folder\.excludeMuted;/);
   assert.match(page, /this\.excludeRead = folder\.excludeRead;/);
+  assert.match(page, /@Local private includeContacts: boolean = false;/);
+  assert.match(page, /this\.includeContacts = folder\.includeContacts;/);
+  assert.match(page, /this\.includeChannels = folder\.includeChannels;/);
+  assert.match(page, /draft\.includeContacts = this\.includeContacts;/);
+  assert.match(page, /draft\.includeChannels = this\.includeChannels;/);
+  assert.match(page, /folders_include_contacts/);
+  assert.match(page, /folders_include_channels/);
+  assert.match(page, /private resetIncludeFlags\(\): void \{/);
   assert.match(page, /enabled\(!this\.isBusy && !this\.isLoadingFolder && this\.draftTitle\.trim\(\)\.length > 0\)/,
     'saving stays disabled until the stored flags are read');
   assert.match(page, /folders_exclude_muted/);
@@ -205,7 +231,9 @@ async function checkUseCase() {
     for (const name of ['folders_list_section', 'folders_empty', 'folders_new', 'folders_edit_title',
       'folders_editing', 'folders_name_placeholder', 'folders_create', 'folders_save', 'folders_delete',
       'folders_cancel', 'folders_delete_confirm', 'folders_exclude_muted', 'folders_exclude_read',
-      'folders_exclude_archived', 'folders_created_toast', 'folders_saved_toast', 'folders_deleted_toast',
+      'folders_exclude_archived', 'folders_include_contacts', 'folders_include_non_contacts',
+      'folders_include_bots', 'folders_include_groups', 'folders_include_channels',
+      'folders_created_toast', 'folders_saved_toast', 'folders_deleted_toast',
       'folders_failed_toast']) {
       const item = strings.string.find((entry) => entry.name === name);
       assert.ok(item && item.value.length > 0, name + ' exists in ' + locale);

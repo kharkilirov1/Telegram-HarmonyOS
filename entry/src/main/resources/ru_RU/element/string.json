@@ -281,6 +281,26 @@
       "value": "Удалить папку? Чаты останутся в списке."
     },
     {
+      "name": "folders_include_contacts",
+      "value": "Включить контакты"
+    },
+    {
+      "name": "folders_include_non_contacts",
+      "value": "Включить не-контакты"
+    },
+    {
+      "name": "folders_include_bots",
+      "value": "Включить ботов"
+    },
+    {
+      "name": "folders_include_groups",
+      "value": "Включить группы"
+    },
+    {
+      "name": "folders_include_channels",
+      "value": "Включить каналы"
+    },
+    {
       "name": "folders_exclude_muted",
       "value": "Исключить беззвучные"
     },

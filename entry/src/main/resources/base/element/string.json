@@ -281,6 +281,26 @@
       "value": "Delete this folder? Chats stay in your chat list."
     },
     {
+      "name": "folders_include_contacts",
+      "value": "Include contacts"
+    },
+    {
+      "name": "folders_include_non_contacts",
+      "value": "Include non-contacts"
+    },
+    {
+      "name": "folders_include_bots",
+      "value": "Include bots"
+    },
+    {
+      "name": "folders_include_groups",
+      "value": "Include groups"
+    },
+    {
+      "name": "folders_include_channels",
+      "value": "Include channels"
+    },
+    {
       "name": "folders_exclude_muted",
       "value": "Exclude muted"
     },

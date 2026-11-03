@@ -835,3 +835,11 @@ Last updated: 2026-10-23
   server state — read back first, then enable Save.
 - int53 vectors in responses are best read with a raw item scanner: JSON.parse turns 9007199254740001
   into a rounded double, and a chat id is an identity, not a measurement.
+
+## 192. A flag read from the server must also be written back
+
+- The folder DTO already parsed the five include flags, but the editor neither showed them nor sent
+  them, so every save silently reset them to false — the same class of bug as R191, one layer up:
+  reading is only half the contract when the same object is rewritten on save.
+- When a payload has N flags, make the editor own all N or explicitly mark the rest as untouched;
+  partial editors on full-replacement payloads are data loss.
