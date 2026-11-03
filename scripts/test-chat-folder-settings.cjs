@@ -24,6 +24,12 @@ const C = load('core/model/AppCommand.ets');
 const errors = load('core/model/AppError.ets');
 const serializer = load('infra/td/serialization/CommandSerializer.ets', { ...C, TdObject, hilog });
 const D = load('core/model/dto/ChatFolderDto.ets', { TdObjectType: TdObject });
+const LINKS_TEXT = '{"@type":"chatFolderInviteLinks","invite_links":[' +
+  '{"@type":"chatFolderInviteLink","invite_link":"https://t.me/addlist/a","name":"First",' +
+  '"chat_ids":[5,9007199254740001]},' +
+  '{"@type":"chatFolderInviteLink","invite_link":"https://t.me/addlist/b","name":"",' +
+  '"chat_ids":[]}]}';
+const L = load('core/model/dto/ChatFolderInviteLinkDto.ets', { TdObjectType: TdObject });
 
 function draft(overrides = {}) {
   return Object.assign(new C.ChatFolderDraftPayload(), overrides);
@@ -94,6 +100,35 @@ function draft(overrides = {}) {
     serializer.serializeCommand(C.createDeleteChatFolderCommand(12)).params));
   assert.equal(remove.chat_folder_id, 12);
   assert.deepEqual(remove.leave_chat_ids, [], 'deleting never leaves chats implicitly');
+}
+
+// Invite links: wire shapes, list parsing and int53 chat ids --------------------------------------
+{
+  const listWire = JSON.parse(serializer.buildTdlibRequestJson('getChatFolderInviteLinks',
+    serializer.serializeCommand(C.createGetChatFolderInviteLinksCommand(12)).params));
+  assert.equal(listWire.chat_folder_id, 12);
+
+  const createWire = JSON.parse(serializer.buildTdlibRequestJson('createChatFolderInviteLink',
+    serializer.serializeCommand(C.createCreateChatFolderInviteLinkCommand(12, 'Friends')).params));
+  assert.equal(createWire.chat_folder_id, 12);
+  assert.equal(createWire.name, 'Friends');
+  assert.deepEqual(createWire.chat_ids, []);
+
+  const deleteWire = JSON.parse(serializer.buildTdlibRequestJson('deleteChatFolderInviteLink',
+    serializer.serializeCommand(C.createDeleteChatFolderInviteLinkCommand(12, 'https://t.me/addlist/abc')).params));
+  assert.equal(deleteWire.chat_folder_id, 12);
+  assert.equal(deleteWire.invite_link, 'https://t.me/addlist/abc');
+
+  const links = L.createChatFolderInviteLinksFromTd(TdObject.fromJSON(LINKS_TEXT));
+  assert.equal(links.links.length, 2);
+  assert.equal(links.links[0].inviteLink, 'https://t.me/addlist/a');
+  assert.equal(links.links[0].name, 'First');
+  assert.deepEqual(links.links[0].chatIds, [5, 9007199254740001]);
+  assert.deepEqual(links.links[1].chatIds, []);
+
+  assert.equal(L.createChatFolderInviteLinksFromTd(TdObject.fromJSON('{"@type":"ok"}')).links.length, 0);
+  assert.equal(L.createChatFolderInviteLinkFromTd(TdObject.fromJSON(
+    '{"@type":"chatFolderInviteLink","invite_link":"","name":"x"}')), undefined);
 }
 
 // getChatFolder read-back: full folder including the flags chatFolderInfo omits -------------------
@@ -190,6 +225,46 @@ async function checkUseCase() {
   await assert.rejects(() => useCase.deleteFolder(-2), /Invalid folderId/);
   await assert.rejects(() => useCase.createFolder(draft({ title: 'A', includedChatIds: [1, 0] })),
     /Invalid chat id/);
+
+  const linkSent = [];
+  const linksGateway = { send: (command) => {
+    linkSent.push(command);
+    if (command.type === 'getChatFolderInviteLinks') {
+      return Promise.resolve(TdObject.fromJSON(LINKS_TEXT));
+    }
+    return Promise.resolve(TdObject.fromJSON('{"@type":"ok"}'));
+  } };
+  const linksUseCase = new (load('domain/usecases/manageChatFolderInviteLinks.ets',
+    { ...C, ...errors, hilog, TdObject, ChatFolderInviteLinkDto: L.ChatFolderInviteLinkDto,
+      createChatFolderInviteLinksFromTd: L.createChatFolderInviteLinksFromTd })
+    .ManageChatFolderInviteLinksUseCase)(linksGateway);
+
+  const listed = await linksUseCase.listLinks(12);
+  assert.equal(linkSent.at(-1).type, 'getChatFolderInviteLinks');
+  assert.equal(linkSent.at(-1).payload.folderId, 12);
+  assert.equal(listed.length, 2);
+
+  await linksUseCase.createLink(12, '  Friends  ');
+  assert.equal(linkSent.at(-1).type, 'createChatFolderInviteLink');
+  assert.equal(linkSent.at(-1).payload.name, 'Friends', 'the link name is trimmed');
+
+  await linksUseCase.deleteLink(12, 'https://t.me/addlist/a');
+  assert.equal(linkSent.at(-1).type, 'deleteChatFolderInviteLink');
+  assert.equal(linkSent.at(-1).payload.inviteLink, 'https://t.me/addlist/a');
+
+  await assert.rejects(() => linksUseCase.listLinks(0), /Invalid folderId/);
+  await assert.rejects(() => linksUseCase.createLink(12, '   '), /Invalid link name/);
+  await assert.rejects(() => linksUseCase.createLink(12, 'x'.repeat(33)), /Invalid link name/);
+  await assert.rejects(() => linksUseCase.deleteLink(12, '  '), /Invalid invite link/);
+  assert.equal(linkSent.length, 3, 'invalid input never reaches the gateway');
+
+  const failingLinks = new (load('domain/usecases/manageChatFolderInviteLinks.ets',
+    { ...C, ...errors, hilog, TdObject, ChatFolderInviteLinkDto: L.ChatFolderInviteLinkDto,
+      createChatFolderInviteLinksFromTd: L.createChatFolderInviteLinksFromTd })
+    .ManageChatFolderInviteLinksUseCase)({ send: () => Promise.reject(new Error('native status')) });
+  await assert.rejects(() => failingLinks.listLinks(1), /Failed to load invite links/);
+  await assert.rejects(() => failingLinks.createLink(1, 'A'), /Failed to create the invite link/);
+  await assert.rejects(() => failingLinks.deleteLink(1, 'https://t.me/addlist/x'), /Failed to delete the invite link/);
   assert.equal(sent.length, 3, 'invalid input never reaches the gateway');
 
   await useCase.createFolder(draft({ title: 'x'.repeat(12) }));
@@ -236,6 +311,13 @@ async function checkUseCase() {
   assert.match(page, /pushPathByName\('TgFolderChatsPage', params,/);
   assert.match(page, /this\.includedChatIds = result\.selectedChatIds\.slice\(\);/);
   assert.match(page, /folders_included_chats/);
+  assert.match(page, /createManageChatFolderInviteLinksUseCase\(getTdGatewayAdapter\(\)\)/);
+  assert.match(page, /useCase\.listLinks\(folderId\)/);
+  assert.match(page, /useCase\.createLink\(folderId, name\)/);
+  assert.match(page, /useCase\.deleteLink\(folderId, inviteLink\)/);
+  assert.match(page, /pasteboard\.getSystemPasteboard\(\)\.setDataSync\(data\)/);
+  assert.match(page, /folders_invite_links/);
+  assert.match(page, /folders_create_link/);
 
   const selectionPage = read('ui/pages/settings/TgFolderChatsPage.ets');
   assert.match(selectionPage, /export function TgFolderChatsPageBuilder\(\)/);
@@ -271,7 +353,11 @@ async function checkUseCase() {
       'folders_exclude_archived', 'folders_include_contacts', 'folders_include_non_contacts',
       'folders_include_bots', 'folders_include_groups', 'folders_include_channels',
       'folders_included_chats', 'folders_select_chats', 'folder_chats_title', 'folder_chats_empty',
-      'folder_chats_save', 'folders_created_toast', 'folders_saved_toast', 'folders_deleted_toast',
+      'folder_chats_save', 'folders_invite_links', 'folders_create_link', 'folders_links_empty',
+      'folders_copy_link', 'folders_delete_link', 'folders_delete_link_confirm',
+      'folders_link_default_name', 'folders_link_created_toast', 'folders_link_deleted_toast',
+      'folders_link_copied_toast', 'folders_link_copy_failed', 'folders_link_failed_toast',
+      'folders_created_toast', 'folders_saved_toast', 'folders_deleted_toast',
       'folders_failed_toast']) {
       const item = strings.string.find((entry) => entry.name === name);
       assert.ok(item && item.value.length > 0, name + ' exists in ' + locale);

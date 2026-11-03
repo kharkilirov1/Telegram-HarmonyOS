@@ -146,6 +146,15 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S13e (lead).** B7: пригласительные ссылки папки. Команды `getChatFolderInviteLinks`/
+  `createChatFolderInviteLink`/`deleteChatFolderInviteLink` + сериализатор, `ChatFolderInviteLinkDto`
+  (список, int53 `chat_ids` через raw items, пустая ссылка — не валидная),
+  `ManageChatFolderInviteLinksUseCase` (list/create/delete, trim имени, лимит 32, отказ до gateway),
+  секция Invite Links в редакторе: список, создание, копирование в pasteboard, удаление с
+  подтверждением. Контракт `test-chat-folder-settings.cjs`: wire-формы трёх команд, разбор списка
+  (int53), use case успех/ошибки/валидация, проводка страницы, 12 строк в 3 локалях. Гейты: host
+  **116/116**, оба smoke, hvigor BUILD SUCCESSFUL. **Осталось (B7):** `editChatFolderInviteLink`,
+  folder link preview, witness.
 - **S13d (lead).** B7: выбор конкретных чатов в папку. Новый экран `TgFolderChatsPage` (список по
   `selectOrderedChats`, чекбоксы, счётчик в шапке, «Done» возвращает `FolderChatSelectionResult`
   через pop-callback), `includedChatIds` в `ChatFolderDraftPayload` + сериализатор (невалидные id

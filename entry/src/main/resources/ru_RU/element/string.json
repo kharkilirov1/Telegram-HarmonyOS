@@ -281,6 +281,54 @@
       "value": "Удалить папку? Чаты останутся в списке."
     },
     {
+      "name": "folders_invite_links",
+      "value": "Пригласительные ссылки"
+    },
+    {
+      "name": "folders_create_link",
+      "value": "Создать ссылку"
+    },
+    {
+      "name": "folders_links_empty",
+      "value": "Пока нет ссылок"
+    },
+    {
+      "name": "folders_copy_link",
+      "value": "Копировать"
+    },
+    {
+      "name": "folders_delete_link",
+      "value": "Удалить ссылку"
+    },
+    {
+      "name": "folders_delete_link_confirm",
+      "value": "Удалить эту ссылку? Кто уже вступил, останутся в папке."
+    },
+    {
+      "name": "folders_link_default_name",
+      "value": "Ссылка"
+    },
+    {
+      "name": "folders_link_created_toast",
+      "value": "Ссылка создана"
+    },
+    {
+      "name": "folders_link_deleted_toast",
+      "value": "Ссылка удалена"
+    },
+    {
+      "name": "folders_link_copied_toast",
+      "value": "Ссылка скопирована"
+    },
+    {
+      "name": "folders_link_copy_failed",
+      "value": "Не удалось скопировать ссылку"
+    },
+    {
+      "name": "folders_link_failed_toast",
+      "value": "Не удалось изменить ссылки"
+    },
+    {
       "name": "folder_chats_title",
       "value": "Чаты папки"
     },

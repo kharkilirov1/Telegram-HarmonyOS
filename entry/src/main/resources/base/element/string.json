@@ -281,6 +281,54 @@
       "value": "Delete this folder? Chats stay in your chat list."
     },
     {
+      "name": "folders_invite_links",
+      "value": "Invite Links"
+    },
+    {
+      "name": "folders_create_link",
+      "value": "Create Link"
+    },
+    {
+      "name": "folders_links_empty",
+      "value": "No invite links yet"
+    },
+    {
+      "name": "folders_copy_link",
+      "value": "Copy"
+    },
+    {
+      "name": "folders_delete_link",
+      "value": "Delete Link"
+    },
+    {
+      "name": "folders_delete_link_confirm",
+      "value": "Delete this invite link? People who already joined stay in the folder."
+    },
+    {
+      "name": "folders_link_default_name",
+      "value": "Link"
+    },
+    {
+      "name": "folders_link_created_toast",
+      "value": "Invite link created"
+    },
+    {
+      "name": "folders_link_deleted_toast",
+      "value": "Invite link deleted"
+    },
+    {
+      "name": "folders_link_copied_toast",
+      "value": "Link copied"
+    },
+    {
+      "name": "folders_link_copy_failed",
+      "value": "Could not copy the link"
+    },
+    {
+      "name": "folders_link_failed_toast",
+      "value": "Could not update invite links"
+    },
+    {
       "name": "folder_chats_title",
       "value": "Folder Chats"
     },

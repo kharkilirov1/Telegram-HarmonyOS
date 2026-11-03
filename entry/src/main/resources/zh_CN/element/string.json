@@ -281,6 +281,54 @@
       "value": "删除此文件夹？聊天仍保留在列表中。"
     },
     {
+      "name": "folders_invite_links",
+      "value": "邀请链接"
+    },
+    {
+      "name": "folders_create_link",
+      "value": "创建链接"
+    },
+    {
+      "name": "folders_links_empty",
+      "value": "还没有邀请链接"
+    },
+    {
+      "name": "folders_copy_link",
+      "value": "复制"
+    },
+    {
+      "name": "folders_delete_link",
+      "value": "删除链接"
+    },
+    {
+      "name": "folders_delete_link_confirm",
+      "value": "删除此邀请链接？已加入的用户仍留在文件夹中。"
+    },
+    {
+      "name": "folders_link_default_name",
+      "value": "链接"
+    },
+    {
+      "name": "folders_link_created_toast",
+      "value": "邀请链接已创建"
+    },
+    {
+      "name": "folders_link_deleted_toast",
+      "value": "邀请链接已删除"
+    },
+    {
+      "name": "folders_link_copied_toast",
+      "value": "链接已复制"
+    },
+    {
+      "name": "folders_link_copy_failed",
+      "value": "无法复制链接"
+    },
+    {
+      "name": "folders_link_failed_toast",
+      "value": "无法更新邀请链接"
+    },
+    {
       "name": "folder_chats_title",
       "value": "文件夹聊天"
     },

@@ -7,7 +7,8 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
   AnyAppCommand,
   ChatFolderDraftPayload,
-  GetChatFolderCommand,
+  CreateChatFolderInviteLinkCommand, DeleteChatFolderInviteLinkCommand,
+  GetChatFolderCommand, GetChatFolderInviteLinksCommand,
   CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand,
   GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
   GetStorageStatisticsCommand,
@@ -121,6 +122,9 @@ COMMAND_SERIALIZATION_HANDLERS.set('setMessageReactions', serializeSetMessageRea
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageAvailableReactions', serializeGetMessageAvailableReactions);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
+COMMAND_SERIALIZATION_HANDLERS.set('getChatFolderInviteLinks', serializeGetChatFolderInviteLinks);
+COMMAND_SERIALIZATION_HANDLERS.set('createChatFolderInviteLink', serializeCreateChatFolderInviteLink);
+COMMAND_SERIALIZATION_HANDLERS.set('deleteChatFolderInviteLink', serializeDeleteChatFolderInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatFolder', serializeGetChatFolder);
 COMMAND_SERIALIZATION_HANDLERS.set('createChatFolder', serializeCreateChatFolder);
 COMMAND_SERIALIZATION_HANDLERS.set('editChatFolder', serializeEditChatFolder);
@@ -441,6 +445,27 @@ function buildChatFolderJson(draft: ChatFolderDraftPayload): string {
     ',"include_bots":' + (draft.includeBots ? 'true' : 'false') +
     ',"include_groups":' + (draft.includeGroups ? 'true' : 'false') +
     ',"include_channels":' + (draft.includeChannels ? 'true' : 'false') + '}';
+}
+
+function serializeGetChatFolderInviteLinks(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetChatFolderInviteLinksCommand;
+  result.method = 'getChatFolderInviteLinks';
+  result.params.setNumber('chat_folder_id', cmd.payload.folderId);
+}
+
+function serializeCreateChatFolderInviteLink(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as CreateChatFolderInviteLinkCommand;
+  result.method = 'createChatFolderInviteLink';
+  result.params.setNumber('chat_folder_id', cmd.payload.folderId);
+  result.params.setString('name', cmd.payload.name);
+  result.params.setString('_chat_ids_json', '[]');
+}
+
+function serializeDeleteChatFolderInviteLink(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as DeleteChatFolderInviteLinkCommand;
+  result.method = 'deleteChatFolderInviteLink';
+  result.params.setNumber('chat_folder_id', cmd.payload.folderId);
+  result.params.setString('invite_link', cmd.payload.inviteLink);
 }
 
 function serializeGetChatFolder(command: AnyAppCommand, result: SerializedCommand): void {

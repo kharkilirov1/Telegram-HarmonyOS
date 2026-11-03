@@ -12,6 +12,12 @@ import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { ChatFolderDraftPayload } from '../../../core/model/AppCommand';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { ChatFolderDto } from '../../../core/model/dto/ChatFolderDto';
+import { ChatFolderInviteLinkDto } from '../../../core/model/dto/ChatFolderInviteLinkDto';
+import {
+  createManageChatFolderInviteLinksUseCase,
+  ManageChatFolderInviteLinksUseCase
+} from '../../../domain/usecases/manageChatFolderInviteLinks';
+import { pasteboard } from '@kit.BasicServicesKit';
 import {
   FolderChatSelectionResult,
   FolderChatSelectionRouteParams
@@ -49,12 +55,15 @@ export struct TgChatFoldersPage {
   @Local private includeChannels: boolean = false;
   // Explicitly included chats; empty means the folder is defined by flags only.
   @Local private includedChatIds: number[] = [];
+  @Local private inviteLinks: ChatFolderInviteLinkDto[] = [];
+  @Local private isLoadingLinks: boolean = false;
   @Local private isBusy: boolean = false;
   @Local private isLoadingFolder: boolean = false;
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
   @Local private topBarInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
 
   private manageUseCase?: ManageChatFoldersUseCase;
+  private inviteLinksUseCase?: ManageChatFolderInviteLinksUseCase;
   private storeUnsubscribe?: () => void;
   private pageLifecycleToken: number = 0;
 
@@ -70,6 +79,7 @@ export struct TgChatFoldersPage {
     }
     try {
       this.manageUseCase = createManageChatFoldersUseCase(getTdGatewayAdapter());
+      this.inviteLinksUseCase = createManageChatFolderInviteLinksUseCase(getTdGatewayAdapter());
       const store = getAppCoreRuntime().getStore();
       this.refreshFolders(store.getState());
       this.storeUnsubscribe = store.subscribe((state: AppState): void => {
@@ -87,6 +97,7 @@ export struct TgChatFoldersPage {
       this.storeUnsubscribe = undefined;
     }
     this.manageUseCase = undefined;
+    this.inviteLinksUseCase = undefined;
   }
 
   private refreshFolders(state: AppState): void {
@@ -116,6 +127,8 @@ export struct TgChatFoldersPage {
 
   private resetIncludeFlags(): void {
     this.includedChatIds = [];
+    this.inviteLinks = [];
+    this.isLoadingLinks = false;
     this.includeContacts = false;
     this.includeNonContacts = false;
     this.includeBots = false;
@@ -131,6 +144,7 @@ export struct TgChatFoldersPage {
     this.excludeArchived = false;
     this.resetIncludeFlags();
     this.loadFolderFlags(folder.id);
+    this.loadInviteLinks(folder.id);
   }
 
   // chatFolderInfo has no flags; getChatFolder returns the whole ChatFolder so a rename keeps them.
@@ -165,6 +179,113 @@ export struct TgChatFoldersPage {
         this.isLoadingFolder = false;
         hilog.warn(DOMAIN, TAG, 'Load folder failed: %{public}s', error.message);
       });
+  }
+
+  private loadInviteLinks(folderId: number): void {
+    const useCase = this.inviteLinksUseCase;
+    if (useCase === undefined) {
+      return;
+    }
+    const token: number = this.pageLifecycleToken;
+    this.isLoadingLinks = true;
+    useCase.listLinks(folderId)
+      .then((links: ChatFolderInviteLinkDto[]) => {
+        if (token !== this.pageLifecycleToken || this.editingFolderId !== folderId) {
+          return;
+        }
+        this.isLoadingLinks = false;
+        this.inviteLinks = links;
+      })
+      .catch((error: Error) => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        this.isLoadingLinks = false;
+        hilog.warn(DOMAIN, TAG, 'Load invite links failed: %{public}s', error.message);
+      });
+  }
+
+  private createInviteLink(): void {
+    const useCase = this.inviteLinksUseCase;
+    const folderId = this.editingFolderId;
+    if (useCase === undefined || folderId <= 0) {
+      return;
+    }
+    const token: number = this.pageLifecycleToken;
+    const name: string = localized($r('app.string.folders_link_default_name').id, 'Link') + ' ' +
+      (this.inviteLinks.length + 1).toString();
+    this.isLoadingLinks = true;
+    useCase.createLink(folderId, name).then(() => {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
+      this.isLoadingLinks = false;
+      this.toast(localized($r('app.string.folders_link_created_toast').id, 'Invite link created'));
+      this.loadInviteLinks(folderId);
+    }).catch((error: Error) => {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
+      this.isLoadingLinks = false;
+      this.toast(error.message.length > 0
+        ? error.message : localized($r('app.string.folders_link_failed_toast').id, 'Could not update invite links'));
+    });
+  }
+
+  private copyInviteLink(link: string): void {
+    try {
+      const data = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, link);
+      pasteboard.getSystemPasteboard().setDataSync(data);
+      this.toast(localized($r('app.string.folders_link_copied_toast').id, 'Link copied'));
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Copy invite link failed: %{public}s', String(error));
+      this.toast(localized($r('app.string.folders_link_copy_failed').id, 'Could not copy the link'));
+    }
+  }
+
+  private confirmDeleteInviteLink(inviteLink: string): void {
+    const folderId = this.editingFolderId;
+    if (folderId <= 0) {
+      return;
+    }
+    this.getUIContext().getPromptAction().showDialog({
+      title: localized($r('app.string.folders_delete_link').id, 'Delete Link'),
+      message: localized($r('app.string.folders_delete_link_confirm').id,
+        'Delete this invite link? People who already joined stay in the folder.'),
+      buttons: [
+        { text: localized($r('app.string.cancel').id, 'Cancel'), color: TgUiTokens.COLOR_TEXT_PREVIEW },
+        { text: localized($r('app.string.folders_delete').id, 'Delete'),
+          color: TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE }
+      ]
+    }).then((result: promptAction.ShowDialogSuccessResponse) => {
+      if (result.index !== 1) {
+        return;
+      }
+      this.deleteInviteLink(folderId, inviteLink);
+    }).catch((error: Error) => {
+      hilog.warn(DOMAIN, TAG, 'Delete link dialog failed: %{public}s', error.message);
+    });
+  }
+
+  private deleteInviteLink(folderId: number, inviteLink: string): void {
+    const useCase = this.inviteLinksUseCase;
+    if (useCase === undefined) {
+      return;
+    }
+    const token: number = this.pageLifecycleToken;
+    useCase.deleteLink(folderId, inviteLink).then(() => {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
+      this.toast(localized($r('app.string.folders_link_deleted_toast').id, 'Invite link deleted'));
+      this.loadInviteLinks(folderId);
+    }).catch((error: Error) => {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
+      this.toast(error.message.length > 0
+        ? error.message : localized($r('app.string.folders_link_failed_toast').id, 'Could not update invite links'));
+    });
   }
 
   private openChatSelection(): void {
@@ -433,6 +554,62 @@ export struct TgChatFoldersPage {
               .onClick(() => {
                 this.openChatSelection();
               })
+
+              if (this.editingFolderId > 0) {
+                Row() {
+                  Text(localized($r('app.string.folders_invite_links').id, 'Invite Links'))
+                    .fontSize(TgUiTokens.FONT_META_SIZE)
+                    .fontColor(TgUiTokens.COLOR_TEXT_META)
+                    .layoutWeight(1)
+                  Text(localized($r('app.string.folders_create_link').id, 'Create Link'))
+                    .fontSize(TgUiTokens.FONT_META_SIZE)
+                    .fontColor(this.isLoadingLinks ? TgUiTokens.COLOR_TEXT_META
+                      : TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT)
+                    .onClick(() => {
+                      if (!this.isLoadingLinks) {
+                        this.createInviteLink();
+                      }
+                    })
+                }
+                .width('100%')
+                .height(40)
+                .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16, top: TgUiTokens.SPACE_8 })
+
+                if (this.inviteLinks.length === 0) {
+                  Text(localized($r('app.string.folders_links_empty').id, 'No invite links yet'))
+                    .fontSize(TgUiTokens.FONT_META_SIZE)
+                    .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+                    .width('100%')
+                    .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16, top: TgUiTokens.SPACE_4 })
+                } else {
+                  ForEach(this.inviteLinks, (link: ChatFolderInviteLinkDto) => {
+                    Row() {
+                      Text(link.name.length > 0 ? link.name : link.inviteLink)
+                        .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+                        .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+                        .maxLines(1)
+                        .textOverflow({ overflow: TextOverflow.Ellipsis })
+                        .layoutWeight(1)
+                      Text(localized($r('app.string.folders_copy_link').id, 'Copy'))
+                        .fontSize(TgUiTokens.FONT_META_SIZE)
+                        .fontColor(TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT)
+                        .margin({ right: TgUiTokens.SPACE_12 })
+                        .onClick(() => {
+                          this.copyInviteLink(link.inviteLink);
+                        })
+                      Text(localized($r('app.string.folders_delete').id, 'Delete'))
+                        .fontSize(TgUiTokens.FONT_META_SIZE)
+                        .fontColor(TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE)
+                        .onClick(() => {
+                          this.confirmDeleteInviteLink(link.inviteLink);
+                        })
+                    }
+                    .width('100%')
+                    .height(44)
+                    .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16 })
+                  }, (link: ChatFolderInviteLinkDto) => link.inviteLink)
+                }
+              }
 
               Row() {
                 Button(this.editingFolderId > 0

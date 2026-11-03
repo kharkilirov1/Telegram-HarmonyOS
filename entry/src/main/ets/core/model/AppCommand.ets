@@ -306,6 +306,12 @@ export class GetChatFolderPayload {
   folderId: number = 0;
 }
 
+export class ChatFolderInviteLinkPayload {
+  folderId: number = 0;
+  inviteLink: string = '';
+  name: string = '';
+}
+
 export class ChatFolderDraftPayload {
   title: string = '';
   excludeMuted: boolean = false;
@@ -731,6 +737,21 @@ export class AddChatToListCommand extends AppCommand {
   payload: AddChatToListPayload = new AddChatToListPayload();
 }
 
+export class GetChatFolderInviteLinksCommand extends AppCommand {
+  type: string = 'getChatFolderInviteLinks';
+  payload: ChatFolderInviteLinkPayload = new ChatFolderInviteLinkPayload();
+}
+
+export class CreateChatFolderInviteLinkCommand extends AppCommand {
+  type: string = 'createChatFolderInviteLink';
+  payload: ChatFolderInviteLinkPayload = new ChatFolderInviteLinkPayload();
+}
+
+export class DeleteChatFolderInviteLinkCommand extends AppCommand {
+  type: string = 'deleteChatFolderInviteLink';
+  payload: ChatFolderInviteLinkPayload = new ChatFolderInviteLinkPayload();
+}
+
 export class GetChatFolderCommand extends AppCommand {
   type: string = 'getChatFolder';
   payload: GetChatFolderPayload = new GetChatFolderPayload();
@@ -981,6 +1002,9 @@ export type AnyAppCommand =
   | JoinChatCommand
   | ToggleChatPinnedCommand
   | AddChatToListCommand
+  | GetChatFolderInviteLinksCommand
+  | CreateChatFolderInviteLinkCommand
+  | DeleteChatFolderInviteLinkCommand
   | GetChatFolderCommand
   | CreateChatFolderCommand
   | EditChatFolderCommand
@@ -1458,6 +1482,32 @@ export function createAddChatToListCommand(
   cmd.payload.chatId = chatId;
   cmd.payload.chatList = chatList;
   cmd.payload.folderId = folderId;
+  return cmd;
+}
+
+export function createGetChatFolderInviteLinksCommand(folderId: number): GetChatFolderInviteLinksCommand {
+  const cmd = new GetChatFolderInviteLinksCommand();
+  cmd.payload.folderId = folderId;
+  return cmd;
+}
+
+export function createCreateChatFolderInviteLinkCommand(
+  folderId: number,
+  name: string
+): CreateChatFolderInviteLinkCommand {
+  const cmd = new CreateChatFolderInviteLinkCommand();
+  cmd.payload.folderId = folderId;
+  cmd.payload.name = name;
+  return cmd;
+}
+
+export function createDeleteChatFolderInviteLinkCommand(
+  folderId: number,
+  inviteLink: string
+): DeleteChatFolderInviteLinkCommand {
+  const cmd = new DeleteChatFolderInviteLinkCommand();
+  cmd.payload.folderId = folderId;
+  cmd.payload.inviteLink = inviteLink;
   return cmd;
 }
 
