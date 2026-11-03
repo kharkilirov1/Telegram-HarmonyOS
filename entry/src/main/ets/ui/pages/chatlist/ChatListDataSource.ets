@@ -58,6 +58,7 @@ export class ChatListDataSource implements IDataSource {
     return prev.chatId === next.chatId &&
       prev.title === next.title &&
       prev.initials === next.initials &&
+      prev.isSavedMessages === next.isSavedMessages &&
         prev.avatarImagePath === next.avatarImagePath &&
         prev.avatarOnline === next.avatarOnline &&
         prev.isVerified === next.isVerified &&

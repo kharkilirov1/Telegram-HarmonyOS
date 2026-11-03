@@ -24,10 +24,11 @@
 | S3b.1 | Reactions — подвал в медиа | D10 | подвал рисует роутер под медиа-баблами (фото/видео/альбом/кружок/документ/аудио/голос/контакт/локация/опрос), стикер — долг из-за фиксированной высоты + `test-reactions-media-footer.cjs` |
 | S5a | Непрочитанный разделитель (верификация C6) | C6 | строка была `missing`: код (`firstUnreadIncomingIndex`, `kind='unread'`, sticky, сброс sender-group) уже был, но без тестов; добавлены паспорт `TgUnreadMarker` (iOS-геометрия 25/0/6/5), ресурс `chat_unread_messages` (base/ru/zh вместо «Unread») + `test-unread-divider.cjs`; C6 → `partial` |
 | S5b | Панель выделения сообщений (C9) | C9 | `selectionActive`/`selectedMessageIds` + пункт «Select» + удаление многих через `requestMany` + панель `TgSelectionPanel` (spec/demo/токены) вместо композера + чек-индикатор и блокировка тапов в строке + `test-selection-mode.cjs`; C9 → `partial` |
+| S6a | Избранное — представление (D7) | D7 | `isSavedMessagesChat` + заголовок «Saved Messages» в списке и шапке + аватар-закладка (`TgAvatar.symbolIcon`) + флаг в diff + `test-saved-messages.cjs`; D7 → `partial` |
 
 ## Следующие срезы (в порядке)
 
-1. **S6. Saved Messages (D7)** — отсутствующая базовая возможность чат-листа.
+1. **S6b. Избранное — точки входа (D7).** Строка в настройках → открыть чат (вынести open-chat транзакцию из `ChatListPage`), создание чата при отсутствии (`createPrivateChat` с `my_id`).
 2. **S7. Папки чатов (B7)** — крупный срез списка, делать после стабилизации списка.
 3. **C9-долг.** Иконки панели, подсветка выбранных баблов, формулировка диалога удаления для N сообщений, device-witness.
 

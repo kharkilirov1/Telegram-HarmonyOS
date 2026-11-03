@@ -83,7 +83,7 @@
 | D4 | Удаление | `available` | `ChatDeleteMessageController.ets` (11/12) | `ChatControllerDelete*` | C9 |
 | D5 | Копирование | `partial` | `ChatMessageActionsController.ets` (1/0) | `ChatControllerShare*` | C9 |
 | D6 | Пересылка | `available` | `ChatForwardSourceController.ets` (19/23) | `ChatControllerForwardMessages` | C9 |
-| D7 | Избранное (Saved Messages) | `missing` | нет | `ChatList` | B1 |
+| D7 | Избранное (Saved Messages) | `partial` | `isSavedMessagesChat(chat, selfUserId)` в `AppState.ets` (private-чат с собственным `peerUserId`, т.к. отдельного типа TDLib не имеет — `td_api.tl:8726`); заголовок «Saved Messages» в списке (`ChatItemVO.ets`, флаг `isSavedMessages` + diff в `ChatListDataSource.ets`) и в шапке чата (`ChatTimelineVO.resolvePrivateChatTitle`); аватар-закладка: `TgAvatar.symbolIcon` → `TgChatRow.avatarIsSavedMessages` → `ChatListPage.ets`; ресурс `saved_messages` (base/ru/zh) + `test-saved-messages.cjs` (5/1) | `ChatList`, `ChatListNavigationBar` | B1 |
 | D8 | Закрепление сообщения | `available` | `ChatMessageActionsController.ets` (9/6) | `Chat/PinnedMessage*` | C4 |
 | D9 | Пометить непрочитанным | `available` | `toggleChatUnread.ets` (3/3) | `ChatList` | B4 |
 | D10 | Реакции | `partial` | S3a (данные, 2026-10-25): `Message.reactions` (`AppState.ets`), парсер `parseReactionSnapshot`/`parseReactionTypeKeys` (`MessageDto.ets`) из `interaction_info` и `updateMessageReactions`, инкремент `updateMessageReaction` через `applyReactionDelta`, чистая раскладка `sortReactionChips`/`packReactionChips` (chosen → count → key, кап 6 + «+N»), VO `ReactionChipVO` + `reactionRenderStamp` в `ChatTimelineVO`. S3b (рендер, 2026-10-25): атом `TgReactionsFooter` (primitives, Flex wrap, «+N», custom-emoji fallback) + токены и цвета light/dark, spec и demo; врезан в текстовый бабл через `TgChatTimelineRow → TgMessageRouter → TgTextBubbleV3`. S3c (постановка, 2026-10-25): `SetMessageReactionsCommand` + serializer (`reactionTypeEmoji`/`reactionTypeCustomEmoji`, int64 строкой, `is_big=false`), `SetMessageReactionsUseCase`, `ChatReactionController` (оптимистичный снимок до отправки, откат по ошибке, guard по токену страницы и по парному тапу, отправляются только chosen-ключи), тап по чипу. S3d (пикер, 2026-10-25): `chat.available_reactions` в `ChatDto`/`Chat` (+`updateChatAvailableReactions`), `availableReactionKeys`/`chatAllowsReactions` с дефолтным рядом iOS (12) и капом 12, атом `TgReactionPicker` + spec/demo и ряд в попапе действий (тап → закрытие меню → S3c-controller). S3d.1 (2026-11-03): `getMessageAvailableReactions` (команда + сериализатор + fail-soft use case), парсер `availableReactions` (top/recent/popular), слияние `pickerReactionKeys` (дедуп, кап 12, fallback на чатовый ряд), синхронный сид ряда при открытии попапа и асинхронная замена с фенсом generation/lifecycle/chatId/messageId. S3b.1 (2026-11-03): подвал рисует роутер под медиа-баблами (фото/видео/альбом/кружок/документ/аудио/голос/контакт/локация/опрос) вне медиа-контейнера, выравнивание по стороне бабла. Host `test-reactions-model.cjs` + `-footer` + `-send` + `-availability` + `-picker` + `-picker-data` + `-media-footer`, suite 104/104. **Не готово:** подвал у стикеров, геометрия медиа-ряда без witness, рендер кастомных эмодзи (D16), реакции-теги, runtime-witness на живом аккаунте | `ChatControllerOpenMessageReactionContextMenu`, `ChatMessageReactionsFooterContentNode` | D13, C9; шов — `ReactionChipVO`/`ReactionsVO` |
@@ -189,8 +189,8 @@
 ## Итог и следующий шаг
 
 - `available`: 35 строк — есть код, тесты и работающий сценарий.
-- `partial`: 47 — код есть, но не сверено с iOS или неполно.
-- `missing`: 19 — кода нет.
+- `partial`: 48 — код есть, но не сверено с iOS или неполно.
+- `missing`: 18 — кода нет.
 - `unverified`: 0 — девять прежних строк разобраны 2026-10-25; остальные 96 имели статус раньше.
 - `frozen`: 3 (VoIP, мультиаккаунт, секретные чаты), `blocked`: 1 (push) — не вкладываться.
 

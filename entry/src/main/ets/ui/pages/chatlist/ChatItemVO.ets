@@ -1,7 +1,7 @@
 // ChatItemVO — View Object for chat list cell rendering
 // Built from AppState Chat model, contains only data needed for UI
 
-import { AppState, Chat, Message } from '../../../core/model/AppState';
+import { AppState, Chat, Message, isSavedMessagesChat } from '../../../core/model/AppState';
 import { compareInt64 } from '../../../core/utils/tdAccessors';
 import { getString } from '../../../core/utils/AppResource';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
@@ -33,6 +33,8 @@ export class ChatItemVO {
   chatId: number = 0;
   title: string = '';
   initials: string = '';
+  // iOS ChatList: Saved Messages keeps a fixed title and a bookmark avatar instead of the peer name.
+  isSavedMessages: boolean = false;
   avatarColor: Resource = TgUiTokens.AVATAR_COLOR_5;
   avatarImagePath: string = '';
   avatarOnline: boolean = false;
@@ -502,6 +504,12 @@ export function buildChatItemVO(chat: Chat, state: AppState): ChatItemVO {
         vo.avatarImagePath = toFileUri(user.photoSmall);
       }
     }
+  }
+
+  if (isSavedMessagesChat(chat, state.auth.userId)) {
+    vo.isSavedMessages = true;
+    const savedTitle = getString($r('app.string.saved_messages').id);
+    vo.title = savedTitle.length > 0 ? savedTitle : 'Saved Messages';
   }
 
   if (!vo.title || vo.title.trim().length === 0) {

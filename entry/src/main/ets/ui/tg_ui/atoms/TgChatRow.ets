@@ -45,6 +45,7 @@ export struct TgChatRow {
   @Param isPinned: boolean = false;
   @Param sendStatus: TgChatSendStatus = TgChatSendStatus.None;
   @Param avatarInitials: string = 'TG';
+  @Param avatarIsSavedMessages: boolean = false;
   @Param avatarUseImage: boolean = false;
   @Param avatarImageSrc: ResourceStr = $r('app.media.app_icon_transparent');
   @Param avatarIsOnline: boolean = false;
@@ -243,6 +244,7 @@ export struct TgChatRow {
           imageSrc: this.avatarImageSrc,
           isOnline: this.avatarIsOnline,
           avatarBackgroundColor: this.avatarBackgroundColor,
+          symbolIcon: this.avatarIsSavedMessages ? $r('sys.symbol.bookmark_fill') : undefined,
           textColor: this.avatarTextColor
         })
 

@@ -7,6 +7,8 @@ export struct TgAvatar {
   @Param useImage: boolean = false;
   @Param imageSrc: Resource | string = $r('app.media.app_icon_transparent');
   @Param isOnline: boolean = false;
+  // Saved Messages and similar service chats show a glyph instead of initials.
+  @Param symbolIcon: Resource | undefined = undefined;
 
   @Param avatarBackgroundColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_BG;
   @Param textColor: ResourceColor = TgUiTokens.COLOR_AVATAR_PLACEHOLDER_TEXT;
@@ -39,6 +41,18 @@ export struct TgAvatar {
         .height(this.avatarSize)
         .objectFit(ImageFit.Cover)
         .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
+    } else if (this.symbolIcon !== undefined) {
+      Row() {
+        SymbolGlyph(this.symbolIcon)
+          .fontSize(this.initialsFontSize())
+          .fontColor([this.textColor as ResourceColor])
+      }
+      .width(this.avatarSize)
+      .height(this.avatarSize)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(VerticalAlign.Center)
+      .backgroundColor(this.avatarBackgroundColor)
+      .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
     } else {
       Row() {
         Text(this.normalizedInitials())

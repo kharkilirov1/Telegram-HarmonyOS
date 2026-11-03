@@ -602,3 +602,14 @@ Last updated: 2026-10-23
   line. Check the SDK enum before inventing a weight.
 - A glass bar over scrolling chat needs the blur on the bar **and** on each floating control; stacking a
   light translucent surface on another light one kills legibility, so panels keep one tint layer.
+
+## 169. Saved Messages has no type flag, and a VO flag needs a diff entry
+
+- TDLib models Saved Messages as a private chat with the account's own user id (`td_api.tl:8726`
+  says to call `createPrivateChat` with `getOption("my_id")`). Identity therefore needs `state.auth.userId`,
+  which only arrives through `getMe` — before that every chat must stay a normal peer chat.
+- A new `ChatItemVO` field is invisible until `ChatListDataSource.isSameChatRow` compares it; the diff is
+  an allowlist, so the avatar glyph silently never appeared until the flag was added there.
+- Presentation and entry point are separate slices: rendering the bookmark avatar and the title does not
+  make the feature reachable. Record the open-chat transaction (nav lock, ownership, route params) as its
+  own slice instead of copying it into the settings page.

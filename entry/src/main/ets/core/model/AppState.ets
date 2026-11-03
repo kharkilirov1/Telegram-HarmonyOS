@@ -627,6 +627,16 @@ export function availableReactionKeys(chat: Chat | undefined): string[] {
 
 // Reactions cannot be used at all when the chat explicitly forbids them: a "some" list that is
 // empty or a max count of zero. An absent chat is treated as "unknown" and keeps the default row.
+// Saved Messages is an ordinary private chat with your own account (td_api.tl:8726:
+// createPrivateChat with getOption("my_id")). TDLib has no chat-type flag for it, so identity comes from
+// the current user id compared with the peer id.
+export function isSavedMessagesChat(chat: Chat | undefined, selfUserId: number): boolean {
+  if (chat === undefined || selfUserId <= 0 || chat.type !== 'private') {
+    return false;
+  }
+  return chat.peerUserId === selfUserId;
+}
+
 export function chatAllowsReactions(chat: Chat | undefined): boolean {
   if (chat === undefined) {
     return true;

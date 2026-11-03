@@ -1426,6 +1426,7 @@ export struct ChatListPage {
                   isPinned: item.isPinned,
                   sendStatus: this.mapSendStatus(item.sendStatus),
                   avatarInitials: item.initials,
+                  avatarIsSavedMessages: item.isSavedMessages,
                     avatarBackgroundColor: item.avatarColor,
                     avatarUseImage: item.avatarImagePath.length > 0,
                     avatarImageSrc: item.avatarImagePath.length > 0 ? item.avatarImagePath : $r('app.media.app_icon_transparent'),

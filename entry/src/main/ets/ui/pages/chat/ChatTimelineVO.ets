@@ -1,4 +1,4 @@
-import { AppState, Chat, FileTransfer, Message, MessageQuoteEntity, ReactionChipData, TextEntity, User, packReactionChips } from '../../../core/model/AppState';
+import { AppState, Chat, FileTransfer, Message, MessageQuoteEntity, ReactionChipData, TextEntity, User, isSavedMessagesChat, packReactionChips } from '../../../core/model/AppState';
 
 import { selectChatMessagesForChatView } from '../../../domain/selectors/messageSelectors';
 import { compareInt64 } from '../../../core/utils/tdAccessors';
@@ -493,6 +493,9 @@ function computeAvatarInitials(name: string): string {
 }
 
 function resolvePrivateChatTitle(chat: Chat, state: AppState): string {
+  if (isSavedMessagesChat(chat, state.auth.userId)) {
+    return localizedString($r('app.string.saved_messages').id, 'Saved Messages');
+  }
   if (chat.peerUserId <= 0) {
     return chat.title;
   }
