@@ -18,7 +18,8 @@ export class DeleteChatHistoryUseCase {
   }
 
   async execute(chatId: ChatId, removeFromChatList: boolean = true, revoke: boolean = false): Promise<void> {
-    if (!chatId || chatId === 0) {
+    // TDLib chat ids are positive int53; zero, negatives and fractions are client bugs.
+    if (!Number.isSafeInteger(chatId) || chatId <= 0) {
       throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid chatId', 'Input validation failed', 400, false);
     }
 

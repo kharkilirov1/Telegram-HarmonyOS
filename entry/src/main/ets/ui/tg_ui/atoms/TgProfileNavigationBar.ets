@@ -10,12 +10,15 @@ import { TgIcon } from './TgIcon';
 export struct TgProfileNavigationBar {
   @Param topInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
   @Param showSearch: boolean = true;
+  // Chat info actions (iOS PeerInfoScreen "..." button).
+  @Param showMore: boolean = false;
   @Param glassMode: string = TgGlassPolicy.MODE_AUTO;
   @Param backAccessibilityText: string = 'Back';
   @Param searchAccessibilityText: string = 'Search in chat';
 
   @Event onBackPress: () => void = (): void => {};
   @Event onSearchPress: () => void = (): void => {};
+  @Event onMorePress: () => void = (): void => {};
 
   private useBlur(): boolean {
     return TgGlassPolicy.shouldUseRealtimeBlurForMode(this.glassMode);
@@ -46,6 +49,71 @@ export struct TgProfileNavigationBar {
       this.onSearchPress();
     } else {
       this.onBackPress();
+    }
+  }
+
+  @Builder
+  private buildMoreIcon() {
+    TgIcon({
+      src: TgUiTokens.ICON_RES_MORE,
+      iconSize: TgUiTokens.PROFILE_NAV_ICON_SIZE,
+      tintColor: TgUiTokens.COMPOSER_ACTION_ACTIVE
+    })
+  }
+
+  @Builder
+  private buildNativeMoreAction() {
+    Row() {
+      this.buildMoreIcon()
+    }
+    .width(TgUiTokens.PROFILE_NAV_CONTROL_SIZE)
+    .height(TgUiTokens.PROFILE_NAV_CONTROL_SIZE)
+    .justifyContent(FlexAlign.Center)
+    .alignItems(VerticalAlign.Center)
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.THIN,
+      colorInvert: true,
+      applyShadow: true,
+      interactive: true
+    }))
+    .borderRadius(TgUiTokens.PROFILE_NAV_CONTROL_RADIUS)
+    .clip(true)
+    .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.88 })
+    .margin({ right: TgUiTokens.SPACE_8 })
+    .id('profile_more')
+    .onClick(() => this.onMorePress())
+  }
+
+  @Builder
+  private buildFallbackMoreAction() {
+    Row() {
+      this.buildMoreIcon()
+    }
+    .width(TgUiTokens.PROFILE_NAV_CONTROL_SIZE)
+    .height(TgUiTokens.PROFILE_NAV_CONTROL_SIZE)
+    .justifyContent(FlexAlign.Center)
+    .alignItems(VerticalAlign.Center)
+    .backgroundColor(this.capsuleBackground())
+    .backdropBlur(this.capsuleBackdropBlur())
+    .border({ width: TgUiTokens.PROFILE_NAV_BORDER_WIDTH, color: TgUiTokens.CHAT_TOP_BAR_CAPSULE_BORDER })
+    .borderRadius(TgUiTokens.PROFILE_NAV_CONTROL_RADIUS)
+    .clip(true)
+    .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.88 })
+    .margin({ right: TgUiTokens.SPACE_8 })
+    .id('profile_more')
+    .onClick(() => this.onMorePress())
+  }
+
+  @Builder
+  private buildMoreAction() {
+    if (deviceInfo.apiAvailable('26.0.0')) {
+      if (this.useNativeMaterial()) {
+        this.buildNativeMoreAction()
+      } else {
+        this.buildFallbackMoreAction()
+      }
+    } else {
+      this.buildFallbackMoreAction()
     }
   }
 
@@ -136,6 +204,9 @@ export struct TgProfileNavigationBar {
       Row() {
         this.buildAction(false)
         Blank()
+        if (this.showMore) {
+          this.buildMoreAction()
+        }
         if (this.showSearch) {
           this.buildAction(true)
         }

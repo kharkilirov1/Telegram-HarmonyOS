@@ -71,7 +71,7 @@
 | C7 | Кнопка «вниз» | `available` | `ChatWindowGeometryCoordinator.ets` (20/15) | `Chat/ScrollToBottom*` | C8 |
 | C8 | Переход к сообщению | `available` | `ChatTimelineViewportCoordinator.ets` (10/4) | `ChatControllerScrollToPointInHistory` | C3, C4 |
 | C9 | Панель выделения сообщений | `partial` | `ChatTimelineViewState.selectionActive`/`selectedMessageIds` + alias-геттеры в `ChatScreenContext.ets`; вход — пункт «Select» в меню действий (`ChatMessageActionsController.ets`, тост `action_select` в base/ru/zh); делегаты `enter/toggle/clear/copy/forward/delete/selectionTitle` в `ChatMessagePopupCoordinator.ets` + `ChatScreenSession.ets`; `ChatDeleteMessageController.requestMany` — одна доступность/один диалог/один `deleteMessages`; панель `TgSelectionPanel` (спец+demo, токены `SELECTION_PANEL_*`/`SELECTION_CHECK_*`) заменяет композер в `TgChatScreenPage.ets`; строка в режиме выделения показывает чек-индикатор, подсвечивается тинтом (`SELECTION_ROW_TINT` → `color.selection_row_tint` в base/dark) и блокирует тапы бабла (`TgChatTimelineRow.ets`); диалог удаления называет размер выбора (`delete_messages_count` base/ru/zh, `messageCount` в `NativeDeleteMessageConfirmation`); host-контракт `test-selection-mode.cjs` (6/1) | `Components/Chat/ChatMessageSelectionInputPanelNode` | D4, D6 |
-| C10 | Меню действий чата (шапка) | `missing` | нет: шапка = back + title/avatar→profile + search (`TgChatTopBar.ets:23-27,39,46-51,619-621`, проводка `TgChatScreenPage.ets:96-107`); меню действий чата (mute / clear history / delete) в шапке нет | `ChatControllerOpenPeer.swift`, `ChatListUI/Sources/ChatContextMenus.swift` | C1; шов — `ChatTopBarCoordinator` |
+| C10 | Меню действий чата (шапка) | `partial` | Кнопка «…» (`profile_more`) в `TgProfileNavigationBar` (`showMore`/`onMorePress`) открывает `showActionMenu`: Mute/Unmute (через `SetChatMuteUseCase`), Clear History (`deleteChatHistory` remove=false), Delete Chat (remove=true, revoke=true для private/secret) с подтверждениями и тостами; шапка чата по-прежнему title/avatar → профиль. Нет: меню прямо в шапке чата (в iOS «…» открывает info-панель, действия — в ней), Share Contact/Report, проверка ролей, witness | `ChatControllerOpenPeer.swift`, `PeerInfoScreen` more menu | C1 |
 
 ## D. Сообщения
 
@@ -189,8 +189,8 @@
 ## Итог и следующий шаг
 
 - `available`: 35 строк — есть код, тесты и работающий сценарий.
-- `partial`: 53 — код есть, но не сверено с iOS или неполно.
-- `missing`: 13 — кода нет.
+- `partial`: 54 — код есть, но не сверено с iOS или неполно.
+- `missing`: 12 — кода нет.
 - `unverified`: 0 — девять прежних строк разобраны 2026-10-25; остальные 96 имели статус раньше.
 - `frozen`: 3 (VoIP, мультиаккаунт, секретные чаты), `blocked`: 1 (push) — не вкладываться.
 

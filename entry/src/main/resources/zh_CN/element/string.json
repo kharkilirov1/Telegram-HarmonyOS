@@ -357,6 +357,38 @@
       "value": "已屏蔽用户"
     },
     {
+      "name": "profile_mute",
+      "value": "静音"
+    },
+    {
+      "name": "profile_unmute",
+      "value": "取消静音"
+    },
+    {
+      "name": "profile_clear_history",
+      "value": "清空历史"
+    },
+    {
+      "name": "profile_clear_history_confirm",
+      "value": "删除此聊天的所有消息？聊天仍会保留在列表中。"
+    },
+    {
+      "name": "profile_delete_chat",
+      "value": "删除聊天"
+    },
+    {
+      "name": "profile_delete_chat_confirm",
+      "value": "删除此聊天及其所有消息？"
+    },
+    {
+      "name": "profile_history_cleared_toast",
+      "value": "历史已清空"
+    },
+    {
+      "name": "profile_chat_deleted_toast",
+      "value": "聊天已删除"
+    },
+    {
       "name": "profile_block_user",
       "value": "屏蔽用户"
     },

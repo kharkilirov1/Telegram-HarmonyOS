@@ -357,6 +357,38 @@
       "value": "Blocked Users"
     },
     {
+      "name": "profile_mute",
+      "value": "Mute"
+    },
+    {
+      "name": "profile_unmute",
+      "value": "Unmute"
+    },
+    {
+      "name": "profile_clear_history",
+      "value": "Clear History"
+    },
+    {
+      "name": "profile_clear_history_confirm",
+      "value": "Delete all messages in this chat? The chat itself stays in the list."
+    },
+    {
+      "name": "profile_delete_chat",
+      "value": "Delete Chat"
+    },
+    {
+      "name": "profile_delete_chat_confirm",
+      "value": "Delete this chat and all its messages?"
+    },
+    {
+      "name": "profile_history_cleared_toast",
+      "value": "History cleared"
+    },
+    {
+      "name": "profile_chat_deleted_toast",
+      "value": "Chat deleted"
+    },
+    {
       "name": "profile_block_user",
       "value": "Block User"
     },

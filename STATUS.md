@@ -81,7 +81,7 @@ Documentation and repository structure were reconciled; no product code changed.
 - `TASKS/SLICE_TEMPLATE.md` — шаблон плана среза (референс → контракт → швы → состояния → тест →
   приёмка).
 - `TASKS/CAPABILITY_MATRIX.md` — 105 строк по пользовательским возможностям iOS: 35 `available`,
-  53 `partial`, 13 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
+  54 `partial`, 12 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
   код-доказательство и связанные фичи; `available` без witness не ставится.
 - `TASKS/WORKMAP.md` — M0 (верифицировать 9 `unverified` строк), S1 (typing indicator, C2),
   S2 (стикеры/TGS, D13).
@@ -146,6 +146,15 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S12 (lead).** C10 «Меню действий чата» из `missing` → `partial`. В `TgProfileNavigationBar`
+  добавлена кнопка «…» (`showMore`/`onMorePress`, `ic_more`, нативный material + fallback), в профиле
+  — `showActionMenu`: Mute/Unmute (`SetChatMuteUseCase`), Clear History (`deleteChatHistory`
+  remove=false), Delete Chat (remove=true, revoke=true) с подтверждениями и тостами; после удаления
+  профиль закрывается. Попутно: `DeleteChatHistoryUseCase` ужесточён — chat_id обязан быть
+  положительным int53 (раньше −1 и 0.5 проходили). Контракт `test-profile-actions.cjs`: use case
+  (clear vs delete payloads, валидация, ошибка), проводка атома и страницы, 8 строк в 3 локалях.
+  Гейты: host **115/115**, оба smoke, hvigor BUILD SUCCESSFUL. **Осталось (C10):** меню в шапке
+  самого чата, Share Contact/Report, проверка ролей, witness.
 - **S10d (lead).** H8: вкладки Messages/Stories. `LoadBlockedSendersUseCase.fetchPage` принимает
   `blockList` (`main`/`stories`), страница держит `@Local blockList`, рисует две вкладки, при
   переключении сбрасывает список/offset/total и перезагружает, «Show More» остаётся на выбранном

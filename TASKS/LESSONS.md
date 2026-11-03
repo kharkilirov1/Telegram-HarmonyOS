@@ -804,3 +804,15 @@ Last updated: 2026-10-23
   not imply two independent blocks.
 - Switching a paging tab must reset offset and total before reloading; otherwise "Show More" appends
   the next page of the previous list.
+
+## 189. Builder annotations and menu APIs have hard shapes
+
+- Inserting a `@Builder` method right before another method's body leaves the original annotation
+  attached to the new method: two `@Builder` in a row, and the original loses its annotation →
+  "does not meet UI component syntax". Match the whole `@Builder\n  private name(` block when inserting.
+- `PromptAction` exposes `showActionMenu` (tuple of 1–6 `{ text, color }` buttons), not
+  `showActionSheet`; the tuple type rejects a mapped `Button[]`, so build the literal inline.
+- A `@Builder` call cannot be chained with `.margin()`; put layout modifiers on the rows inside the
+  builder.
+- Tightening `DeleteChatHistoryUseCase` validation (positive int53, not just non-zero) exposed that the
+  old check let negative and fractional ids through to the gateway.

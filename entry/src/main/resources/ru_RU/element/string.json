@@ -357,6 +357,38 @@
       "value": "Заблокированные"
     },
     {
+      "name": "profile_mute",
+      "value": "Выключить уведомления"
+    },
+    {
+      "name": "profile_unmute",
+      "value": "Включить уведомления"
+    },
+    {
+      "name": "profile_clear_history",
+      "value": "Очистить историю"
+    },
+    {
+      "name": "profile_clear_history_confirm",
+      "value": "Удалить все сообщения в этом чате? Сам чат останется в списке."
+    },
+    {
+      "name": "profile_delete_chat",
+      "value": "Удалить чат"
+    },
+    {
+      "name": "profile_delete_chat_confirm",
+      "value": "Удалить этот чат и все его сообщения?"
+    },
+    {
+      "name": "profile_history_cleared_toast",
+      "value": "История очищена"
+    },
+    {
+      "name": "profile_chat_deleted_toast",
+      "value": "Чат удалён"
+    },
+    {
       "name": "profile_block_user",
       "value": "Заблокировать"
     },

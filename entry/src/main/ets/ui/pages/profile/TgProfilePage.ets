@@ -9,6 +9,7 @@ import { AppState, User, Chat } from '../../../core/model/AppState';
 import { loadUserFullInfo, loadSupergroupFullInfo, loadBasicGroupFullInfo, ProfileLoadContext, ProfileLoadResult, ProfileLoadStatus, captureProfileLoadContext } from '../../../domain/usecases/loadProfileInfo';
 import { createSetChatMuteUseCase, SetChatMuteUseCase, MUTE_FOREVER } from '../../../domain/usecases/setChatMute';
 import { createSetMessageSenderBlockedUseCase, SetMessageSenderBlockedUseCase } from '../../../domain/usecases/setMessageSenderBlocked';
+import { createDeleteChatHistoryUseCase, DeleteChatHistoryUseCase } from '../../../domain/usecases/deleteChatHistory';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { TgAvatar } from '../../tg_ui/atoms/TgAvatar';
 import { TgProfileNavigationBar } from '../../tg_ui/atoms/TgProfileNavigationBar';
@@ -149,6 +150,7 @@ export struct TgProfilePage {
   // flipping a local boolean that no other surface ever sees.
   @Local private muteUseCase: SetChatMuteUseCase | undefined = undefined;
   private blockUseCase?: SetMessageSenderBlockedUseCase;
+  private deleteHistoryUseCase?: DeleteChatHistoryUseCase;
   @Local private isVerified: boolean = false;
   @Local private isPremium: boolean = false;
 
@@ -177,6 +179,7 @@ export struct TgProfilePage {
       this.pageLifecycleToken++;
       this.muteUseCase = createSetChatMuteUseCase(getTdGatewayAdapter());
       this.blockUseCase = createSetMessageSenderBlockedUseCase(getTdGatewayAdapter());
+      this.deleteHistoryUseCase = createDeleteChatHistoryUseCase(getTdGatewayAdapter());
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
       const windowStage = context.windowStage;
       if (windowStage) {
@@ -414,6 +417,7 @@ export struct TgProfilePage {
     this.requestPending = false;
     this.muteUseCase = undefined;
     this.blockUseCase = undefined;
+    this.deleteHistoryUseCase = undefined;
     this.releaseProfileSubscriptions();
   }
 
@@ -867,6 +871,117 @@ export struct TgProfilePage {
   }
 
   // ─── Main Build ───
+  private openChatActions(): void {
+    const chatId = this.chatId;
+    if (chatId === 0) {
+      return;
+    }
+    const muteTitle: string = this.isMuted
+      ? localized($r('app.string.profile_unmute').id, 'Unmute')
+      : localized($r('app.string.profile_mute').id, 'Mute');
+    // showActionMenu takes a fixed tuple of up to six buttons; each needs its own color.
+    this.getUIContext().getPromptAction().showActionMenu({
+      title: this.title,
+      buttons: [
+        { text: muteTitle, color: TgUiTokens.COLOR_TEXT_TITLE },
+        { text: localized($r('app.string.profile_clear_history').id, 'Clear History'),
+          color: TgUiTokens.COLOR_TEXT_TITLE },
+        { text: localized($r('app.string.profile_delete_chat').id, 'Delete Chat'),
+          color: TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE }
+      ]
+    }).then((result: promptAction.ActionMenuSuccessResponse) => {
+      if (result.index === 0) {
+        this.toggleMuteFromActions();
+      } else if (result.index === 1) {
+        this.confirmClearHistory();
+      } else if (result.index === 2) {
+        this.confirmDeleteChat();
+      }
+    }).catch((error: Error) => {
+      hilog.warn(DOMAIN, TAG, 'Chat actions failed: %{public}s', error.message);
+    });
+  }
+
+  private toggleMuteFromActions(): void {
+    const useCase = this.muteUseCase;
+    const chatId = this.chatId;
+    if (useCase === undefined || chatId === 0) {
+      return;
+    }
+    const token: number = this.pageLifecycleToken;
+    const nextMuted: boolean = !this.isMuted;
+    const work = nextMuted ? useCase.mute(chatId, MUTE_FOREVER) : useCase.unmute(chatId);
+    work.then(() => {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
+      this.isMuted = nextMuted;
+    }).catch((error: Error) => {
+      hilog.error(DOMAIN, TAG, 'Mute toggle failed: %{public}s', error.message);
+    });
+  }
+
+  private confirmClearHistory(): void {
+    this.confirmDestructive(
+      localized($r('app.string.profile_clear_history').id, 'Clear History'),
+      localized($r('app.string.profile_clear_history_confirm').id,
+        'Delete all messages in this chat? The chat itself stays in the list.'),
+      (): void => this.deleteHistory(false, false)
+    );
+  }
+
+  private confirmDeleteChat(): void {
+    this.confirmDestructive(
+      localized($r('app.string.profile_delete_chat').id, 'Delete Chat'),
+      localized($r('app.string.profile_delete_chat_confirm').id,
+        'Delete this chat and all its messages?'),
+      (): void => this.deleteHistory(true, true)
+    );
+  }
+
+  private confirmDestructive(title: string, message: string, onConfirm: () => void): void {
+    this.getUIContext().getPromptAction().showDialog({
+      title: title,
+      message: message,
+      buttons: [
+        { text: localized($r('app.string.cancel').id, 'Cancel'), color: TgUiTokens.COLOR_TEXT_PREVIEW },
+        { text: title, color: TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE }
+      ]
+    }).then((result: promptAction.ShowDialogSuccessResponse) => {
+      if (result.index !== 1) {
+        return;
+      }
+      onConfirm();
+    }).catch((error: Error) => {
+      hilog.warn(DOMAIN, TAG, 'Confirm dialog failed: %{public}s', error.message);
+    });
+  }
+
+  private deleteHistory(removeFromChatList: boolean, revoke: boolean): void {
+    const useCase = this.deleteHistoryUseCase;
+    const chatId = this.chatId;
+    if (useCase === undefined || chatId === 0) {
+      return;
+    }
+    const token: number = this.pageLifecycleToken;
+    useCase.execute(chatId, removeFromChatList, revoke).then(() => {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
+      this.getUIContext().getPromptAction().showToast({
+        message: removeFromChatList
+          ? localized($r('app.string.profile_chat_deleted_toast').id, 'Chat deleted')
+          : localized($r('app.string.profile_history_cleared_toast').id, 'History cleared'),
+        duration: 2000
+      });
+      if (removeFromChatList) {
+        this.handleBackPress();
+      }
+    }).catch((error: Error) => {
+      hilog.error(DOMAIN, TAG, 'Delete history failed: %{public}s', error.message);
+    });
+  }
+
   private canBlockPeer(): boolean {
     return this.hasPeer && (this.chatType === 'private' || this.chatType === 'secret') &&
       this.profileUserId > 0 && this.chatId !== 0;
@@ -955,6 +1070,7 @@ export struct TgProfilePage {
         TgProfileNavigationBar({
           topInset: this.topInset,
           showSearch: this.chatId !== 0 && this.hasPeer && this.routeContext !== undefined && this.routeContext.isCurrent(),
+          showMore: this.chatId !== 0 && this.hasPeer && this.isActive && !this.isClosing,
           backAccessibilityText: localized($r('app.string.accessibility_back').id, 'Back'),
           searchAccessibilityText: localized($r('app.string.search_in_chat').id, 'Search in chat'),
           onBackPress: (): void => {
@@ -962,6 +1078,9 @@ export struct TgProfilePage {
           },
           onSearchPress: (): void => {
             this.openChatSearch();
+          },
+          onMorePress: (): void => {
+            this.openChatActions();
           }
         })
 
