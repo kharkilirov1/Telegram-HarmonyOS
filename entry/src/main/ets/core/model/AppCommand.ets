@@ -316,6 +316,7 @@ export class ChatFolderDraftPayload {
   includeBots: boolean = false;
   includeGroups: boolean = false;
   includeChannels: boolean = false;
+  includedChatIds: number[] = [];
 }
 
 export class EditChatFolderPayload {

@@ -413,6 +413,16 @@ function serializeToggleChatIsPinned(command: AnyAppCommand, result: SerializedC
     : '{"@type":"chatListMain"}');
 }
 
+function buildChatIdArrayJson(chatIds: number[]): string {
+  const parts: string[] = [];
+  for (const chatId of chatIds) {
+    if (Number.isSafeInteger(chatId) && chatId > 0) {
+      parts.push(chatId.toString());
+    }
+  }
+  return '[' + parts.join(',') + ']';
+}
+
 function buildChatFolderJson(draft: ChatFolderDraftPayload): string {
   return '{"@type":"chatFolder"' +
     ',"name":{"@type":"chatFolderName","text":{"@type":"formattedText","text":"' +
@@ -421,7 +431,7 @@ function buildChatFolderJson(draft: ChatFolderDraftPayload): string {
     ',"color_id":0' +
     ',"is_shareable":false' +
     ',"pinned_chat_ids":[]' +
-    ',"included_chat_ids":[]' +
+    ',"included_chat_ids":' + buildChatIdArrayJson(draft.includedChatIds) + '' +
     ',"excluded_chat_ids":[]' +
     ',"exclude_muted":' + (draft.excludeMuted ? 'true' : 'false') +
     ',"exclude_read":' + (draft.excludeRead ? 'true' : 'false') +

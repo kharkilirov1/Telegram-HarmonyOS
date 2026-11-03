@@ -65,6 +65,20 @@ function draft(overrides = {}) {
   assert.equal(includeAll.folder.include_groups, true);
   assert.equal(includeAll.folder.include_channels, true);
 
+  const selected = JSON.parse(serializer.buildTdlibRequestJson('createChatFolder',
+    serializer.serializeCommand(C.createChatFolderCommand(draft({
+      title: 'Pick',
+      includedChatIds: [5, 9007199254740001]
+    }))).params));
+  assert.deepEqual(selected.folder.included_chat_ids, [5, 9007199254740001],
+    'selected chat ids reach included_chat_ids unchanged');
+  const filtered = JSON.parse(serializer.buildTdlibRequestJson('createChatFolder',
+    serializer.serializeCommand(C.createChatFolderCommand(draft({
+      title: 'Pick',
+      includedChatIds: [3, 0, -1, 1.5]
+    }))).params));
+  assert.deepEqual(filtered.folder.included_chat_ids, [3], 'invalid ids never reach TDLib');
+
   // Quotes and backslashes must not break the raw JSON object.
   const quoted = JSON.parse(serializer.buildTdlibRequestJson('createChatFolder',
     serializer.serializeCommand(C.createChatFolderCommand(draft({ title: 'A"B\\C' }))).params));
@@ -174,6 +188,8 @@ async function checkUseCase() {
   await assert.rejects(() => useCase.editFolder(0, draft({ title: 'A' })), /Invalid folderId/);
   await assert.rejects(() => useCase.editFolder(1.5, draft({ title: 'A' })), /Invalid folderId/);
   await assert.rejects(() => useCase.deleteFolder(-2), /Invalid folderId/);
+  await assert.rejects(() => useCase.createFolder(draft({ title: 'A', includedChatIds: [1, 0] })),
+    /Invalid chat id/);
   assert.equal(sent.length, 3, 'invalid input never reaches the gateway');
 
   await useCase.createFolder(draft({ title: 'x'.repeat(12) }));
@@ -213,11 +229,32 @@ async function checkUseCase() {
     'saving stays disabled until the stored flags are read');
   assert.match(page, /folders_exclude_muted/);
 
+  assert.match(page, /@Local private includedChatIds: number\[\] = \[\];/);
+  assert.match(page, /this\.includedChatIds = folder\.includedChatIds\.slice\(\);/);
+  assert.match(page, /draft\.includedChatIds = this\.includedChatIds\.slice\(\);/);
+  assert.match(page, /private openChatSelection\(\): void \{/);
+  assert.match(page, /pushPathByName\('TgFolderChatsPage', params,/);
+  assert.match(page, /this\.includedChatIds = result\.selectedChatIds\.slice\(\);/);
+  assert.match(page, /folders_included_chats/);
+
+  const selectionPage = read('ui/pages/settings/TgFolderChatsPage.ets');
+  assert.match(selectionPage, /export function TgFolderChatsPageBuilder\(\)/);
+  assert.match(selectionPage, /getParamByName\('TgFolderChatsPage'\)/);
+  assert.match(selectionPage, /this\.selected\.add\(chatId\)/);
+  assert.match(selectionPage, /this\.selected\.delete\(chatId\)/);
+  assert.match(selectionPage, /this\.selected = new Set<number>\(this\.selected\)/);
+  assert.match(selectionPage, /this\.pageStack\.pop\(result, true\)/);
+  assert.match(selectionPage, /selectOrderedChats\(state\)/);
+  assert.match(selectionPage, /folder_chats_save/);
+
   const routeMap = JSON.parse(fs.readFileSync(
     path.join(root, 'entry/src/main/resources/base/profile/route_map.json'), 'utf8'));
   const route = routeMap.routerMap.find((item) => item.name === 'TgChatFoldersPage');
   assert.ok(route, 'TgChatFoldersPage is registered');
   assert.equal(route.buildFunction, 'TgChatFoldersPageBuilder');
+  const selectionRoute = routeMap.routerMap.find((item) => item.name === 'TgFolderChatsPage');
+  assert.ok(selectionRoute, 'TgFolderChatsPage is registered');
+  assert.equal(selectionRoute.buildFunction, 'TgFolderChatsPageBuilder');
 
   const settings = read('ui/pages/settings/SettingsPage.ets');
   assert.match(settings, /@Event onOpenChatFolders: \(\) => void/);
@@ -233,7 +270,8 @@ async function checkUseCase() {
       'folders_cancel', 'folders_delete_confirm', 'folders_exclude_muted', 'folders_exclude_read',
       'folders_exclude_archived', 'folders_include_contacts', 'folders_include_non_contacts',
       'folders_include_bots', 'folders_include_groups', 'folders_include_channels',
-      'folders_created_toast', 'folders_saved_toast', 'folders_deleted_toast',
+      'folders_included_chats', 'folders_select_chats', 'folder_chats_title', 'folder_chats_empty',
+      'folder_chats_save', 'folders_created_toast', 'folders_saved_toast', 'folders_deleted_toast',
       'folders_failed_toast']) {
       const item = strings.string.find((entry) => entry.name === name);
       assert.ok(item && item.value.length > 0, name + ' exists in ' + locale);

@@ -281,6 +281,26 @@
       "value": "删除此文件夹？聊天仍保留在列表中。"
     },
     {
+      "name": "folder_chats_title",
+      "value": "文件夹聊天"
+    },
+    {
+      "name": "folder_chats_empty",
+      "value": "还没有聊天"
+    },
+    {
+      "name": "folder_chats_save",
+      "value": "完成"
+    },
+    {
+      "name": "folders_included_chats",
+      "value": "已选聊天"
+    },
+    {
+      "name": "folders_select_chats",
+      "value": "选择聊天"
+    },
+    {
       "name": "folders_include_contacts",
       "value": "包含联系人"
     },

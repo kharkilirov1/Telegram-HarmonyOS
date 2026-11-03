@@ -281,6 +281,26 @@
       "value": "Удалить папку? Чаты останутся в списке."
     },
     {
+      "name": "folder_chats_title",
+      "value": "Чаты папки"
+    },
+    {
+      "name": "folder_chats_empty",
+      "value": "Пока нет чатов"
+    },
+    {
+      "name": "folder_chats_save",
+      "value": "Готово"
+    },
+    {
+      "name": "folders_included_chats",
+      "value": "Выбранные чаты"
+    },
+    {
+      "name": "folders_select_chats",
+      "value": "Выбрать чаты"
+    },
+    {
       "name": "folders_include_contacts",
       "value": "Включить контакты"
     },

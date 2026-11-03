@@ -281,6 +281,26 @@
       "value": "Delete this folder? Chats stay in your chat list."
     },
     {
+      "name": "folder_chats_title",
+      "value": "Folder Chats"
+    },
+    {
+      "name": "folder_chats_empty",
+      "value": "No chats yet"
+    },
+    {
+      "name": "folder_chats_save",
+      "value": "Done"
+    },
+    {
+      "name": "folders_included_chats",
+      "value": "Included chats"
+    },
+    {
+      "name": "folders_select_chats",
+      "value": "Select chats"
+    },
+    {
       "name": "folders_include_contacts",
       "value": "Include contacts"
     },

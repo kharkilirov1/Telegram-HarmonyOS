@@ -146,6 +146,15 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S13d (lead).** B7: выбор конкретных чатов в папку. Новый экран `TgFolderChatsPage` (список по
+  `selectOrderedChats`, чекбоксы, счётчик в шапке, «Done» возвращает `FolderChatSelectionResult`
+  через pop-callback), `includedChatIds` в `ChatFolderDraftPayload` + сериализатор (невалидные id
+  отфильтровываются, use case отвергает до gateway), редактор загружает выбор из `ChatFolderDto`,
+  показывает «Included chats: N» и передаёт его в `chatFolder` JSON. Контракт
+  `test-chat-folder-settings.cjs`: ids в wire (включая int53 `9007199254740001`), фильтрация
+  невалидных, отказ use case, проводка редактора/страницы/route, строки. Гейты: host **116/116**,
+  оба smoke, hvigor BUILD SUCCESSFUL. **Осталось (B7):** shareable-ссылки, folder link preview,
+  witness.
 - **S13c (lead).** B7: include-флаги в редакторе папки. Раньше `ChatFolderDto` читал 5 include-флагов
   (contacts/non-contacts/bots/groups/channels), но UI их не показывал и не отправлял. Теперь все 10
   флагов переключаются, сбрасываются при создании, подгружаются из `getChatFolder` при

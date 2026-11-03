@@ -843,3 +843,12 @@ Last updated: 2026-10-23
   reading is only half the contract when the same object is rewritten on save.
 - When a payload has N flags, make the editor own all N or explicitly mark the rest as untouched;
   partial editors on full-replacement payloads are data loss.
+
+## 193. Page results need a typed pop contract, and Sets need replacement
+
+- `pageStack.pushPathByName(name, params, onPop)` delivers results through `popInfo.result`; define
+  route params/result classes in one file so both pages share the type instead of casting ad hoc.
+- `pageStack.getParamByName` is typed as `Object[]`; `unknown[]` inference trips arkts-no-any-unknown,
+  so cast the call, not the variable.
+- A `Set` mutation is not observable: replace it (`this.selected = new Set(this.selected)`) or the
+  checkbox rows never re-render.

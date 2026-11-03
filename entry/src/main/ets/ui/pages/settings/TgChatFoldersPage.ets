@@ -13,6 +13,10 @@ import { ChatFolderDraftPayload } from '../../../core/model/AppCommand';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { ChatFolderDto } from '../../../core/model/dto/ChatFolderDto';
 import {
+  FolderChatSelectionResult,
+  FolderChatSelectionRouteParams
+} from './folderChatSelectionRoute';
+import {
   createManageChatFoldersUseCase,
   CHAT_FOLDER_TITLE_MAX_LENGTH,
   ManageChatFoldersUseCase
@@ -43,6 +47,8 @@ export struct TgChatFoldersPage {
   @Local private includeBots: boolean = false;
   @Local private includeGroups: boolean = false;
   @Local private includeChannels: boolean = false;
+  // Explicitly included chats; empty means the folder is defined by flags only.
+  @Local private includedChatIds: number[] = [];
   @Local private isBusy: boolean = false;
   @Local private isLoadingFolder: boolean = false;
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
@@ -109,6 +115,7 @@ export struct TgChatFoldersPage {
   }
 
   private resetIncludeFlags(): void {
+    this.includedChatIds = [];
     this.includeContacts = false;
     this.includeNonContacts = false;
     this.includeBots = false;
@@ -149,6 +156,7 @@ export struct TgChatFoldersPage {
         this.includeBots = folder.includeBots;
         this.includeGroups = folder.includeGroups;
         this.includeChannels = folder.includeChannels;
+        this.includedChatIds = folder.includedChatIds.slice();
       })
       .catch((error: Error) => {
         if (token !== this.pageLifecycleToken) {
@@ -157,6 +165,27 @@ export struct TgChatFoldersPage {
         this.isLoadingFolder = false;
         hilog.warn(DOMAIN, TAG, 'Load folder failed: %{public}s', error.message);
       });
+  }
+
+  private openChatSelection(): void {
+    const params = new FolderChatSelectionRouteParams();
+    params.selectedChatIds = this.includedChatIds.slice();
+    params.folderTitle = this.draftTitle;
+    this.pageStack.pushPathByName('TgFolderChatsPage', params,
+      (popInfo: PopInfo): void => {
+        if (this.isClosingPage()) {
+          return;
+        }
+        const result = popInfo.result as FolderChatSelectionResult | undefined;
+        if (result === undefined) {
+          return;
+        }
+        this.includedChatIds = result.selectedChatIds.slice();
+      });
+  }
+
+  private isClosingPage(): boolean {
+    return this.isBusy || this.editingFolderId < 0;
   }
 
   private buildDraft(): ChatFolderDraftPayload {
@@ -170,6 +199,7 @@ export struct TgChatFoldersPage {
     draft.includeBots = this.includeBots;
     draft.includeGroups = this.includeGroups;
     draft.includeChannels = this.includeChannels;
+    draft.includedChatIds = this.includedChatIds.slice();
     return draft;
   }
 
@@ -383,6 +413,26 @@ export struct TgChatFoldersPage {
                 this.includeChannels, (): void => {
                   this.includeChannels = !this.includeChannels;
                 })
+
+              Row() {
+                Text(localized($r('app.string.folders_included_chats').id, 'Included chats'))
+                  .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+                  .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+                  .layoutWeight(1)
+                Text(`${this.includedChatIds.length}`)
+                  .fontSize(TgUiTokens.FONT_META_SIZE)
+                  .fontColor(TgUiTokens.COLOR_TEXT_META)
+                  .margin({ right: TgUiTokens.SPACE_8 })
+                Text(localized($r('app.string.folders_select_chats').id, 'Select chats'))
+                  .fontSize(TgUiTokens.FONT_META_SIZE)
+                  .fontColor(TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT)
+              }
+              .width('100%')
+              .height(44)
+              .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16 })
+              .onClick(() => {
+                this.openChatSelection();
+              })
 
               Row() {
                 Button(this.editingFolderId > 0

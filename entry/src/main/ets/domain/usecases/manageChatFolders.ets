@@ -99,6 +99,11 @@ export class ManageChatFoldersUseCase {
     }
     // The name is trimmed before sending so a padded title cannot pass validation.
     draft.title = title;
+    for (const chatId of draft.includedChatIds) {
+      if (!Number.isSafeInteger(chatId) || chatId <= 0) {
+        throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid chat id', 'Input validation failed', 400, false);
+      }
+    }
   }
 }
 
