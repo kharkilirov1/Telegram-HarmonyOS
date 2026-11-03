@@ -6,6 +6,11 @@
       "buildFunction": "TgChatScreenPageBuilder"
     },
     {
+      "name": "TgDataStoragePage",
+      "pageSourceFile": "src/main/ets/ui/pages/settings/TgDataStoragePage.ets",
+      "buildFunction": "TgDataStoragePageBuilder"
+    },
+    {
       "name": "TgBlockedUsersPage",
       "pageSourceFile": "src/main/ets/ui/pages/settings/TgBlockedUsersPage.ets",
       "buildFunction": "TgBlockedUsersPageBuilder"

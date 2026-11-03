@@ -237,6 +237,62 @@
       "value": "Terminate All Other Sessions"
     },
     {
+      "name": "data_storage_total",
+      "value": "Total"
+    },
+    {
+      "name": "data_storage_files",
+      "value": "Media files"
+    },
+    {
+      "name": "data_storage_file_count",
+      "value": "Files"
+    },
+    {
+      "name": "data_storage_database",
+      "value": "Database"
+    },
+    {
+      "name": "data_storage_language_packs",
+      "value": "Language packs"
+    },
+    {
+      "name": "data_storage_logs",
+      "value": "Logs"
+    },
+    {
+      "name": "data_storage_by_chat",
+      "value": "BY CHAT"
+    },
+    {
+      "name": "data_storage_clear_cache",
+      "value": "Clear Cache"
+    },
+    {
+      "name": "data_storage_clear_cache_message",
+      "value": "Cached media will be downloaded again when needed."
+    },
+    {
+      "name": "data_storage_clearing",
+      "value": "Clearing…"
+    },
+    {
+      "name": "data_storage_loading",
+      "value": "Loading…"
+    },
+    {
+      "name": "data_storage_load_failed",
+      "value": "Could not load storage usage"
+    },
+    {
+      "name": "data_storage_retry",
+      "value": "Retry"
+    },
+    {
+      "name": "data_storage_unknown_chat",
+      "value": "Chat"
+    },
+    {
       "name": "settings_blocked_users",
       "value": "Blocked Users"
     },

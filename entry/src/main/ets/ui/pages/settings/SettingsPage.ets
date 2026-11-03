@@ -45,6 +45,7 @@ export struct SettingsPage {
   // Devices lives on the root navigation stack, like Saved Messages.
   @Event onOpenDevices: () => void = (): void => {};
   @Event onOpenBlockedUsers: () => void = (): void => {};
+  @Event onOpenDataStorage: () => void = (): void => {};
 
   private unsubscribe?: () => void;
   private pageLifecycleToken: number = 0;
@@ -242,6 +243,16 @@ export struct SettingsPage {
               showSeparator: true,
               onRowClick: (): void => {
                 this.onOpenBlockedUsers();
+              }
+            })
+            TgSettingsRow({
+              title: localized($r('app.string.settings_data_storage').id, 'Data and Storage'),
+              iconRes: TgUiTokens.ICON_RES_FOLDER,
+              iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_ORANGE,
+              trailingType: TgSettingsTrailing.Arrow,
+              showSeparator: true,
+              onRowClick: (): void => {
+                this.onOpenDataStorage();
               }
             })
             TgSettingsRow({

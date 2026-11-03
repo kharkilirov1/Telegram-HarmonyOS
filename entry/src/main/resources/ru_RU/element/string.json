@@ -237,6 +237,62 @@
       "value": "Завершить все другие сеансы"
     },
     {
+      "name": "data_storage_total",
+      "value": "Всего"
+    },
+    {
+      "name": "data_storage_files",
+      "value": "Медиафайлы"
+    },
+    {
+      "name": "data_storage_file_count",
+      "value": "Файлов"
+    },
+    {
+      "name": "data_storage_database",
+      "value": "База данных"
+    },
+    {
+      "name": "data_storage_language_packs",
+      "value": "Языковые пакеты"
+    },
+    {
+      "name": "data_storage_logs",
+      "value": "Логи"
+    },
+    {
+      "name": "data_storage_by_chat",
+      "value": "ПО ЧАТАМ"
+    },
+    {
+      "name": "data_storage_clear_cache",
+      "value": "Очистить кэш"
+    },
+    {
+      "name": "data_storage_clear_cache_message",
+      "value": "Кэшированные медиа будут загружены заново при необходимости."
+    },
+    {
+      "name": "data_storage_clearing",
+      "value": "Очистка…"
+    },
+    {
+      "name": "data_storage_loading",
+      "value": "Загрузка…"
+    },
+    {
+      "name": "data_storage_load_failed",
+      "value": "Не удалось загрузить данные"
+    },
+    {
+      "name": "data_storage_retry",
+      "value": "Повторить"
+    },
+    {
+      "name": "data_storage_unknown_chat",
+      "value": "Чат"
+    },
+    {
       "name": "settings_blocked_users",
       "value": "Заблокированные"
     },

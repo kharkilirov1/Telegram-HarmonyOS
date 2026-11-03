@@ -21,8 +21,16 @@ assert.equal((profile.match(/buildSwitchRow/g) || []).length, 0,
   'the unused generic switch builder must not come back');
 
 const settings = read('entry/src/main/ets/ui/pages/settings/SettingsPage.ets');
-assert.doesNotMatch(settings, /settings_data_storage/,
-  'Data and Storage row must stay out until a destination screen exists');
+// The 2026-10-25 audit removed the Data and Storage row because it had no destination. The screen
+// exists now (TgDataStoragePage), so the row must be present AND wired, not merely re-added.
+assert.match(settings, /settings_data_storage'\)\.id/,
+  'Data and Storage row is back now that a destination screen exists');
+assert.match(settings, /onOpenDataStorage/,
+  'the row must open the storage screen instead of being decorative');
+const routeMap = JSON.parse(fs.readFileSync(
+  path.join(root, 'entry/src/main/resources/base/profile/route_map.json'), 'utf8'));
+assert.ok(routeMap.routerMap.some((item) => item.name === 'TgDataStoragePage'),
+  'the Data and Storage destination must be a registered route');
 
 function walk(directory) {
   const entries = fs.readdirSync(directory, { withFileTypes: true });

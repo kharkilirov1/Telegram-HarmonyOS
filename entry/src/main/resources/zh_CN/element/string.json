@@ -237,6 +237,62 @@
       "value": "终止所有其他会话"
     },
     {
+      "name": "data_storage_total",
+      "value": "总计"
+    },
+    {
+      "name": "data_storage_files",
+      "value": "媒体文件"
+    },
+    {
+      "name": "data_storage_file_count",
+      "value": "文件数"
+    },
+    {
+      "name": "data_storage_database",
+      "value": "数据库"
+    },
+    {
+      "name": "data_storage_language_packs",
+      "value": "语言包"
+    },
+    {
+      "name": "data_storage_logs",
+      "value": "日志"
+    },
+    {
+      "name": "data_storage_by_chat",
+      "value": "按聊天"
+    },
+    {
+      "name": "data_storage_clear_cache",
+      "value": "清除缓存"
+    },
+    {
+      "name": "data_storage_clear_cache_message",
+      "value": "缓存的媒体将在需要时重新下载。"
+    },
+    {
+      "name": "data_storage_clearing",
+      "value": "正在清除…"
+    },
+    {
+      "name": "data_storage_loading",
+      "value": "加载中…"
+    },
+    {
+      "name": "data_storage_load_failed",
+      "value": "无法加载存储数据"
+    },
+    {
+      "name": "data_storage_retry",
+      "value": "重试"
+    },
+    {
+      "name": "data_storage_unknown_chat",
+      "value": "聊天"
+    },
+    {
       "name": "settings_blocked_users",
       "value": "已屏蔽用户"
     },

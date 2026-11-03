@@ -81,7 +81,7 @@ Documentation and repository structure were reconciled; no product code changed.
 - `TASKS/SLICE_TEMPLATE.md` — шаблон плана среза (референс → контракт → швы → состояния → тест →
   приёмка).
 - `TASKS/CAPABILITY_MATRIX.md` — 105 строк по пользовательским возможностям iOS: 35 `available`,
-  52 `partial`, 14 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
+  53 `partial`, 13 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
   код-доказательство и связанные фичи; `available` без witness не ставится.
 - `TASKS/WORKMAP.md` — M0 (верифицировать 9 `unverified` строк), S1 (typing indicator, C2),
   S2 (стикеры/TGS, D13).
@@ -146,6 +146,18 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S11 (lead).** H4 «Данные и хранилище» из `missing` → `partial`. Экран `TgDataStoragePage`
+  (Settings → Data and Storage): быстрые размеры (`getStorageStatisticsFast`: медиа, БД, языковые
+  пакеты, логи), разбивка по чатам (`getStorageStatistics` с `chat_limit`, сортировка по размеру),
+  «Clear Cache» через `optimizeStorage` с нулевыми лимитами после подтверждения; `formatStorageBytes`
+  в DTO-модуле, имена чатов из `AppState`, состояния loading/error/retry. Строка Data and Storage,
+  удалённая как мёртвая 2026-10-25, восстановлена уже с route и destination — `test-dead-controls.cjs`
+  переписан на «строка есть И ведёт на зарегистрированный экран» вместо `doesNotMatch`. Контракт
+  `test-data-storage.cjs`: форматирование размеров, точные int64 в статистике, сортировка и отсев
+  мусора, проводка команд/сериализатора (нулевые лимиты, пустые фильтры), use case (fast→full,
+  необязательная разбивка, fatal fast-ошибка, clearCache, валидация), экран/route/settings/локали.
+  Гейты: host **113/113**, оба smoke, hvigor BUILD SUCCESSFUL. **Осталось (H4):** авто-скачивание по
+  типам/сетям, лимиты кэша, iOS-диаграмма, witness.
 - **S10 (lead).** H8 «Заблокированные пользователи» из `missing` → `partial`. Экран
   `TgBlockedUsersPage` (Settings → Blocked Users, отдельная строка и route): список из
   `getBlockedMessageSenders`, имена из `AppState` (user first+last или @username, chat title, иначе

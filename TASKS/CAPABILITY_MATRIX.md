@@ -153,7 +153,7 @@
 | H1 | Экран настроек | `partial` | `SettingsPage.ets` (31/5) | `Sources/Settings*` | H2–H9 |
 | H2 | Приватность | `partial` | `SettingsPage.ets` (1/2) | `Sources/Privacy*` | H1 |
 | H3 | Настройки уведомлений | `partial` | `CommandSerializer.ets` (7/3) | `Sources/Notifications*` | B3, I1 |
-| H4 | Данные и хранилище | `missing` | нет: мёртвая строка «Data and Storage» удалена из `SettingsPage.ets` (2026-10-25), неиспользуемые DTO `TdAutoDownloadSettings`/`Presets` удалены; экрана, `clearCache`/`storageStats`/auto-download-настроек нет объявлен и нигде не используется — `models/td/system/index.ets:13-26` | `Sources/Storage*` | F2 |
+| H4 | Данные и хранилище | `partial` | Экран `TgDataStoragePage` (Settings → Data and Storage, строка восстановлена и привязана к route после удаления «мёртвой» строки 2026-10-25): `getStorageStatisticsFast` (медиа, БД, языковые пакеты, логи) + `getStorageStatistics(chat_limit)` (разбивка по чатам, сортировка по размеру), `optimizeStorage` с нулевыми лимитами как «Clear Cache» после подтверждения; размеры через `formatStorageBytes`, имена чатов из `AppState`, состояния loading/error/retry. Команды/сериализатор, `StorageStatisticsDto`, `LoadStorageStatisticsUseCase`, строки `data_storage_*` в 3 локалях, контракты `test-data-storage.cjs` и обновлённый `test-dead-controls.cjs`. Нет: авто-скачивание по типам/сетям, лимиты кэша, iOS-диаграмма и witness | `Sources/DataStorage*` | H1 |
 | H5 | Устройства/сессии | `partial` | Экран `TgSessionsPage` (Settings → Devices, route `TgSessionsPage`): `getActiveSessions` → `SessionDto` (int64 id сохраняется точным, флаги current/password_pending, устройство, приложение, IP/страна, last active), текущий сеанс помечен и не завершается, `terminateSession` через `promptAction`-подтверждение и перезагрузку списка. Команды/сериализатор `getActiveSessions`/`terminateSession` (int64 как точный JSON-литерал), use case `LoadSessionsUseCase`, строки `sessions_*` в base/ru/zh, контракт `test-sessions.cjs`. Разделы как в iOS: `sessionSelectors` делит сеансы на Active/Web по `sessionType` (браузеры Brave/Chrome/Edge/Firefox/Opera/Safari/Vivaldi), «Terminate All Other Sessions» через `terminateAllOtherSessions` (показывается только при наличии других сеансов). Нет: привязка к 2FA-паролю, подтверждение новых сеансов, iOS-раскладка карточек и witness | `ActiveSessions*`, `WebSessions*` | A4 |
 | H6 | Тёмная тема/акценты | `partial` | `accentColorsReducer.ets`, `colorMode` (12/2) | `Sources/Theme*` | J8 |
 | H7 | Язык интерфейса | `partial` | 15/8 | `Sources/Localization*` | J6 |
@@ -189,8 +189,8 @@
 ## Итог и следующий шаг
 
 - `available`: 35 строк — есть код, тесты и работающий сценарий.
-- `partial`: 52 — код есть, но не сверено с iOS или неполно.
-- `missing`: 14 — кода нет.
+- `partial`: 53 — код есть, но не сверено с iOS или неполно.
+- `missing`: 13 — кода нет.
 - `unverified`: 0 — девять прежних строк разобраны 2026-10-25; остальные 96 имели статус раньше.
 - `frozen`: 3 (VoIP, мультиаккаунт, секретные чаты), `blocked`: 1 (push) — не вкладываться.
 

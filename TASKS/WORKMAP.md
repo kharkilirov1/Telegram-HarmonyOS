@@ -36,10 +36,12 @@
 | S9 | Устройства/сессии (H5) | H5 | `getActiveSessions`/`terminateSession` (команды, сериализатор), `SessionDto` + точный int64 через `getTopLevelRawObjectArrayStrict`, `LoadSessionsUseCase`, `TgSessionsPage` + route + строка Settings → Devices, `sessions_*` в 3 локалях, контракт; H5 → `partial` |
 | S9b | Сессии — Active/Web и завершение всех (H5) | H5 | `sessionType` в DTO, `sessionSelectors` (web-типы, секции, canTerminateOthers), `terminateAllOtherSessions` (команда/сериализатор/use case), две секции и destructive-строка в странице, строки в 3 локалях, контракт расширен |
 | S10 | Заблокированные пользователи (H8) | H8 | `getBlockedMessageSenders`/`setMessageSenderBlockList` (block → main, unblock → null), `BlockedSenderDto`, `LoadBlockedSendersUseCase`, `TgBlockedUsersPage` + route + строка Settings, `blocked_*` в 3 локалях, контракт; H8 → `partial` |
+| S11 | Данные и хранилище (H4) | H4 | `getStorageStatisticsFast`/`getStorageStatistics`/`optimizeStorage` (команды, сериализатор), `StorageStatisticsDto` + `formatStorageBytes`, `LoadStorageStatisticsUseCase`, `TgDataStoragePage` + восстановленная строка Settings + route, `data_storage_*` в 3 локалях, контракты data-storage и dead-controls; H4 → `partial` |
 
 ## Следующие срезы (в порядке)
 
-1. **S10b. Заблокированные — пагинация и блокировка из профиля (H8).** «Показать ещё», block-действие в профиле, blockListStories.
+1. **S11b. Данные и хранилище — авто-скачивание и лимиты (H4).** Сети/типы медиа, лимит кэша, диаграмма как в iOS.
+2. **S10b. Заблокированные — пагинация и блокировка из профиля (H8).**
 2. **S9c. Сессии — 2FA и подтверждение новых сеансов (H5).**
 2. **S8b.3. Контекстное меню — пункты по типу чата (B6).** Join (только search-контекст в iOS), Select.
 2. **S7b.4. Папки чатов — экран настроек и folder link preview (B7).**

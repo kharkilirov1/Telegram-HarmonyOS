@@ -755,3 +755,13 @@ Last updated: 2026-10-23
   would send `"null"` and TDLib would reject the request.
 - List payloads carry identifiers only: the blocked-users page resolves names from AppState and
   falls back to a localized label plus the id rather than showing a blank row.
+
+## 184. A "dead control" guard must flip into a wiring guard
+
+- test-dead-controls.cjs asserted `doesNotMatch(/settings_data_storage/)`: a row with no destination
+  must stay out. Once the destination exists, the same guard fails the suite — which is correct, but
+  the test must be rewritten to assert presence AND wiring AND a registered route, not deleted.
+- Keep the guard’s intent: a settings row is only allowed when opening it leads somewhere real. The
+  new assertion checks the route map, so a future revert of the page fails the guard again.
+- `optimizeStorage` with size/ttl/count zero is the TDLib way to clear every droppable cache file;
+  the database and logs stay, so the screen must show them separately instead of promising zero.

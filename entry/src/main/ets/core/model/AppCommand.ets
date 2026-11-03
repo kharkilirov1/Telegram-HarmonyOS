@@ -300,6 +300,11 @@ export class AddChatToListPayload {
   folderId: number = 0;
 }
 
+export class GetStorageStatisticsPayload {
+  // Number of chats whose per-chat usage is included (TDLib chat_limit, default 20).
+  chatLimit: number = 20;
+}
+
 export type BlockListKind = 'main' | 'stories';
 
 export class GetBlockedMessageSendersPayload {
@@ -683,6 +688,20 @@ export class AddChatToListCommand extends AppCommand {
   payload: AddChatToListPayload = new AddChatToListPayload();
 }
 
+export class GetStorageStatisticsCommand extends AppCommand {
+  type: string = 'getStorageStatistics';
+  payload: GetStorageStatisticsPayload = new GetStorageStatisticsPayload();
+}
+
+export class GetStorageStatisticsFastCommand extends AppCommand {
+  type: string = 'getStorageStatisticsFast';
+}
+
+export class OptimizeStorageCommand extends AppCommand {
+  // "Clear cache": size/ttl/count 0 means remove every cache file TDLib is allowed to drop.
+  type: string = 'optimizeStorage';
+}
+
 export class GetBlockedMessageSendersCommand extends AppCommand {
   type: string = 'getBlockedMessageSenders';
   payload: GetBlockedMessageSendersPayload = new GetBlockedMessageSendersPayload();
@@ -890,6 +909,9 @@ export type AnyAppCommand =
   | JoinChatCommand
   | ToggleChatPinnedCommand
   | AddChatToListCommand
+  | GetStorageStatisticsCommand
+  | GetStorageStatisticsFastCommand
+  | OptimizeStorageCommand
   | GetBlockedMessageSendersCommand
   | SetMessageSenderBlockListCommand
   | GetActiveSessionsCommand
@@ -1359,6 +1381,20 @@ export function createAddChatToListCommand(
   cmd.payload.chatList = chatList;
   cmd.payload.folderId = folderId;
   return cmd;
+}
+
+export function createGetStorageStatisticsCommand(chatLimit: number = 20): GetStorageStatisticsCommand {
+  const cmd = new GetStorageStatisticsCommand();
+  cmd.payload.chatLimit = chatLimit;
+  return cmd;
+}
+
+export function createGetStorageStatisticsFastCommand(): GetStorageStatisticsFastCommand {
+  return new GetStorageStatisticsFastCommand();
+}
+
+export function createOptimizeStorageCommand(): OptimizeStorageCommand {
+  return new OptimizeStorageCommand();
 }
 
 export function createGetBlockedMessageSendersCommand(

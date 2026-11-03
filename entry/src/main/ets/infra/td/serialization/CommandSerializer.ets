@@ -7,6 +7,8 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
   AnyAppCommand,
   GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
+  GetStorageStatisticsCommand,
+  OptimizeStorageCommand,
   TerminateAllOtherSessionsCommand,
   TerminateSessionCommand,
   SetPhoneNumberCommand,
@@ -115,6 +117,9 @@ COMMAND_SERIALIZATION_HANDLERS.set('setMessageReactions', serializeSetMessageRea
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageAvailableReactions', serializeGetMessageAvailableReactions);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
+COMMAND_SERIALIZATION_HANDLERS.set('getStorageStatistics', serializeGetStorageStatistics);
+COMMAND_SERIALIZATION_HANDLERS.set('getStorageStatisticsFast', serializeGetStorageStatisticsFast);
+COMMAND_SERIALIZATION_HANDLERS.set('optimizeStorage', serializeOptimizeStorage);
 COMMAND_SERIALIZATION_HANDLERS.set('getBlockedMessageSenders', serializeGetBlockedMessageSenders);
 COMMAND_SERIALIZATION_HANDLERS.set('setMessageSenderBlockList', serializeSetMessageSenderBlockList);
 COMMAND_SERIALIZATION_HANDLERS.set('getActiveSessions', serializeGetActiveSessions);
@@ -396,6 +401,30 @@ function serializeToggleChatIsPinned(command: AnyAppCommand, result: SerializedC
   result.params.setString('_chat_list_json', cmd.payload.chatList === 'archive'
     ? '{"@type":"chatListArchive"}'
     : '{"@type":"chatListMain"}');
+}
+
+function serializeGetStorageStatistics(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetStorageStatisticsCommand;
+  result.method = 'getStorageStatistics';
+  result.params.setNumber('chat_limit', cmd.payload.chatLimit);
+}
+
+function serializeGetStorageStatisticsFast(_command: AnyAppCommand, result: SerializedCommand): void {
+  result.method = 'getStorageStatisticsFast';
+}
+
+function serializeOptimizeStorage(_command: AnyAppCommand, result: SerializedCommand): void {
+  result.method = 'optimizeStorage';
+  // size/ttl/count zero = release every droppable cache file (td_api.tl:14444).
+  result.params.setNumber('size', 0);
+  result.params.setNumber('ttl', 0);
+  result.params.setNumber('count', 0);
+  result.params.setNumber('immunity_delay', 0);
+  result.params.setString('_file_types_json', '[]');
+  result.params.setString('_chat_ids_json', '[]');
+  result.params.setString('_exclude_chat_ids_json', '[]');
+  result.params.setBool('return_deleted_file_statistics', false);
+  result.params.setNumber('chat_limit', 0);
 }
 
 function serializeGetBlockedMessageSenders(command: AnyAppCommand, result: SerializedCommand): void {
