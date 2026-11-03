@@ -155,6 +155,9 @@ Documentation and repository structure were reconciled; no product code changed.
   в режиме выделения показывает чек-индикатор и блокирует тапы бабла (`.enabled(false)`), тап строки
   — тоггл. Строки «Select»/«%d selected» в base/ru/zh. Гейты: host **106/106**, оба smoke, hvigor
   BUILD SUCCESSFUL. **Долг:** иконки вместо текстовых действий, подсветка выбранных баблов, диалог
+  pass по apple-design + iOS-источнику: панель = строка input-панели 40 px, действия — круги
+  40×40 (иконки close/forward/delete, Copy — глиф ⧉), стекло через `TgGlassPolicy`, press-feedback —
+  нативный эффект `Button`, счётчик SemiBold по центру.
   удаления с формулировкой для N сообщений, device-witness.
 - **S5a (lead).** C6 «разделитель непрочитанных» верифицирован и доведён: модель уже создавала
   запись `kind='unread'` (`firstUnreadIncomingIndex`, sticky-граница, `'0'` как валидная граница,

@@ -589,3 +589,16 @@ Last updated: 2026-10-23
 - To make a row toggle without hijacking child taps, disable the bubble subtree in selection mode and own
   the tap on the outer row: \`.enabled(!selectionActive)\` + one \`onClick\`. Wrapping individual media
   callbacks would need a guard in every lambda and still misses empty areas.
+
+## 168. Design skills are usefu as a lens, but iOS source still owns the numbers
+
+- `apple-design` (WWDC fluid-interface principles) transfers to ArkUI at the level of intent: press
+  feedback on touch-down (native `Button` state effect instead of custom handlers), materials as glass
+  (`backdropBlur` + tint via `TgGlassPolicy`), 40-44 pt tap targets, and hierarchy from translucency.
+  It does not provide ArkUI numbers — `ChatMessageSelectionInputPanelNode.swift` does (panel 40, buttons
+  40x40, computed spacing).
+- `FontWeight.SemiBold` does not exist in the target SDK's enum (only Lighter/Normal/Regular/Medium/
+  Bold/Bolder), and an invalid enum member surfaces as a confusing `arkts-no-any-unknown` on the token
+  line. Check the SDK enum before inventing a weight.
+- A glass bar over scrolling chat needs the blur on the bar **and** on each floating control; stacking a
+  light translucent surface on another light one kills legibility, so panels keep one tint layer.

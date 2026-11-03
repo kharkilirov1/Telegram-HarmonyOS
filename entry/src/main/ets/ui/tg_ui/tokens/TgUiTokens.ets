@@ -1536,13 +1536,17 @@ export class TgUiTokens {
   static readonly REACTION_PICKER_PILL_SIZE: number = 28;
   static readonly REACTION_PICKER_GLYPH_SIZE: number = 16;
   static readonly REACTION_PICKER_PADDING_H: number = 12;
-  // S5b (C9): message-selection panel replaces the composer while messages are selected.
-  static readonly SELECTION_PANEL_HEIGHT: number = 52;
-  static readonly SELECTION_PANEL_ACTION_TEXT_SIZE: number = 15;
-  static readonly SELECTION_PANEL_ACTION_TEXT_WEIGHT = FontWeight.Medium;
-  static readonly SELECTION_PANEL_ACTION_PADDING_H: number = 12;
-  static readonly SELECTION_PANEL_ACTION_GAP: number = 4;
-  static readonly SELECTION_PANEL_CLOSE_ICON_SIZE: number = 22;
+  // S5b (C9) / iOS ChatMessageSelectionInputPanelNode: the bar is an input-panel row (ChatInputPanelNode
+  // defaultHeight = 40) of circular 40x40 glass buttons spread across the width; press feedback comes from
+  // the native Button state effect, and the count sits in the middle where iOS keeps its title.
+  static readonly SELECTION_PANEL_HEIGHT: number = 40;
+  static readonly SELECTION_PANEL_BUTTON_SIZE: number = 40;
+  static readonly SELECTION_PANEL_BUTTON_ICON_SIZE: number = 20;
+  static readonly SELECTION_PANEL_BUTTON_BG: Resource = $r('app.color.composer_glass_tint');
+  static readonly SELECTION_PANEL_ACTION_GAP: number = 8;
+  static readonly SELECTION_PANEL_TEXT_SIZE: number = 15;
+  static readonly SELECTION_PANEL_TEXT_WEIGHT = FontWeight.Medium;
+  static readonly SELECTION_PANEL_COPY_GLYPH: string = '⧉';
   static readonly SELECTION_PANEL_BG: Resource = $r('app.color.composer_glass_tint');
 
   // S5b (C9): selection-mode row indicator drawn in the leading lane.

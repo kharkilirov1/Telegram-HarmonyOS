@@ -1,8 +1,14 @@
 // TgSelectionPanel — message-selection bar that replaces the composer while messages are selected
-// (C9 / iOS ChatMessageSelectionInputPanelNode). Text actions only for now: the icon set has no copy
-// glyph, so all three actions share the same text-button treatment instead of an icon/text mix.
+// (C9 / iOS ChatMessageSelectionInputPanelNode).
+//
+// iOS geometry: ChatInputPanelNode.defaultHeight = 40; the node lays out circular 40x40 glass buttons
+// spread across the panel width (ChatMessageSelectionInputPanelNode.swift:581-597) and dims them via
+// HighlightTrackingButton on press. Copy has no icon resource in this project, so it renders the same
+// circular button with a copy glyph instead of an asset — visual parity stays partial, interaction
+// parity does not (all four buttons share size, shape and native press feedback).
 
 import { TgUiTokens } from '../tokens/TgUiTokens';
+import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 
 @ComponentV2
 export struct TgSelectionPanel {
@@ -17,57 +23,81 @@ export struct TgSelectionPanel {
   @Event onDelete: () => void = () => {};
 
   @Builder
-  private buildAction(label: Resource, enabled: boolean, action: () => void) {
-    Text(label)
-      .fontSize(TgUiTokens.SELECTION_PANEL_ACTION_TEXT_SIZE)
-      .fontWeight(TgUiTokens.SELECTION_PANEL_ACTION_TEXT_WEIGHT)
-      .fontColor(enabled ? TgUiTokens.COLOR_TEXT_TITLE : TgUiTokens.COLOR_TEXT_META)
-      .maxLines(1)
-      .padding({
-        left: TgUiTokens.SELECTION_PANEL_ACTION_PADDING_H,
-        right: TgUiTokens.SELECTION_PANEL_ACTION_PADDING_H
-      })
-      .enabled(enabled)
-      .onClick(() => {
-        if (enabled) {
-          action();
-        }
-      })
+  private buildIconButton(icon: Resource, label: Resource, enabled: boolean, action: () => void) {
+    Button({ type: ButtonType.Circle }) {
+      Image(icon)
+        .width(TgUiTokens.SELECTION_PANEL_BUTTON_ICON_SIZE)
+        .height(TgUiTokens.SELECTION_PANEL_BUTTON_ICON_SIZE)
+        .fillColor(enabled ? TgUiTokens.COLOR_TEXT_TITLE : TgUiTokens.COLOR_TEXT_META)
+    }
+    .width(TgUiTokens.SELECTION_PANEL_BUTTON_SIZE)
+    .height(TgUiTokens.SELECTION_PANEL_BUTTON_SIZE)
+    .backgroundColor(TgUiTokens.SELECTION_PANEL_BUTTON_BG)
+    .backgroundBlurStyle(TgGlassPolicy.composerBlurStyle())
+    .enabled(enabled)
+    .accessibilityText(label)
+    .onClick(() => {
+      if (enabled) {
+        action();
+      }
+    })
+  }
+
+  @Builder
+  private buildGlyphButton(glyph: string, label: Resource, enabled: boolean, action: () => void) {
+    Button({ type: ButtonType.Circle }) {
+      Text(glyph)
+        .fontSize(TgUiTokens.SELECTION_PANEL_BUTTON_ICON_SIZE)
+        .fontColor(enabled ? TgUiTokens.COLOR_TEXT_TITLE : TgUiTokens.COLOR_TEXT_META)
+    }
+    .width(TgUiTokens.SELECTION_PANEL_BUTTON_SIZE)
+    .height(TgUiTokens.SELECTION_PANEL_BUTTON_SIZE)
+    .backgroundColor(TgUiTokens.SELECTION_PANEL_BUTTON_BG)
+    .backgroundBlurStyle(TgGlassPolicy.composerBlurStyle())
+    .enabled(enabled)
+    .accessibilityText(label)
+    .onClick(() => {
+      if (enabled) {
+        action();
+      }
+    })
   }
 
   build() {
     Row() {
-      Image($r('app.media.ic_close'))
-        .width(TgUiTokens.SELECTION_PANEL_CLOSE_ICON_SIZE)
-        .height(TgUiTokens.SELECTION_PANEL_CLOSE_ICON_SIZE)
-        .margin({ right: TgUiTokens.SELECTION_PANEL_ACTION_GAP })
-        .onClick(() => {
-          this.onClose();
-        })
+      this.buildIconButton($r('app.media.ic_close'), $r('app.string.done'), true, () => {
+        this.onClose();
+      })
 
       Text(this.title)
-        .fontSize(TgUiTokens.SELECTION_PANEL_ACTION_TEXT_SIZE)
-        .fontWeight(TgUiTokens.SELECTION_PANEL_ACTION_TEXT_WEIGHT)
+        .fontSize(TgUiTokens.SELECTION_PANEL_TEXT_SIZE)
+        .fontWeight(TgUiTokens.SELECTION_PANEL_TEXT_WEIGHT)
         .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .layoutWeight(1)
-        .margin({ left: TgUiTokens.SPACE_4 })
+        .textAlign(TextAlign.Center)
 
-      this.buildAction($r('app.string.action_copy'), this.canCopy, () => {
-        this.onCopy();
-      })
-      this.buildAction($r('app.string.action_forward'), this.canForward, () => {
-        this.onForward();
-      })
-      this.buildAction($r('app.string.action_delete'), this.canDelete, () => {
-        this.onDelete();
-      })
+      Row() {
+        this.buildGlyphButton(TgUiTokens.SELECTION_PANEL_COPY_GLYPH, $r('app.string.action_copy'),
+          this.canCopy, () => {
+            this.onCopy();
+          })
+        this.buildIconButton($r('app.media.ic_forward'), $r('app.string.action_forward'), this.canForward, () => {
+          this.onForward();
+        })
+        this.buildIconButton($r('app.media.ic_delete'), $r('app.string.action_delete'), this.canDelete, () => {
+          this.onDelete();
+        })
+      }
+      .alignItems(VerticalAlign.Center)
+      .padding({ left: TgUiTokens.SELECTION_PANEL_ACTION_GAP })
     }
     .width('100%')
     .height(TgUiTokens.SELECTION_PANEL_HEIGHT)
-    .padding({ left: TgUiTokens.SPACE_8, right: TgUiTokens.SPACE_8 })
+    .padding({ left: TgUiTokens.SPACE_4, right: TgUiTokens.SPACE_4 })
     .alignItems(VerticalAlign.Center)
     .backgroundColor(TgUiTokens.SELECTION_PANEL_BG)
+    .backgroundBlurStyle(TgGlassPolicy.composerBlurStyle())
   }
 }

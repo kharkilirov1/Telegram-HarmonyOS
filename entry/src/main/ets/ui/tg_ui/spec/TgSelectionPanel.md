@@ -22,20 +22,28 @@
 | выбор пуст | панель не рендерится: страница показывает композер |
 | закрытие (X) | выход из режима, композер возвращается |
 
-## Токены
+## Геометрия и токены (сверено с iOS)
 
-| Что | Токен |
-|---|---|
-| высота | `SELECTION_PANEL_HEIGHT` = 52 |
-| фон | `SELECTION_PANEL_BG` |
-| шрифт действий | `SELECTION_PANEL_ACTION_TEXT_SIZE` / `_WEIGHT` |
-| паддинги действий | `SELECTION_PANEL_ACTION_PADDING_H` |
-| иконка закрытия | `SELECTION_PANEL_CLOSE_ICON_SIZE` |
+iOS: `ChatInputPanelNode.defaultHeight` = 40, кнопки — круги 40×40 со стеклянным фоном
+(`ChatMessageSelectionInputPanelNode.swift:581-597`), раскладка по ширине панели, нажатие
+подсвечивается (`HighlightTrackingButton`) — у нас это нативный press-effect `Button`.
+
+| Что | Токен | iOS |
+|---|---|---|
+| высота панели | `SELECTION_PANEL_HEIGHT` = 40 | `defaultHeight` = 40 |
+| кнопка | `SELECTION_PANEL_BUTTON_SIZE` = 40 | `buttonSize` 40×40 |
+| иконка кнопки | `SELECTION_PANEL_BUTTON_ICON_SIZE` = 20 | `image.size` в круге 40 |
+| фон кнопки + блюр | `SELECTION_PANEL_BUTTON_BG` + `TgGlassPolicy.composerBlurStyle()` | GlassBackgroundView |
+| глиф Copy | `SELECTION_PANEL_COPY_GLYPH` = ⧉ | иконка ассета (у нас нет) |
+| счётчик | `SELECTION_PANEL_TEXT_SIZE` / `_WEIGHT` (SemiBold) | заголовок навбара iOS |
+
+Материал: панель и кнопки — стекло (`backdropBlur` + тинт, LESSON 121), а не плоская заливка;
+иерархия читается за счёт прозрачности, контент чата просвечивает под панелью. |
 
 ## Отклонения от iOS (долг)
 
-- Действия — текстовые кнопки Copy/Forward/Delete; в iOS это иконки (в наборе ресурсов нет
-  copy-глифа, поэтому иконочный ряд был бы неполным). Визуальный witness не снят.
+- Copy — глиф вместо ассета: в наборе ресурсов нет copy-иконки. Остальные три — реальные иконки в
+  тех же кругах. Визуальный witness не снят; press-состояние опирается на нативный эффект `Button`.
 - Нет кнопки «Info» и меню «Ещё» — за рамками первого среза.
 
 ## Интеграция

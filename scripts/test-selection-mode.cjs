@@ -177,10 +177,18 @@ assert.ok(fs.existsSync(path.join(main, 'ui/tg_ui/molecules/TgSelectionPanel.ets
 assert.ok(fs.existsSync(path.join(main, 'ui/tg_ui/spec/TgSelectionPanel.md')), 'panel needs a passport');
 assert.ok(fs.existsSync(path.join(main, 'ui/tg_ui/demos/TgSelectionPanelDemo.ets')), 'panel needs a demo');
 const tokens = read('ui/tg_ui/tokens/TgUiTokens.ets');
-for (const token of ['SELECTION_PANEL_HEIGHT', 'SELECTION_PANEL_BG', 'SELECTION_PANEL_ACTION_TEXT_SIZE',
-  'SELECTION_CHECK_LANE_WIDTH', 'SELECTION_CHECK_GLYPH']) {
+for (const token of ['SELECTION_PANEL_HEIGHT', 'SELECTION_PANEL_BG', 'SELECTION_PANEL_BUTTON_SIZE',
+  'SELECTION_PANEL_BUTTON_ICON_SIZE', 'SELECTION_PANEL_COPY_GLYPH', 'SELECTION_CHECK_LANE_WIDTH',
+  'SELECTION_CHECK_GLYPH']) {
   assert.ok(tokens.includes(token), `missing token ${token}`);
 }
+// iOS parity: the bar is an input-panel row of 40x40 buttons, not full-height text buttons.
+assert.match(tokens, /SELECTION_PANEL_HEIGHT: number = 40;/);
+assert.match(tokens, /SELECTION_PANEL_BUTTON_SIZE: number = 40;/);
+const panelSource = read('ui/tg_ui/molecules/TgSelectionPanel.ets');
+assert.match(panelSource, /Button\(\{ type: ButtonType\.Circle \}\)/, 'actions are circular buttons with native press feedback');
+assert.match(panelSource, /backgroundBlurStyle\(TgGlassPolicy\.composerBlurStyle\(\)\)/, 'panel and buttons are glass');
+assert.ok(!panelSource.includes('SELECTION_PANEL_ACTION_TEXT_SIZE'), 'text-button tokens are gone');
 for (const [locale, expected] of Object.entries({
   base: ['%d selected', 'Select'],
   ru_RU: ['%d выбрано', 'Выбрать'],
