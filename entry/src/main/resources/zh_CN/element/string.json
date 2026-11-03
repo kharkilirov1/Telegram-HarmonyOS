@@ -525,6 +525,30 @@
       "value": "已屏蔽用户"
     },
     {
+      "name": "chat_actions_leave",
+      "value": "退出聊天"
+    },
+    {
+      "name": "chat_actions_leave_confirm",
+      "value": "退出此聊天？你将不再收到它的消息。"
+    },
+    {
+      "name": "chat_actions_left_toast",
+      "value": "你已退出聊天"
+    },
+    {
+      "name": "chat_actions_share_contact",
+      "value": "分享我的联系人"
+    },
+    {
+      "name": "chat_actions_contact_shared",
+      "value": "联系人已分享"
+    },
+    {
+      "name": "chat_actions_share_failed",
+      "value": "无法分享联系人"
+    },
+    {
       "name": "chat_actions_info",
       "value": "聊天信息"
     },

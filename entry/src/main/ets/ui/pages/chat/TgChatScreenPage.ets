@@ -23,6 +23,7 @@ import { AppState, Chat } from '../../../core/model/AppState';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { createSetChatMuteUseCase, MUTE_FOREVER } from '../../../domain/usecases/setChatMute';
 import { createDeleteChatHistoryUseCase } from '../../../domain/usecases/deleteChatHistory';
+import { createLeaveChatUseCase, createShareMyContactUseCase } from '../../../domain/usecases/chatMembership';
 
 @ComponentV2
 export struct TgChatScreenPage {
@@ -57,12 +58,18 @@ export struct TgChatScreenPage {
 
   private openChatActions(): void {
     const chatId = this.view.chrome.activeChatId;
-    if (chatId <= 0) {
+    const chat = this.activeChat();
+    if (chatId <= 0 || chat === undefined) {
       return;
     }
     const muteTitle: string = this.isActiveChatMuted()
       ? localized($r('app.string.profile_unmute').id, 'Unmute')
       : localized($r('app.string.profile_mute').id, 'Mute');
+    // iOS splits the destructive membership item by chat kind: leave for groups/channels, share contact
+    // for private chats.
+    const membershipTitle: string = this.canLeaveChat(chat)
+      ? localized($r('app.string.chat_actions_leave').id, 'Leave Chat')
+      : localized($r('app.string.chat_actions_share_contact').id, 'Share My Contact');
     this.getUIContext().getPromptAction().showActionMenu({
       title: this.view.chrome.title,
       buttons: [
@@ -72,7 +79,8 @@ export struct TgChatScreenPage {
         { text: localized($r('app.string.profile_clear_history').id, 'Clear History'),
           color: TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND },
         { text: localized($r('app.string.profile_delete_chat').id, 'Delete Chat'),
-          color: TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE }
+          color: TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE },
+        { text: membershipTitle, color: TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE }
       ]
     }).then((result: promptAction.ActionMenuSuccessResponse) => {
       if (result.index === 0) {
@@ -83,10 +91,93 @@ export struct TgChatScreenPage {
         this.confirmChatDeletion(chatId, false);
       } else if (result.index === 3) {
         this.confirmChatDeletion(chatId, true);
+      } else if (result.index === 4) {
+        if (this.canLeaveChat(chat)) {
+          this.confirmLeaveChat(chatId);
+        } else {
+          this.shareMyContact(chatId);
+        }
       }
     }).catch((error: Error) => {
       hilog.warn(0x003b, 'TgChatScreenPage', 'Chat actions failed: %{public}s', error.message);
     });
+  }
+
+  private canLeaveChat(chat: Chat): boolean {
+    return chat.type === 'group' || chat.type === 'supergroup' || chat.type === 'channel';
+  }
+
+  private confirmLeaveChat(chatId: number): void {
+    const title: string = localized($r('app.string.chat_actions_leave').id, 'Leave Chat');
+    this.getUIContext().getPromptAction().showDialog({
+      title: title,
+      message: localized($r('app.string.chat_actions_leave_confirm').id,
+        'Leave this chat? You will stop receiving its messages.'),
+      buttons: [
+        { text: localized($r('app.string.cancel').id, 'Cancel'), color: TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND },
+        { text: title, color: TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE }
+      ]
+    }).then((result: promptAction.ShowDialogSuccessResponse) => {
+      if (result.index !== 1) {
+        return;
+      }
+      const token: number = this.pageLifecycleToken;
+      try {
+        const useCase = createLeaveChatUseCase(getTdGatewayAdapter());
+        useCase.leave(chatId).then(() => {
+          if (token !== this.pageLifecycleToken) {
+            return;
+          }
+          this.showChatActionToast(localized($r('app.string.chat_actions_left_toast').id, 'You left the chat'));
+          this.bindings.handleBackPress();
+        }).catch((error: Error) => {
+          hilog.error(0x003b, 'TgChatScreenPage', 'Leave chat failed: %{public}s', error.message);
+        });
+      } catch (error) {
+        hilog.error(0x003b, 'TgChatScreenPage', 'Leave use case init failed: %{public}s', String(error));
+      }
+    }).catch((error: Error) => {
+      hilog.warn(0x003b, 'TgChatScreenPage', 'Leave dialog failed: %{public}s', error.message);
+    });
+  }
+
+  private shareMyContact(chatId: number): void {
+    let phoneNumber: string = '';
+    let firstName: string = '';
+    let lastName: string = '';
+    let userId: number = 0;
+    try {
+      const state: AppState = getAppCoreRuntime().getStore().getState();
+      userId = state.auth.userId;
+      const self = state.users.users.get(userId);
+      if (self === undefined) {
+        this.showChatActionToast(localized($r('app.string.chat_actions_share_failed').id,
+          'Could not share your contact'));
+        return;
+      }
+      phoneNumber = self.phoneNumber;
+      firstName = self.firstName;
+      lastName = self.lastName;
+    } catch (error) {
+      hilog.error(0x003b, 'TgChatScreenPage', 'Self user lookup failed: %{public}s', String(error));
+      return;
+    }
+    const token: number = this.pageLifecycleToken;
+    try {
+      const useCase = createShareMyContactUseCase(getTdGatewayAdapter());
+      useCase.share(chatId, phoneNumber, firstName, lastName, userId).then(() => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        this.showChatActionToast(localized($r('app.string.chat_actions_contact_shared').id, 'Contact shared'));
+      }).catch((error: Error) => {
+        hilog.error(0x003b, 'TgChatScreenPage', 'Share contact failed: %{public}s', error.message);
+        this.showChatActionToast(localized($r('app.string.chat_actions_share_failed').id,
+          'Could not share your contact'));
+      });
+    } catch (error) {
+      hilog.error(0x003b, 'TgChatScreenPage', 'Share use case init failed: %{public}s', String(error));
+    }
   }
 
   private toggleActiveChatMute(chatId: number): void {

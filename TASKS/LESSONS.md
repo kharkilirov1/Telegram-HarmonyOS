@@ -878,3 +878,13 @@ Last updated: 2026-10-23
   check.
 - Adding a second capsule next to the trailing one is a param (`showMoreAction`), not a new enum case:
   replacing `Search` with `More` would have removed search from the header.
+
+## 197. showActionMenu tops out at six buttons — plan the menu as a whole
+
+- The chat actions menu already had four entries; Leave/Share makes five. A sixth entry would still
+  fit, but the iOS menu is longer, so further items need submenus or separate sheets rather than
+  appending forever.
+- Putting a context-dependent item in a fixed index is fine only when the guard and the action are
+  read from the same chat snapshot (`canLeaveChat(chat)` used for both label and dispatch).
+- `inputMessageContact` needs the full `contact` object including `vcard` and `user_id`; sending a
+  phone-only payload makes TDLib reject the message.

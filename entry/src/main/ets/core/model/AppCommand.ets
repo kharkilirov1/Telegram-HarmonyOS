@@ -718,8 +718,30 @@ export class SetMessageReactionsCommand extends AppCommand {
   payload: SetMessageReactionsPayload = new SetMessageReactionsPayload();
 }
 
+export class LeaveChatPayload {
+  chatId: ChatId = 0;
+}
+
+export class ShareContactPayload {
+  chatId: ChatId = 0;
+  phoneNumber: string = '';
+  firstName: string = '';
+  lastName: string = '';
+  userId: number = 0;
+}
+
 export class JoinChatPayload {
   chatId: ChatId = 0; // TDLib joinChat takes the chat id (chat_id:int53)
+}
+
+export class LeaveChatCommand extends AppCommand {
+  type: string = 'leaveChat';
+  payload: LeaveChatPayload = new LeaveChatPayload();
+}
+
+export class ShareContactCommand extends AppCommand {
+  type: string = 'sendContactMessage';
+  payload: ShareContactPayload = new ShareContactPayload();
 }
 
 export class JoinChatCommand extends AppCommand {
@@ -1004,6 +1026,8 @@ export type AnyAppCommand =
   | SetChatMuteCommand
   | GetMessageAvailableReactionsCommand
   | SetMessageReactionsCommand
+  | LeaveChatCommand
+  | ShareContactCommand
   | JoinChatCommand
   | ToggleChatPinnedCommand
   | AddChatToListCommand
@@ -1458,6 +1482,18 @@ export function createSetMessageReactionsCommand(chatId: ChatId, messageId: Mess
   cmd.payload.chatId = chatId;
   cmd.payload.messageId = messageId;
   cmd.payload.reactionKeys = reactionKeys.slice();
+  return cmd;
+}
+
+export function createLeaveChatCommand(chatId: ChatId): LeaveChatCommand {
+  const cmd = new LeaveChatCommand();
+  cmd.payload.chatId = chatId;
+  return cmd;
+}
+
+export function createShareContactCommand(payload: ShareContactPayload): ShareContactCommand {
+  const cmd = new ShareContactCommand();
+  cmd.payload = payload;
   return cmd;
 }
 

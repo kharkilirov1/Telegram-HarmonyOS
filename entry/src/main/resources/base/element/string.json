@@ -525,6 +525,30 @@
       "value": "Blocked Users"
     },
     {
+      "name": "chat_actions_leave",
+      "value": "Leave Chat"
+    },
+    {
+      "name": "chat_actions_leave_confirm",
+      "value": "Leave this chat? You will stop receiving its messages."
+    },
+    {
+      "name": "chat_actions_left_toast",
+      "value": "You left the chat"
+    },
+    {
+      "name": "chat_actions_share_contact",
+      "value": "Share My Contact"
+    },
+    {
+      "name": "chat_actions_contact_shared",
+      "value": "Contact shared"
+    },
+    {
+      "name": "chat_actions_share_failed",
+      "value": "Could not share your contact"
+    },
+    {
       "name": "chat_actions_info",
       "value": "Chat Info"
     },

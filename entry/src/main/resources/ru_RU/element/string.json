@@ -525,6 +525,30 @@
       "value": "Заблокированные"
     },
     {
+      "name": "chat_actions_leave",
+      "value": "Покинуть чат"
+    },
+    {
+      "name": "chat_actions_leave_confirm",
+      "value": "Покинуть чат? Вы перестанете получать его сообщения."
+    },
+    {
+      "name": "chat_actions_left_toast",
+      "value": "Вы покинули чат"
+    },
+    {
+      "name": "chat_actions_share_contact",
+      "value": "Отправить мой контакт"
+    },
+    {
+      "name": "chat_actions_contact_shared",
+      "value": "Контакт отправлен"
+    },
+    {
+      "name": "chat_actions_share_failed",
+      "value": "Не удалось отправить контакт"
+    },
+    {
       "name": "chat_actions_info",
       "value": "Информация о чате"
     },

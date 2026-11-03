@@ -9,7 +9,7 @@ import {
   ChatFolderDraftPayload,
   CreateChatFolderInviteLinkCommand, DeleteChatFolderInviteLinkCommand, EditChatFolderInviteLinkCommand,
   GetChatFolderCommand, GetChatFolderInviteLinksCommand,
-  CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand,
+  CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand, LeaveChatCommand, ShareContactCommand,
   GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
   GetStorageStatisticsCommand,
   SetAutoDownloadSettingsCommand,
@@ -120,6 +120,8 @@ COMMAND_SERIALIZATION_HANDLERS.set('forwardMessages', serializeForwardMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('setChatMute', serializeSetChatMute);
 COMMAND_SERIALIZATION_HANDLERS.set('setMessageReactions', serializeSetMessageReactions);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageAvailableReactions', serializeGetMessageAvailableReactions);
+COMMAND_SERIALIZATION_HANDLERS.set('leaveChat', serializeLeaveChat);
+COMMAND_SERIALIZATION_HANDLERS.set('sendContactMessage', serializeSendContactMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatFolderInviteLinks', serializeGetChatFolderInviteLinks);
@@ -399,6 +401,25 @@ function serializeSetMessageReactions(command: AnyAppCommand, result: Serialized
   result.params.setString('_message_id_json', JSON.stringify(cmd.payload.messageId));
   result.params.setString('_reaction_types_json', buildReactionTypesJson(cmd.payload.reactionKeys));
   result.params.setBool('is_big', cmd.payload.isBig);
+}
+
+function serializeLeaveChat(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as LeaveChatCommand;
+  result.method = 'leaveChat';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+}
+
+function serializeSendContactMessage(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as ShareContactCommand;
+  result.method = 'sendMessage';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('_input_message_content_json',
+    '{"@type":"inputMessageContact","contact":{"@type":"contact"' +
+    ',"phone_number":"' + escapeForJson(cmd.payload.phoneNumber) + '"' +
+    ',"first_name":"' + escapeForJson(cmd.payload.firstName) + '"' +
+    ',"last_name":"' + escapeForJson(cmd.payload.lastName) + '"' +
+    ',"vcard":""' +
+    ',"user_id":' + cmd.payload.userId.toString() + '}}');
 }
 
 function serializeJoinChat(command: AnyAppCommand, result: SerializedCommand): void {

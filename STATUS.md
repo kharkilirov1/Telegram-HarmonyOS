@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S12c (lead).** C10: Leave Chat и Share My Contact. `LeaveChatUseCase` (`leaveChat`, валидация
+  chatId) и `ShareMyContactUseCase` (`sendMessage` + `inputMessageContact`: телефон/имя из store,
+  тримминг, проверка userId) + сериализаторы; пятый пункт меню в шапке контекстный — Leave для
+  group/supergroup/channel (подтверждение, тост, выход из чата), Share My Contact для
+  private/secret (свои данные из `state.auth.userId`/`state.users`, ошибка — тост). Контракт
+  `test-chat-header-actions.cjs`: wire обеих команд (экранирование кавычек в имени), use case
+  (валидация, ошибки), проводка меню, локали. Гейты: host **117/117**, оба smoke, hvigor
+  BUILD SUCCESSFUL. Остаток C10: Report и ролевые пункты, witness.
 - **S12b (lead).** C10 закрыт до `available`: в шапке чата появилась «…»-капсула
   (`@Param showMoreAction` + `@Event onMorePress`, нативный material и fallback, theme-foreground
   токен), не заменяющая поиск; открывает `showActionMenu` с Chat Info (профиль), Mute/Unmute

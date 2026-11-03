@@ -49,11 +49,12 @@
 | S13e | Папки — invite-ссылки (B7) | B7 | 3 команды ссылок + сериализатор, `ChatFolderInviteLinkDto`, `ManageChatFolderInviteLinksUseCase`, секция Invite Links в редакторе (создание/копирование/удаление), 12 строк в 3 локалях, контракт расширен |
 | S13f | Папки — переименование ссылки (B7) | B7 | `editChatFolderInviteLink` (команда/сериализатор), `editLink` в use case, инлайн-редактор имени в редакторе папки, 2 строки в 3 локалях, контракт расширен |
 | S12b | Меню действий в шапке чата (C10) | C10 | `showMoreAction`/`onMorePress` в `TgChatTopBar`, меню Chat Info / Mute / Clear History / Delete в `TgChatScreenPage`, live-store состояние, контракт `test-chat-header-actions.cjs`, smoke-пин на 4 действия; C10 → `available` |
+| S12c | Leave Chat и Share My Contact (C10) | C10 | `leaveChat` + `inputMessageContact` (команды/сериализаторы), `LeaveChatUseCase`/`ShareMyContactUseCase`, пятый контекстный пункт меню в шапке, 6 строк в 3 локалях, контракт расширен |
 
 ## Следующие срезы (в порядке)
 
 1. **S13g. Папки — folder link preview (B7).** Экран открытия `t.me/addlist/...` (`checkChatFolderInviteLink`), ограничение набора чатов ссылки в UI.
-2. **S12c. Действия чата — роли и Share Contact/Report (C10).** Остаток iOS-меню.
+2. **S12d. Действия чата — Report и роли (C10).** Report с причинами (`reportChat`), ролевые пункты для админов.
 2. **S12b. Меню действий в шапке чата (C10).** Действия в шапке/панели чата, роли, Share Contact/Report.
 2. **S10b. Заблокированные — пагинация и блокировка из профиля (H8).**
 2. **S9c. Сессии — 2FA и подтверждение новых сеансов (H5).**
