@@ -274,6 +274,8 @@ export struct TgChatTimelineRow {
         this.bindings.toggleMessageSelection(this.entry.message.messageId);
       }
     })
+    .backgroundColor(this.timeline.selectionActive && this.isSelected() ?
+      TgUiTokens.SELECTION_ROW_TINT : Color.Transparent)
   }
 
   @Builder

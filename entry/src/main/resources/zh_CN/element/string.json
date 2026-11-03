@@ -413,6 +413,10 @@
       "value": "删除消息？"
     },
     {
+      "name": "delete_messages_count",
+      "value": "删除 %d 条消息？"
+    },
+    {
       "name": "delete_message_warning",
       "value": "此操作无法撤销。"
     },

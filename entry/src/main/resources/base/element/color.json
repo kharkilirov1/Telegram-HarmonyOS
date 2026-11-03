@@ -485,6 +485,10 @@
       "value": "#CCF1F3F5"
     },
     {
+      "name": "selection_row_tint",
+      "value": "#1A007AFF"
+    },
+    {
       "name": "tab_item_unselected",
       "value": "#000000"
     }

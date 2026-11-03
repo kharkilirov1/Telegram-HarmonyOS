@@ -413,6 +413,10 @@
       "value": "Удалить сообщение?"
     },
     {
+      "name": "delete_messages_count",
+      "value": "Удалить %d сообщений?"
+    },
+    {
       "name": "delete_message_warning",
       "value": "Это действие нельзя отменить."
     },

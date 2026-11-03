@@ -13,8 +13,9 @@ export interface ChatDeleteMessageHost {
 }
 
 export interface DeleteMessageConfirmation {
+  // messageCount keeps the single dialog honest when a whole selection is deleted.
   confirm(availability: DeleteMessagesAvailability, host: ChatDeleteMessageHost,
-    isCurrent: () => boolean): Promise<boolean | undefined>;
+    isCurrent: () => boolean, messageCount: number): Promise<boolean | undefined>;
 }
 
 // Native confirmation is deliberately separate from the source action popup.
@@ -22,7 +23,7 @@ export interface DeleteMessageConfirmation {
 // response never becomes permission to delete, and index 1 is not always self.
 export class NativeDeleteMessageConfirmation implements DeleteMessageConfirmation {
   async confirm(availability: DeleteMessagesAvailability, host: ChatDeleteMessageHost,
-    isCurrent: () => boolean): Promise<boolean | undefined> {
+    isCurrent: () => boolean, messageCount: number): Promise<boolean | undefined> {
     if (!isCurrent() || (!availability.forSelf && !availability.forEveryone)) return undefined;
     const buttons: promptAction.Button[] = [{
       text: localized($r('app.string.cancel').id, 'Cancel'), color: TgUiTokens.COLOR_TEXT_TITLE
@@ -39,8 +40,12 @@ export class NativeDeleteMessageConfirmation implements DeleteMessageConfirmatio
       modes.push(true);
     }
     try {
+      const title: string = messageCount > 1 ?
+        localized($r('app.string.delete_messages_count').id, 'Delete %d messages?')
+          .replace('%d', messageCount.toString()) :
+        localized($r('app.string.delete_message_title').id, 'Delete message?');
       const result = await host.getChatUIContext().getPromptAction().showDialog({
-        title: localized($r('app.string.delete_message_title').id, 'Delete message?'),
+        title: title,
         message: localized($r('app.string.delete_message_warning').id, 'This action cannot be undone.'),
         buttons: buttons
       });
@@ -110,7 +115,7 @@ export class ChatDeleteMessageController {
         if (!current()) return;
         if (!availability.forSelf && !availability.forEveryone) throw new DeleteMessagesEligibilityError();
         this.phase = 'confirming';
-        const revoke = await this.confirmation.confirm(availability, host, current);
+        const revoke = await this.confirmation.confirm(availability, host, current, ids.length);
         if (!current() || revoke === undefined) return;
         this.phase = 'deleting';
         const params = new DeleteMessagesParams();

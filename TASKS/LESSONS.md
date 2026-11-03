@@ -628,3 +628,14 @@ Last updated: 2026-10-23
   `pushChatScreenRoute(params, navStack, currentStore)`.
 - Smoke scripts assert the old inline push text; when a transaction moves, update the grep contracts in
   both smoke variants in the same commit, or the gate fails on a correct refactor.
+
+## 171. A "one dialog" refactor is not finished until the dialog text matches the action
+
+- Multi-delete reused the single-message confirmation unmodified: the flow was correct (one probe, one
+  dialog, one deleteMessages) but the title said "Delete message?" for seven messages. Pass the count
+  into the confirmation port and keep the single-message string for count 1.
+- A localized count string needs the same resource in base/ru/zh, and `.replace('%d', n)` must be applied
+  after `localized(...)` — otherwise the placeholder leaks into the dialog.
+- Selected-row feedback on iOS is a tint, not just a check mark: a new color needs both
+  `base/element/color.json` and `dark/element/color.json`, and the tint must be gated by
+  `selectionActive && isSelected()` so normal rows stay transparent.

@@ -413,6 +413,10 @@
       "value": "Delete message?"
     },
     {
+      "name": "delete_messages_count",
+      "value": "Delete %d messages?"
+    },
+    {
       "name": "delete_message_warning",
       "value": "This action cannot be undone."
     },

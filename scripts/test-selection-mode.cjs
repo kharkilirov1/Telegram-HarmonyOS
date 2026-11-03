@@ -131,6 +131,38 @@ const entries = [
   assert.deepEqual(host.selectedMessageIds, []);
 }
 
+// Multi-delete confirmation names the selection size (one dialog, honest title) --------------------
+async function checkCountDialog() {
+  const DeleteController = load('ui/pages/chat/ChatDeleteMessageController.ets', {
+    TgUiTokens: new Proxy(function () { return 0; }, { get: () => 0 }),
+    localized: (_id, fallback) => fallback,
+    $r: (id) => ({ id }),
+    DeleteMessagesParams: class {},
+    DeleteMessagesEligibilityError: class extends Error {},
+    DeleteMessagesAvailability: class {},
+    DeleteMessagesUseCase: class {},
+    promptAction: { Button: class {} }
+  });
+  const dialogs = [];
+  const host = {
+    getChatUIContext: () => ({
+      getPromptAction: () => ({
+        showDialog: (options) => {
+          dialogs.push(options);
+          return Promise.resolve({ index: 0 });
+        }
+      })
+    })
+  };
+  const confirmation = new DeleteController.NativeDeleteMessageConfirmation();
+  const availability = { forSelf: true, forEveryone: false };
+  await confirmation.confirm(availability, host, () => true, 1);
+  await confirmation.confirm(availability, host, () => true, 7);
+  assert.equal(dialogs[0].title, 'Delete message?', 'a single message keeps the original title');
+  assert.equal(dialogs[1].title, 'Delete 7 messages?', 'the dialog names the selection size');
+  assert.equal(dialogs[1].message, 'This action cannot be undone.');
+}
+
 // Source contracts --------------------------------------------------------------------------------
 const controller = read('ui/pages/chat/ChatMessageActionsController.ets');
 assert.match(controller, /new ChatMessageActionItem\('select', localized\(\$r\('app\.string\.action_select'\)\.id, 'Select'\)\)/);
@@ -177,6 +209,24 @@ assert.ok(fs.existsSync(path.join(main, 'ui/tg_ui/molecules/TgSelectionPanel.ets
 assert.ok(fs.existsSync(path.join(main, 'ui/tg_ui/spec/TgSelectionPanel.md')), 'panel needs a passport');
 assert.ok(fs.existsSync(path.join(main, 'ui/tg_ui/demos/TgSelectionPanelDemo.ets')), 'panel needs a demo');
 const tokens = read('ui/tg_ui/tokens/TgUiTokens.ets');
+// iOS tints the selected bubble/row; a check lane alone is not enough feedback.
+assert.match(tokens, /SELECTION_ROW_TINT: Resource = \$r\('app\.color\.selection_row_tint'\)/);
+assert.match(row, /\.backgroundColor\(this\.timeline\.selectionActive && this\.isSelected\(\) \?/,
+  'the selected row is tinted while selection mode is on');
+for (const [file, locale] of [['base', 'light'], ['dark', 'dark']]) {
+  const colors = JSON.parse(fs.readFileSync(
+    path.join(root, `entry/src/main/resources/${file}/element/color.json`), 'utf8'));
+  const entry = colors.color.find((item) => item.name === 'selection_row_tint');
+  assert.ok(entry && entry.value.length > 0, `selection_row_tint exists (${locale})`);
+}
+// The dialog title now names the selection size.
+const deleteSource = read('ui/pages/chat/ChatDeleteMessageController.ets');
+assert.match(deleteSource, /messageCount > 1 \?/);
+assert.match(deleteSource, /delete_messages_count/);
+assert.match(deleteSource, /messageCount\.toString\(\)/);
+assert.match(deleteSource, /confirm\(availability, host, current, ids\.length\)/,
+  'the controller passes the selection size into the confirmation');
+
 for (const token of ['SELECTION_PANEL_HEIGHT', 'SELECTION_PANEL_BG', 'SELECTION_PANEL_BUTTON_SIZE',
   'SELECTION_PANEL_BUTTON_ICON_SIZE', 'SELECTION_PANEL_COPY_GLYPH', 'SELECTION_CHECK_LANE_WIDTH',
   'SELECTION_CHECK_GLYPH']) {
@@ -202,4 +252,11 @@ for (const [locale, expected] of Object.entries({
   assert.equal(select?.value, expected[1], `action_select in ${locale}`);
 }
 
-console.log('PASS message selection contract');
+checkCountDialog()
+  .then(() => {
+    console.log('PASS message selection contract');
+  })
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

@@ -1557,4 +1557,6 @@ export class TgUiTokens {
   static readonly SELECTION_CHECK_BG: Resource = $r('app.color.telegram_blue');
   static readonly SELECTION_CHECK_GLYPH: string = '✓';
   static readonly SELECTION_CHECK_GLYPH_COLOR: Resource = $r('app.color.icon_on_primary');
+  // iOS tints the whole selected bubble/row instead of only drawing a check lane.
+  static readonly SELECTION_ROW_TINT: Resource = $r('app.color.selection_row_tint');
 }

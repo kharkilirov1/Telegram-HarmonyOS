@@ -146,6 +146,13 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S5c (lead).** Долги C9 закрыты частично: выбранная строка теперь подсвечивается
+  тинтом (`SELECTION_ROW_TINT` → `selection_row_tint` в base/dark), а диалог удаления называет
+  размер выбора — «Delete %d messages?» / «Удалить %d сообщений?» / «删除 %d 条消息？»
+  (`delete_messages_count`, `messageCount` в `NativeDeleteMessageConfirmation`, один диалог и один
+  `deleteMessages` на весь выбор). Хост-контракт `test-selection-mode.cjs` расширен: поведенческая
+  проверка заголовка для 1 и N сообщений, токен/цвет тинта, проводка строки. Гейты: host **108/108**,
+  оба smoke, hvigor BUILD SUCCESSFUL. **Остаётся:** Copy глифом (нет ассета), device-witness.
 - **S6b (lead).** D7 получил точку входа: строка «Saved Messages» в настройках больше не
   мёртвая — `SettingsPage` эмитит `onOpenSavedMessages`, `MainTabsPage` открывает уже существующий
   чат либо создаёт его через `createPrivateChat(my_id)` (td_api.tl:8726), гидрирует стор
