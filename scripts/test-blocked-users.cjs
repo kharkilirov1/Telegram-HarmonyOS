@@ -143,24 +143,28 @@ async function checkUseCase() {
   await useCase.fetchPage(2, 10);
   assert.equal(sent.at(-1).payload.offset, 2, 'the offset reaches getBlockedMessageSenders');
   assert.equal(sent.at(-1).payload.limit, 10);
+  assert.equal(sent.at(-1).payload.blockList, 'main', 'the default tab reads the main block list');
+
+  await useCase.fetchPage(0, 100, 'stories');
+  assert.equal(sent.at(-1).payload.blockList, 'stories', 'the stories tab selects blockListStories');
 
   await useCase.unblock(page.senders[0]);
-  assert.equal(sent.length, 3);
-  assert.equal(sent[2].type, 'setMessageSenderBlockList');
-  assert.equal(sent[2].payload.senderType, 'user');
-  assert.equal(sent[2].payload.senderId, 11);
-  assert.equal(sent[2].payload.blocked, false, 'the page only unblocks');
+  assert.equal(sent.length, 4);
+  assert.equal(sent[3].type, 'setMessageSenderBlockList');
+  assert.equal(sent[3].payload.senderType, 'user');
+  assert.equal(sent[3].payload.senderId, 11);
+  assert.equal(sent[3].payload.blocked, false, 'the page only unblocks');
 
   for (const offset of [-1, 1.5]) {
     await assert.rejects(() => useCase.fetchPage(offset), /Invalid paging/);
   }
   await assert.rejects(() => useCase.fetchPage(0, 0), /Invalid paging/);
   await assert.rejects(() => useCase.fetchPage(0, 101), /Invalid paging/);
-  assert.equal(sent.length, 3, 'invalid paging never reaches the gateway');
+  assert.equal(sent.length, 4, 'invalid paging never reaches the gateway');
 
   await assert.rejects(() => useCase.unblock(Object.assign(new D.BlockedSenderDto(),
     { senderType: 'user', senderId: 0 })), /Invalid sender/);
-  assert.equal(sent.length, 3);
+  assert.equal(sent.length, 4);
 
   const blockedUseCase = new (load('domain/usecases/setMessageSenderBlocked.ets',
     { ...C, ...errors, hilog }).SetMessageSenderBlockedUseCase)(gateway);
@@ -213,7 +217,7 @@ async function checkUseCase() {
   const page = read('ui/pages/settings/TgBlockedUsersPage.ets');
   assert.match(page, /export function TgBlockedUsersPageBuilder\(\)/);
   assert.match(page, /createLoadBlockedSendersUseCase\(getTdGatewayAdapter\(\)\)/);
-  assert.match(page, /useCase\.fetchPage\(\)/);
+  assert.match(page, /useCase\.fetchPage\(0, 100, this\.blockList\)/);
   assert.match(page, /useCase\.unblock\(sender\)/);
   assert.match(page, /state\.users\.users\.get\(sender\.senderId\)/);
   assert.match(page, /state\.chats\.chats\.get\(sender\.senderId\)/);
@@ -221,7 +225,15 @@ async function checkUseCase() {
   assert.match(page, /ForEach\(this\.senders, \(sender: BlockedSenderDto\)/);
   assert.match(page, /mergeBlockedSenders\(this\.senders, page\.senders\)/);
   assert.match(page, /hasMoreBlockedSenders\(this\.senders\.length, this\.totalCount\)/);
-  assert.match(page, /useCase\.fetchPage\(this\.senders\.length\)/,
+  assert.match(page, /@Local private blockList: BlockListKind = 'main';/);
+  assert.match(page, /private selectBlockList\(blockList: BlockListKind\): void \{/);
+  assert.match(page, /this\.blockList = blockList;/);
+  assert.match(page, /useCase\.fetchPage\(0, 100, this\.blockList\)/);
+  assert.match(page, /useCase\.fetchPage\(this\.senders\.length, 100, this\.blockList\)/,
+    'show more must stay on the selected block list');
+  assert.match(page, /blocked_tab_messages/);
+  assert.match(page, /blocked_tab_stories/);
+  assert.match(page, /useCase\.fetchPage\(this\.senders\.length, 100, this\.blockList\)/,
     'show more requests the next offset, not the first page again');
 
   const routeMap = JSON.parse(fs.readFileSync(
@@ -252,7 +264,8 @@ async function checkUseCase() {
       path.join(root, 'entry/src/main/resources', locale, 'element/string.json'), 'utf8'));
     for (const name of ['settings_blocked_users', 'blocked_loading', 'blocked_load_failed', 'blocked_retry',
       'blocked_empty', 'blocked_unblock', 'blocked_user_fallback', 'blocked_chat_fallback',
-      'blocked_show_more', 'profile_block_user', 'profile_unblock_user',
+      'blocked_show_more', 'blocked_tab_messages', 'blocked_tab_stories',
+      'profile_block_user', 'profile_unblock_user',
       'profile_blocked_toast', 'profile_unblocked_toast']) {
       const item = strings.string.find((entry) => entry.name === name);
       assert.ok(item && item.value.length > 0, name + ' exists in ' + locale);

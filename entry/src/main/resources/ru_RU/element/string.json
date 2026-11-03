@@ -373,6 +373,14 @@
       "value": "Пользователь разблокирован"
     },
     {
+      "name": "blocked_tab_messages",
+      "value": "Сообщения"
+    },
+    {
+      "name": "blocked_tab_stories",
+      "value": "Истории"
+    },
+    {
       "name": "blocked_show_more",
       "value": "Показать ещё"
     },

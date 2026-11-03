@@ -373,6 +373,14 @@
       "value": "已取消屏蔽"
     },
     {
+      "name": "blocked_tab_messages",
+      "value": "消息"
+    },
+    {
+      "name": "blocked_tab_stories",
+      "value": "故事"
+    },
+    {
       "name": "blocked_show_more",
       "value": "显示更多"
     },

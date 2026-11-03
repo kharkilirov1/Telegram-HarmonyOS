@@ -5,6 +5,7 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { TdObject } from '../../models/TdTypes';
 import {
+  BlockListKind,
   createGetBlockedMessageSendersCommand,
   createSetMessageSenderBlockListCommand
 } from '../../core/model/AppCommand';
@@ -27,14 +28,19 @@ export class LoadBlockedSendersUseCase {
     this.gateway = gateway;
   }
 
-  async fetchPage(offset: number = 0, limit: number = BLOCKED_SENDERS_PAGE_SIZE): Promise<BlockedSendersPage> {
+  // blockList selects which TDLib block list is read: main (messages) or stories.
+  async fetchPage(
+    offset: number = 0,
+    limit: number = BLOCKED_SENDERS_PAGE_SIZE,
+    blockList: BlockListKind = 'main'
+  ): Promise<BlockedSendersPage> {
     if (!Number.isSafeInteger(offset) || offset < 0 ||
       !Number.isSafeInteger(limit) || limit <= 0 || limit > 100) {
       throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid paging', 'Input validation failed', 400, false);
     }
     try {
       const response = await this.gateway.send(
-        createGetBlockedMessageSendersCommand('main', offset, limit)) as TdObject;
+        createGetBlockedMessageSendersCommand(blockList, offset, limit)) as TdObject;
       return createBlockedSendersPageFromTd(response);
     } catch (error) {
       const err = error as Error;

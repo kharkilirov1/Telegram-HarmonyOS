@@ -146,6 +146,13 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S10d (lead).** H8: вкладки Messages/Stories. `LoadBlockedSendersUseCase.fetchPage` принимает
+  `blockList` (`main`/`stories`), страница держит `@Local blockList`, рисует две вкладки, при
+  переключении сбрасывает список/offset/total и перезагружает, «Show More» остаётся на выбранном
+  списке; разблокировка по-прежнему обнуляет блок-лист (в TDLib один `block_list`). Контракт
+  `test-blocked-users.cjs`: проброс stories в команду, дефолт main, вкладки/сброс/пагинация в
+  странице, строки `blocked_tab_*` в 3 локалях. Гейты: host **114/114**, оба smoke, hvigor
+  BUILD SUCCESSFUL. **Осталось (H8):** iOS-карточки, witness.
 - **S10c (lead).** H8: блокировка из профиля. Данные: `Chat.isBlocked` ← `chat.block_list`
   (`blockListMain`), `updateChatBlockList` нормализуется в `ChatUpdateDto.isBlocked` и применяется
   reducer’ом (create + оба merge-пути). Действие: `SetMessageSenderBlockedUseCase` (block/unblock с

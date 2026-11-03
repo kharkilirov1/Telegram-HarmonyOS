@@ -796,3 +796,11 @@ Last updated: 2026-10-23
   debt entry explaining why the active state is unknown.
 - Host-test loaders that also capture `export type` names try to return erased bindings; match only
   value exports (`class|function|enum|const`) and let `stripTypeScriptTypes` erase the rest.
+
+## 188. One block_list field means the unblock action is shared
+
+- TDLib keeps a single `block_list` per sender (main or stories), so the stories tab cannot have its
+  own "remove from stories only" action: unblocking always clears the list. Presenting two tabs must
+  not imply two independent blocks.
+- Switching a paging tab must reset offset and total before reloading; otherwise "Show More" appends
+  the next page of the previous list.

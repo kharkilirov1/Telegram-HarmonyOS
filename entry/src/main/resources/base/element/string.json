@@ -373,6 +373,14 @@
       "value": "User unblocked"
     },
     {
+      "name": "blocked_tab_messages",
+      "value": "Messages"
+    },
+    {
+      "name": "blocked_tab_stories",
+      "value": "Stories"
+    },
+    {
       "name": "blocked_show_more",
       "value": "Show More"
     },

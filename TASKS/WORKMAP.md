@@ -40,6 +40,7 @@
 | S11b | Авто-скачивание по сетям (H4) | H4 | `getAutoDownloadSettingsPresets`/`setAutoDownloadSettings` (команды, сериализатор с 9 полями и NetworkType), `AutoDownloadSettingsDto` (пресеты+выбор), `LoadAutoDownloadSettingsUseCase`, `TgAutoDownloadPage` + route + вход из Data and Storage, `auto_download_*` в 3 локалях, контракт; ограничение: нет getter’а текущих настроек |
 | S10b | Заблокированные — пагинация (H8) | H8 | `blockedSenderSelectors` (ключ, merge с дедупом, hasMore по loaded-vs-total), offset-пагинация «Show More» в `TgBlockedUsersPage`, `blocked_show_more` в 3 локалях, контракт расширен |
 | S10c | Заблокированные — блокировка из профиля (H8) | H8 | `Chat.isBlocked` из `chat.block_list`, `updateChatBlockList` → reducer, `SetMessageSenderBlockedUseCase`, строка Block/Unblock в профиле (private/secret) с подтверждением и тостом, 4 строки в 3 локалях, контракт расширен |
+| S10d | Заблокированные — вкладки Messages/Stories (H8) | H8 | `fetchPage(offset, limit, blockList)`, вкладки и сброс пагинации в `TgBlockedUsersPage`, `blocked_tab_*` в 3 локалях, контракт расширен |
 
 ## Следующие срезы (в порядке)
 

@@ -12,6 +12,7 @@ import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter'
 import { createLoadBlockedSendersUseCase, LoadBlockedSendersUseCase } from '../../../domain/usecases/loadBlockedSenders';
 import { BlockedSenderDto } from '../../../core/model/dto/BlockedSenderDto';
 import { blockedSenderKey, mergeBlockedSenders, hasMoreBlockedSenders } from '../../../domain/selectors/blockedSenderSelectors';
+import { BlockListKind } from '../../../core/model/AppCommand';
 import { TgChatTopBar } from '../../tg_ui/atoms/TgChatTopBar';
 import { TgIcon } from '../../tg_ui/atoms/TgIcon';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
@@ -36,6 +37,8 @@ export struct TgBlockedUsersPage {
   @Local private unblockingKey: string = '';
   @Local private totalCount: number = 0;
   @Local private isLoadingMore: boolean = false;
+  // Which TDLib block list is shown: main (messages) or stories.
+  @Local private blockList: BlockListKind = 'main';
 
   private loadBlockedUseCase?: LoadBlockedSendersUseCase;
   private pageLifecycleToken: number = 0;
@@ -74,7 +77,7 @@ export struct TgBlockedUsersPage {
     const token: number = this.pageLifecycleToken;
     this.isLoading = true;
     this.loadFailed = false;
-    useCase.fetchPage()
+    useCase.fetchPage(0, 100, this.blockList)
       .then((page) => {
         if (token !== this.pageLifecycleToken) {
           return;
@@ -97,6 +100,43 @@ export struct TgBlockedUsersPage {
     return blockedSenderKey(sender);
   }
 
+  private selectBlockList(blockList: BlockListKind): void {
+    if (this.blockList === blockList) {
+      return;
+    }
+    this.blockList = blockList;
+    this.senders = [];
+    this.totalCount = 0;
+    this.reloadSenders();
+  }
+
+  @Builder
+  buildBlockListTabs() {
+    Row() {
+      Text(localized($r('app.string.blocked_tab_messages').id, 'Messages'))
+        .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+        .fontColor(this.blockList === 'main' ? TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT
+          : TgUiTokens.COLOR_TEXT_META)
+        .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16, top: TgUiTokens.SPACE_8,
+          bottom: TgUiTokens.SPACE_8 })
+        .onClick(() => {
+          this.selectBlockList('main');
+        })
+      Text(localized($r('app.string.blocked_tab_stories').id, 'Stories'))
+        .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+        .fontColor(this.blockList === 'stories' ? TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT
+          : TgUiTokens.COLOR_TEXT_META)
+        .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16, top: TgUiTokens.SPACE_8,
+          bottom: TgUiTokens.SPACE_8 })
+        .onClick(() => {
+          this.selectBlockList('stories');
+        })
+    }
+    .width('100%')
+    .height(44)
+    .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16 })
+  }
+
   private loadMore(): void {
     const useCase = this.loadBlockedUseCase;
     if (useCase === undefined || this.isLoadingMore) {
@@ -104,7 +144,7 @@ export struct TgBlockedUsersPage {
     }
     const token: number = this.pageLifecycleToken;
     this.isLoadingMore = true;
-    useCase.fetchPage(this.senders.length)
+    useCase.fetchPage(this.senders.length, 100, this.blockList)
       .then((page) => {
         if (token !== this.pageLifecycleToken) {
           return;
@@ -196,6 +236,9 @@ export struct TgBlockedUsersPage {
     NavDestination() {
       Stack({ alignContent: Alignment.Top }) {
         List() {
+          ListItem() {
+            this.buildBlockListTabs()
+          }
           if (this.isLoading) {
             ListItem() {
               Text(localized($r('app.string.blocked_loading').id, 'Loading…'))
