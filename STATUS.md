@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S7b.3 (lead).** B7: пагинация по папке. `LoadChatsPayload` получил `chatList: folder` +
+  `folderId` (фабрика `createLoadChatsCommand(limit, chatList, folderId)`), сериализатор отправляет
+  `chatListFolder` JSON; новый `LoadFolderChatsUseCase` держит один запрос на папку в полёте, cooldown
+  1.5 c после ответа (TDLib может ответить пусто), отменяется вместе со страницей; `ChatListPage`
+  запрашивает первую страницу при выборе папки и догружает её на скролле вместо основного списка.
+  Контракт `test-chat-folders.cjs`: проводка команды/фабрики/сериализатора (включая регрессию archive),
+  дедупликация в полёте, cooldown, folder 0, отмена, проводка страницы. Гейты: host **109/109**,
+  оба smoke, hvigor BUILD SUCCESSFUL. **Осталось (B7):** экран настроек папок, folder link preview.
 - **S7b.2 (lead).** B7: полоса папок подключена к списку. `TgChatListFilterBar` получил
   `TgChatListFilterTab` (id/title/unread), режим реальных папок с горизонтальной прокруткой и
   бейджами (легаси All/Unread/Personal остаётся фолбэком при одной вкладке), `TgChatListNavigationBar`

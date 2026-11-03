@@ -29,10 +29,11 @@
 | S7a | Папки чатов — слой данных (B7) | B7 | `ChatFolderInfo`/`ChatFoldersState` в AppState, `ChatFolderNormalizer` (`updateChatFolders`), `chatFoldersReducer`, селектор вкладок с позицией All chats, `test-chat-folders.cjs`; B7 → `partial` |
 | S7b.1 | Папки чатов — членство (B7) | B7 | `ChatDto.folderOrders`/`extractFolderPosition`, `Chat.folderOrders`, добавление/удаление через `updateChatAddedToList`/`RemovedFromList`, `selectChatIdsForFolder` + контракт |
 | S7b.2 | Папки чатов — полоса и фильтрация (B7) | B7 | `TgChatListFilterTab` в полосе, проброс через nav bar, `ChatListPage` выбирает папку и строит список из `selectChatIdsForFolder`, unread-счётчики по спискам и бейджи, `chat_folders_all`; контракт расширен |
+| S7b.3 | Папки чатов — пагинация (B7) | B7 | `loadChats(chatListFolder)` в payload/сериализаторе, `LoadFolderChatsUseCase` (in-flight + cooldown + cancel), запрос на выбор папки и на скролл, контракт |
 
 ## Следующие срезы (в порядке)
 
-1. **S7b.3. Папки чатов — пагинация (B7).** `loadChats(chatListFolder)` при выборе папки, догрузка по скроллу, затем экран настроек папок.
+1. **S7b.4. Папки чатов — экран настроек и folder link preview (B7).**
 2. **C9-долг** (иконка Copy) и **D7-долг** (пункт меню).
 3. **Witness-очередь:** D10 (реакции), C2 (typing), C6 (разделитель), D13 (стикеры). Иконки панели, подсветка выбранных баблов, формулировка диалога удаления для N сообщений, device-witness.
 

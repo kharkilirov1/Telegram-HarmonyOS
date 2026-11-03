@@ -688,3 +688,12 @@ Last updated: 2026-10-23
 - The symptom looked like lost counters after the second update (only the first one survived) — a clone
   bug, not a reducer bug. When a field disappears between two actions, read the clone helper first.
 - Clone helpers stay cheap: assign the whole sub-state by reference and let the owning reducer replace it.
+
+## 177. buildTdlibRequestJson expands the _*_json params
+
+- A serializer that stores `_chat_list_json` sends a nested object on the wire: assert
+  `parsed.chat_list` (the expanded shape), not the raw `_chat_list_json` string — the raw key is
+  undefined even though the payload is correct.
+- Pagination guards belong to the use case, not the page: one in-flight request per folder plus a
+  cooldown after the answer, because TDLib silently returns nothing for an exhausted folder while the
+  user keeps scrolling.
