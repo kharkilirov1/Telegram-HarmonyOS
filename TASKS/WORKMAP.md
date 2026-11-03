@@ -43,10 +43,11 @@
 | S10d | Заблокированные — вкладки Messages/Stories (H8) | H8 | `fetchPage(offset, limit, blockList)`, вкладки и сброс пагинации в `TgBlockedUsersPage`, `blocked_tab_*` в 3 локалях, контракт расширен |
 | S12 | Меню действий чата (C10) | C10 | «…» в `TgProfileNavigationBar` + `showActionMenu` в профиле: mute/unmute, clear history, delete chat (подтверждения, тосты), ужесточение валидации `DeleteChatHistoryUseCase`, контракт `test-profile-actions.cjs`; C10 → `partial` |
 | S13 | Настройки папок (B7/S7b.4) | B7 | `createChatFolder`/`editChatFolder`/`deleteChatFolder` (команды, сериализатор с полным `chatFolder` JSON), `ManageChatFoldersUseCase` (валидация имени/folderId), `TgChatFoldersPage` + route + строка Settings, `folders_*` в 3 локалях, контракт |
+| S13b | Папки — чтение полной папки (B7) | B7 | `getChatFolder` (команда, сериализатор), `ChatFolderDto` (все флаги + int53-вектора через raw items), `fetchFolder` в use case, подгрузка флагов перед сохранением в `TgChatFoldersPage`, контракт расширен; долг «флаги сбрасываются» закрыт |
 
 ## Следующие срезы (в порядке)
 
-1. **S13b. Папки — выбор чатов и shareable-ссылки (B7).** iOS-сетка выбора чатов, `createChatFolderInviteLink`/`editChatFolderInviteLink`/`deleteChatFolderInviteLink`, folder link preview.
+1. **S13c. Папки — выбор чатов и shareable-ссылки (B7).** iOS-сетка выбора чатов (`included_chat_ids`), invite-ссылки, folder link preview.
 2. **S12b. Меню действий в шапке чата (C10).** Действия в шапке/панели чата, роли, Share Contact/Report.
 2. **S10b. Заблокированные — пагинация и блокировка из профиля (H8).**
 2. **S9c. Сессии — 2FA и подтверждение новых сеансов (H5).**

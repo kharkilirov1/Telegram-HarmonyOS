@@ -827,3 +827,11 @@ Last updated: 2026-10-23
   editor starts from false only because TDLib does not expose the current values in this version.
 - Raw JSON fields (`_folder_json`) need the same escaping as normal strings: use the existing
   escapeForJson helper and test quotes/backslashes explicitly.
+
+## 191. Read-back closes the "editor resets state" class of bug
+
+- The folder list carries only a summary (chatFolderInfo); the editor must call getChatFolder to get
+  the flags it is about to send back. Saving a form whose initial values are guessed silently rewrites
+  server state — read back first, then enable Save.
+- int53 vectors in responses are best read with a raw item scanner: JSON.parse turns 9007199254740001
+  into a rounded double, and a chat id is an identity, not a measurement.

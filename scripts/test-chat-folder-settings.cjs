@@ -23,6 +23,7 @@ const { TdObject } = load('models/td/common/index.ets');
 const C = load('core/model/AppCommand.ets');
 const errors = load('core/model/AppError.ets');
 const serializer = load('infra/td/serialization/CommandSerializer.ets', { ...C, TdObject, hilog });
+const D = load('core/model/dto/ChatFolderDto.ets', { TdObjectType: TdObject });
 
 function draft(overrides = {}) {
   return Object.assign(new C.ChatFolderDraftPayload(), overrides);
@@ -66,12 +67,74 @@ function draft(overrides = {}) {
   assert.deepEqual(remove.leave_chat_ids, [], 'deleting never leaves chats implicitly');
 }
 
+// getChatFolder read-back: full folder including the flags chatFolderInfo omits -------------------
+{
+  const folderWire = JSON.parse(serializer.buildTdlibRequestJson('getChatFolder',
+    serializer.serializeCommand(C.createGetChatFolderCommand(12)).params));
+  assert.equal(folderWire.chat_folder_id, 12);
+
+  const folderText = '{"@type":"chatFolder",' +
+    '"name":{"@type":"chatFolderName","text":{"@type":"formattedText","text":"Work","entities":[]},' +
+    '"animate_custom_emoji":false},' +
+    '"icon":{"@type":"chatFolderIcon","name":"work"},' +
+    '"color_id":3,"is_shareable":true,' +
+    '"pinned_chat_ids":[9007199254740001],"included_chat_ids":[1,2],"excluded_chat_ids":[3],' +
+    '"exclude_muted":true,"exclude_read":true,"exclude_archived":false,' +
+    '"include_contacts":true,"include_non_contacts":false,"include_bots":true,' +
+    '"include_groups":true,"include_channels":false}';
+  const folder = D.createChatFolderDtoFromTd(TdObject.fromJSON(folderText));
+  assert.equal(folder.title, 'Work');
+  assert.equal(folder.iconName, 'work');
+  assert.equal(folder.colorId, 3);
+  assert.equal(folder.isShareable, true);
+  assert.deepEqual(folder.pinnedChatIds, [9007199254740001], 'int53 ids keep their exact value');
+  assert.deepEqual(folder.includedChatIds, [1, 2]);
+  assert.deepEqual(folder.excludedChatIds, [3]);
+  assert.equal(folder.excludeMuted, true);
+  assert.equal(folder.excludeRead, true);
+  assert.equal(folder.excludeArchived, false);
+  assert.equal(folder.includeContacts, true);
+  assert.equal(folder.includeBots, true);
+  assert.equal(folder.includeGroups, true);
+  assert.equal(folder.includeChannels, false);
+
+  assert.equal(D.createChatFolderDtoFromTd(TdObject.fromJSON('{"@type":"ok"}')), undefined);
+  const empty = D.createChatFolderDtoFromTd(TdObject.fromJSON('{"@type":"chatFolder"}'));
+  assert.deepEqual(empty.includedChatIds, []);
+  assert.equal(empty.excludeMuted, false);
+}
+
 // Use case: validation before the gateway, payload selection, error wrapping ----------------------
 async function checkUseCase() {
   const sent = [];
   const gateway = { send: (command) => { sent.push(command); return Promise.resolve(TdObject.fromJSON('{"@type":"ok"}')); } };
-  const mod = load('domain/usecases/manageChatFolders.ets', { ...C, ...errors, hilog });
+  const mod = load('domain/usecases/manageChatFolders.ets',
+    { ...C, ...errors, hilog, ChatFolderDto: D.ChatFolderDto,
+      createChatFolderDtoFromTd: D.createChatFolderDtoFromTd });
   const useCase = new mod.ManageChatFoldersUseCase(gateway);
+
+  const readSent = [];
+  const folderGateway = { send: (command) => {
+    readSent.push(command);
+    return Promise.resolve(TdObject.fromJSON('{"@type":"chatFolder",' +
+      '"name":{"@type":"chatFolderName","text":{"@type":"formattedText","text":"Work","entities":[]}},' +
+      '"exclude_muted":true,"include_groups":true}'));
+  } };
+  const readingUseCase = new mod.ManageChatFoldersUseCase(folderGateway);
+  const loaded = await readingUseCase.fetchFolder(9);
+  assert.equal(readSent.at(-1).type, 'getChatFolder');
+  assert.equal(readSent.at(-1).payload.folderId, 9);
+  assert.equal(loaded.title, 'Work');
+  assert.equal(loaded.excludeMuted, true, 'the stored flags are read back');
+  assert.equal(loaded.includeGroups, true);
+
+  await assert.rejects(() => readingUseCase.fetchFolder(0), /Invalid folderId/);
+  await assert.rejects(() => new mod.ManageChatFoldersUseCase(
+    { send: () => Promise.resolve(TdObject.fromJSON('{"@type":"ok"}')) }).fetchFolder(1),
+    /Invalid folder response/);
+  await assert.rejects(() => new mod.ManageChatFoldersUseCase(
+    { send: () => Promise.reject(new Error('native status')) }).fetchFolder(1),
+    /Failed to load the folder/);
 
   await useCase.createFolder(draft({ title: '  Work  ' }));
   assert.equal(sent.length, 1);
@@ -117,6 +180,11 @@ async function checkUseCase() {
   assert.match(page, /state\.chatFilters\.folders/);
   assert.match(page, /maxLength\(CHAT_FOLDER_TITLE_MAX_LENGTH\)/);
   assert.match(page, /folders_delete_confirm/);
+  assert.match(page, /useCase\.fetchFolder\(folderId\)/);
+  assert.match(page, /this\.excludeMuted = folder\.excludeMuted;/);
+  assert.match(page, /this\.excludeRead = folder\.excludeRead;/);
+  assert.match(page, /enabled\(!this\.isBusy && !this\.isLoadingFolder && this\.draftTitle\.trim\(\)\.length > 0\)/,
+    'saving stays disabled until the stored flags are read');
   assert.match(page, /folders_exclude_muted/);
 
   const routeMap = JSON.parse(fs.readFileSync(

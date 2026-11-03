@@ -317,6 +317,84 @@ export class TdObject {
     return undefined;
   }
 
+  // Raw JSON text of every top-level array item, including primitives and null slots. Object
+  // children are returned as raw slices (see getTopLevelRawObjectArrayStrict); numbers keep their exact
+  // lexeme so int53/int64 identifiers never round-trip through JSON.parse.
+  getTopLevelRawItemArrayStrict(prop: string): (string | null)[] | undefined {
+    if (!this.rawJson) return undefined;
+    const keyIndex = this.rawJson.indexOf('"' + prop + '"');
+    if (keyIndex < 0) return undefined;
+    const open = this.rawJson.indexOf('[', keyIndex + prop.length + 2);
+    if (open < 0) return undefined;
+    const result: (string | null)[] = [];
+    let index = open + 1;
+    while (index < this.rawJson.length) {
+      let char = this.rawJson.charAt(index);
+      while (char === ' ' || char === '\n' || char === '\r' || char === '\t' || char === ',') {
+        index += 1;
+        char = this.rawJson.charAt(index);
+      }
+      if (char === ']') {
+        return result;
+      }
+      if (char === '{') {
+        const start = index;
+        let depth = 0;
+        let inString = false;
+        let escaped = false;
+        while (index < this.rawJson.length) {
+          const current = this.rawJson.charAt(index);
+          if (inString) {
+            if (escaped) {
+              escaped = false;
+            } else if (current === '\\') {
+              escaped = true;
+            } else if (current === '"') {
+              inString = false;
+            }
+          } else if (current === '"') {
+            inString = true;
+          } else if (current === '{') {
+            depth += 1;
+          } else if (current === '}') {
+            depth -= 1;
+            if (depth === 0) {
+              result.push(this.rawJson.substring(start, index + 1));
+              index += 1;
+              break;
+            }
+          }
+          index += 1;
+        }
+        continue;
+      }
+      // Primitive item: read until the next top-level comma or the closing bracket.
+      const start = index;
+      let inString = false;
+      let escaped = false;
+      while (index < this.rawJson.length) {
+        const current = this.rawJson.charAt(index);
+        if (inString) {
+          if (escaped) {
+            escaped = false;
+          } else if (current === '\\') {
+            escaped = true;
+          } else if (current === '"') {
+            inString = false;
+          }
+        } else if (current === '"') {
+          inString = true;
+        } else if (current === ',' || current === ']') {
+          break;
+        }
+        index += 1;
+      }
+      const text = this.rawJson.substring(start, index).trim();
+      result.push(text === 'null' ? null : text);
+    }
+    return undefined;
+  }
+
   getBool(prop: string): boolean {
     const val = this.get(prop);
     if (typeof val === 'boolean') return val;

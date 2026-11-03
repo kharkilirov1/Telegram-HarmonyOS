@@ -7,6 +7,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
   AnyAppCommand,
   ChatFolderDraftPayload,
+  GetChatFolderCommand,
   CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand,
   GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
   GetStorageStatisticsCommand,
@@ -120,6 +121,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('setMessageReactions', serializeSetMessageRea
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageAvailableReactions', serializeGetMessageAvailableReactions);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
+COMMAND_SERIALIZATION_HANDLERS.set('getChatFolder', serializeGetChatFolder);
 COMMAND_SERIALIZATION_HANDLERS.set('createChatFolder', serializeCreateChatFolder);
 COMMAND_SERIALIZATION_HANDLERS.set('editChatFolder', serializeEditChatFolder);
 COMMAND_SERIALIZATION_HANDLERS.set('deleteChatFolder', serializeDeleteChatFolder);
@@ -429,6 +431,12 @@ function buildChatFolderJson(draft: ChatFolderDraftPayload): string {
     ',"include_bots":' + (draft.includeBots ? 'true' : 'false') +
     ',"include_groups":' + (draft.includeGroups ? 'true' : 'false') +
     ',"include_channels":' + (draft.includeChannels ? 'true' : 'false') + '}';
+}
+
+function serializeGetChatFolder(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetChatFolderCommand;
+  result.method = 'getChatFolder';
+  result.params.setNumber('chat_folder_id', cmd.payload.folderId);
 }
 
 function serializeCreateChatFolder(command: AnyAppCommand, result: SerializedCommand): void {

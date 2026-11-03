@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S13b (lead).** B7: чтение полной папки. Закрыт долг «редактор не видит флаги»: `getChatFolder`
+  (td_api.tl:12051) → `ChatFolderDto` (name, icon, color_id, is_shareable, pinned/included/excluded
+  int53 через `TdObject.getTopLevelRawItemArrayStrict`, 7 include + 3 exclude флагов);
+  `ManageChatFoldersUseCase.fetchFolder` (валидация, ответ не chatFolder — ошибка), страница
+  подгружает флаги при выборе папки, блокирует Save до чтения, не сбрасывает фильтры при
+  переименовании. Контракт `test-chat-folder-settings.cjs`: wire getChatFolder, разбор всех полей
+  (включая int53 `9007199254740001`), случаи «ok»/пустой chatFolder, fetchFolder успех/ошибки,
+  проводка страницы. Гейты: host **116/116**, оба smoke, hvigor BUILD SUCCESSFUL.
+  **Осталось (B7):** выбор чатов и shareable-ссылки, include_* флаги в UI, folder link preview,
+  witness.
 - **S13 (lead).** B7: экран настроек папок (остаток S7b.4). `TgChatFoldersPage` (Settings → Chat
   Folders, строка получила destination): список папок из AppStore (`updateChatFolders`), создание/
   переименование/удаление через `createChatFolder`/`editChatFolder`/`deleteChatFolder` — полный

@@ -11,6 +11,7 @@ import { AppState, ChatFolderInfo } from '../../../core/model/AppState';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { ChatFolderDraftPayload } from '../../../core/model/AppCommand';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
+import { ChatFolderDto } from '../../../core/model/dto/ChatFolderDto';
 import {
   createManageChatFoldersUseCase,
   CHAT_FOLDER_TITLE_MAX_LENGTH,
@@ -38,6 +39,7 @@ export struct TgChatFoldersPage {
   @Local private excludeRead: boolean = false;
   @Local private excludeArchived: boolean = false;
   @Local private isBusy: boolean = false;
+  @Local private isLoadingFolder: boolean = false;
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
   @Local private topBarInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
 
@@ -93,6 +95,7 @@ export struct TgChatFoldersPage {
 
   private startCreate(): void {
     this.editingFolderId = 0;
+    this.isLoadingFolder = false;
     this.draftTitle = '';
     this.excludeMuted = false;
     this.excludeRead = false;
@@ -102,11 +105,38 @@ export struct TgChatFoldersPage {
   private startEdit(folder: ChatFolderInfo): void {
     this.editingFolderId = folder.id;
     this.draftTitle = folder.title;
-    // The edit call sends the whole folder; include/exclude flags are not in ChatFolderInfo yet, so
-    // the editor starts from the flags the user last set instead of pretending to know them.
     this.excludeMuted = false;
     this.excludeRead = false;
     this.excludeArchived = false;
+    this.loadFolderFlags(folder.id);
+  }
+
+  // chatFolderInfo has no flags; getChatFolder returns the whole ChatFolder so a rename keeps them.
+  private loadFolderFlags(folderId: number): void {
+    const useCase = this.manageUseCase;
+    if (useCase === undefined) {
+      return;
+    }
+    const token: number = this.pageLifecycleToken;
+    this.isLoadingFolder = true;
+    useCase.fetchFolder(folderId)
+      .then((folder: ChatFolderDto) => {
+        if (token !== this.pageLifecycleToken || this.editingFolderId !== folderId) {
+          return;
+        }
+        this.isLoadingFolder = false;
+        this.draftTitle = folder.title;
+        this.excludeMuted = folder.excludeMuted;
+        this.excludeRead = folder.excludeRead;
+        this.excludeArchived = folder.excludeArchived;
+      })
+      .catch((error: Error) => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        this.isLoadingFolder = false;
+        hilog.warn(DOMAIN, TAG, 'Load folder failed: %{public}s', error.message);
+      });
   }
 
   private buildDraft(): ChatFolderDraftPayload {
@@ -315,7 +345,7 @@ export struct TgChatFoldersPage {
                   : localized($r('app.string.folders_create').id, 'Create'))
                   .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
                   .layoutWeight(1)
-                  .enabled(!this.isBusy && this.draftTitle.trim().length > 0)
+                  .enabled(!this.isBusy && !this.isLoadingFolder && this.draftTitle.trim().length > 0)
                   .onClick(() => {
                     this.save();
                   })

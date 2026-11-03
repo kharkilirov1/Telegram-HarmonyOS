@@ -302,6 +302,10 @@ export class AddChatToListPayload {
 
 // Folder CRUD (td_api.tl:12054/12057/12060). The chat selection model of iOS is not implemented
 // yet: create/edit send the name and the include/exclude flags with empty id vectors.
+export class GetChatFolderPayload {
+  folderId: number = 0;
+}
+
 export class ChatFolderDraftPayload {
   title: string = '';
   excludeMuted: boolean = false;
@@ -726,6 +730,11 @@ export class AddChatToListCommand extends AppCommand {
   payload: AddChatToListPayload = new AddChatToListPayload();
 }
 
+export class GetChatFolderCommand extends AppCommand {
+  type: string = 'getChatFolder';
+  payload: GetChatFolderPayload = new GetChatFolderPayload();
+}
+
 export class CreateChatFolderCommand extends AppCommand {
   type: string = 'createChatFolder';
   payload: ChatFolderDraftPayload = new ChatFolderDraftPayload();
@@ -971,6 +980,7 @@ export type AnyAppCommand =
   | JoinChatCommand
   | ToggleChatPinnedCommand
   | AddChatToListCommand
+  | GetChatFolderCommand
   | CreateChatFolderCommand
   | EditChatFolderCommand
   | DeleteChatFolderCommand
@@ -1446,6 +1456,12 @@ export function createAddChatToListCommand(
   const cmd = new AddChatToListCommand();
   cmd.payload.chatId = chatId;
   cmd.payload.chatList = chatList;
+  cmd.payload.folderId = folderId;
+  return cmd;
+}
+
+export function createGetChatFolderCommand(folderId: number): GetChatFolderCommand {
+  const cmd = new GetChatFolderCommand();
   cmd.payload.folderId = folderId;
   return cmd;
 }
