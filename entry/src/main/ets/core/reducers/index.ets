@@ -33,7 +33,7 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
   }
 
   // Chat folders (mirrored TDLib folder list)
-  if (action.type === 'chatFoldersUpdated') {
+  if (action.type === 'chatFoldersUpdated' || action.type === 'chatListUnreadCountUpdated') {
     return chatFoldersReducer(state, action);
   }
 

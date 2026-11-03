@@ -4,7 +4,7 @@
 // ChatFoldersState, then the folders/position/tags are replaced.
 
 import { AppState, ChatFolderInfo, ChatFoldersState, ReducerAction } from '../model/AppState';
-import { ChatFoldersUpdatedEvent } from '../model/AppEvent';
+import { ChatFoldersUpdatedEvent, ChatListUnreadCountUpdatedEvent } from '../model/AppEvent';
 import { cloneStateForChats } from '../utils/stateClone';
 
 export function cloneChatFolder(folder: ChatFolderInfo): ChatFolderInfo {
@@ -29,12 +29,31 @@ export function applyChatFoldersUpdated(state: AppState, event: ChatFoldersUpdat
   return next;
 }
 
+export function applyUnreadChatCount(state: AppState, event: ChatListUnreadCountUpdatedEvent): AppState {
+  const next = cloneStateForChats(state);
+  const filters = new ChatFoldersState();
+  for (const folder of next.chatFilters.folders) {
+    filters.folders.push(cloneChatFolder(folder));
+  }
+  filters.mainChatListPosition = next.chatFilters.mainChatListPosition;
+  filters.areTagsEnabled = next.chatFilters.areTagsEnabled;
+  next.chatFilters.unreadByList.forEach((count: number, key: string): void => {
+    filters.unreadByList.set(key, count);
+  });
+  filters.unreadByList.set(event.listKey, event.unreadCount);
+  next.chatFilters = filters;
+  return next;
+}
+
 export function chatFoldersReducer(state: AppState, action: ReducerAction): AppState {
   if (state === undefined || action === undefined) {
     return state;
   }
   if (action.type === 'chatFoldersUpdated') {
     return applyChatFoldersUpdated(state, action as ChatFoldersUpdatedEvent);
+  }
+  if (action.type === 'chatListUnreadCountUpdated') {
+    return applyUnreadChatCount(state, action as ChatListUnreadCountUpdatedEvent);
   }
   return state;
 }

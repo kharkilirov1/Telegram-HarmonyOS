@@ -219,6 +219,86 @@ function tdUpdate(folders, position, tags) {
   assert.deepEqual(S.selectChatIdsForFolder(sel, 11), [], 'unknown folder has no chats');
 }
 
+// Per-list unread counters + folder strip UI wiring -------------------------------------------------
+{
+  // updateUnreadChatCount is keyed per list; archive and folder lists must not collide with main.
+  const unreadEvents = [];
+  N.handleUnreadChatCount(unreadEvents, TdObject.fromJSON(JSON.stringify({
+    '@type': 'updateUnreadChatCount',
+    chat_list: { '@type': 'chatListMain' },
+    total_count: 12, unread_count: 5, unread_unmuted_count: 3,
+    marked_as_unread_count: 0, marked_as_unread_unmuted_count: 0
+  })));
+  N.handleUnreadChatCount(unreadEvents, TdObject.fromJSON(JSON.stringify({
+    '@type': 'updateUnreadChatCount',
+    chat_list: { '@type': 'chatListFolder', chat_folder_id: 7 },
+    total_count: 3, unread_count: 2, unread_unmuted_count: 0,
+    marked_as_unread_count: 0, marked_as_unread_unmuted_count: 0
+  })));
+  N.handleUnreadChatCount(unreadEvents, TdObject.fromJSON(JSON.stringify({
+    '@type': 'updateUnreadChatCount',
+    chat_list: { '@type': 'chatListArchive' },
+    total_count: 1, unread_count: 1, unread_unmuted_count: 1,
+    marked_as_unread_count: 0, marked_as_unread_unmuted_count: 0
+  })));
+  assert.deepEqual(unreadEvents.map((event) => event.listKey), ['main', 'folder:7', 'archive']);
+  assert.equal(unreadEvents[1].unreadCount, 2);
+  const beforeZero = unreadEvents.length;
+  N.handleUnreadChatCount(unreadEvents, TdObject.fromJSON(JSON.stringify({
+    '@type': 'updateUnreadChatCount',
+    chat_list: { '@type': 'chatListFolder', chat_folder_id: 0 },
+    total_count: 9, unread_count: 9
+  })));
+  assert.equal(unreadEvents.length, beforeZero, 'folder id 0 is not a list');
+
+  // Reducer keeps the folder strip and only replaces the counter of that list.
+  const seeded = A.createInitialAppState();
+  seeded.chatFilters.folders.push(folder(7, 'Work'));
+  seeded.chatFilters.folders.push(folder(9, 'News'));
+  seeded.chatFilters.mainChatListPosition = 1;
+  const withMain = R.chatFoldersReducer(seeded, unreadEvents[0]);
+  const withFolder = R.chatFoldersReducer(withMain, unreadEvents[1]);
+  assert.equal(withFolder.chatFilters.unreadByList.get('main'), 5);
+  assert.equal(withFolder.chatFilters.unreadByList.get('folder:7'), 2);
+  assert.equal(withFolder.chatFilters.folders.length, 2, 'counters do not drop the folder list');
+  assert.equal(withFolder.chatFilters.mainChatListPosition, 1);
+
+  // The tab strip carries those counters.
+  const tabs = S.selectChatFolderTabs(withFolder);
+  const byId = (id) => tabs.find((tab) => tab.id === id);
+  assert.equal(byId(0).unreadCount, 5, 'All chats shows the main list counter');
+  assert.equal(byId(7).unreadCount, 2);
+  assert.equal(byId(9).unreadCount, 0, 'a folder without a reported counter shows none');
+}
+
+// The UI contract: data-driven strip, folder-sourced list, three locales.
+{
+  const bar = read('ui/tg_ui/atoms/TgChatListFilterBar.ets');
+  assert.match(bar, /export class TgChatListFilterTab \{/);
+  assert.match(bar, /@Param tabs: TgChatListFilterTab\[\] = \[\];/);
+  assert.match(bar, /@Param selectedFolderId: number = 0;/);
+  assert.match(bar, /@Event onFolderSelected: \(folderId: number\) => void/);
+  assert.match(bar, /private buildFolderTab\(tab: TgChatListFilterTab\)/);
+  assert.match(bar, /this\.tabs\.length > 0/);
+  const navBar = read('ui/tg_ui/atoms/TgChatListNavigationBar.ets');
+  assert.match(navBar, /@Param filterTabs: TgChatListFilterTab\[\] = \[\];/);
+  assert.match(navBar, /@Event onFolderFilterChange: \(folderId: number\) => void/);
+  assert.match(navBar, /tabs: this\.filterTabs,/);
+  const page = read('ui/pages/chatlist/ChatListPage.ets');
+  assert.match(page, /import \{ selectChatFolderTabs, selectChatIdsForFolder, ChatFolderTab \}/);
+  assert.match(page, /@Local private selectedFolderId: number = 0;/);
+  assert.match(page, /this\.folderTabs = this\.buildFolderTabs\(state\);/);
+  assert.match(page, /folderId !== 0 \?\n      selectChatIdsForFolder\(state, folderId\) : state\.chats\.orderedChatIds;/);
+  assert.match(page, /private selectFolder\(folderId: number\): void \{/);
+  assert.match(page, /filterTabs: this\.folderTabs,/);
+  for (const locale of ['base', 'ru_RU', 'zh_CN']) {
+    const strings = JSON.parse(fs.readFileSync(
+      path.join(root, 'entry/src/main/resources', locale, 'element/string.json'), 'utf8'));
+    assert.ok(strings.string.find((item) => item.name === 'chat_folders_all'),
+      'chat_folders_all exists in ' + locale);
+  }
+}
+
 // Wiring contracts ---------------------------------------------------------------------------------
 const appState = read('core/model/AppState.ets');
 assert.match(appState, /chatFilters: ChatFoldersState = new ChatFoldersState\(\);/);

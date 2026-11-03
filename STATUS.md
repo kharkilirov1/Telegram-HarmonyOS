@@ -146,6 +146,18 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S7b.2 (lead).** B7: полоса папок подключена к списку. `TgChatListFilterBar` получил
+  `TgChatListFilterTab` (id/title/unread), режим реальных папок с горизонтальной прокруткой и
+  бейджами (легаси All/Unread/Personal остаётся фолбэком при одной вкладке), `TgChatListNavigationBar`
+  пробрасывает `filterTabs`/`selectedFolderId`/`onFolderFilterChange`, `ChatListPage` строит вкладки
+  из `selectChatFolderTabs` и при выборе папки перестраивает список из `selectChatIdsForFolder`
+  («All chats» — прежний `orderedChatIds`). Счётчики: `updateUnreadChatCount` →
+  `chatListUnreadCountUpdated` (`main`/`archive`/`folder:<id>`) → `ChatFoldersState.unreadByList` →
+  бейджи. Строка «All» локализована (`chat_folders_all`, base/ru/zh). Контракт `test-chat-folders.cjs`
+  дополнен: клавиши списков (folder id 0 отбрасывается), сохранение папок при обновлении счётчика,
+  бейджи вкладок, контракты atom/navbar/page и три локали. Гейты: host **109/109**, оба smoke,
+  hvigor BUILD SUCCESSFUL. **Осталось (B7):** пагинация `loadChats(chatListFolder)`, экран настроек
+  папок, folder link preview.
 - **S7b.1 (lead).** B7: принадлежность чатов к папкам. `ChatDto` парсит **все** `chatListFolder`
   позиции (`folderOrders`, типизированный `extractFolderPosition`), `Chat` их зеркалит,
   `updateChatAddedToList`/`updateChatRemovedFromList` обновляют членство (`folderId`/`folderOrder`/

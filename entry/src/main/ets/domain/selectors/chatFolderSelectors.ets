@@ -3,8 +3,8 @@
 // iOS keeps the main chat list in the user-ordered strip (updateChatFolders.main_chat_list_position),
 // so the "All chats" tab is not always first. A position outside the folder count clamps to the end.
 
-import { AppState, Chat, ChatFolderInfo } from '../model/AppState';
-import { compareInt64 } from '../utils/tdAccessors';
+import { AppState, Chat, ChatFolderInfo } from '../../core/model/AppState';
+import { compareInt64 } from '../../core/utils/tdAccessors';
 
 export const CHAT_FOLDER_ALL_ID: number = 0;
 
@@ -13,6 +13,8 @@ export class ChatFolderTab {
   title: string = '';
   // true for the synthetic "All chats" tab that TDLib does not list as a folder.
   isAllChats: boolean = false;
+  // Unread dialogs in this list (updateUnreadChatCount), 0 when TDLib has not reported it yet.
+  unreadCount: number = 0;
 }
 
 export function selectChatFolderTabs(state: AppState): ChatFolderTab[] {
@@ -22,6 +24,8 @@ export function selectChatFolderTabs(state: AppState): ChatFolderTab[] {
   allTab.id = CHAT_FOLDER_ALL_ID;
   allTab.isAllChats = true;
 
+  const mainUnread = filters.unreadByList.get('main');
+  allTab.unreadCount = mainUnread === undefined ? 0 : mainUnread;
   const rawPosition = filters.mainChatListPosition;
   const clamped = rawPosition < 0 ? 0 : (rawPosition > filters.folders.length ? filters.folders.length : rawPosition);
   for (let index: number = 0; index < filters.folders.length; index += 1) {
@@ -32,6 +36,8 @@ export function selectChatFolderTabs(state: AppState): ChatFolderTab[] {
     const tab = new ChatFolderTab();
     tab.id = folder.id;
     tab.title = folder.title;
+    const folderUnread = filters.unreadByList.get('folder:' + folder.id.toString());
+    tab.unreadCount = folderUnread === undefined ? 0 : folderUnread;
     tabs.push(tab);
   }
   if (clamped >= filters.folders.length) {
@@ -51,9 +57,11 @@ export function selectChatIdsForFolder(state: AppState, folderId: number): numbe
     }
   });
   chats.sort((a: Chat, b: Chat): number => {
-    const orderA: string = a.folderOrders.get(folderId) ?? '0';
-    const orderB: string = b.folderOrders.get(folderId) ?? '0';
-    const byOrder = compareInt64(orderB, orderA);
+    const rawA = a.folderOrders.get(folderId);
+    const rawB = b.folderOrders.get(folderId);
+    const orderA: string = rawA === undefined ? '0' : rawA;
+    const orderB: string = rawB === undefined ? '0' : rawB;
+    const byOrder: number = compareInt64(orderB, orderA);
     return byOrder !== 0 ? byOrder : a.id - b.id;
   });
   return chats.map((chat: Chat): number => chat.id);

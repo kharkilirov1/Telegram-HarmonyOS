@@ -106,6 +106,8 @@ export class ChatFoldersState {
   // Index of the "All chats" tab inside the folder strip (iOS keeps it user-ordered).
   mainChatListPosition: number = 0;
   areTagsEnabled: boolean = false;
+  // updateUnreadChatCount is per chat list: 'main' | 'archive' | 'folder:<id>'.
+  unreadByList: Map<string, number> = new Map<string, number>();
 }
 
 export class ChatsState {

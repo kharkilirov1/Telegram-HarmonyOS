@@ -249,6 +249,7 @@ function shallowCloneAppState(state: AppState): AppState {
   s.files = state.files;
   s.accentColors = state.accentColors;
   s.users = state.users;
+  s.chatFilters = state.chatFilters;
   s.lastEvent = state.lastEvent;
   s.version = state.version;
   return s;

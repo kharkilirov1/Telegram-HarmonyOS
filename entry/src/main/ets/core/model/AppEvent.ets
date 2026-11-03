@@ -107,6 +107,15 @@ export class ChatFoldersUpdatedEvent extends AppEvent {
   areTagsEnabled: boolean = false;
 }
 
+// updateUnreadChatCount (td_api.tl:9937) — unread counters for one chat list.
+export class ChatListUnreadCountUpdatedEvent extends AppEvent {
+  type: string = 'chatListUnreadCountUpdated';
+  listKey: string = 'main';
+  totalCount: number = 0;
+  unreadCount: number = 0;
+  unreadUnmutedCount: number = 0;
+}
+
 export class ChatsLoadStateChangedEvent extends AppEvent {
   type: string = 'chatsLoadStateChanged';
   isLoading: boolean = false;
@@ -323,6 +332,7 @@ export type AnyAppEvent =
   | ChatReadInboxEvent
   | ChatReadOutboxEvent
   | ChatListUnreadMessageCountChangedEvent
+  | ChatListUnreadCountUpdatedEvent
   | ChatFoldersUpdatedEvent
   | ChatsLoadStateChangedEvent
   | ChatActiveStoriesUpdatedEvent
@@ -423,6 +433,16 @@ export function createNewChatEvent(
   event.chatId = chatId;
   event.chatData = chatData;
   event.timestamp = Date.now();
+  return event;
+}
+
+export function createChatListUnreadCountUpdatedEvent(listKey: string, totalCount: number,
+  unreadCount: number, unreadUnmutedCount: number): ChatListUnreadCountUpdatedEvent {
+  const event = new ChatListUnreadCountUpdatedEvent();
+  event.listKey = listKey;
+  event.totalCount = totalCount;
+  event.unreadCount = unreadCount;
+  event.unreadUnmutedCount = unreadUnmutedCount;
   return event;
 }
 

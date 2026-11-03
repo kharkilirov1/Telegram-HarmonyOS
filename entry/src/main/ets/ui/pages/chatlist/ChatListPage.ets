@@ -21,7 +21,8 @@ import {
   TgChatListNavigationBar,
   TgChatListStoryPreview
 } from '../../tg_ui/atoms/TgChatListNavigationBar';
-import { TgChatListFilter } from '../../tg_ui/atoms/TgChatListFilterBar';
+import { TgChatListFilter, TgChatListFilterTab } from '../../tg_ui/atoms/TgChatListFilterBar';
+import { selectChatFolderTabs, selectChatIdsForFolder, ChatFolderTab } from '../../../domain/selectors/chatFolderSelectors';
 import { localized } from '../../../core/utils/AppResource';
 import {
   computeTabBottomInset,
@@ -89,6 +90,9 @@ export struct ChatListPage {
   @Local private listBottomInset: number = ROOT_TAB_BAR_FALLBACK_CONTENT_INSET;
   @Local private chatTopInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
   @Local private selectedFilterIndex: number = TgChatListFilter.All;
+  // TDLib folder strip (0 = "All chats"), mirrored from state.chatFilters through the selector.
+  @Local private folderTabs: TgChatListFilterTab[] = [];
+  @Local private selectedFolderId: number = 0;
   @Local private unreadFilterCount: number = 0;
   @Local private searchCollapseProgress: number = 0;
   @Local private filteredChatsCount: number = 0;
@@ -643,7 +647,11 @@ export struct ChatListPage {
     this.archivedUnreadCount = archiveUnreadCount;
     this.archivedPreview = archivePreviewTitles.join(', ');
 
-    for (const chatId of state.chats.orderedChatIds) {
+    this.folderTabs = this.buildFolderTabs(state);
+    const folderId: number = this.selectedFolderId;
+    const sourceChatIds: number[] = folderId !== 0 ?
+      selectChatIdsForFolder(state, folderId) : state.chats.orderedChatIds;
+    for (const chatId of sourceChatIds) {
       if (seenChatIds.has(chatId)) {
         continue;
       }
@@ -654,7 +662,7 @@ export struct ChatListPage {
         if (item.unreadCount > 0) {
           unreadDialogsCount++;
         }
-        if (this.matchesSelectedFilter(item) &&
+        if ((folderId !== 0 || this.matchesSelectedFilter(item)) &&
           (normalizedQuery.length === 0 || this.matchesSearch(item, normalizedQuery))) {
           items.push(item);
         }
@@ -680,6 +688,28 @@ export struct ChatListPage {
     this.dataSource.applyDiff(items);
     this.filteredChatsCount = items.length;
     this.unreadFilterCount = unreadDialogsCount;
+  }
+
+  private buildFolderTabs(state: AppState): TgChatListFilterTab[] {
+    const source: ChatFolderTab[] = selectChatFolderTabs(state);
+    const tabs: TgChatListFilterTab[] = [];
+    for (const tab of source) {
+      const item = new TgChatListFilterTab();
+      item.id = tab.id;
+      item.title = tab.isAllChats ? localized($r('app.string.chat_folders_all').id, 'All') : tab.title;
+      item.unreadCount = tab.unreadCount;
+      tabs.push(item);
+    }
+    // A single "All" tab is not a choice: keep the legacy rail in that case.
+    return tabs.length > 1 ? tabs : [];
+  }
+
+  private selectFolder(folderId: number): void {
+    if (folderId === this.selectedFolderId) {
+      return;
+    }
+    this.selectedFolderId = folderId;
+    this.rebuildList(getAppCoreRuntime().getStore().getState());
   }
 
   private matchesSelectedFilter(item: ChatItemVO): boolean {
@@ -1490,6 +1520,11 @@ export struct ChatListPage {
         },
         onFilterChange: (index: number): void => {
           this.selectFilter(index);
+        },
+        filterTabs: this.folderTabs,
+        selectedFolderId: this.selectedFolderId,
+        onFolderFilterChange: (folderId: number): void => {
+          this.selectFolder(folderId);
         },
         onSearchChange: (value: string): void => {
           if (value === this.searchQuery) {

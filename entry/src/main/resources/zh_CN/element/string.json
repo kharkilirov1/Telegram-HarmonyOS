@@ -181,6 +181,10 @@
       "value": "未读"
     },
     {
+      "name": "chat_folders_all",
+      "value": "全部"
+    },
+    {
       "name": "chat_unread_messages",
       "value": "未读消息"
     },

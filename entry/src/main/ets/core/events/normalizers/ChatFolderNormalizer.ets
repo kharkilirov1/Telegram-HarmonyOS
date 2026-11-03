@@ -4,10 +4,36 @@
 // chatFolderInfo vector, the position of the main chat list and the tags flag. TDLib re-sends the
 // whole vector on every change, so the reducer replaces state instead of diffing entries.
 
-import { AnyAppEvent, createChatFoldersUpdatedEvent } from '../../model/AppEvent';
+import { AnyAppEvent, createChatFoldersUpdatedEvent, createChatListUnreadCountUpdatedEvent } from '../../model/AppEvent';
 import { ChatFolderInfo } from '../../model/AppState';
 import { TdObject } from '../../../models/TdTypes';
 import { tdGetArray, tdGetBoolean, tdGetNumber, tdGetObject, tdGetString } from '../../../core/utils/tdAccessors';
+
+// chatList -> stable key. TDLib sends one counter per list; folder lists carry the folder id.
+export function chatListKey(tdList: TdObject): string {
+  const listType = tdGetString(tdList, '@type');
+  if (listType === 'chatListArchive') {
+    return 'archive';
+  }
+  if (listType === 'chatListFolder') {
+    const folderId = tdGetNumber(tdList, 'chat_folder_id');
+    return folderId > 0 ? 'folder:' + folderId.toString() : '';
+  }
+  return 'main';
+}
+
+export function handleUnreadChatCount(events: AnyAppEvent[], update: TdObject): void {
+  const listObj = tdGetObject(update, 'chat_list');
+  if (listObj === undefined) {
+    return;
+  }
+  const key = chatListKey(listObj);
+  if (key.length === 0) {
+    return;
+  }
+  events.push(createChatListUnreadCountUpdatedEvent(key, tdGetNumber(update, 'total_count'),
+    tdGetNumber(update, 'unread_count'), tdGetNumber(update, 'unread_unmuted_count')));
+}
 
 function parseFolderIconName(raw: TdObject): string {
   const icon = tdGetObject(raw, 'icon');
@@ -59,4 +85,5 @@ export function registerChatFolderHandlers(
   handlers: Map<string, (events: AnyAppEvent[], update: TdObject) => void>
 ): void {
   handlers.set('updateChatFolders', handleChatFolders);
+  handlers.set('updateUnreadChatCount', handleUnreadChatCount);
 }

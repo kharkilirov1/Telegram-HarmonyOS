@@ -679,3 +679,12 @@ Last updated: 2026-10-23
   its membership forever. For folders it must delete the map entry (folderRemoved), not write order 0.
 - Selecting folder chats must sort by the folder position, not by chatListMain order: the same chat can
   be pinned in a folder while archived globally.
+
+## 176. The shallow state clone lists fields explicitly
+
+- A new AppState field is invisible to every reducer until shallowCloneAppState copies it: the helper
+  builds a fresh AppState and assigns auth/connection/chats/messages/files/accentColors/users/lastEvent/
+  version by name. A reducer that reads a new field from a cloned state silently sees the default value.
+- The symptom looked like lost counters after the second update (only the first one survived) — a clone
+  bug, not a reducer bug. When a field disappears between two actions, read the clone helper first.
+- Clone helpers stay cheap: assign the whole sub-state by reference and let the owning reducer replace it.

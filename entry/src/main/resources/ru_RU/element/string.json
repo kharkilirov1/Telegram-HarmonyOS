@@ -181,6 +181,10 @@
       "value": "Не прочитано"
     },
     {
+      "name": "chat_folders_all",
+      "value": "Все"
+    },
+    {
       "name": "chat_unread_messages",
       "value": "Непрочитанные сообщения"
     },

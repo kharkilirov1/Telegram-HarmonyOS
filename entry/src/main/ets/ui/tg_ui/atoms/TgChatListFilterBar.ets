@@ -9,6 +9,13 @@ export enum TgChatListFilter {
   Personal = 2
 }
 
+// One tab of the folder strip: TDLib folder id (0 = "All chats") plus its unread dialogs count.
+export class TgChatListFilterTab {
+  id: number = 0;
+  title: string = '';
+  unreadCount: number = 0;
+}
+
 @ComponentV2
 export struct TgChatListFilterBar {
   @Param selectedIndex: number = TgChatListFilter.All;
@@ -17,8 +24,12 @@ export struct TgChatListFilterBar {
   @Param personalText: string = 'Personal';
   @Param unreadCount: number = 0;
   @Param glassMode: string = TgGlassPolicy.MODE_AUTO;
+  // When non-empty the bar renders the real TDLib folder strip instead of the legacy All/Unread/Personal rail.
+  @Param tabs: TgChatListFilterTab[] = [];
+  @Param selectedFolderId: number = 0;
 
   @Event onSelectedIndexChange: (index: number) => void = (_: number): void => {};
+  @Event onFolderSelected: (folderId: number) => void = (_: number): void => {};
 
   private useBlur(): boolean {
     return TgGlassPolicy.shouldUseRealtimeBlurForMode(this.glassMode);
@@ -94,12 +105,90 @@ export struct TgChatListFilterBar {
     })
   }
 
+  private tabBadgeText(count: number): string {
+    return count > 999 ? '999+' : count.toString();
+  }
+
+  @Builder
+  private buildTabBadge(count: number) {
+    if (count > 0) {
+      Text(this.tabBadgeText(count))
+        .fontSize(TgUiTokens.CHAT_LIST_NAV_FILTER_BADGE_FONT_SIZE)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(TgUiTokens.FILTER_BAR_BADGE_TEXT_COLOR)
+        .height(TgUiTokens.CHAT_LIST_NAV_FILTER_BADGE_HEIGHT)
+        .constraintSize({ minWidth: TgUiTokens.CHAT_LIST_NAV_FILTER_BADGE_HEIGHT })
+        .padding({
+          left: TgUiTokens.CHAT_LIST_NAV_FILTER_BADGE_PADDING_H,
+          right: TgUiTokens.CHAT_LIST_NAV_FILTER_BADGE_PADDING_H
+        })
+        .textAlign(TextAlign.Center)
+        .backgroundColor(TgUiTokens.FILTER_BAR_BADGE_INACTIVE_BG)
+        .borderRadius(TgUiTokens.CHAT_LIST_NAV_FILTER_BADGE_HEIGHT / 2)
+        .margin({ left: TgUiTokens.CHAT_LIST_NAV_FILTER_BADGE_GAP })
+    }
+  }
+
+  @Builder
+  private buildFolderTab(tab: TgChatListFilterTab) {
+    Row() {
+      Text(tab.title)
+        .fontSize(TgUiTokens.CHAT_LIST_NAV_FILTER_FONT_SIZE)
+        .fontWeight(this.selectedFolderId === tab.id ? FontWeight.Medium : FontWeight.Regular)
+        .fontColor(TgUiTokens.FILTER_BAR_TAB_TEXT_COLOR)
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+      this.buildTabBadge(tab.unreadCount)
+    }
+    .height(TgUiTokens.CHAT_LIST_NAV_FILTER_HEIGHT -
+      TgUiTokens.CHAT_LIST_NAV_FILTER_SELECTED_INSET * 2)
+    .padding({
+      left: TgUiTokens.CHAT_LIST_NAV_FILTER_INNER_GAP,
+      right: TgUiTokens.CHAT_LIST_NAV_FILTER_INNER_GAP
+    })
+    .justifyContent(FlexAlign.Center)
+    .alignItems(VerticalAlign.Center)
+    .backgroundColor(this.selectedFolderId === tab.id ? TgUiTokens.FILTER_BAR_HIGHLIGHT_BG : Color.Transparent)
+    .borderRadius(TgUiTokens.CHAT_LIST_NAV_FILTER_SELECTED_RADIUS)
+    .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.98 })
+    .animation({ duration: TgUiTokens.CHAT_LIST_NAV_FILTER_MOTION_MS, curve: Curve.Smooth })
+    .accessibilityText(tab.unreadCount > 0 ? `${tab.title} ${this.tabBadgeText(tab.unreadCount)}` : tab.title)
+    .onClick(() => {
+      if (this.selectedFolderId !== tab.id) {
+        this.onFolderSelected(tab.id);
+      }
+    })
+  }
+
+  @Builder
+  private buildFolderItems() {
+    Scroll() {
+      Row({ space: TgUiTokens.CHAT_LIST_NAV_FILTER_INNER_GAP }) {
+        ForEach(this.tabs, (tab: TgChatListFilterTab) => {
+          this.buildFolderTab(tab)
+        }, (tab: TgChatListFilterTab) => tab.id.toString())
+      }
+      .height('100%')
+      .padding(TgUiTokens.CHAT_LIST_NAV_FILTER_SELECTED_INSET)
+    }
+    .scrollable(ScrollDirection.Horizontal)
+    .scrollBar(BarState.Off)
+    .width('100%')
+    .height('100%')
+  }
+
   @Builder
   private buildItems() {
     Row({ space: TgUiTokens.CHAT_LIST_NAV_FILTER_INNER_GAP }) {
-      this.buildItem(TgChatListFilter.All, this.allText, false)
-      this.buildItem(TgChatListFilter.Unread, this.unreadText, true)
-      this.buildItem(TgChatListFilter.Personal, this.personalText, false)
+      if (this.tabs.length > 0) {
+        ForEach(this.tabs, (tab: TgChatListFilterTab) => {
+          this.buildFolderTab(tab)
+        }, (tab: TgChatListFilterTab) => tab.id.toString())
+      } else {
+        this.buildItem(TgChatListFilter.All, this.allText, false)
+        this.buildItem(TgChatListFilter.Unread, this.unreadText, true)
+        this.buildItem(TgChatListFilter.Personal, this.personalText, false)
+      }
     }
     .width('100%')
     .height('100%')

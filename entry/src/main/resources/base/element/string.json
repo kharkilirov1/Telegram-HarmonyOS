@@ -181,6 +181,10 @@
       "value": "Unread"
     },
     {
+      "name": "chat_folders_all",
+      "value": "All"
+    },
+    {
       "name": "chat_unread_messages",
       "value": "Unread messages"
     },

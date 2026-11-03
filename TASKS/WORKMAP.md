@@ -28,10 +28,11 @@
 | S6b | Избранное — точка входа (D7) | D7 | строка в настройках → `MainTabsPage.openSavedMessages` (существующий чат или `createPrivateChat(my_id)` + гидратация) через общий `ChatOpenTransaction.pushChatScreenRoute` (чат-лист и архив переведены) + `test-chat-open-transaction.cjs` |
 | S7a | Папки чатов — слой данных (B7) | B7 | `ChatFolderInfo`/`ChatFoldersState` в AppState, `ChatFolderNormalizer` (`updateChatFolders`), `chatFoldersReducer`, селектор вкладок с позицией All chats, `test-chat-folders.cjs`; B7 → `partial` |
 | S7b.1 | Папки чатов — членство (B7) | B7 | `ChatDto.folderOrders`/`extractFolderPosition`, `Chat.folderOrders`, добавление/удаление через `updateChatAddedToList`/`RemovedFromList`, `selectChatIdsForFolder` + контракт |
+| S7b.2 | Папки чатов — полоса и фильтрация (B7) | B7 | `TgChatListFilterTab` в полосе, проброс через nav bar, `ChatListPage` выбирает папку и строит список из `selectChatIdsForFolder`, unread-счётчики по спискам и бейджи, `chat_folders_all`; контракт расширен |
 
 ## Следующие срезы (в порядке)
 
-1. **S7b.2. Папки чатов — UI (B7).** Data-driven `TgChatListFilterBar`, фильтрация/пагинация списка по `chatListFolder`, счётчики непрочитанного по папкам.
+1. **S7b.3. Папки чатов — пагинация (B7).** `loadChats(chatListFolder)` при выборе папки, догрузка по скроллу, затем экран настроек папок.
 2. **C9-долг** (иконка Copy) и **D7-долг** (пункт меню).
 3. **Witness-очередь:** D10 (реакции), C2 (typing), C6 (разделитель), D13 (стикеры). Иконки панели, подсветка выбранных баблов, формулировка диалога удаления для N сообщений, device-witness.
 

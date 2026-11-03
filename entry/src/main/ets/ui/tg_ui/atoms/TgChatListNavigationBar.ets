@@ -3,7 +3,7 @@ import { Available, deviceInfo } from '@kit.BasicServicesKit';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 import { TgAvatar } from './TgAvatar';
-import { TgChatListFilterBar } from './TgChatListFilterBar';
+import { TgChatListFilterBar, TgChatListFilterTab } from './TgChatListFilterBar';
 import { TgIcon } from './TgIcon';
 
 export const TG_CHAT_LIST_SEARCH_INPUT_ID: string = 'tg_chat_list_search_input';
@@ -37,6 +37,9 @@ export struct TgChatListNavigationBar {
   @Param unreadFilterText: string = 'Unread';
   @Param personalFilterText: string = 'Personal';
   @Param unreadFilterCount: number = 0;
+  // Real TDLib folder strip; when empty the legacy All/Unread/Personal rail is used.
+  @Param filterTabs: TgChatListFilterTab[] = [];
+  @Param selectedFolderId: number = 0;
   @Param glassMode: string = TgGlassPolicy.MODE_AUTO;
 
   @Local private searchFocused: boolean = false;
@@ -46,6 +49,7 @@ export struct TgChatListNavigationBar {
   @Event onComposePress: () => void = (): void => {};
   @Event onStoryStripPress: () => void = (): void => {};
   @Event onFilterChange: (index: number) => void = (_: number): void => {};
+  @Event onFolderFilterChange: (folderId: number) => void = (_: number): void => {};
   @Event onSearchWillFocus: () => void = (): void => {};
   @Event onSearchChange: (value: string) => void = (_: string): void => {};
   @Event onSearchSubmit: (value: string) => void = (_: string): void => {};
@@ -509,6 +513,9 @@ export struct TgChatListNavigationBar {
         unreadText: this.unreadFilterText,
         personalText: this.personalFilterText,
         unreadCount: this.unreadFilterCount,
+        tabs: this.filterTabs,
+        selectedFolderId: this.selectedFolderId,
+        onFolderSelected: (folderId: number): void => this.onFolderFilterChange(folderId),
         glassMode: this.glassMode,
         onSelectedIndexChange: (index: number): void => this.onFilterChange(index)
       })
