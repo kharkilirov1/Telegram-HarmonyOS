@@ -639,3 +639,22 @@ Last updated: 2026-10-23
 - Selected-row feedback on iOS is a tint, not just a check mark: a new color needs both
   `base/element/color.json` and `dark/element/color.json`, and the tint must be gated by
   `selectionActive && isSelected()` so normal rows stay transparent.
+
+## 172. The device witness blocker was the account, not the signature
+
+- `hdc list targets` has an emulator, unsigned `entry-default-unsigned.hap` installs with `hdc install -r`,
+  and the app starts as a fresh PID — so "signing blocks runtime verification" was the wrong diagnosis
+  for this emulator. The real blocker is that the session is unauthenticated (phone-number screen).
+- Always separate the three layers when claiming a witness: build/install, process identity
+  (PID + STIME vs `date`), and the authenticated UI state. Check the third with a screenshot before
+  planning automation; otherwise hours go into coordinates for a login wall.
+- Record the exact evidence (target serial, install result, PID/STIME, screenshot dimensions) in
+  `STATUS.md` so the next round does not re-derive it.
+
+## 173. Probe-class suites inline their dependencies
+
+- `test-chat-top-bar-presentation.cjs` compiles selected page methods into a `PageProbe` class, not the
+  whole module: a module-level helper (`selfUserIdOf`) is a free name there. Inline the expression
+  (`state.auth ? state.auth.userId : 0`) or inject it as a binding; do not add helpers to the module.
+- When a pure presentation module starts importing a model predicate, add it to the suite's fixed
+  binding list (`isSavedMessagesChat`) and treat it as a fixture boundary covered by its own suite.

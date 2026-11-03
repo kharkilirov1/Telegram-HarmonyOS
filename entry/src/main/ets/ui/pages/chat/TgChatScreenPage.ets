@@ -90,6 +90,7 @@ export struct TgChatScreenPage {
           subtitleMode: this.view.chrome.chatSubtitleMode,
           showSubtitleSpinner: this.view.chrome.chatSubtitleSpinner,
           avatarInitials: this.view.chrome.chatAvatarInitials,
+  avatarIsSavedMessages: this.view.chrome.chatIsSavedMessages,
           avatarColorIndex: this.view.chrome.chatAvatarColorIndex,
           avatarImageSrc: this.view.chrome.chatAvatarImageSrc,
           isOnline: this.view.chrome.chatIsOnline,

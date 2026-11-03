@@ -15,6 +15,7 @@ export class ChatChromeState {
   @Trace chatSubtitleMode: TgChatTopBarSubtitleMode = TgChatTopBarSubtitleMode.Secondary;
   @Trace chatSubtitleSpinner: boolean = false;
   @Trace chatAvatarInitials: string = '';
+  @Trace chatIsSavedMessages: boolean = false;
   @Trace chatAvatarColorIndex: number = 0;
   @Trace chatAvatarImageSrc: string = '';
   @Trace chatIsOnline: boolean = false;

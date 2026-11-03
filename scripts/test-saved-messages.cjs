@@ -92,6 +92,38 @@ assert.equal(A.isSavedMessagesChat(chat(), 0), false, 'unknown self id cannot ma
   assert.equal(VO.buildChatTimeline(11, otherState).chatTitle, 'Bob Ray', 'normal private chat keeps the peer name');
 }
 
+// Chat screen top bar: the header avatar is a bookmark, not the account initials -------------------
+{
+  const enums = { Subtitle: { Secondary: 'secondary', Typing: 'typing' },
+    Trailing: { Search: 'search', Avatar: 'avatar', None: 'none' } };
+  const presentation = load('ui/pages/chat/ChatTopBarPresentation.ets', {
+    ...A, fileUri, localized: (id, fb) => fb, localizedPlural: (id, fb) => fb,
+    $r: (id) => ({ id }), TgChatTopBarSubtitleMode: enums.Subtitle,
+    TgChatTopBarTrailingAction: enums.Trailing
+  });
+  const appState = state(7, [[7, 'Ann', 'Lee']]);
+  const savedView = presentation.chatAvatarPresentation(chat(), 7);
+  assert.equal(savedView.isSavedMessages, true);
+  assert.equal(savedView.initials, 'A', 'the initials stay derived from the peer name for other callers');
+  assert.equal(presentation.chatAvatarPresentation(chat(), 0).isSavedMessages, false, 'no self id yet');
+  assert.equal(presentation.chatAvatarPresentation(chat({ id: 9, peerUserId: 8 }), 7).isSavedMessages, false);
+  assert.ok(appState.auth.userId === 7);
+  const coordinator = read('ui/pages/chat/ChatTopBarCoordinator.ets');
+  assert.match(coordinator, /chatIsSavedMessages: boolean;/);
+  assert.match(coordinator, /host\.chatIsSavedMessages = value\.isSavedMessages;/);
+  assert.match(coordinator, /chatAvatarPresentation\(chat, \(state\.auth \? state\.auth\.userId : 0\)\)/);
+  const chrome = read('ui/pages/chat/ChatChromeState.ets');
+  assert.match(chrome, /@Trace chatIsSavedMessages: boolean = false;/);
+  const context = read('ui/pages/chat/ChatScreenContext.ets');
+  assert.match(context, /get chatIsSavedMessages\(\): boolean/);
+  assert.match(context, /set chatIsSavedMessages\(value: boolean\)/);
+  const topBar = read('ui/tg_ui/atoms/TgChatTopBar.ets');
+  assert.match(topBar, /@Param avatarIsSavedMessages: boolean = false;/);
+  assert.match(topBar, /symbolIcon: this\.avatarIsSavedMessages \? \$r\('sys\.symbol\.bookmark_fill'\) : undefined/);
+  const page = read('ui/pages/chat/TgChatScreenPage.ets');
+  assert.match(page, /avatarIsSavedMessages: this\.view\.chrome\.chatIsSavedMessages,/);
+}
+
 // Presentation contracts --------------------------------------------------------------------------
 const avatar = read('ui/tg_ui/atoms/TgAvatar.ets');
 assert.match(avatar, /@Param symbolIcon: Resource \| undefined = undefined;/);

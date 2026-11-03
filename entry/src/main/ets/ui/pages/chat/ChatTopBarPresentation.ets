@@ -1,7 +1,7 @@
 // Pure header derivation. Route ownership, access observation and @Local publication stay in the page.
 
 import { fileUri } from '@kit.CoreFileKit';
-import { AppState, Chat, ChatTypingInfo } from '../../../core/model/AppState';
+import { AppState, Chat, ChatTypingInfo, isSavedMessagesChat } from '../../../core/model/AppState';
 import { localized, localizedPlural } from '../../../core/utils/AppResource';
 import { TgChatTopBarSubtitleMode, TgChatTopBarTrailingAction } from '../../tg_ui/atoms/TgChatTopBar';
 
@@ -20,6 +20,8 @@ export class ChatAvatarPresentation {
   colorIndex: number = 0;
   imageSrc: string = '';
   trailingAction: TgChatTopBarTrailingAction = TgChatTopBarTrailingAction.Search;
+  // iOS shows the bookmark avatar for Saved Messages instead of the account initials.
+  isSavedMessages: boolean = false;
 }
 
 export class ChatSubtitlePresentation {
@@ -122,7 +124,7 @@ function formatConnectionSubtitle(status: string): string {
   }
 }
 
-export function chatAvatarPresentation(chat: Chat | undefined): ChatAvatarPresentation {
+export function chatAvatarPresentation(chat: Chat | undefined, selfUserId: number = 0): ChatAvatarPresentation {
   const result = new ChatAvatarPresentation();
   if (chat === undefined) {
     return result;
@@ -133,6 +135,7 @@ export function chatAvatarPresentation(chat: Chat | undefined): ChatAvatarPresen
   result.imageSrc = chat.photoSmall.length > 0 ? fileUri.getUriFromPath(chat.photoSmall) : '';
   result.trailingAction = chat.peerUserId > 0
     ? TgChatTopBarTrailingAction.Search : TgChatTopBarTrailingAction.Avatar;
+  result.isSavedMessages = isSavedMessagesChat(chat, selfUserId);
   return result;
 }
 

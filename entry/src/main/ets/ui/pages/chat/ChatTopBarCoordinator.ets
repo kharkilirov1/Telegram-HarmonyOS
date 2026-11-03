@@ -15,6 +15,7 @@ export interface ChatTopBarCoordinatorPort extends ChatSlowmodeHost {
   chatAvatarColorIndex: number;
   chatAvatarImageSrc: string;
   chatAvatarInitials: string;
+  chatIsSavedMessages: boolean;
   chatBottomBarAction: 'none' | 'mute' | 'unmute' | 'join' | 'retry';
   chatBottomBarReason: 'restricted' | 'banned' | 'unknown' | '';
   chatBottomBarRestricted: boolean;
@@ -32,6 +33,7 @@ export interface ChatTopBarCoordinatorPort extends ChatSlowmodeHost {
 
 export function applyChatAvatarPresentation(host: ChatTopBarCoordinatorPort, value: ChatAvatarPresentation): void {
     host.chatAvatarInitials = value.initials;
+    host.chatIsSavedMessages = value.isSavedMessages;
     host.chatAvatarColorIndex = value.colorIndex;
     host.chatAvatarImageSrc = value.imageSrc;
     host.chatTopBarTrailingAction = value.trailingAction;
@@ -56,7 +58,7 @@ export function updateChatTopBarData(host: ChatTopBarCoordinatorPort, state: App
       host.chatAccessController?.observe(new Chat());
       host.applyChatSubtitlePresentation(chatSubtitlePresentation(undefined, state,
         host.activeChatId, (): number => Date.now()));
-      host.applyChatAvatarPresentation(chatAvatarPresentation(undefined));
+      host.applyChatAvatarPresentation(chatAvatarPresentation(undefined, (state.auth ? state.auth.userId : 0)));
       return;
     }
 
@@ -64,7 +66,7 @@ export function updateChatTopBarData(host: ChatTopBarCoordinatorPort, state: App
       state.chats.supergroupAccess.get(chat.supergroupId), state.chats.supergroupBoosts.get(chat.supergroupId),
       state.chats.supergroupSlowmode.get(chat.supergroupId));
     host.chatAccessUnavailable = host.chatAccessController?.isUnavailable() ?? false;
-    host.applyChatAvatarPresentation(chatAvatarPresentation(chat));
+    host.applyChatAvatarPresentation(chatAvatarPresentation(chat, (state.auth ? state.auth.userId : 0)));
     host.deriveChatBottomBar(chat, state);
 
     // Data hydration belongs to the page; the presentation mapper never starts requests.

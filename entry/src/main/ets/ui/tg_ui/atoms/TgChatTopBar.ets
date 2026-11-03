@@ -33,6 +33,7 @@ export struct TgChatTopBar {
   @Param subtitleMode: TgChatTopBarSubtitleMode = TgChatTopBarSubtitleMode.Secondary;
   @Param showSubtitleSpinner: boolean = false;
   @Param avatarInitials: string = '';
+  @Param avatarIsSavedMessages: boolean = false;
   @Param avatarColorIndex: number = 0;
   @Param avatarImageSrc: string = '';
   @Param isOnline: boolean = false;
@@ -378,6 +379,7 @@ export struct TgChatTopBar {
     TgAvatar({
       avatarSize: TgUiTokens.CHAT_TOP_BAR_AVATAR_INNER,
       initials: this.avatarInitials,
+      symbolIcon: this.avatarIsSavedMessages ? $r('sys.symbol.bookmark_fill') : undefined,
       useImage: this.avatarImageSrc.length > 0,
       imageSrc: this.avatarImageSrc,
       isOnline: this.isOnline,

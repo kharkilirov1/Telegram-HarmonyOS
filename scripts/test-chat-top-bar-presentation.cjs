@@ -57,10 +57,13 @@ const TgChatTopBarTrailingAction = { Search: 'search', Avatar: 'avatar' };
 class Chat {}
 const now = 100000;
 const DateStub = { now: () => now };
+// Model predicate fixture: the real one lives in AppState and is covered by test-saved-messages.cjs.
+const isSavedMessagesChatFixture = (chat, selfUserId) =>
+  chat !== undefined && selfUserId > 0 && chat.type === 'private' && chat.peerUserId === selfUserId;
 const bindingNames = ['localized', 'localizedPlural', '$r', 'fileUri',
-  'TgChatTopBarSubtitleMode', 'TgChatTopBarTrailingAction', 'Date', 'Chat'];
+  'TgChatTopBarSubtitleMode', 'TgChatTopBarTrailingAction', 'Date', 'Chat', 'isSavedMessagesChat'];
 const bindingValues = [localized, localizedPlural, $r, fileUri,
-  TgChatTopBarSubtitleMode, TgChatTopBarTrailingAction, DateStub, Chat];
+  TgChatTopBarSubtitleMode, TgChatTopBarTrailingAction, DateStub, Chat, isSavedMessagesChatFixture];
 
 function method(source, name) {
   const match = source.match(new RegExp(`^  private ${name}\\([\\s\\S]*?^  \\}`, 'm'));

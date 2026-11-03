@@ -200,6 +200,8 @@ export class ChatScreenContext {
   get chatSubtitleSpinner(): boolean { return this.view.chrome.chatSubtitleSpinner; }
   set chatSubtitleSpinner(value: boolean) { this.view.chrome.chatSubtitleSpinner = value; }
   get chatAvatarInitials(): string { return this.view.chrome.chatAvatarInitials; }
+  get chatIsSavedMessages(): boolean { return this.view.chrome.chatIsSavedMessages; }
+  set chatIsSavedMessages(value: boolean) { this.view.chrome.chatIsSavedMessages = value; }
   set chatAvatarInitials(value: string) { this.view.chrome.chatAvatarInitials = value; }
   get chatAvatarColorIndex(): number { return this.view.chrome.chatAvatarColorIndex; }
   set chatAvatarColorIndex(value: number) { this.view.chrome.chatAvatarColorIndex = value; }

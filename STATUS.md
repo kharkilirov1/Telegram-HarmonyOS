@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S6c (lead).** D7: аватар-закладка в шапке чата. `ChatAvatarPresentation.isSavedMessages`
+  вычисляется по `state.auth.userId` (токен/приватный чат), идёт через port
+  `chatIsSavedMessages` → `ChatChromeState` → `TgChatTopBar.avatarIsSavedMessages` →
+  `TgAvatar.symbolIcon`, т.е. вместо инициалов аккаунта рисуется `sys.symbol.bookmark_fill`.
+  Гейты: host **108/108**, оба smoke, hvigor BUILD SUCCESSFUL.
+- **Witness-блокер (снят фактически).** Эмулятор доступен (`hdc list targets` → `127.0.0.1:5555`,
+  API 26), **unsigned HAP ставится** (`hdc install -r` → success), приложение запускается свежим
+  процессом (PID 20175, STIME 02:36:55 < now 02:37:26), но сессия **не авторизована**: экран ввода
+  номера. Т.е. блокер witness-ов — не подпись и не сборка, а отсутствие залогиненного аккаунта
+  (нужен номер + код). Доказательство: скриншот `snapshot_display` 1280×2832 (auth-экран).
 - **S5c (lead).** Долги C9 закрыты частично: выбранная строка теперь подсвечивается
   тинтом (`SELECTION_ROW_TINT` → `selection_row_tint` в base/dark), а диалог удаления называет
   размер выбора — «Delete %d messages?» / «Удалить %d сообщений?» / «删除 %d 条消息？»
