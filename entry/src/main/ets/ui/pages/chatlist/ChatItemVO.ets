@@ -42,6 +42,7 @@ export class ChatItemVO {
   lastMessage: string = '';
   formattedTime: string = '';
   unreadCount: number = 0;
+  isMarkedAsUnread: boolean = false;
   isPinned: boolean = false;
   isLastPinned: boolean = false;
   isMuted: boolean = false;
@@ -482,6 +483,7 @@ export function buildChatItemVO(chat: Chat, state: AppState): ChatItemVO {
   vo.avatarColor = getAvatarColor(chat.id);
   vo.avatarImagePath = toFileUri(chat.photoSmall);
   vo.unreadCount = chat.unreadCount;
+  vo.isMarkedAsUnread = chat.isMarkedAsUnread;
   vo.isPinned = chat.isPinned;
   vo.isMuted = chat.muteForSeconds > 0;
   vo.isGroup = chat.type === 'group' || chat.type === 'supergroup' || chat.type === 'channel';

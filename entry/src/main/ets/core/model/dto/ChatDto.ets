@@ -34,6 +34,7 @@ export class ChatDto {
   accentColorId: number = -1;
   title: string = '';
   unreadCount: number = 0;
+  isMarkedAsUnread: boolean = false;
   unreadMentionCount: number = 0;
   muteFor: number = 0;
   lastReadOutboxMessageId: string = '0';
@@ -125,6 +126,7 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   chatDto.title = tdGetString(tdChat, 'title');
   chatDto.accentColorId = extractOptionalAccentColorId(tdChat);
   chatDto.unreadCount = tdGetNumber(tdChat, 'unread_count');
+  chatDto.isMarkedAsUnread = tdGetBoolean(tdChat, 'is_marked_as_unread');
   const permissions = tdChat.getTopLevelObjectStrict('permissions');
   if (permissions !== undefined && permissions.getTopLevelBooleanStrict('can_send_basic_messages') !== undefined) {
     chatDto.sendPermissions = GroupSendPermissionsDto.fromTd(permissions);
@@ -298,6 +300,7 @@ export class ChatUpdateDto {
   accentColorId?: number;
   title?: string;
   unreadCount?: number;
+  isMarkedAsUnread?: boolean;
   unreadMentionCount?: number;
   muteFor?: number;
   lastReadOutboxMessageId?: string;

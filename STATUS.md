@@ -146,6 +146,15 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S8b.1 (lead).** Bugfix: «mark as unread» не был двусторонним. TDLib держит `is_marked_as_unread`
+  отдельно от `unread_count`, присылает `updateChatIsMarkedAsUnread`, а приложение этот апдейт
+  игнорировало — после переключения состояние в списке оставалось прежним, а меню предлагало
+  «mark as unread» повторно. Добавлены парсинг `chat.is_marked_as_unread`, обработчик
+  `updateChatIsMarkedAsUnread`, поле `Chat.isMarkedAsUnread` (создание + оба merge-пути reducer),
+  `ChatItemVO`/diff строки, условие меню и обработчик (`markAsRead`, если есть unread или ручная
+  метка). Контракт `test-chat-list-context-menu.cjs` расширен: парсинг full chat, dispatch через
+  реальную registration-map, установка/снятие флага в reducer, «mark as read» для помеченного чата,
+  VO и diff. Гейты: host **110/110**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **S8a (lead).** B6 «Контекстное меню чата» из `missing` → `partial`. Long-press по строке списка
   открывает меню (`bindContextMenu`, `ResponseType.LongPress`) с iOS-порядком действий: mark
   read/unread → archive/unarchive → pin/unpin → mute/unmute → delete (destructive). Модель — чистый

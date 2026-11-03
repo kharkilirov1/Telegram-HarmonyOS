@@ -67,6 +67,7 @@ export class ChatListDataSource implements IDataSource {
       prev.previewPrefixStyle === next.previewPrefixStyle &&
       prev.formattedTime === next.formattedTime &&
       prev.unreadCount === next.unreadCount &&
+      prev.isMarkedAsUnread === next.isMarkedAsUnread &&
       prev.isPinned === next.isPinned &&
       prev.isLastPinned === next.isLastPinned &&
       prev.isMuted === next.isMuted &&

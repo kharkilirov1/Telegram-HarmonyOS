@@ -1238,7 +1238,7 @@ export struct ChatListPage {
     if (!toggleUnreadUseCase) return;
     const scheduledToken: number = this.pageLifecycleToken;
     const chatId: number = item.chatId;
-    if (item.unreadCount > 0) {
+    if (item.unreadCount > 0 || item.isMarkedAsUnread) {
       toggleUnreadUseCase.markAsRead(chatId)
         .then(() => {
           if (!this.isCurrentToggleUnreadContinuation(scheduledToken, toggleUnreadUseCase)) {

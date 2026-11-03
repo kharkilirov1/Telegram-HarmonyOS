@@ -80,6 +80,65 @@ const C = S.ChatContextAction;
   assert.equal(S.chatContextActionIcon(C.Unmute), 'ic_unmute');
 }
 
+// Marked-as-unread: TDLib keeps this flag separate from unreadCount ------------------------------
+{
+  const { TdObject } = load('models/td/common/index.ets');
+  const access = load('core/utils/tdAccessors.ets', { TdObject });
+  const cmd = load('core/model/AppCommand.ets');
+  const hilog = { info() {}, debug() {}, warn() {}, error() {} };
+  const dto = load('core/model/dto/ChatDto.ets', { ...access, ...cmd, hilog });
+  const events = load('core/model/AppEvent.ets', { ChatFolderInfo: A.ChatFolderInfo, ChatUpdateDto: dto.ChatUpdateDto });
+  const clone = load('core/utils/stateClone.ets', { ...A });
+  const { chatsReducer } = load('core/reducers/chatsReducer.ets',
+    { ...A, ...events, ...clone, ...access, ChatDto: dto.ChatDto, DtoChatType: dto.ChatType, ChatUpdateDto: dto.ChatUpdateDto });
+  const normalizer = load('core/events/normalizers/ChatNormalizer.ets',
+    { ...events, ...dto, ...access, TdObject, hilog });
+
+  // The full chat object carries the flag.
+  const parsed = dto.createChatDtoFromTd(TdObject.fromJSON(JSON.stringify({
+    '@type': 'chat', id: 42, title: 'Ann', type: { '@type': 'chatTypePrivate', user_id: 7 },
+    unread_count: 0, is_marked_as_unread: true, positions: [], photo: null, last_message: null,
+    notification_settings: { '@type': 'chatNotificationSettings' },
+    permissions: { '@type': 'chatPermissions' }, available_reactions: null, draft_message: null
+  })));
+  assert.equal(parsed.isMarkedAsUnread, true);
+
+  // updateChatIsMarkedAsUnread reached the reducer (previously unhandled).
+  const handlers = new Map();
+  normalizer.registerChatHandlers(handlers);
+  const dispatch = (type, payload) => {
+    const produced = [];
+    handlers.get(type)(produced, TdObject.fromJSON(JSON.stringify(payload)));
+    return produced;
+  };
+  const marked = dispatch('updateChatIsMarkedAsUnread', {
+    '@type': 'updateChatIsMarkedAsUnread', chat_id: 42, is_marked_as_unread: true
+  });
+  assert.equal(marked.length, 1);
+  assert.equal(marked[0].type, 'chatUpdated');
+  assert.equal(marked[0].updates.isMarkedAsUnread, true);
+
+  const base = A.createInitialAppState();
+  base.chats.chats.set(42, Object.assign(new A.Chat(), { id: 42, title: 'Ann', order: '10' }));
+  const next = chatsReducer(base, marked[0]);
+  assert.equal(next.chats.chats.get(42).isMarkedAsUnread, true, 'the flag must reach the chat');
+  const cleared = chatsReducer(next, dispatch('updateChatIsMarkedAsUnread', {
+    '@type': 'updateChatIsMarkedAsUnread', chat_id: 42, is_marked_as_unread: false
+  })[0]);
+  assert.equal(cleared.chats.chats.get(42).isMarkedAsUnread, false, 'and clear again');
+
+  // A chat with no unread messages but a manual mark still offers "mark as read".
+  const manual = S.selectChatContextMenuEntries(chat({ isMarkedAsUnread: true }), 999);
+  assert.equal(manual[0].action, C.MarkRead, 'manual unread mark offers mark as read');
+
+  // Row VO + diff contract, so the row repaints when the flag flips.
+  const vo = read('ui/pages/chatlist/ChatItemVO.ets');
+  assert.match(vo, /isMarkedAsUnread: boolean = false;/);
+  assert.match(vo, /vo\.isMarkedAsUnread = chat\.isMarkedAsUnread;/);
+  const dataSource = read('ui/pages/chatlist/ChatListDataSource.ets');
+  assert.match(dataSource, /prev\.isMarkedAsUnread === next\.isMarkedAsUnread/);
+}
+
 // Page wiring: long-press opens the menu, actions go to the existing use cases -----------------------
 const page = read('ui/pages/chatlist/ChatListPage.ets');
 assert.match(page, /import \{ selectChatContextMenuEntries, chatContextActionIcon, ChatContextAction, ChatContextMenuEntry \}/);

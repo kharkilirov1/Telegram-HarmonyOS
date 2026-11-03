@@ -41,7 +41,7 @@ export function selectChatContextMenuEntries(chat: Chat | undefined, selfUserId:
     return entries;
   }
 
-  entries.push(chat.unreadCount > 0 || chat.unreadMentionCount > 0
+  entries.push(chat.unreadCount > 0 || chat.unreadMentionCount > 0 || chat.isMarkedAsUnread
     ? entry(ChatContextAction.MarkRead)
     : entry(ChatContextAction.MarkUnread));
 

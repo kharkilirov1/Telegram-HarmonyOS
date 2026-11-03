@@ -54,6 +54,7 @@ function chatFromDto(dto: ChatDto): Chat {
   chat.accentColorId = dto.accentColorId;
   chat.title = dto.title;
   chat.unreadCount = dto.unreadCount;
+  chat.isMarkedAsUnread = dto.isMarkedAsUnread;
   chat.unreadMentionCount = dto.unreadMentionCount;
   chat.muteForSeconds = dto.muteFor;
   chat.lastReadOutboxMessageId = dto.lastReadOutboxMessageId;
@@ -321,6 +322,9 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         if (event.updates.order !== undefined) {
           placeholder.order = event.updates.order;
         }
+        if (event.updates.isMarkedAsUnread !== undefined) {
+          placeholder.isMarkedAsUnread = event.updates.isMarkedAsUnread;
+        }
         if (event.updates.archiveOrder !== undefined) {
           placeholder.archiveOrder = event.updates.archiveOrder;
         }
@@ -409,6 +413,9 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         lm.text = event.updates.lastMessage.text;
         lm.timestamp = event.updates.lastMessage.timestamp;
         updatedChat.lastMessage = lm;
+      }
+      if (event.updates.isMarkedAsUnread !== undefined) {
+        updatedChat.isMarkedAsUnread = event.updates.isMarkedAsUnread;
       }
       if (event.updates.order !== undefined) {
         orderChanged = existingChat.order !== event.updates.order;

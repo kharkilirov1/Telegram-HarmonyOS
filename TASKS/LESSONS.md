@@ -707,3 +707,13 @@ Last updated: 2026-10-23
   press without owning popup state or an anchor. Keep the existing ListItem tap for opening the chat.
 - Saved Messages must return an empty menu: list management for a chat whose peer is the account
   itself (archive/pin/mute/delete) is nonsense and iOS does not offer it.
+
+## 179. Mark-as-unread is a flag, not a counter round-trip
+
+- TDLib keeps `is_marked_as_unread` separate from `unread_count` and reports it through
+  `updateChatIsMarkedAsUnread`. A client that only reads `unread_count` looks correct until the user
+  marks an empty chat unread: the command succeeds, the update is ignored, and the row never changes.
+- The menu condition and the handler must use the same predicate (`unreadCount > 0 || isMarkedAsUnread`),
+  otherwise "Mark as read" re-sends markAsUnread and appears to do nothing.
+- Any new chat field needs all five seams: DTO parse, model field, update handler, reducer (create +
+  both merge paths), and the row VO/diff pair — missing the diff keeps a stale row on screen.

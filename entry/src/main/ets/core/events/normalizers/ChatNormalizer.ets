@@ -28,7 +28,7 @@ import {
 import { GroupKind, GroupSendPermissionsDto, createGroupAccessDtoFromTd, createSupergroupBoostsDtoFromTd, createSupergroupSlowmodeDtoFromTd } from '../../model/dto/GroupAccessDto';
 import { TdObject } from '../../../models/TdTypes';
 import {
-  tdGetNumber, tdGetString, tdGetInt64,
+  tdGetBoolean, tdGetNumber, tdGetString, tdGetInt64,
   tdGetObject, tdGetArray, tdHasKeys
 } from '../../utils/tdAccessors';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -187,6 +187,14 @@ function handleChatLastMessage(events: AnyAppEvent[], update: TdObject): void {
     updates.lastReadInboxMessageId = lastReadInboxMessageId;
   }
 
+  events.push(createChatUpdatedEvent(chatId, updates));
+}
+
+function handleChatMarkedAsUnread(events: AnyAppEvent[], update: TdObject): void {
+  const chatId = tdGetNumber(update, 'chat_id');
+  if (!chatId) return;
+  const updates = new ChatUpdateDto();
+  updates.isMarkedAsUnread = tdGetBoolean(update, 'is_marked_as_unread');
   events.push(createChatUpdatedEvent(chatId, updates));
 }
 
@@ -424,6 +432,7 @@ export function registerChatHandlers(
   handlers.set('updateChatPermissions', handleChatPermissions);
   handlers.set('updateChatPhoto', handleChatPhoto);
   handlers.set('updateChatLastMessage', handleChatLastMessage);
+  handlers.set('updateChatIsMarkedAsUnread', handleChatMarkedAsUnread);
   handlers.set('updateChatAddedToList', handleChatAddedToList);
   handlers.set('updateChatRemovedFromList', handleChatRemovedFromList);
   handlers.set('updateChatPosition', handleChatPosition);
