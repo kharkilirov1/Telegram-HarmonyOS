@@ -613,3 +613,18 @@ Last updated: 2026-10-23
 - Presentation and entry point are separate slices: rendering the bookmark avatar and the title does not
   make the feature reachable. Record the open-chat transaction (nav lock, ownership, route params) as its
   own slice instead of copying it into the settings page.
+
+## 170. Extracting a shared route transaction: keep the harness honest
+
+- Three pages carried the same ~40-line open-chat transaction. Extracting it is only worth it if the
+  yaml suite that tests rollback/owner semantics keeps exercising production code: inject the **real**
+  module into the page contract (`deps.pushChatScreenRoute = openTransaction.pushChatScreenRoute`)
+  instead of a stub, and retarget the rollback mutation to the new owner file.
+- A page that imports a new free function from a new module breaks every suite that compiles its
+  contract text with a fixed dep list — the same trap as LESSON 164. Always grep the suites that
+  `page(...)` the touched page and inject the new names.
+- The transaction must compare the current account store **passed by the caller**, not the params'
+  own `accountStore` (that comparison is trivially true). Keep the guard explicit in the signature:
+  `pushChatScreenRoute(params, navStack, currentStore)`.
+- Smoke scripts assert the old inline push text; when a transaction moves, update the grep contracts in
+  both smoke variants in the same commit, or the gate fails on a correct refactor.

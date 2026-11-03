@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S6b (lead).** D7 получил точку входа: строка «Saved Messages» в настройках больше не
+  мёртвая — `SettingsPage` эмитит `onOpenSavedMessages`, `MainTabsPage` открывает уже существующий
+  чат либо создаёт его через `createPrivateChat(my_id)` (td_api.tl:8726), гидрирует стор
+  `createNewChatEvent` и пушит экран чата. Транзакция открытия (запись navigation/chat-состояния,
+  nav-lock, откат при исключении, защита от нового владельца) вынесена в общий
+  `ChatOpenTransaction.pushChatScreenRoute`; на неё переведены и `ChatListPage`, и
+  `TgArchivedChatsPage` — три копии блока свёрнуты в одну. Host-контракты
+  `test-chat-open-transaction.cjs` (4 сценария транзакции + проводка) и обновлённый
+  `test-saved-messages.cjs`. Гейты: host **108/108**, оба smoke, hvigor BUILD SUCCESSFUL.
+  **Долг:** пункта в меню iOS нет (только настройки), аватар в шапке чата не обновлён, device-witness.
 - **S6a (lead).** D7 «Избранное» из `missing` → `partial` (представление): предикат
   `isSavedMessagesChat` (private-чат с `peerUserId === state.auth.userId`), заголовок «Saved Messages»
   в списке и в шапке чата вместо имени аккаунта, аватар-закладка через новый `TgAvatar.symbolIcon`

@@ -32,10 +32,10 @@ import { ROOT_TAB_BAR_FALLBACK_CONTENT_INSET } from '../../utils/RootTabBarGeome
 import { ChatItemVO, buildChatItemVO } from './ChatItemVO';
 import { ChatListDataSource } from './ChatListDataSource';
 import { ChatScreenRouteParams } from '../chat/ChatScreenRouteParams';
+import { pushChatScreenRoute } from '../chat/ChatOpenTransaction';
 
 const DOMAIN = 0x0012;
 const TAG = 'TgArchivedChatsPage';
-const CHAT_NAV_TRANSITION_LOCK_MS = 760;
 
 @ComponentV2
 export struct TgArchivedChatsPage {
@@ -216,44 +216,7 @@ export struct TgArchivedChatsPage {
       !this.accountScope.isScopeCurrent() || getAppCoreRuntime().getStore() !== store) return;
     const params = new ChatScreenRouteParams(item.chatId, item.title, store, gateway);
     if (!params.isCurrentAccount(getAppCoreRuntime().getStore())) return;
-    const previousOwnerToken = navigationUIState.activeChatOwnerToken;
-    const previousChatId = navigationUIState.activeChatId;
-    const previousTitle = navigationUIState.activeChatTitle;
-    const previousVisible = navigationUIState.chatScreenVisible;
-    const previousLockUntil = navigationUIState.chatNavLockUntil;
-    const previousStoredChatId = AppStorage.get<number>(StorageKeys.ACTIVE_CHAT_ID) ?? previousChatId;
-    const previousStoredTitle = AppStorage.get<string>(StorageKeys.ACTIVE_CHAT_TITLE) ?? previousTitle;
-    try {
-      const navLockUntil = Date.now() + CHAT_NAV_TRANSITION_LOCK_MS;
-      navigationUIState.activeChatOwnerToken = params.navigationToken;
-      navigationUIState.chatNavLockUntil = navLockUntil;
-      navigationUIState.activeChatId = item.chatId;
-      navigationUIState.activeChatTitle = item.title;
-      chatUIState.activeChatId = item.chatId;
-      chatUIState.activeChatTitle = item.title;
-      AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, navLockUntil);
-      AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, item.chatId);
-      AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, item.title);
-      navigationUIState.chatScreenVisible = true;
-      AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
-      this.pageStack.pushPathByName('TgChatScreenPage', params);
-    } catch (error) {
-      if (navigationUIState.activeChatOwnerToken === params.navigationToken &&
-        params.isCurrentAccount(getAppCoreRuntime().getStore())) {
-        navigationUIState.activeChatOwnerToken = previousOwnerToken;
-        navigationUIState.chatNavLockUntil = previousLockUntil;
-        navigationUIState.activeChatId = previousChatId;
-        navigationUIState.activeChatTitle = previousTitle;
-        chatUIState.activeChatId = previousChatId;
-        chatUIState.activeChatTitle = previousTitle;
-        navigationUIState.chatScreenVisible = previousVisible;
-        AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, previousLockUntil);
-        AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, previousStoredChatId);
-        AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, previousStoredTitle);
-        AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, previousVisible);
-      }
-      hilog.error(DOMAIN, TAG, 'Failed to open archived chat: %{public}s', String(error));
-    }
+    pushChatScreenRoute(params, this.pageStack, getAppCoreRuntime().getStore());
   }
 
   private closeOrBack(): void {

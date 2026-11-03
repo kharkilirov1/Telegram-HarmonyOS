@@ -56,6 +56,13 @@ import {
   SymbolGlyphModifier
 } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { getAppCoreRuntime } from '../../app/bootstrap/AppCoreRuntime';
+import { getTdGatewayAdapter } from '../../infra/td/adapter/TdGatewayAdapter';
+import { createPrivateChatUseCase } from '../../domain/usecases/createPrivateChat';
+import { createNewChatEvent } from '../../core/model/AppEvent';
+import { isSavedMessagesChat } from '../../core/model/AppState';
+import { ChatScreenRouteParams } from './chat/ChatScreenRouteParams';
+import { pushChatScreenRoute } from './chat/ChatOpenTransaction';
 
 const DOMAIN = 0x0020;
 const TAG = 'MainTabsPage';
@@ -99,6 +106,9 @@ export struct MainTabsPage {
   private callsNavStack: NavPathStack = new NavPathStack();
   private chatListNavStack: NavPathStack = new NavPathStack();
   private chatDetailNavStack: NavPathStack = new NavPathStack();
+  // Saved Messages: the row lives in Settings, the chat screen lives on the outer stack.
+  private isOpeningSavedMessages: boolean = false;
+  private savedMessagesOpenToken: number = 0;
   private settingsNavStack: NavPathStack = new NavPathStack();
   private controller: HdsTabsController = new HdsTabsController();
 
@@ -681,6 +691,64 @@ export struct MainTabsPage {
     })
   }
 
+  private savedMessagesChatId(): number {
+    const state = getAppCoreRuntime().getStore().getState();
+    const selfUserId: number = state.auth.userId;
+    if (selfUserId <= 0) {
+      return 0;
+    }
+    let found: number = 0;
+    state.chats.chats.forEach((chat): void => {
+      if (found === 0 && isSavedMessagesChat(chat, selfUserId)) {
+        found = chat.id;
+      }
+    });
+    return found;
+  }
+
+  private openSavedMessages(): void {
+    if (this.isOpeningSavedMessages) {
+      return;
+    }
+    const runtime = getAppCoreRuntime();
+    const store = runtime.getStore();
+    const selfUserId: number = store.getState().auth.userId;
+    if (selfUserId <= 0) {
+      return;
+    }
+    const gateway = getTdGatewayAdapter();
+    const title: string = localized($r('app.string.saved_messages').id, 'Saved Messages');
+    const knownChatId: number = this.savedMessagesChatId();
+    if (knownChatId !== 0) {
+      pushChatScreenRoute(new ChatScreenRouteParams(knownChatId, title, store, gateway), this.chatDetailNavStack, store);
+      return;
+    }
+    // TDLib has no "open Saved Messages" method: the chat is createPrivateChat(my_id)
+    // (td_api.tl:8726). Hydrating it into the store keeps the chat screen's reducers alive.
+    this.isOpeningSavedMessages = true;
+    const openToken: number = ++this.savedMessagesOpenToken;
+    createPrivateChatUseCase(gateway).execute(selfUserId, false)
+      .then((chat): void => {
+        if (openToken !== this.savedMessagesOpenToken) {
+          return;
+        }
+        this.isOpeningSavedMessages = false;
+        try {
+          store.dispatch(createNewChatEvent(chat.id, chat));
+        } catch (error) {
+          hilog.warn(DOMAIN, TAG, 'Saved Messages hydration failed: %{public}s', String(error));
+        }
+        pushChatScreenRoute(new ChatScreenRouteParams(chat.id, title, store, gateway), this.chatDetailNavStack, store);
+      })
+      .catch((error: Error): void => {
+        if (openToken !== this.savedMessagesOpenToken) {
+          return;
+        }
+        this.isOpeningSavedMessages = false;
+        hilog.error(DOMAIN, TAG, 'createPrivateChat for Saved Messages failed: %{public}s', error.message);
+      });
+  }
+
   @Builder
   chatDetailPageMap(name: string) {
     if (name === 'TgChatScreenPage') {
@@ -861,6 +929,9 @@ export struct MainTabsPage {
             onOpenCalls: (): void => {
               this.controller.changeIndex(1);
               this.handleTabChange(1);
+            },
+            onOpenSavedMessages: (): void => {
+              this.openSavedMessages();
             }
           })
         }

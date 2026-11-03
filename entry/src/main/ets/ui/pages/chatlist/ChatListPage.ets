@@ -33,6 +33,7 @@ import { ROOT_TAB_BAR_FALLBACK_CONTENT_INSET } from '../../utils/RootTabBarGeome
 import { ROOT_TAB_BAR_AUTO_HIDE_THRESHOLD } from '../../utils/RootTabBarGeometry';
 import { resolveChatHostTopInset } from '../../utils/ChatSplitGeometry';
 import { ChatScreenRouteParams } from '../chat/ChatScreenRouteParams';
+import { pushChatScreenRoute } from '../chat/ChatOpenTransaction';
 import { ComposeResult, ComposeRouteParams } from '../compose/TgComposePage';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { createLoadChatsUseCase, LoadChatsUseCase } from '../../../domain/usecases/loadChats';
@@ -60,7 +61,6 @@ import { common } from '@kit.AbilityKit';
 
 const DOMAIN = 0x0012;
 const TAG = 'ChatListPage';
-const CHAT_NAV_TRANSITION_LOCK_MS = 760;
 let lastPortraitChatTopInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
 
 @ComponentV2
@@ -1177,48 +1177,11 @@ export struct ChatListPage {
       !params.isCurrentAccount(getAppCoreRuntime().getStore())) return;
     const navStack = this.chatDetailStack;
 
-    const prevOwnerToken = navigationUIState.activeChatOwnerToken;
-    const prevChatId: number = navigationUIState.activeChatId;
-    const prevTitle: string = navigationUIState.activeChatTitle;
-    const prevVisible = navigationUIState.chatScreenVisible;
-    const prevLockUntil = navigationUIState.chatNavLockUntil;
-    const prevStoredChatId: number = AppStorage.get<number>(StorageKeys.ACTIVE_CHAT_ID) ?? prevChatId;
-    const prevStoredTitle: string = AppStorage.get<string>(StorageKeys.ACTIVE_CHAT_TITLE) ?? prevTitle;
-    hilog.info(DOMAIN, TAG, 'Setting active chat and pushing TgChatScreenPage');
-    navigationUIState.activeChatOwnerToken = params.navigationToken;
-    navigationUIState.activeChatId = params.chatId;
-    navigationUIState.activeChatTitle = params.chatTitle;
-
-    try {
-      this.isOpeningChat = true;
-      const nextNavLockUntil = Date.now() + CHAT_NAV_TRANSITION_LOCK_MS;
-      navigationUIState.chatNavLockUntil = nextNavLockUntil;
-      AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, nextNavLockUntil);
-      chatUIState.activeChatId = params.chatId;
-      chatUIState.activeChatTitle = params.chatTitle;
-      AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, params.chatId);
-      AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, params.chatTitle);
-      navigationUIState.chatScreenVisible = true;
-      AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, true);
-      navStack.pushPathByName('TgChatScreenPage', params);
-      this.isOpeningChat = false;
-    } catch (e) {
-      this.isOpeningChat = false;
-      if (navigationUIState.activeChatOwnerToken === params.navigationToken &&
-        params.isCurrentAccount(getAppCoreRuntime().getStore())) {
-        navigationUIState.activeChatOwnerToken = prevOwnerToken;
-        navigationUIState.activeChatId = prevChatId;
-        navigationUIState.activeChatTitle = prevTitle;
-        navigationUIState.chatNavLockUntil = prevLockUntil;
-        chatUIState.activeChatId = prevChatId;
-        chatUIState.activeChatTitle = prevTitle;
-        AppStorage.set<number>(StorageKeys.CHAT_NAV_LOCK_UNTIL, prevLockUntil);
-        AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, prevStoredChatId);
-        AppStorage.set<string>(StorageKeys.ACTIVE_CHAT_TITLE, prevStoredTitle);
-        navigationUIState.chatScreenVisible = prevVisible;
-        AppStorage.set<boolean>(StorageKeys.CHAT_SCREEN_VISIBLE, prevVisible);
-      }
-      hilog.error(DOMAIN, TAG, 'Failed to push TgChatScreenPage: %{public}s', String(e));
+    this.isOpeningChat = true;
+    const pushed = pushChatScreenRoute(params, navStack, getAppCoreRuntime().getStore());
+    this.isOpeningChat = false;
+    if (!pushed) {
+      return;
     }
   }
 

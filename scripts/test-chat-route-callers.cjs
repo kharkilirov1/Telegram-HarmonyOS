@@ -21,8 +21,10 @@ function read(file) {
   let source = snapshots.get(file);
   let from;
   if (mutant === 'scope' && file === 'ui/pages/chat/ChatScreenRouteParams.ets') from = 'this.accountScope.isScopeCurrent()';
-  if (mutant === 'rollback-token' && ['ui/pages/chatlist/ChatListPage.ets', 'ui/pages/chatlist/TgArchivedChatsPage.ets',
-    'ui/pages/chat/ChatMessageActionsController.ets'].includes(file)) from = 'navigationUIState.activeChatOwnerToken === params.navigationToken';
+  if (mutant === 'rollback-token' && ['ui/pages/chat/ChatMessageActionsController.ets',
+    'ui/pages/chat/ChatOpenTransaction.ets'].includes(file)) {
+    from = 'navigationUIState.activeChatOwnerToken === params.navigationToken';
+  }
   if (from) {
     assert.equal(source.split(from).length - 1, 1, `one engaged mutation site: ${file}`);
     source = source.replace(from, 'true'); mutationSites.add(file);
@@ -100,6 +102,12 @@ function fixture(kind = 'list', options = {}) {
     TgUiTokens: { STATUS_BAR_FALLBACK_INSET: 24 }, TgUiFeatureFlags: { USE_TG_CHAT_V2: true },
     removeWindowSizeListener() {}, ComposeRouteParams: class {},
     buildChatItemVO: chat => Object.assign(new ChatItemVO(), { chatId: chat.id, title: chat.title, unreadCount: chat.unreadCount }) };
+  const openTransaction = load('ui/pages/chat/ChatOpenTransaction.ets', {
+    StorageKeys, AppStorage: deps.AppStorage, navigationUIState: nav, chatUIState, ChatScreenRouteParams,
+    hilog: platform.hilog
+  });
+  deps.pushChatScreenRoute = openTransaction.pushChatScreenRoute;
+  deps.CHAT_NAV_TRANSITION_LOCK_MS = openTransaction.CHAT_NAV_TRANSITION_LOCK_MS;
   for (const name of ['createLoadChatsUseCase', 'createLoadArchiveChatsUseCase', 'createLoadActiveStoriesUseCase',
     'createOpenChatUseCase', 'createSetChatMuteUseCase', 'createToggleChatPinnedUseCase', 'createMoveChatToListUseCase',
     'createDeleteChatHistoryUseCase', 'createToggleChatUnreadUseCase']) deps[name] = factory(name);

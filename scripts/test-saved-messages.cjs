@@ -119,9 +119,10 @@ for (const [locale, expected] of Object.entries({
   const entry = strings.string.find((item) => item.name === 'saved_messages');
   assert.equal(entry?.value, expected, `saved_messages in ${locale}`);
 }
-// The entry point is still missing: Settings renders the row but never wires navigation.
+// S6b: the Settings row now opens the chat through MainTabsPage (see test-chat-open-transaction.cjs).
 const settings = read('ui/pages/settings/SettingsPage.ets');
-const settingsRow = settings.slice(settings.indexOf("saved_messages"), settings.indexOf("saved_messages") + 320);
-assert.ok(!settingsRow.includes('onRowClick'), 'debt: the Settings row has no navigation yet');
+const settingsRow = settings.slice(settings.indexOf("saved_messages"), settings.indexOf("saved_messages") + 420);
+assert.ok(settingsRow.includes('onRowClick'), 'the Settings row is wired to an entry point');
+assert.ok(settingsRow.includes('onOpenSavedMessages'), 'the row emits the Saved Messages intent');
 
 console.log('PASS saved messages presentation contract');

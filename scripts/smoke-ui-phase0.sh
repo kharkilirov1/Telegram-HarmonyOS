@@ -598,9 +598,9 @@ done
 
 if ! grep -Fq 'return new ChatScreenRouteParams(chatId, title, store, gateway);' "$CHAT_LIST_PAGE" ||
    ! grep -Fq 'const params = this.createChatRouteParams(item.chatId, item.title);' "$CHAT_LIST_PAGE" ||
-   ! grep -Fq "navStack.pushPathByName('TgChatScreenPage', params);" "$CHAT_LIST_PAGE" ||
+   ! grep -Fq "pushChatScreenRoute(params, navStack, getAppCoreRuntime().getStore());" "$CHAT_LIST_PAGE" ||
    ! grep -Fq 'const params = new ChatScreenRouteParams(item.chatId, item.title, store, gateway);' "$ARCHIVED_CHAT_LIST_PAGE" ||
-   ! grep -Fq "this.pageStack.pushPathByName('TgChatScreenPage', params);" "$ARCHIVED_CHAT_LIST_PAGE"; then
+   ! grep -Fq "pushChatScreenRoute(params, this.pageStack, getAppCoreRuntime().getStore());" "$ARCHIVED_CHAT_LIST_PAGE"; then
   echo 'ERROR: Chat-list callers must pass captured canonical route params unchanged.' >&2
   exit 1
 fi

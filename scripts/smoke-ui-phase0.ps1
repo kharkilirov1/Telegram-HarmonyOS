@@ -732,9 +732,9 @@ if (-not $chatListOpen.Contains('const params = this.createChatRouteParams(item.
   exit 1
 }
 $archiveCaptureIndex = $archiveOpen.IndexOf('const params = new ChatScreenRouteParams(')
-$archivePushIndex = $archiveOpen.IndexOf("this.pageStack.pushPathByName('TgChatScreenPage', params);")
+$archivePushIndex = $archiveOpen.IndexOf('pushChatScreenRoute(params, this.pageStack, getAppCoreRuntime().getStore());')
 if ($archiveCaptureIndex -lt 0 -or $archivePushIndex -le $archiveCaptureIndex -or
-  -not $chatListRoute.Contains("navStack.pushPathByName('TgChatScreenPage', params);")) {
+  -not $chatListRoute.Contains('pushChatScreenRoute(params, navStack, getAppCoreRuntime().getStore());')) {
   Write-Error 'Canonical unread entry params must be captured before push and passed unchanged to the destination.'
   exit 1
 }

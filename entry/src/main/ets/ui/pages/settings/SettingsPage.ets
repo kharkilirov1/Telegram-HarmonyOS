@@ -40,6 +40,8 @@ export struct SettingsPage {
   @Local private contentBottomInset: number = ROOT_TAB_BAR_FALLBACK_CONTENT_INSET;
 
   @Event onOpenCalls: () => void = (): void => {};
+  // Saved Messages lives in the chat stack; the tab root owns the navigation stack.
+  @Event onOpenSavedMessages: () => void = (): void => {};
 
   private unsubscribe?: () => void;
   private pageLifecycleToken: number = 0;
@@ -204,7 +206,10 @@ export struct SettingsPage {
               symbolRes: $r('sys.symbol.bookmark_fill'),
               iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_BLUE,
               trailingType: TgSettingsTrailing.Arrow,
-              showSeparator: true
+              showSeparator: true,
+              onRowClick: (): void => {
+                this.onOpenSavedMessages();
+              }
             })
             TgSettingsRow({
               title: localized($r('app.string.settings_recent_calls').id, 'Recent Calls'),
