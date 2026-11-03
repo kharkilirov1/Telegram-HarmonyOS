@@ -23,6 +23,7 @@ import {
 } from '../../tg_ui/atoms/TgChatListNavigationBar';
 import { TgChatListFilter, TgChatListFilterTab } from '../../tg_ui/atoms/TgChatListFilterBar';
 import { selectChatFolderTabs, selectChatIdsForFolder, ChatFolderTab } from '../../../domain/selectors/chatFolderSelectors';
+import { selectChatContextMenuEntries, chatContextActionIcon, ChatContextAction, ChatContextMenuEntry } from '../../../domain/selectors/chatContextMenuSelectors';
 import { localized } from '../../../core/utils/AppResource';
 import {
   computeTabBottomInset,
@@ -1020,6 +1021,118 @@ export struct ChatListPage {
   }
 
   // TDLib confirms with updateChatPosition → chatsReducer reorders; list rebuilds via subscription
+  // Long-press menu (iOS ChatContextMenus.swift order): the list decides nothing, it renders the
+  // selector's entries and forwards the tapped action to the use case that already owns the change.
+  private contextMenuSelfUserId(): number {
+    const store = this.accountStore;
+    return store === undefined ? 0 : store.getState().auth.userId;
+  }
+
+  private contextMenuEntryLabel(action: ChatContextAction): Resource {
+    switch (action) {
+      case ChatContextAction.MarkRead: return $r('app.string.chat_context_mark_read');
+      case ChatContextAction.MarkUnread: return $r('app.string.chat_context_mark_unread');
+      case ChatContextAction.Archive: return $r('app.string.chat_context_archive');
+      case ChatContextAction.Unarchive: return $r('app.string.chat_context_unarchive');
+      case ChatContextAction.Pin: return $r('app.string.chat_context_pin');
+      case ChatContextAction.Unpin: return $r('app.string.chat_context_unpin');
+      case ChatContextAction.Mute: return $r('app.string.chat_context_mute');
+      case ChatContextAction.Unmute: return $r('app.string.chat_context_unmute');
+      default: return $r('app.string.chat_context_delete');
+    }
+  }
+
+  private contextMenuIcon(action: ChatContextAction): Resource {
+    switch (chatContextActionIcon(action)) {
+      case 'ic_eye': return $r('app.media.ic_eye');
+      case 'ic_eye_off': return $r('app.media.ic_eye_off');
+      case 'ic_archive': return $r('app.media.ic_archive');
+      case 'ic_folder': return $r('app.media.ic_folder');
+      case 'ic_pin': return $r('app.media.ic_pin');
+      case 'ic_mute': return $r('app.media.ic_mute');
+      case 'ic_unmute': return $r('app.media.ic_unmute');
+      default: return $r('app.media.ic_delete');
+    }
+  }
+
+  private contextMenuEntries(item: ChatItemVO): ChatContextMenuEntry[] {
+    const state = this.accountStore === undefined ? undefined : this.accountStore.getState();
+    if (state === undefined) {
+      return [];
+    }
+    return selectChatContextMenuEntries(state.chats.chats.get(item.chatId), state.auth.userId);
+  }
+
+  private handleContextAction(action: ChatContextAction, item: ChatItemVO): void {
+    switch (action) {
+      case ChatContextAction.MarkRead:
+      case ChatContextAction.MarkUnread:
+        this.handleToggleUnread(item);
+        break;
+      case ChatContextAction.Archive:
+        this.handleMoveToArchive(item);
+        break;
+      case ChatContextAction.Unarchive:
+        this.handleMoveToMain(item);
+        break;
+      case ChatContextAction.Pin:
+      case ChatContextAction.Unpin:
+        this.handlePinToggle(item);
+        break;
+      case ChatContextAction.Mute:
+      case ChatContextAction.Unmute:
+        this.handleMuteToggle(item);
+        break;
+      case ChatContextAction.Delete:
+        this.handleDeleteChat(item);
+        break;
+      default:
+        break;
+    }
+  }
+
+  private handleMoveToMain(item: ChatItemVO): void {
+    const useCase = this.moveChatToListUseCase;
+    if (!useCase) {
+      return;
+    }
+    useCase.execute(item.chatId, 'main')
+      .catch((error: Error) => {
+        hilog.error(DOMAIN, TAG, 'Unarchive failed for %{public}d: %{public}s', item.chatId, error.message);
+      });
+  }
+
+  @Builder
+  buildChatContextMenu(item: ChatItemVO) {
+    Column() {
+      ForEach(this.contextMenuEntries(item), (entry: ChatContextMenuEntry) => {
+        Row() {
+          Image(this.contextMenuIcon(entry.action))
+            .width(TgUiTokens.CHAT_CONTEXT_MENU_ICON_SIZE)
+            .height(TgUiTokens.CHAT_CONTEXT_MENU_ICON_SIZE)
+            .fillColor(entry.destructive ? TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE : TgUiTokens.CHAT_CONTEXT_MENU_TEXT)
+          Text(localized(this.contextMenuEntryLabel(entry.action).id, ''))
+            .fontSize(TgUiTokens.CHAT_CONTEXT_MENU_FONT_SIZE)
+            .fontColor(entry.destructive ? TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE : TgUiTokens.CHAT_CONTEXT_MENU_TEXT)
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .margin({ left: TgUiTokens.CHAT_CONTEXT_MENU_ICON_GAP })
+            .layoutWeight(1)
+        }
+        .width('100%')
+        .height(TgUiTokens.CHAT_CONTEXT_MENU_ITEM_HEIGHT)
+        .padding({ left: TgUiTokens.CHAT_CONTEXT_MENU_PADDING_H, right: TgUiTokens.CHAT_CONTEXT_MENU_PADDING_H })
+        .onClick(() => {
+          this.handleContextAction(entry.action, item);
+        })
+      }, (entry: ChatContextMenuEntry) => entry.action.toString() + item.chatId.toString())
+    }
+    .width(TgUiTokens.CHAT_CONTEXT_MENU_WIDTH)
+    .backgroundColor(TgUiTokens.CHAT_CONTEXT_MENU_BG)
+    .borderRadius(TgUiTokens.CHAT_CONTEXT_MENU_RADIUS)
+    .clip(true)
+  }
+
   private handlePinToggle(item: ChatItemVO): void {
     const pinUseCase = this.pinUseCase;
     if (!pinUseCase) return;
@@ -1467,6 +1580,7 @@ export struct ChatListPage {
                 this.buildSwipeEndActions(item);
               }
             })
+            .bindContextMenu(this.buildChatContextMenu(item), ResponseType.LongPress)
             // NB: no stateStyles here — a pressed-state on the ListItem swallowed
             // taps meant for swipeAction buttons (row press feedback lives in TgChatRow)
             .onClick(() => {

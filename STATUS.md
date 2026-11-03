@@ -81,7 +81,7 @@ Documentation and repository structure were reconciled; no product code changed.
 - `TASKS/SLICE_TEMPLATE.md` — шаблон плана среза (референс → контракт → швы → состояния → тест →
   приёмка).
 - `TASKS/CAPABILITY_MATRIX.md` — 105 строк по пользовательским возможностям iOS: 35 `available`,
-  49 `partial`, 17 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
+  50 `partial`, 16 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
   код-доказательство и связанные фичи; `available` без witness не ставится.
 - `TASKS/WORKMAP.md` — M0 (верифицировать 9 `unverified` строк), S1 (typing indicator, C2),
   S2 (стикеры/TGS, D13).
@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S8a (lead).** B6 «Контекстное меню чата» из `missing` → `partial`. Long-press по строке списка
+  открывает меню (`bindContextMenu`, `ResponseType.LongPress`) с iOS-порядком действий: mark
+  read/unread → archive/unarchive → pin/unpin → mute/unmute → delete (destructive). Модель — чистый
+  селектор `chatContextMenuSelectors.ets` (Saved Messages меню не получает), действия делегируются
+  существующим use case, архив/разархив через `handleMoveToArchive`/`handleMoveToMain`. Лейблы
+  `chat_context_*` в base/ru/zh, токены `CHAT_CONTEXT_MENU_*`, контракт
+  `test-chat-list-context-menu.cjs` (труth table по состояниям, иконки-ассеты, проводка, локали,
+  токены). Гейты: host **110/110**, оба smoke, hvigor BUILD SUCCESSFUL. **Осталось (B6):**
+  пункты по типу чата (Add to contacts, Join chat/channel, Add/Remove from folder, Select, Remove
+  from recents), выделение нескольких чатов.
 - **S7b.3 (lead).** B7: пагинация по папке. `LoadChatsPayload` получил `chatList: folder` +
   `folderId` (фабрика `createLoadChatsCommand(limit, chatList, folderId)`), сериализатор отправляет
   `chatListFolder` JSON; новый `LoadFolderChatsUseCase` держит один запрос на папку в полёте, cooldown

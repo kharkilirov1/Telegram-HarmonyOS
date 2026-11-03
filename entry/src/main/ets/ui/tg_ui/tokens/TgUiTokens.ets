@@ -1391,6 +1391,18 @@ export class TgUiTokens {
   // ── Swipe action colors (iOS: constructive/neutral2/destructive) ──
   static readonly SWIPE_ACTION_PIN: Resource = $r('app.color.swipe_action_green');
   static readonly SWIPE_ACTION_MUTE: Resource = $r('app.color.settings_icon_orange');
+  // Chat list context menu (iOS ContextMenuActionItem): 44 px rows, 22 px leading icon.
+  static readonly CHAT_CONTEXT_MENU_ITEM_HEIGHT: number = 44;
+  static readonly CHAT_CONTEXT_MENU_ICON_SIZE: number = 22;
+  static readonly CHAT_CONTEXT_MENU_ICON_GAP: number = 12;
+  static readonly CHAT_CONTEXT_MENU_PADDING_H: number = 16;
+  static readonly CHAT_CONTEXT_MENU_FONT_SIZE: number = 16;
+  static readonly CHAT_CONTEXT_MENU_RADIUS: number = 14;
+  static readonly CHAT_CONTEXT_MENU_WIDTH: number = 250;
+  static readonly CHAT_CONTEXT_MENU_BG: Resource = $r('app.color.chat_list_surface_bg');
+  static readonly CHAT_CONTEXT_MENU_TEXT: Resource = $r('app.color.text_primary');
+  static readonly CHAT_CONTEXT_MENU_DESTRUCTIVE: Resource = $r('app.color.settings_icon_red');
+  static readonly CHAT_CONTEXT_MENU_SEPARATOR: Resource = $r('app.color.separator');
   static readonly SWIPE_ACTION_DELETE: Resource = $r('app.color.settings_icon_red');
   static readonly SWIPE_ACTION_ARCHIVE: Resource = $r('app.color.swipe_pin');
 

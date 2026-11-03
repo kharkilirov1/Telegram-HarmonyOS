@@ -181,6 +181,42 @@
       "value": "Не прочитано"
     },
     {
+      "name": "chat_context_mark_read",
+      "value": "Отметить прочитанным"
+    },
+    {
+      "name": "chat_context_mark_unread",
+      "value": "Отметить непрочитанным"
+    },
+    {
+      "name": "chat_context_archive",
+      "value": "В архив"
+    },
+    {
+      "name": "chat_context_unarchive",
+      "value": "Из архива"
+    },
+    {
+      "name": "chat_context_pin",
+      "value": "Закрепить"
+    },
+    {
+      "name": "chat_context_unpin",
+      "value": "Открепить"
+    },
+    {
+      "name": "chat_context_mute",
+      "value": "Без звука"
+    },
+    {
+      "name": "chat_context_unmute",
+      "value": "Включить звук"
+    },
+    {
+      "name": "chat_context_delete",
+      "value": "Удалить"
+    },
+    {
       "name": "chat_folders_all",
       "value": "Все"
     },

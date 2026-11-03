@@ -697,3 +697,13 @@ Last updated: 2026-10-23
 - Pagination guards belong to the use case, not the page: one in-flight request per folder plus a
   cooldown after the answer, because TDLib silently returns nothing for an exhausted folder while the
   user keeps scrolling.
+
+## 178. A context menu is a selector plus a dispatch, not a new backend
+
+- Every action a chat-row menu needs already had a use case (toggle unread, move to list, pin,
+  mute, delete history). The slice is a pure `selectChatContextMenuEntries(chat, selfUserId)` plus a
+  page switch that forwards the action, so the menu never invents its own TDLib path.
+- `bindContextMenu(this.builder(item), ResponseType.LongPress)` renders a custom builder on long
+  press without owning popup state or an anchor. Keep the existing ListItem tap for opening the chat.
+- Saved Messages must return an empty menu: list management for a chat whose peer is the account
+  itself (archive/pin/mute/delete) is nonsense and iOS does not offer it.

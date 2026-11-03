@@ -181,6 +181,42 @@
       "value": "Unread"
     },
     {
+      "name": "chat_context_mark_read",
+      "value": "Mark as read"
+    },
+    {
+      "name": "chat_context_mark_unread",
+      "value": "Mark as unread"
+    },
+    {
+      "name": "chat_context_archive",
+      "value": "Archive"
+    },
+    {
+      "name": "chat_context_unarchive",
+      "value": "Unarchive"
+    },
+    {
+      "name": "chat_context_pin",
+      "value": "Pin"
+    },
+    {
+      "name": "chat_context_unpin",
+      "value": "Unpin"
+    },
+    {
+      "name": "chat_context_mute",
+      "value": "Mute"
+    },
+    {
+      "name": "chat_context_unmute",
+      "value": "Unmute"
+    },
+    {
+      "name": "chat_context_delete",
+      "value": "Delete"
+    },
+    {
       "name": "chat_folders_all",
       "value": "All"
     },

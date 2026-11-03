@@ -181,6 +181,42 @@
       "value": "未读"
     },
     {
+      "name": "chat_context_mark_read",
+      "value": "标为已读"
+    },
+    {
+      "name": "chat_context_mark_unread",
+      "value": "标为未读"
+    },
+    {
+      "name": "chat_context_archive",
+      "value": "归档"
+    },
+    {
+      "name": "chat_context_unarchive",
+      "value": "取消归档"
+    },
+    {
+      "name": "chat_context_pin",
+      "value": "置顶"
+    },
+    {
+      "name": "chat_context_unpin",
+      "value": "取消置顶"
+    },
+    {
+      "name": "chat_context_mute",
+      "value": "静音"
+    },
+    {
+      "name": "chat_context_unmute",
+      "value": "取消静音"
+    },
+    {
+      "name": "chat_context_delete",
+      "value": "删除"
+    },
+    {
       "name": "chat_folders_all",
       "value": "全部"
     },
