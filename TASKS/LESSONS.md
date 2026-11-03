@@ -551,3 +551,16 @@ Last updated: 2026-10-23
 - Fence an async answer with everything that can change while it is in flight: generation, lifecycle
   token, chatId and the open messageId. Also re-check the chat policy on arrival so a stale response
   cannot reintroduce reactions into a chat that forbids them.
+
+## 165. Reactions footer under media bubbles lives in the router
+
+- Media balloons (`TgPhotoBubble`, `TgDocumentBubble`, `TgAudioBubble`, …) each own a different
+  container, so a per-atom footer would be six copies of the same row. The router already knows the
+  content type, the bubble side and the avatar lane — render the row there, outside the media
+  container, aligned to `isOutgoing`, and keep the balloon atoms free of reaction wiring.
+- Text keeps its inline footer inside `TgTextBubbleV3`; a host contract must assert the router adds
+  no second row in the text branch, otherwise a future refactor will double-render reactions.
+- Stickers are the exception: their column has a fixed media height, so a footer needs a layout
+  adapter first. Record it as debt instead of squeezing the row into a clipped column.
+- Geometry under media is not verified by host tests: chips size themselves from content, so the
+  row's width/padding needs a device screenshot before claiming parity.

@@ -129,8 +129,16 @@ Documentation and repository structure were reconciled; no product code changed.
   открытии синхронно сеет чатовый ряд и асинхронно заменяет его ответом TDLib; устаревший ответ
   отсекается по generation + lifecycle + chatId + messageId, чат с запретом реакций не получает их
   из ответа. Host-контракт `test-reactions-picker-data.cjs`. Гейты: host **103/103**, оба smoke,
-  hvigor BUILD SUCCESSFUL. **D10 остаётся `partial`:** S3b.1 (медиа-баблы), рендер кастомных
-  эмодзи (D16), теги, runtime-witness.
+  hvigor BUILD SUCCESSFUL. **D10 остаётся `partial`:** рендер кастомных эмодзи (D16), теги,
+  runtime-witness.
+- **S3b.1 (lead).** Подвал реакций добрался до медиа: роутер рисует `TgReactionsFooter` под
+  фото/видео/альбомом/кружком/гиф, документами/аудио/голосом, контактом/локацией/опросом — вне
+  медиа-контейнера, с выравниванием по стороне бабла (как в iOS), и не дублирует подвал текстового
+  бабла. Стикер-ветка без подвала: у её колонки фиксированная высота картинки — записано долгом.
+  Host-контракт `test-reactions-media-footer.cjs` (наличие 6+ вызовов, отсутствие проводки в
+  `TgMediaBubbleShellV2`, сохранение inline-подвала текста). Гейты: host **104/104**, оба smoke,
+  hvigor BUILD SUCCESSFUL. **D10 остаётся `partial`:** стикер, геометрия медиа-ряда без witness,
+  рендер кастомных эмодзи (D16), теги, runtime-witness.
 - **S4 (lead).** Мёртвые контролы из аудита закрыты: Toggle «Notifications» в профиле теперь отправляет
   `SetChatMuteCommand` (откат при ошибке, токен страницы), строка «Data and Storage» удалена до
   появления экрана, мёртвая проводка `attachmentMenuLabels` вырезана из шести файлов, неиспользуемые

@@ -18,6 +18,7 @@ import { TgStickerView } from '../atoms/TgStickerView';
 import { TgMessageMeta, TgMessageSendStatus } from '../atoms/TgMessageMeta';
 import { TgReplySnippet } from '../atoms/TgReplySnippet';
 import { TgTextBubbleV3 } from '../atoms/TgTextBubbleV3';
+import { TgReactionsFooter } from '../atoms/TgReactionsFooter';
 import { TgMediaBubbleShellV2 } from '../atoms/TgMediaBubbleShellV2';
 import { TgTextLayout } from '../../text_engine/TgTextLayout';
 import { computeTextBubbleLayout } from '../layout/TgBubbleLayout';
@@ -642,6 +643,29 @@ export struct TgMessageRouter {
     })
   }
 
+
+  // S3b.1: media bubbles render their reactions BELOW the bubble (iOS keeps the pill row outside the
+  // media bubble), aligned to the bubble side, not inside the media container.
+  @Builder
+  private buildReactionsRow() {
+    if (this.reactionEmojis.length > 0) {
+      Row() {
+        TgReactionsFooter({
+          emojis: this.reactionEmojis,
+          keys: this.reactionKeys,
+          counts: this.reactionCounts,
+          chosenFlags: this.reactionChosenFlags,
+          hiddenCount: this.reactionHiddenCount,
+          onReactionPress: (key: string): void => {
+            this.onReactionPress(key);
+          }
+        })
+      }
+      .constraintSize({ maxWidth: this.maxBubbleWidth() })
+      .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
+      .padding({ top: TgUiTokens.REACTION_FOOTER_TOP_GAP })
+    }
+  }
   @Builder
   private buildAvatarSlot() {
     // iOS: always reserve avatar space for incoming group — visible or invisible spacer
@@ -1030,6 +1054,7 @@ export struct TgMessageRouter {
           }
           .width(this.stickerRenderWidth())
           .height(this.stickerRenderHeight())
+          this.buildReactionsRow()
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
 
@@ -1248,6 +1273,7 @@ export struct TgMessageRouter {
           .backgroundColor(this.isOutgoing ? TgUiTokens.COLOR_MSG_BUBBLE_OUTGOING_BG : TgUiTokens.COLOR_MSG_BUBBLE_INCOMING_BG)
           .borderRadius(this.bubbleRadius())
           .padding({ left: TgUiTokens.BUBBLE_PADDING_H, right: TgUiTokens.BUBBLE_PADDING_H, top: TgUiTokens.BUBBLE_PADDING_V, bottom: TgUiTokens.BUBBLE_PADDING_V })
+          this.buildReactionsRow()
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
 
@@ -1307,6 +1333,7 @@ export struct TgMessageRouter {
           .backgroundColor(this.isOutgoing ? TgUiTokens.COLOR_MSG_BUBBLE_OUTGOING_BG : TgUiTokens.COLOR_MSG_BUBBLE_INCOMING_BG)
           .borderRadius(this.bubbleRadius())
           .padding({ left: TgUiTokens.BUBBLE_PADDING_H, right: TgUiTokens.BUBBLE_PADDING_H, top: TgUiTokens.BUBBLE_PADDING_V, bottom: TgUiTokens.BUBBLE_PADDING_V })
+          this.buildReactionsRow()
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
 
@@ -1356,6 +1383,7 @@ export struct TgMessageRouter {
           })
           .backgroundColor(this.isOutgoing ? TgUiTokens.COLOR_MSG_BUBBLE_OUTGOING_BG : TgUiTokens.COLOR_MSG_BUBBLE_INCOMING_BG)
           .borderRadius(this.bubbleRadius())
+          this.buildReactionsRow()
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
 
@@ -1371,7 +1399,11 @@ export struct TgMessageRouter {
       Row() {
         this.buildAvatarSlot()
 
-        this.buildVisualMediaBubbleShell()
+        Column() {
+          this.buildVisualMediaBubbleShell()
+          this.buildReactionsRow()
+        }
+        .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
 
         this.buildChannelShareButton()
       }
@@ -1477,6 +1509,7 @@ export struct TgMessageRouter {
               top: TgUiTokens.SPACE_2
             })
           }
+          this.buildReactionsRow()
         }
         .constraintSize({ maxWidth: this.maxBubbleWidth() })
         .backgroundColor(this.bubbleColor())
