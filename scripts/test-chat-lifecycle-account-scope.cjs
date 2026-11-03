@@ -474,7 +474,7 @@ async function main({ fixturesOnly = false, draftMutant = false,
     // Actual messages normalizer makes completed history genuinely cached. Other
     // registration domains are not involved; first-chat/read events enter directly.
     const normalizer = load('core/events/EventNormalizer.ets', { ...td, ...accessors, ...messages,
-      hilog: silentLog, ...Object.fromEntries(['Auth', 'Chat', 'User', 'File', 'AccentColor', 'Story']
+      hilog: silentLog, ...Object.fromEntries(['Auth', 'Chat', 'User', 'File', 'AccentColor', 'Story', 'ChatFolder']
         .map(name => [`register${name}Handlers`, () => {}])) }).getEventNormalizer();
     const f = await fixture(7, { bind: false, heldMethods: ['openChat', 'viewMessages', ...(options.holdHistory ? ['getChatHistory'] : [])],
       reducer: chatsReducer, eventNormalizer: normalizer });

@@ -37,7 +37,8 @@ const messageHandlers = load('core/events/normalizers/MessageNormalizer.ets',
   { ...events, ...dto, ...td, ...accessors, hilog });
 const normalizer = load('core/events/EventNormalizer.ets', { ...td, ...accessors, ...messageHandlers, hilog,
   registerAuthHandlers() {}, registerChatHandlers() {}, registerUserHandlers() {},
-  registerFileHandlers() {}, registerAccentColorHandlers() {}, registerStoryHandlers() {} });
+  registerFileHandlers() {}, registerAccentColorHandlers() {}, registerStoryHandlers() {},
+  registerChatFolderHandlers() {} });
 const { LoadChatHistoryUseCase: History, LoadChatHistoryParams: Params } = load(
   'domain/usecases/loadChatHistory.ets', { ...td, ...accessors, ...commands, ...appErrors, ...events, ...normalizer, hilog });
 const tick = () => new Promise(resolve => setImmediate(resolve));

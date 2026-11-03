@@ -1,6 +1,7 @@
 // Application events - normalized events from TDLib updates
 // These are domain-specific events that reducers understand
 
+import { ChatFolderInfo } from './AppState';
 import { ChatId, UserId, MessageId } from './EntityId';
 import { ChatDto, ChatUpdateDto } from './dto/ChatDto';
 import { AccentColorDto } from './dto/AccentColorDto';
@@ -97,6 +98,13 @@ export class ChatListUnreadMessageCountChangedEvent extends AppEvent {
   chatListType: string = 'main';
   unreadCount: number = 0;
   unreadUnmutedCount: number = 0;
+}
+
+export class ChatFoldersUpdatedEvent extends AppEvent {
+  type: string = 'chatFoldersUpdated';
+  folders: ChatFolderInfo[] = [];
+  mainChatListPosition: number = 0;
+  areTagsEnabled: boolean = false;
 }
 
 export class ChatsLoadStateChangedEvent extends AppEvent {
@@ -315,6 +323,7 @@ export type AnyAppEvent =
   | ChatReadInboxEvent
   | ChatReadOutboxEvent
   | ChatListUnreadMessageCountChangedEvent
+  | ChatFoldersUpdatedEvent
   | ChatsLoadStateChangedEvent
   | ChatActiveStoriesUpdatedEvent
   | ChatAvailableReactionsUpdatedEvent
@@ -414,6 +423,15 @@ export function createNewChatEvent(
   event.chatId = chatId;
   event.chatData = chatData;
   event.timestamp = Date.now();
+  return event;
+}
+
+export function createChatFoldersUpdatedEvent(folders: ChatFolderInfo[], mainChatListPosition: number,
+  areTagsEnabled: boolean): ChatFoldersUpdatedEvent {
+  const event = new ChatFoldersUpdatedEvent();
+  event.folders = folders;
+  event.mainChatListPosition = mainChatListPosition;
+  event.areTagsEnabled = areTagsEnabled;
   return event;
 }
 

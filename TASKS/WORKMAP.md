@@ -26,11 +26,12 @@
 | S5b | Панель выделения сообщений (C9) | C9 | `selectionActive`/`selectedMessageIds` + пункт «Select» + удаление многих через `requestMany` + панель `TgSelectionPanel` (spec/demo/токены) вместо композера + чек-индикатор и блокировка тапов в строке + `test-selection-mode.cjs`; C9 → `partial` |
 | S6a | Избранное — представление (D7) | D7 | `isSavedMessagesChat` + заголовок «Saved Messages» в списке и шапке + аватар-закладка (`TgAvatar.symbolIcon`) + флаг в diff + `test-saved-messages.cjs`; D7 → `partial` |
 | S6b | Избранное — точка входа (D7) | D7 | строка в настройках → `MainTabsPage.openSavedMessages` (существующий чат или `createPrivateChat(my_id)` + гидратация) через общий `ChatOpenTransaction.pushChatScreenRoute` (чат-лист и архив переведены) + `test-chat-open-transaction.cjs` |
+| S7a | Папки чатов — слой данных (B7) | B7 | `ChatFolderInfo`/`ChatFoldersState` в AppState, `ChatFolderNormalizer` (`updateChatFolders`), `chatFoldersReducer`, селектор вкладок с позицией All chats, `test-chat-folders.cjs`; B7 → `partial` |
 
 ## Следующие срезы (в порядке)
 
-1. **S7. Папки чатов (B7)** — крупный срез списка, делать после стабилизации списка.
-2. **C9-долг** (иконка Copy, подсветка выбранных баблов, диалог удаления для N) и **D7-долг** (пункт меню, аватар в шапке).
+1. **S7b. Папки чатов — UI (B7).** Data-driven `TgChatListFilterBar`, фильтрация списка по `chatListFolder` + `updateChatAddedToList/RemovedFromList`, счётчики непрочитанного по папкам.
+2. **C9-долг** (иконка Copy) и **D7-долг** (пункт меню).
 3. **Witness-очередь:** D10 (реакции), C2 (typing), C6 (разделитель), D13 (стикеры). Иконки панели, подсветка выбранных баблов, формулировка диалога удаления для N сообщений, device-witness.
 
 ## Требуют внешних условий (не начинать)

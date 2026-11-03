@@ -8,6 +8,7 @@ import { messagesReducer } from './messagesReducer';
 import { usersReducer } from './usersReducer';
 import { filesReducer } from './filesReducer';
 import { accentColorsReducer } from './accentColorsReducer';
+import { chatFoldersReducer } from './chatFoldersReducer';
 
 export type AppReducerFn = (state: AppState, action: ReducerAction) => AppState;
 
@@ -29,6 +30,11 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
     action.type === 'chatFullInfo' || action.type === 'chatActiveStoriesUpdated' ||
     action.type === 'chatAvailableReactionsUpdated') {
     return chatsReducer(state, action);
+  }
+
+  // Chat folders (mirrored TDLib folder list)
+  if (action.type === 'chatFoldersUpdated') {
+    return chatFoldersReducer(state, action);
   }
 
   // Messages

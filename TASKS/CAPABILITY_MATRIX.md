@@ -49,7 +49,7 @@
 | B4 | Unread-бейджи | `available` | 44 файла / 10 тестов | `BadgeComponent` | B9, B12 |
 | B5 | Свайпы по строке (read/pin/mute/delete) | `partial` | `ChatListPage.ets`, `TgArchivedChatsPage.ets` (2/0) | `Components/ChatList` | B2, B3 |
 | B6 | Контекстное меню чата | `missing` | нет: long-press по строке отсутствует (`TgChatRow.ets` без обработчиков нажатий), в `ChatListPage.ets:1453-1467` только `.swipeAction` + `.onClick`; `bindContextMenu` / `Menu` по всему `entry/src/main/ets` — 0 совпадений | `ChatListUI/Sources/ChatContextMenus.swift` | B2, B5; шов — готовые use-case pin/mute/delete/archive |
-| B7 | Папки чатов | `missing` | нет | `ChatFolderLinkPreviewScreen` | B11, B6 |
+| B7 | Папки чатов | `partial` | Слой данных: `ChatFolderInfo`/`ChatFoldersState` в `AppState.ets` (TDLib `chatFolderInfo`, td_api.tl:3115), `ChatFolderNormalizer.ets` (`updateChatFolders` → `chatFoldersUpdated`, `main_chat_list_position`, `are_tags_enabled`, регистрация в `EventNormalizer.ets`), `chatFoldersReducer.ets` (полная замена списка через `cloneStateForChats`, роут в `reducers/index.ets`), селектор `chatFolderSelectors.ets` (вкладка All chats на позиции TDLib, clamp), контракт `test-chat-folders.cjs`. Нет UI: панель фильтров статична, список не фильтруется по `chatListFolder`, счётчики непрочитанного по папкам не хранятся | `ChatFolderLinkPreviewScreen` | B11, B6 |
 | B8 | Архив | `available` | `TgArchivedChatsPage.ets` (19/12) | `ChatList` | B7 |
 | B9 | Драфты | `available` | 42/48 | `Components/ChatInputNode` | B10, C? |
 | B10 | Превью последнего сообщения | `available` | `ChatInitialHistoryCoordinator.ets` (24/10) | `ChatList` | B4 |
@@ -189,8 +189,8 @@
 ## Итог и следующий шаг
 
 - `available`: 35 строк — есть код, тесты и работающий сценарий.
-- `partial`: 48 — код есть, но не сверено с iOS или неполно.
-- `missing`: 18 — кода нет.
+- `partial`: 49 — код есть, но не сверено с iOS или неполно.
+- `missing`: 17 — кода нет.
 - `unverified`: 0 — девять прежних строк разобраны 2026-10-25; остальные 96 имели статус раньше.
 - `frozen`: 3 (VoIP, мультиаккаунт, секретные чаты), `blocked`: 1 (push) — не вкладываться.
 

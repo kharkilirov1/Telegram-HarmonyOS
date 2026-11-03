@@ -49,7 +49,8 @@ const { AppStore } = load('core/store/AppStore.ets', { ...state, ...invariants, 
 const handlers = load('core/events/normalizers/MessageNormalizer.ets', { ...events, ...dto, ...td, ...accessors, hilog });
 const normalizer = load('core/events/EventNormalizer.ets', { ...td, ...accessors, ...handlers, hilog,
   registerAuthHandlers() {}, registerChatHandlers() {}, registerUserHandlers() {},
-  registerFileHandlers() {}, registerAccentColorHandlers() {}, registerStoryHandlers() {} });
+  registerFileHandlers() {}, registerAccentColorHandlers() {}, registerStoryHandlers() {},
+  registerChatFolderHandlers() {} });
 const { LoadChatHistoryUseCase: History } = load('domain/usecases/loadChatHistory.ets',
   { ...td, ...accessors, ...commands, ...appErrors, ...events, ...normalizer, hilog });
 const timelineSource = read('ui/pages/chat/ChatTimelineVO.ets');

@@ -88,6 +88,24 @@ export class ChatTypingInfo {
   timestamp: number = 0;
 }
 
+// Chat folders (TDLib chatFolderInfo, td_api.tl:3115 + updateChatFolders:9683).
+// TDLib owns the list; the app mirrors it and never creates or reorders folders itself.
+export class ChatFolderInfo {
+  id: number = 0;
+  title: string = '';
+  // chatFolderIcon.name — a name from TDLib's own icon set (may be empty).
+  iconName: string = '';
+  colorId: number = -1;
+  isShareable: boolean = false;
+}
+
+export class ChatFoldersState {
+  folders: ChatFolderInfo[] = [];
+  // Index of the "All chats" tab inside the folder strip (iOS keeps it user-ordered).
+  mainChatListPosition: number = 0;
+  areTagsEnabled: boolean = false;
+}
+
 export class ChatsState {
   chats: Map<ChatId, Chat> = new Map<ChatId, Chat>();
   // TDLib group updates can precede newChat. Keep the two ID namespaces separate.
@@ -373,6 +391,8 @@ export class AppState {
   auth: AuthState = new AuthState();
   connection: ConnectionState = new ConnectionState();
   chats: ChatsState = new ChatsState();
+  // TDLib chat folder list (updateChatFolders); the UI mirrors it, never owns it.
+  chatFilters: ChatFoldersState = new ChatFoldersState();
   messages: MessagesState = new MessagesState();
   files: FilesState = new FilesState();
   accentColors: AccentColorsState = new AccentColorsState();

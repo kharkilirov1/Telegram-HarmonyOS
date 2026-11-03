@@ -658,3 +658,15 @@ Last updated: 2026-10-23
   (`state.auth ? state.auth.userId : 0`) or inject it as a binding; do not add helpers to the module.
 - When a pure presentation module starts importing a model predicate, add it to the suite's fixed
   binding list (`isSavedMessagesChat`) and treat it as a fixture boundary covered by its own suite.
+
+## 174. AppState is a self-contained model file, and suites that embed it are many
+
+- Adding one import to AppState.ets broke 53 suites at once: each loads the model with its own
+  fixed dependency list, so a new external class is a free name in every one of them. Keep model
+  classes (ChatFolderInfo, ChatFoldersState) inside AppState.ets; only then does
+  createInitialAppState() stay loadable with no deps.
+- New normalizer registrations are also a harness boundary: suites that compile EventNormalizer.ets
+  pass explicit register*Handlers stubs (and the lifecycle suite builds them from a name list), so
+  every new domain needs a stub there — the failure surfaces as a misleading "Failed to load history".
+- Object.assign is restricted in ArkTS (arkts-limited-stdlib). Clone state with the project helper
+  (cloneStateForChats) instead of copying into a fresh AppState.

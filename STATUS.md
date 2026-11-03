@@ -81,7 +81,7 @@ Documentation and repository structure were reconciled; no product code changed.
 - `TASKS/SLICE_TEMPLATE.md` — шаблон плана среза (референс → контракт → швы → состояния → тест →
   приёмка).
 - `TASKS/CAPABILITY_MATRIX.md` — 105 строк по пользовательским возможностям iOS: 35 `available`,
-  48 `partial`, 18 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
+  49 `partial`, 17 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
   код-доказательство и связанные фичи; `available` без witness не ставится.
 - `TASKS/WORKMAP.md` — M0 (верифицировать 9 `unverified` строк), S1 (typing indicator, C2),
   S2 (стикеры/TGS, D13).
@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S7a (lead).** B7 «Папки чатов» из `missing` → `partial` (слой данных). TDLib-контракт
+  `updateChatFolders` (td_api.tl:9683) нормализуется в `chatFoldersUpdated` (папки, позиция
+  «All chats», флаг тегов); состояние зеркалируется в `AppState.chatFilters`
+  (`ChatFolderInfo`/`ChatFoldersState`), роутинг через `chatFoldersReducer` (полная замена,
+  `cloneStateForChats`), селектор `selectChatFolderTabs` ставит «All chats» на позицию TDLib и
+  клампит выход за границы. Контракт `test-chat-folders.cjs`: разбор нормализатора (включая
+  malformed/unknown записи), замена состояния без мутации, все позиции вкладки, проводка
+  регистрации/роутинга + сверка с `td_api.tl`. Гейты: host **109/109**, оба smoke, hvigor
+  BUILD SUCCESSFUL. **Дальше (S7b):** data-driven панель фильтров, фильтрация списка по
+  `chatListFolder` + `updateChatAddedToList/RemovedFromList`, счётчики непрочитанного по папкам.
 - **S6c (lead).** D7: аватар-закладка в шапке чата. `ChatAvatarPresentation.isSavedMessages`
   вычисляется по `state.auth.userId` (токен/приватный чат), идёт через port
   `chatIsSavedMessages` → `ChatChromeState` → `TgChatTopBar.avatarIsSavedMessages` →
