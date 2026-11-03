@@ -271,6 +271,57 @@ function tdUpdate(folders, position, tags) {
   assert.equal(byId(9).unreadCount, 0, 'a folder without a reported counter shows none');
 }
 
+// Folder pagination: loadChats(chatListFolder) + request guards --------------------------------------
+async function checkFolderPagination() {
+  const serializer = load('infra/td/serialization/CommandSerializer.ets', { ...C, TdObject, hilog });
+  const command = C.createLoadChatsCommand(20, 'folder', 7);
+  assert.equal(command.type, 'loadChats');
+  assert.equal(command.payload.chatList, 'folder');
+  assert.equal(command.payload.folderId, 7);
+  assert.equal(C.createLoadChatsCommand().payload.chatList, 'main', 'default stays the main list');
+  const serialized = serializer.serializeCommand(command);
+  assert.equal(serialized.method, 'loadChats');
+  const wire = serializer.buildTdlibRequestJson(serialized.method, serialized.params);
+  const parsed = JSON.parse(wire);
+  assert.deepEqual(parsed.chat_list, { '@type': 'chatListFolder', 'chat_folder_id': 7 },
+    'the folder list must be serialized as chatListFolder');
+  assert.equal(parsed.limit, 20);
+  const archiveWire = JSON.parse(serializer.buildTdlibRequestJson('loadChats',
+    serializer.serializeCommand(C.createLoadChatsCommand(5, 'archive')).params));
+  assert.deepEqual(archiveWire.chat_list, { '@type': 'chatListArchive' }, 'archive regression');
+
+  // Request guards: one in flight per folder, cooldown after an answer, nothing for folder 0.
+  const sent = [];
+  const gateway = {
+    send: (issued) => {
+      sent.push(issued);
+      return new Promise((resolve) => setImmediate(() => resolve({})));
+    }
+  };
+  let clock = 1000;
+  const loader = load('domain/usecases/loadFolderChats.ets', { ...C }).LoadFolderChatsUseCase !== undefined
+    ? new (load('domain/usecases/loadFolderChats.ets', { ...C }).LoadFolderChatsUseCase)(
+      { getState: () => A.createInitialAppState() }, gateway, () => clock)
+    : undefined;
+  assert.ok(loader, 'LoadFolderChatsUseCase must be exported');
+  assert.equal(loader.request(0), false, 'folder 0 is the main list, not a folder');
+  assert.equal(loader.request(7), true);
+  assert.equal(loader.request(7), false, 'a second request while one is in flight is dropped');
+  assert.equal(loader.isRequesting(7), true);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].payload.chatList, 'folder');
+  assert.equal(sent[0].payload.folderId, 7);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(loader.isRequesting(7), false, 'the in-flight flag clears after the answer');
+  clock += 10;
+  assert.equal(loader.request(7), false, 'cooldown blocks an immediate repeat');
+  clock += 2000;
+  assert.equal(loader.request(7), true, 'after the cooldown the next page may be requested');
+  loader.cancel();
+  assert.equal(loader.request(9), false, 'a cancelled loader never issues requests');
+  await new Promise((resolve) => setImmediate(resolve));
+}
+
 // The UI contract: data-driven strip, folder-sourced list, three locales.
 {
   const bar = read('ui/tg_ui/atoms/TgChatListFilterBar.ets');
@@ -291,6 +342,12 @@ function tdUpdate(folders, position, tags) {
   assert.match(page, /folderId !== 0 \?\n      selectChatIdsForFolder\(state, folderId\) : state\.chats\.orderedChatIds;/);
   assert.match(page, /private selectFolder\(folderId: number\): void \{/);
   assert.match(page, /filterTabs: this\.folderTabs,/);
+  assert.match(page, /createLoadFolderChatsUseCase\(store, gateway\)/);
+  assert.match(page, /this\.loadFolderChatsUseCase\?\.request\(folderId\);/,
+    'selecting a folder requests its first page');
+  assert.match(page, /this\.loadFolderChatsUseCase\?\.request\(this\.selectedFolderId\);/,
+    'scrolling pages the selected folder, not the main list');
+  assert.match(page, /this\.loadFolderChatsUseCase\?\.cancel\(\);/);
   for (const locale of ['base', 'ru_RU', 'zh_CN']) {
     const strings = JSON.parse(fs.readFileSync(
       path.join(root, 'entry/src/main/resources', locale, 'element/string.json'), 'utf8'));
@@ -319,4 +376,11 @@ assert.match(normalizer, /tdGetBoolean\(update, 'are_tags_enabled'\)/);
 const tl = fs.readFileSync(path.join(root, 'tdlib/td/generate/scheme/td_api.tl'), 'utf8');
 assert.match(tl, /updateChatFolders chat_folders:vector<chatFolderInfo> main_chat_list_position:int32 are_tags_enabled:Bool = Update;/);
 
-console.log('PASS chat folders data layer');
+checkFolderPagination()
+  .then(() => {
+    console.log('PASS chat folders data layer');
+  })
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

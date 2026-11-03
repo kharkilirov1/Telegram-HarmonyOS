@@ -38,6 +38,7 @@ import { pushChatScreenRoute } from '../chat/ChatOpenTransaction';
 import { ComposeResult, ComposeRouteParams } from '../compose/TgComposePage';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { createLoadChatsUseCase, LoadChatsUseCase } from '../../../domain/usecases/loadChats';
+import { createLoadFolderChatsUseCase, LoadFolderChatsUseCase } from '../../../domain/usecases/loadFolderChats';
 import {
   createLoadArchiveChatsUseCase,
   LoadArchiveChatsUseCase
@@ -118,6 +119,7 @@ export struct ChatListPage {
   private mainWindow?: window.Window;
   private windowSizeListener?: () => void;
   private loadChatsUseCase?: LoadChatsUseCase;
+  private loadFolderChatsUseCase?: LoadFolderChatsUseCase;
   private loadArchiveChatsUseCase?: LoadArchiveChatsUseCase;
   private loadActiveStoriesUseCase?: LoadActiveStoriesUseCase;
   private accountStore?: AppStore;
@@ -271,6 +273,7 @@ export struct ChatListPage {
       this.accountScope = store.createScope();
       this.chatGateway = gateway;
       this.loadChatsUseCase = createLoadChatsUseCase(store, gateway);
+      this.loadFolderChatsUseCase = createLoadFolderChatsUseCase(store, gateway);
       this.loadArchiveChatsUseCase = createLoadArchiveChatsUseCase(store, gateway);
       this.loadActiveStoriesUseCase = createLoadActiveStoriesUseCase(store, gateway);
       this.muteUseCase = createSetChatMuteUseCase(gateway);
@@ -343,6 +346,8 @@ export struct ChatListPage {
       this.unsubscribe();
       this.unsubscribe = undefined;
     }
+    this.loadFolderChatsUseCase?.cancel();
+    this.loadFolderChatsUseCase = undefined;
     this.loadChatsUseCase = undefined;
     this.loadArchiveChatsUseCase = undefined;
     this.loadActiveStoriesUseCase = undefined;
@@ -591,6 +596,11 @@ export struct ChatListPage {
 
   private maybeLoadMoreChats(endIndex: number): void {
     this.lastVisibleListEndIndex = endIndex;
+    if (this.selectedFolderId !== 0 && !this.hasActiveSearch() &&
+      this.chatsState.connectionStatus === 'ready') {
+      this.loadFolderChatsUseCase?.request(this.selectedFolderId);
+      return;
+    }
     const loadChatsUseCase = this.loadChatsUseCase;
     if (!loadChatsUseCase) {
       return;
@@ -710,6 +720,9 @@ export struct ChatListPage {
     }
     this.selectedFolderId = folderId;
     this.rebuildList(getAppCoreRuntime().getStore().getState());
+    if (folderId !== 0) {
+      this.loadFolderChatsUseCase?.request(folderId);
+    }
   }
 
   private matchesSelectedFilter(item: ChatItemVO): boolean {

@@ -222,9 +222,12 @@ function serializeLoadChats(command: AnyAppCommand, result: SerializedCommand): 
   const cmd = command as LoadChatsCommand;
   result.method = 'loadChats';
   // TDLib 1.8+: loadChats(chat_list, limit) — загружает чаты, шлёт updateNewChat
-  result.params.setString('_chat_list_json', cmd.payload.chatList === 'archive'
+  const chatListJson: string = cmd.payload.chatList === 'archive'
     ? '{"@type":"chatListArchive"}'
-    : '{"@type":"chatListMain"}');
+    : (cmd.payload.chatList === 'folder'
+      ? '{"@type":"chatListFolder","chat_folder_id":' + cmd.payload.folderId.toString() + '}'
+      : '{"@type":"chatListMain"}');
+  result.params.setString('_chat_list_json', chatListJson);
   result.params.setNumber('limit', cmd.payload.limit);
 }
 

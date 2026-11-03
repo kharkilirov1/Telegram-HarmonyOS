@@ -23,7 +23,9 @@ export class CheckAuthPasswordPayload {
 
 export class LoadChatsPayload {
   limit: number = 20;
-  chatList: 'main' | 'archive' = 'main';
+  chatList: 'main' | 'archive' | 'folder' = 'main';
+  // Only meaningful for chatList = 'folder' (chatListFolder / chat_folder_id).
+  folderId: number = 0;
 }
 
 export class OpenChatPayload {
@@ -899,11 +901,13 @@ export function createResendAuthCodeCommand(): ResendAuthCodeCommand {
 
 export function createLoadChatsCommand(
   limit: number = 20,
-  chatList: 'main' | 'archive' = 'main'
+  chatList: 'main' | 'archive' | 'folder' = 'main',
+  folderId: number = 0
 ): LoadChatsCommand {
   const cmd = new LoadChatsCommand();
   cmd.payload.limit = limit;
   cmd.payload.chatList = chatList;
+  cmd.payload.folderId = folderId;
   return cmd;
 }
 
