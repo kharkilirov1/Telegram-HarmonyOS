@@ -221,6 +221,42 @@
       "value": "Добавить в папку"
     },
     {
+      "name": "sessions_loading",
+      "value": "Загрузка…"
+    },
+    {
+      "name": "sessions_load_failed",
+      "value": "Не удалось загрузить сеансы"
+    },
+    {
+      "name": "sessions_retry",
+      "value": "Повторить"
+    },
+    {
+      "name": "sessions_empty",
+      "value": "Нет активных сеансов"
+    },
+    {
+      "name": "sessions_current",
+      "value": "Текущий"
+    },
+    {
+      "name": "sessions_this_device",
+      "value": "Это устройство"
+    },
+    {
+      "name": "sessions_unknown_device",
+      "value": "Неизвестное устройство"
+    },
+    {
+      "name": "sessions_terminate",
+      "value": "Завершить"
+    },
+    {
+      "name": "sessions_terminate_title",
+      "value": "Завершить сеанс"
+    },
+    {
       "name": "chat_folders_all",
       "value": "Все"
     },

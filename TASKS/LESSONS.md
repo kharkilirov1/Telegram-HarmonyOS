@@ -726,3 +726,13 @@ Last updated: 2026-10-23
 - TDLib in this checkout has `addChatToList` for folders but no removal call, so "Remove from folder"
   cannot be offered honestly; a missing contract is better than a dead menu row.
 - The folder section only renders when there is at least one target; an empty header would be noise.
+
+## 181. JSON round-trips destroy int64 precision, including in "typed" helpers
+
+- A TdObject child rebuilt as `TdObject.fromJSON(JSON.stringify(parsedChild))` no longer holds the
+  original lexeme: `9007199254740993` becomes `...992`. The bug is invisible until an id crosses
+  2^53, then an identity comparison silently fails.
+- `getTopLevelObjectArrayStrict` does exactly that; `getTopLevelRawObjectArrayStrict` slices the raw
+  text with a brace/string scanner instead. Prefer raw slices for any array of objects.
+- In host tests, never build a fixture with JSON.parse → JSON.stringify either: emit the raw JSON
+  text with the id as bare digits.

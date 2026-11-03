@@ -267,6 +267,56 @@ export class TdObject {
     }
   }
 
+  // Raw JSON text of every object in a top-level array, in order. getTopLevelObjectArrayStrict
+  // rebuilds children from JSON.parse, which rounds int64 fields to the nearest double; this
+  // scanner slices the original text so a child keeps its exact lexemes (sessions, message lists).
+  getTopLevelRawObjectArrayStrict(prop: string): string[] | undefined {
+    if (!this.rawJson) return undefined;
+    const keyIndex = this.rawJson.indexOf('"' + prop + '"');
+    if (keyIndex < 0) return undefined;
+    const open = this.rawJson.indexOf('[', keyIndex + prop.length + 2);
+    if (open < 0) return undefined;
+    const result: string[] = [];
+    let depth: number = 0;
+    let inString: boolean = false;
+    let escaped: boolean = false;
+    let itemStart: number = -1;
+    for (let index: number = open + 1; index < this.rawJson.length; index += 1) {
+      const char = this.rawJson.charAt(index);
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+        } else if (char === '\\') {
+          escaped = true;
+        } else if (char === '"') {
+          inString = false;
+        }
+        continue;
+      }
+      if (char === '"') {
+        inString = true;
+        continue;
+      }
+      if (char === '{') {
+        if (depth === 0) itemStart = index;
+        depth += 1;
+        continue;
+      }
+      if (char === '}') {
+        depth -= 1;
+        if (depth === 0 && itemStart >= 0) {
+          result.push(this.rawJson.substring(itemStart, index + 1));
+          itemStart = -1;
+        }
+        continue;
+      }
+      if (char === ']' && depth === 0) {
+        return result;
+      }
+    }
+    return undefined;
+  }
+
   getBool(prop: string): boolean {
     const val = this.get(prop);
     if (typeof val === 'boolean') return val;

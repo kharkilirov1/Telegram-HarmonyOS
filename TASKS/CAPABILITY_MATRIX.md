@@ -154,7 +154,7 @@
 | H2 | Приватность | `partial` | `SettingsPage.ets` (1/2) | `Sources/Privacy*` | H1 |
 | H3 | Настройки уведомлений | `partial` | `CommandSerializer.ets` (7/3) | `Sources/Notifications*` | B3, I1 |
 | H4 | Данные и хранилище | `missing` | нет: мёртвая строка «Data and Storage» удалена из `SettingsPage.ets` (2026-10-25), неиспользуемые DTO `TdAutoDownloadSettings`/`Presets` удалены; экрана, `clearCache`/`storageStats`/auto-download-настроек нет объявлен и нигде не используется — `models/td/system/index.ets:13-26` | `Sources/Storage*` | F2 |
-| H5 | Устройства/сессии | `missing` | нет | `Sources/Sessions*` | A4 |
+| H5 | Устройства/сессии | `partial` | Экран `TgSessionsPage` (Settings → Devices, route `TgSessionsPage`): `getActiveSessions` → `SessionDto` (int64 id сохраняется точным, флаги current/password_pending, устройство, приложение, IP/страна, last active), текущий сеанс помечен и не завершается, `terminateSession` через `promptAction`-подтверждение и перезагрузку списка. Команды/сериализатор `getActiveSessions`/`terminateSession` (int64 как точный JSON-литерал), use case `LoadSessionsUseCase`, строки `sessions_*` в base/ru/zh, контракт `test-sessions.cjs`. Нет: завершение всех остальных сеансов, web-сессии отдельно, привязка к 2FA-паролю, iOS-раскладка секций и witness | `ActiveSessions*`, `WebSessions*` | A4 |
 | H6 | Тёмная тема/акценты | `partial` | `accentColorsReducer.ets`, `colorMode` (12/2) | `Sources/Theme*` | J8 |
 | H7 | Язык интерфейса | `partial` | 15/8 | `Sources/Localization*` | J6 |
 | H8 | Заблокированные пользователи | `missing` | нет | `Sources/Privacy*` | H2 |
@@ -189,8 +189,8 @@
 ## Итог и следующий шаг
 
 - `available`: 35 строк — есть код, тесты и работающий сценарий.
-- `partial`: 50 — код есть, но не сверено с iOS или неполно.
-- `missing`: 16 — кода нет.
+- `partial`: 51 — код есть, но не сверено с iOS или неполно.
+- `missing`: 15 — кода нет.
 - `unverified`: 0 — девять прежних строк разобраны 2026-10-25; остальные 96 имели статус раньше.
 - `frozen`: 3 (VoIP, мультиаккаунт, секретные чаты), `blocked`: 1 (push) — не вкладываться.
 

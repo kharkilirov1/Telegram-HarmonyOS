@@ -300,6 +300,11 @@ export class AddChatToListPayload {
   folderId: number = 0;
 }
 
+export class TerminateSessionPayload {
+  // TDLib session.id is int64: carried as a decimal string to avoid JS precision loss.
+  sessionId: string = '0';
+}
+
 export class PinChatMessagePayload {
   chatId: ChatId = 0;
   messageId: MessageId = '0';
@@ -662,6 +667,15 @@ export class AddChatToListCommand extends AppCommand {
   payload: AddChatToListPayload = new AddChatToListPayload();
 }
 
+export class GetActiveSessionsCommand extends AppCommand {
+  type: string = 'getActiveSessions';
+}
+
+export class TerminateSessionCommand extends AppCommand {
+  type: string = 'terminateSession';
+  payload: TerminateSessionPayload = new TerminateSessionPayload();
+}
+
 export class PinChatMessageCommand extends AppCommand {
   type: string = 'pinChatMessage';
   payload: PinChatMessagePayload = new PinChatMessagePayload();
@@ -846,6 +860,8 @@ export type AnyAppCommand =
   | JoinChatCommand
   | ToggleChatPinnedCommand
   | AddChatToListCommand
+  | GetActiveSessionsCommand
+  | TerminateSessionCommand
   | PinChatMessageCommand
   | UnpinChatMessageCommand
   | DeleteChatHistoryCommand
@@ -1309,6 +1325,16 @@ export function createAddChatToListCommand(
   cmd.payload.chatId = chatId;
   cmd.payload.chatList = chatList;
   cmd.payload.folderId = folderId;
+  return cmd;
+}
+
+export function createGetActiveSessionsCommand(): GetActiveSessionsCommand {
+  return new GetActiveSessionsCommand();
+}
+
+export function createTerminateSessionCommand(sessionId: string): TerminateSessionCommand {
+  const cmd = new TerminateSessionCommand();
+  cmd.payload.sessionId = sessionId;
   return cmd;
 }
 

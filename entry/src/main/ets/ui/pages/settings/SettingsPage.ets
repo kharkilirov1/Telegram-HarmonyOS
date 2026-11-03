@@ -42,6 +42,8 @@ export struct SettingsPage {
   @Event onOpenCalls: () => void = (): void => {};
   // Saved Messages lives in the chat stack; the tab root owns the navigation stack.
   @Event onOpenSavedMessages: () => void = (): void => {};
+  // Devices lives on the root navigation stack, like Saved Messages.
+  @Event onOpenDevices: () => void = (): void => {};
 
   private unsubscribe?: () => void;
   private pageLifecycleToken: number = 0;
@@ -226,7 +228,10 @@ export struct SettingsPage {
               iconRes: TgUiTokens.ICON_RES_DEVICE,
               iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_BLUE,
               trailingType: TgSettingsTrailing.Arrow,
-              showSeparator: true
+              showSeparator: true,
+              onRowClick: (): void => {
+                this.onOpenDevices();
+              }
             })
             TgSettingsRow({
               title: localized($r('app.string.settings_chat_folders').id, 'Chat Folders'),

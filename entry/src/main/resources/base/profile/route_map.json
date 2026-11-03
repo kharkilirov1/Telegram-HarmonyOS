@@ -6,6 +6,11 @@
       "buildFunction": "TgChatScreenPageBuilder"
     },
     {
+      "name": "TgSessionsPage",
+      "pageSourceFile": "src/main/ets/ui/pages/settings/TgSessionsPage.ets",
+      "buildFunction": "TgSessionsPageBuilder"
+    },
+    {
       "name": "TgProfilePage",
       "pageSourceFile": "src/main/ets/ui/pages/profile/TgProfilePage.ets",
       "buildFunction": "TgProfilePageBuilder"

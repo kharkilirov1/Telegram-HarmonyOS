@@ -6,6 +6,7 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
   AnyAppCommand,
+  TerminateSessionCommand,
   SetPhoneNumberCommand,
   CheckAuthCodeCommand,
   CheckAuthPasswordCommand,
@@ -112,6 +113,8 @@ COMMAND_SERIALIZATION_HANDLERS.set('setMessageReactions', serializeSetMessageRea
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageAvailableReactions', serializeGetMessageAvailableReactions);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
+COMMAND_SERIALIZATION_HANDLERS.set('getActiveSessions', serializeGetActiveSessions);
+COMMAND_SERIALIZATION_HANDLERS.set('terminateSession', serializeTerminateSession);
 COMMAND_SERIALIZATION_HANDLERS.set('addChatToList', serializeAddChatToList);
 COMMAND_SERIALIZATION_HANDLERS.set('pinChatMessage', serializePinChatMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('unpinChatMessage', serializeUnpinChatMessage);
@@ -388,6 +391,17 @@ function serializeToggleChatIsPinned(command: AnyAppCommand, result: SerializedC
   result.params.setString('_chat_list_json', cmd.payload.chatList === 'archive'
     ? '{"@type":"chatListArchive"}'
     : '{"@type":"chatListMain"}');
+}
+
+function serializeGetActiveSessions(_command: AnyAppCommand, result: SerializedCommand): void {
+  result.method = 'getActiveSessions';
+}
+
+function serializeTerminateSession(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as TerminateSessionCommand;
+  result.method = 'terminateSession';
+  // int64 must stay a raw JSON number (decimal string) to avoid precision loss.
+  result.params.setString('_session_id_json', cmd.payload.sessionId);
 }
 
 function serializeAddChatToList(command: AnyAppCommand, result: SerializedCommand): void {

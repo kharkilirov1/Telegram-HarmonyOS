@@ -221,6 +221,42 @@
       "value": "添加到文件夹"
     },
     {
+      "name": "sessions_loading",
+      "value": "加载中…"
+    },
+    {
+      "name": "sessions_load_failed",
+      "value": "无法加载会话"
+    },
+    {
+      "name": "sessions_retry",
+      "value": "重试"
+    },
+    {
+      "name": "sessions_empty",
+      "value": "没有活动会话"
+    },
+    {
+      "name": "sessions_current",
+      "value": "当前"
+    },
+    {
+      "name": "sessions_this_device",
+      "value": "本设备"
+    },
+    {
+      "name": "sessions_unknown_device",
+      "value": "未知设备"
+    },
+    {
+      "name": "sessions_terminate",
+      "value": "终止"
+    },
+    {
+      "name": "sessions_terminate_title",
+      "value": "终止会话"
+    },
+    {
       "name": "chat_folders_all",
       "value": "全部"
     },

@@ -81,7 +81,7 @@ Documentation and repository structure were reconciled; no product code changed.
 - `TASKS/SLICE_TEMPLATE.md` — шаблон плана среза (референс → контракт → швы → состояния → тест →
   приёмка).
 - `TASKS/CAPABILITY_MATRIX.md` — 105 строк по пользовательским возможностям iOS: 35 `available`,
-  50 `partial`, 16 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
+  51 `partial`, 15 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
   код-доказательство и связанные фичи; `available` без witness не ставится.
 - `TASKS/WORKMAP.md` — M0 (верифицировать 9 `unverified` строк), S1 (typing indicator, C2),
   S2 (стикеры/TGS, D13).
@@ -146,6 +146,17 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S9 (lead).** H5 «Устройства/сессии» из `missing` → `partial`. Новый экран `TgSessionsPage`
+  (Settings → Devices; строка уже была, добавлен `onOpenDevices` → push на root-стек):
+  `getActiveSessions` → `SessionDto`, текущий сеанс помечен и не завершается, `terminateSession`
+  после подтверждения и с перезагрузкой списка. Попутно: `TdObject.getTopLevelRawObjectArrayStrict`
+  — старый `getTopLevelObjectArrayStrict` пересобирает дочерние объекты через JSON.parse и теряет
+  точность int64 (id сессии `9007199254740993` превращался в `...992`); слайсы исходного текста
+  сохраняют литерал. Контракт `test-sessions.cjs`: DTO (точный int64, флаги, пустые поля, null-слоты,
+  неправильные payloads), команды/сериализатор, use case (валидация id до gateway, пустой ответ не
+  роняет), экран/route/settings/локали. Гейты: host **111/111**, оба smoke, hvigor BUILD SUCCESSFUL.
+  **Осталось (H5):** завершить все остальные сеансы, разделить web-сессии, привязка к 2FA,
+  iOS-раскладка секций, witness.
 - **S8b.2 (lead).** B6: «Add to folder». `AddChatToListPayload`/фабрика/сериализатор получили
   `chatList: folder` + `folderId` (`chatListFolder` JSON), `MoveChatToListUseCase.addToFolder(chatId,
   folderId)` валидирует вход и шлёт `addChatToList`; `selectAddToFolderTargets` отдаёт только папки,

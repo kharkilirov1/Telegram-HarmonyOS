@@ -932,6 +932,9 @@ export struct MainTabsPage {
             },
             onOpenSavedMessages: (): void => {
               this.openSavedMessages();
+            },
+            onOpenDevices: (): void => {
+              this.chatDetailNavStack.pushPathByName('TgSessionsPage', undefined);
             }
           })
         }

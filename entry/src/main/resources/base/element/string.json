@@ -221,6 +221,42 @@
       "value": "Add to folder"
     },
     {
+      "name": "sessions_loading",
+      "value": "Loading…"
+    },
+    {
+      "name": "sessions_load_failed",
+      "value": "Could not load sessions"
+    },
+    {
+      "name": "sessions_retry",
+      "value": "Retry"
+    },
+    {
+      "name": "sessions_empty",
+      "value": "No active sessions"
+    },
+    {
+      "name": "sessions_current",
+      "value": "Current"
+    },
+    {
+      "name": "sessions_this_device",
+      "value": "This device"
+    },
+    {
+      "name": "sessions_unknown_device",
+      "value": "Unknown device"
+    },
+    {
+      "name": "sessions_terminate",
+      "value": "Terminate"
+    },
+    {
+      "name": "sessions_terminate_title",
+      "value": "Terminate Session"
+    },
+    {
       "name": "chat_folders_all",
       "value": "All"
     },
