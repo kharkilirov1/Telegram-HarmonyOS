@@ -670,3 +670,12 @@ Last updated: 2026-10-23
   every new domain needs a stub there — the failure surfaces as a misleading "Failed to load history".
 - Object.assign is restricted in ArkTS (arkts-limited-stdlib). Clone state with the project helper
   (cloneStateForChats) instead of copying into a fresh AppState.
+
+## 175. A chat has one position per list, and removals were never handled
+
+- `chat.positions` is a vector with an independent order per list. Parsing only chatListMain/Archive
+  silently loses folder membership; parse every chatListFolder position into a map keyed by folder id.
+- `updateChatRemovedFromList` had no handler at all before this slice, so a chat that left a list kept
+  its membership forever. For folders it must delete the map entry (folderRemoved), not write order 0.
+- Selecting folder chats must sort by the folder position, not by chatListMain order: the same chat can
+  be pinned in a folder while archived globally.

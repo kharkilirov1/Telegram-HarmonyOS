@@ -23,12 +23,15 @@ function load(relative, deps = {}) {
 
 const A = load('core/model/AppState.ets');
 const F = { ChatFolderInfo: A.ChatFolderInfo, ChatFoldersState: A.ChatFoldersState };
-const E = load('core/model/AppEvent.ets', { ChatFolderInfo: F.ChatFolderInfo });
-const clone = load('core/utils/stateClone.ets', { ...A });
-const R = load('core/reducers/chatFoldersReducer.ets', { ...A, ...E, ...F, ...clone });
-const S = load('domain/selectors/chatFolderSelectors.ets', { ...A, ...F });
 const { TdObject } = load('models/td/common/index.ets');
 const access = load('core/utils/tdAccessors.ets', { TdObject });
+const C = load('core/model/AppCommand.ets');
+const hilog = { info() {}, debug() {}, warn() {}, error() {} };
+const dtoModule = load('core/model/dto/ChatDto.ets', { ...access, ...C, hilog });
+const E = load('core/model/AppEvent.ets', { ChatFolderInfo: F.ChatFolderInfo, ChatUpdateDto: dtoModule.ChatUpdateDto });
+const clone = load('core/utils/stateClone.ets', { ...A });
+const R = load('core/reducers/chatFoldersReducer.ets', { ...A, ...E, ...F, ...clone });
+const S = load('domain/selectors/chatFolderSelectors.ets', { ...A, ...F, ...access });
 const N = load('core/events/normalizers/ChatFolderNormalizer.ets', { ...E, ...F, TdObject, ...access });
 
 function folder(id, title, extra = {}) {
@@ -133,6 +136,87 @@ function tdUpdate(folders, position, tags) {
   assert.equal(tabs[0].id, S.CHAT_FOLDER_ALL_ID);
   assert.equal(tabs[0].id, 0);
   assert.equal(tabs[1].id, 2);
+}
+
+// Folder membership: chatListFolder positions, add/remove updates, per-folder ordering --------------
+{
+  const chatNormalizer = load('core/events/normalizers/ChatNormalizer.ets',
+    { ...E, ...dtoModule, ...access, TdObject, hilog });
+  const handlers = new Map();
+  chatNormalizer.registerChatHandlers(handlers);
+  const dispatch = (type, payload) => {
+    const events = [];
+    handlers.get(type)(events, TdObject.fromJSON(JSON.stringify(payload)));
+    return events;
+  };
+  const { chatsReducer } = load('core/reducers/chatsReducer.ets', {
+    ...A, ...E, ...clone, ...access, ChatDto: dtoModule.ChatDto, DtoChatType: dtoModule.ChatType,
+    ChatUpdateDto: dtoModule.ChatUpdateDto
+  });
+
+  // Position parser: a folder position is typed and validated, other lists are rejected.
+  const folderPosition = dtoModule.extractFolderPosition(TdObject.fromJSON(JSON.stringify({
+    '@type': 'chatPosition',
+    list: { '@type': 'chatListFolder', chat_folder_id: 7 },
+    order: '123456789012345',
+    is_pinned: false,
+    source: null
+  })));
+  assert.equal(folderPosition.folderId, 7);
+  assert.equal(folderPosition.order, '123456789012345');
+  assert.equal(dtoModule.extractFolderPosition(TdObject.fromJSON(JSON.stringify({
+    '@type': 'chatPosition', list: { '@type': 'chatListMain' }, order: '1'
+  }))), undefined);
+  assert.equal(dtoModule.extractFolderPosition(TdObject.fromJSON(JSON.stringify({
+    '@type': 'chatPosition', list: { '@type': 'chatListFolder', chat_folder_id: 0 }, order: '1'
+  }))), undefined, 'folder id 0 is not a folder');
+
+  // updateChatAddedToList / updateChatRemovedFromList carry the folder membership change.
+  const added = dispatch('updateChatAddedToList', {
+    '@type': 'updateChatAddedToList', chat_id: 42,
+    chat_list: { '@type': 'chatListFolder', chat_folder_id: 7 }
+  });
+  assert.equal(added.length, 1);
+  assert.equal(added[0].updates.folderId, 7);
+  assert.ok(added[0].updates.folderOrder.length > 0);
+  const removed = dispatch('updateChatRemovedFromList', {
+    '@type': 'updateChatRemovedFromList', chat_id: 42,
+    chat_list: { '@type': 'chatListFolder', chat_folder_id: 7 }
+  });
+  assert.equal(removed.length, 1);
+  assert.equal(removed[0].updates.folderId, 7);
+  assert.equal(removed[0].updates.folderRemoved, true);
+  const ignored = dispatch('updateChatRemovedFromList', {
+    '@type': 'updateChatRemovedFromList', chat_id: 42,
+    chat_list: { '@type': 'chatListFolder', chat_folder_id: 0 }
+  });
+  assert.equal(ignored.length, 0, 'folder id 0 must not touch state');
+
+  // Reducer: membership is added and dropped without touching main/archive order.
+  const base = A.createInitialAppState();
+  const chat = Object.assign(new A.Chat(), { id: 42, title: 'Work chat', order: '10', archiveOrder: '0' });
+  base.chats.chats.set(42, chat);
+  const afterAdd = chatsReducer(base, E.createChatUpdatedEvent(42, added[0].updates));
+  const addedChat = afterAdd.chats.chats.get(42);
+  assert.equal(addedChat.folderOrders.get(7), added[0].updates.folderOrder);
+  assert.equal(addedChat.order, '10', 'main list order is untouched by a folder update');
+  const afterRemove = chatsReducer(afterAdd, E.createChatUpdatedEvent(42, removed[0].updates));
+  assert.equal(afterRemove.chats.chats.get(42).folderOrders.has(7), false);
+
+  // Selector: only folder members, ordered by the folder's own sort key.
+  const sel = A.createInitialAppState();
+  const first = Object.assign(new A.Chat(), { id: 1, title: 'A' });
+  first.folderOrders.set(7, '100');
+  const second = Object.assign(new A.Chat(), { id: 2, title: 'B' });
+  second.folderOrders.set(7, '300');
+  const other = Object.assign(new A.Chat(), { id: 3, title: 'C' });
+  other.folderOrders.set(9, '999');
+  sel.chats.chats.set(1, first);
+  sel.chats.chats.set(2, second);
+  sel.chats.chats.set(3, other);
+  assert.deepEqual(S.selectChatIdsForFolder(sel, 7), [2, 1], 'higher folder order first');
+  assert.deepEqual(S.selectChatIdsForFolder(sel, 9), [3]);
+  assert.deepEqual(S.selectChatIdsForFolder(sel, 11), [], 'unknown folder has no chats');
 }
 
 // Wiring contracts ---------------------------------------------------------------------------------

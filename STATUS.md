@@ -146,6 +146,15 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S7b.1 (lead).** B7: принадлежность чатов к папкам. `ChatDto` парсит **все** `chatListFolder`
+  позиции (`folderOrders`, типизированный `extractFolderPosition`), `Chat` их зеркалит,
+  `updateChatAddedToList`/`updateChatRemovedFromList` обновляют членство (`folderId`/`folderOrder`/
+  `folderRemoved` → `applyFolderUpdate` в `chatsReducer`), `selectChatIdsForFolder` отдаёт состав
+  папки в её собственном порядке (`chatListMain` намеренно не используется). Контракт
+  `test-chat-folders.cjs` расширен: парсер позиций, оба update-а (включая `folder_id = 0`),
+  добавление/удаление членства без изменения main/archive order, сортировка состава. Гейты: host
+  **109/109**, оба smoke, hvigor BUILD SUCCESSFUL. **Дальше (S7b.2):** data-driven
+  `TgChatListFilterBar` + фильтрация списка и пагинация `chatListFolder` + unread по папкам.
 - **S7a (lead).** B7 «Папки чатов» из `missing` → `partial` (слой данных). TDLib-контракт
   `updateChatFolders` (td_api.tl:9683) нормализуется в `chatFoldersUpdated` (папки, позиция
   «All chats», флаг тегов); состояние зеркалируется в `AppState.chatFilters`

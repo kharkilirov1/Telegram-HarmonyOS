@@ -20,7 +20,7 @@ import {
   ChatFullInfoEvent
 } from '../model/AppEvent';
 import { ChatActiveStoriesDto } from '../model/dto/StoryDto';
-import { ChatDto, ChatType as DtoChatType } from '../model/dto/ChatDto';
+import { ChatDto, ChatType as DtoChatType, ChatUpdateDto } from '../model/dto/ChatDto';
 import { compareInt64 } from '../utils/tdAccessors';
 import { cloneStateForChats, cloneChat, cloneGroupAccess } from '../utils/stateClone';
 
@@ -65,6 +65,10 @@ function chatFromDto(dto: ChatDto): Chat {
   chat.isArchivePinned = dto.isArchivePinned;
   chat.order = dto.order;
   chat.archiveOrder = dto.archiveOrder;
+  chat.folderOrders = new Map<number, string>();
+  dto.folderOrders.forEach((order: string, folderId: number): void => {
+    chat.folderOrders.set(folderId, order);
+  });
   chat.supergroupId = dto.supergroupId;
   chat.basicGroupId = dto.basicGroupId;
   chat.canSendBasicMessages = dto.sendPermissions?.canSendBasicMessages ?? dto.canSendBasicMessages;
@@ -92,6 +96,20 @@ function chatFromDto(dto: ChatDto): Chat {
 // Rebuild orderedChatIds from chats map, sorted by order descending.
 // Chats with real order sort first; unknown placeholders stay at the end unless
 // TDLib already identifies them as archive-only.
+// chatListFolder membership is independent of chatListMain/Archive order: add/refresh or drop one entry.
+function applyFolderUpdate(chat: Chat, updates: ChatUpdateDto): void {
+  if (updates.folderId === undefined || updates.folderId <= 0) {
+    return;
+  }
+  if (updates.folderRemoved === true) {
+    chat.folderOrders.delete(updates.folderId);
+    return;
+  }
+  if (updates.folderOrder !== undefined) {
+    chat.folderOrders.set(updates.folderId, updates.folderOrder);
+  }
+}
+
 function rebuildOrderedChatIds(chats: Map<number, Chat>): number[] {
   const withOrder: Chat[] = [];
   const noOrder: Chat[] = [];
@@ -306,6 +324,7 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         if (event.updates.archiveOrder !== undefined) {
           placeholder.archiveOrder = event.updates.archiveOrder;
         }
+        applyFolderUpdate(placeholder, event.updates);
         if (event.updates.isPinned !== undefined) {
           placeholder.isPinned = event.updates.isPinned;
         }
@@ -399,6 +418,7 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         orderChanged = orderChanged || existingChat.archiveOrder !== event.updates.archiveOrder;
         updatedChat.archiveOrder = event.updates.archiveOrder;
       }
+      applyFolderUpdate(updatedChat, event.updates);
 
       newState.chats.chats.set(event.chatId, updatedChat);
       break;

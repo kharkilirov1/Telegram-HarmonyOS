@@ -202,10 +202,37 @@ function handleChatAddedToList(events: AnyAppEvent[], update: TdObject): void {
     updates.order = fallbackOrder;
   } else if (listType === 'chatListArchive') {
     updates.archiveOrder = fallbackOrder;
+  } else if (listType === 'chatListFolder') {
+    const folderId = tdGetNumber(listObj, 'chat_folder_id');
+    if (folderId <= 0) return;
+    updates.folderId = folderId;
+    updates.folderOrder = fallbackOrder;
   } else {
     return;
   }
   hilog.info(DOMAIN, TAG, 'chatAddedToList chatId=%{public}d list=%{public}s', chatId, listType);
+  events.push(createChatUpdatedEvent(chatId, updates));
+}
+
+function handleChatRemovedFromList(events: AnyAppEvent[], update: TdObject): void {
+  const chatId = tdGetNumber(update, 'chat_id');
+  if (!chatId) return;
+
+  const listObj = tdGetObject(update, 'chat_list');
+  const listType = tdGetString(listObj, '@type');
+  const updates = new ChatUpdateDto();
+  if (listType === 'chatListMain') {
+    updates.order = '0';
+  } else if (listType === 'chatListArchive') {
+    updates.archiveOrder = '0';
+  } else if (listType === 'chatListFolder') {
+    const folderId = tdGetNumber(listObj, 'chat_folder_id');
+    if (folderId <= 0) return;
+    updates.folderId = folderId;
+    updates.folderRemoved = true;
+  } else {
+    return;
+  }
   events.push(createChatUpdatedEvent(chatId, updates));
 }
 
@@ -398,6 +425,7 @@ export function registerChatHandlers(
   handlers.set('updateChatPhoto', handleChatPhoto);
   handlers.set('updateChatLastMessage', handleChatLastMessage);
   handlers.set('updateChatAddedToList', handleChatAddedToList);
+  handlers.set('updateChatRemovedFromList', handleChatRemovedFromList);
   handlers.set('updateChatPosition', handleChatPosition);
   handlers.set('updateChatReadInbox', handleChatReadInbox);
   handlers.set('updateChatReadOutbox', handleChatReadOutbox);

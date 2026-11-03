@@ -65,6 +65,8 @@ export class Chat {
   photoSmallFileId: number = 0;
   order: string = '0'; // TDLib int64 sort key as string; '0' = not in chatListMain
   archiveOrder: string = '0'; // TDLib int64 sort key as string; '0' = not in chatListArchive
+  // chatListFolder membership: folder id -> order. Absent = the chat is not in that folder.
+  folderOrders: Map<number, string> = new Map<number, string>();
   memberCount: number = 0;
   description: string = '';
   supergroupId: number = 0; // TDLib supergroup_id for fetching full info

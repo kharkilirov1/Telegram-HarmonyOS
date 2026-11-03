@@ -44,6 +44,8 @@ export class ChatDto {
   photo?: ChatPhoto;
   order: string = '0';
   archiveOrder: string = '0';
+  // chatListFolder positions: folder id -> order. TDLib keeps one position per folder.
+  folderOrders: Map<number, string> = new Map<number, string>();
   draftText: string = '';
   draftCustomEmojiEntities: CustomEmojiTextEntity[] = [];
   draftReplyToMessageId: string = '0';
@@ -153,6 +155,11 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
     } else if (listType === 'chatListArchive') {
       chatDto.isArchivePinned = tdGetBoolean(position, 'is_pinned');
       chatDto.archiveOrder = tdGetInt64(position, 'order');
+    } else if (listType === 'chatListFolder') {
+      const folderPosition = extractFolderPosition(position);
+      if (folderPosition !== undefined) {
+        chatDto.folderOrders.set(folderPosition.folderId, folderPosition.order);
+      }
     }
   }
 
@@ -256,6 +263,27 @@ export function extractChatListPosition(tdPosition: TdObject): ChatPositionInfo 
   return undefined;
 }
 
+// One chatListFolder position: which folder, and the chat's sort key inside it.
+export class FolderPositionInfo {
+  folderId: number = 0;
+  order: string = '0';
+}
+
+export function extractFolderPosition(tdPosition: TdObject): FolderPositionInfo | undefined {
+  const listObj = tdGetObject(tdPosition, 'list');
+  if (tdGetString(listObj, '@type') !== 'chatListFolder') {
+    return undefined;
+  }
+  const folderId = tdGetNumber(listObj, 'chat_folder_id');
+  if (folderId <= 0) {
+    return undefined;
+  }
+  const info = new FolderPositionInfo();
+  info.folderId = folderId;
+  info.order = tdGetInt64(tdPosition, 'order');
+  return info;
+}
+
 // Compatibility helper for callers that only need chatListMain.
 export function extractMainListPosition(tdPosition: TdObject): ChatPositionInfo | undefined {
   const info = extractChatListPosition(tdPosition);
@@ -280,6 +308,10 @@ export class ChatUpdateDto {
   isArchivePinned?: boolean;
   order?: string;
   archiveOrder?: string;
+  // chatListFolder membership: set order, or drop the folder entry when folderRemoved.
+  folderId?: number;
+  folderOrder?: string;
+  folderRemoved?: boolean;
   draftText?: string;
   draftCustomEmojiEntities?: CustomEmojiTextEntity[];
   draftReplyToMessageId?: string;
