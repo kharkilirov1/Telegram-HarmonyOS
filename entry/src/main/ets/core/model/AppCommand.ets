@@ -747,6 +747,11 @@ export class CreateChatFolderInviteLinkCommand extends AppCommand {
   payload: ChatFolderInviteLinkPayload = new ChatFolderInviteLinkPayload();
 }
 
+export class EditChatFolderInviteLinkCommand extends AppCommand {
+  type: string = 'editChatFolderInviteLink';
+  payload: ChatFolderInviteLinkPayload = new ChatFolderInviteLinkPayload();
+}
+
 export class DeleteChatFolderInviteLinkCommand extends AppCommand {
   type: string = 'deleteChatFolderInviteLink';
   payload: ChatFolderInviteLinkPayload = new ChatFolderInviteLinkPayload();
@@ -1004,6 +1009,7 @@ export type AnyAppCommand =
   | AddChatToListCommand
   | GetChatFolderInviteLinksCommand
   | CreateChatFolderInviteLinkCommand
+  | EditChatFolderInviteLinkCommand
   | DeleteChatFolderInviteLinkCommand
   | GetChatFolderCommand
   | CreateChatFolderCommand
@@ -1497,6 +1503,18 @@ export function createCreateChatFolderInviteLinkCommand(
 ): CreateChatFolderInviteLinkCommand {
   const cmd = new CreateChatFolderInviteLinkCommand();
   cmd.payload.folderId = folderId;
+  cmd.payload.name = name;
+  return cmd;
+}
+
+export function createEditChatFolderInviteLinkCommand(
+  folderId: number,
+  inviteLink: string,
+  name: string
+): EditChatFolderInviteLinkCommand {
+  const cmd = new EditChatFolderInviteLinkCommand();
+  cmd.payload.folderId = folderId;
+  cmd.payload.inviteLink = inviteLink;
   cmd.payload.name = name;
   return cmd;
 }

@@ -57,6 +57,8 @@ export struct TgChatFoldersPage {
   @Local private includedChatIds: number[] = [];
   @Local private inviteLinks: ChatFolderInviteLinkDto[] = [];
   @Local private isLoadingLinks: boolean = false;
+  @Local private editingLinkUri: string = '';
+  @Local private linkNameDraft: string = '';
   @Local private isBusy: boolean = false;
   @Local private isLoadingFolder: boolean = false;
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
@@ -129,6 +131,8 @@ export struct TgChatFoldersPage {
     this.includedChatIds = [];
     this.inviteLinks = [];
     this.isLoadingLinks = false;
+    this.editingLinkUri = '';
+    this.linkNameDraft = '';
     this.includeContacts = false;
     this.includeNonContacts = false;
     this.includeBots = false;
@@ -227,6 +231,36 @@ export struct TgChatFoldersPage {
         return;
       }
       this.isLoadingLinks = false;
+      this.toast(error.message.length > 0
+        ? error.message : localized($r('app.string.folders_link_failed_toast').id, 'Could not update invite links'));
+    });
+  }
+
+  private startRenameLink(link: ChatFolderInviteLinkDto): void {
+    this.editingLinkUri = link.inviteLink;
+    this.linkNameDraft = link.name;
+  }
+
+  private saveLinkName(): void {
+    const useCase = this.inviteLinksUseCase;
+    const folderId = this.editingFolderId;
+    const inviteLink = this.editingLinkUri;
+    if (useCase === undefined || folderId <= 0 || inviteLink.length === 0) {
+      return;
+    }
+    const token: number = this.pageLifecycleToken;
+    useCase.editLink(folderId, inviteLink, this.linkNameDraft).then(() => {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
+      this.editingLinkUri = '';
+      this.linkNameDraft = '';
+      this.toast(localized($r('app.string.folders_link_renamed_toast').id, 'Link renamed'));
+      this.loadInviteLinks(folderId);
+    }).catch((error: Error) => {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
       this.toast(error.message.length > 0
         ? error.message : localized($r('app.string.folders_link_failed_toast').id, 'Could not update invite links'));
     });
@@ -575,6 +609,40 @@ export struct TgChatFoldersPage {
                 .height(40)
                 .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16, top: TgUiTokens.SPACE_8 })
 
+                if (this.editingLinkUri.length > 0) {
+                  Row() {
+                    TextInput({ text: this.linkNameDraft, placeholder: localized(
+                      $r('app.string.folders_rename_link').id, 'Link name') })
+                      .maxLength(32)
+                      .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+                      .height(40)
+                      .layoutWeight(1)
+                      .onChange((value: string): void => {
+                        this.linkNameDraft = value;
+                      })
+                    Text(localized($r('app.string.folders_save').id, 'Save'))
+                      .fontSize(TgUiTokens.FONT_META_SIZE)
+                      .fontColor(this.linkNameDraft.trim().length === 0 ? TgUiTokens.COLOR_TEXT_META
+                        : TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT)
+                      .margin({ left: TgUiTokens.SPACE_12 })
+                      .onClick(() => {
+                        if (this.linkNameDraft.trim().length > 0) {
+                          this.saveLinkName();
+                        }
+                      })
+                    Text(localized($r('app.string.folders_cancel').id, 'Cancel'))
+                      .fontSize(TgUiTokens.FONT_META_SIZE)
+                      .fontColor(TgUiTokens.COLOR_TEXT_META)
+                      .margin({ left: TgUiTokens.SPACE_12 })
+                      .onClick(() => {
+                        this.editingLinkUri = '';
+                        this.linkNameDraft = '';
+                      })
+                  }
+                  .width('100%')
+                  .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16, top: TgUiTokens.SPACE_4 })
+                }
+
                 if (this.inviteLinks.length === 0) {
                   Text(localized($r('app.string.folders_links_empty').id, 'No invite links yet'))
                     .fontSize(TgUiTokens.FONT_META_SIZE)
@@ -607,6 +675,9 @@ export struct TgChatFoldersPage {
                     .width('100%')
                     .height(44)
                     .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16 })
+                    .onClick(() => {
+                      this.startRenameLink(link);
+                    })
                   }, (link: ChatFolderInviteLinkDto) => link.inviteLink)
                 }
               }

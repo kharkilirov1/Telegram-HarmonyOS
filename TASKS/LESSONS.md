@@ -860,3 +860,12 @@ Last updated: 2026-10-23
   reads like a production failure. Hoist shared fixtures next to the other module-level constants.
 - Invite-link creation with `chat_ids: []` means "all folder chats"; the empty array is the TDLib
   contract, not an omission.
+
+## 195. A silent string-anchor miss hides contract gaps
+
+- The rename feature passed its test on the first run even though the "labels exist in three locales"
+  assertion had not been added: the script that adds assertions threw on an anchor, and the already
+  written parts of the test still passed. Run the doc/test patch script, read its stderr, and only
+  then trust the suite result.
+- Invite links keep `chat_ids: []` on create/edit from this UI, which TDLib reads as "all folder
+  chats"; a restricted link needs explicit ids, so the UI must not pretend to offer the restriction.

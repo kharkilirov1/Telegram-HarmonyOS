@@ -357,6 +357,7 @@ async function checkUseCase() {
       'folders_copy_link', 'folders_delete_link', 'folders_delete_link_confirm',
       'folders_link_default_name', 'folders_link_created_toast', 'folders_link_deleted_toast',
       'folders_link_copied_toast', 'folders_link_copy_failed', 'folders_link_failed_toast',
+      'folders_rename_link', 'folders_link_renamed_toast',
       'folders_created_toast', 'folders_saved_toast', 'folders_deleted_toast',
       'folders_failed_toast']) {
       const item = strings.string.find((entry) => entry.name === name);

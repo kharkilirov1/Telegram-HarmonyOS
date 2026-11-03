@@ -7,7 +7,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
   AnyAppCommand,
   ChatFolderDraftPayload,
-  CreateChatFolderInviteLinkCommand, DeleteChatFolderInviteLinkCommand,
+  CreateChatFolderInviteLinkCommand, DeleteChatFolderInviteLinkCommand, EditChatFolderInviteLinkCommand,
   GetChatFolderCommand, GetChatFolderInviteLinksCommand,
   CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand,
   GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
@@ -124,6 +124,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatFolderInviteLinks', serializeGetChatFolderInviteLinks);
 COMMAND_SERIALIZATION_HANDLERS.set('createChatFolderInviteLink', serializeCreateChatFolderInviteLink);
+COMMAND_SERIALIZATION_HANDLERS.set('editChatFolderInviteLink', serializeEditChatFolderInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('deleteChatFolderInviteLink', serializeDeleteChatFolderInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatFolder', serializeGetChatFolder);
 COMMAND_SERIALIZATION_HANDLERS.set('createChatFolder', serializeCreateChatFolder);
@@ -457,6 +458,15 @@ function serializeCreateChatFolderInviteLink(command: AnyAppCommand, result: Ser
   const cmd = command as CreateChatFolderInviteLinkCommand;
   result.method = 'createChatFolderInviteLink';
   result.params.setNumber('chat_folder_id', cmd.payload.folderId);
+  result.params.setString('name', cmd.payload.name);
+  result.params.setString('_chat_ids_json', '[]');
+}
+
+function serializeEditChatFolderInviteLink(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as EditChatFolderInviteLinkCommand;
+  result.method = 'editChatFolderInviteLink';
+  result.params.setNumber('chat_folder_id', cmd.payload.folderId);
+  result.params.setString('invite_link', cmd.payload.inviteLink);
   result.params.setString('name', cmd.payload.name);
   result.params.setString('_chat_ids_json', '[]');
 }

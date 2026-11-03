@@ -5,6 +5,7 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
   createCreateChatFolderInviteLinkCommand,
+  createEditChatFolderInviteLinkCommand,
   createDeleteChatFolderInviteLinkCommand,
   createGetChatFolderInviteLinksCommand
 } from '../../core/model/AppCommand';
@@ -54,6 +55,26 @@ export class ManageChatFolderInviteLinksUseCase {
       const err = error as Error;
       hilog.error(DOMAIN, TAG, 'createChatFolderInviteLink failed: %{public}s', err.message);
       throw new AppError(AppErrorKind.UNKNOWN, 'Failed to create the invite link', err.message, 0, true);
+    }
+  }
+
+  async editLink(folderId: number, inviteLink: string, name: string): Promise<void> {
+    this.validateFolderId(folderId);
+    if (inviteLink.trim().length === 0) {
+      throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid invite link', 'Input validation failed', 400, false);
+    }
+    const trimmed = name.trim();
+    if (trimmed.length === 0 || trimmed.length > CHAT_FOLDER_INVITE_LINK_NAME_MAX_LENGTH) {
+      throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid link name',
+        'Expected 1..' + CHAT_FOLDER_INVITE_LINK_NAME_MAX_LENGTH + ' characters', 400, false);
+    }
+    try {
+      hilog.info(DOMAIN, TAG, 'Editing invite link of folder %{public}d', folderId);
+      await this.gateway.send(createEditChatFolderInviteLinkCommand(folderId, inviteLink, trimmed));
+    } catch (error) {
+      const err = error as Error;
+      hilog.error(DOMAIN, TAG, 'editChatFolderInviteLink failed: %{public}s', err.message);
+      throw new AppError(AppErrorKind.UNKNOWN, 'Failed to update the invite link', err.message, 0, true);
     }
   }
 

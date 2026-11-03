@@ -146,6 +146,13 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S13f (lead).** B7: редактирование invite-ссылки. `editChatFolderInviteLink` (команда,
+  сериализатор, `editLink` в use case с trim имени и проверкой ссылки), UI: тап по строке ссылки
+  открывает инлайн-редактор имени (TextInput + Save/Cancel), после сохранения — тост и перезагрузка
+  списка. Контракт `test-chat-folder-settings.cjs`: wire editChatFolderInviteLink (включая
+  `chat_ids: []`), trim в payload, валидация до gateway, ошибка, проводка страницы, 2 строки в 3
+  локалях. Гейты: host **116/116**, оба smoke, hvigor BUILD SUCCESSFUL.
+  **Осталось (B7):** ограничение ссылки набором чатов в UI, folder link preview, witness.
 - **S13e (lead).** B7: пригласительные ссылки папки. Команды `getChatFolderInviteLinks`/
   `createChatFolderInviteLink`/`deleteChatFolderInviteLink` + сериализатор, `ChatFolderInviteLinkDto`
   (список, int53 `chat_ids` через raw items, пустая ссылка — не валидная),

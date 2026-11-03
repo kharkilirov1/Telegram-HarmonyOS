@@ -47,10 +47,11 @@
 | S13c | Папки — include-флаги в редакторе (B7) | B7 | 5 include-флагов в `TgChatFoldersPage` (state, reset, загрузка из `ChatFolderDto`, `buildDraft`), 5 строк в 3 локалях, контракт расширен (wire true-значения, edit-payload) |
 | S13d | Папки — выбор чатов (B7) | B7 | `includedChatIds` в payload/сериализаторе, `TgFolderChatsPage` (чекбоксы, pop-результат), загрузка выбора в редактор, route, строки, контракт расширен |
 | S13e | Папки — invite-ссылки (B7) | B7 | 3 команды ссылок + сериализатор, `ChatFolderInviteLinkDto`, `ManageChatFolderInviteLinksUseCase`, секция Invite Links в редакторе (создание/копирование/удаление), 12 строк в 3 локалях, контракт расширен |
+| S13f | Папки — переименование ссылки (B7) | B7 | `editChatFolderInviteLink` (команда/сериализатор), `editLink` в use case, инлайн-редактор имени в редакторе папки, 2 строки в 3 локалях, контракт расширен |
 
 ## Следующие срезы (в порядке)
 
-1. **S13f. Папки — редактирование ссылки и folder link preview (B7).** `editChatFolderInviteLink` (имя/чаты), превью ссылки папки.
+1. **S13g. Папки — folder link preview (B7).** Экран открытия `t.me/addlist/...` (`checkChatFolderInviteLink`), ограничение набора чатов ссылки в UI.
 2. **S12b. Меню действий в шапке чата (C10).** Действия в шапке/панели чата, роли, Share Contact/Report.
 2. **S10b. Заблокированные — пагинация и блокировка из профиля (H8).**
 2. **S9c. Сессии — 2FA и подтверждение новых сеансов (H5).**

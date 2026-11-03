@@ -281,6 +281,14 @@
       "value": "Delete this folder? Chats stay in your chat list."
     },
     {
+      "name": "folders_rename_link",
+      "value": "Link name"
+    },
+    {
+      "name": "folders_link_renamed_toast",
+      "value": "Link renamed"
+    },
+    {
       "name": "folders_invite_links",
       "value": "Invite Links"
     },

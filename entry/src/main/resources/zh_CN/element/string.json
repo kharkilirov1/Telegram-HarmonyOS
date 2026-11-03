@@ -281,6 +281,14 @@
       "value": "删除此文件夹？聊天仍保留在列表中。"
     },
     {
+      "name": "folders_rename_link",
+      "value": "链接名称"
+    },
+    {
+      "name": "folders_link_renamed_toast",
+      "value": "链接已重命名"
+    },
+    {
       "name": "folders_invite_links",
       "value": "邀请链接"
     },
