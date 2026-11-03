@@ -636,3 +636,22 @@ export function chatAllowsReactions(chat: Chat | undefined): boolean {
   }
   return chat.maxReactionCount > 0 || chat.availableReactionsAll || chat.availableReactionKeys.length > 0;
 }
+
+// Picker order from `getMessageAvailableReactions`: the server's top reactions first (what iOS shows
+// in the context menu), then recent, then popular, deduplicated and capped to one comfortable row.
+// An empty response (or a failed request) falls back to the chat-level list so the picker never
+// disappears while the request is in flight.
+export function pickerReactionKeys(chat: Chat | undefined, top: string[], recent: string[],
+  popular: string[]): string[] {
+  const merged: string[] = [];
+  for (const key of top.concat(recent, popular)) {
+    if (key.length === 0 || merged.includes(key)) {
+      continue;
+    }
+    merged.push(key);
+    if (merged.length >= MAX_PICKER_REACTION_KEYS) {
+      break;
+    }
+  }
+  return merged.length > 0 ? merged : availableReactionKeys(chat);
+}

@@ -22,6 +22,7 @@ import {
   DeleteMessagesCommand,
   ForwardMessagesCommand,
   SetChatMuteCommand,
+  GetMessageAvailableReactionsCommand,
   SetMessageReactionsCommand,
   JoinChatCommand,
   ToggleChatPinnedCommand,
@@ -108,6 +109,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('deleteMessages', serializeDeleteMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('forwardMessages', serializeForwardMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('setChatMute', serializeSetChatMute);
 COMMAND_SERIALIZATION_HANDLERS.set('setMessageReactions', serializeSetMessageReactions);
+COMMAND_SERIALIZATION_HANDLERS.set('getMessageAvailableReactions', serializeGetMessageAvailableReactions);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
 COMMAND_SERIALIZATION_HANDLERS.set('addChatToList', serializeAddChatToList);
@@ -347,6 +349,14 @@ function buildReactionTypesJson(reactionKeys: string[]): string {
     throw new Error('Unsupported reaction key');
   }
   return '[' + parts.join(',') + ']';
+}
+
+function serializeGetMessageAvailableReactions(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetMessageAvailableReactionsCommand;
+  result.method = 'getMessageAvailableReactions';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('_message_id_json', JSON.stringify(cmd.payload.messageId));
+  result.params.setNumber('row_size', cmd.payload.rowSize);
 }
 
 function serializeSetMessageReactions(command: AnyAppCommand, result: SerializedCommand): void {

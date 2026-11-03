@@ -6,7 +6,9 @@ import { ChatMessageActionItem, ChatMessageActionsController, ChatMessageActions
 import { ChatForwardSourceController } from './ChatForwardSourceController';
 import { ForwardMessagesUseCase } from '../../../domain/usecases/forwardMessages';
 import { ChatReactionHost, toggleMessageReaction } from './ChatReactionController';
-import { Chat, availableReactionKeys, chatAllowsReactions } from '../../../core/model/AppState';
+import { Chat, availableReactionKeys, chatAllowsReactions, pickerReactionKeys } from '../../../core/model/AppState';
+import { MessageAvailableReactionsSnapshot } from '../../../core/model/dto/MessageDto';
+import { createGetMessageAvailableReactionsUseCase } from '../../../domain/usecases/getMessageAvailableReactions';
 
 export interface ChatMessagePopupCoordinatorPort extends ChatMessageActionsHost, ChatReactionHost {
   activeChatId: number;
@@ -18,6 +20,9 @@ export interface ChatMessagePopupCoordinatorPort extends ChatMessageActionsHost,
   messageActionsGeneration: number;
   messageActionsLifecycle: number;
   messageActionsOpenId: string;
+  // S3d.1: keys for the popup reaction row; seeded from the chat list, then replaced by the
+  // per-message getMessageAvailableReactions answer.
+  messageActionsReactionKeys: string[];
   messageActionsSourceChatId: number;
   messageActionsUseCase?: ForwardMessagesUseCase;
   timelineContainerWidth: number;
@@ -67,7 +72,9 @@ export function showMessageActions(host: ChatMessagePopupCoordinatorPort, entry:
     host.messageActionsLifecycle = host.getLifecycleToken();
     host.messageActionsUseCase = host.getSourceForwardUseCase();
     host.messageActionsOpenId = entry.message.messageId;
+    host.messageActionsReactionKeys = chatLevelPickerKeys(host);
     host.refreshForwardActionAvailability();
+    refreshPickerReactionKeys(host, entry.message.messageId, host.messageActionsGeneration);
   }
 
 export function messageActionsPopupStateHandler(host: ChatMessagePopupCoordinatorPort, messageId: string): (event: PopupStateChangeParam) => void {
@@ -83,6 +90,7 @@ export function closeMessageActions(host: ChatMessagePopupCoordinatorPort): void
     host.messageActionsGeneration++;
     host.forwardSourceCtrl.cancel();
     host.messageActionsOpenId = '';
+    host.messageActionsReactionKeys = [];
     host.messageActionsEntry = undefined;
     host.messageActionsUseCase = undefined;
     host.messageActionsForwardState = 'loading';
@@ -170,13 +178,53 @@ export function handleDeleteMessage(host: ChatMessagePopupCoordinatorPort, messa
   }
 
 export function messageActionReactionKeys(host: ChatMessagePopupCoordinatorPort): string[] {
+  return host.messageActionsReactionKeys.length > 0
+    ? host.messageActionsReactionKeys
+    : chatLevelPickerKeys(host);
+}
+
+export function chatLevelPickerKeys(host: ChatMessagePopupCoordinatorPort): string[] {
   // S3d: availability is chat-level state parsed from chat.available_reactions, so the picker never
   // offers a reaction TDLib would reject.
   if (!host.hasActiveChatState() || host.activeChatId === 0 || host.accountStore === undefined) {
     return [];
   }
-  const chat = host.accountStore.getState().chats.chats.get(host.activeChatId);
+  const chat: Chat | undefined = host.accountStore.getState().chats.chats.get(host.activeChatId);
   return chatAllowsReactions(chat) ? availableReactionKeys(chat) : [];
+}
+
+export function refreshPickerReactionKeys(host: ChatMessagePopupCoordinatorPort, messageId: string,
+  generation: number): void {
+  // S3d.1: ask TDLib for this message's own list (top/recent/popular). The seeded chat-level row is
+  // already visible, so the request only ever enriches it; a stale answer for another popup or chat
+  // is dropped by the generation/lifecycle/identity fence below.
+  const gateway = host.chatGateway;
+  if (gateway === undefined || messageId === '0') {
+    return;
+  }
+  const chatId = host.activeChatId;
+  const lifecycle = host.getLifecycleToken();
+  createGetMessageAvailableReactionsUseCase(gateway).load(chatId, messageId)
+    .then((snapshot: MessageAvailableReactionsSnapshot): void => {
+      if (generation !== host.messageActionsGeneration ||
+        host.getLifecycleToken() !== lifecycle ||
+        host.activeChatId !== chatId ||
+        host.messageActionsOpenId !== messageId) {
+        return;
+      }
+      const accountStore = host.accountStore;
+      let chat: Chat | undefined = undefined;
+      if (accountStore !== undefined) {
+        chat = accountStore.getState().chats.chats.get(chatId);
+      }
+      if (chat !== undefined && !chatAllowsReactions(chat)) {
+        // A chat that forbids reactions must not gain them from a stale response.
+        host.messageActionsReactionKeys = [];
+        return;
+      }
+      host.messageActionsReactionKeys = pickerReactionKeys(chat, snapshot.top, snapshot.recent,
+        snapshot.popular);
+    });
 }
 
 export function handleMessageActionReaction(host: ChatMessagePopupCoordinatorPort, key: string): void {

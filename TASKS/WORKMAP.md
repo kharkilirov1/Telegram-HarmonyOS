@@ -4,7 +4,7 @@
 `TASKS/SLICE_PROTOCOL.md`; вход — строка `TASKS/CAPABILITY_MATRIX.md`. Перегенерируется после
 каждого закрытого среза. Долг — в `TASKS/TODO.md` (§Debt).
 
-**Обновлено:** 2026-10-25 (после M0, S1, S2)
+**Обновлено:** 2026-11-03 (S3d.1)
 
 ## Закрыто в этой волне
 
@@ -20,21 +20,19 @@
 | S3b | Reactions — подвал (текст) | D10 | атом `TgReactionsFooter` + токены/цвета + spec/demo + интеграция в текстовый бабл + `test-reactions-footer.cjs` |
 | S3c | Reactions — постановка | D10 | команда + сериализатор + use case + `ChatReactionController` (optimistic/откат, guard) + тап по чипу + `test-reactions-send.cjs` |
 | S3d | Reactions — пикер (быстрый ряд) | D10 | `available_reactions` в `ChatDto`/`Chat` + `availableReactionKeys`/`chatAllowsReactions` + атом `TgReactionPicker` + spec/demo + ряд в попапе действий + `test-reactions-availability.cjs`/`-picker` |
+| S3d.1 | Reactions — пикер (per-message) | D10 | `getMessageAvailableReactions` + команда/сериализатор/use case + слияние `pickerReactionKeys` (top→recent→popular, кап 12, fallback на чат) + фенс устаревших ответов + `test-reactions-picker-data.cjs` |
 
 ## Следующие срезы (в порядке)
 
-1. **S3d.1. Пикер: recent/popular и кастомные эмодзи.** `getMessageAvailableReactions`
-   (`top_reactions`/`recent_reactions`/`popular_reactions`) + выбор кастомного эмодзи из паков.
-   Дизайн: `docs/specs/2026-10-25-reactions-design.md`.
-2. **S3b.1. Подвал в медиа-баблах.** Тот же атом в фото/видео/документ/аудио баблах (долг записан).
-3. **S5. Непрочитанный разделитель (C6) + панель выделения (C9).** Малые UI-срезы с готовыми швами.
-4. **S6. Saved Messages (D7)** — отсутствующая базовая возможность чат-листа.
-5. **S7. Папки чатов (B7)** — крупный срез списка, делать после стабилизации списка.
+1. **S3b.1. Подвал в медиа-баблах.** Тот же атом в фото/видео/документ/аудио баблах (долг записан).
+2. **S5. Непрочитанный разделитель (C6) + панель выделения (C9).** Малые UI-срезы с готовыми швами.
+3. **S6. Saved Messages (D7)** — отсутствующая базовая возможность чат-листа.
+4. **S7. Папки чатов (B7)** — крупный срез списка, делать после стабилизации списка.
 
 ## Требуют внешних условий (не начинать)
 
 - **Witness D10:** поставить/снять реакцию на живом аккаунте (эмулятор + чат с сообщениями);
-  до этого S3c проверен host-контрактами, не устройством.
+  до этого S3a–S3d.1 проверены host-контрактами, не устройством.
 - **Witness C2:** второй аккаунт/устройство, которое начнёт печатать.
 - **Witness D13:** стабильный запуск эмулятора + стикер в доступном чате; логи
   `tgs playback started key=file:<id>`.

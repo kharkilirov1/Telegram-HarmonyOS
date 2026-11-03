@@ -329,6 +329,8 @@ export class ChatScreenContext {
   set botMenuTitle(value: string) { this.view.composer.botMenuTitle = value; }
   get messageActionsOpenId(): string { return this.view.timeline.messageActionsOpenId; }
   set messageActionsOpenId(value: string) { this.view.timeline.messageActionsOpenId = value; }
+  get messageActionsReactionKeys(): string[] { return this.view.timeline.messageActionsReactionKeys; }
+  set messageActionsReactionKeys(value: string[]) { this.view.timeline.messageActionsReactionKeys = value; }
   get messageActionsForwardState(): string { return this.view.timeline.messageActionsForwardState; }
   set messageActionsForwardState(value: string) { this.view.timeline.messageActionsForwardState = value; }
   get awaitingInitialTimeline(): boolean { return this.view.timeline.awaitingInitialTimeline; }

@@ -119,8 +119,18 @@ Documentation and repository structure were reconciled; no product code changed.
   Атом `TgReactionPicker` (горизонтальный скролл, токены, spec+demo) врезан над меню действий:
   long-press → попап → тап закрывает меню и уходит в S3c-контроллер. Host-контракты
   `test-reactions-availability.cjs` + `test-reactions-picker.cjs`. Гейты: host **102/102**, оба
-  smoke, hvigor BUILD SUCCESSFUL. **D10 остаётся `partial`:** S3b.1 (медиа-баблы), recent/popular
-  и кастомные эмодзи в пикере (S3d.1), теги, runtime-witness.
+  smoke, hvigor BUILD SUCCESSFUL. **D10 остаётся `partial`:** S3b.1 (медиа-баблы), теги,
+  runtime-witness.
+- **S3d.1 (lead).** Пикер стал per-message: `GetMessageAvailableReactionsCommand` +
+  сериализатор (`getMessageAvailableReactions`, int64 сообщения строкой, `row_size=12`), парсер
+  `availableReactions` (`top`/`recent`/`popular` + `allow_custom_emoji`/`are_tags`),
+  use case, который не бросает исключение (ошибка → пустой снимок). Модель `pickerReactionKeys`
+  сливает top→recent→popular с дедупом и капом 12, пустой ответ падает на чатовый ряд. Попап при
+  открытии синхронно сеет чатовый ряд и асинхронно заменяет его ответом TDLib; устаревший ответ
+  отсекается по generation + lifecycle + chatId + messageId, чат с запретом реакций не получает их
+  из ответа. Host-контракт `test-reactions-picker-data.cjs`. Гейты: host **103/103**, оба smoke,
+  hvigor BUILD SUCCESSFUL. **D10 остаётся `partial`:** S3b.1 (медиа-баблы), рендер кастомных
+  эмодзи (D16), теги, runtime-witness.
 - **S4 (lead).** Мёртвые контролы из аудита закрыты: Toggle «Notifications» в профиле теперь отправляет
   `SetChatMuteCommand` (откат при ошибке, токен страницы), строка «Data and Storage» удалена до
   появления экрана, мёртвая проводка `attachmentMenuLabels` вырезана из шести файлов, неиспользуемые

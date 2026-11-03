@@ -621,6 +621,19 @@ export class SetChatMuteCommand extends AppCommand {
   payload: SetChatMutePayload = new SetChatMutePayload();
 }
 
+// getMessageAvailableReactions chat_id:int53 message_id:int53 row_size:int32 = AvailableReactions
+// (td_api.tl:11597) — the per-message picker list, refreshed by updateActiveEmojiReactions etc.
+export class GetMessageAvailableReactionsPayload {
+  chatId: ChatId = 0;
+  messageId: MessageId = '0';
+  rowSize: number = 12;
+}
+
+export class GetMessageAvailableReactionsCommand extends AppCommand {
+  type: string = 'getMessageAvailableReactions';
+  payload: GetMessageAvailableReactionsPayload = new GetMessageAvailableReactionsPayload();
+}
+
 export class SetMessageReactionsCommand extends AppCommand {
   type: string = 'setMessageReactions';
   payload: SetMessageReactionsPayload = new SetMessageReactionsPayload();
@@ -824,6 +837,7 @@ export type AnyAppCommand =
   | DeleteMessagesCommand
   | ForwardMessagesCommand
   | SetChatMuteCommand
+  | GetMessageAvailableReactionsCommand
   | SetMessageReactionsCommand
   | JoinChatCommand
   | ToggleChatPinnedCommand
@@ -1241,6 +1255,15 @@ export function createSetChatMuteCommand(chatId: ChatId, muteForSeconds: number)
   const cmd = new SetChatMuteCommand();
   cmd.payload.chatId = chatId;
   cmd.payload.muteForSeconds = muteForSeconds;
+  return cmd;
+}
+
+export function createGetMessageAvailableReactionsCommand(chatId: ChatId, messageId: MessageId,
+  rowSize: number): GetMessageAvailableReactionsCommand {
+  const cmd = new GetMessageAvailableReactionsCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.messageId = messageId;
+  cmd.payload.rowSize = rowSize;
   return cmd;
 }
 

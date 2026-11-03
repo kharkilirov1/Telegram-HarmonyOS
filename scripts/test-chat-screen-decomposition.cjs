@@ -98,7 +98,7 @@ check('bounded composition has no retained page implementations', () => {
     assert.doesNotMatch(graph.page, new RegExp(`^  (?:private )?${name}\\(`, 'm'));
   }
 });
-check('all 114 reactive fields have one backing model and bidirectional Context aliases', () => {
+check('all 115 reactive fields have one backing model and bidirectional Context aliases', () => {
   const aggregate = at('ChatScreenViewState'), context = at('ChatScreenContext');
   const fields = [];
   const bindings = { $r: id => ({ id }), NavPathStack: class {} };
@@ -113,8 +113,8 @@ check('all 114 reactive fields have one backing model and bidirectional Context 
     const js = stripTypeScriptTypes(code.replace(/^import[\s\S]*?;\s*/gm, '').replace(/@ObservedV2\s*|@Trace\s*|^export /gm, ''), { mode: 'transform' });
     bindings[model] = new Function(...Object.keys(bindings), js + `\nreturn ${model};`)(...Object.values(bindings));
   }
-  assert.equal(fields.length, 114);
-  assert.equal(new Set(fields.map(field => field.name)).size, 114);
+  assert.equal(fields.length, 115);
+  assert.equal(new Set(fields.map(field => field.name)).size, 115);
   const aggregateJs = stripTypeScriptTypes(aggregate.replace(/^import[\s\S]*?;\s*/gm, '').replace(/^export /gm, ''), { mode: 'transform' });
   const View = new Function(...Object.keys(bindings), aggregateJs + '\nreturn ChatScreenViewState;')(...Object.values(bindings));
   const contextJs = stripTypeScriptTypes(context.replace(/^import[\s\S]*?;\s*/gm, '').replace(/^export /gm, ''), { mode: 'transform' });

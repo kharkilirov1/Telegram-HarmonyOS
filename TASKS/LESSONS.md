@@ -534,3 +534,20 @@ Last updated: 2026-10-23
 - API24 entry_test rendered compiled Resource colors black although ResourceManager resolved them; identical main widgets rendered correctly. Reproduce with direct/imported/named/literal controls before changing production tokens. Exact installed runtime adapter root cause remains unproven.
 - AA custom argument keys include `-s `; read the official contract. Set app-local color mode only after successful loadContent and gate UI readiness. Main validation must compile the whole registry and fixtures together to preserve singleton identity, target a dummy bundle, and retain strict owner/route/caret/modal assertions.
 - Keep failed runs and stale-source receipts separate. A passing callback footer does not establish pixels, main ownership or theme. Unique screenshots, raw configuration trace, exact callback pairs and byte guards are required.
+
+## 164. Per-message picker data and the contract-text harness
+
+- `getMessageAvailableReactions` returns `availableReactions` with three ordered lists; parse each
+  `availableReaction.type`, dedupe inside a list, drop unsupported types (paid/unsupported), and keep
+  `allow_custom_emoji`/`are_tags` as flags. Merge top→recent→popular with a cross-bucket dedupe and a
+  cap, then fall back to the chat-level row when the answer is empty — a failed request must never
+  empty the picker.
+- A new command that is not added to the `AnyAppCommand` union fails later with a confusing
+  `arkts-no-structural-typing` error at the `send(...)` call site, not at the command declaration.
+- Page-delegate bodies are compiled by host suites from reconstructed contract text with explicit
+  `deps`. Adding a same-module sibling call (`chatLevelPickerKeys`) inside `showMessageActions`
+  breaks every suite that compiles that boundary with `{}` — inject the siblings where the boundary
+  is compiled, and bump the reactive-field counter when a new `@Trace` field appears.
+- Fence an async answer with everything that can change while it is in flight: generation, lifecycle
+  token, chatId and the open messageId. Also re-check the chat policy on arrival so a stale response
+  cannot reintroduce reactions into a chat that forbids them.

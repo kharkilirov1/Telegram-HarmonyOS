@@ -952,3 +952,40 @@ export function parseReactionSnapshot(tdReactions: TdObject): ReactionSnapshot {
   }
   return snapshot;
 }
+
+// ─── getMessageAvailableReactions response (td_api.tl:6519) ─────────────────
+// Per-message picker data: three ordered lists of chip keys. `availableReaction` wraps one
+// ReactionType plus `needs_premium`; premium gating stays out of scope until the account profile
+// carries a premium flag.
+export class MessageAvailableReactionsSnapshot {
+  top: string[] = [];
+  recent: string[] = [];
+  popular: string[] = [];
+  allowCustomEmoji: boolean = false;
+  areTags: boolean = false;
+}
+
+function parseAvailableReactionList(tdReactions: TdObject[]): string[] {
+  const keys: string[] = [];
+  for (const tdAvailableReaction of tdReactions) {
+    const key = parseReactionTypeKey(tdGetObject(tdAvailableReaction, 'type'));
+    if (key.length > 0 && !keys.includes(key)) {
+      keys.push(key);
+    }
+  }
+  return keys;
+}
+
+export function parseAvailableReactions(tdAvailableReactions: TdObject): MessageAvailableReactionsSnapshot {
+  const snapshot = new MessageAvailableReactionsSnapshot();
+  const responseType = tdGetString(tdAvailableReactions, '@type');
+  if (responseType !== 'availableReactions') {
+    return snapshot;
+  }
+  snapshot.top = parseAvailableReactionList(tdGetArray(tdAvailableReactions, 'top_reactions'));
+  snapshot.recent = parseAvailableReactionList(tdGetArray(tdAvailableReactions, 'recent_reactions'));
+  snapshot.popular = parseAvailableReactionList(tdGetArray(tdAvailableReactions, 'popular_reactions'));
+  snapshot.allowCustomEmoji = tdGetBoolean(tdAvailableReactions, 'allow_custom_emoji');
+  snapshot.areTags = tdGetBoolean(tdAvailableReactions, 'are_tags');
+  return snapshot;
+}
