@@ -107,26 +107,52 @@ async function checkUseCase() {
   assert.equal(sent[0].payload.limit, 100);
   assert.deepEqual(page.senders.map((item) => item.senderId), [11]);
 
+  await useCase.fetchPage(2, 10);
+  assert.equal(sent.at(-1).payload.offset, 2, 'the offset reaches getBlockedMessageSenders');
+  assert.equal(sent.at(-1).payload.limit, 10);
+
   await useCase.unblock(page.senders[0]);
-  assert.equal(sent.length, 2);
-  assert.equal(sent[1].type, 'setMessageSenderBlockList');
-  assert.equal(sent[1].payload.senderType, 'user');
-  assert.equal(sent[1].payload.senderId, 11);
-  assert.equal(sent[1].payload.blocked, false, 'the page only unblocks');
+  assert.equal(sent.length, 3);
+  assert.equal(sent[2].type, 'setMessageSenderBlockList');
+  assert.equal(sent[2].payload.senderType, 'user');
+  assert.equal(sent[2].payload.senderId, 11);
+  assert.equal(sent[2].payload.blocked, false, 'the page only unblocks');
 
   for (const offset of [-1, 1.5]) {
     await assert.rejects(() => useCase.fetchPage(offset), /Invalid paging/);
   }
   await assert.rejects(() => useCase.fetchPage(0, 0), /Invalid paging/);
   await assert.rejects(() => useCase.fetchPage(0, 101), /Invalid paging/);
-  assert.equal(sent.length, 2, 'invalid paging never reaches the gateway');
+  assert.equal(sent.length, 3, 'invalid paging never reaches the gateway');
 
   await assert.rejects(() => useCase.unblock(Object.assign(new D.BlockedSenderDto(),
     { senderType: 'user', senderId: 0 })), /Invalid sender/);
-  assert.equal(sent.length, 2);
+  assert.equal(sent.length, 3);
 
   response = TdObject.fromJSON('{"@type":"ok"}');
   assert.deepEqual((await useCase.fetchPage()).senders, [], 'an unexpected payload is empty, not a crash');
+}
+
+// Paging: append with dedupe, "show more" driven by loaded-versus-total ----------------------------
+{
+  const S = load('domain/selectors/blockedSenderSelectors.ets');
+  const make = (type, id) => Object.assign(new D.BlockedSenderDto(), { senderType: type, senderId: id });
+  assert.equal(S.blockedSenderKey(make('user', 5)), 'user:5');
+  assert.equal(S.blockedSenderKey(make('chat', -9)), 'chat:-9');
+
+  const merged = S.mergeBlockedSenders(
+    [make('user', 1), make('user', 2)],
+    [make('user', 2), make('chat', -3), make('user', 1), make('user', 4)]);
+  assert.deepEqual(merged.map((item) => S.blockedSenderKey(item)),
+    ['user:1', 'user:2', 'chat:-3', 'user:4'], 'duplicates are dropped and order is stable');
+
+  assert.deepEqual(S.mergeBlockedSenders([], [make('user', 1)]).map((item) => item.senderId), [1]);
+  assert.deepEqual(S.mergeBlockedSenders([make('user', 1)], []).map((item) => item.senderId), [1]);
+
+  assert.equal(S.hasMoreBlockedSenders(0, 0), false, 'an empty list has nothing more');
+  assert.equal(S.hasMoreBlockedSenders(0, 3), true);
+  assert.equal(S.hasMoreBlockedSenders(3, 3), false);
+  assert.equal(S.hasMoreBlockedSenders(3, 2), false, 'a shrunken total never asks for more');
 }
 
 // Page, route, settings entry and localizable strings ---------------------------------------------
@@ -140,6 +166,10 @@ async function checkUseCase() {
   assert.match(page, /state\.chats\.chats\.get\(sender\.senderId\)/);
   assert.match(page, /promptAction\.showDialog\(/);
   assert.match(page, /ForEach\(this\.senders, \(sender: BlockedSenderDto\)/);
+  assert.match(page, /mergeBlockedSenders\(this\.senders, page\.senders\)/);
+  assert.match(page, /hasMoreBlockedSenders\(this\.senders\.length, this\.totalCount\)/);
+  assert.match(page, /useCase\.fetchPage\(this\.senders\.length\)/,
+    'show more requests the next offset, not the first page again');
 
   const routeMap = JSON.parse(fs.readFileSync(
     path.join(root, 'entry/src/main/resources/base/profile/route_map.json'), 'utf8'));
@@ -157,7 +187,8 @@ async function checkUseCase() {
     const strings = JSON.parse(fs.readFileSync(
       path.join(root, 'entry/src/main/resources', locale, 'element/string.json'), 'utf8'));
     for (const name of ['settings_blocked_users', 'blocked_loading', 'blocked_load_failed', 'blocked_retry',
-      'blocked_empty', 'blocked_unblock', 'blocked_user_fallback', 'blocked_chat_fallback']) {
+      'blocked_empty', 'blocked_unblock', 'blocked_user_fallback', 'blocked_chat_fallback',
+      'blocked_show_more']) {
       const item = strings.string.find((entry) => entry.name === name);
       assert.ok(item && item.value.length > 0, name + ' exists in ' + locale);
     }

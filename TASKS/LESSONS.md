@@ -765,3 +765,11 @@ Last updated: 2026-10-23
   new assertion checks the route map, so a future revert of the page fails the guard again.
 - `optimizeStorage` with size/ttl/count zero is the TDLib way to clear every droppable cache file;
   the database and logs stay, so the screen must show them separately instead of promising zero.
+
+## 185. Offset paging needs a merge, not an assignment
+
+- TDLib returns total_count with every page; "show more" must compare loaded versus total, because a
+  short page does not prove the end (the block list can change between requests).
+- Appending must dedupe by the sender key: a sender blocked twice or a shifting list can repeat an
+  entry, and ForEach keys must stay unique or the list throws.
+- A shrinking total (unblocks elsewhere) must yield hasMore=false even when loaded < previous total.

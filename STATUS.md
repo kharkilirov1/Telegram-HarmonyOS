@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S10b (lead).** H8: пагинация списка заблокированных. `blockedSenderSelectors`
+  (`blockedSenderKey`, `mergeBlockedSenders` с дедупликацией, `hasMoreBlockedSenders` по
+  loaded-vs-total) + страница: «Show More» запрашивает следующий `offset` (число загруженных),
+  дописывает страницу, `isLoadingMore` блокирует повтор. Контракт `test-blocked-users.cjs`
+  расширен: ключи/дедуп/порядок, honestly-правило hasMore (пусто, догрузка, полный список,
+  уменьшившийся total), проброс offset в команду, проводка страницы, строка `blocked_show_more`
+  в 3 локалях. Гейты: host **113/113**, оба smoke, hvigor BUILD SUCCESSFUL.
+  **Осталось (H8):** блокировка из профиля, blockListStories UI, iOS-карточки, witness.
 - **S11 (lead).** H4 «Данные и хранилище» из `missing` → `partial`. Экран `TgDataStoragePage`
   (Settings → Data and Storage): быстрые размеры (`getStorageStatisticsFast`: медиа, БД, языковые
   пакеты, логи), разбивка по чатам (`getStorageStatistics` с `chat_limit`, сортировка по размеру),

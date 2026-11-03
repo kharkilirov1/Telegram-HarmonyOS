@@ -37,10 +37,11 @@
 | S9b | Сессии — Active/Web и завершение всех (H5) | H5 | `sessionType` в DTO, `sessionSelectors` (web-типы, секции, canTerminateOthers), `terminateAllOtherSessions` (команда/сериализатор/use case), две секции и destructive-строка в странице, строки в 3 локалях, контракт расширен |
 | S10 | Заблокированные пользователи (H8) | H8 | `getBlockedMessageSenders`/`setMessageSenderBlockList` (block → main, unblock → null), `BlockedSenderDto`, `LoadBlockedSendersUseCase`, `TgBlockedUsersPage` + route + строка Settings, `blocked_*` в 3 локалях, контракт; H8 → `partial` |
 | S11 | Данные и хранилище (H4) | H4 | `getStorageStatisticsFast`/`getStorageStatistics`/`optimizeStorage` (команды, сериализатор), `StorageStatisticsDto` + `formatStorageBytes`, `LoadStorageStatisticsUseCase`, `TgDataStoragePage` + восстановленная строка Settings + route, `data_storage_*` в 3 локалях, контракты data-storage и dead-controls; H4 → `partial` |
+| S10b | Заблокированные — пагинация (H8) | H8 | `blockedSenderSelectors` (ключ, merge с дедупом, hasMore по loaded-vs-total), offset-пагинация «Show More» в `TgBlockedUsersPage`, `blocked_show_more` в 3 локалях, контракт расширен |
 
 ## Следующие срезы (в порядке)
 
-1. **S11b. Данные и хранилище — авто-скачивание и лимиты (H4).** Сети/типы медиа, лимит кэша, диаграмма как в iOS.
+1. **S11b. Данные и хранилище — авто-скачивание и лимиты (H4).** Пресеты `getAutoDownloadSettingsPresets` (Mobile/Roaming/Wi-Fi) + `setAutoDownloadSettings`, лимит кэша.
 2. **S10b. Заблокированные — пагинация и блокировка из профиля (H8).**
 2. **S9c. Сессии — 2FA и подтверждение новых сеансов (H5).**
 2. **S8b.3. Контекстное меню — пункты по типу чата (B6).** Join (только search-контекст в iOS), Select.

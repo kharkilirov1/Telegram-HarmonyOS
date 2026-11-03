@@ -11,6 +11,7 @@ import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { createLoadBlockedSendersUseCase, LoadBlockedSendersUseCase } from '../../../domain/usecases/loadBlockedSenders';
 import { BlockedSenderDto } from '../../../core/model/dto/BlockedSenderDto';
+import { blockedSenderKey, mergeBlockedSenders, hasMoreBlockedSenders } from '../../../domain/selectors/blockedSenderSelectors';
 import { TgChatTopBar } from '../../tg_ui/atoms/TgChatTopBar';
 import { TgIcon } from '../../tg_ui/atoms/TgIcon';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
@@ -33,6 +34,8 @@ export struct TgBlockedUsersPage {
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
   @Local private topBarInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
   @Local private unblockingKey: string = '';
+  @Local private totalCount: number = 0;
+  @Local private isLoadingMore: boolean = false;
 
   private loadBlockedUseCase?: LoadBlockedSendersUseCase;
   private pageLifecycleToken: number = 0;
@@ -77,6 +80,7 @@ export struct TgBlockedUsersPage {
           return;
         }
         this.senders = page.senders;
+        this.totalCount = page.totalCount;
         this.isLoading = false;
       })
       .catch((error: Error) => {
@@ -90,7 +94,32 @@ export struct TgBlockedUsersPage {
   }
 
   private senderKey(sender: BlockedSenderDto): string {
-    return sender.senderType + ':' + sender.senderId.toString();
+    return blockedSenderKey(sender);
+  }
+
+  private loadMore(): void {
+    const useCase = this.loadBlockedUseCase;
+    if (useCase === undefined || this.isLoadingMore) {
+      return;
+    }
+    const token: number = this.pageLifecycleToken;
+    this.isLoadingMore = true;
+    useCase.fetchPage(this.senders.length)
+      .then((page) => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        this.senders = mergeBlockedSenders(this.senders, page.senders);
+        this.totalCount = page.totalCount;
+        this.isLoadingMore = false;
+      })
+      .catch((error: Error) => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        this.isLoadingMore = false;
+        hilog.error(DOMAIN, TAG, 'Load more blocked users failed: %{public}s', error.message);
+      });
   }
 
   private senderTitle(sender: BlockedSenderDto): string {
@@ -236,6 +265,22 @@ export struct TgBlockedUsersPage {
                 this.confirmUnblock(sender);
               })
             }, (sender: BlockedSenderDto) => this.senderKey(sender))
+            if (hasMoreBlockedSenders(this.senders.length, this.totalCount)) {
+              ListItem() {
+                Text(this.isLoadingMore
+                  ? localized($r('app.string.blocked_loading').id, 'Loading…')
+                  : localized($r('app.string.blocked_show_more').id, 'Show More'))
+                  .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+                  .fontColor(TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT)
+                  .width('100%')
+                  .height(44)
+                  .textAlign(TextAlign.Center)
+                  .opacity(this.isLoadingMore ? 0.5 : 1)
+                  .onClick(() => {
+                    this.loadMore();
+                  })
+              }
+            }
           }
         }
         .width('100%')
