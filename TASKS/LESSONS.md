@@ -576,3 +576,16 @@ Last updated: 2026-10-23
   changes user-visible wording.
 - Sticky unread boundary is easy to break: the live `unreadCount`/`lastReadInbox` reset on read, so
   the captured entry-time boundary must win; assert both paths in the contract.
+
+## 167. Selection mode touches every layer, and the harness slices between exports
+
+- A modal row interaction (selection) is not one atom: state in \`ChatTimelineViewState\`, aliases in the
+  context, port methods in two interfaces, seven session delegates, one controller item, a page swap and
+  a row overlay. Budget the slice for the wiring, not for the panel widget.
+- \`fullExport\` in \`chat-screen-source.cjs\` slices from \`export function X(\` to the next line that starts
+  with \`export\`. A comment block placed immediately before the next export becomes the tail of the
+  previous export's contract text and fails \`full.endsWith('}')\` — keep comments inside function bodies
+  or above the previous export, never as a header for the next one.
+- To make a row toggle without hijacking child taps, disable the bubble subtree in selection mode and own
+  the tap on the outer row: \`.enabled(!selectionActive)\` + one \`onClick\`. Wrapping individual media
+  callbacks would need a guard in every lambda and still misses empty areas.

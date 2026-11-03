@@ -185,6 +185,14 @@
       "value": "未读消息"
     },
     {
+      "name": "selection_count",
+      "value": "已选择 %d"
+    },
+    {
+      "name": "action_select",
+      "value": "选择"
+    },
+    {
       "name": "service_joined_group",
       "value": "{name} 加入了群组"
     },

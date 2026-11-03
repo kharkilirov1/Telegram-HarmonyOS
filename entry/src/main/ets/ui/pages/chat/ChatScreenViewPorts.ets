@@ -27,6 +27,8 @@ export interface ChatTimelineRowPort extends ChatMessageActionsPopupPort {
   handleDocumentTap(documentPath: string, documentFileId: number, mimeType: string, messageId?: string ): void;
   handleMediaGalleryOpen(messageId: string): void;
   toggleMessageReaction(messageId: string, key: string): void;
+  // S5b (C9): tap in selection mode toggles this row instead of opening the actions menu.
+  toggleMessageSelection(messageId: string): void;
   handleVoiceSeek(messageId: string, progress: number): void;
   handleVoiceTap(messageId: string, voicePath: string, voiceFileId: number): void;
   isActiveAudioEntry(entry: ChatTimelineEntryVO): boolean;
@@ -125,6 +127,13 @@ export interface ChatMediaOverlayPort {
 
 export interface ChatScreenPagePort {
   chatTopInset(): number;
+  // S5b (C9): the selection bar replaces the composer while messages are selected.
+  selectionActive(): boolean;
+  selectionTitle(): string;
+  clearMessageSelection(): void;
+  copySelectedMessages(): void;
+  forwardSelectedMessages(): void;
+  deleteSelectedMessages(): void;
   closeSearch(): void;
   handleBackPress(): void;
   handleChatViewportAreaChange(newArea: Area): void;

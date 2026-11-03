@@ -81,7 +81,7 @@ Documentation and repository structure were reconciled; no product code changed.
 - `TASKS/SLICE_TEMPLATE.md` — шаблон плана среза (референс → контракт → швы → состояния → тест →
   приёмка).
 - `TASKS/CAPABILITY_MATRIX.md` — 105 строк по пользовательским возможностям iOS: 35 `available`,
-  46 `partial`, 20 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
+  47 `partial`, 19 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
   код-доказательство и связанные фичи; `available` без witness не ставится.
 - `TASKS/WORKMAP.md` — M0 (верифицировать 9 `unverified` строк), S1 (typing indicator, C2),
   S2 (стикеры/TGS, D13).
@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S5b (lead).** C9 «панель выделения сообщений» из `missing` → `partial`. Вход — пункт
+  «Select» в меню действий; состояние `selectionActive`/`selectedMessageIds` в
+  `ChatTimelineViewState` с alias-геттерами; делегаты входа/тоггла/выхода, `selectionTitle`,
+  copy (тексты в порядке таймлайна), forward (тот же `startForwardMessages`), delete
+  (`ChatDeleteMessageController.requestMany` — одна доступность, один диалог, один
+  `deleteMessages`); панель `TgSelectionPanel` с паспортом/demo и токенами заменяет композер; строка
+  в режиме выделения показывает чек-индикатор и блокирует тапы бабла (`.enabled(false)`), тап строки
+  — тоггл. Строки «Select»/«%d selected» в base/ru/zh. Гейты: host **106/106**, оба smoke, hvigor
+  BUILD SUCCESSFUL. **Долг:** иконки вместо текстовых действий, подсветка выбранных баблов, диалог
+  удаления с формулировкой для N сообщений, device-witness.
 - **S5a (lead).** C6 «разделитель непрочитанных» верифицирован и доведён: модель уже создавала
   запись `kind='unread'` (`firstUnreadIncomingIndex`, sticky-граница, `'0'` как валидная граница,
   сброс sender-group), но строка матрицы висела `missing` без тестов. Добавлены паспорт

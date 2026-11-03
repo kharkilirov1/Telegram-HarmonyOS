@@ -78,6 +78,8 @@ export interface ChatMessageActionsHost extends ChatDeleteMessageHost, ChatEditM
   getEditingOriginalText(): string;
   clearEditMode(clearDraft: boolean): void;
   setForwardMode(messageIds: string[], sourceChatId: number, title: string, preview: string): void;
+  // S5b (C9): entering selection mode from the message actions menu.
+  enterMessageSelection(messageId: string): void;
   getForwardModeState(): ChatForwardModeState;
   clearForwardMode(): void;
 }
@@ -346,6 +348,7 @@ export class ChatMessageActionsController {
     items.push(new ChatMessageActionItem(forwardState === 'unavailable' ? 'forwardRetry' : 'forward', forwardTitle,
       false, forwardState === 'allowed' || forwardState === 'unavailable'));
     items.push(new ChatMessageActionItem('pin', localized($r('app.string.action_pin').id, 'Pin')));
+    items.push(new ChatMessageActionItem('select', localized($r('app.string.action_select').id, 'Select')));
     items.push(new ChatMessageActionItem('delete', localized($r('app.string.action_delete').id, 'Delete'), true));
     for (const item of items) item.sourceMessageId = entry.message.messageId;
     return items;
@@ -354,6 +357,11 @@ export class ChatMessageActionsController {
   handleMessageActionPress(actionId: string, entry: ChatTimelineEntryVO, host: ChatMessageActionsHost): void {
     const items = this.buildMessageActionItems(entry, 'allowed');
     if (!items.some((item: ChatMessageActionItem): boolean => item.id === actionId)) {
+      return;
+    }
+
+    if (actionId === 'select') {
+      host.enterMessageSelection(entry.message.messageId);
       return;
     }
 
@@ -576,6 +584,13 @@ export class ChatMessageActionsController {
         }
         hilog.error(DOMAIN, TAG, 'Pin failed: %{public}s', err.message);
       });
+  }
+
+  handleDeleteMessages(messageIds: string[], host: ChatMessageActionsHost): void {
+    this.editController?.cancel();
+    this.cancelPendingForwardPicker();
+    if (this.deleteController === undefined) this.deleteController = new ChatDeleteMessageController();
+    this.deleteController.requestMany(messageIds, host);
   }
 
   handleDeleteMessage(messageId: string, host: ChatMessageActionsHost): void {

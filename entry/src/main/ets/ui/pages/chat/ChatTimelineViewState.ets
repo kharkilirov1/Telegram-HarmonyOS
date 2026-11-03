@@ -5,6 +5,10 @@ export class ChatTimelineViewState {
   // S3d.1: keys shown in the popup reaction row; seeded from the chat list, replaced by the
   // per-message getMessageAvailableReactions answer.
   @Trace messageActionsReactionKeys: string[] = [];
+  // S5b (C9): selection mode. selectionActive is explicit (not derived from the ids) so the panel
+  // and row hit-testing can react before the first toggle resolves.
+  @Trace selectionActive: boolean = false;
+  @Trace selectedMessageIds: string[] = [];
   @Trace messageActionsForwardState: string = 'loading';
   @Trace awaitingInitialTimeline: boolean = false;
   @Trace prependScrollMask: boolean = false;

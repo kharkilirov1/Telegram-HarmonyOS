@@ -331,6 +331,10 @@ export class ChatScreenContext {
   set messageActionsOpenId(value: string) { this.view.timeline.messageActionsOpenId = value; }
   get messageActionsReactionKeys(): string[] { return this.view.timeline.messageActionsReactionKeys; }
   set messageActionsReactionKeys(value: string[]) { this.view.timeline.messageActionsReactionKeys = value; }
+  get selectionActive(): boolean { return this.view.timeline.selectionActive; }
+  set selectionActive(value: boolean) { this.view.timeline.selectionActive = value; }
+  get selectedMessageIds(): string[] { return this.view.timeline.selectedMessageIds; }
+  set selectedMessageIds(value: string[]) { this.view.timeline.selectedMessageIds = value; }
   get messageActionsForwardState(): string { return this.view.timeline.messageActionsForwardState; }
   set messageActionsForwardState(value: string) { this.view.timeline.messageActionsForwardState = value; }
   get awaitingInitialTimeline(): boolean { return this.view.timeline.awaitingInitialTimeline; }

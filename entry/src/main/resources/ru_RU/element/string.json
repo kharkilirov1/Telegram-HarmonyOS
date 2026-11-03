@@ -185,6 +185,14 @@
       "value": "Непрочитанные сообщения"
     },
     {
+      "name": "selection_count",
+      "value": "%d выбрано"
+    },
+    {
+      "name": "action_select",
+      "value": "Выбрать"
+    },
+    {
       "name": "service_joined_group",
       "value": "{name} вступил(а) в группу"
     },

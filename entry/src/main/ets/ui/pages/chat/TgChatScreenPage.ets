@@ -11,6 +11,7 @@ import { ChatScreenViewState } from './ChatScreenViewState';
 import { ChatScreenSession } from './ChatScreenSession';
 import { ChatScreenViewBindings } from './ChatScreenViewBindings';
 import { TgChatTimelineViewport } from './TgChatTimelineViewport';
+import { TgSelectionPanel } from '../../tg_ui/molecules/TgSelectionPanel';
 import { TgChatComposerDock } from './TgChatComposerDock';
 import { TgChatPinnedOverlay } from './TgChatPinnedOverlay';
 import { TgChatMediaOverlay } from './TgChatMediaOverlay';
@@ -118,7 +119,26 @@ export struct TgChatScreenPage {
         // Default hit-test: Transparent let the list underneath steal taps —
         // title/avatar onClick never fired, profile would not open
 
-        TgChatComposerDock({ chrome: this.view.chrome, composer: this.view.composer, media: this.view.media, panels: this.view.panels, pinnedSearch: this.view.pinnedSearch, timeline: this.view.timeline, bindings: this.bindings })
+        // S5b (C9): while messages are selected the selection bar takes the composer's place.
+        if (this.view.timeline.selectionActive) {
+          TgSelectionPanel({
+            title: this.bindings.selectionTitle(),
+            onClose: (): void => {
+              this.bindings.clearMessageSelection();
+            },
+            onCopy: (): void => {
+              this.bindings.copySelectedMessages();
+            },
+            onForward: (): void => {
+              this.bindings.forwardSelectedMessages();
+            },
+            onDelete: (): void => {
+              this.bindings.deleteSelectedMessages();
+            }
+          })
+        } else {
+          TgChatComposerDock({ chrome: this.view.chrome, composer: this.view.composer, media: this.view.media, panels: this.view.panels, pinnedSearch: this.view.pinnedSearch, timeline: this.view.timeline, bindings: this.bindings })
+        }
 
         if (this.view.media.showMediaGallery) {
           TgChatMediaOverlay({ chrome: this.view.chrome, media: this.view.media, bindings: this.bindings })

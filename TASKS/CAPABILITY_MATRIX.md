@@ -70,7 +70,7 @@
 
 | C7 | Кнопка «вниз» | `available` | `ChatWindowGeometryCoordinator.ets` (20/15) | `Chat/ScrollToBottom*` | C8 |
 | C8 | Переход к сообщению | `available` | `ChatTimelineViewportCoordinator.ets` (10/4) | `ChatControllerScrollToPointInHistory` | C3, C4 |
-| C9 | Панель выделения сообщений | `missing` | нет | `ChatMessageSelectionInputPanelNode` | D4, D6 |
+| C9 | Панель выделения сообщений | `partial` | `ChatTimelineViewState.selectionActive`/`selectedMessageIds` + alias-геттеры в `ChatScreenContext.ets`; вход — пункт «Select» в меню действий (`ChatMessageActionsController.ets`, тост `action_select` в base/ru/zh); делегаты `enter/toggle/clear/copy/forward/delete/selectionTitle` в `ChatMessagePopupCoordinator.ets` + `ChatScreenSession.ets`; `ChatDeleteMessageController.requestMany` — одна доступность/один диалог/один `deleteMessages`; панель `TgSelectionPanel` (спец+demo, токены `SELECTION_PANEL_*`/`SELECTION_CHECK_*`) заменяет композер в `TgChatScreenPage.ets`; строка в режиме выделения показывает чек-индикатор и блокирует тапы бабла (`TgChatTimelineRow.ets`); host-контракт `test-selection-mode.cjs` (6/1) | `Components/Chat/ChatMessageSelectionInputPanelNode` | D4, D6 |
 | C10 | Меню действий чата (шапка) | `missing` | нет: шапка = back + title/avatar→profile + search (`TgChatTopBar.ets:23-27,39,46-51,619-621`, проводка `TgChatScreenPage.ets:96-107`); меню действий чата (mute / clear history / delete) в шапке нет | `ChatControllerOpenPeer.swift`, `ChatListUI/Sources/ChatContextMenus.swift` | C1; шов — `ChatTopBarCoordinator` |
 
 ## D. Сообщения
@@ -189,8 +189,8 @@
 ## Итог и следующий шаг
 
 - `available`: 35 строк — есть код, тесты и работающий сценарий.
-- `partial`: 46 — код есть, но не сверено с iOS или неполно.
-- `missing`: 20 — кода нет.
+- `partial`: 47 — код есть, но не сверено с iOS или неполно.
+- `missing`: 19 — кода нет.
 - `unverified`: 0 — девять прежних строк разобраны 2026-10-25; остальные 96 имели статус раньше.
 - `frozen`: 3 (VoIP, мультиаккаунт, секретные чаты), `blocked`: 1 (push) — не вкладываться.
 

@@ -6,9 +6,11 @@ import { ChatMessageActionItem, ChatMessageActionsController, ChatMessageActions
 import { ChatForwardSourceController } from './ChatForwardSourceController';
 import { ForwardMessagesUseCase } from '../../../domain/usecases/forwardMessages';
 import { ChatReactionHost, toggleMessageReaction } from './ChatReactionController';
+import { ChatTimelineDataSource } from './ChatTimelineDataSource';
 import { Chat, availableReactionKeys, chatAllowsReactions, pickerReactionKeys } from '../../../core/model/AppState';
 import { MessageAvailableReactionsSnapshot } from '../../../core/model/dto/MessageDto';
 import { createGetMessageAvailableReactionsUseCase } from '../../../domain/usecases/getMessageAvailableReactions';
+import { localized } from '../../../core/utils/AppResource';
 
 export interface ChatMessagePopupCoordinatorPort extends ChatMessageActionsHost, ChatReactionHost {
   activeChatId: number;
@@ -23,6 +25,10 @@ export interface ChatMessagePopupCoordinatorPort extends ChatMessageActionsHost,
   // S3d.1: keys for the popup reaction row; seeded from the chat list, then replaced by the
   // per-message getMessageAvailableReactions answer.
   messageActionsReactionKeys: string[];
+  // S5b (C9): selection mode state and the rendered timeline entries the actions read.
+  selectionActive: boolean;
+  selectedMessageIds: string[];
+  dataSource: ChatTimelineDataSource;
   messageActionsSourceChatId: number;
   messageActionsUseCase?: ForwardMessagesUseCase;
   timelineContainerWidth: number;
@@ -237,4 +243,92 @@ export function handleMessageActionReaction(host: ChatMessagePopupCoordinatorPor
   const messageId = entry.message.messageId;
   host.closeMessageActions();
   toggleMessageReaction(host, messageId, key);
+}
+
+
+export function enterMessageSelection(host: ChatMessagePopupCoordinatorPort, messageId: string): void {
+  // Selection mode is page UI state (ids in ChatTimelineViewState); actions reuse the existing
+  // copy/forward/delete controllers so the TDLib paths and their fences stay single-sourced.
+  if (messageId.length === 0) return;
+  host.messageActionsGeneration++;
+  host.closeMessageActions();
+  host.selectionActive = true;
+  host.selectedMessageIds = [messageId];
+}
+
+export function toggleMessageSelection(host: ChatMessagePopupCoordinatorPort, messageId: string): void {
+  if (!host.selectionActive || messageId.length === 0) return;
+  const current = host.selectedMessageIds;
+  const next = current.includes(messageId)
+    ? current.filter((id: string): boolean => id !== messageId)
+    : current.concat([messageId]);
+  host.selectedMessageIds = next;
+  if (next.length === 0) {
+    host.selectionActive = false;
+  }
+}
+
+export function clearMessageSelection(host: ChatMessagePopupCoordinatorPort): void {
+  host.selectionActive = false;
+  host.selectedMessageIds = [];
+}
+
+export function selectionTitle(host: ChatMessagePopupCoordinatorPort): string {
+  const count = host.selectedMessageIds.length;
+  if (count === 0) return '';
+  const template = localized($r('app.string.selection_count').id, '%d selected');
+  return template.replace('%d', count.toString());
+}
+
+// Selected ids in the order they appear in the timeline (channel/album rows resolve to their
+// rendered entries), so copy/forward/delete never depend on tap order.
+function selectedEntriesInTimelineOrder(host: ChatMessagePopupCoordinatorPort): ChatTimelineEntryVO[] {
+  const selected = host.selectedMessageIds;
+  if (selected.length === 0) return [];
+  const entries: ChatTimelineEntryVO[] = [];
+  const seen: string[] = [];
+  for (const entry of host.dataSource.getAllEntries()) {
+    if (entry.kind !== 'message') continue;
+    if (selected.indexOf(entry.message.messageId) < 0 || seen.indexOf(entry.message.messageId) >= 0) continue;
+    seen.push(entry.message.messageId);
+    entries.push(entry);
+  }
+  return entries;
+}
+
+export function copySelectedMessages(host: ChatMessagePopupCoordinatorPort): void {
+  const entries = selectedEntriesInTimelineOrder(host);
+  const texts: string[] = [];
+  for (const entry of entries) {
+    const text = entry.message.text.length > 0 ? entry.message.text : entry.message.caption;
+    if (text.length > 0) texts.push(text);
+  }
+  if (texts.length === 0) return;
+  host.messageActionsCtrl.copyMessageText(texts.join('\n'), host);
+  clearMessageSelection(host);
+}
+
+export function forwardSelectedMessages(host: ChatMessagePopupCoordinatorPort): void {
+  const entries = selectedEntriesInTimelineOrder(host);
+  if (entries.length === 0) return;
+  const chatId = host.getActiveChatId();
+  if (chatId === 0) return;
+  const ids: string[] = [];
+  for (const entry of entries) ids.push(entry.message.messageId);
+  const first = entries[0].message;
+  const author = first.senderName.length > 0 ? first.senderName
+    : (first.isOutgoing ? localized($r('app.string.chat_you_prefix').id, 'You')
+      : localized($r('app.string.message_action').id, 'Message'));
+  const previewSource = first.text.length > 0 ? first.text : first.caption;
+  host.messageActionsCtrl.startForwardMessages(ids, author, previewSource, chatId, host);
+  clearMessageSelection(host);
+}
+
+export function deleteSelectedMessages(host: ChatMessagePopupCoordinatorPort): void {
+  const entries = selectedEntriesInTimelineOrder(host);
+  if (entries.length === 0) return;
+  const ids: string[] = [];
+  for (const entry of entries) ids.push(entry.message.messageId);
+  host.messageActionsCtrl.handleDeleteMessages(ids, host);
+  clearMessageSelection(host);
 }

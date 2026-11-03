@@ -1536,4 +1536,21 @@ export class TgUiTokens {
   static readonly REACTION_PICKER_PILL_SIZE: number = 28;
   static readonly REACTION_PICKER_GLYPH_SIZE: number = 16;
   static readonly REACTION_PICKER_PADDING_H: number = 12;
+  // S5b (C9): message-selection panel replaces the composer while messages are selected.
+  static readonly SELECTION_PANEL_HEIGHT: number = 52;
+  static readonly SELECTION_PANEL_ACTION_TEXT_SIZE: number = 15;
+  static readonly SELECTION_PANEL_ACTION_TEXT_WEIGHT = FontWeight.Medium;
+  static readonly SELECTION_PANEL_ACTION_PADDING_H: number = 12;
+  static readonly SELECTION_PANEL_ACTION_GAP: number = 4;
+  static readonly SELECTION_PANEL_CLOSE_ICON_SIZE: number = 22;
+  static readonly SELECTION_PANEL_BG: Resource = $r('app.color.composer_glass_tint');
+
+  // S5b (C9): selection-mode row indicator drawn in the leading lane.
+  static readonly SELECTION_CHECK_LANE_WIDTH: number = 28;
+  static readonly SELECTION_CHECK_ICON_SIZE: number = 22;
+  static readonly SELECTION_CHECK_RING_WIDTH: number = 1.5;
+  static readonly SELECTION_CHECK_RING_COLOR: Resource = $r('app.color.text_secondary');
+  static readonly SELECTION_CHECK_BG: Resource = $r('app.color.telegram_blue');
+  static readonly SELECTION_CHECK_GLYPH: string = '✓';
+  static readonly SELECTION_CHECK_GLYPH_COLOR: Resource = $r('app.color.icon_on_primary');
 }

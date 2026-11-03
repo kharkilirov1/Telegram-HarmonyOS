@@ -185,6 +185,14 @@
       "value": "Unread messages"
     },
     {
+      "name": "selection_count",
+      "value": "%d selected"
+    },
+    {
+      "name": "action_select",
+      "value": "Select"
+    },
+    {
       "name": "service_joined_group",
       "value": "{name} joined the group"
     },

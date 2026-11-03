@@ -63,7 +63,7 @@ export class ChatDeleteMessageController {
   private phase: string = 'idle';
   private chatId: number = 0;
   private lifecycle: number = 0;
-  private messageId: string = '';
+  private messageIds: string[] = [];
   private useCase?: DeleteMessagesUseCase;
 
   constructor(confirmation: DeleteMessageConfirmation = new NativeDeleteMessageConfirmation()) {
@@ -77,21 +77,35 @@ export class ChatDeleteMessageController {
   }
 
   request(messageId: string, host: ChatDeleteMessageHost): void {
+    this.requestMany([messageId], host);
+  }
+
+  // Same confirmation flow for one or many messages: one availability probe, one dialog, one
+  // execute call with every id. Duplicate/empty ids are dropped before any async boundary.
+  requestMany(messageIds: string[], host: ChatDeleteMessageHost): void {
+    const ids: string[] = [];
+    for (const raw of messageIds) {
+      const id = raw.trim();
+      if (id.length > 0 && id !== '0' && !ids.includes(id)) ids.push(id);
+    }
+    if (ids.length === 0) return;
     const useCase = host.getDeleteUseCase();
     const chatId = host.getActiveChatId();
     const lifecycle = host.getLifecycleToken();
     if (!useCase || !host.hasActiveChatState() || chatId === 0) return;
+    const idsKey = ids.join(',');
     const sameContext = this.useCase === useCase && this.chatId === chatId && this.lifecycle === lifecycle;
-    if (sameContext && this.phase !== 'idle' && (this.phase !== 'loading' || this.messageId === messageId)) return;
+    if (sameContext && this.phase !== 'idle' &&
+      (this.phase !== 'loading' || this.messageIds.join(',') === idsKey)) return;
     const generation = ++this.generation;
     this.useCase = useCase;
     this.chatId = chatId;
     this.lifecycle = lifecycle;
-    this.messageId = messageId;
+    this.messageIds = ids;
     this.phase = 'loading';
     const current = (): boolean => generation === this.generation && host.hasActiveChatState() &&
       host.getActiveChatId() === chatId && host.getLifecycleToken() === lifecycle && host.getDeleteUseCase() === useCase;
-    useCase.getAvailability(chatId, [messageId], current)
+    useCase.getAvailability(chatId, ids, current)
       .then(async (availability: DeleteMessagesAvailability) => {
         if (!current()) return;
         if (!availability.forSelf && !availability.forEveryone) throw new DeleteMessagesEligibilityError();
@@ -101,7 +115,7 @@ export class ChatDeleteMessageController {
         this.phase = 'deleting';
         const params = new DeleteMessagesParams();
         params.chatId = chatId;
-        params.messageIds = [messageId];
+        params.messageIds = ids;
         params.revoke = revoke;
         // Permissions can expire/change while the native dialog is visible.
         await useCase.execute(params, current);
@@ -122,5 +136,4 @@ export class ChatDeleteMessageController {
         this.phase = 'idle';
         this.useCase = undefined;
       });
-  }
-}
+  }}

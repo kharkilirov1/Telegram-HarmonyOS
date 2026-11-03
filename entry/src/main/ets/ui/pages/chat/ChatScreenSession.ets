@@ -133,7 +133,11 @@ import {
   messageActionsPopupStateHandler as delegateMessageActionsPopupStateHandler, closeMessageActions as delegateCloseMessageActions, refreshForwardActionAvailability as delegateRefreshForwardActionAvailability, messageActionItems as delegateMessageActionItems,
   messageActionsPopupWidth as delegateMessageActionsPopupWidth, messageActionsPopupHeight as delegateMessageActionsPopupHeight, handleMessageActionPress as delegateHandleMessageActionPress, startEditMessage as delegateStartEditMessage,
   cancelEditMessage as delegateCancelEditMessage, handleEditMessage as delegateHandleEditMessage, handleForwardMessages as delegateHandleForwardMessages, handlePinMessage as delegateHandlePinMessage,
-  handleDeleteMessage as delegateHandleDeleteMessage
+  handleDeleteMessage as delegateHandleDeleteMessage,
+  enterMessageSelection as delegateEnterMessageSelection, toggleMessageSelection as delegateToggleMessageSelection,
+  clearMessageSelection as delegateClearMessageSelection, selectionTitle as delegateSelectionTitle,
+  copySelectedMessages as delegateCopySelectedMessages, forwardSelectedMessages as delegateForwardSelectedMessages,
+  deleteSelectedMessages as delegateDeleteSelectedMessages
 } from './ChatMessagePopupCoordinator';
 import {
   setStickerPanelVisible as delegateSetStickerPanelVisible, openStickerSettings as delegateOpenStickerSettings, handleSendMessage as delegateHandleSendMessage, handleComposerAttachPress as delegateHandleComposerAttachPress,
@@ -380,6 +384,13 @@ export class ChatScreenSession extends ChatScreenContext implements ChatScreenSe
   toggleMessageReaction(messageId: string, key: string): void { delegateToggleMessageReaction(this, messageId, key); }
   messageActionReactionKeys(): string[] { return delegateMessageActionReactionKeys(this); }
   handleMessageActionReaction(key: string): void { delegateHandleMessageActionReaction(this, key); }
+  enterMessageSelection(messageId: string): void { delegateEnterMessageSelection(this, messageId); }
+  toggleMessageSelection(messageId: string): void { delegateToggleMessageSelection(this, messageId); }
+  clearMessageSelection(): void { delegateClearMessageSelection(this); }
+  selectionTitle(): string { return delegateSelectionTitle(this); }
+  copySelectedMessages(): void { delegateCopySelectedMessages(this); }
+  forwardSelectedMessages(): void { delegateForwardSelectedMessages(this); }
+  deleteSelectedMessages(): void { delegateDeleteSelectedMessages(this); }
   animateMediaGalleryState(isVisible: boolean, sourceMessageId: string = '0'): void { delegateAnimateMediaGalleryState(this, isVisible, sourceMessageId); }
   refreshOpenMediaGalleryItems(): void { delegateRefreshOpenMediaGalleryItems(this); }
   startReply(messageId: string, author: string, preview: string, isQuote: boolean = false): void { delegateStartReply(this, messageId, author, preview, isQuote); }

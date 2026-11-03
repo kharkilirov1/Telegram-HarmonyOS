@@ -23,7 +23,14 @@ const eventArguments = {
   toggleMessageReaction: ['messageId', 'key'],
   // S3d: the popup asks for the chat's available reaction keys, then reports the picked one.
   messageActionReactionKeys: [],
-  handleMessageActionReaction: ['key']
+  handleMessageActionReaction: ['key'],
+  enterMessageSelection: ['messageId'],
+  toggleMessageSelection: ['messageId'],
+  clearMessageSelection: [],
+  selectionTitle: [],
+  copySelectedMessages: [],
+  forwardSelectedMessages: [],
+  deleteSelectedMessages: []
 };
 const PAGE = 'TgChatScreenPage.ets';
 const normalize = text => text.replaceAll('\r\n', '\n');

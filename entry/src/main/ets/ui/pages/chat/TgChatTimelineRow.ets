@@ -20,8 +20,37 @@ export struct TgChatTimelineRow {
   @Require @Param bindings: ChatTimelineRowPort;
   @Require @Param entry: ChatTimelineEntryVO;
 
+  private isSelected(): boolean {
+    return this.timeline.selectedMessageIds.indexOf(this.entry.message.messageId) >= 0;
+  }
+
+  // S5b (C9): in selection mode the whole row is a toggle target. The bubble subtree is disabled so
+  // photo/voice/reaction taps cannot fire instead of selecting, and a single outer onClick owns the toggle.
+  @Builder
+  private buildSelectionIndicator() {
+    Row() {
+      Text(this.isSelected() ? TgUiTokens.SELECTION_CHECK_GLYPH : '')
+        .fontSize(TgUiTokens.SELECTION_CHECK_ICON_SIZE)
+        .fontColor(TgUiTokens.SELECTION_CHECK_GLYPH_COLOR)
+        .textAlign(TextAlign.Center)
+        .width(TgUiTokens.SELECTION_CHECK_ICON_SIZE)
+        .height(TgUiTokens.SELECTION_CHECK_ICON_SIZE)
+        .borderRadius(TgUiTokens.SELECTION_CHECK_ICON_SIZE / 2)
+        .border({ width: TgUiTokens.SELECTION_CHECK_RING_WIDTH, color: TgUiTokens.SELECTION_CHECK_RING_COLOR })
+        .backgroundColor(this.isSelected() ? TgUiTokens.SELECTION_CHECK_BG : Color.Transparent)
+    }
+    .width(TgUiTokens.SELECTION_CHECK_LANE_WIDTH)
+    .alignItems(VerticalAlign.Center)
+    .justifyContent(FlexAlign.Center)
+  }
+
   build() {
-    Column() {
+    Row() {
+      if (this.timeline.selectionActive) {
+        this.buildSelectionIndicator()
+      }
+
+      Column() {
       TgMessageRouter({
         messageId: this.entry.message.messageId,
         hiddenMediaMessageId: this.media.gallerySourceMessageId,
@@ -208,15 +237,10 @@ export struct TgChatTimelineRow {
           this.bindings.handleVoiceSeek(messageId, progress);
         }
       })
-    }
-    .width('100%')
-    .padding({
-      left: TgUiTokens.SPACE_12,
-      right: TgUiTokens.SPACE_12,
-      top: this.entry.message.topSpacing,
-      bottom: 0
-    })
-    .bindPopup(this.timeline.messageActionsOpenId === this.entry.message.messageId, {
+      }
+      .layoutWeight(1)
+      .enabled(!this.timeline.selectionActive)
+      .bindPopup(this.timeline.messageActionsOpenId === this.entry.message.messageId, {
       builder: this.buildMessageActionsPopup,
       placement: Placement.Top,
       popupColor: TgUiTokens.COMPOSER_CAPSULE_BG,
@@ -231,12 +255,25 @@ export struct TgChatTimelineRow {
       transition: composerPopupTransition(),
       onStateChange: this.bindings.messageActionsPopupStateHandler(this.entry.message.messageId)
     })
-    .gesture(
-      LongPressGesture({ repeat: false, duration: 300 })
-        .onAction(() => {
-          this.bindings.showMessageActions(this.entry);
-        })
-    )
+      .gesture(
+        LongPressGesture({ repeat: false, duration: 300 })
+          .onAction(() => {
+            this.bindings.showMessageActions(this.entry);
+          })
+      )
+    }
+    .width('100%')
+    .padding({
+      left: TgUiTokens.SPACE_12,
+      right: TgUiTokens.SPACE_12,
+      top: this.entry.message.topSpacing,
+      bottom: 0
+    })
+    .onClick(() => {
+      if (this.timeline.selectionActive) {
+        this.bindings.toggleMessageSelection(this.entry.message.messageId);
+      }
+    })
   }
 
   @Builder
