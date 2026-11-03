@@ -300,6 +300,21 @@ export class AddChatToListPayload {
   folderId: number = 0;
 }
 
+export type AutoDownloadNetworkType = 'mobile' | 'mobileRoaming' | 'wifi' | 'other' | 'none';
+
+export class SetAutoDownloadSettingsPayload {
+  networkType: AutoDownloadNetworkType = 'wifi';
+  isAutoDownloadEnabled: boolean = true;
+  maxPhotoFileSize: number = 0;
+  maxVideoFileSize: number = 0;
+  maxOtherFileSize: number = 0;
+  videoUploadBitrate: number = 0;
+  preloadLargeVideos: boolean = false;
+  preloadNextAudio: boolean = false;
+  preloadStories: boolean = false;
+  useLessDataForCalls: boolean = false;
+}
+
 export class GetStorageStatisticsPayload {
   // Number of chats whose per-chat usage is included (TDLib chat_limit, default 20).
   chatLimit: number = 20;
@@ -688,6 +703,15 @@ export class AddChatToListCommand extends AppCommand {
   payload: AddChatToListPayload = new AddChatToListPayload();
 }
 
+export class GetAutoDownloadSettingsPresetsCommand extends AppCommand {
+  type: string = 'getAutoDownloadSettingsPresets';
+}
+
+export class SetAutoDownloadSettingsCommand extends AppCommand {
+  type: string = 'setAutoDownloadSettings';
+  payload: SetAutoDownloadSettingsPayload = new SetAutoDownloadSettingsPayload();
+}
+
 export class GetStorageStatisticsCommand extends AppCommand {
   type: string = 'getStorageStatistics';
   payload: GetStorageStatisticsPayload = new GetStorageStatisticsPayload();
@@ -909,6 +933,8 @@ export type AnyAppCommand =
   | JoinChatCommand
   | ToggleChatPinnedCommand
   | AddChatToListCommand
+  | GetAutoDownloadSettingsPresetsCommand
+  | SetAutoDownloadSettingsCommand
   | GetStorageStatisticsCommand
   | GetStorageStatisticsFastCommand
   | OptimizeStorageCommand
@@ -1380,6 +1406,18 @@ export function createAddChatToListCommand(
   cmd.payload.chatId = chatId;
   cmd.payload.chatList = chatList;
   cmd.payload.folderId = folderId;
+  return cmd;
+}
+
+export function createGetAutoDownloadSettingsPresetsCommand(): GetAutoDownloadSettingsPresetsCommand {
+  return new GetAutoDownloadSettingsPresetsCommand();
+}
+
+export function createSetAutoDownloadSettingsCommand(
+  payload: SetAutoDownloadSettingsPayload
+): SetAutoDownloadSettingsCommand {
+  const cmd = new SetAutoDownloadSettingsCommand();
+  cmd.payload = payload;
   return cmd;
 }
 

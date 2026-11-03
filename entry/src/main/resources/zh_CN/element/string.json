@@ -237,6 +237,66 @@
       "value": "终止所有其他会话"
     },
     {
+      "name": "data_storage_auto_download",
+      "value": "自动下载"
+    },
+    {
+      "name": "auto_download_mobile",
+      "value": "移动网络"
+    },
+    {
+      "name": "auto_download_roaming",
+      "value": "漫游"
+    },
+    {
+      "name": "auto_download_wifi",
+      "value": "Wi-Fi"
+    },
+    {
+      "name": "auto_download_low",
+      "value": "低"
+    },
+    {
+      "name": "auto_download_medium",
+      "value": "中"
+    },
+    {
+      "name": "auto_download_high",
+      "value": "高"
+    },
+    {
+      "name": "auto_download_applied",
+      "value": "已应用"
+    },
+    {
+      "name": "auto_download_disabled",
+      "value": "自动下载已关闭"
+    },
+    {
+      "name": "auto_download_photo_limit",
+      "value": "照片最大"
+    },
+    {
+      "name": "auto_download_video_limit",
+      "value": "视频最大"
+    },
+    {
+      "name": "auto_download_loading",
+      "value": "加载中…"
+    },
+    {
+      "name": "auto_download_load_failed",
+      "value": "无法加载预设"
+    },
+    {
+      "name": "auto_download_retry",
+      "value": "重试"
+    },
+    {
+      "name": "auto_download_note",
+      "value": "仅预设：此版本 TDLib 不提供当前设置。"
+    },
+    {
       "name": "data_storage_total",
       "value": "总计"
     },

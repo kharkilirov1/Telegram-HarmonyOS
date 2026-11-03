@@ -786,3 +786,13 @@ Last updated: 2026-10-23
   other suites import.
 - Also: `chat.block_list` (BlockList object) is the authoritative blocked flag; a stories-only block
   must not read as a message block.
+
+## 187. A settings screen without a getter must say so
+
+- This TDLib version exposes auto-download presets and an apply call but no getter for the settings in
+  effect. Showing a selected preset as if it were the server truth would be a lie, and persisting the
+  choice locally could silently diverge from the account.
+- The honest shape: apply the preset, mark it "Applied" for the session, and put a visible note plus a
+  debt entry explaining why the active state is unknown.
+- Host-test loaders that also capture `export type` names try to return erased bindings; match only
+  value exports (`class|function|enum|const`) and let `stripTypeScriptTypes` erase the rest.

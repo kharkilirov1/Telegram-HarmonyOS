@@ -163,6 +163,16 @@ Documentation and repository structure were reconciled; no product code changed.
   уменьшившийся total), проброс offset в команду, проводка страницы, строка `blocked_show_more`
   в 3 локалях. Гейты: host **113/113**, оба smoke, hvigor BUILD SUCCESSFUL.
   **Осталось (H8):** блокировка из профиля, blockListStories UI, iOS-карточки, witness.
+- **S11b (lead).** H4: авто-скачивание по сетям. `TgAutoDownloadPage` (вход из Data and Storage):
+  `getAutoDownloadSettingsPresets` → три пресета (low/medium/high), секции Mobile/Roaming/Wi-Fi,
+  тап по строке применяет пресет через `setAutoDownloadSettings` (все 9 полей + маппинг
+  networkType*), показывается сводка (лимиты фото/видео через `formatStorageBytes`) и пометка
+  «Applied: level» в рамках сессии. Ограничение зафиксировано на экране и в матрице: в этой версии
+  TDLib нет getter’а текущих настроек, поэтому реальный активный пресет не читается. Контракт
+  `test-auto-download.cjs`: разбор всех полей пресетов, выбор уровня, проводка команд (маппинг сетей,
+  9 полей), use case (пресеты→применение, отказ без пресетов до gateway, ошибки), экран/route/вход
+  из хранилища/локали. Гейты: host **114/114**, оба smoke, hvigor BUILD SUCCESSFUL.
+  **Осталось (H4):** лимит кэша, iOS-диаграмма, witness.
 - **S11 (lead).** H4 «Данные и хранилище» из `missing` → `partial`. Экран `TgDataStoragePage`
   (Settings → Data and Storage): быстрые размеры (`getStorageStatisticsFast`: медиа, БД, языковые
   пакеты, логи), разбивка по чатам (`getStorageStatistics` с `chat_limit`, сортировка по размеру),

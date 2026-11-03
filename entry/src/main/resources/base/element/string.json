@@ -237,6 +237,66 @@
       "value": "Terminate All Other Sessions"
     },
     {
+      "name": "data_storage_auto_download",
+      "value": "Auto-Download"
+    },
+    {
+      "name": "auto_download_mobile",
+      "value": "Mobile"
+    },
+    {
+      "name": "auto_download_roaming",
+      "value": "Roaming"
+    },
+    {
+      "name": "auto_download_wifi",
+      "value": "Wi-Fi"
+    },
+    {
+      "name": "auto_download_low",
+      "value": "Low"
+    },
+    {
+      "name": "auto_download_medium",
+      "value": "Medium"
+    },
+    {
+      "name": "auto_download_high",
+      "value": "High"
+    },
+    {
+      "name": "auto_download_applied",
+      "value": "Applied"
+    },
+    {
+      "name": "auto_download_disabled",
+      "value": "Auto-download is off"
+    },
+    {
+      "name": "auto_download_photo_limit",
+      "value": "Photos up to"
+    },
+    {
+      "name": "auto_download_video_limit",
+      "value": "videos up to"
+    },
+    {
+      "name": "auto_download_loading",
+      "value": "Loading…"
+    },
+    {
+      "name": "auto_download_load_failed",
+      "value": "Could not load presets"
+    },
+    {
+      "name": "auto_download_retry",
+      "value": "Retry"
+    },
+    {
+      "name": "auto_download_note",
+      "value": "Presets only: the active preset is not exposed by TDLib in this version."
+    },
+    {
       "name": "data_storage_total",
       "value": "Total"
     },

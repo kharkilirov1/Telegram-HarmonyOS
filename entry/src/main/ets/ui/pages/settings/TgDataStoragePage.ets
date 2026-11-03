@@ -259,6 +259,23 @@ export struct TgDataStoragePage {
                 formatStorageBytes(this.logSize), true)
             }
             ListItem() {
+              Row() {
+                Text(localized($r('app.string.data_storage_auto_download').id, 'Auto-Download'))
+                  .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+                  .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+                  .layoutWeight(1)
+                Text('›')
+                  .fontSize(TgUiTokens.FONT_META_SIZE)
+                  .fontColor(TgUiTokens.COLOR_TEXT_META)
+              }
+              .width('100%')
+              .height(44)
+              .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16 })
+              .onClick(() => {
+                this.pageStack.pushPathByName('TgAutoDownloadPage', undefined);
+              })
+            }
+            ListItem() {
               Text(this.isClearing
                 ? localized($r('app.string.data_storage_clearing').id, 'Clearing…')
                 : localized($r('app.string.data_storage_clear_cache').id, 'Clear Cache'))

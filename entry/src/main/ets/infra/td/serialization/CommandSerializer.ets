@@ -8,6 +8,7 @@ import {
   AnyAppCommand,
   GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
   GetStorageStatisticsCommand,
+  SetAutoDownloadSettingsCommand,
   OptimizeStorageCommand,
   TerminateAllOtherSessionsCommand,
   TerminateSessionCommand,
@@ -117,6 +118,8 @@ COMMAND_SERIALIZATION_HANDLERS.set('setMessageReactions', serializeSetMessageRea
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageAvailableReactions', serializeGetMessageAvailableReactions);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
+COMMAND_SERIALIZATION_HANDLERS.set('getAutoDownloadSettingsPresets', serializeGetAutoDownloadSettingsPresets);
+COMMAND_SERIALIZATION_HANDLERS.set('setAutoDownloadSettings', serializeSetAutoDownloadSettings);
 COMMAND_SERIALIZATION_HANDLERS.set('getStorageStatistics', serializeGetStorageStatistics);
 COMMAND_SERIALIZATION_HANDLERS.set('getStorageStatisticsFast', serializeGetStorageStatisticsFast);
 COMMAND_SERIALIZATION_HANDLERS.set('optimizeStorage', serializeOptimizeStorage);
@@ -401,6 +404,37 @@ function serializeToggleChatIsPinned(command: AnyAppCommand, result: SerializedC
   result.params.setString('_chat_list_json', cmd.payload.chatList === 'archive'
     ? '{"@type":"chatListArchive"}'
     : '{"@type":"chatListMain"}');
+}
+
+function serializeGetAutoDownloadSettingsPresets(_command: AnyAppCommand, result: SerializedCommand): void {
+  result.method = 'getAutoDownloadSettingsPresets';
+}
+
+const AUTO_DOWNLOAD_NETWORK_TYPES: Map<string, string> = new Map<string, string>([
+  ['mobile', 'networkTypeMobile'],
+  ['mobileRoaming', 'networkTypeMobileRoaming'],
+  ['wifi', 'networkTypeWiFi'],
+  ['other', 'networkTypeOther'],
+  ['none', 'networkTypeNone']
+]);
+
+function serializeSetAutoDownloadSettings(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SetAutoDownloadSettingsCommand;
+  const payload = cmd.payload;
+  result.method = 'setAutoDownloadSettings';
+  const networkType: string = AUTO_DOWNLOAD_NETWORK_TYPES.get(payload.networkType) ?? 'networkTypeWiFi';
+  result.params.setString('_type_json', '{"@type":"' + networkType + '"}');
+  result.params.setString('_settings_json',
+    '{"@type":"autoDownloadSettings"' +
+    ',"is_auto_download_enabled":' + (payload.isAutoDownloadEnabled ? 'true' : 'false') +
+    ',"max_photo_file_size":' + payload.maxPhotoFileSize.toString() +
+    ',"max_video_file_size":' + payload.maxVideoFileSize.toString() +
+    ',"max_other_file_size":' + payload.maxOtherFileSize.toString() +
+    ',"video_upload_bitrate":' + payload.videoUploadBitrate.toString() +
+    ',"preload_large_videos":' + (payload.preloadLargeVideos ? 'true' : 'false') +
+    ',"preload_next_audio":' + (payload.preloadNextAudio ? 'true' : 'false') +
+    ',"preload_stories":' + (payload.preloadStories ? 'true' : 'false') +
+    ',"use_less_data_for_calls":' + (payload.useLessDataForCalls ? 'true' : 'false') + '}');
 }
 
 function serializeGetStorageStatistics(command: AnyAppCommand, result: SerializedCommand): void {

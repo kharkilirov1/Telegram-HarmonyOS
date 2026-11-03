@@ -237,6 +237,66 @@
       "value": "Завершить все другие сеансы"
     },
     {
+      "name": "data_storage_auto_download",
+      "value": "Авто-скачивание"
+    },
+    {
+      "name": "auto_download_mobile",
+      "value": "Мобильная сеть"
+    },
+    {
+      "name": "auto_download_roaming",
+      "value": "Роуминг"
+    },
+    {
+      "name": "auto_download_wifi",
+      "value": "Wi-Fi"
+    },
+    {
+      "name": "auto_download_low",
+      "value": "Низкий"
+    },
+    {
+      "name": "auto_download_medium",
+      "value": "Средний"
+    },
+    {
+      "name": "auto_download_high",
+      "value": "Высокий"
+    },
+    {
+      "name": "auto_download_applied",
+      "value": "Применён"
+    },
+    {
+      "name": "auto_download_disabled",
+      "value": "Авто-скачивание выключено"
+    },
+    {
+      "name": "auto_download_photo_limit",
+      "value": "Фото до"
+    },
+    {
+      "name": "auto_download_video_limit",
+      "value": "видео до"
+    },
+    {
+      "name": "auto_download_loading",
+      "value": "Загрузка…"
+    },
+    {
+      "name": "auto_download_load_failed",
+      "value": "Не удалось загрузить пресеты"
+    },
+    {
+      "name": "auto_download_retry",
+      "value": "Повторить"
+    },
+    {
+      "name": "auto_download_note",
+      "value": "Только пресеты: активный профиль в этой версии TDLib не читается."
+    },
+    {
       "name": "data_storage_total",
       "value": "Всего"
     },
