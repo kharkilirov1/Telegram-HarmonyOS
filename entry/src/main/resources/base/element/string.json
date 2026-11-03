@@ -217,6 +217,10 @@
       "value": "Delete"
     },
     {
+      "name": "chat_context_add_to_folder",
+      "value": "Add to folder"
+    },
+    {
       "name": "chat_folders_all",
       "value": "All"
     },

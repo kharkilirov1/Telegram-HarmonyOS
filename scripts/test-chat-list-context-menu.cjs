@@ -141,7 +141,7 @@ const C = S.ChatContextAction;
 
 // Page wiring: long-press opens the menu, actions go to the existing use cases -----------------------
 const page = read('ui/pages/chatlist/ChatListPage.ets');
-assert.match(page, /import \{ selectChatContextMenuEntries, chatContextActionIcon, ChatContextAction, ChatContextMenuEntry \}/);
+assert.match(page, /import \{ selectChatContextMenuEntries, chatContextActionIcon, ChatContextAction, ChatContextMenuEntry, selectAddToFolderTargets, ChatFolderTarget \}/);
 assert.match(page, /\.bindContextMenu\(this\.buildChatContextMenu\(item\), ResponseType\.LongPress\)/,
   'long press must open the menu');
 assert.match(page, /buildChatContextMenu\(item: ChatItemVO\)/);
@@ -177,4 +177,76 @@ for (const name of ['CHAT_CONTEXT_MENU_ITEM_HEIGHT', 'CHAT_CONTEXT_MENU_ICON_SIZ
 }
 assert.ok(page.includes('TgUiTokens.CHAT_CONTEXT_MENU_ITEM_HEIGHT'), 'builder uses the tokens');
 
-console.log('PASS chat list context menu contract');
+// Add to folder: addChatToList(chatListFolder) + only not-yet-member folders -------------------------
+async function checkAddToFolder() {
+  const { TdObject } = load('models/td/common/index.ets');
+  const access = load('core/utils/tdAccessors.ets', { TdObject });
+  const cmd = load('core/model/AppCommand.ets');
+  const errors = load('core/model/AppError.ets');
+  const hilog = { info() {}, debug() {}, warn() {}, error() {} };
+  const serializer = load('infra/td/serialization/CommandSerializer.ets', { ...cmd, TdObject, hilog });
+
+  const command = cmd.createAddChatToListCommand(42, 'folder', 7);
+  assert.equal(command.type, 'addChatToList');
+  assert.equal(command.payload.chatList, 'folder');
+  assert.equal(command.payload.folderId, 7);
+  assert.equal(cmd.createAddChatToListCommand(42, 'main').payload.folderId, 0, 'main stays folderless');
+  const parsed = JSON.parse(serializer.buildTdlibRequestJson('addChatToList',
+    serializer.serializeCommand(command).params));
+  assert.equal(parsed.chat_id, 42);
+  assert.deepEqual(parsed.chat_list, { '@type': 'chatListFolder', 'chat_folder_id': 7 });
+  const archiveParsed = JSON.parse(serializer.buildTdlibRequestJson('addChatToList',
+    serializer.serializeCommand(cmd.createAddChatToListCommand(42, 'archive')).params));
+  assert.deepEqual(archiveParsed.chat_list, { '@type': 'chatListArchive' }, 'archive regression');
+
+  const sent = [];
+  const gateway = { send: (issued) => { sent.push(issued); return Promise.resolve({}); } };
+  const useCase = new (load('domain/usecases/moveChatToList.ets', { ...cmd, ...errors, hilog }).MoveChatToListUseCase)(gateway);
+  await useCase.addToFolder(42, 7);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].payload.chatList, 'folder');
+  assert.equal(sent[0].payload.folderId, 7);
+  await assert.rejects(() => useCase.addToFolder(42, 0), /Invalid chatId\/folderId/);
+  await assert.rejects(() => useCase.addToFolder(0, 7), /Invalid chatId\/folderId/);
+  assert.equal(sent.length, 1, 'invalid input must not reach the gateway');
+  await useCase.execute(42, 'archive');
+  assert.equal(sent[1].payload.chatList, 'archive', 'archive move still works');
+
+  // Targets: only folders the chat is not in yet.
+  const state = A.createInitialAppState();
+  state.chatFilters.folders.push(Object.assign(new A.ChatFolderInfo(), { id: 7, title: 'Work' }));
+  state.chatFilters.folders.push(Object.assign(new A.ChatFolderInfo(), { id: 9, title: 'News' }));
+  const member = Object.assign(new A.Chat(), { id: 42, title: 'Ann' });
+  member.folderOrders.set(7, '10');
+  state.chats.chats.set(42, member);
+  const targets = S.selectAddToFolderTargets(state, 42);
+  assert.deepEqual(targets.map((target) => target.folderId), [9], 'already-member folder is not offered');
+  assert.equal(targets[0].title, 'News');
+  assert.deepEqual(S.selectAddToFolderTargets(state, 999), [], 'unknown chat has no targets');
+  state.chatFilters.folders = [];
+  assert.deepEqual(S.selectAddToFolderTargets(state, 42), [], 'no folders, no section');
+
+  // Page wiring: the section renders only with targets and dispatches to the use case.
+  const page = read('ui/pages/chatlist/ChatListPage.ets');
+  assert.match(page, /selectAddToFolderTargets, ChatFolderTarget/);
+  assert.match(page, /private folderTargets\(item: ChatItemVO\): ChatFolderTarget\[\]/);
+  assert.match(page, /if \(this\.folderTargets\(item\)\.length > 0\) \{/);
+  assert.match(page, /private handleAddToFolder\(item: ChatItemVO, folderId: number\): void \{/);
+  assert.match(page, /useCase\.addToFolder\(item\.chatId, folderId\)/);
+  assert.match(page, /chat_context_add_to_folder/);
+  for (const locale of ['base', 'ru_RU', 'zh_CN']) {
+    const strings = JSON.parse(fs.readFileSync(
+      path.join(root, 'entry/src/main/resources', locale, 'element/string.json'), 'utf8'));
+    assert.ok(strings.string.find((item) => item.name === 'chat_context_add_to_folder'),
+      'chat_context_add_to_folder exists in ' + locale);
+  }
+}
+
+checkAddToFolder()
+  .then(() => {
+    console.log('PASS chat list context menu contract');
+  })
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

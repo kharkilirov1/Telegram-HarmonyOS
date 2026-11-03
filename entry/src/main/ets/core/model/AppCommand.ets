@@ -295,7 +295,9 @@ export class ToggleChatPinnedPayload {
 
 export class AddChatToListPayload {
   chatId: ChatId = 0;
-  chatList: 'main' | 'archive' = 'main';
+  chatList: 'main' | 'archive' | 'folder' = 'main';
+  // Only meaningful for chatList = 'folder' (chatListFolder / chat_folder_id).
+  folderId: number = 0;
 }
 
 export class PinChatMessagePayload {
@@ -1300,11 +1302,13 @@ export function createToggleChatPinnedCommand(
 
 export function createAddChatToListCommand(
   chatId: ChatId,
-  chatList: 'main' | 'archive'
+  chatList: 'main' | 'archive' | 'folder',
+  folderId: number = 0
 ): AddChatToListCommand {
   const cmd = new AddChatToListCommand();
   cmd.payload.chatId = chatId;
   cmd.payload.chatList = chatList;
+  cmd.payload.folderId = folderId;
   return cmd;
 }
 

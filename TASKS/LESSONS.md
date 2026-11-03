@@ -717,3 +717,12 @@ Last updated: 2026-10-23
   otherwise "Mark as read" re-sends markAsUnread and appears to do nothing.
 - Any new chat field needs all five seams: DTO parse, model field, update handler, reducer (create +
   both merge paths), and the row VO/diff pair — missing the diff keeps a stale row on screen.
+
+## 180. Menu submenus need data that is true of the current chat
+
+- "Add to folder" must offer only folders the chat is not already in, otherwise the action looks
+  available but does nothing. `selectAddToFolderTargets` reads `Chat.folderOrders`, which the folder
+  membership slice already maintains from chatListFolder positions.
+- TDLib in this checkout has `addChatToList` for folders but no removal call, so "Remove from folder"
+  cannot be offered honestly; a missing contract is better than a dead menu row.
+- The folder section only renders when there is at least one target; an empty header would be noise.

@@ -217,6 +217,10 @@
       "value": "删除"
     },
     {
+      "name": "chat_context_add_to_folder",
+      "value": "添加到文件夹"
+    },
+    {
       "name": "chat_folders_all",
       "value": "全部"
     },

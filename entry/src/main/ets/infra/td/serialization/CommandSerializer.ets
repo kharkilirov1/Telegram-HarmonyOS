@@ -394,9 +394,11 @@ function serializeAddChatToList(command: AnyAppCommand, result: SerializedComman
   const cmd = command as AddChatToListCommand;
   result.method = 'addChatToList';
   result.params.setNumber('chat_id', cmd.payload.chatId);
-  const chatListJson = cmd.payload.chatList === 'archive'
+  const chatListJson: string = cmd.payload.chatList === 'archive'
     ? '{"@type":"chatListArchive"}'
-    : '{"@type":"chatListMain"}';
+    : (cmd.payload.chatList === 'folder'
+      ? '{"@type":"chatListFolder","chat_folder_id":' + cmd.payload.folderId.toString() + '}'
+      : '{"@type":"chatListMain"}');
   result.params.setString('_chat_list_json', chatListJson);
 }
 

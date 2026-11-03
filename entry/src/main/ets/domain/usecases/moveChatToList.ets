@@ -17,6 +17,22 @@ export class MoveChatToListUseCase {
     this.gateway = gateway;
   }
 
+  // TDLib exposes addChatToList for every list, so adding a chat to a folder is the same command
+  // with chatListFolder. Removing a chat from a folder is not available in this TDLib version.
+  async addToFolder(chatId: ChatId, folderId: number): Promise<void> {
+    if (!chatId || chatId === 0 || !Number.isSafeInteger(folderId) || folderId <= 0) {
+      throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid chatId/folderId', 'Input validation failed', 400, false);
+    }
+    try {
+      hilog.info(DOMAIN, TAG, 'Adding chat %{public}d to folder %{public}d', chatId, folderId);
+      await this.gateway.send(createAddChatToListCommand(chatId, 'folder', folderId));
+    } catch (error) {
+      const err = error as Error;
+      hilog.error(DOMAIN, TAG, 'Add to folder failed: %{public}s', err.message);
+      throw new AppError(AppErrorKind.UNKNOWN, 'Failed to add chat to folder', err.message, 0, true);
+    }
+  }
+
   async execute(chatId: ChatId, target: 'main' | 'archive'): Promise<void> {
     if (!chatId || chatId === 0) {
       throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid chatId', 'Input validation failed', 400, false);

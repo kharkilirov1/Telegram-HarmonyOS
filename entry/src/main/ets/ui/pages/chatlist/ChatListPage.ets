@@ -23,7 +23,7 @@ import {
 } from '../../tg_ui/atoms/TgChatListNavigationBar';
 import { TgChatListFilter, TgChatListFilterTab } from '../../tg_ui/atoms/TgChatListFilterBar';
 import { selectChatFolderTabs, selectChatIdsForFolder, ChatFolderTab } from '../../../domain/selectors/chatFolderSelectors';
-import { selectChatContextMenuEntries, chatContextActionIcon, ChatContextAction, ChatContextMenuEntry } from '../../../domain/selectors/chatContextMenuSelectors';
+import { selectChatContextMenuEntries, chatContextActionIcon, ChatContextAction, ChatContextMenuEntry, selectAddToFolderTargets, ChatFolderTarget } from '../../../domain/selectors/chatContextMenuSelectors';
 import { localized } from '../../../core/utils/AppResource';
 import {
   computeTabBottomInset,
@@ -1091,6 +1091,22 @@ export struct ChatListPage {
     }
   }
 
+  private folderTargets(item: ChatItemVO): ChatFolderTarget[] {
+    const store = this.accountStore;
+    return store === undefined ? [] : selectAddToFolderTargets(store.getState(), item.chatId);
+  }
+
+  private handleAddToFolder(item: ChatItemVO, folderId: number): void {
+    const useCase = this.moveChatToListUseCase;
+    if (!useCase) {
+      return;
+    }
+    useCase.addToFolder(item.chatId, folderId)
+      .catch((error: Error) => {
+        hilog.error(DOMAIN, TAG, 'Add to folder failed for %{public}d: %{public}s', item.chatId, error.message);
+      });
+  }
+
   private handleMoveToMain(item: ChatItemVO): void {
     const useCase = this.moveChatToListUseCase;
     if (!useCase) {
@@ -1126,6 +1142,41 @@ export struct ChatListPage {
           this.handleContextAction(entry.action, item);
         })
       }, (entry: ChatContextMenuEntry) => entry.action.toString() + item.chatId.toString())
+      if (this.folderTargets(item).length > 0) {
+        Row()
+          .width('100%')
+          .height(TgUiTokens.CHAT_ROW_SEPARATOR_STROKE)
+          .backgroundColor(TgUiTokens.CHAT_CONTEXT_MENU_SEPARATOR)
+        Text(localized($r('app.string.chat_context_add_to_folder').id, 'Add to folder'))
+          .fontSize(TgUiTokens.CHAT_CONTEXT_MENU_FONT_SIZE)
+          .fontColor(TgUiTokens.CHAT_CONTEXT_MENU_TEXT)
+          .height(TgUiTokens.CHAT_CONTEXT_MENU_ITEM_HEIGHT)
+          .width('100%')
+          .padding({ left: TgUiTokens.CHAT_CONTEXT_MENU_PADDING_H, right: TgUiTokens.CHAT_CONTEXT_MENU_PADDING_H })
+          .textAlign(TextAlign.Start)
+          .opacity(0.6)
+        ForEach(this.folderTargets(item), (target: ChatFolderTarget) => {
+          Row() {
+            Image($r('app.media.ic_folder'))
+              .width(TgUiTokens.CHAT_CONTEXT_MENU_ICON_SIZE)
+              .height(TgUiTokens.CHAT_CONTEXT_MENU_ICON_SIZE)
+              .fillColor(TgUiTokens.CHAT_CONTEXT_MENU_TEXT)
+            Text(target.title)
+              .fontSize(TgUiTokens.CHAT_CONTEXT_MENU_FONT_SIZE)
+              .fontColor(TgUiTokens.CHAT_CONTEXT_MENU_TEXT)
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .margin({ left: TgUiTokens.CHAT_CONTEXT_MENU_ICON_GAP })
+              .layoutWeight(1)
+          }
+          .width('100%')
+          .height(TgUiTokens.CHAT_CONTEXT_MENU_ITEM_HEIGHT)
+          .padding({ left: TgUiTokens.CHAT_CONTEXT_MENU_PADDING_H, right: TgUiTokens.CHAT_CONTEXT_MENU_PADDING_H })
+          .onClick(() => {
+            this.handleAddToFolder(item, target.folderId);
+          })
+        }, (target: ChatFolderTarget) => 'folder' + target.folderId.toString())
+      }
     }
     .width(TgUiTokens.CHAT_CONTEXT_MENU_WIDTH)
     .backgroundColor(TgUiTokens.CHAT_CONTEXT_MENU_BG)

@@ -146,6 +146,15 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S8b.2 (lead).** B6: «Add to folder». `AddChatToListPayload`/фабрика/сериализатор получили
+  `chatList: folder` + `folderId` (`chatListFolder` JSON), `MoveChatToListUseCase.addToFolder(chatId,
+  folderId)` валидирует вход и шлёт `addChatToList`; `selectAddToFolderTargets` отдаёт только папки,
+  где чата ещё нет; меню рисует секцию с названиями папок (`chat_context_add_to_folder` в base/ru/zh).
+  Удаление из папки в этой версии TDLib отсутствует — пункт не предлагается. Контракт
+  `test-chat-list-context-menu.cjs` расширен: команда/фабрика/сериализатор (регрессия archive),
+  `addToFolder` (включая отказ при неверных id и то, что main). Гейты: host **110/110**, оба smoke,
+  hvigor BUILD SUCCESSFUL. **Осталось (B6):** Join chat/channel, Select, Add to contacts, Remove from
+  recents.
 - **S8b.1 (lead).** Bugfix: «mark as unread» не был двусторонним. TDLib держит `is_marked_as_unread`
   отдельно от `unread_count`, присылает `updateChatIsMarkedAsUnread`, а приложение этот апдейт
   игнорировало — после переключения состояние в списке оставалось прежним, а меню предлагало

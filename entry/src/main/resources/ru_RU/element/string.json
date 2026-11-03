@@ -217,6 +217,10 @@
       "value": "Удалить"
     },
     {
+      "name": "chat_context_add_to_folder",
+      "value": "Добавить в папку"
+    },
+    {
       "name": "chat_folders_all",
       "value": "Все"
     },

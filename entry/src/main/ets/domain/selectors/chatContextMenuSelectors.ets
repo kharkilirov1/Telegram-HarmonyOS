@@ -4,7 +4,7 @@
 // pin/unpin → mute/unmute → delete (destructive). The menu is a pure function of the chat so the
 // page only renders and dispatches; every action delegates to an existing use case.
 
-import { Chat, isSavedMessagesChat } from '../../core/model/AppState';
+import { AppState, Chat, ChatFolderInfo, isSavedMessagesChat } from '../../core/model/AppState';
 
 export enum ChatContextAction {
   MarkRead = 0,
@@ -83,4 +83,29 @@ export function chatContextActionIcon(action: ChatContextAction): string {
     default:
       return 'ic_info';
   }
+}
+
+export class ChatFolderTarget {
+  folderId: number = 0;
+  title: string = '';
+}
+
+// Folders this chat is not in yet. TDLib exposes addChatToList for folders but no removal in this
+// version, so the menu only ever offers "add" targets.
+export function selectAddToFolderTargets(state: AppState, chatId: number): ChatFolderTarget[] {
+  const targets: ChatFolderTarget[] = [];
+  const chat = state.chats.chats.get(chatId);
+  if (chat === undefined || chatId === 0) {
+    return targets;
+  }
+  for (const folder of state.chatFilters.folders) {
+    if (folder.id <= 0 || chat.folderOrders.has(folder.id)) {
+      continue;
+    }
+    const target = new ChatFolderTarget();
+    target.folderId = folder.id;
+    target.title = folder.title.length > 0 ? folder.title : 'Folder';
+    targets.push(target);
+  }
+  return targets;
 }

@@ -32,10 +32,12 @@
 | S7b.3 | Папки чатов — пагинация (B7) | B7 | `loadChats(chatListFolder)` в payload/сериализаторе, `LoadFolderChatsUseCase` (in-flight + cooldown + cancel), запрос на выбор папки и на скролл, контракт |
 | S8a | Контекстное меню чата (B6) | B6 | `chatContextMenuSelectors` + `bindContextMenu` long-press, iOS-порядок действий, делегирование use case, `chat_context_*` в 3 локалях, токены, контракт; B6 → `partial` |
 | S8b.1 | Mark-as-unread: двусторонний флаг (B6) | B6 | `is_marked_as_unread` в DTO/модели/normalizer (`updateChatIsMarkedAsUnread`)/reducer/VO/diff, меню и обработчик используют флаг; контракт расширен |
+| S8b.2 | Add to folder в контекстном меню (B6) | B6 | `addChatToList(chatListFolder)` в payload/сериализаторе, `MoveChatToListUseCase.addToFolder`, `selectAddToFolderTargets`, секция папок в меню, `chat_context_add_to_folder`; контракт расширен |
 
 ## Следующие срезы (в порядке)
 
-1. **S8b.2. Контекстное меню — пункты по типу чата (B6).** Add to folder (через `addChatToList` + селектор папок), Join chat/channel, Select; Add to contacts/Remove from recents — по контрактам TDLib уточнить.
+1. **S8b.3. Контекстное меню — Join chat/channel и Select (B6).** Join через `JoinChatUseCase` с сигналом из чата, Select — режим выделения чатов.
+2. **S7b.4. Папки чатов — экран настроек и folder link preview (B7).**
 2. **S7b.4. Папки чатов — экран настроек и folder link preview (B7).**
 2. **C9-долг** (иконка Copy) и **D7-долг** (пункт меню).
 3. **Witness-очередь:** D10 (реакции), C2 (typing), C6 (разделитель), D13 (стикеры). Иконки панели, подсветка выбранных баблов, формулировка диалога удаления для N сообщений, device-witness.
