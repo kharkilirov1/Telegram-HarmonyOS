@@ -12,6 +12,8 @@ export class SessionInfoDto {
   isUnconfirmed: boolean = false;
   canAcceptSecretChats: boolean = false;
   canAcceptCalls: boolean = false;
+  // TDLib sessionType*: tells browser sessions (Chrome, Safari...) from app sessions.
+  sessionType: string = '';
   applicationName: string = '';
   applicationVersion: string = '';
   isOfficialApplication: boolean = false;
@@ -38,6 +40,8 @@ export function createSessionInfoFromTd(td: TdObjectType): SessionInfoDto | unde
   dto.isUnconfirmed = td.getTopLevelBooleanStrict('is_unconfirmed') === true;
   dto.canAcceptSecretChats = td.getTopLevelBooleanStrict('can_accept_secret_chats') === true;
   dto.canAcceptCalls = td.getTopLevelBooleanStrict('can_accept_calls') === true;
+  const type = td.getTopLevelObjectStrict('type');
+  dto.sessionType = type === undefined ? '' : (type.getTopLevelStringStrict('@type') ?? '');
   dto.applicationName = td.getTopLevelStringStrict('application_name') ?? '';
   dto.applicationVersion = td.getTopLevelStringStrict('application_version') ?? '';
   dto.isOfficialApplication = td.getTopLevelBooleanStrict('is_official_application') === true;

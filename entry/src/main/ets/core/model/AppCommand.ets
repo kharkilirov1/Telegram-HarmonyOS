@@ -671,6 +671,10 @@ export class GetActiveSessionsCommand extends AppCommand {
   type: string = 'getActiveSessions';
 }
 
+export class TerminateAllOtherSessionsCommand extends AppCommand {
+  type: string = 'terminateAllOtherSessions';
+}
+
 export class TerminateSessionCommand extends AppCommand {
   type: string = 'terminateSession';
   payload: TerminateSessionPayload = new TerminateSessionPayload();
@@ -861,6 +865,7 @@ export type AnyAppCommand =
   | ToggleChatPinnedCommand
   | AddChatToListCommand
   | GetActiveSessionsCommand
+  | TerminateAllOtherSessionsCommand
   | TerminateSessionCommand
   | PinChatMessageCommand
   | UnpinChatMessageCommand
@@ -1330,6 +1335,10 @@ export function createAddChatToListCommand(
 
 export function createGetActiveSessionsCommand(): GetActiveSessionsCommand {
   return new GetActiveSessionsCommand();
+}
+
+export function createTerminateAllOtherSessionsCommand(): TerminateAllOtherSessionsCommand {
+  return new TerminateAllOtherSessionsCommand();
 }
 
 export function createTerminateSessionCommand(sessionId: string): TerminateSessionCommand {

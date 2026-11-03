@@ -221,6 +221,22 @@
       "value": "Add to folder"
     },
     {
+      "name": "sessions_active_title",
+      "value": "Active Sessions"
+    },
+    {
+      "name": "sessions_web_title",
+      "value": "Web Sessions"
+    },
+    {
+      "name": "sessions_terminate_all",
+      "value": "Terminate All Other Sessions"
+    },
+    {
+      "name": "sessions_terminate_all_title",
+      "value": "Terminate All Other Sessions"
+    },
+    {
       "name": "sessions_loading",
       "value": "Loading…"
     },

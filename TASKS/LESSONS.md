@@ -736,3 +736,13 @@ Last updated: 2026-10-23
   text with a brace/string scanner instead. Prefer raw slices for any array of objects.
 - In host tests, never build a fixture with JSON.parse → JSON.stringify either: emit the raw JSON
   text with the id as bare digits.
+
+## 182. Flat lists hide their grouping contract
+
+- A sessions list split into iOS Active/Web sections cannot be a single ForEach: the grouping is a
+  pure selector (`splitSessionsByKind`), and the page renders one section builder per group. Keeping
+  the split in the selector makes the browser-type table testable without mounting UI.
+- Destructive "Terminate all" is only honest when `canTerminateOthers` is true; otherwise the row
+  promises an action with no effect.
+- Grouping by TDLib `sessionType*` (17 values) must default unknown/app types to Active, never to Web:
+  misclassifying an app login as a browser session hides a real security entry.

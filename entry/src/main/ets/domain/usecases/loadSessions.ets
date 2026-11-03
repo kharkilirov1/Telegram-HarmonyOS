@@ -6,7 +6,7 @@
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { TdObject } from '../../models/TdTypes';
-import { createGetActiveSessionsCommand, createTerminateSessionCommand } from '../../core/model/AppCommand';
+import { createGetActiveSessionsCommand, createTerminateAllOtherSessionsCommand, createTerminateSessionCommand } from '../../core/model/AppCommand';
 import { AppError, AppErrorKind } from '../../core/model/AppError';
 import { SessionInfoDto, createSessionInfoListFromTd } from '../../core/model/dto/SessionDto';
 import { TdGatewayPort } from '../ports/TdGatewayPort';
@@ -29,6 +29,18 @@ export class LoadSessionsUseCase {
       const err = error as Error;
       hilog.error(DOMAIN, TAG, 'getActiveSessions failed: %{public}s', err.message);
       throw new AppError(AppErrorKind.UNKNOWN, 'Failed to load sessions', err.message, 0, true);
+    }
+  }
+
+  // iOS "Terminate all other sessions": one TDLib call, the current session is kept.
+  async terminateAllOthers(): Promise<void> {
+    try {
+      hilog.info(DOMAIN, TAG, 'Terminating all other sessions');
+      await this.gateway.send(createTerminateAllOtherSessionsCommand());
+    } catch (error) {
+      const err = error as Error;
+      hilog.error(DOMAIN, TAG, 'terminateAllOtherSessions failed: %{public}s', err.message);
+      throw new AppError(AppErrorKind.UNKNOWN, 'Failed to terminate other sessions', err.message, 0, true);
     }
   }
 

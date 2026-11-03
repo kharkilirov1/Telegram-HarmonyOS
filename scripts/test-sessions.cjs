@@ -65,6 +65,7 @@ function sessionJsonRaw(id, overrides = {}) {
   assert.equal(parsed.ipAddress, '203.0.113.5');
   assert.equal(parsed.country, 'RU');
   assert.equal(parsed.lastActiveDate, 1700000500);
+  assert.equal(parsed.sessionType, 'sessionTypeAndroid', 'the session type is kept for sectioning');
 
   const current = D.createSessionInfoFromTd(TdObject.fromJSON(sessionJsonRaw('9007199254740993', {
     is_current: true, is_password_pending: true, device_model: ''
@@ -76,6 +77,13 @@ function sessionJsonRaw(id, overrides = {}) {
   assert.equal(D.createSessionInfoFromTd(TdObject.fromJSON('{"@type":"session"}')), undefined,
     'a session without id is rejected');
   assert.equal(D.createSessionInfoFromTd(TdObject.fromJSON('{"@type":"user","id":1}')), undefined);
+  const noTypeJson = '{"@type":"session","id":7,"is_current":false,' +
+    '"is_password_pending":false,"is_unconfirmed":false,"can_accept_secret_chats":false,' +
+    '"can_accept_calls":false,"application_name":"A","application_version":"1",' +
+    '"is_official_application":false,"device_model":"M","platform":"P",' +
+    '"system_version":"S","ip_address":"1.2.3.4","country":"DE","last_active_date":5}';
+  const noType = D.createSessionInfoFromTd(TdObject.fromJSON(noTypeJson));
+  assert.equal(noType.sessionType, '', 'a missing type is unknown, not a guessed browser');
 
   const listJson = '{"@type":"sessions","sessions":[' + sessionJsonRaw('9007199254740993') + ',' +
     sessionJsonRaw('42', { is_current: true }) + ',null]}';
@@ -101,6 +109,43 @@ function sessionJsonRaw(id, overrides = {}) {
   const terminateWire = JSON.parse(serializer.buildTdlibRequestJson('terminateSession',
     serializer.serializeCommand(terminate).params));
   assert.equal(terminateWire.session_id, 9007199254740993, 'the int64 session id stays exact on the wire');
+
+  const all = C.createTerminateAllOtherSessionsCommand();
+  assert.equal(all.type, 'terminateAllOtherSessions');
+  const allWire = serializer.serializeCommand(all);
+  assert.equal(allWire.method, 'terminateAllOtherSessions');
+  assert.equal(serializer.buildTdlibRequestJson(allWire.method, allWire.params),
+    '{"@type":"terminateAllOtherSessions"}');
+}
+
+// Session sections: browser logins versus app sessions -------------------------------------------
+{
+  const S = load('domain/selectors/sessionSelectors.ets');
+  for (const type of ['sessionTypeChrome', 'sessionTypeSafari', 'sessionTypeFirefox', 'sessionTypeOpera',
+    'sessionTypeEdge', 'sessionTypeBrave', 'sessionTypeVivaldi']) {
+    assert.equal(S.isWebSession(type), true, type + ' is a web session');
+  }
+  for (const type of ['sessionTypeAndroid', 'sessionTypeIphone', 'sessionTypeIpad', 'sessionTypeMac',
+    'sessionTypeWindows', 'sessionTypeLinux', 'sessionTypeUbuntu', 'sessionTypeUnknown', '']) {
+    assert.equal(S.isWebSession(type), false, type + ' is not a web session');
+  }
+
+  const make = (id, type, current) => Object.assign(new D.SessionInfoDto(),
+    { id: id, sessionType: type, isCurrent: current });
+  const sessions = [
+    make('1', 'sessionTypeIphone', true),
+    make('2', 'sessionTypeChrome', false),
+    make('3', 'sessionTypeAndroid', false),
+    make('4', 'sessionTypeSafari', false)
+  ];
+  const sections = S.splitSessionsByKind(sessions);
+  assert.deepEqual(sections.active.map((item) => item.id), ['1', '3'], 'app sessions keep TDLib order');
+  assert.deepEqual(sections.web.map((item) => item.id), ['2', '4'], 'browser sessions keep TDLib order');
+
+  assert.equal(S.canTerminateOthers(sessions), true);
+  assert.equal(S.canTerminateOthers([make('1', 'sessionTypeIphone', true)]), false,
+    'nothing to terminate when this is the only session');
+  assert.equal(S.canTerminateOthers([]), false);
 }
 
 // Use case: fetch parses the response, terminate validates before the gateway ----------------------
@@ -132,6 +177,10 @@ async function checkUseCase() {
   }
   assert.equal(sent.length, 2, 'invalid ids never reach the gateway');
 
+  await useCase.terminateAllOthers();
+  assert.equal(sent.length, 3);
+  assert.equal(sent[2].type, 'terminateAllOtherSessions');
+
   nextResponse = TdObject.fromJSON('{"@type":"ok"}');
   assert.deepEqual(await useCase.fetchSessions(), [], 'an unexpected payload is an empty list, not a crash');
 }
@@ -145,8 +194,15 @@ async function checkUseCase() {
   assert.match(page, /useCase\.terminate\(session\.id\)/);
   assert.match(page, /if \(session\.isCurrent\) \{/, 'the current session cannot be terminated here');
   assert.match(page, /promptAction\.showDialog\(/);
-  assert.match(page, /ForEach\(this\.sessions, \(session: SessionInfoDto\)/);
+  assert.match(page, /ForEach\(list, \(session: SessionInfoDto\) => \{/);
   assert.match(page, /sessions_current/);
+  assert.match(page, /splitSessionsByKind\(sessions\)/);
+  assert.match(page, /sessions_active_title/);
+  assert.match(page, /sessions_web_title/);
+  assert.match(page, /canTerminateOthers\(this\.sessions\)/);
+  assert.match(page, /sessions_terminate_all/);
+  assert.match(page, /useCase\.terminateAllOthers\(\)/);
+  assert.match(page, /private confirmTerminateAll\(\): void \{/);
 
   const routeMap = JSON.parse(fs.readFileSync(
     path.join(root, 'entry/src/main/resources/base/profile/route_map.json'), 'utf8'));
@@ -165,7 +221,8 @@ async function checkUseCase() {
       path.join(root, 'entry/src/main/resources', locale, 'element/string.json'), 'utf8'));
     for (const name of ['sessions_loading', 'sessions_load_failed', 'sessions_retry', 'sessions_empty',
       'sessions_current', 'sessions_this_device', 'sessions_unknown_device', 'sessions_terminate',
-      'sessions_terminate_title', 'settings_devices']) {
+      'sessions_terminate_title', 'sessions_active_title', 'sessions_web_title',
+      'sessions_terminate_all', 'sessions_terminate_all_title', 'settings_devices']) {
       const item = strings.string.find((entry) => entry.name === name);
       assert.ok(item && item.value.length > 0, name + ' exists in ' + locale);
     }

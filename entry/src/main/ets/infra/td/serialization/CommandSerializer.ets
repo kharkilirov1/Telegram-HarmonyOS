@@ -6,6 +6,7 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
   AnyAppCommand,
+  TerminateAllOtherSessionsCommand,
   TerminateSessionCommand,
   SetPhoneNumberCommand,
   CheckAuthCodeCommand,
@@ -115,6 +116,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
 COMMAND_SERIALIZATION_HANDLERS.set('getActiveSessions', serializeGetActiveSessions);
 COMMAND_SERIALIZATION_HANDLERS.set('terminateSession', serializeTerminateSession);
+COMMAND_SERIALIZATION_HANDLERS.set('terminateAllOtherSessions', serializeTerminateAllOtherSessions);
 COMMAND_SERIALIZATION_HANDLERS.set('addChatToList', serializeAddChatToList);
 COMMAND_SERIALIZATION_HANDLERS.set('pinChatMessage', serializePinChatMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('unpinChatMessage', serializeUnpinChatMessage);
@@ -395,6 +397,10 @@ function serializeToggleChatIsPinned(command: AnyAppCommand, result: SerializedC
 
 function serializeGetActiveSessions(_command: AnyAppCommand, result: SerializedCommand): void {
   result.method = 'getActiveSessions';
+}
+
+function serializeTerminateAllOtherSessions(_command: AnyAppCommand, result: SerializedCommand): void {
+  result.method = 'terminateAllOtherSessions';
 }
 
 function serializeTerminateSession(command: AnyAppCommand, result: SerializedCommand): void {

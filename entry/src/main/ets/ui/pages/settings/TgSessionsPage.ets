@@ -8,6 +8,7 @@ import { localized } from '../../../core/utils/AppResource';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { createLoadSessionsUseCase, LoadSessionsUseCase } from '../../../domain/usecases/loadSessions';
 import { SessionInfoDto } from '../../../core/model/dto/SessionDto';
+import { splitSessionsByKind, canTerminateOthers } from '../../../domain/selectors/sessionSelectors';
 import { TgChatTopBar } from '../../tg_ui/atoms/TgChatTopBar';
 import { TgIcon } from '../../tg_ui/atoms/TgIcon';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
@@ -26,6 +27,8 @@ export function TgSessionsPageBuilder() {
 export struct TgSessionsPage {
   @Local private pageStack: NavPathStack = new NavPathStack();
   @Local private sessions: SessionInfoDto[] = [];
+  @Local private activeSessions: SessionInfoDto[] = [];
+  @Local private webSessions: SessionInfoDto[] = [];
   @Local private isLoading: boolean = true;
   @Local private loadFailed: boolean = false;
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
@@ -75,6 +78,9 @@ export struct TgSessionsPage {
           return;
         }
         this.sessions = sessions;
+        const sections = splitSessionsByKind(sessions);
+        this.activeSessions = sections.active;
+        this.webSessions = sections.web;
         this.isLoading = false;
       })
       .catch((error: Error) => {
@@ -172,6 +178,144 @@ export struct TgSessionsPage {
     return date.toLocaleString();
   }
 
+  @Builder
+  buildSessionSection(title: string, list: SessionInfoDto[], showTerminateAll: boolean) {
+    ListItem() {
+      Text(title)
+        .fontSize(TgUiTokens.FONT_META_SIZE)
+        .fontColor(TgUiTokens.COLOR_TEXT_META)
+        .width('100%')
+        .padding({
+          left: TgUiTokens.SPACE_16,
+          right: TgUiTokens.SPACE_16,
+          top: TgUiTokens.SPACE_12,
+          bottom: TgUiTokens.SPACE_4
+        })
+    }
+    ForEach(list, (session: SessionInfoDto) => {
+      ListItem() {
+        this.buildSessionRow(session)
+      }
+    }, (session: SessionInfoDto) => session.id)
+    if (showTerminateAll) {
+      ListItem() {
+        Text(localized($r('app.string.sessions_terminate_all').id, 'Terminate All Other Sessions'))
+          .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+          .fontColor(TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE)
+          .width('100%')
+          .padding({
+            left: TgUiTokens.SPACE_16,
+            right: TgUiTokens.SPACE_16,
+            top: TgUiTokens.SPACE_12,
+            bottom: TgUiTokens.SPACE_12
+          })
+          .onClick(() => {
+            this.confirmTerminateAll();
+          })
+      }
+    }
+  }
+
+  @Builder
+  buildSessionRow(session: SessionInfoDto) {
+    Row() {
+      TgIcon({
+        src: TgUiTokens.ICON_RES_DEVICE,
+        iconSize: TgUiTokens.ICON_SIZE_MD,
+        tintColor: TgUiTokens.COLOR_TEXT_PREVIEW
+      })
+        .margin({ right: TgUiTokens.SPACE_12 })
+      Column() {
+        Row() {
+          Text(this.deviceTitle(session))
+            .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+            .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .layoutWeight(1)
+          if (session.isCurrent) {
+            Text(localized($r('app.string.sessions_current').id, 'Current'))
+              .fontSize(TgUiTokens.FONT_META_SIZE)
+              .fontColor(TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT)
+              .margin({ left: TgUiTokens.SPACE_8 })
+          }
+        }
+        .width('100%')
+
+        Text(this.deviceSubtitle(session))
+          .fontSize(TgUiTokens.FONT_META_SIZE)
+          .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .width('100%')
+          .margin({ top: TgUiTokens.SPACE_4 })
+
+        if (this.lastActiveText(session).length > 0) {
+          Text(this.lastActiveText(session))
+            .fontSize(TgUiTokens.FONT_META_SIZE)
+            .fontColor(TgUiTokens.COLOR_TEXT_META)
+            .maxLines(1)
+            .width('100%')
+            .margin({ top: TgUiTokens.SPACE_4 })
+        }
+      }
+      .layoutWeight(1)
+      .alignItems(HorizontalAlign.Start)
+    }
+    .width('100%')
+    .padding({
+      left: TgUiTokens.SPACE_16,
+      right: TgUiTokens.SPACE_16,
+      top: TgUiTokens.SPACE_12,
+      bottom: TgUiTokens.SPACE_12
+    })
+    .opacity(this.terminatingId === session.id ? 0.5 : 1)
+    .onClick(() => {
+      this.confirmTerminate(session);
+    })
+  }
+
+  private confirmTerminateAll(): void {
+    const title: string = localized($r('app.string.sessions_terminate_all_title').id,
+      'Terminate All Other Sessions');
+    promptAction.showDialog({
+      title: title,
+      buttons: [
+        { text: localized($r('app.string.cancel').id, 'Cancel'), color: TgUiTokens.COLOR_TEXT_PREVIEW },
+        { text: localized($r('app.string.sessions_terminate').id, 'Terminate'),
+          color: TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE }
+      ]
+    }).then((result: promptAction.ShowDialogSuccessResponse) => {
+      if (result.index !== 1) {
+        return;
+      }
+      this.terminateAllOthers();
+    }).catch((error: Error) => {
+      hilog.warn(DOMAIN, TAG, 'Terminate-all dialog failed: %{public}s', error.message);
+    });
+  }
+
+  private terminateAllOthers(): void {
+    const useCase = this.loadSessionsUseCase;
+    if (useCase === undefined) {
+      return;
+    }
+    const token: number = this.pageLifecycleToken;
+    useCase.terminateAllOthers()
+      .then(() => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        this.reloadSessions();
+      })
+      .catch((error: Error) => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        hilog.error(DOMAIN, TAG, 'Terminate all failed: %{public}s', error.message);
+      });
+  }
+
   build() {
     NavDestination() {
       Stack({ alignContent: Alignment.Top }) {
@@ -212,65 +356,18 @@ export struct TgSessionsPage {
                 .padding({ top: TgUiTokens.SPACE_24 })
             }
           } else {
-            ForEach(this.sessions, (session: SessionInfoDto) => {
-              ListItem() {
-                Row() {
-                  TgIcon({
-                    src: TgUiTokens.ICON_RES_DEVICE,
-                    iconSize: TgUiTokens.ICON_SIZE_MD,
-                    tintColor: TgUiTokens.COLOR_TEXT_PREVIEW
-                  })
-                    .margin({ right: TgUiTokens.SPACE_12 })
-                  Column() {
-                    Row() {
-                      Text(this.deviceTitle(session))
-                        .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
-                        .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
-                        .maxLines(1)
-                        .textOverflow({ overflow: TextOverflow.Ellipsis })
-                        .layoutWeight(1)
-                      if (session.isCurrent) {
-                        Text(localized($r('app.string.sessions_current').id, 'Current'))
-                          .fontSize(TgUiTokens.FONT_META_SIZE)
-                          .fontColor(TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT)
-                          .margin({ left: TgUiTokens.SPACE_8 })
-                      }
-                    }
-                    .width('100%')
-
-                    Text(this.deviceSubtitle(session))
-                      .fontSize(TgUiTokens.FONT_META_SIZE)
-                      .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
-                      .maxLines(1)
-                      .textOverflow({ overflow: TextOverflow.Ellipsis })
-                      .width('100%')
-                      .margin({ top: TgUiTokens.SPACE_4 })
-
-                    if (this.lastActiveText(session).length > 0) {
-                      Text(this.lastActiveText(session))
-                        .fontSize(TgUiTokens.FONT_META_SIZE)
-                        .fontColor(TgUiTokens.COLOR_TEXT_META)
-                        .maxLines(1)
-                        .width('100%')
-                        .margin({ top: TgUiTokens.SPACE_4 })
-                    }
-                  }
-                  .layoutWeight(1)
-                  .alignItems(HorizontalAlign.Start)
-                }
-                .width('100%')
-                .padding({
-                  left: TgUiTokens.SPACE_24,
-                  right: TgUiTokens.SPACE_24,
-                  top: TgUiTokens.SPACE_12,
-                  bottom: TgUiTokens.SPACE_12
-                })
-                .opacity(this.terminatingId === session.id ? 0.5 : 1)
-                .onClick(() => {
-                  this.confirmTerminate(session);
-                })
-              }
-            }, (session: SessionInfoDto) => session.id)
+            this.buildSessionSection(
+              localized($r('app.string.sessions_active_title').id, 'Active Sessions'),
+              this.activeSessions,
+              canTerminateOthers(this.sessions)
+            )
+            if (this.webSessions.length > 0) {
+              this.buildSessionSection(
+                localized($r('app.string.sessions_web_title').id, 'Web Sessions'),
+                this.webSessions,
+                false
+              )
+            }
           }
         }
         .width('100%')

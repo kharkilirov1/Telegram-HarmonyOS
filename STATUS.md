@@ -146,6 +146,15 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S9b (lead).** H5: разделы и завершение всех. `SessionDto.sessionType` + `sessionSelectors`
+  (`isWebSession`, `splitSessionsByKind`, `canTerminateOthers`) делят список на Active/Web по
+  `sessionType*` (браузеры Brave/Chrome/Edge/Firefox/Opera/Safari/Vivaldi — web, остальные — app);
+  экран рисует две секции, «Terminate All Other Sessions» появляется только когда есть что завершать
+  и уходит в `terminateAllOtherSessions` после подтверждения. Контракт `test-sessions.cjs`
+  расширен: `sessionType` в DTO (включая отсутствующий тип), классификация всех 17 типов, порядок
+  секций, `canTerminateOthers`, команда/сериализатор terminate-all, use case, секции/строки в
+  странице, 13 локалей. Гейты: host **111/111**, оба smoke, hvigor BUILD SUCCESSFUL.
+  **Осталось (H5):** привязка к 2FA, подтверждение новых сеансов, iOS-карточки, witness.
 - **S9 (lead).** H5 «Устройства/сессии» из `missing` → `partial`. Новый экран `TgSessionsPage`
   (Settings → Devices; строка уже была, добавлен `onOpenDevices` → push на root-стек):
   `getActiveSessions` → `SessionDto`, текущий сеанс помечен и не завершается, `terminateSession`

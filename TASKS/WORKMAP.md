@@ -34,10 +34,11 @@
 | S8b.1 | Mark-as-unread: двусторонний флаг (B6) | B6 | `is_marked_as_unread` в DTO/модели/normalizer (`updateChatIsMarkedAsUnread`)/reducer/VO/diff, меню и обработчик используют флаг; контракт расширен |
 | S8b.2 | Add to folder в контекстном меню (B6) | B6 | `addChatToList(chatListFolder)` в payload/сериализаторе, `MoveChatToListUseCase.addToFolder`, `selectAddToFolderTargets`, секция папок в меню, `chat_context_add_to_folder`; контракт расширен |
 | S9 | Устройства/сессии (H5) | H5 | `getActiveSessions`/`terminateSession` (команды, сериализатор), `SessionDto` + точный int64 через `getTopLevelRawObjectArrayStrict`, `LoadSessionsUseCase`, `TgSessionsPage` + route + строка Settings → Devices, `sessions_*` в 3 локалях, контракт; H5 → `partial` |
+| S9b | Сессии — Active/Web и завершение всех (H5) | H5 | `sessionType` в DTO, `sessionSelectors` (web-типы, секции, canTerminateOthers), `terminateAllOtherSessions` (команда/сериализатор/use case), две секции и destructive-строка в странице, строки в 3 локалях, контракт расширен |
 
 ## Следующие срезы (в порядке)
 
-1. **S9b. Сессии — завершение всех и web-сеансы (H5).** `resetAllSessions`/`terminateSession`, секции Web/Active по iOS.
+1. **S9c. Сессии — 2FA и подтверждение новых сеансов (H5).** Привязка пароля, подтверждение подозрительных входов.
 2. **S8b.3. Контекстное меню — пункты по типу чата (B6).** Join (только search-контекст в iOS), Select.
 2. **S7b.4. Папки чатов — экран настроек и folder link preview (B7).**
 2. **S7b.4. Папки чатов — экран настроек и folder link preview (B7).**

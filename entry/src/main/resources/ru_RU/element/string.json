@@ -221,6 +221,22 @@
       "value": "Добавить в папку"
     },
     {
+      "name": "sessions_active_title",
+      "value": "Активные сеансы"
+    },
+    {
+      "name": "sessions_web_title",
+      "value": "Веб-сеансы"
+    },
+    {
+      "name": "sessions_terminate_all",
+      "value": "Завершить все другие сеансы"
+    },
+    {
+      "name": "sessions_terminate_all_title",
+      "value": "Завершить все другие сеансы"
+    },
+    {
       "name": "sessions_loading",
       "value": "Загрузка…"
     },
