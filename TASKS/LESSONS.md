@@ -564,3 +564,15 @@ Last updated: 2026-10-23
   adapter first. Record it as debt instead of squeezing the row into a clipped column.
 - Geometry under media is not verified by host tests: chips size themselves from content, so the
   row's width/padding needs a device screenshot before claiming parity.
+
+## 166. Verification slice: a stale `missing` row hid a working feature
+
+- C6 sat in the matrix as `missing`, yet the timeline already emitted `kind='unread'`, the viewport
+  rendered `TgUnreadMarker`, and the geometry mirrored iOS (`ChatUnreadItem.swift`). What was missing
+  was tests, a passport and honest evidence — not code. A verification slice should start by reading
+  the suspect owner, and if the code exists, the deliverable is contracts + docs rather than a rewrite.
+- The divider shared the chat-list filter string ("Unread"); iOS uses `Conversation_UnreadMessages`
+  ("Unread messages"). Separate resources for separate meanings — reusing a short label silently
+  changes user-visible wording.
+- Sticky unread boundary is easy to break: the live `unreadCount`/`lastReadInbox` reset on read, so
+  the captured entry-time boundary must win; assert both paths in the contract.

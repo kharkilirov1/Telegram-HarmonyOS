@@ -66,7 +66,8 @@
 | C3 | Поиск по чату | `available` | `ChatSearchController.ets` (14/14) | `ChatControllerSearch*` | C8 |
 | C4 | Закреплённое сообщение (бар) | `available` | `ChatMessageActionsController.ets` (24/12) | `Chat/PinnedMessage*` | C8 |
 | C5 | Разделители дат | `available` | `ChatTimelineVO.ets`, `TgDateSeparator.ets` (5/1) | `Components/Chat` | C6 |
-| C6 | Разделитель непрочитанных | `missing` | нет | `Chat/Unread*` | C5, B4 |
+| C6 | Разделитель непрочитанных | `partial` | `ChatTimelineVO.ets` (`firstUnreadIncomingIndex` + запись `kind='unread'`, sticky-граница, сброс sender-group), `TgUnreadMarker` в `TgDateSeparator.ets` (25 px, радиус 0, отступы 6/5 — как `ChatUnreadItem.swift:142-176`), рендер в `TgChatTimelineViewport.ets`, ресурс `chat_unread_messages` (base/ru_RU/zh_CN) + `test-unread-divider.cjs` (6/1) | `Components/Chat/ChatMessageItemImpl/ChatUnreadItem.swift` | C5, B4 |
+
 | C7 | Кнопка «вниз» | `available` | `ChatWindowGeometryCoordinator.ets` (20/15) | `Chat/ScrollToBottom*` | C8 |
 | C8 | Переход к сообщению | `available` | `ChatTimelineViewportCoordinator.ets` (10/4) | `ChatControllerScrollToPointInHistory` | C3, C4 |
 | C9 | Панель выделения сообщений | `missing` | нет | `ChatMessageSelectionInputPanelNode` | D4, D6 |
@@ -188,8 +189,8 @@
 ## Итог и следующий шаг
 
 - `available`: 35 строк — есть код, тесты и работающий сценарий.
-- `partial`: 45 — код есть, но не сверено с iOS или неполно.
-- `missing`: 21 — кода нет.
+- `partial`: 46 — код есть, но не сверено с iOS или неполно.
+- `missing`: 20 — кода нет.
 - `unverified`: 0 — девять прежних строк разобраны 2026-10-25; остальные 96 имели статус раньше.
 - `frozen`: 3 (VoIP, мультиаккаунт, секретные чаты), `blocked`: 1 (push) — не вкладываться.
 

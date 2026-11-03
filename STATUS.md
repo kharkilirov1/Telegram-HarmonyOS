@@ -80,9 +80,9 @@ Documentation and repository structure were reconciled; no product code changed.
   side-by-side с iOS, Definition of Done, реестр долга.
 - `TASKS/SLICE_TEMPLATE.md` — шаблон плана среза (референс → контракт → швы → состояния → тест →
   приёмка).
-- `TASKS/CAPABILITY_MATRIX.md` — 105 строк по пользовательским возможностям iOS: 34 `available`,
-  41 `partial`, 17 `missing`, 9 `unverified`, 3 `frozen`, 1 `blocked`. У каждой строки — код-доказательство
-  и связанные фичи; `available` без witness не ставится.
+- `TASKS/CAPABILITY_MATRIX.md` — 105 строк по пользовательским возможностям iOS: 35 `available`,
+  46 `partial`, 20 `missing`, 3 `frozen`, 1 `blocked`; `unverified` = 0. У каждой строки —
+  код-доказательство и связанные фичи; `available` без witness не ставится.
 - `TASKS/WORKMAP.md` — M0 (верифицировать 9 `unverified` строк), S1 (typing indicator, C2),
   S2 (стикеры/TGS, D13).
 - `TASKS/TODO.md` — добавлен раздел **Debt**: долг с владельцем и триггером, иначе срез не закрыт.
@@ -145,8 +145,15 @@ Documentation and repository structure were reconciled; no product code changed.
   DTO `TdAutoDownloadSettings`/`Presets` удалены. Новый host-guard `scripts/test-dead-controls.cjs`
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
-  `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0. Матрица: 35 `available`, 45 `partial`,
-  21 `missing`, 3 `frozen`, 1 `blocked`.
+  `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S5a (lead).** C6 «разделитель непрочитанных» верифицирован и доведён: модель уже создавала
+  запись `kind='unread'` (`firstUnreadIncomingIndex`, sticky-граница, `'0'` как валидная граница,
+  сброс sender-group), но строка матрицы висела `missing` без тестов. Добавлены паспорт
+  `TgUnreadMarker` (геометрия сверена с iOS `ChatUnreadItem.swift`: 25 px, радиус 0, отступы 6/5),
+  отдельный ресурс `chat_unread_messages` («Unread messages», ru/zh — было «Unread» из строки
+  фильтра чатов) и host-контракт `test-unread-divider.cjs` (6 сценариев + геометрия + локали).
+  Гейты: host **105/105**, оба smoke, hvigor BUILD SUCCESSFUL. C6 → `partial`: witness скролла к
+  непрочитанному на устройстве не снят (долг в TODO).
 - **S1 + S1.1 (typing-slice).** TTL активности 8 s по iOS, откат по дедлайну без новых store-change,
   группа — только имя, приватный — текст активности, статические точки из токенов, «печатает…» в
   трёх локалях, единый TTL в шапке и списке. Восстановлен harness `chat-screen-source.cjs` для

@@ -181,6 +181,10 @@
       "value": "Не прочитано"
     },
     {
+      "name": "chat_unread_messages",
+      "value": "Непрочитанные сообщения"
+    },
+    {
       "name": "service_joined_group",
       "value": "{name} вступил(а) в группу"
     },

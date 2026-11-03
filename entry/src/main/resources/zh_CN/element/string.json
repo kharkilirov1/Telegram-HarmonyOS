@@ -181,6 +181,10 @@
       "value": "未读"
     },
     {
+      "name": "chat_unread_messages",
+      "value": "未读消息"
+    },
+    {
       "name": "service_joined_group",
       "value": "{name} 加入了群组"
     },

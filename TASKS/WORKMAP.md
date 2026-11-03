@@ -22,10 +22,11 @@
 | S3d | Reactions — пикер (быстрый ряд) | D10 | `available_reactions` в `ChatDto`/`Chat` + `availableReactionKeys`/`chatAllowsReactions` + атом `TgReactionPicker` + spec/demo + ряд в попапе действий + `test-reactions-availability.cjs`/`-picker` |
 | S3d.1 | Reactions — пикер (per-message) | D10 | `getMessageAvailableReactions` + команда/сериализатор/use case + слияние `pickerReactionKeys` (top→recent→popular, кап 12, fallback на чат) + фенс устаревших ответов + `test-reactions-picker-data.cjs` |
 | S3b.1 | Reactions — подвал в медиа | D10 | подвал рисует роутер под медиа-баблами (фото/видео/альбом/кружок/документ/аудио/голос/контакт/локация/опрос), стикер — долг из-за фиксированной высоты + `test-reactions-media-footer.cjs` |
+| S5a | Непрочитанный разделитель (верификация C6) | C6 | строка была `missing`: код (`firstUnreadIncomingIndex`, `kind='unread'`, sticky, сброс sender-group) уже был, но без тестов; добавлены паспорт `TgUnreadMarker` (iOS-геометрия 25/0/6/5), ресурс `chat_unread_messages` (base/ru/zh вместо «Unread») + `test-unread-divider.cjs`; C6 → `partial` |
 
 ## Следующие срезы (в порядке)
 
-1. **S5. Непрочитанный разделитель (C6) + панель выделения (C9).** Малые UI-срезы с готовыми швами.
+1. **S5b. Панель выделения сообщений (C9).** `ChatMessageSelectionInputPanelNode` — выделение, копирование, пересылка.
 2. **S6. Saved Messages (D7)** — отсутствующая базовая возможность чат-листа.
 3. **S7. Папки чатов (B7)** — крупный срез списка, делать после стабилизации списка.
 

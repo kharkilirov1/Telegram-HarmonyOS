@@ -1398,7 +1398,7 @@ export function buildChatTimeline(chatId: number, state: AppState, stickyLastRea
       unreadEntry.kind = 'unread';
       unreadEntry.key = 'unread_before_' + message.id;
       unreadEntry.stableKey = unreadEntry.key;
-      unreadEntry.unreadText = localizedString($r('app.string.unread').id, 'Unread');
+      unreadEntry.unreadText = localizedString($r('app.string.chat_unread_messages').id, 'Unread messages');
       result.unreadEntryIndex = result.entries.length;
       result.entries.push(unreadEntry);
     }

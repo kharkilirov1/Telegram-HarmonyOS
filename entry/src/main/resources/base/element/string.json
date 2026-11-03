@@ -181,6 +181,10 @@
       "value": "Unread"
     },
     {
+      "name": "chat_unread_messages",
+      "value": "Unread messages"
+    },
+    {
       "name": "service_joined_group",
       "value": "{name} joined the group"
     },
