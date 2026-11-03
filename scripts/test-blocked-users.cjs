@@ -24,6 +24,10 @@ const C = load('core/model/AppCommand.ets');
 const errors = load('core/model/AppError.ets');
 const D = load('core/model/dto/BlockedSenderDto.ets', { TdObjectType: TdObject });
 const serializer = load('infra/td/serialization/CommandSerializer.ets', { ...C, TdObject, hilog });
+const tdAccessors = load('core/utils/tdAccessors.ets', { TdObject });
+const chatDto = load('core/model/dto/ChatDto.ets',
+  { ...tdAccessors, TdObject, ChatId: undefined, GroupSendPermissionsDto: undefined,
+    CustomEmojiTextEntity: undefined });
 
 // DTO: user / chat senders, malformed entries, page envelope --------------------------------------
 {
@@ -57,6 +61,35 @@ const serializer = load('infra/td/serialization/CommandSerializer.ets', { ...C, 
   assert.deepEqual(partial.senders.map((item) => item.senderId), [5], 'malformed entries are skipped');
 
   assert.deepEqual(D.createBlockedSendersPageFromTd(TdObject.fromJSON('{"@type":"ok"}')).senders, []);
+}
+
+// chat.block_list: only blockListMain means "we blocked this peer" ---------------------------------
+{
+  const parsed = chatDto.createChatDtoFromTd(TdObject.fromJSON(JSON.stringify({
+    '@type': 'chat',
+    id: 7,
+    type: { '@type': 'chatTypePrivate', user_id: 11 },
+    title: 'Peer',
+    block_list: { '@type': 'blockListMain' }
+  })));
+  assert.equal(parsed.isBlocked, true, 'blockListMain marks the peer as blocked');
+
+  const storiesOnly = chatDto.createChatDtoFromTd(TdObject.fromJSON(JSON.stringify({
+    '@type': 'chat',
+    id: 8,
+    type: { '@type': 'chatTypePrivate', user_id: 12 },
+    title: 'Peer 2',
+    block_list: { '@type': 'blockListStories' }
+  })));
+  assert.equal(storiesOnly.isBlocked, false, 'a stories-only block is not a message block');
+
+  const unblocked = chatDto.createChatDtoFromTd(TdObject.fromJSON(JSON.stringify({
+    '@type': 'chat',
+    id: 9,
+    type: { '@type': 'chatTypePrivate', user_id: 13 },
+    title: 'Peer 3'
+  })));
+  assert.equal(unblocked.isBlocked, false);
 }
 
 // Commands and wire shapes -----------------------------------------------------------------------
@@ -129,6 +162,26 @@ async function checkUseCase() {
     { senderType: 'user', senderId: 0 })), /Invalid sender/);
   assert.equal(sent.length, 3);
 
+  const blockedUseCase = new (load('domain/usecases/setMessageSenderBlocked.ets',
+    { ...C, ...errors, hilog }).SetMessageSenderBlockedUseCase)(gateway);
+  const before = sent.length;
+  await blockedUseCase.block('user', 42);
+  assert.equal(sent.length, before + 1);
+  assert.equal(sent.at(-1).type, 'setMessageSenderBlockList');
+  assert.equal(sent.at(-1).payload.blocked, true, 'block sends blockListMain');
+  assert.equal(sent.at(-1).payload.senderId, 42);
+
+  await blockedUseCase.unblock('chat', -1009);
+  assert.equal(sent.at(-1).payload.blocked, false, 'unblock sends the null block list');
+  assert.equal(sent.at(-1).payload.senderType, 'chat');
+  assert.equal(sent.at(-1).payload.senderId, -1009);
+
+  for (const badId of [0, 1.5]) {
+    await assert.rejects(() => blockedUseCase.block('user', badId), /Invalid sender/);
+  }
+  await assert.rejects(() => blockedUseCase.block('sticker', 1), /Invalid sender/);
+  assert.equal(sent.at(-1).type, 'setMessageSenderBlockList', 'invalid input never reaches the gateway');
+
   response = TdObject.fromJSON('{"@type":"ok"}');
   assert.deepEqual((await useCase.fetchPage()).senders, [], 'an unexpected payload is empty, not a crash');
 }
@@ -180,6 +233,17 @@ async function checkUseCase() {
   const settings = read('ui/pages/settings/SettingsPage.ets');
   assert.match(settings, /@Event onOpenBlockedUsers: \(\) => void/);
   assert.match(settings, /this\.onOpenBlockedUsers\(\);/);
+  const profile = read('ui/pages/profile/TgProfilePage.ets');
+  assert.match(profile, /createSetMessageSenderBlockedUseCase\(getTdGatewayAdapter\(\)\)/);
+  assert.match(profile, /@Local private isBlocked: boolean = false;/);
+  assert.match(profile, /this\.isBlocked = chat\.isBlocked;/);
+  assert.match(profile, /private canBlockPeer\(\): boolean \{/);
+  assert.match(profile, /this\.chatType === 'private' \|\| this\.chatType === 'secret'/);
+  assert.match(profile, /useCase\.block\('user', userId\)/, 'blocking must target the peer user');
+  assert.match(profile, /useCase\.unblock\('user', userId\)/);
+  assert.match(profile, /profile_block_user/);
+  assert.match(profile, /profile_unblock_user/);
+
   const tabs = read('ui/pages/MainTabsPage.ets');
   assert.match(tabs, /onOpenBlockedUsers: \(\): void => \{\n              this\.chatDetailNavStack\.pushPathByName\('TgBlockedUsersPage', undefined\);/);
 
@@ -188,7 +252,8 @@ async function checkUseCase() {
       path.join(root, 'entry/src/main/resources', locale, 'element/string.json'), 'utf8'));
     for (const name of ['settings_blocked_users', 'blocked_loading', 'blocked_load_failed', 'blocked_retry',
       'blocked_empty', 'blocked_unblock', 'blocked_user_fallback', 'blocked_chat_fallback',
-      'blocked_show_more']) {
+      'blocked_show_more', 'profile_block_user', 'profile_unblock_user',
+      'profile_blocked_toast', 'profile_unblocked_toast']) {
       const item = strings.string.find((entry) => entry.name === name);
       assert.ok(item && item.value.length > 0, name + ' exists in ' + locale);
     }

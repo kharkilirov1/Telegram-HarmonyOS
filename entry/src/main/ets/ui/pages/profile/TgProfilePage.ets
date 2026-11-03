@@ -3,10 +3,12 @@
 // V2 @ComponentV2 — migrated from V1
 // Reference: iOS Telegram PeerInfoScreen
 
+import { promptAction } from '@kit.ArkUI';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { AppState, User, Chat } from '../../../core/model/AppState';
 import { loadUserFullInfo, loadSupergroupFullInfo, loadBasicGroupFullInfo, ProfileLoadContext, ProfileLoadResult, ProfileLoadStatus, captureProfileLoadContext } from '../../../domain/usecases/loadProfileInfo';
 import { createSetChatMuteUseCase, SetChatMuteUseCase, MUTE_FOREVER } from '../../../domain/usecases/setChatMute';
+import { createSetMessageSenderBlockedUseCase, SetMessageSenderBlockedUseCase } from '../../../domain/usecases/setMessageSenderBlocked';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { TgAvatar } from '../../tg_ui/atoms/TgAvatar';
 import { TgProfileNavigationBar } from '../../tg_ui/atoms/TgProfileNavigationBar';
@@ -141,9 +143,12 @@ export struct TgProfilePage {
   @Local private description: string = '';
   @Local private inviteLink: string = '';
   @Local private isMuted: boolean = false;
+  // true when the peer sits in our main block list (chat.block_list).
+  @Local private isBlocked: boolean = false;
   // Owned by the page and dropped on teardown: the toggle must send a real TDLib command instead of
   // flipping a local boolean that no other surface ever sees.
   @Local private muteUseCase: SetChatMuteUseCase | undefined = undefined;
+  private blockUseCase?: SetMessageSenderBlockedUseCase;
   @Local private isVerified: boolean = false;
   @Local private isPremium: boolean = false;
 
@@ -171,6 +176,7 @@ export struct TgProfilePage {
       this.isActive = true;
       this.pageLifecycleToken++;
       this.muteUseCase = createSetChatMuteUseCase(getTdGatewayAdapter());
+      this.blockUseCase = createSetMessageSenderBlockedUseCase(getTdGatewayAdapter());
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
       const windowStage = context.windowStage;
       if (windowStage) {
@@ -360,6 +366,7 @@ export struct TgProfilePage {
 
     this.chatType = chat.type;
     this.isMuted = chat.muteForSeconds > 0;
+    this.isBlocked = chat.isBlocked;
     this.memberCount = chat.memberCount;
     this.description = chat.description;
     this.inviteLink = chat.inviteLink;
@@ -406,6 +413,7 @@ export struct TgProfilePage {
     this.requestGeneration++;
     this.requestPending = false;
     this.muteUseCase = undefined;
+    this.blockUseCase = undefined;
     this.releaseProfileSubscriptions();
   }
 
@@ -859,6 +867,86 @@ export struct TgProfilePage {
   }
 
   // ─── Main Build ───
+  private canBlockPeer(): boolean {
+    return this.hasPeer && (this.chatType === 'private' || this.chatType === 'secret') &&
+      this.profileUserId > 0 && this.chatId !== 0;
+  }
+
+  @Builder
+  private buildBlockSection() {
+    Column() {
+      Row() {
+        Text(this.isBlocked
+          ? localized($r('app.string.profile_unblock_user').id, 'Unblock User')
+          : localized($r('app.string.profile_block_user').id, 'Block User'))
+          .fontSize(TgUiTokens.FONT_TITLE_SIZE)
+          .fontColor(TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE)
+          .layoutWeight(1)
+      }
+      .width('100%')
+      .height(48)
+      .padding({ left: 16, right: 16 })
+      .onClick(() => {
+        this.confirmToggleBlock();
+      })
+    }
+    .width('100%')
+    .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
+    .borderRadius(12)
+    .margin({ left: 16, right: 16, top: 16 })
+    .clip(true)
+  }
+
+  private confirmToggleBlock(): void {
+    const blocking: boolean = !this.isBlocked;
+    const title: string = blocking
+      ? localized($r('app.string.profile_block_user').id, 'Block User')
+      : localized($r('app.string.profile_unblock_user').id, 'Unblock User');
+    this.getUIContext().getPromptAction().showDialog({
+      title: title,
+      message: this.title,
+      buttons: [
+        { text: localized($r('app.string.cancel').id, 'Cancel'), color: TgUiTokens.COLOR_TEXT_PREVIEW },
+        { text: title, color: TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE }
+      ]
+    }).then((result: promptAction.ShowDialogSuccessResponse) => {
+      if (result.index !== 1) {
+        return;
+      }
+      this.applyBlock(blocking);
+    }).catch((error: Error) => {
+      hilog.warn(DOMAIN, TAG, 'Block dialog failed: %{public}s', error.message);
+    });
+  }
+
+  private applyBlock(blocking: boolean): void {
+    const useCase = this.blockUseCase;
+    const userId = this.profileUserId;
+    if (useCase === undefined || userId <= 0) {
+      return;
+    }
+    const token: number = this.pageLifecycleToken;
+    const work = blocking ? useCase.block('user', userId) : useCase.unblock('user', userId);
+    work.then(() => {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
+      // The canonical value returns with updateChatBlockList; flip locally so the row answers at once.
+      this.isBlocked = blocking;
+      this.getUIContext().getPromptAction().showToast({
+        message: blocking
+          ? localized($r('app.string.profile_blocked_toast').id, 'User blocked')
+          : localized($r('app.string.profile_unblocked_toast').id, 'User unblocked'),
+        duration: 2000
+      });
+    }).catch((error: Error) => {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
+      hilog.error(DOMAIN, TAG, 'Block toggle failed: %{public}s', error.message);
+    });
+  }
+
   build() {
     NavDestination() {
       Column() {
@@ -903,6 +991,10 @@ export struct TgProfilePage {
             // Direct member profiles have no chat-owned settings yet.
             if (this.chatId !== 0 && this.hasPeer) {
               this.buildNotificationsSection()
+            }
+
+            if (this.canBlockPeer()) {
+              this.buildBlockSection()
             }
 
             // Members (groups/channels only)

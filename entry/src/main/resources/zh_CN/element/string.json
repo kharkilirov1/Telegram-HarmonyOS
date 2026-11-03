@@ -297,6 +297,22 @@
       "value": "已屏蔽用户"
     },
     {
+      "name": "profile_block_user",
+      "value": "屏蔽用户"
+    },
+    {
+      "name": "profile_unblock_user",
+      "value": "取消屏蔽"
+    },
+    {
+      "name": "profile_blocked_toast",
+      "value": "用户已屏蔽"
+    },
+    {
+      "name": "profile_unblocked_toast",
+      "value": "已取消屏蔽"
+    },
+    {
       "name": "blocked_show_more",
       "value": "显示更多"
     },

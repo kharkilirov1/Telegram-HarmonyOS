@@ -773,3 +773,16 @@ Last updated: 2026-10-23
 - Appending must dedupe by the sender key: a sender blocked twice or a shifting list can repeat an
   entry, and ForEach keys must stay unique or the list throws.
 - A shrinking total (unblocks elsewhere) must yield hasMore=false even when loaded < previous total.
+
+## 186. Inserting before `export function X` steals the export keyword
+
+- A script that matches the bare substring `function extractFolderPosition` and prepends a new
+  function leaves `export ` dangling at the end of the previous line: `export // comment` then the
+  new function. ArkTS compiles it (the export binds to the next declaration), so the build stays
+  green while the helper silently stops being exported and a host test fails on `is not a function`.
+- When inserting next to a function, match the full `export function name(` (or the whole signature
+  line) and assert the export stays where it was.
+- The `test-chat-folders.cjs` failure, not hvigor, caught it: keep module-surface tests for helpers
+  other suites import.
+- Also: `chat.block_list` (BlockList object) is the authoritative blocked flag; a stories-only block
+  must not read as a message block.

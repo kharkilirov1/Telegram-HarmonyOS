@@ -54,6 +54,8 @@ export class Chat {
   // TDLib chat.is_marked_as_unread / updateChatIsMarkedAsUnread: the user pinned the chat as unread
   // even when nothing is unread, so "mark as read" must still be offered.
   isMarkedAsUnread: boolean = false;
+  // true when the peer sits in our main block list (chat.block_list == blockListMain).
+  isBlocked: boolean = false;
   unreadMentionCount: number = 0;
   muteForSeconds: number = 0;
   lastReadOutboxMessageId: MessageId = '0';

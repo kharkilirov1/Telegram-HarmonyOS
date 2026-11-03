@@ -35,6 +35,7 @@ export class ChatDto {
   title: string = '';
   unreadCount: number = 0;
   isMarkedAsUnread: boolean = false;
+  isBlocked: boolean = false;
   unreadMentionCount: number = 0;
   muteFor: number = 0;
   lastReadOutboxMessageId: string = '0';
@@ -127,6 +128,7 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   chatDto.accentColorId = extractOptionalAccentColorId(tdChat);
   chatDto.unreadCount = tdGetNumber(tdChat, 'unread_count');
   chatDto.isMarkedAsUnread = tdGetBoolean(tdChat, 'is_marked_as_unread');
+  chatDto.isBlocked = extractBlockList(tdChat);
   const permissions = tdChat.getTopLevelObjectStrict('permissions');
   if (permissions !== undefined && permissions.getTopLevelBooleanStrict('can_send_basic_messages') !== undefined) {
     chatDto.sendPermissions = GroupSendPermissionsDto.fromTd(permissions);
@@ -271,6 +273,12 @@ export class FolderPositionInfo {
   order: string = '0';
 }
 
+// chat.block_list is a BlockList object; only blockListMain means "we blocked this peer".
+function extractBlockList(td: TdObject): boolean {
+  const blockList = tdGetObject(td, 'block_list');
+  return blockList !== undefined && tdGetString(blockList, '@type') === 'blockListMain';
+}
+
 export function extractFolderPosition(tdPosition: TdObject): FolderPositionInfo | undefined {
   const listObj = tdGetObject(tdPosition, 'list');
   if (tdGetString(listObj, '@type') !== 'chatListFolder') {
@@ -301,6 +309,7 @@ export class ChatUpdateDto {
   title?: string;
   unreadCount?: number;
   isMarkedAsUnread?: boolean;
+  isBlocked?: boolean;
   unreadMentionCount?: number;
   muteFor?: number;
   lastReadOutboxMessageId?: string;

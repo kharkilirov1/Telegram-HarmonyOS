@@ -55,6 +55,7 @@ function chatFromDto(dto: ChatDto): Chat {
   chat.title = dto.title;
   chat.unreadCount = dto.unreadCount;
   chat.isMarkedAsUnread = dto.isMarkedAsUnread;
+  chat.isBlocked = dto.isBlocked;
   chat.unreadMentionCount = dto.unreadMentionCount;
   chat.muteForSeconds = dto.muteFor;
   chat.lastReadOutboxMessageId = dto.lastReadOutboxMessageId;
@@ -325,6 +326,9 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         if (event.updates.isMarkedAsUnread !== undefined) {
           placeholder.isMarkedAsUnread = event.updates.isMarkedAsUnread;
         }
+        if (event.updates.isBlocked !== undefined) {
+          placeholder.isBlocked = event.updates.isBlocked;
+        }
         if (event.updates.archiveOrder !== undefined) {
           placeholder.archiveOrder = event.updates.archiveOrder;
         }
@@ -416,6 +420,9 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
       }
       if (event.updates.isMarkedAsUnread !== undefined) {
         updatedChat.isMarkedAsUnread = event.updates.isMarkedAsUnread;
+      }
+      if (event.updates.isBlocked !== undefined) {
+        updatedChat.isBlocked = event.updates.isBlocked;
       }
       if (event.updates.order !== undefined) {
         orderChanged = existingChat.order !== event.updates.order;

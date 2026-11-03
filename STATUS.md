@@ -146,6 +146,15 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S10c (lead).** H8: блокировка из профиля. Данные: `Chat.isBlocked` ← `chat.block_list`
+  (`blockListMain`), `updateChatBlockList` нормализуется в `ChatUpdateDto.isBlocked` и применяется
+  reducer’ом (create + оба merge-пути). Действие: `SetMessageSenderBlockedUseCase` (block/unblock с
+  валидацией) + строка Block/Unblock в профиле для private/secret с подтверждением, оптимистичным
+  переключением и тостом. Контракт `test-blocked-users.cjs` расширен: парсинг blockListMain против
+  blockListStories и отсутствия, use case (payload blocked true/false, senderType chat/user, отказ
+  невалидным входам), проводка профиля (`canBlockPeer`, `chat.isBlocked`, строки), 4 новые строки в
+  3 локалях. Гейты: host **113/113**, оба smoke, hvigor BUILD SUCCESSFUL.
+  **Осталось (H8):** blockListStories UI, iOS-карточки, witness.
 - **S10b (lead).** H8: пагинация списка заблокированных. `blockedSenderSelectors`
   (`blockedSenderKey`, `mergeBlockedSenders` с дедупликацией, `hasMoreBlockedSenders` по
   loaded-vs-total) + страница: «Show More» запрашивает следующий `offset` (число загруженных),

@@ -297,6 +297,22 @@
       "value": "Заблокированные"
     },
     {
+      "name": "profile_block_user",
+      "value": "Заблокировать"
+    },
+    {
+      "name": "profile_unblock_user",
+      "value": "Разблокировать"
+    },
+    {
+      "name": "profile_blocked_toast",
+      "value": "Пользователь заблокирован"
+    },
+    {
+      "name": "profile_unblocked_toast",
+      "value": "Пользователь разблокирован"
+    },
+    {
       "name": "blocked_show_more",
       "value": "Показать ещё"
     },

@@ -198,6 +198,15 @@ function handleChatMarkedAsUnread(events: AnyAppEvent[], update: TdObject): void
   events.push(createChatUpdatedEvent(chatId, updates));
 }
 
+function handleChatBlockList(events: AnyAppEvent[], update: TdObject): void {
+  const chatId = tdGetNumber(update, 'chat_id');
+  if (!chatId) return;
+  const blockList = tdGetObject(update, 'block_list');
+  const updates = new ChatUpdateDto();
+  updates.isBlocked = blockList !== undefined && tdGetString(blockList, '@type') === 'blockListMain';
+  events.push(createChatUpdatedEvent(chatId, updates));
+}
+
 function handleChatAddedToList(events: AnyAppEvent[], update: TdObject): void {
   const chatId = tdGetNumber(update, 'chat_id');
   if (!chatId) return;
@@ -433,6 +442,7 @@ export function registerChatHandlers(
   handlers.set('updateChatPhoto', handleChatPhoto);
   handlers.set('updateChatLastMessage', handleChatLastMessage);
   handlers.set('updateChatIsMarkedAsUnread', handleChatMarkedAsUnread);
+  handlers.set('updateChatBlockList', handleChatBlockList);
   handlers.set('updateChatAddedToList', handleChatAddedToList);
   handlers.set('updateChatRemovedFromList', handleChatRemovedFromList);
   handlers.set('updateChatPosition', handleChatPosition);

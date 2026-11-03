@@ -38,6 +38,7 @@
 | S10 | Заблокированные пользователи (H8) | H8 | `getBlockedMessageSenders`/`setMessageSenderBlockList` (block → main, unblock → null), `BlockedSenderDto`, `LoadBlockedSendersUseCase`, `TgBlockedUsersPage` + route + строка Settings, `blocked_*` в 3 локалях, контракт; H8 → `partial` |
 | S11 | Данные и хранилище (H4) | H4 | `getStorageStatisticsFast`/`getStorageStatistics`/`optimizeStorage` (команды, сериализатор), `StorageStatisticsDto` + `formatStorageBytes`, `LoadStorageStatisticsUseCase`, `TgDataStoragePage` + восстановленная строка Settings + route, `data_storage_*` в 3 локалях, контракты data-storage и dead-controls; H4 → `partial` |
 | S10b | Заблокированные — пагинация (H8) | H8 | `blockedSenderSelectors` (ключ, merge с дедупом, hasMore по loaded-vs-total), offset-пагинация «Show More» в `TgBlockedUsersPage`, `blocked_show_more` в 3 локалях, контракт расширен |
+| S10c | Заблокированные — блокировка из профиля (H8) | H8 | `Chat.isBlocked` из `chat.block_list`, `updateChatBlockList` → reducer, `SetMessageSenderBlockedUseCase`, строка Block/Unblock в профиле (private/secret) с подтверждением и тостом, 4 строки в 3 локалях, контракт расширен |
 
 ## Следующие срезы (в порядке)
 
