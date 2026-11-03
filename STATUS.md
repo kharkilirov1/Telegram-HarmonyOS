@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S13 (lead).** B7: экран настроек папок (остаток S7b.4). `TgChatFoldersPage` (Settings → Chat
+  Folders, строка получила destination): список папок из AppStore (`updateChatFolders`), создание/
+  переименование/удаление через `createChatFolder`/`editChatFolder`/`deleteChatFolder` — полный
+  `chatFolder` JSON (name/formattedText с экранированием, icon, color_id, вектора, 7 флагов), лимит
+  имени 12 символов, trim перед отправкой, подтверждение удаления, тосты, список обновляется
+  подпиской на store. Контракт `test-chat-folder-settings.cjs`: wire-форма create/edit/delete
+  (включая кавычки/бэкслеши в имени), валидация до gateway (пустое/13 символов/12 — ок, folderId),
+  ошибки, проводка страницы/route/settings, 18 строк в 3 локалях. Гейты: host **116/116**, оба
+  smoke, hvigor BUILD SUCCESSFUL. **Осталось (B7):** выбор чатов и shareable-ссылки, folder link
+  preview, witness.
 - **S12 (lead).** C10 «Меню действий чата» из `missing` → `partial`. В `TgProfileNavigationBar`
   добавлена кнопка «…» (`showMore`/`onMorePress`, `ic_more`, нативный material + fallback), в профиле
   — `showActionMenu`: Mute/Unmute (`SetChatMuteUseCase`), Clear History (`deleteChatHistory`

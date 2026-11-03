@@ -237,6 +237,78 @@
       "value": "Завершить все другие сеансы"
     },
     {
+      "name": "folders_list_section",
+      "value": "ПАПКИ"
+    },
+    {
+      "name": "folders_empty",
+      "value": "Пока нет папок"
+    },
+    {
+      "name": "folders_new",
+      "value": "Новая папка"
+    },
+    {
+      "name": "folders_edit_title",
+      "value": "Изменить папку"
+    },
+    {
+      "name": "folders_editing",
+      "value": "Редактируется"
+    },
+    {
+      "name": "folders_name_placeholder",
+      "value": "Название папки"
+    },
+    {
+      "name": "folders_create",
+      "value": "Создать"
+    },
+    {
+      "name": "folders_save",
+      "value": "Сохранить"
+    },
+    {
+      "name": "folders_delete",
+      "value": "Удалить"
+    },
+    {
+      "name": "folders_cancel",
+      "value": "Отмена"
+    },
+    {
+      "name": "folders_delete_confirm",
+      "value": "Удалить папку? Чаты останутся в списке."
+    },
+    {
+      "name": "folders_exclude_muted",
+      "value": "Исключить беззвучные"
+    },
+    {
+      "name": "folders_exclude_read",
+      "value": "Исключить прочитанные"
+    },
+    {
+      "name": "folders_exclude_archived",
+      "value": "Исключить архив"
+    },
+    {
+      "name": "folders_created_toast",
+      "value": "Папка создана"
+    },
+    {
+      "name": "folders_saved_toast",
+      "value": "Папка обновлена"
+    },
+    {
+      "name": "folders_deleted_toast",
+      "value": "Папка удалена"
+    },
+    {
+      "name": "folders_failed_toast",
+      "value": "Не удалось изменить папку"
+    },
+    {
       "name": "data_storage_auto_download",
       "value": "Авто-скачивание"
     },

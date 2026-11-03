@@ -46,6 +46,7 @@ export struct SettingsPage {
   @Event onOpenDevices: () => void = (): void => {};
   @Event onOpenBlockedUsers: () => void = (): void => {};
   @Event onOpenDataStorage: () => void = (): void => {};
+  @Event onOpenChatFolders: () => void = (): void => {};
 
   private unsubscribe?: () => void;
   private pageLifecycleToken: number = 0;
@@ -260,7 +261,10 @@ export struct SettingsPage {
               iconRes: TgUiTokens.ICON_RES_FOLDER,
               iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_BLUE,
               trailingType: TgSettingsTrailing.Arrow,
-              showSeparator: false
+              showSeparator: false,
+              onRowClick: (): void => {
+                this.onOpenChatFolders();
+              }
             })
           }
           .width('100%')

@@ -6,6 +6,11 @@
       "buildFunction": "TgChatScreenPageBuilder"
     },
     {
+      "name": "TgChatFoldersPage",
+      "pageSourceFile": "src/main/ets/ui/pages/settings/TgChatFoldersPage.ets",
+      "buildFunction": "TgChatFoldersPageBuilder"
+    },
+    {
       "name": "TgAutoDownloadPage",
       "pageSourceFile": "src/main/ets/ui/pages/settings/TgAutoDownloadPage.ets",
       "buildFunction": "TgAutoDownloadPageBuilder"

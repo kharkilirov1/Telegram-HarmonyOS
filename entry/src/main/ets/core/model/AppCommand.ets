@@ -300,6 +300,29 @@ export class AddChatToListPayload {
   folderId: number = 0;
 }
 
+// Folder CRUD (td_api.tl:12054/12057/12060). The chat selection model of iOS is not implemented
+// yet: create/edit send the name and the include/exclude flags with empty id vectors.
+export class ChatFolderDraftPayload {
+  title: string = '';
+  excludeMuted: boolean = false;
+  excludeRead: boolean = false;
+  excludeArchived: boolean = false;
+  includeContacts: boolean = false;
+  includeNonContacts: boolean = false;
+  includeBots: boolean = false;
+  includeGroups: boolean = false;
+  includeChannels: boolean = false;
+}
+
+export class EditChatFolderPayload {
+  folderId: number = 0;
+  draft: ChatFolderDraftPayload = new ChatFolderDraftPayload();
+}
+
+export class DeleteChatFolderPayload {
+  folderId: number = 0;
+}
+
 export type AutoDownloadNetworkType = 'mobile' | 'mobileRoaming' | 'wifi' | 'other' | 'none';
 
 export class SetAutoDownloadSettingsPayload {
@@ -703,6 +726,21 @@ export class AddChatToListCommand extends AppCommand {
   payload: AddChatToListPayload = new AddChatToListPayload();
 }
 
+export class CreateChatFolderCommand extends AppCommand {
+  type: string = 'createChatFolder';
+  payload: ChatFolderDraftPayload = new ChatFolderDraftPayload();
+}
+
+export class EditChatFolderCommand extends AppCommand {
+  type: string = 'editChatFolder';
+  payload: EditChatFolderPayload = new EditChatFolderPayload();
+}
+
+export class DeleteChatFolderCommand extends AppCommand {
+  type: string = 'deleteChatFolder';
+  payload: DeleteChatFolderPayload = new DeleteChatFolderPayload();
+}
+
 export class GetAutoDownloadSettingsPresetsCommand extends AppCommand {
   type: string = 'getAutoDownloadSettingsPresets';
 }
@@ -933,6 +971,9 @@ export type AnyAppCommand =
   | JoinChatCommand
   | ToggleChatPinnedCommand
   | AddChatToListCommand
+  | CreateChatFolderCommand
+  | EditChatFolderCommand
+  | DeleteChatFolderCommand
   | GetAutoDownloadSettingsPresetsCommand
   | SetAutoDownloadSettingsCommand
   | GetStorageStatisticsCommand
@@ -1405,6 +1446,28 @@ export function createAddChatToListCommand(
   const cmd = new AddChatToListCommand();
   cmd.payload.chatId = chatId;
   cmd.payload.chatList = chatList;
+  cmd.payload.folderId = folderId;
+  return cmd;
+}
+
+export function createChatFolderCommand(draft: ChatFolderDraftPayload): CreateChatFolderCommand {
+  const cmd = new CreateChatFolderCommand();
+  cmd.payload = draft;
+  return cmd;
+}
+
+export function createEditChatFolderCommand(
+  folderId: number,
+  draft: ChatFolderDraftPayload
+): EditChatFolderCommand {
+  const cmd = new EditChatFolderCommand();
+  cmd.payload.folderId = folderId;
+  cmd.payload.draft = draft;
+  return cmd;
+}
+
+export function createDeleteChatFolderCommand(folderId: number): DeleteChatFolderCommand {
+  const cmd = new DeleteChatFolderCommand();
   cmd.payload.folderId = folderId;
   return cmd;
 }

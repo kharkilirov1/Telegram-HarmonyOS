@@ -941,6 +941,9 @@ export struct MainTabsPage {
             },
             onOpenDataStorage: (): void => {
               this.chatDetailNavStack.pushPathByName('TgDataStoragePage', undefined);
+            },
+            onOpenChatFolders: (): void => {
+              this.chatDetailNavStack.pushPathByName('TgChatFoldersPage', undefined);
             }
           })
         }

@@ -237,6 +237,78 @@
       "value": "Terminate All Other Sessions"
     },
     {
+      "name": "folders_list_section",
+      "value": "FOLDERS"
+    },
+    {
+      "name": "folders_empty",
+      "value": "No folders yet"
+    },
+    {
+      "name": "folders_new",
+      "value": "New Folder"
+    },
+    {
+      "name": "folders_edit_title",
+      "value": "Edit Folder"
+    },
+    {
+      "name": "folders_editing",
+      "value": "Editing"
+    },
+    {
+      "name": "folders_name_placeholder",
+      "value": "Folder name"
+    },
+    {
+      "name": "folders_create",
+      "value": "Create"
+    },
+    {
+      "name": "folders_save",
+      "value": "Save"
+    },
+    {
+      "name": "folders_delete",
+      "value": "Delete"
+    },
+    {
+      "name": "folders_cancel",
+      "value": "Cancel"
+    },
+    {
+      "name": "folders_delete_confirm",
+      "value": "Delete this folder? Chats stay in your chat list."
+    },
+    {
+      "name": "folders_exclude_muted",
+      "value": "Exclude muted"
+    },
+    {
+      "name": "folders_exclude_read",
+      "value": "Exclude read"
+    },
+    {
+      "name": "folders_exclude_archived",
+      "value": "Exclude archived"
+    },
+    {
+      "name": "folders_created_toast",
+      "value": "Folder created"
+    },
+    {
+      "name": "folders_saved_toast",
+      "value": "Folder updated"
+    },
+    {
+      "name": "folders_deleted_toast",
+      "value": "Folder deleted"
+    },
+    {
+      "name": "folders_failed_toast",
+      "value": "Could not update the folder"
+    },
+    {
       "name": "data_storage_auto_download",
       "value": "Auto-Download"
     },

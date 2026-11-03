@@ -42,10 +42,12 @@
 | S10c | Заблокированные — блокировка из профиля (H8) | H8 | `Chat.isBlocked` из `chat.block_list`, `updateChatBlockList` → reducer, `SetMessageSenderBlockedUseCase`, строка Block/Unblock в профиле (private/secret) с подтверждением и тостом, 4 строки в 3 локалях, контракт расширен |
 | S10d | Заблокированные — вкладки Messages/Stories (H8) | H8 | `fetchPage(offset, limit, blockList)`, вкладки и сброс пагинации в `TgBlockedUsersPage`, `blocked_tab_*` в 3 локалях, контракт расширен |
 | S12 | Меню действий чата (C10) | C10 | «…» в `TgProfileNavigationBar` + `showActionMenu` в профиле: mute/unmute, clear history, delete chat (подтверждения, тосты), ужесточение валидации `DeleteChatHistoryUseCase`, контракт `test-profile-actions.cjs`; C10 → `partial` |
+| S13 | Настройки папок (B7/S7b.4) | B7 | `createChatFolder`/`editChatFolder`/`deleteChatFolder` (команды, сериализатор с полным `chatFolder` JSON), `ManageChatFoldersUseCase` (валидация имени/folderId), `TgChatFoldersPage` + route + строка Settings, `folders_*` в 3 локалях, контракт |
 
 ## Следующие срезы (в порядке)
 
-1. **S12b. Меню действий в шапке чата (C10).** Вынести действия в саму шапку/панель чата (iOS открывает info-панель), роли и Share Contact/Report.
+1. **S13b. Папки — выбор чатов и shareable-ссылки (B7).** iOS-сетка выбора чатов, `createChatFolderInviteLink`/`editChatFolderInviteLink`/`deleteChatFolderInviteLink`, folder link preview.
+2. **S12b. Меню действий в шапке чата (C10).** Действия в шапке/панели чата, роли, Share Contact/Report.
 2. **S10b. Заблокированные — пагинация и блокировка из профиля (H8).**
 2. **S9c. Сессии — 2FA и подтверждение новых сеансов (H5).**
 2. **S8b.3. Контекстное меню — пункты по типу чата (B6).** Join (только search-контекст в iOS), Select.

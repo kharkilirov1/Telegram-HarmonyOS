@@ -237,6 +237,78 @@
       "value": "终止所有其他会话"
     },
     {
+      "name": "folders_list_section",
+      "value": "文件夹"
+    },
+    {
+      "name": "folders_empty",
+      "value": "还没有文件夹"
+    },
+    {
+      "name": "folders_new",
+      "value": "新建文件夹"
+    },
+    {
+      "name": "folders_edit_title",
+      "value": "编辑文件夹"
+    },
+    {
+      "name": "folders_editing",
+      "value": "编辑中"
+    },
+    {
+      "name": "folders_name_placeholder",
+      "value": "文件夹名称"
+    },
+    {
+      "name": "folders_create",
+      "value": "创建"
+    },
+    {
+      "name": "folders_save",
+      "value": "保存"
+    },
+    {
+      "name": "folders_delete",
+      "value": "删除"
+    },
+    {
+      "name": "folders_cancel",
+      "value": "取消"
+    },
+    {
+      "name": "folders_delete_confirm",
+      "value": "删除此文件夹？聊天仍保留在列表中。"
+    },
+    {
+      "name": "folders_exclude_muted",
+      "value": "排除静音聊天"
+    },
+    {
+      "name": "folders_exclude_read",
+      "value": "排除已读"
+    },
+    {
+      "name": "folders_exclude_archived",
+      "value": "排除已归档"
+    },
+    {
+      "name": "folders_created_toast",
+      "value": "文件夹已创建"
+    },
+    {
+      "name": "folders_saved_toast",
+      "value": "文件夹已更新"
+    },
+    {
+      "name": "folders_deleted_toast",
+      "value": "文件夹已删除"
+    },
+    {
+      "name": "folders_failed_toast",
+      "value": "无法更新文件夹"
+    },
+    {
       "name": "data_storage_auto_download",
       "value": "自动下载"
     },

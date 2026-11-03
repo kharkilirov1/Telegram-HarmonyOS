@@ -816,3 +816,14 @@ Last updated: 2026-10-23
   builder.
 - Tightening `DeleteChatHistoryUseCase` validation (positive int53, not just non-zero) exposed that the
   old check let negative and fractional ids through to the gateway.
+
+## 190. A settings editor must not silently reset state it cannot read
+
+- ChatFolderInfo carries only name/icon/color, not the exclude/include flags. An editor that always
+  sends false for them rewrites the folder whenever the user renames it. The honest options are to
+  read state back (getChatFolder/full DTO) or to keep the flags out of the rename path; sending false
+  silently is the worst of the three.
+- The current slice sends the flags the user set in the form and records the limitation as debt; the
+  editor starts from false only because TDLib does not expose the current values in this version.
+- Raw JSON fields (`_folder_json`) need the same escaping as normal strings: use the existing
+  escapeForJson helper and test quotes/backslashes explicitly.

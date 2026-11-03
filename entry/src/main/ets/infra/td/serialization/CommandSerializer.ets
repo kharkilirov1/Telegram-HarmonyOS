@@ -6,6 +6,8 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
   AnyAppCommand,
+  ChatFolderDraftPayload,
+  CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand,
   GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
   GetStorageStatisticsCommand,
   SetAutoDownloadSettingsCommand,
@@ -118,6 +120,9 @@ COMMAND_SERIALIZATION_HANDLERS.set('setMessageReactions', serializeSetMessageRea
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageAvailableReactions', serializeGetMessageAvailableReactions);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
+COMMAND_SERIALIZATION_HANDLERS.set('createChatFolder', serializeCreateChatFolder);
+COMMAND_SERIALIZATION_HANDLERS.set('editChatFolder', serializeEditChatFolder);
+COMMAND_SERIALIZATION_HANDLERS.set('deleteChatFolder', serializeDeleteChatFolder);
 COMMAND_SERIALIZATION_HANDLERS.set('getAutoDownloadSettingsPresets', serializeGetAutoDownloadSettingsPresets);
 COMMAND_SERIALIZATION_HANDLERS.set('setAutoDownloadSettings', serializeSetAutoDownloadSettings);
 COMMAND_SERIALIZATION_HANDLERS.set('getStorageStatistics', serializeGetStorageStatistics);
@@ -404,6 +409,46 @@ function serializeToggleChatIsPinned(command: AnyAppCommand, result: SerializedC
   result.params.setString('_chat_list_json', cmd.payload.chatList === 'archive'
     ? '{"@type":"chatListArchive"}'
     : '{"@type":"chatListMain"}');
+}
+
+function buildChatFolderJson(draft: ChatFolderDraftPayload): string {
+  return '{"@type":"chatFolder"' +
+    ',"name":{"@type":"chatFolderName","text":{"@type":"formattedText","text":"' +
+    escapeForJson(draft.title) + '","entities":[]},"animate_custom_emoji":false}' +
+    ',"icon":{"@type":"chatFolderIcon","name":""}' +
+    ',"color_id":0' +
+    ',"is_shareable":false' +
+    ',"pinned_chat_ids":[]' +
+    ',"included_chat_ids":[]' +
+    ',"excluded_chat_ids":[]' +
+    ',"exclude_muted":' + (draft.excludeMuted ? 'true' : 'false') +
+    ',"exclude_read":' + (draft.excludeRead ? 'true' : 'false') +
+    ',"exclude_archived":' + (draft.excludeArchived ? 'true' : 'false') +
+    ',"include_contacts":' + (draft.includeContacts ? 'true' : 'false') +
+    ',"include_non_contacts":' + (draft.includeNonContacts ? 'true' : 'false') +
+    ',"include_bots":' + (draft.includeBots ? 'true' : 'false') +
+    ',"include_groups":' + (draft.includeGroups ? 'true' : 'false') +
+    ',"include_channels":' + (draft.includeChannels ? 'true' : 'false') + '}';
+}
+
+function serializeCreateChatFolder(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as CreateChatFolderCommand;
+  result.method = 'createChatFolder';
+  result.params.setString('_folder_json', buildChatFolderJson(cmd.payload));
+}
+
+function serializeEditChatFolder(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as EditChatFolderCommand;
+  result.method = 'editChatFolder';
+  result.params.setNumber('chat_folder_id', cmd.payload.folderId);
+  result.params.setString('_folder_json', buildChatFolderJson(cmd.payload.draft));
+}
+
+function serializeDeleteChatFolder(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as DeleteChatFolderCommand;
+  result.method = 'deleteChatFolder';
+  result.params.setNumber('chat_folder_id', cmd.payload.folderId);
+  result.params.setString('_leave_chat_ids_json', '[]');
 }
 
 function serializeGetAutoDownloadSettingsPresets(_command: AnyAppCommand, result: SerializedCommand): void {
