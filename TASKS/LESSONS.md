@@ -1175,3 +1175,13 @@ Last updated: 2026-10-23
   `new Function(...names)` call, not at the duplicated line.
 - Pre-filling a screen from TDLib must tolerate a different status than expected: `loadState` returns
   every status and each page only applies the branch it owns.
+
+## 226. Reuse the existing viewer instead of adding a new event chain
+
+- A sticker preview needed no new page, route or binding port: the media gallery already renders any
+  `MediaGalleryItem`, so adding a `sticker` item type plus a tap handler reused the whole open/close and
+  index machinery. Check the data-shape first, not the screen name.
+- `TgMessageRouter.ets` lives in `ui/tg_ui/molecules/`, not `ui/components/`; a hardcoded path in a patch
+  script silently targets nothing, so resolve files with a recursive search.
+- Multi-replacement scripts must write only after all anchors matched; otherwise a missing third anchor
+  discards the first two edits and the failure looks like "the collector was never patched".

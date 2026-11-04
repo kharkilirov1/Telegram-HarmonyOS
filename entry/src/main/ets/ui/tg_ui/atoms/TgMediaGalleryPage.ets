@@ -505,7 +505,7 @@ export struct TgMediaGalleryPage {
 
   @Builder
   private buildGalleryItemContent(item: MediaGalleryItem, index: number) {
-    if (item.type === 'photo') {
+    if (item.type === 'photo' || item.type === 'sticker') {
       this.buildPhotoItem(item)
     } else {
       this.buildVideoItem(item, index)

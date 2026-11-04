@@ -1054,6 +1054,10 @@ export struct TgMessageRouter {
           }
           .width(this.stickerRenderWidth())
           .height(this.stickerRenderHeight())
+          .onClick(() => {
+            // Stickers open the shared viewer, the same tap target as photos in iOS.
+            this.onMediaGalleryOpen(this.messageId);
+          })
           this.buildReactionsRow()
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)

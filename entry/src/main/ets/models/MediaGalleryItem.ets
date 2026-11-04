@@ -3,7 +3,7 @@
 // progresses, fails or completes while the gallery stays open.
 @ObservedV2
 export class MediaGalleryItem {
-  type: string = 'photo'; // 'photo' | 'video' | 'animation' | 'videoNote'
+  type: string = 'photo'; // 'photo' | 'video' | 'animation' | 'videoNote' | 'sticker'
   @Trace path: string = '';
   @Trace thumbnailPath: string = '';
   @Trace minithumb: string = '';

@@ -28,8 +28,22 @@ export function buildMediaGalleryItems(host: ChatMediaGalleryCoordinatorPort): M
       const entry = entries[i];
       if (entry.kind !== 'message') continue;
       const ct = entry.message.contentType;
-      if (ct === 'photo' || ct === 'video' || ct === 'animation' || ct === 'videoNote' || ct === 'photoAlbum') {
-        if (ct === 'photoAlbum') {
+      if (ct === 'photo' || ct === 'video' || ct === 'animation' || ct === 'videoNote' ||
+        ct === 'sticker' || ct === 'photoAlbum') {
+        if (ct === 'sticker') {
+          // Stickers open in the same viewer as photos: one tap shows the sticker full-screen.
+          const stickerItem = new MediaGalleryItem();
+          stickerItem.type = 'sticker';
+          stickerItem.path = entry.message.stickerPath;
+          stickerItem.thumbnailPath = entry.message.stickerThumbnailPath;
+          stickerItem.width = entry.message.stickerWidth;
+          stickerItem.height = entry.message.stickerHeight;
+          stickerItem.messageId = entry.message.messageId;
+          stickerItem.sourceMessageId = entry.message.messageId;
+          stickerItem.senderName = entry.message.senderName;
+          stickerItem.timestamp = entry.message.timeText;
+          items.push(stickerItem);
+        } else if (ct === 'photoAlbum') {
           for (let j = 0; j < entry.message.albumPhotoPaths.length; j++) {
             const albumItem = new MediaGalleryItem();
             const albumFileId = j < entry.message.albumPhotoFileIds.length ? entry.message.albumPhotoFileIds[j] : 0;
@@ -96,7 +110,8 @@ export function handleMediaGalleryOpen(host: ChatMediaGalleryCoordinatorPort, me
       const entry = entries[i];
       if (entry.kind !== 'message') continue;
       const ct = entry.message.contentType;
-      if (ct === 'photo' || ct === 'video' || ct === 'animation' || ct === 'videoNote') {
+      if (ct === 'photo' || ct === 'video' || ct === 'animation' || ct === 'videoNote' ||
+        ct === 'sticker') {
         if (entry.message.messageId === messageId) {
           targetIndex = mediaIndex;
           break;

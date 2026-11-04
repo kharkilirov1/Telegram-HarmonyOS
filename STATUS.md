@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **F6-срез (lead).** Просмотр стикеров: `MediaGalleryItem.type` расширен `sticker`,
+  `ChatMediaGalleryCoordinator` добавляет стикер-сообщения в галерею (path/thumbnail/размеры,
+  source/author/time), поиск целевого индекса учитывает `sticker`, `TgMediaGalleryPage` рисует
+  стикеры фото-веткой (`Image` Contain + thumbnail-fallback при незагруженном файле), в
+  `TgMessageRouter` тап по стикеру вызывает `onMediaGalleryOpen`. Новая суита
+  `test-sticker-viewer.cjs` (128-я): сбор элемента, поиск индекса, render-ветка, tap-проводка,
+  модель, fallback. Гейты: host **128/128**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток F6:
+  карточка пака (getStickerSet/changeStickerSet уже есть), TGS-анимация, witness.
 - **G6-предзаполнение (lead).** `parseMemberModerationState` (chatMember → administrator rights по
   16 флагам / restricted permissions+until / banned until / creator / member) и
   `ChatMemberAdminUseCase.loadState` через `getChatMember`; `TgChatAdminRightsPage` подставляет
