@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S12d (lead).** C10: Report с причинами + вынос меню в координатор. `reportChat` (команда,
+  сериализатор с base64 `option_id`, `ReportChatDto` для `reportChatResult*`), `ReportChatUseCase`
+  (start → chooseOption, валидация), `chat.can_be_reported` в модели/DTO/reducer; в меню шестой
+  пункт Report: список причин через `showActionMenu` (до 6), успех — тост, шаги text/messages честно
+  сообщаются (ввода комментария и выбора сообщений пока нет — долги). Меню/действия вынесены в
+  `ChatActionsCoordinator` (typed host-класс), страница снова в бюджете (≤500 строк,
+  decomposition-тест восстановлен вместе с lifecycle-хуками). Контракт
+  `test-chat-header-actions.cjs` расширен (wire, DTO-шаги, use case, проводка). Гейты: host
+  **117/117**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток C10: ввод комментария/выбор сообщений,
+  ролевые пункты, witness.
 - **S12c (lead).** C10: Leave Chat и Share My Contact. `LeaveChatUseCase` (`leaveChat`, валидация
   chatId) и `ShareMyContactUseCase` (`sendMessage` + `inputMessageContact`: телефон/имя из store,
   тримминг, проверка userId) + сериализаторы; пятый пункт меню в шапке контекстный — Leave для

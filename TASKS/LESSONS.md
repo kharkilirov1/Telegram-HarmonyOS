@@ -888,3 +888,14 @@ Last updated: 2026-10-23
   read from the same chat snapshot (`canLeaveChat(chat)` used for both label and dispatch).
 - `inputMessageContact` needs the full `contact` object including `vcard` and `user_id`; sending a
   phone-only payload makes TDLib reject the message.
+
+## 198. Move growing page logic out before the decomposition test notices
+
+- The bounded-owner test caps `TgChatScreenPage.ets` at 500 lines; the report flow pushed it to 568 and
+  the failure appeared only in the host suite, not in hvigor. Watch the limit while adding, or extract
+  first (ChatActionsCoordinator) and let the page delegate.
+- When removing a page region by slicing from marker A to `build()`, lifecycle hooks and @Monitor
+  methods that sit in that region are deleted silently — the build still compiles and only the
+  decomposition test catches `this.session.aboutToAppear()` missing. Re-read the file after slicing.
+- ArkTS rejects object literals for host interfaces; pass dependencies through a small class with a
+  constructor instead of an interface literal.

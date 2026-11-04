@@ -9,7 +9,8 @@ import {
   ChatFolderDraftPayload,
   CreateChatFolderInviteLinkCommand, DeleteChatFolderInviteLinkCommand, EditChatFolderInviteLinkCommand,
   GetChatFolderCommand, GetChatFolderInviteLinksCommand,
-  CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand, LeaveChatCommand, ShareContactCommand,
+  CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand, LeaveChatCommand,
+  ReportChatCommand, ShareContactCommand,
   GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
   GetStorageStatisticsCommand,
   SetAutoDownloadSettingsCommand,
@@ -120,6 +121,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('forwardMessages', serializeForwardMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('setChatMute', serializeSetChatMute);
 COMMAND_SERIALIZATION_HANDLERS.set('setMessageReactions', serializeSetMessageReactions);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageAvailableReactions', serializeGetMessageAvailableReactions);
+COMMAND_SERIALIZATION_HANDLERS.set('reportChat', serializeReportChat);
 COMMAND_SERIALIZATION_HANDLERS.set('leaveChat', serializeLeaveChat);
 COMMAND_SERIALIZATION_HANDLERS.set('sendContactMessage', serializeSendContactMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
@@ -401,6 +403,16 @@ function serializeSetMessageReactions(command: AnyAppCommand, result: Serialized
   result.params.setString('_message_id_json', JSON.stringify(cmd.payload.messageId));
   result.params.setString('_reaction_types_json', buildReactionTypesJson(cmd.payload.reactionKeys));
   result.params.setBool('is_big', cmd.payload.isBig);
+}
+
+function serializeReportChat(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as ReportChatCommand;
+  result.method = 'reportChat';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  // bytes are base64 strings in the JSON bridge; the first request sends empty bytes.
+  result.params.setString('_option_id_json', JSON.stringify(cmd.payload.optionId));
+  result.params.setString('_message_ids_json', '[]');
+  result.params.setString('text', cmd.payload.text);
 }
 
 function serializeLeaveChat(command: AnyAppCommand, result: SerializedCommand): void {

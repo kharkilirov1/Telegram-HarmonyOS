@@ -56,6 +56,8 @@ export class Chat {
   isMarkedAsUnread: boolean = false;
   // true when the peer sits in our main block list (chat.block_list == blockListMain).
   isBlocked: boolean = false;
+  // chat.can_be_reported — gates the Report entry in chat actions.
+  canBeReported: boolean = false;
   unreadMentionCount: number = 0;
   muteForSeconds: number = 0;
   lastReadOutboxMessageId: MessageId = '0';

@@ -525,6 +525,26 @@
       "value": "Заблокированные"
     },
     {
+      "name": "chat_actions_report",
+      "value": "Пожаловаться"
+    },
+    {
+      "name": "chat_actions_report_sent",
+      "value": "Жалоба отправлена"
+    },
+    {
+      "name": "chat_actions_report_failed",
+      "value": "Не удалось отправить жалобу"
+    },
+    {
+      "name": "chat_actions_report_text_required",
+      "value": "Telegram просит комментарий для завершения жалобы"
+    },
+    {
+      "name": "chat_actions_report_messages_required",
+      "value": "Telegram просит выбрать сообщения для жалобы"
+    },
+    {
       "name": "chat_actions_leave",
       "value": "Покинуть чат"
     },

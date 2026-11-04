@@ -525,6 +525,26 @@
       "value": "Blocked Users"
     },
     {
+      "name": "chat_actions_report",
+      "value": "Report"
+    },
+    {
+      "name": "chat_actions_report_sent",
+      "value": "Report sent"
+    },
+    {
+      "name": "chat_actions_report_failed",
+      "value": "Could not report the chat"
+    },
+    {
+      "name": "chat_actions_report_text_required",
+      "value": "Telegram asks for a comment to finish this report"
+    },
+    {
+      "name": "chat_actions_report_messages_required",
+      "value": "Telegram asks for the messages to report"
+    },
+    {
       "name": "chat_actions_leave",
       "value": "Leave Chat"
     },

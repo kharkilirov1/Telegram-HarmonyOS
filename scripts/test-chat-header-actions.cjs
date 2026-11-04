@@ -10,6 +10,7 @@ const read = (relative) => fs.readFileSync(main + relative, 'utf8').replaceAll('
 
 const topBar = read('ui/tg_ui/atoms/TgChatTopBar.ets');
 const page = read('ui/pages/chat/TgChatScreenPage.ets');
+const actions = read('ui/pages/chat/ChatActionsCoordinator.ets');
 
 // Top bar: a second capsule, not a replacement for search -----------------------------------------
 assert.match(topBar, /More = 'more'/);
@@ -28,33 +29,37 @@ assert.match(topBar, /private buildFallbackMoreActionCapsule\(\)/);
 assert.match(page, /showMoreAction: this\.view\.chrome\.activeChatId > 0,/);
 assert.match(page, /onMorePress: \(\): void => \{\n {12}this\.openChatActions\(\);/);
 assert.match(page, /private openChatActions\(\): void \{/);
-assert.match(page, /getPromptAction\(\)\.showActionMenu\(/);
-assert.match(page, /localized\(\$r\('app\.string\.chat_actions_info'\)\.id, 'Chat Info'\)/);
-assert.match(page, /localized\(\$r\('app\.string\.profile_mute'\)\.id, 'Mute'\)/);
-assert.match(page, /localized\(\$r\('app\.string\.profile_clear_history'\)\.id, 'Clear History'\)/);
-assert.match(page, /localized\(\$r\('app\.string\.profile_delete_chat'\)\.id, 'Delete Chat'\)/);
+assert.match(page, /this\.chatActions\.currentChatId = this\.view\.chrome\.activeChatId;/);
+assert.match(page, /this\.chatActions\.open\(\);/);
+assert.match(actions, /private handleChoice\(index: number, chatId: number, chat: Chat\): void \{/);
+assert.match(actions, /getPromptAction\(\)\.showActionMenu\(/);
+assert.match(actions, /localized\(\$r\('app\.string\.chat_actions_info'\)\.id, 'Chat Info'\)/);
+assert.match(actions, /localized\(\$r\('app\.string\.profile_mute'\)\.id, 'Mute'\)/);
+assert.match(actions, /localized\(\$r\('app\.string\.profile_clear_history'\)\.id, 'Clear History'\)/);
+assert.match(actions, /localized\(\$r\('app\.string\.profile_delete_chat'\)\.id, 'Delete Chat'\)/);
 assert.match(page, /this\.bindings\.openProfile\(\);/);
-assert.match(page, /createSetChatMuteUseCase\(getTdGatewayAdapter\(\)\)/);
-assert.match(page, /useCase\.mute\(chatId, MUTE_FOREVER\)/);
-assert.match(page, /useCase\.unmute\(chatId\)/);
-assert.match(page, /createDeleteChatHistoryUseCase\(getTdGatewayAdapter\(\)\)/);
-assert.match(page, /useCase\.execute\(chatId, removeChat, removeChat\)/);
-assert.match(page, /private confirmChatDeletion\(chatId: number, removeChat: boolean\): void \{/);
-assert.match(page, /this\.bindings\.handleBackPress\(\);/, 'deleting the chat leaves the screen');
-assert.match(page, /profile_chat_deleted_toast/);
-assert.match(page, /profile_history_cleared_toast/);
-assert.match(page, /private canLeaveChat\(chat: Chat\): boolean \{/);
-assert.match(page, /chat\.type === 'group' \|\| chat\.type === 'supergroup' \|\| chat\.type === 'channel'/);
-assert.match(page, /localized\(\$r\('app\.string\.chat_actions_leave'\)\.id, 'Leave Chat'\)/);
-assert.match(page, /localized\(\$r\('app\.string\.chat_actions_share_contact'\)\.id, 'Share My Contact'\)/);
-assert.match(page, /createLeaveChatUseCase\(getTdGatewayAdapter\(\)\)/);
-assert.match(page, /createShareMyContactUseCase\(getTdGatewayAdapter\(\)\)/);
-assert.match(page, /useCase\.share\(chatId, phoneNumber, firstName, lastName, userId\)/);
-assert.match(page, /const self = state\.users\.users\.get\(userId\)/);
+assert.match(actions, /this\.host\.openProfile\(\);/);
+assert.match(actions, /createSetChatMuteUseCase\(getTdGatewayAdapter\(\)\)/);
+assert.match(actions, /useCase\.mute\(chatId, MUTE_FOREVER\)/);
+assert.match(actions, /useCase\.unmute\(chatId\)/);
+assert.match(actions, /createDeleteChatHistoryUseCase\(getTdGatewayAdapter\(\)\)/);
+assert.match(actions, /useCase\.execute\(chatId, removeChat, removeChat\)/);
+assert.match(actions, /private confirmDeletion\(chatId: number, removeChat: boolean\): void \{/);
+assert.match(actions, /this\.host\.handleBackPress\(\);/, 'deleting the chat leaves the screen');
+assert.match(actions, /profile_chat_deleted_toast/);
+assert.match(actions, /profile_history_cleared_toast/);
+assert.match(actions, /private canLeaveChat\(chat: Chat\): boolean \{/);
+assert.match(actions, /chat\.type === 'group' \|\| chat\.type === 'supergroup' \|\| chat\.type === 'channel'/);
+assert.match(actions, /localized\(\$r\('app\.string\.chat_actions_leave'\)\.id, 'Leave Chat'\)/);
+assert.match(actions, /localized\(\$r\('app\.string\.chat_actions_share_contact'\)\.id, 'Share My Contact'\)/);
+assert.match(actions, /createLeaveChatUseCase\(getTdGatewayAdapter\(\)\)/);
+assert.match(actions, /createShareMyContactUseCase\(getTdGatewayAdapter\(\)\)/);
+assert.match(actions, /useCase\.share\(chatId, phoneNumber, firstName, lastName, userId\)/);
+assert.match(actions, /const self = state\.users\.users\.get\(userId\)/);
 
 // The header is wired to the live chat, not to a guessed id.
-assert.match(page, /const chatId = this\.view\.chrome\.activeChatId;/);
-assert.match(page, /state\.chats\.chats\.get\(chatId\)/);
+assert.match(page, /this\.chatActions\.currentChatId = this\.view\.chrome\.activeChatId;/);
+assert.match(actions, /state\.chats\.chats\.get\(chatId\)/);
 
 for (const locale of ['base', 'ru_RU', 'zh_CN']) {
   const strings = JSON.parse(fs.readFileSync(
@@ -84,8 +89,64 @@ const { TdObject } = load('models/td/common/index.ets');
 const C = load('core/model/AppCommand.ets');
 const errors = load('core/model/AppError.ets');
 const serializer = load('infra/td/serialization/CommandSerializer.ets', { ...C, TdObject, hilog });
+const R = load('core/model/dto/ReportChatDto.ets', { TdObjectType: TdObject });
 
 async function checkMembership() {
+  const startWire = JSON.parse(serializer.buildTdlibRequestJson('reportChat',
+    serializer.serializeCommand(C.createReportChatCommand(Object.assign(new C.ReportChatPayload(),
+      { chatId: 42 }))).params));
+  assert.equal(startWire.chat_id, 42);
+  assert.equal(startWire.option_id, '', 'the first request sends empty bytes');
+  assert.deepEqual(startWire.message_ids, []);
+  assert.equal(startWire.text, '');
+
+  const optionWire = JSON.parse(serializer.buildTdlibRequestJson('reportChat',
+    serializer.serializeCommand(C.createReportChatCommand(Object.assign(new C.ReportChatPayload(),
+      { chatId: 42, optionId: 'AQID' }))).params));
+  assert.equal(optionWire.option_id, 'AQID', 'the chosen base64 option id is echoed');
+
+  const optionsStep = R.createReportChatStepFromTd(TdObject.fromJSON('{"@type":"reportChatResultOptionRequired",' +
+    '"title":"Why are you reporting?","options":[' +
+    '{"@type":"reportOption","id":"AQID","text":"Spam"},' +
+    '{"@type":"reportOption","id":"BAUG","text":"Violence"}]}'));
+  assert.equal(optionsStep.kind, 'options');
+  assert.equal(optionsStep.title, 'Why are you reporting?');
+  assert.equal(optionsStep.options.length, 2);
+  assert.equal(optionsStep.options[0].id, 'AQID');
+  assert.equal(optionsStep.options[1].text, 'Violence');
+
+  const textStep = R.createReportChatStepFromTd(TdObject.fromJSON(
+    '{"@type":"reportChatResultTextRequired","option_id":"AQID","is_optional":false}'));
+  assert.equal(textStep.kind, 'text');
+  assert.equal(textStep.optionId, 'AQID');
+  assert.equal(textStep.isTextOptional, false);
+  assert.equal(R.createReportChatStepFromTd(TdObject.fromJSON(
+    '{"@type":"reportChatResultMessagesRequired"}')).kind, 'messages');
+  assert.equal(R.createReportChatStepFromTd(TdObject.fromJSON(
+    '{"@type":"reportChatResultOk"}')).kind, 'ok');
+  assert.equal(R.createReportChatStepFromTd(TdObject.fromJSON('{"@type":"ok"}')).kind, 'unknown');
+
+  const reportSent = [];
+  const reportGateway = { send: (command) => {
+    reportSent.push(command);
+    return Promise.resolve(TdObject.fromJSON(reportSent.length === 1
+      ? '{"@type":"reportChatResultOptionRequired","title":"Why","options":[{"@type":"reportOption","id":"AQID","text":"Spam"}]}'
+      : '{"@type":"reportChatResultOk"}'));
+  } };
+  const reportMod = load('domain/usecases/reportChat.ets',
+    { ...C, ...errors, hilog, TdObject, ReportChatStepDto: R.ReportChatStepDto,
+      ReportChatOptionDto: R.ReportChatOptionDto, createReportChatStepFromTd: R.createReportChatStepFromTd });
+  const report = new reportMod.ReportChatUseCase(reportGateway);
+  const first = await report.start(42);
+  assert.equal(first.kind, 'options');
+  await assert.rejects(() => report.chooseOption(42, ''), /Invalid option/);
+  const done = await report.chooseOption(42, first.options[0].id);
+  assert.equal(done.kind, 'ok');
+  assert.equal(reportSent.at(-1).payload.optionId, 'AQID');
+  await assert.rejects(() => report.start(0), /Invalid chatId/);
+  await assert.rejects(() => new reportMod.ReportChatUseCase(
+    { send: () => Promise.reject(new Error('native status')) }).start(1), /Failed to report the chat/);
+
   const leaveWire = JSON.parse(serializer.buildTdlibRequestJson('leaveChat',
     serializer.serializeCommand(C.createLeaveChatCommand(42)).params));
   assert.equal(leaveWire.chat_id, 42);

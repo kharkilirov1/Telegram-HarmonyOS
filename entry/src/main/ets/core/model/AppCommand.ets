@@ -718,6 +718,13 @@ export class SetMessageReactionsCommand extends AppCommand {
   payload: SetMessageReactionsPayload = new SetMessageReactionsPayload();
 }
 
+export class ReportChatPayload {
+  chatId: ChatId = 0;
+  // Base64 option id returned by TDLib; empty for the first (option list) request.
+  optionId: string = '';
+  text: string = '';
+}
+
 export class LeaveChatPayload {
   chatId: ChatId = 0;
 }
@@ -732,6 +739,11 @@ export class ShareContactPayload {
 
 export class JoinChatPayload {
   chatId: ChatId = 0; // TDLib joinChat takes the chat id (chat_id:int53)
+}
+
+export class ReportChatCommand extends AppCommand {
+  type: string = 'reportChat';
+  payload: ReportChatPayload = new ReportChatPayload();
 }
 
 export class LeaveChatCommand extends AppCommand {
@@ -1026,6 +1038,7 @@ export type AnyAppCommand =
   | SetChatMuteCommand
   | GetMessageAvailableReactionsCommand
   | SetMessageReactionsCommand
+  | ReportChatCommand
   | LeaveChatCommand
   | ShareContactCommand
   | JoinChatCommand
@@ -1482,6 +1495,12 @@ export function createSetMessageReactionsCommand(chatId: ChatId, messageId: Mess
   cmd.payload.chatId = chatId;
   cmd.payload.messageId = messageId;
   cmd.payload.reactionKeys = reactionKeys.slice();
+  return cmd;
+}
+
+export function createReportChatCommand(payload: ReportChatPayload): ReportChatCommand {
+  const cmd = new ReportChatCommand();
+  cmd.payload = payload;
   return cmd;
 }
 

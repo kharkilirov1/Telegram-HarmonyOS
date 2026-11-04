@@ -525,6 +525,26 @@
       "value": "已屏蔽用户"
     },
     {
+      "name": "chat_actions_report",
+      "value": "举报"
+    },
+    {
+      "name": "chat_actions_report_sent",
+      "value": "举报已提交"
+    },
+    {
+      "name": "chat_actions_report_failed",
+      "value": "无法举报此聊天"
+    },
+    {
+      "name": "chat_actions_report_text_required",
+      "value": "Telegram 要求提供说明以完成举报"
+    },
+    {
+      "name": "chat_actions_report_messages_required",
+      "value": "Telegram 要求选择要举报的消息"
+    },
+    {
       "name": "chat_actions_leave",
       "value": "退出聊天"
     },
