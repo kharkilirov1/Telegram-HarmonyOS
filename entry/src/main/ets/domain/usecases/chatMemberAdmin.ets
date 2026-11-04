@@ -4,16 +4,16 @@
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ChatId, UserId } from '../../core/model/EntityId';
-import { createSetChatMemberStatusCommand } from '../../core/model/AppCommand';
+import { ChatAdminRightsPayload, createSetChatMemberStatusCommand } from '../../core/model/AppCommand';
 import { AppError, AppErrorKind } from '../../core/model/AppError';
 import { TdGatewayPort } from '../ports/TdGatewayPort';
 
 const DOMAIN = 0x0048;
 const TAG = 'ChatMemberAdmin';
 
-export type ChatMemberModerationAction = 'ban' | 'unban' | 'restrict';
+export type ChatMemberModerationAction = 'ban' | 'unban' | 'restrict' | 'promote' | 'demote';
 
-export const MEMBER_ACTION_KINDS: string[] = ['member', 'banned', 'restricted'];
+export const MEMBER_ACTION_KINDS: string[] = ['member', 'banned', 'restricted', 'administrator'];
 
 export function memberStatusKind(action: ChatMemberModerationAction): string {
   if (action === 'ban') {
@@ -21,6 +21,9 @@ export function memberStatusKind(action: ChatMemberModerationAction): string {
   }
   if (action === 'restrict') {
     return 'restricted';
+  }
+  if (action === 'promote') {
+    return 'administrator';
   }
   return 'member';
 }
@@ -33,11 +36,13 @@ export class ChatMemberAdminUseCase {
   }
 
   async apply(chatId: ChatId, userId: UserId, action: ChatMemberModerationAction,
-    untilDate: number = 0): Promise<void> {
+    untilDate: number = 0,
+    rights: ChatAdminRightsPayload = new ChatAdminRightsPayload()): Promise<void> {
     this.validate(chatId, userId, untilDate);
     const statusKind: string = memberStatusKind(action);
     try {
-      await this.gateway.send(createSetChatMemberStatusCommand(chatId, userId, statusKind, untilDate));
+      await this.gateway.send(createSetChatMemberStatusCommand(chatId, userId, statusKind, untilDate,
+        rights));
       hilog.info(DOMAIN, TAG, 'Member status updated: %{public}s', statusKind);
     } catch (error) {
       const err = error as Error;

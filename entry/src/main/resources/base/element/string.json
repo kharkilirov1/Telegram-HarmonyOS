@@ -813,6 +813,14 @@
       "value": "Administrators"
     },
     {
+      "name": "member_action_promote",
+      "value": "Add Admin"
+    },
+    {
+      "name": "member_action_demote",
+      "value": "Remove Admin"
+    },
+    {
       "name": "member_action_ban",
       "value": "Ban"
     },

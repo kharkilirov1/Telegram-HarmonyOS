@@ -22,7 +22,7 @@ async function main() {
   const hilog = { info() {}, warn() {}, error() {}, debug() {} };
   const { TdObject } = load('models/td/common/index.ets', ['TdObject']);
   const C = load('core/model/AppCommand.ets',
-    ['createSetChatMemberStatusCommand', 'AppCommand']);
+    ['createSetChatMemberStatusCommand', 'AppCommand', 'ChatAdminRightsPayload']);
   const errors = load('core/model/AppError.ets', ['AppError', 'AppErrorKind']);
   const serializer = load('infra/td/serialization/CommandSerializer.ets',
     ['serializeCommand', 'buildTdlibRequestJson'], { ...C, TdObject, hilog });
@@ -34,6 +34,8 @@ async function main() {
   assert.equal(U.memberStatusKind('ban'), 'banned');
   assert.equal(U.memberStatusKind('unban'), 'member');
   assert.equal(U.memberStatusKind('restrict'), 'restricted');
+  assert.equal(U.memberStatusKind('promote'), 'administrator');
+  assert.equal(U.memberStatusKind('demote'), 'member');
 
   // Wire shapes ------------------------------------------------------------------------------------
   const sent = [];
@@ -73,6 +75,24 @@ async function main() {
     assert.equal(permissions[key], false, key + ' must be false when restricting');
   }
 
+  await useCase.apply(42, 7, 'promote');
+  wire = JSON.parse(serializer.buildTdlibRequestJson('setChatMemberStatus',
+    serializer.serializeCommand(sent.at(-1)).params));
+  assert.equal(wire.status['@type'], 'chatMemberStatusAdministrator');
+  const rights = wire.status.rights;
+  assert.equal(rights['@type'], 'chatAdministratorRights');
+  for (const key of ['can_manage_chat', 'can_change_info', 'can_post_messages', 'can_edit_messages',
+    'can_delete_messages', 'can_invite_users', 'can_restrict_members', 'can_pin_messages',
+    'can_manage_topics', 'can_promote_members', 'can_manage_video_chats', 'can_post_stories',
+    'can_edit_stories', 'can_delete_stories', 'can_manage_direct_messages', 'is_anonymous']) {
+    assert.equal(rights[key], false, key + ' defaults to false for a fresh administrator');
+  }
+
+  await useCase.apply(42, 7, 'demote');
+  wire = JSON.parse(serializer.buildTdlibRequestJson('setChatMemberStatus',
+    serializer.serializeCommand(sent.at(-1)).params));
+  assert.equal(wire.status['@type'], 'chatMemberStatusMember', 'demote restores plain membership');
+
   // Validation and failures ------------------------------------------------------------------------
   const before = sent.length;
   await assert.rejects(() => useCase.apply(0, 7, 'ban'), /Invalid chatId/);
@@ -92,8 +112,8 @@ async function main() {
   const page = read('ui/pages/profile/TgProfileMembersPage.ets');
   assert.match(page, /createChatMemberAdminUseCase\(owner\.gateway\)/);
   assert.match(page, /private openMemberActions\(row: TgProfileMemberRowVO\): void \{/);
-  assert.match(page, /const actions: ChatMemberModerationAction\[\] = \['ban', 'unban', 'restrict'\];/);
-  assert.match(page, /buttons: \[b0, b1, b2\]/);
+  assert.match(page, /const actions: ChatMemberModerationAction\[\] = \['promote', 'demote', 'ban', 'unban', 'restrict'\];/);
+  assert.match(page, /buttons: \[b0, b1, b2, b3, b4\]/);
   assert.match(page, /useCase\.apply\(this\.chatId, userId, action\)/);
   assert.match(page, /onLongPress: \(\): void => \{\n              this\.openMemberActions\(row\);/);
 
@@ -101,7 +121,8 @@ async function main() {
     const strings = JSON.parse(fs.readFileSync(
       path.join(root, '../resources', locale, 'element/string.json'), 'utf8'));
     for (const name of ['member_action_ban', 'member_action_unban', 'member_action_restrict',
-      'member_action_applied', 'member_action_failed']) {
+      'member_action_promote', 'member_action_demote', 'member_action_applied',
+      'member_action_failed']) {
       assert.ok(strings.string.some((entry) => entry.name === name), name + ' exists in ' + locale);
     }
   }

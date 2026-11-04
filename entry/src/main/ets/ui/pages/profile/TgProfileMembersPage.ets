@@ -495,16 +495,21 @@ export struct TgProfileMembersPage {
     }
     const normal: Resource = TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND;
     const destructive: Resource = TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE;
-    const actions: ChatMemberModerationAction[] = ['ban', 'unban', 'restrict'];
+    // Order mirrors the iOS member menu: administrator actions first, then moderation.
+    const actions: ChatMemberModerationAction[] = ['promote', 'demote', 'ban', 'unban', 'restrict'];
     const b0: promptAction.Button = {
-      text: localized($r('app.string.member_action_ban').id, 'Ban'), color: destructive };
+      text: localized($r('app.string.member_action_promote').id, 'Add Admin'), color: normal };
     const b1: promptAction.Button = {
-      text: localized($r('app.string.member_action_unban').id, 'Unban'), color: normal };
+      text: localized($r('app.string.member_action_demote').id, 'Remove Admin'), color: normal };
     const b2: promptAction.Button = {
+      text: localized($r('app.string.member_action_ban').id, 'Ban'), color: destructive };
+    const b3: promptAction.Button = {
+      text: localized($r('app.string.member_action_unban').id, 'Unban'), color: normal };
+    const b4: promptAction.Button = {
       text: localized($r('app.string.member_action_restrict').id, 'Restrict'), color: normal };
     this.getUIContext().getPromptAction().showActionMenu({
       title: row.title,
-      buttons: [b0, b1, b2]
+      buttons: [b0, b1, b2, b3, b4]
     }).then((result: promptAction.ActionMenuSuccessResponse) => {
       this.applyMemberAction(actions[result.index], row.userId);
     }).catch((error: Error) => {

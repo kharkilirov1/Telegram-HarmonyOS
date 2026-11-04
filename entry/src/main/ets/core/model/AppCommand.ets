@@ -837,13 +837,36 @@ export class SetChatPermissionsCommand extends AppCommand {
   payload: SetChatPermissionsPayload = new SetChatPermissionsPayload();
 }
 
+// chatAdministratorRights (td_api.tl:945): every flag defaults to false, matching the iOS "Add Admin"
+// sheet where an administrator starts without extra rights.
+export class ChatAdminRightsPayload {
+  canManageChat: boolean = false;
+  canChangeInfo: boolean = false;
+  canPostMessages: boolean = false;
+  canEditMessages: boolean = false;
+  canDeleteMessages: boolean = false;
+  canInviteUsers: boolean = false;
+  canRestrictMembers: boolean = false;
+  canPinMessages: boolean = false;
+  canManageTopics: boolean = false;
+  canPromoteMembers: boolean = false;
+  canManageVideoChats: boolean = false;
+  canPostStories: boolean = false;
+  canEditStories: boolean = false;
+  canDeleteStories: boolean = false;
+  canManageDirectMessages: boolean = false;
+  isAnonymous: boolean = false;
+}
+
 export class SetChatMemberStatusPayload {
   chatId: ChatId = 0;
   userId: UserId = 0;
   // 'member' restores normal membership, 'banned' blocks the user, 'restricted' keeps them in the chat
-  // without any send rights. Dates are Unix timestamps; 0 means forever.
+  // without any send rights, 'administrator' promotes with the provided rights. Dates are Unix
+  // timestamps; 0 means forever.
   statusKind: string = 'member';
   untilDate: number = 0;
+  rights: ChatAdminRightsPayload = new ChatAdminRightsPayload();
 }
 
 export class SetChatMemberStatusCommand extends AppCommand {
@@ -1796,12 +1819,14 @@ export function createSetChatPermissionsCommand(chatId: ChatId,
 }
 
 export function createSetChatMemberStatusCommand(chatId: ChatId, userId: UserId,
-  statusKind: string, untilDate: number = 0): SetChatMemberStatusCommand {
+  statusKind: string, untilDate: number = 0,
+  rights: ChatAdminRightsPayload = new ChatAdminRightsPayload()): SetChatMemberStatusCommand {
   const cmd = new SetChatMemberStatusCommand();
   cmd.payload.chatId = chatId;
   cmd.payload.userId = userId;
   cmd.payload.statusKind = statusKind;
   cmd.payload.untilDate = untilDate;
+  cmd.payload.rights = rights;
   return cmd;
 }
 

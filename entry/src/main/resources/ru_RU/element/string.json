@@ -813,6 +813,14 @@
       "value": "Администраторы"
     },
     {
+      "name": "member_action_promote",
+      "value": "Назначить админом"
+    },
+    {
+      "name": "member_action_demote",
+      "value": "Снять админа"
+    },
+    {
       "name": "member_action_ban",
       "value": "Забанить"
     },

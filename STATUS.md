@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **G6-продолжение (lead).** Promote/demote: `ChatAdminRightsPayload` (16 флагов
+  `chatAdministratorRights`, по умолчанию все false), `buildAdminRightsJson`, статус
+  `chatMemberStatusAdministrator`, действия `promote`/`demote` в use case, меню участника
+  расширено до 5 пунктов (Add Admin/Remove Admin/Ban/Unban/Restrict), 2 строки в base/ru/zh.
+  Суита `test-chat-member-admin.cjs` расширена: маппинг promote→administrator/demote→member, wire
+  прав (все 16 false), демоут в обычное членство, меню из 5 кнопок. Гейты: host **127/127**,
+  оба smoke, hvigor BUILD SUCCESSFUL. Остаток G6: UI-тоглы прав, частичные ограничения, сроки,
+  witness.
 - **G6-срез (lead).** Модерация участника: команда `setChatMemberStatus` с тремя статусами
   (`chatMemberStatusMember` / `Banned` / `Restricted` — restricted остаётся в чате, все 14 прав
   false), `ChatMemberAdminUseCase.apply` (ban/unban/restrict, валидация chatId/userId/даты,

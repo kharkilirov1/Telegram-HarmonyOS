@@ -13,7 +13,7 @@ import {
   CheckChatInviteLinkCommand, JoinChatByInviteLinkCommand, GetChatMemberCommand,
   CreateChatInviteLinkCommand, RevokeChatInviteLinkCommand, GetChatInviteLinksCommand,
   GetChatAdministratorsCommand, SetChatPermissionsCommand, SetChatMessageAutoDeleteTimeCommand,
-  SetChatMemberStatusCommand,
+  SetChatMemberStatusCommand, ChatAdminRightsPayload,
   GetChatScheduledMessagesCommand, EditMessageSchedulingStateCommand,
   CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand, LeaveChatCommand,
   ReportChatCommand, ShareContactCommand,
@@ -534,9 +534,34 @@ function serializeSetChatMessageAutoDeleteTime(command: AnyAppCommand, result: S
 }
 
 // statusKind maps to the TDLib status object; a restricted member keeps zero permissions by design.
-function buildMemberStatusJson(statusKind: string, untilDate: number): string {
+function buildAdminRightsJson(rights: ChatAdminRightsPayload): string {
+  return '{"@type":"chatAdministratorRights"' +
+    ',"can_manage_chat":' + rights.canManageChat.toString() +
+    ',"can_change_info":' + rights.canChangeInfo.toString() +
+    ',"can_post_messages":' + rights.canPostMessages.toString() +
+    ',"can_edit_messages":' + rights.canEditMessages.toString() +
+    ',"can_delete_messages":' + rights.canDeleteMessages.toString() +
+    ',"can_invite_users":' + rights.canInviteUsers.toString() +
+    ',"can_restrict_members":' + rights.canRestrictMembers.toString() +
+    ',"can_pin_messages":' + rights.canPinMessages.toString() +
+    ',"can_manage_topics":' + rights.canManageTopics.toString() +
+    ',"can_promote_members":' + rights.canPromoteMembers.toString() +
+    ',"can_manage_video_chats":' + rights.canManageVideoChats.toString() +
+    ',"can_post_stories":' + rights.canPostStories.toString() +
+    ',"can_edit_stories":' + rights.canEditStories.toString() +
+    ',"can_delete_stories":' + rights.canDeleteStories.toString() +
+    ',"can_manage_direct_messages":' + rights.canManageDirectMessages.toString() +
+    ',"is_anonymous":' + rights.isAnonymous.toString() + '}';
+}
+
+function buildMemberStatusJson(statusKind: string, untilDate: number,
+  rights: ChatAdminRightsPayload): string {
   if (statusKind === 'banned') {
     return '{"@type":"chatMemberStatusBanned","banned_until_date":' + untilDate.toString() + '}';
+  }
+  if (statusKind === 'administrator') {
+    return '{"@type":"chatMemberStatusAdministrator","custom_title":"","can_be_edited":false,' +
+      '"rights":' + buildAdminRightsJson(rights) + '}';
   }
   if (statusKind === 'restricted') {
     return '{"@type":"chatMemberStatusRestricted","is_member":true,"restricted_until_date":' +
@@ -557,7 +582,7 @@ function serializeSetChatMemberStatus(command: AnyAppCommand, result: Serialized
   result.params.setString('_member_id_json',
     '{"@type":"messageSenderUser","user_id":' + cmd.payload.userId.toString() + '}');
   result.params.setString('_status_json', buildMemberStatusJson(cmd.payload.statusKind,
-    cmd.payload.untilDate));
+    cmd.payload.untilDate, cmd.payload.rights));
 }
 
 function serializeSetChatPermissions(command: AnyAppCommand, result: SerializedCommand): void {

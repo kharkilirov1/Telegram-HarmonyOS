@@ -1126,3 +1126,13 @@ Last updated: 2026-10-23
   global adapter; new use cases must follow that pattern or they will not see the account switch.
 - A long-press on a row needs its own `@Event` plus `LongPressGesture`; `.onClick` alone silently drops
   the gesture on ArkUI rows.
+
+## 221. A default parameter is a runtime dependency for the host loader
+
+- Adding `rights: ChatAdminRightsPayload = new ChatAdminRightsPayload()` made the default expression a
+  runtime reference; the CJS suite then failed with `ReferenceError: ChatAdminRightsPayload is not
+  defined` even though the payload was only a type in the serializer. Load the class in the suite deps.
+- `chatAdministratorRights` has 16 flags in this TDLib revision (including `is_anonymous`); mirror all of
+  them explicitly instead of emitting a partial object, otherwise TDLib rejects the status JSON.
+- `showActionMenu` still has room at five buttons, so administrator and moderation actions can share one
+  member menu; the six-slot cap now leaves no space for a sixth entry.

@@ -144,7 +144,7 @@
 | G3 | Участники и поиск | `available` | `TgProfileMembersPage.ets` (7/17) | `ChatParticipantRightsScreen` | G2 |
 | G4 | Права/доступ в чате | `available` | `ChatChromeState.ets` (19/28) | `ChatParticipantRightsScreen` | G5, D1 |
 | G5 | Инвайт-ссылка | `partial` | `AppEvent.ets`, `index.ets` (9/2) | `Sources/Invite*` | G2 |
-| G6 | Админ-действия | `partial` | Модерация участника: `setChatMemberStatus` (`member`/`banned`/`restricted` со всеми правами false), `ChatMemberAdminUseCase.apply` (ban/unban/restrict, валидация id и даты, 0 = навсегда), long-press строки участника → меню Ban/Unban/Restrict + тосты; команды прав чата/админов/ссылок/автоудаления — в C10/D20. Нет: promote/demote с выбором прав, restrict с частичными правами, срок «на N часов», witness | `AdminUserActionsSheet` | G4 |
+| G6 | Админ-действия | `partial` | Модерация участника: `setChatMemberStatus` (`member`/`banned`/`restricted` со всеми правами false/`administrator` + `chatAdministratorRights`), `ChatMemberAdminUseCase.apply` (promote/demote/ban/unban/restrict, права по умолчанию все false, валидация id и даты, 0 = навсегда), long-press участника → меню Add Admin/Remove Admin/Ban/Unban/Restrict + тосты. Нет: UI-тоглы прав при promote, restrict с частичными правами, срок «на N часов», witness | `AdminUserActionsSheet` | G4 |
 
 ## H. Настройки
 
