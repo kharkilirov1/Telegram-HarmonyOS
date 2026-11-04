@@ -39,7 +39,9 @@ assert.match(actions, /localized\(\$r\('app\.string\.chat_actions_info'\)\.id, '
 // Role-aware admin entries (C10 remainder): getChatMember decides Members.
 assert.match(actions, /createChatMemberRoleUseCase\(getTdGatewayAdapter\(\)\)\.load\(chatId, userId\)/);
 assert.match(actions, /if \(canManageChat\(role\)\) \{/);
-assert.match(actions, /push\(ChatMenuAction\.Members, localized\(\$r\('app\.string\.chat_actions_members'\)\.id, 'Members'\), normal\);/);
+assert.match(actions, /push\(ChatMenuAction\.Manage, localized\(\$r\('app\.string\.chat_actions_manage'\)\.id, 'Manage'\), normal\);/);
+assert.match(actions, /const actions: ChatMenuAction\[\] = \[ChatMenuAction\.Members, ChatMenuAction\.InviteLinks\];/);
+assert.match(actions, /this\.host\.openInviteLinks\(chatId\)/);
 assert.match(actions, /const b0: promptAction\.Button = \{ text: labels\[0\], color: colors\[0\] \};/);
 assert.match(page, /private openMembersFromChat\(chatId: number, title: string\): void \{/);
 assert.match(page, /new ProfileMembersRouteParams\(chatId, chat\?\.supergroupId \?\? 0, 'all',/);

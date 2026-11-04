@@ -641,6 +641,50 @@
       "value": "Blocked Users"
     },
     {
+      "name": "chat_actions_manage",
+      "value": "Manage"
+    },
+    {
+      "name": "chat_actions_invite_links",
+      "value": "Invite Links"
+    },
+    {
+      "name": "invite_links_title",
+      "value": "Invite Links"
+    },
+    {
+      "name": "invite_links_create",
+      "value": "Create Invite Link"
+    },
+    {
+      "name": "invite_links_loading",
+      "value": "Loading invite links…"
+    },
+    {
+      "name": "invite_links_failed",
+      "value": "Could not load invite links"
+    },
+    {
+      "name": "invite_links_create_failed",
+      "value": "Could not create an invite link"
+    },
+    {
+      "name": "invite_links_revoke_failed",
+      "value": "Could not revoke the invite link"
+    },
+    {
+      "name": "invite_links_primary",
+      "value": "Primary link"
+    },
+    {
+      "name": "invite_links_joined",
+      "value": "joined"
+    },
+    {
+      "name": "invite_links_pending",
+      "value": "pending"
+    },
+    {
       "name": "chat_actions_members",
       "value": "Members"
     },

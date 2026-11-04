@@ -9,6 +9,7 @@ import { TgPinnedMessagePanel } from '../../tg_ui/atoms/TgPinnedMessagePanel';
 import { localized } from '../../../core/utils/AppResource';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { ProfileMembersRouteParams } from '../profile/TgProfileMembersPage';
+import { ChatInviteLinksRouteParams } from './chatInviteLinksRoute';
 import { ChatScreenViewState } from './ChatScreenViewState';
 import { ChatScreenSession } from './ChatScreenSession';
 import { ChatScreenViewBindings } from './ChatScreenViewBindings';
@@ -64,6 +65,9 @@ export struct TgChatScreenPage {
     (): number => this.currentUserId(),
     (chatId: number, title: string): void => {
       this.openMembersFromChat(chatId, title);
+    },
+    (chatId: number): void => {
+      this.openInviteLinksFromChat(chatId);
     }
   ));
 
@@ -92,6 +96,23 @@ export struct TgChatScreenPage {
     }
     this.getUIContext().getPromptAction().showToast({
       message: localized($r('app.string.chat_actions_members_failed').id, 'Could not open members'),
+      duration: 2000
+    });
+  }
+
+  private openInviteLinksFromChat(chatId: number): void {
+    try {
+      const navigation = this.queryNavigationInfo();
+      const stack = navigation?.pathStack;
+      if (stack !== undefined) {
+        stack.pushPathByName('TgChatInviteLinksPage', new ChatInviteLinksRouteParams(chatId));
+        return;
+      }
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Invite links navigation failed: %{public}s', String(error));
+    }
+    this.getUIContext().getPromptAction().showToast({
+      message: localized($r('app.string.invite_links_failed').id, 'Could not load invite links'),
       duration: 2000
     });
   }

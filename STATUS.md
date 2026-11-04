@@ -146,6 +146,17 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S12h (lead).** C10: ссылки-приглашения группы. Команды `getChatInviteLinks`/
+  `createChatInviteLink`/`revokeChatInviteLink` + сериализаторы, `ChatInviteLinkDto`/
+  `ChatInviteLinksDto` (primary/лимит/участники/заявки/revoked), `ChatInviteLinksUseCase`
+  (load/create/revoke, валидация chatId и ссылки, trim), экран `TgChatInviteLinksPage` (список,
+  Create Invite Link, отзыв по тапу, primary не отзывается, ошибки, счётчик), route
+  `TgChatInviteLinksPage`, `ChatInviteLinksRouteParams`, в меню — Manage-подменю (Members /
+  Invite Links) вместо плоского пункта, `openInviteLinks` в host и навигация со страницы чата.
+  Новая суита `scripts/test-chat-invite-links.cjs` (121-я): разбор DTO (primary, пустые ссылки
+  отбрасываются), wire всех трёх команд, trim, валидация до gateway, ошибки, экран/route/
+  подменю/11 строк в 3 локалях. Гейты: host **121/121**, оба smoke, hvigor BUILD SUCCESSFUL.
+  Остаток C10: права участников, администраторы, witness.
 - **S12g (lead).** C10: ролевые admin-пункты. `getChatMember` (+сериализатор с
   `_member_id_json`), `ChatMemberRole`/`readChatMemberRole`/`canManageChat` и
   `ChatMemberRoleUseCase` (валидация id, ошибка роли → `unknown`, меню не блокируется); меню

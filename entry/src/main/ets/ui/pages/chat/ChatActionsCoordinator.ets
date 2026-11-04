@@ -40,7 +40,8 @@ export class ChatActionsHost {
     reportCommentAction: (chatId: number, optionId: string) => void,
     reportMessagesAction: (chatId: number, optionId: string) => void,
     currentUserIdProvider: () => number,
-    membersAction: (chatId: number, title: string) => void
+    membersAction: (chatId: number, title: string) => void,
+    inviteLinksAction: (chatId: number) => void
   ) {
     this.uiContextProvider = uiContextProvider;
     this.titleProvider = titleProvider;
@@ -51,6 +52,7 @@ export class ChatActionsHost {
     this.reportMessagesHandler = reportMessagesAction;
     this.currentUserIdProvider = currentUserIdProvider;
     this.membersHandler = membersAction;
+    this.inviteLinksHandler = inviteLinksAction;
   }
 
   uiContext(): UIContext {
@@ -77,6 +79,7 @@ export class ChatActionsHost {
   private reportMessagesHandler: (chatId: number, optionId: string) => void;
   private currentUserIdProvider: () => number;
   private membersHandler: (chatId: number, title: string) => void;
+  private inviteLinksHandler: (chatId: number) => void;
 
   requestReportComment(chatId: number, optionId: string): void {
     this.reportCommentHandler(chatId, optionId);
@@ -91,6 +94,10 @@ export class ChatActionsHost {
     this.membersHandler(chatId, title);
   }
 
+  openInviteLinks(chatId: number): void {
+    this.inviteLinksHandler(chatId);
+  }
+
   requestReportMessages(chatId: number, optionId: string): void {
     this.reportMessagesHandler(chatId, optionId);
   }
@@ -102,7 +109,9 @@ export enum ChatMenuAction {
   Mute,
   ClearHistory,
   DeleteChat,
+  Manage,
   Members,
+  InviteLinks,
   Leave,
   ShareContact,
   Report
@@ -201,7 +210,8 @@ export class ChatActionsCoordinator {
       destructive);
     // Admin entries take the slot the destructive Report normally uses (the menu is capped at six).
     if (canManageChat(role)) {
-      push(ChatMenuAction.Members, localized($r('app.string.chat_actions_members').id, 'Members'), normal);
+      // Admin-only submenu keeps the six-slot top-level menu intact.
+      push(ChatMenuAction.Manage, localized($r('app.string.chat_actions_manage').id, 'Manage'), normal);
     }
     push(this.canLeaveChat(chat) ? ChatMenuAction.Leave : ChatMenuAction.ShareContact, membershipTitle,
       destructive);
@@ -232,6 +242,23 @@ export class ChatActionsCoordinator {
       });
   }
 
+  private showManageMenu(chatId: number, chat: Chat): void {
+    const normal: Resource = TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND;
+    const actions: ChatMenuAction[] = [ChatMenuAction.Members, ChatMenuAction.InviteLinks];
+    const b0: promptAction.Button = {
+      text: localized($r('app.string.chat_actions_members').id, 'Members'), color: normal };
+    const b1: promptAction.Button = {
+      text: localized($r('app.string.chat_actions_invite_links').id, 'Invite Links'), color: normal };
+    this.host.uiContext().getPromptAction().showActionMenu({
+      title: localized($r('app.string.chat_actions_manage').id, 'Manage'),
+      buttons: [b0, b1]
+    }).then((result: promptAction.ActionMenuSuccessResponse) => {
+      this.applyMenuAction(actions[result.index], chatId, chat);
+    }).catch((error: Error) => {
+      hilog.warn(DOMAIN, TAG, 'Manage menu failed: %{public}s', error.message);
+    });
+  }
+
   private applyMenuAction(action: ChatMenuAction | undefined, chatId: number, chat: Chat): void {
     if (action === undefined) {
       return;
@@ -244,8 +271,12 @@ export class ChatActionsCoordinator {
       this.confirmDeletion(chatId, false);
     } else if (action === ChatMenuAction.DeleteChat) {
       this.confirmDeletion(chatId, true);
+    } else if (action === ChatMenuAction.Manage) {
+      this.showManageMenu(chatId, chat);
     } else if (action === ChatMenuAction.Members) {
       this.host.openMembers(chatId, this.host.title());
+    } else if (action === ChatMenuAction.InviteLinks) {
+      this.host.openInviteLinks(chatId);
     } else if (action === ChatMenuAction.Leave) {
       this.confirmLeave(chatId);
     } else if (action === ChatMenuAction.ShareContact) {

@@ -1010,3 +1010,14 @@ Last updated: 2026-10-23
 - Replacing an index-based menu switch with typed actions keeps the report/leave/share mapping
   readable and makes the admin variant a one-line insertion; update the contract test in the same
   slice instead of keeping both mappings alive.
+
+## 210. This TDLib revision has no exportChatInviteLink; test loaders need an export list
+
+- The primary invite link is not exported by a call: `getChatInviteLinks` returns it with
+  `is_primary = true`, so the screen must not offer revoke for that row and must not invent an
+  export command.
+- The ad-hoc `load()` used by a new suite returned nothing because it only executed the module body.
+  The suite loader must append `return {exports}` like the other suites, and every dependency module
+  needs its own explicit name list; a missing name surfaces as `Cannot destructure ... of undefined`.
+- Six-button action menus cannot absorb every admin entry: add a Manage submenu instead of dropping
+  an existing entry, and update the header contract when the top-level item changes.

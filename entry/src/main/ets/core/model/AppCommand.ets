@@ -780,6 +780,44 @@ export class ChatFolderInviteLinkRequestPayload {
   chatIds: number[] = [];
 }
 
+export class CreateChatInviteLinkPayload {
+  chatId: ChatId = 0;
+  name: string = '';
+  expirationDate: number = 0;
+  memberLimit: number = 0;
+  createsJoinRequest: boolean = false;
+}
+
+export class CreateChatInviteLinkCommand extends AppCommand {
+  type: string = 'createChatInviteLink';
+  payload: CreateChatInviteLinkPayload = new CreateChatInviteLinkPayload();
+}
+
+export class RevokeChatInviteLinkPayload {
+  chatId: ChatId = 0;
+  inviteLink: string = '';
+}
+
+export class RevokeChatInviteLinkCommand extends AppCommand {
+  type: string = 'revokeChatInviteLink';
+  payload: RevokeChatInviteLinkPayload = new RevokeChatInviteLinkPayload();
+}
+
+export class GetChatInviteLinksPayload {
+  chatId: ChatId = 0;
+  // 0 = links created by anyone (the primary link included), otherwise only that creator's.
+  creatorUserId: number = 0;
+  isRevoked: boolean = false;
+  offsetDate: number = 0;
+  offsetInviteLink: string = '';
+  limit: number = 50;
+}
+
+export class GetChatInviteLinksCommand extends AppCommand {
+  type: string = 'getChatInviteLinks';
+  payload: GetChatInviteLinksPayload = new GetChatInviteLinksPayload();
+}
+
 export class GetChatMemberPayload {
   chatId: ChatId = 0;
   userId: UserId = 0;
@@ -1104,6 +1142,9 @@ export type AnyAppCommand =
   | JoinChatByInviteLinkCommand
   | CheckChatFolderInviteLinkCommand
   | AddChatFolderByInviteLinkCommand
+  | CreateChatInviteLinkCommand
+  | RevokeChatInviteLinkCommand
+  | GetChatInviteLinksCommand
   | GetChatMemberCommand
   | GetRecommendedChatFoldersCommand
   | GetChatFolderInviteLinksCommand
@@ -1633,6 +1674,27 @@ export function createAddChatFolderByInviteLinkCommand(
   const cmd = new AddChatFolderByInviteLinkCommand();
   cmd.payload.inviteLink = inviteLink;
   cmd.payload.chatIds = chatIds;
+  return cmd;
+}
+
+export function createCreateChatInviteLinkCommand(chatId: ChatId, name: string): CreateChatInviteLinkCommand {
+  const cmd = new CreateChatInviteLinkCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.name = name;
+  return cmd;
+}
+
+export function createRevokeChatInviteLinkCommand(chatId: ChatId,
+  inviteLink: string): RevokeChatInviteLinkCommand {
+  const cmd = new RevokeChatInviteLinkCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.inviteLink = inviteLink;
+  return cmd;
+}
+
+export function createGetChatInviteLinksCommand(chatId: ChatId): GetChatInviteLinksCommand {
+  const cmd = new GetChatInviteLinksCommand();
+  cmd.payload.chatId = chatId;
   return cmd;
 }
 

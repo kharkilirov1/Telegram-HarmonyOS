@@ -11,6 +11,7 @@ import {
   GetChatFolderCommand, GetChatFolderInviteLinksCommand, GetRecommendedChatFoldersCommand,
   CheckChatFolderInviteLinkCommand, AddChatFolderByInviteLinkCommand,
   CheckChatInviteLinkCommand, JoinChatByInviteLinkCommand, GetChatMemberCommand,
+  CreateChatInviteLinkCommand, RevokeChatInviteLinkCommand, GetChatInviteLinksCommand,
   CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand, LeaveChatCommand,
   ReportChatCommand, ShareContactCommand,
   GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
@@ -130,6 +131,9 @@ COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
 COMMAND_SERIALIZATION_HANDLERS.set('checkChatInviteLink', serializeCheckChatInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatMember', serializeGetChatMember);
+COMMAND_SERIALIZATION_HANDLERS.set('createChatInviteLink', serializeCreateChatInviteLink);
+COMMAND_SERIALIZATION_HANDLERS.set('revokeChatInviteLink', serializeRevokeChatInviteLink);
+COMMAND_SERIALIZATION_HANDLERS.set('getChatInviteLinks', serializeGetChatInviteLinks);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChatByInviteLink', serializeJoinChatByInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('checkChatFolderInviteLink', serializeCheckChatFolderInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('addChatFolderByInviteLink', serializeAddChatFolderByInviteLink);
@@ -487,6 +491,34 @@ function buildChatFolderJson(draft: ChatFolderDraftPayload): string {
     ',"include_bots":' + (draft.includeBots ? 'true' : 'false') +
     ',"include_groups":' + (draft.includeGroups ? 'true' : 'false') +
     ',"include_channels":' + (draft.includeChannels ? 'true' : 'false') + '}';
+}
+
+function serializeCreateChatInviteLink(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as CreateChatInviteLinkCommand;
+  result.method = 'createChatInviteLink';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('name', cmd.payload.name);
+  result.params.setNumber('expiration_date', cmd.payload.expirationDate);
+  result.params.setNumber('member_limit', cmd.payload.memberLimit);
+  result.params.setBool('creates_join_request', cmd.payload.createsJoinRequest);
+}
+
+function serializeRevokeChatInviteLink(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as RevokeChatInviteLinkCommand;
+  result.method = 'revokeChatInviteLink';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('invite_link', cmd.payload.inviteLink);
+}
+
+function serializeGetChatInviteLinks(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetChatInviteLinksCommand;
+  result.method = 'getChatInviteLinks';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setNumber('creator_user_id', cmd.payload.creatorUserId);
+  result.params.setBool('is_revoked', cmd.payload.isRevoked);
+  result.params.setNumber('offset_date', cmd.payload.offsetDate);
+  result.params.setString('offset_invite_link', cmd.payload.offsetInviteLink);
+  result.params.setNumber('limit', cmd.payload.limit);
 }
 
 function serializeGetChatMember(command: AnyAppCommand, result: SerializedCommand): void {
