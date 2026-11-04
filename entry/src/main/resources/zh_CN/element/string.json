@@ -813,6 +813,26 @@
       "value": "管理员"
     },
     {
+      "name": "member_action_ban",
+      "value": "封禁"
+    },
+    {
+      "name": "member_action_unban",
+      "value": "解除封禁"
+    },
+    {
+      "name": "member_action_restrict",
+      "value": "限制"
+    },
+    {
+      "name": "member_action_applied",
+      "value": "成员已更新"
+    },
+    {
+      "name": "member_action_failed",
+      "value": "无法更新成员"
+    },
+    {
       "name": "administrators_title",
       "value": "管理员"
     },

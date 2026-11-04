@@ -146,6 +146,15 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **G6-срез (lead).** Модерация участника: команда `setChatMemberStatus` с тремя статусами
+  (`chatMemberStatusMember` / `Banned` / `Restricted` — restricted остаётся в чате, все 14 прав
+  false), `ChatMemberAdminUseCase.apply` (ban/unban/restrict, валидация chatId/userId/даты,
+  `untilDate` 0 = навсегда), long-press строки в списке участников открывает showActionMenu
+  Ban/Unban/Restrict с тостами результата, `onLongPress` добавлен в `TgProfileMemberRow`, 5 строк
+  в base/ru/zh. Новая суита `test-chat-member-admin.cjs` (127-я): маппинг действий в статусы,
+  wire всех трёх статусов (включая запрет всех прав при restrict), валидация, ошибки, проводка
+  long-press/меню и локали. Гейты: host **127/127**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток G6:
+  promote/demote с выбором прав, частичные ограничения, сроки, witness.
 - **D21-срез (lead).** Отложенные сообщения: `getChatScheduledMessages` + `ScheduledMessageDto`
   (int64 id строкой, send_date, превью, порядок новые первыми), `EditMessageSchedulingState`
   (null → отправить сейчас, дата → перенос), отмена через `deleteMessages` (id уходит в wire как

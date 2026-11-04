@@ -21,6 +21,12 @@ import {
 } from '../../tg_ui/atoms/TgChatTopBar';
 import { TgProfileMemberRoleKind, TgProfileMemberRow } from '../../tg_ui/atoms/TgProfileMemberRow';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
+import { promptAction } from '@kit.ArkUI';
+import {
+  ChatMemberAdminUseCase,
+  ChatMemberModerationAction,
+  createChatMemberAdminUseCase
+} from '../../../domain/usecases/chatMemberAdmin';
 import { TgProfileMemberRowVO, TgProfileMembersDataSource } from './TgProfileMembersDataSource';
 
 const DOMAIN = 0x0035;
@@ -155,6 +161,7 @@ export struct TgProfileMembersPage {
   @Local private searchQuery: string = '';
 
   private useCase?: ChatMembersUseCase;
+  private memberAdminUseCase?: ChatMemberAdminUseCase;
   private routeContext?: ProfileLoadContext;
   private scopeUnsubscribe?: () => void;
   private isActive: boolean = false;
@@ -249,6 +256,7 @@ export struct TgProfileMembersPage {
       return;
     }
     this.useCase = createChatMembersUseCase(owner.gateway);
+    this.memberAdminUseCase = createChatMemberAdminUseCase(owner.gateway);
     this.scopeUnsubscribe = owner.store.subscribeScopeInvalidation((): void => {
       if (this.isActive && this.routeContext === owner) this.accountUnavailable();
     });
@@ -480,6 +488,52 @@ export struct TgProfileMembersPage {
     }
   }
 
+  // Moderation entry: iOS exposes ban/unban/restrict from the member context menu.
+  private openMemberActions(row: TgProfileMemberRowVO): void {
+    if (this.memberAdminUseCase === undefined || row.userId <= 0) {
+      return;
+    }
+    const normal: Resource = TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND;
+    const destructive: Resource = TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE;
+    const actions: ChatMemberModerationAction[] = ['ban', 'unban', 'restrict'];
+    const b0: promptAction.Button = {
+      text: localized($r('app.string.member_action_ban').id, 'Ban'), color: destructive };
+    const b1: promptAction.Button = {
+      text: localized($r('app.string.member_action_unban').id, 'Unban'), color: normal };
+    const b2: promptAction.Button = {
+      text: localized($r('app.string.member_action_restrict').id, 'Restrict'), color: normal };
+    this.getUIContext().getPromptAction().showActionMenu({
+      title: row.title,
+      buttons: [b0, b1, b2]
+    }).then((result: promptAction.ActionMenuSuccessResponse) => {
+      this.applyMemberAction(actions[result.index], row.userId);
+    }).catch((error: Error) => {
+      hilog.warn(DOMAIN, TAG, 'Member actions menu failed: %{public}s', error.message);
+    });
+  }
+
+  private applyMemberAction(action: ChatMemberModerationAction | undefined, userId: number): void {
+    const useCase = this.memberAdminUseCase;
+    if (useCase === undefined || action === undefined) {
+      return;
+    }
+    useCase.apply(this.chatId, userId, action)
+      .then(() => {
+        this.getUIContext().getPromptAction().showToast({
+          message: localized($r('app.string.member_action_applied').id, 'Member updated'),
+          duration: 1500
+        });
+      })
+      .catch((error: Error) => {
+        this.getUIContext().getPromptAction().showToast({
+          message: error.message.length > 0
+            ? error.message : localized($r('app.string.member_action_failed').id,
+              'Could not update the member'),
+          duration: 2000
+        });
+      });
+  }
+
   private openUserProfile(userId: number): void {
     if (userId <= 0 || this.routeContext === undefined || !this.routeContext.isCurrent() || !this.isActive || this.isClosing) {
       return;
@@ -534,6 +588,9 @@ export struct TgProfileMembersPage {
             isEnabled: row.isEnabled,
             onPress: (): void => {
               this.openUserProfile(row.userId);
+            },
+            onLongPress: (): void => {
+              this.openMemberActions(row);
             }
           })
         }

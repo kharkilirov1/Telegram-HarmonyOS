@@ -17,6 +17,7 @@ export struct TgProfileMemberRow {
   @Param isEnabled: boolean = true;
 
   @Event onPress: () => void = (): void => {};
+  @Event onLongPress: () => void = (): void => {};
 
   private roleTextColor(): ResourceColor {
     if (this.roleKind === 'creator') {
@@ -106,6 +107,11 @@ export struct TgProfileMemberRow {
     .height(TgUiTokens.PROFILE_MEMBER_ROW_HEIGHT)
     .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
     .opacity(this.isEnabled ? 1 : 0.72)
+    .gesture(LongPressGesture({ repeat: false }).onAction((): void => {
+      if (this.isEnabled) {
+        this.onLongPress();
+      }
+    }))
     .onClick((): void => {
       if (this.isEnabled) {
         this.onPress();

@@ -813,6 +813,26 @@
       "value": "Администраторы"
     },
     {
+      "name": "member_action_ban",
+      "value": "Забанить"
+    },
+    {
+      "name": "member_action_unban",
+      "value": "Разбанить"
+    },
+    {
+      "name": "member_action_restrict",
+      "value": "Ограничить"
+    },
+    {
+      "name": "member_action_applied",
+      "value": "Участник обновлён"
+    },
+    {
+      "name": "member_action_failed",
+      "value": "Не удалось обновить участника"
+    },
+    {
       "name": "administrators_title",
       "value": "Администраторы"
     },

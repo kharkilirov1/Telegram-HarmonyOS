@@ -13,6 +13,7 @@ import {
   CheckChatInviteLinkCommand, JoinChatByInviteLinkCommand, GetChatMemberCommand,
   CreateChatInviteLinkCommand, RevokeChatInviteLinkCommand, GetChatInviteLinksCommand,
   GetChatAdministratorsCommand, SetChatPermissionsCommand, SetChatMessageAutoDeleteTimeCommand,
+  SetChatMemberStatusCommand,
   GetChatScheduledMessagesCommand, EditMessageSchedulingStateCommand,
   CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand, LeaveChatCommand,
   ReportChatCommand, ShareContactCommand,
@@ -88,7 +89,7 @@ import {
   SearchPublicChatCommand,
   GetInlineQueryResultsCommand,
   SendInlineQueryResultCommand,
-  GetStickerSetCommand,
+  GetStickerSetCommand, ChangeStickerSetCommand,
   SendStickerCommand,
   SendAnimationCommand
 } from '../../../core/model/AppCommand';
@@ -138,6 +139,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('revokeChatInviteLink', serializeRevokeChatIn
 COMMAND_SERIALIZATION_HANDLERS.set('getChatInviteLinks', serializeGetChatInviteLinks);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatAdministrators', serializeGetChatAdministrators);
 COMMAND_SERIALIZATION_HANDLERS.set('setChatPermissions', serializeSetChatPermissions);
+COMMAND_SERIALIZATION_HANDLERS.set('setChatMemberStatus', serializeSetChatMemberStatus);
 COMMAND_SERIALIZATION_HANDLERS.set('setChatMessageAutoDeleteTime', serializeSetChatMessageAutoDeleteTime);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatScheduledMessages', serializeGetChatScheduledMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('editMessageSchedulingState', serializeEditMessageSchedulingState);
@@ -211,6 +213,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('searchPublicChat', serializeSearchPublicChat
 COMMAND_SERIALIZATION_HANDLERS.set('getInlineQueryResults', serializeGetInlineQueryResults);
 COMMAND_SERIALIZATION_HANDLERS.set('sendInlineQueryResult', serializeSendInlineQueryResult);
 COMMAND_SERIALIZATION_HANDLERS.set('getStickerSet', serializeGetStickerSet);
+COMMAND_SERIALIZATION_HANDLERS.set('changeStickerSet', serializeChangeStickerSet);
 COMMAND_SERIALIZATION_HANDLERS.set('sendSticker', serializeSendSticker);
 COMMAND_SERIALIZATION_HANDLERS.set('getSavedAnimations', serializeGetSavedAnimations);
 COMMAND_SERIALIZATION_HANDLERS.set('sendAnimation', serializeSendAnimation);
@@ -528,6 +531,33 @@ function serializeSetChatMessageAutoDeleteTime(command: AnyAppCommand, result: S
   result.method = 'setChatMessageAutoDeleteTime';
   result.params.setNumber('chat_id', cmd.payload.chatId);
   result.params.setNumber('message_auto_delete_time', cmd.payload.seconds);
+}
+
+// statusKind maps to the TDLib status object; a restricted member keeps zero permissions by design.
+function buildMemberStatusJson(statusKind: string, untilDate: number): string {
+  if (statusKind === 'banned') {
+    return '{"@type":"chatMemberStatusBanned","banned_until_date":' + untilDate.toString() + '}';
+  }
+  if (statusKind === 'restricted') {
+    return '{"@type":"chatMemberStatusRestricted","is_member":true,"restricted_until_date":' +
+      untilDate.toString() + ',"permissions":{"@type":"chatPermissions"' +
+      ',"can_send_basic_messages":false,"can_send_audios":false,"can_send_documents":false' +
+      ',"can_send_photos":false,"can_send_videos":false,"can_send_video_notes":false' +
+      ',"can_send_voice_notes":false,"can_send_polls":false,"can_send_other_messages":false' +
+      ',"can_add_link_previews":false,"can_change_info":false,"can_invite_users":false' +
+      ',"can_pin_messages":false,"can_create_topics":false}}';
+  }
+  return '{"@type":"chatMemberStatusMember","member_until_date":0}';
+}
+
+function serializeSetChatMemberStatus(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SetChatMemberStatusCommand;
+  result.method = 'setChatMemberStatus';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('_member_id_json',
+    '{"@type":"messageSenderUser","user_id":' + cmd.payload.userId.toString() + '}');
+  result.params.setString('_status_json', buildMemberStatusJson(cmd.payload.statusKind,
+    cmd.payload.untilDate));
 }
 
 function serializeSetChatPermissions(command: AnyAppCommand, result: SerializedCommand): void {
@@ -1146,6 +1176,15 @@ function serializeSendInlineQueryResult(command: AnyAppCommand, result: Serializ
     ? cmd.payload.queryId : '0');
   result.params.setString('result_id', cmd.payload.resultId);
   result.params.setBool('hide_via_bot', cmd.payload.hideViaBot);
+}
+
+function serializeChangeStickerSet(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as ChangeStickerSetCommand;
+  result.method = 'changeStickerSet';
+  // The set id is int64: a quoted decimal string keeps every digit.
+  result.params.setString('_set_id_json', JSON.stringify(cmd.payload.setId));
+  result.params.setBool('is_installed', cmd.payload.isInstalled);
+  result.params.setBool('is_archived', cmd.payload.isArchived);
 }
 
 function serializeGetStickerSet(command: AnyAppCommand, result: SerializedCommand): void {

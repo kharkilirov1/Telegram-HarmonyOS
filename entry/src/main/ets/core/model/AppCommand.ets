@@ -431,6 +431,18 @@ export class GetPremiumStickersPayload {
   limit: number = 16;
 }
 
+export class ChangeStickerSetPayload {
+  // TDLib int64; kept as a decimal string to avoid precision loss.
+  setId: string = '0';
+  isInstalled: boolean = true;
+  isArchived: boolean = false;
+}
+
+export class ChangeStickerSetCommand extends AppCommand {
+  type: string = 'changeStickerSet';
+  payload: ChangeStickerSetPayload = new ChangeStickerSetPayload();
+}
+
 export class GetStickerSetPayload {
   setId: string = '0'; // TDLib int64 — kept as string to avoid precision loss
 }
@@ -825,6 +837,20 @@ export class SetChatPermissionsCommand extends AppCommand {
   payload: SetChatPermissionsPayload = new SetChatPermissionsPayload();
 }
 
+export class SetChatMemberStatusPayload {
+  chatId: ChatId = 0;
+  userId: UserId = 0;
+  // 'member' restores normal membership, 'banned' blocks the user, 'restricted' keeps them in the chat
+  // without any send rights. Dates are Unix timestamps; 0 means forever.
+  statusKind: string = 'member';
+  untilDate: number = 0;
+}
+
+export class SetChatMemberStatusCommand extends AppCommand {
+  type: string = 'setChatMemberStatus';
+  payload: SetChatMemberStatusPayload = new SetChatMemberStatusPayload();
+}
+
 export class GetChatAdministratorsPayload {
   chatId: ChatId = 0;
 }
@@ -1200,6 +1226,7 @@ export type AnyAppCommand =
   | GetChatScheduledMessagesCommand
   | EditMessageSchedulingStateCommand
   | SetChatPermissionsCommand
+  | SetChatMemberStatusCommand
   | GetChatAdministratorsCommand
   | CreateChatInviteLinkCommand
   | RevokeChatInviteLinkCommand
@@ -1245,6 +1272,7 @@ export type AnyAppCommand =
   | SearchPublicChatCommand
   | GetInlineQueryResultsCommand
   | SendInlineQueryResultCommand
+  | ChangeStickerSetCommand
   | GetStickerSetCommand
   | SendStickerCommand
   | GetSavedAnimationsCommand
@@ -1767,6 +1795,16 @@ export function createSetChatPermissionsCommand(chatId: ChatId,
   return cmd;
 }
 
+export function createSetChatMemberStatusCommand(chatId: ChatId, userId: UserId,
+  statusKind: string, untilDate: number = 0): SetChatMemberStatusCommand {
+  const cmd = new SetChatMemberStatusCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.userId = userId;
+  cmd.payload.statusKind = statusKind;
+  cmd.payload.untilDate = untilDate;
+  return cmd;
+}
+
 export function createGetChatAdministratorsCommand(chatId: ChatId): GetChatAdministratorsCommand {
   const cmd = new GetChatAdministratorsCommand();
   cmd.payload.chatId = chatId;
@@ -2146,6 +2184,15 @@ export function createSendInlineQueryResultCommand(
   cmd.payload.queryId = queryId;
   cmd.payload.resultId = resultId;
   cmd.payload.hideViaBot = hideViaBot;
+  return cmd;
+}
+
+export function createChangeStickerSetCommand(setId: string, isInstalled: boolean,
+  isArchived: boolean = false): ChangeStickerSetCommand {
+  const cmd = new ChangeStickerSetCommand();
+  cmd.payload.setId = setId;
+  cmd.payload.isInstalled = isInstalled;
+  cmd.payload.isArchived = isArchived;
   return cmd;
 }
 

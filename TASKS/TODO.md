@@ -402,3 +402,6 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
 
 - [ ] **D21: нет пикера даты из композера и repeat-периодов.** Список отложенных
   готов; планирование пока только через API-payload. Владелец: lead.
+
+- [ ] **G6: нет promote/demote и частичных ограничений.** Ban/unban/restrict готовы.
+  Владелец: lead.

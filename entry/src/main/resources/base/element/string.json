@@ -813,6 +813,26 @@
       "value": "Administrators"
     },
     {
+      "name": "member_action_ban",
+      "value": "Ban"
+    },
+    {
+      "name": "member_action_unban",
+      "value": "Unban"
+    },
+    {
+      "name": "member_action_restrict",
+      "value": "Restrict"
+    },
+    {
+      "name": "member_action_applied",
+      "value": "Member updated"
+    },
+    {
+      "name": "member_action_failed",
+      "value": "Could not update the member"
+    },
+    {
       "name": "administrators_title",
       "value": "Administrators"
     },

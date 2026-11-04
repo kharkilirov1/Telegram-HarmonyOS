@@ -69,6 +69,7 @@
 | C9b | Иконка Copy в панели выделения (C9) | C9 | SVG `ic_selection_copy` + `SELECTION_PANEL_COPY_ICON`, copy через `buildIconButton`, паспорт обновлён; остаток — witness |
 | D20b | Автоудаление сообщений (D20) | D20 | `messageAutoDeleteTime` в Chat/DTO/reducer, `setChatMessageAutoDeleteTime`, экран пресетов, Manage-пункт, суита `test-chat-auto-delete.cjs`; остаток — self-destruct/секретные чаты |
 | D21b | Отложенные сообщения (D21) | D21 | `getChatScheduledMessages`/`editMessageSchedulingState`/`deleteMessages`, DTO+use case, экран списка, 6-й пункт Manage; остаток — пикер даты, repeat |
+| G6b | Модерация участника (G6) | G6 | `setChatMemberStatus` + use case, long-press меню Ban/Unban/Restrict в списке участников, суита `test-chat-member-admin.cjs`; остаток — promote/demote/частичные права |
 | S12b | Меню действий в шапке чата (C10) | C10 | `showMoreAction`/`onMorePress` в `TgChatTopBar`, меню Chat Info / Mute / Clear History / Delete в `TgChatScreenPage`, live-store состояние, контракт `test-chat-header-actions.cjs`, smoke-пин на 4 действия; C10 → `available` |
 | S12c | Leave Chat и Share My Contact (C10) | C10 | `leaveChat` + `inputMessageContact` (команды/сериализаторы), `LeaveChatUseCase`/`ShareMyContactUseCase`, пятый контекстный пункт меню в шапке, 6 строк в 3 локалях, контракт расширен |
 | S12d | Report с причинами + `ChatActionsCoordinator` (C10) | C10 | `reportChat`/`ReportChatDto`/`ReportChatUseCase`, `canBeReported` в модели/DTO/reducer, шестой пункт меню, меню вынесено в координатор (страница ≤500 строк), контракт расширен |

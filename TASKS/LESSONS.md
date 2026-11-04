@@ -1117,3 +1117,12 @@ Last updated: 2026-10-23
 - The six-slot `showActionMenu` cap is now exactly saturated; adding another admin entry requires
   restructuring the menu rather than appending, and every suite that pins the action array must change
   in the same commit.
+
+## 220. Type aliases disappear in the host loader; only load runtime values
+
+- `stripTypeScriptTypes` removes `export type X = ...`, so asking the loader for it throws
+  `ReferenceError: X is not defined` even though the source declares it. Load only functions/classes.
+- The member list initialises its use case from the route-context owner (`owner.gateway`), not from a
+  global adapter; new use cases must follow that pattern or they will not see the account switch.
+- A long-press on a row needs its own `@Event` plus `LongPressGesture`; `.onClick` alone silently drops
+  the gesture on ArkUI rows.
