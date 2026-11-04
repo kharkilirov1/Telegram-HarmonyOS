@@ -140,6 +140,7 @@ function contentFromDto(dto: MessageContentDto): MessageContent {
   content.stickerPath = dto.stickerPath;
   content.stickerFileId = dto.stickerFileId;
   content.stickerEmoji = dto.stickerEmoji;
+  content.stickerSetId = dto.stickerSetId;
   content.stickerWidth = dto.stickerWidth;
   content.stickerHeight = dto.stickerHeight;
   content.isAnimatedSticker = dto.isAnimatedSticker;
@@ -310,6 +311,7 @@ function cloneMessage(msg: Message): Message {
   clonedContent.stickerPath = msg.content.stickerPath;
   clonedContent.stickerFileId = msg.content.stickerFileId;
   clonedContent.stickerEmoji = msg.content.stickerEmoji;
+  clonedContent.stickerSetId = msg.content.stickerSetId;
   clonedContent.stickerWidth = msg.content.stickerWidth;
   clonedContent.stickerHeight = msg.content.stickerHeight;
   clonedContent.isAnimatedSticker = msg.content.isAnimatedSticker;

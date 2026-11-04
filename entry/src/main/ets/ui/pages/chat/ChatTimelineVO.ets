@@ -251,6 +251,7 @@ export class ChatMessageRowVO {
   stickerFileId: number = 0;
   stickerThumbnailPath: string = '';
   stickerEmoji: string = '';
+  stickerSetId: string = '0';
   stickerWidth: number = 0;
   stickerHeight: number = 0;
   isAnimatedSticker: boolean = false;
@@ -1095,6 +1096,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   row.stickerFileId = content.stickerFileId;
   row.stickerThumbnailPath = toFileUri(content.stickerThumbnailPath);
   row.stickerEmoji = content.stickerEmoji;
+  row.stickerSetId = content.stickerSetId;
   row.stickerWidth = content.stickerWidth;
   row.stickerHeight = content.stickerHeight;
   row.isAnimatedSticker = content.isAnimatedSticker;

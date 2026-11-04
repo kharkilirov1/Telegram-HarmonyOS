@@ -42,6 +42,7 @@ export function buildMediaGalleryItems(host: ChatMediaGalleryCoordinatorPort): M
           stickerItem.sourceMessageId = entry.message.messageId;
           stickerItem.senderName = entry.message.senderName;
           stickerItem.timestamp = entry.message.timeText;
+          stickerItem.stickerSetId = entry.message.stickerSetId;
           items.push(stickerItem);
         } else if (ct === 'photoAlbum') {
           for (let j = 0; j < entry.message.albumPhotoPaths.length; j++) {

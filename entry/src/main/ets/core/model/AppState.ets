@@ -260,6 +260,8 @@ export class MessageContent {
   stickerThumbnailPath: string = '';
   stickerFileId: number = 0;
   stickerEmoji: string = '';
+  // TDLib sticker.set_id as a decimal string; '0' when the pack is unknown.
+  stickerSetId: string = '0';
   stickerWidth: number = 0;
   stickerHeight: number = 0;
   isAnimatedSticker: boolean = false;

@@ -14,6 +14,8 @@ export class MediaGalleryItem {
   height: number = 0;
   durationSec: number = 0;
   fileId: number = 0;
+  // Populated for sticker items so the viewer can show the pack card.
+  stickerSetId: string = '0';
   messageId: string = '';
   sourceMessageId: string = '';
   @Trace isDownloading: boolean = false;

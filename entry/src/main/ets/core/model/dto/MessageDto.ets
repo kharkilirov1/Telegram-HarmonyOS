@@ -123,6 +123,7 @@ export class MessageContentDto {
   stickerThumbnailPath: string = '';
   stickerFileId: number = 0;
   stickerEmoji: string = '';
+  stickerSetId: string = '0';
   stickerWidth: number = 0;
   stickerHeight: number = 0;
   isAnimatedSticker: boolean = false;
@@ -703,6 +704,7 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.stickerUniqueId = extractRemoteUniqueId(stickerFile);
       contentDto.stickerThumbUniqueId = extractThumbnailUniqueId(stickerObj);
       contentDto.stickerEmoji = tdGetString(stickerObj, 'emoji');
+      contentDto.stickerSetId = tdGetInt64(stickerObj, 'set_id');
       contentDto.stickerWidth = tdGetNumber(stickerObj, 'width');
       contentDto.stickerHeight = tdGetNumber(stickerObj, 'height');
       contentDto.isAnimatedSticker = formatType === 'stickerFormatTgs';
