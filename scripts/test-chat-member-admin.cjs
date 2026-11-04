@@ -27,7 +27,8 @@ async function main() {
   const serializer = load('infra/td/serialization/CommandSerializer.ets',
     ['serializeCommand', 'buildTdlibRequestJson'], { ...C, TdObject, hilog });
   const U = load('domain/usecases/chatMemberAdmin.ets',
-    ['ChatMemberAdminUseCase', 'createChatMemberAdminUseCase', 'memberStatusKind'],
+    ['ChatMemberAdminUseCase', 'createChatMemberAdminUseCase', 'memberStatusKind',
+      'MODERATION_DURATION_SECONDS', 'MODERATION_DURATION_OPTIONS', 'moderationUntilDate'],
     { ...C, ...errors, hilog });
 
   // Action → status mapping ------------------------------------------------------------------------
@@ -93,6 +94,29 @@ async function main() {
     serializer.serializeCommand(sent.at(-1)).params));
   assert.equal(wire.status['@type'], 'chatMemberStatusMember', 'demote restores plain membership');
 
+  // Timed moderation ------------------------------------------------------------------------------
+  assert.deepEqual(U.MODERATION_DURATION_SECONDS, [3600, 86400, 7 * 86400, 0]);
+  assert.deepEqual(U.MODERATION_DURATION_OPTIONS.map((option) => option.seconds),
+    [3600, 86400, 7 * 86400, 0]);
+  assert.equal(U.moderationUntilDate(1000, 3600), 4600);
+  assert.equal(U.moderationUntilDate(1000, 86400), 87400);
+  assert.equal(U.moderationUntilDate(1000, 7 * 86400), 605800);
+  assert.equal(U.moderationUntilDate(1000, 0), 0, 'zero duration means forever');
+  assert.equal(U.moderationUntilDate(-5, 3600), 0);
+  assert.equal(U.moderationUntilDate(1000, -1), 0);
+  assert.equal(U.moderationUntilDate(1000, 1.5), 0);
+
+  await useCase.apply(42, 7, 'restrict', U.moderationUntilDate(1000, 3600));
+  wire = JSON.parse(serializer.buildTdlibRequestJson('setChatMemberStatus',
+    serializer.serializeCommand(sent.at(-1)).params));
+  assert.equal(wire.status.restricted_until_date, 4600, 'a timed restriction carries the deadline');
+
+  await useCase.apply(42, 7, 'ban', U.moderationUntilDate(1000, 86400));
+  wire = JSON.parse(serializer.buildTdlibRequestJson('setChatMemberStatus',
+    serializer.serializeCommand(sent.at(-1)).params));
+  assert.equal(wire.status['@type'], 'chatMemberStatusBanned');
+  assert.equal(wire.status.banned_until_date, 87400, 'a timed ban carries the deadline');
+
   // Validation and failures ------------------------------------------------------------------------
   const before = sent.length;
   await assert.rejects(() => useCase.apply(0, 7, 'ban'), /Invalid chatId/);
@@ -116,6 +140,10 @@ async function main() {
   assert.match(page, /buttons: \[b0, b1, b2, b3, b4\]/);
   assert.match(page, /useCase\.apply\(this\.chatId, userId, action\)/);
   assert.match(page, /onLongPress: \(\): void => \{\n              this\.openMemberActions\(row\);/);
+  assert.match(page, /private openModerationDuration\(action: ChatMemberModerationAction, userId: number\): void \{/);
+  assert.match(page, /if \(action === 'ban' \|\| action === 'restrict'\) \{/);
+  assert.match(page, /buttons: \[d0, d1, d2, d3\]/);
+  assert.match(page, /moderationUntilDate\(Math\.floor\(Date\.now\(\) \/ 1000\),/);
 
   // Promotion navigates to the rights screen, which applies the status itself.
   assert.match(page, /pushPathByName\('TgChatAdminRightsPage',/);
@@ -144,7 +172,9 @@ async function main() {
       'admin_rights_failed', 'admin_rights_manage_chat', 'admin_rights_change_info',
       'admin_rights_delete_messages', 'admin_rights_invite_users', 'admin_rights_restrict_members',
       'admin_rights_pin_messages', 'admin_rights_manage_topics', 'admin_rights_manage_video_chats',
-      'admin_rights_promote_members', 'admin_rights_anonymous']) {
+      'admin_rights_promote_members', 'admin_rights_anonymous', 'moderation_duration_title',
+      'moderation_duration_1h', 'moderation_duration_1d', 'moderation_duration_1w',
+      'moderation_duration_forever']) {
       assert.ok(strings.string.some((entry) => entry.name === name), name + ' exists in ' + locale);
     }
   }

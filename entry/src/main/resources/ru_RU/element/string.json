@@ -813,6 +813,26 @@
       "value": "Администраторы"
     },
     {
+      "name": "moderation_duration_title",
+      "value": "Срок"
+    },
+    {
+      "name": "moderation_duration_1h",
+      "value": "1 час"
+    },
+    {
+      "name": "moderation_duration_1d",
+      "value": "1 день"
+    },
+    {
+      "name": "moderation_duration_1w",
+      "value": "1 неделя"
+    },
+    {
+      "name": "moderation_duration_forever",
+      "value": "Навсегда"
+    },
+    {
       "name": "admin_rights_title",
       "value": "Права администратора"
     },

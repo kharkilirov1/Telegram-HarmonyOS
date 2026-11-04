@@ -15,6 +15,33 @@ export type ChatMemberModerationAction = 'ban' | 'unban' | 'restrict' | 'promote
 
 export const MEMBER_ACTION_KINDS: string[] = ['member', 'banned', 'restricted', 'administrator'];
 
+// iOS offers 1 hour / 1 day / 1 week / forever when restricting or banning; 0 means forever.
+export const MODERATION_DURATION_SECONDS: number[] = [3600, 86400, 7 * 86400, 0];
+
+export interface ModerationDurationOption {
+  labelKey: string;
+  fallback: string;
+  seconds: number;
+}
+
+export const MODERATION_DURATION_OPTIONS: ModerationDurationOption[] = [
+  { labelKey: 'moderation_duration_1h', fallback: '1 hour', seconds: 3600 },
+  { labelKey: 'moderation_duration_1d', fallback: '1 day', seconds: 86400 },
+  { labelKey: 'moderation_duration_1w', fallback: '1 week', seconds: 7 * 86400 },
+  { labelKey: 'moderation_duration_forever', fallback: 'Forever', seconds: 0 }
+];
+
+// TDLib expects an absolute Unix timestamp; 0 is 'forever' for ban and restrict.
+export function moderationUntilDate(nowSeconds: number, durationSeconds: number): number {
+  if (!Number.isSafeInteger(nowSeconds) || nowSeconds < 0) {
+    return 0;
+  }
+  if (!Number.isSafeInteger(durationSeconds) || durationSeconds <= 0) {
+    return 0;
+  }
+  return nowSeconds + durationSeconds;
+}
+
 export function memberStatusKind(action: ChatMemberModerationAction): string {
   if (action === 'ban') {
     return 'banned';

@@ -1146,3 +1146,12 @@ Last updated: 2026-10-23
   fails at the push site, not in the page itself.
 - Token names drift: `COMPOSER_SEND_BUTTON_SIZE` does not exist, the real token is `COMPOSER_BUTTON_SIZE`;
   grep `TgUiTokens.` before inventing a size.
+
+## 223. showActionMenu needs a literal tuple, never a mapped Button[]
+
+- Building `promptAction.Button[]` in a loop and passing it fails type-checking with
+  "Type Button[] is not assignable to type [Button, Button?, ...]"; declare `d0..d3` and pass the literal.
+- Keep the preset values in a pure array (`MODERATION_DURATION_SECONDS`) and map the index into the
+  literal tuple, so tests can assert the ordering without duplicating labels.
+- Time arithmetic belongs in a pure helper (`moderationUntilDate`) because `Date.now()` inside a page
+  makes the wire contract untestable: 0 duration is "forever", invalid input collapses to 0.

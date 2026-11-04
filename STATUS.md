@@ -146,6 +146,13 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **G6-сроки (lead).** Ban/restrict спрашивают срок вторым меню (1 час/1 день/1 неделя/навсегда),
+  `MODERATION_DURATION_SECONDS`/`MODERATION_DURATION_OPTIONS`/`moderationUntilDate(now, duration)`
+  (0 = forever, невалидные → 0), до вызова `apply` с `untilDate`; 5 строк в base/ru/zh. Суита
+  `test-chat-member-admin.cjs` расширена: пресеты, арифметика until-даты, границы (0/отрицательная/
+  дробная), wire timed-restrict (`restricted_until_date`) и timed-ban (`banned_until_date`),
+  проводка меню и локали. Гейты: host **127/127**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток G6:
+  restrict с частичными правами, предзаполнение прав админа, witness.
 - **G6-экран прав (lead).** `TgChatAdminRightsPage`: 10 тоглов `chatAdministratorRights`
   (manage chat, change info, delete messages, invite, restrict, pin, topics, video chats,
   promote, anonymous), кнопка Add Administrator, сохранение через

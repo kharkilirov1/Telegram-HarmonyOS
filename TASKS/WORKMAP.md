@@ -72,6 +72,7 @@
 | G6b | Модерация участника (G6) | G6 | `setChatMemberStatus` + use case, long-press меню Ban/Unban/Restrict в списке участников, суита `test-chat-member-admin.cjs`; остаток — promote/demote/частичные права |
 | G6c | Promote/demote (G6) | G6 | `ChatAdminRightsPayload` + статус `administrator`, действия promote/demote, меню из 5 пунктов; остаток — тоглы прав, частичные ограничения, сроки |
 | G6d | Экран прав администратора (G6) | G6 | `TgChatAdminRightsPage` + route, 10 тоглов прав, promote через экран; остаток — частичные ограничения, сроки, предзаполнение |
+| G6e | Сроки бана/ограничения (G6) | G6 | меню срока + `moderationUntilDate`, timed restrict/ban в wire; остаток — частичные права, предзаполнение |
 | S12b | Меню действий в шапке чата (C10) | C10 | `showMoreAction`/`onMorePress` в `TgChatTopBar`, меню Chat Info / Mute / Clear History / Delete в `TgChatScreenPage`, live-store состояние, контракт `test-chat-header-actions.cjs`, smoke-пин на 4 действия; C10 → `available` |
 | S12c | Leave Chat и Share My Contact (C10) | C10 | `leaveChat` + `inputMessageContact` (команды/сериализаторы), `LeaveChatUseCase`/`ShareMyContactUseCase`, пятый контекстный пункт меню в шапке, 6 строк в 3 локалях, контракт расширен |
 | S12d | Report с причинами + `ChatActionsCoordinator` (C10) | C10 | `reportChat`/`ReportChatDto`/`ReportChatUseCase`, `canBeReported` в модели/DTO/reducer, шестой пункт меню, меню вынесено в координатор (страница ≤500 строк), контракт расширен |

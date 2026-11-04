@@ -26,7 +26,9 @@ import { promptAction } from '@kit.ArkUI';
 import {
   ChatMemberAdminUseCase,
   ChatMemberModerationAction,
-  createChatMemberAdminUseCase
+  MODERATION_DURATION_OPTIONS,
+  createChatMemberAdminUseCase,
+  moderationUntilDate
 } from '../../../domain/usecases/chatMemberAdmin';
 import { TgProfileMemberRowVO, TgProfileMembersDataSource } from './TgProfileMembersDataSource';
 
@@ -490,6 +492,52 @@ export struct TgProfileMembersPage {
   }
 
   // Moderation entry: iOS exposes ban/unban/restrict from the member context menu.
+  private openModerationDuration(action: ChatMemberModerationAction, userId: number): void {
+    const normal: Resource = TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND;
+    const destructive: Resource = TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE;
+    const seconds: number[] = [];
+    for (let i = 0; i < MODERATION_DURATION_OPTIONS.length; i += 1) {
+      seconds.push(MODERATION_DURATION_OPTIONS[i].seconds);
+    }
+    // showActionMenu takes a literal tuple; the presets are fixed so four buttons are enough.
+    const d0: promptAction.Button = { text: localized($r('app.string.moderation_duration_1h').id,
+      '1 hour'), color: normal };
+    const d1: promptAction.Button = { text: localized($r('app.string.moderation_duration_1d').id,
+      '1 day'), color: normal };
+    const d2: promptAction.Button = { text: localized($r('app.string.moderation_duration_1w').id,
+      '1 week'), color: normal };
+    const d3: promptAction.Button = { text: localized($r('app.string.moderation_duration_forever').id,
+      'Forever'), color: destructive };
+    this.getUIContext().getPromptAction().showActionMenu({
+      title: localized($r('app.string.moderation_duration_title').id, 'Duration'),
+      buttons: [d0, d1, d2, d3]
+    }).then((result: promptAction.ActionMenuSuccessResponse) => {
+      const useCase = this.memberAdminUseCase;
+      if (useCase === undefined || result.index < 0 || result.index >= seconds.length) {
+        return;
+      }
+      const untilDate: number = moderationUntilDate(Math.floor(Date.now() / 1000),
+        seconds[result.index]);
+      useCase.apply(this.chatId, userId, action, untilDate)
+        .then(() => {
+          this.getUIContext().getPromptAction().showToast({
+            message: localized($r('app.string.member_action_applied').id, 'Member updated'),
+            duration: 1500
+          });
+        })
+        .catch((error: Error) => {
+          this.getUIContext().getPromptAction().showToast({
+            message: error.message.length > 0
+              ? error.message : localized($r('app.string.member_action_failed').id,
+                'Could not update the member'),
+            duration: 2000
+          });
+        });
+    }).catch((error: Error) => {
+      hilog.warn(DOMAIN, TAG, 'Moderation duration menu failed: %{public}s', error.message);
+    });
+  }
+
   private openMemberActions(row: TgProfileMemberRowVO): void {
     if (this.memberAdminUseCase === undefined || row.userId <= 0) {
       return;
@@ -527,6 +575,12 @@ export struct TgProfileMembersPage {
     if (action === 'promote') {
       this.pageStack.pushPathByName('TgChatAdminRightsPage',
         new ChatAdminRightsRouteParams(this.chatId, userId));
+      return;
+    }
+    // Ban and restrict ask for a duration first (iOS offers the same presets); other actions are
+    // immediate and take no until date.
+    if (action === 'ban' || action === 'restrict') {
+      this.openModerationDuration(action, userId);
       return;
     }
     useCase.apply(this.chatId, userId, action)
