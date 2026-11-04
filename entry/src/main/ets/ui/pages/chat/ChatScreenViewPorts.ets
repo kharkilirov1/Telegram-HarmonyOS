@@ -119,6 +119,9 @@ export interface ChatPinnedOverlayPort {
 }
 
 export interface ChatMediaOverlayPort {
+  // F6: the pack card of the visible sticker.
+  loadStickerPack(): void;
+  toggleStickerPackInstalled(): void;
   animateMediaGalleryState(isVisible: boolean, sourceMessageId?: string ): void;
   cancelMediaDownload(fileId: number, messageId?: string ): void;
   handleGalleryIndexChange(index: number): void;

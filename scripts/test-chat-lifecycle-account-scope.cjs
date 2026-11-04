@@ -149,6 +149,7 @@ const factoryGatewayIndex = {
   createEditMessageUseCase: 0, createDeleteMessagesUseCase: 0, createForwardMessagesUseCase: 0,
   createSetChatMuteUseCase: 0, createJoinChatUseCase: 0,
   createSearchChatMessagesUseCase: 0, createPinChatMessageUseCase: 0, createStickerPanelUseCase: 0,
+  createStickerPackUseCase: 0,
   createLoadChatHistoryUseCase: 1, createLoadRepliedMessageUseCase: 1, createMarkChatReadUseCase: 1
 };
 const storageNames = ['CHAT_SCREEN_VISIBLE', 'ACTIVE_CHAT_ID', 'ACTIVE_CHAT_TITLE', 'CHAT_NAV_LOCK_UNTIL'];

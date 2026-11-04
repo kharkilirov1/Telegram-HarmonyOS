@@ -12,6 +12,7 @@ import { ChatScreenRouteParams } from './ChatScreenRouteParams';
 import { PendingSharedMediaAction } from './PendingSharedMediaActionSignal';
 import { createSendMessageUseCase, SendMessageUseCase } from '../../../domain/usecases/sendMessage';
 import { createStickerPanelUseCase, StickerPanelUseCase } from '../../../domain/usecases/stickerPanel';
+import { createStickerPackUseCase, StickerPackUseCase } from '../../../domain/usecases/stickerPack';
 import { SendMediaMessageUseCase, createSendMediaMessageUseCase } from '../../../domain/usecases/sendMediaMessage';
 import { createEditMessageUseCase, EditMessageUseCase } from '../../../domain/usecases/editMessage';
 import { createDeleteMessagesUseCase, DeleteMessagesUseCase } from '../../../domain/usecases/deleteMessages';
@@ -76,6 +77,7 @@ export interface ChatRouteActivationCoordinatorPort {
   sendMediaUseCase?: SendMediaMessageUseCase;
   sendUseCase?: SendMessageUseCase;
   stickerPanelUseCase?: StickerPanelUseCase;
+  stickerPackUseCase?: StickerPackUseCase;
   stickyLastReadMessageId: string;
   suppressLoadOlderUntil: number;
   transientTimerIds: Set<number>;
@@ -156,6 +158,7 @@ export function activateChatRoute(host: ChatRouteActivationCoordinatorPort): voi
       host.searchUseCase = createSearchChatMessagesUseCase(gateway);
       host.pinUseCase = createPinChatMessageUseCase(gateway);
       host.stickerPanelUseCase = createStickerPanelUseCase(gateway);
+      host.stickerPackUseCase = createStickerPackUseCase(gateway);
       host.loadChatHistoryUseCase = createLoadChatHistoryUseCase(store, gateway);
       host.loadRepliedMessageUseCase = createLoadRepliedMessageUseCase(
         store,

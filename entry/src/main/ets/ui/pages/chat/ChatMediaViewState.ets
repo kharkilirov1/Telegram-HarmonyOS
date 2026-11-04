@@ -15,4 +15,9 @@ export class ChatMediaViewState {
   @Trace galleryInitialIndex: number = 0;
   @Trace galleryCurrentIndex: number = 0;
   @Trace gallerySourceMessageId: string = '0';
+  // F6: pack card for the visible sticker; '0' hides the card.
+  @Trace stickerPackSetId: string = '0';
+  @Trace stickerPackTitle: string = '';
+  @Trace stickerPackInstalled: boolean = false;
+  @Trace stickerPackBusy: boolean = false;
 }

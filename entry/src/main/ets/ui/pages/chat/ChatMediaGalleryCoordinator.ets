@@ -8,6 +8,8 @@ import { albumMediaSourceId } from '../../tg_ui/utils/TgMediaGeometryTransition'
 import { curves } from '@kit.ArkUI';
 
 export interface ChatMediaGalleryCoordinatorPort {
+  // F6: load the pack card of the visible sticker as soon as the viewer opens.
+  syncStickerPackCard(): void;
   dataSource: ChatTimelineDataSource;
   galleryCurrentIndex: number;
   galleryInitialIndex: number;
@@ -140,6 +142,7 @@ export function handleMediaGalleryOpen(host: ChatMediaGalleryCoordinatorPort, me
     host.galleryCurrentIndex = host.galleryInitialIndex;
     const sourceMessageId = items[host.galleryInitialIndex].sourceMessageId;
     host.animateMediaGalleryState(true, sourceMessageId);
+  host.syncStickerPackCard();
   }
 
 export function animateMediaGalleryState(host: ChatMediaGalleryCoordinatorPort, isVisible: boolean, sourceMessageId: string = '0'): void {

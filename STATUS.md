@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **F6-карточка пака (lead).** `ChatStickerPackCoordinator`: `visibleStickerSetId`,
+  `syncStickerPackCard` (загрузка при смене видимого стикера, очистка на не-стикере), `loadStickerPack`
+  (валидация id, токены запроса/жизненного цикла, тихий отказ), `toggleStickerPackInstalled`
+  (install/remove с проверкой busy). Поля `stickerPackSetId/Title/Installed/Busy` в
+  `ChatMediaViewState`, порт `ChatMediaOverlayPort.loadStickerPack/toggleStickerPackInstalled`, слой
+  session/bindings/activation/teardown, открытие вьювера вызывает sync, в оверлее плитка с названием
+  пака и Add/Remove Stickers (2 строки в base/ru/zh). Суита `test-sticker-pack.cjs` расширена:
+  видимый id, загрузка/повтор, установка, очистка, ошибки, устаревшие ответы, проводка UI. Гейты:
+  host **129/129**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток F6: TGS-анимация, листание по паку,
+  witness.
 - **F6-данные пака (lead).** `sticker.set_id` протянут DTO → `MessageContent` → reducer (map+clone) →
   `ChatTimelineVO` → `MediaGalleryItem.stickerSetId`; новый `StickerPackUseCase`: `load(setId)`
   (`getStickerSet` → title/isInstalled/isArchived/stickerCount) и `setInstalled(setId, installed)`

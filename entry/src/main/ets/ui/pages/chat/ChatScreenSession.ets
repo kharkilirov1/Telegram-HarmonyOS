@@ -14,6 +14,7 @@ import { ChatAvatarPresentation, ChatSubtitlePresentation } from './ChatTopBarPr
 import { PendingSharedMediaAction } from './PendingSharedMediaActionSignal';
 import { SendMessageUseCase } from '../../../domain/usecases/sendMessage';
 import { StickerPanelUseCase, StickerPanelEntry, GifPanelEntry } from '../../../domain/usecases/stickerPanel';
+import { loadStickerPack as delegateLoadStickerPack, syncStickerPackCard as delegateSyncStickerPackCard, toggleStickerPackInstalled as delegateToggleStickerPackInstalled } from './ChatStickerPackCoordinator';
 import { SendMediaMessageUseCase } from '../../../domain/usecases/sendMediaMessage';
 import { EditMessageUseCase } from '../../../domain/usecases/editMessage';
 import { DeleteMessagesUseCase } from '../../../domain/usecases/deleteMessages';
@@ -187,7 +188,6 @@ import {
 
 const PROGRAMMATIC_SCROLL_GUARD_MS = 320;
 
-// Owns one context and delegates each operation to its cohesive feature module.
 export class ChatScreenSession extends ChatScreenContext implements ChatScreenSessionPorts {
   constructor(
     view: ChatScreenViewState,
@@ -489,6 +489,9 @@ export class ChatScreenSession extends ChatScreenContext implements ChatScreenSe
   handleTimelineScrollIndex(start: number, end: number): void { delegateHandleTimelineScrollIndex(this, start, end); }
   handleComposerTextChange(value: string): void { delegateHandleComposerTextChange(this, value); }
   handleComposerAreaChange(height: number): void { delegateHandleComposerAreaChange(this, height); }
+  loadStickerPack(): void { delegateLoadStickerPack(this); }
+  toggleStickerPackInstalled(): void { delegateToggleStickerPackInstalled(this); }
+  syncStickerPackCard(): void { delegateSyncStickerPackCard(this); }
   handleGalleryIndexChange(index: number): void { delegateHandleGalleryIndexChange(this, index); }
   handleNavReady(context: NavDestinationContext): void { delegateHandleNavReady(this, context); }
   handleNavShown(): void { delegateHandleNavShown(this); }

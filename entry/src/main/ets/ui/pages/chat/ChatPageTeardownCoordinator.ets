@@ -14,6 +14,7 @@ import { ChatSearchController } from './ChatSearchController';
 import { PendingSharedMediaAction } from './PendingSharedMediaActionSignal';
 import { SendMessageUseCase } from '../../../domain/usecases/sendMessage';
 import { StickerPanelUseCase } from '../../../domain/usecases/stickerPanel';
+import { StickerPackUseCase } from '../../../domain/usecases/stickerPack';
 import { SendMediaMessageUseCase } from '../../../domain/usecases/sendMediaMessage';
 import { EditMessageUseCase } from '../../../domain/usecases/editMessage';
 import { DeleteMessagesUseCase } from '../../../domain/usecases/deleteMessages';
@@ -75,6 +76,7 @@ export interface ChatPageTeardownCoordinatorPort {
   sendMediaUseCase?: SendMediaMessageUseCase;
   sendUseCase?: SendMessageUseCase;
   stickerPanelUseCase?: StickerPanelUseCase;
+  stickerPackUseCase?: StickerPackUseCase;
   stickyLastReadMessageId: string;
   suppressLoadOlderUntil: number;
   transientTimerIds: Set<number>;
@@ -176,6 +178,7 @@ export function aboutToDisappear(host: ChatPageTeardownCoordinatorPort): void {
     host.sendUseCase = undefined;
     host.sendMediaUseCase = undefined;
     host.stickerPanelUseCase = undefined;
+  host.stickerPackUseCase = undefined;
     host.editUseCase = undefined;
     host.deleteUseCase = undefined;
     host.forwardUseCase = undefined;

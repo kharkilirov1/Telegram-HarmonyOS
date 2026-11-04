@@ -29,6 +29,10 @@ async function main() {
   const U = load('domain/usecases/stickerPack.ets',
     ['StickerPackUseCase', 'createStickerPackUseCase', 'isValidStickerSetId', 'parseStickerPack',
       'StickerPackInfo'], { ...C, ...errors, hilog, TdObject });
+  const K = load('ui/pages/chat/ChatStickerPackCoordinator.ets',
+    ['visibleStickerSetId', 'syncStickerPackCard', 'loadStickerPack', 'toggleStickerPackInstalled',
+      'handleStickerPackLoad', 'handleStickerPackToggle'],
+    { isValidStickerSetId: U.isValidStickerSetId, hilog });
 
   // Set id validation ------------------------------------------------------------------------------
   assert.equal(U.isValidStickerSetId('1368304386507618432'), true);
@@ -103,6 +107,74 @@ async function main() {
     { send: () => Promise.reject(new Error('native status')) }).setInstalled('1368304386507618432', true),
     /Failed to update the sticker pack/);
 
+  // Pack card coordinator ---------------------------------------------------------------------------
+  const makeHost = (items, index, useCase) => ({
+    galleryCurrentIndex: index,
+    galleryItems: items,
+    stickerPackSetId: '0',
+    stickerPackTitle: '',
+    stickerPackInstalled: false,
+    stickerPackBusy: false,
+    stickerPackUseCase: useCase,
+    pageLifecycleToken: 1,
+    stickerPackRequestToken: 0
+  });
+
+  const fakePack = {
+    load: (setId) => Promise.resolve({
+      setId, title: 'Ducks', isInstalled: false, isArchived: false, stickerCount: 2
+    }),
+    setInstalled: () => Promise.resolve()
+  };
+
+  assert.equal(K.visibleStickerSetId(makeHost([{ stickerSetId: '0' }], 0, fakePack)), '0',
+    'a non-sticker item has no pack');
+  assert.equal(K.visibleStickerSetId(makeHost([], 0, fakePack)), '0');
+  assert.equal(K.visibleStickerSetId(makeHost([{ stickerSetId: '777' }], 5, fakePack)), '0');
+
+  const cardHost = makeHost([{ stickerSetId: '777' }], 0, fakePack);
+  K.syncStickerPackCard(cardHost);
+  assert.equal(cardHost.stickerPackSetId, '777');
+  assert.equal(cardHost.stickerPackBusy, true, 'the card shows a loading state');
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(cardHost.stickerPackTitle, 'Ducks');
+  assert.equal(cardHost.stickerPackInstalled, false);
+  assert.equal(cardHost.stickerPackBusy, false);
+
+  const loadedBefore = cardHost.stickerPackTitle;
+  K.syncStickerPackCard(cardHost);
+  assert.equal(cardHost.stickerPackTitle, loadedBefore, 'the same pack is not reloaded');
+
+  K.handleStickerPackToggle(cardHost);
+  assert.equal(cardHost.stickerPackBusy, true);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(cardHost.stickerPackInstalled, true, 'the toggle installs the pack');
+
+  const clearedHost = makeHost([{ stickerSetId: '777' }], 0, fakePack);
+  clearedHost.stickerPackSetId = '777';
+  clearedHost.stickerPackTitle = 'Ducks';
+  clearedHost.stickerPackInstalled = true;
+  clearedHost.galleryItems = [{ stickerSetId: '0' }];
+  K.syncStickerPackCard(clearedHost);
+  assert.equal(clearedHost.stickerPackSetId, '0');
+  assert.equal(clearedHost.stickerPackTitle, '');
+  assert.equal(clearedHost.stickerPackInstalled, false);
+
+  // A failed load clears the spinner and keeps the card hidden rather than showing a stale title.
+  const failingHost = makeHost([{ stickerSetId: '888' }], 0,
+    { load: () => Promise.reject(new Error('native status')), setInstalled: () => Promise.resolve() });
+  K.handleStickerPackLoad(failingHost);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(failingHost.stickerPackBusy, false);
+  assert.equal(failingHost.stickerPackTitle, '');
+
+  // A stale response after the page token changed must not touch the state.
+  const staleHost = makeHost([{ stickerSetId: '999' }], 0, fakePack);
+  K.handleStickerPackLoad(staleHost);
+  staleHost.pageLifecycleToken += 1;
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(staleHost.stickerPackTitle, '', 'stale responses are dropped');
+
   // Model plumbing: TDLib → content → timeline row → gallery item -----------------------------------
   const state = read('core/model/AppState.ets');
   assert.match(state, /stickerSetId: string = '0';/);
@@ -118,6 +190,37 @@ async function main() {
   assert.match(item, /stickerSetId: string = '0';/);
   const coordinator = read('ui/pages/chat/ChatMediaGalleryCoordinator.ets');
   assert.match(coordinator, /stickerItem\.stickerSetId = entry\.message\.stickerSetId;/);
+
+  // Card UI and wiring.
+  const overlay = read('ui/pages/chat/TgChatMediaOverlay.ets');
+  assert.match(overlay, /this\.bindings\.loadStickerPack\(\);/);
+  assert.match(overlay, /@Monitor\('media\.galleryCurrentIndex'\)/);
+  assert.match(overlay, /private buildStickerPackCard\(\)/);
+  assert.match(overlay, /this\.bindings\.toggleStickerPackInstalled\(\);/);
+  const viewState = read('ui/pages/chat/ChatMediaViewState.ets');
+  for (const field of ['stickerPackSetId', 'stickerPackTitle', 'stickerPackInstalled',
+    'stickerPackBusy']) {
+    assert.ok(viewState.includes('@Trace ' + field), 'view state field ' + field);
+  }
+  const ports = read('ui/pages/chat/ChatScreenViewPorts.ets');
+  assert.match(ports, /loadStickerPack\(\): void;/);
+  assert.match(ports, /toggleStickerPackInstalled\(\): void;/);
+  const bindings = read('ui/pages/chat/ChatScreenViewBindings.ets');
+  assert.match(bindings, /loadStickerPack\(\): void \{ this\.session\.loadStickerPack\(\); \}/);
+  const gallery = read('ui/pages/chat/ChatMediaGalleryCoordinator.ets');
+  assert.match(gallery, /host\.syncStickerPackCard\(\);/,
+    'the viewer loads the pack card when it opens');
+  const session = read('ui/pages/chat/ChatScreenSession.ets');
+  assert.match(session, /syncStickerPackCard\(\): void \{ delegateSyncStickerPackCard\(this\); \}/);
+  const activation = read('ui/pages/chat/ChatRouteActivationCoordinator.ets');
+  assert.match(activation, /host\.stickerPackUseCase = createStickerPackUseCase\(gateway\);/);
+  for (const locale of ['base', 'ru_RU', 'zh_CN']) {
+    const strings = JSON.parse(fs.readFileSync(
+      path.join(root, '../resources/' + locale + '/element/string.json'), 'utf8'));
+    for (const name of ['sticker_pack_add', 'sticker_pack_remove']) {
+      assert.ok(strings.string.find((item) => item.name === name), locale + ' has ' + name);
+    }
+  }
 
   console.log('PASS sticker pack contract');
 }

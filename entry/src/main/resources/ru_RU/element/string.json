@@ -813,6 +813,10 @@
       "value": "Администраторы"
     },
     {
+      "name": "sticker_pack_add",
+      "value": "Добавить стикеры"
+    },
+    {
       "name": "restrict_rights_title",
       "value": "Ограничить участника"
     },

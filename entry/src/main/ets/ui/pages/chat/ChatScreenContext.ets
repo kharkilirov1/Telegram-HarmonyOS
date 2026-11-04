@@ -23,6 +23,7 @@ import { ChatStickerSearchController } from './ChatStickerSearchController';
 import { PendingSharedMediaAction } from './PendingSharedMediaActionSignal';
 import { SendMessageUseCase } from '../../../domain/usecases/sendMessage';
 import { StickerPanelUseCase } from '../../../domain/usecases/stickerPanel';
+import { StickerPackUseCase } from '../../../domain/usecases/stickerPack';
 import { SendMediaMessageUseCase } from '../../../domain/usecases/sendMediaMessage';
 import { EditMessageUseCase } from '../../../domain/usecases/editMessage';
 import { DeleteMessagesUseCase } from '../../../domain/usecases/deleteMessages';
@@ -96,6 +97,7 @@ export class ChatScreenContext {
   searchUseCase?: SearchChatMessagesUseCase;
   pinUseCase?: PinChatMessageUseCase;
   stickerPanelUseCase?: StickerPanelUseCase;
+  stickerPackUseCase?: StickerPackUseCase;
   stickerPanelLoadedOnce: boolean = false;
   premiumStickerHomeLoaded: boolean = false;
   premiumStickerHomeLoading: boolean = false;
@@ -390,6 +392,15 @@ export class ChatScreenContext {
   set galleryCurrentIndex(value: number) { this.view.media.galleryCurrentIndex = value; }
   get gallerySourceMessageId(): string { return this.view.media.gallerySourceMessageId; }
   set gallerySourceMessageId(value: string) { this.view.media.gallerySourceMessageId = value; }
+  get stickerPackSetId(): string { return this.view.media.stickerPackSetId; }
+  set stickerPackSetId(value: string) { this.view.media.stickerPackSetId = value; }
+  get stickerPackTitle(): string { return this.view.media.stickerPackTitle; }
+  set stickerPackTitle(value: string) { this.view.media.stickerPackTitle = value; }
+  get stickerPackInstalled(): boolean { return this.view.media.stickerPackInstalled; }
+  set stickerPackInstalled(value: boolean) { this.view.media.stickerPackInstalled = value; }
+  get stickerPackBusy(): boolean { return this.view.media.stickerPackBusy; }
+  set stickerPackBusy(value: boolean) { this.view.media.stickerPackBusy = value; }
+  stickerPackRequestToken: number = 0;
   get isEditingMessage(): boolean { return this.view.composer.isEditingMessage; }
   set isEditingMessage(value: boolean) { this.view.composer.isEditingMessage = value; }
   get editingMessageId(): string { return this.view.composer.editingMessageId; }

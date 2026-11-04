@@ -813,6 +813,10 @@
       "value": "Administrators"
     },
     {
+      "name": "sticker_pack_add",
+      "value": "Add Stickers"
+    },
+    {
       "name": "restrict_rights_title",
       "value": "Restrict Member"
     },

@@ -1195,3 +1195,17 @@ Last updated: 2026-10-23
   declared in that class or the mapping line fails to compile even though `AppState.MessageContent` has it.
 - `getStickerSet` serialises the id as a raw int64 literal, so a round-trip through `JSON.parse` in a test
   rounds the value; assert on the raw request text as with `deleteMessages` ids.
+
+## 228. Page contract source is the transitive graph, so lifecycle methods multiply
+
+- `readChatSource` for the page returns `contractSource(graph)`: every imported coordinator is inlined, so an
+  `aboutToAppear` added to `TgChatMediaOverlay` made the page contract contain two and six ownership suites
+  failed with "exactly one actual full page method". Trigger initial work from an existing page/session entry
+  point (gallery open) instead of adding a lifecycle hook to a nested component.
+- The same graph pins exact budgets: `graph.delegates.size`, owner line counts (<= 500) and aggregated `@Trace`
+  field counts. Every new delegate/field must be accounted for in `test-chat-screen-decomposition.cjs` in the
+  same commit, otherwise the suite fails with a numeric mismatch far from the change.
+- `ChatScreenSession` sits exactly at the 500-line ceiling; compacting a multi-line import to one line and
+  dropping a stale comment keeps it there. Prefer that over raising the ceiling.
+- Fixture harnesses keep an explicit factory table (`factoryGatewayIndex`); a new `create*UseCase` in the
+  activation path must be registered there or the fixture hides a ReferenceError behind its best-effort catch.
