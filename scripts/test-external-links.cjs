@@ -232,6 +232,12 @@ assert.ok((browsable.actions ?? []).includes('ohos.want.action.viewData'));
 const uris = browsable.uris ?? [];
 assert.ok(uris.some((uri) => uri.host === 't.me' && uri.pathStartWith === 'joinchat'),
   't.me/joinchat is declared');
+// A leading '+' cannot collide with usernames or reserved paths, so the short invite form is safe to
+// declare as its own prefix.
+assert.ok(uris.some((uri) => uri.host === 't.me' && uri.pathStartWith === '+'),
+  't.me/+hash is declared');
+assert.ok(uris.some((uri) => uri.host === 'telegram.me' && uri.pathStartWith === '+'),
+  'telegram.me/+hash is declared');
 assert.ok(uris.some((uri) => uri.scheme === 'https' && uri.host === 't.me' &&
   uri.pathStartWith === 'addlist'), 't.me/addlist is declared');
 assert.ok(uris.some((uri) => uri.scheme === 'https' && uri.host === 'telegram.me' &&

@@ -1045,3 +1045,14 @@ Last updated: 2026-10-23
   commit, otherwise four suites fail on stale anchors.
 - A native-bridge compile failure under the parallel host runner can be transient: standalone run was
   green and the next full run passed; re-run before treating it as a regression.
+
+## 213. A leading "+" is a safe App Linking prefix, and exports beat private helpers
+
+- `pathStartWith: "+"` cannot collide with usernames (they start with a letter) or reserved paths
+  (`addlist`, `joinchat`), so the short invite form is declarable after all; the earlier claim that it
+  was inexpressible was wrong and is corrected by a manifest entry plus a contract assertion.
+- Exporting `DirectUserProfileRouteParams` from the members page was enough to open a profile from the
+  administrators screen; the profile context helper already existed in `domain/usecases/loadProfileInfo`,
+  so check domain helpers before duplicating context capture.
+- After closing a debt bullet, delete the TODO line instead of leaving it "closed" in prose; a stale
+  open checkbox reads as pending work in the next round.

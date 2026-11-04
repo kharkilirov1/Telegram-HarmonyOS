@@ -52,7 +52,7 @@ export class ProfileMembersRouteParams {
   }
 }
 
-class DirectUserProfileRouteParams {
+export class DirectUserProfileRouteParams {
   chatId: number = 0;
   userId: number = 0;
 

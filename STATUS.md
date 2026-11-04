@@ -146,6 +146,13 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S12k + S15 (lead).** C10: тап по администратору открывает профиль — `DirectUserProfileRouteParams`
+  экспортирован, `captureProfileLoadContext` переиспользован, `TgChatAdministratorsPage` пушит
+  `TgProfilePage` с контекстом и логирует ошибку. App Linking: объявлены `pathStartWith: "+"` для
+  `t.me` и `telegram.me`, поэтому короткая форма `t.me/+hash` больше не требует явного want
+  (ведущий «+» не пересекается с username и зарезервированными путями). Контракты: суита
+  администраторов проверяет экспорт параметров/контекста и проводку тапа, суита внешних ссылок —
+  оба `+`-uri. Гейты: host **123/123**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток: witness.
 - **S12j (lead).** C10: права участников. Команда `setChatPermissions` (полный JSON объекта),
   `ChatPermissionsDto` (14 бит + `clone` + `chatPermissionsToJson`), `ChatPermissionsUseCase`
   (`load` через `getChat` → `chat.permissions`, `save` целиком, валидация chatId), экран

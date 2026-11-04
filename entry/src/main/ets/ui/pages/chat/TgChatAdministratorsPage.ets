@@ -14,6 +14,8 @@ import {
   createChatAdministratorsUseCase
 } from '../../../domain/usecases/chatAdministrators';
 import { ChatAdministratorsRouteParams } from './chatAdministratorsRoute';
+import { DirectUserProfileRouteParams } from '../profile/TgProfileMembersPage';
+import { captureProfileLoadContext } from '../../../domain/usecases/loadProfileInfo';
 import { TgChatTopBar } from '../../tg_ui/atoms/TgChatTopBar';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { computeTopBarHeight } from '../../utils/SafeAreaUtils';
@@ -97,6 +99,15 @@ export struct TgChatAdministratorsPage {
       });
   }
 
+  private openProfile(admin: ChatAdministratorDto): void {
+    try {
+      this.pageStack.pushPathByName('TgProfilePage',
+        new DirectUserProfileRouteParams(admin.userId, captureProfileLoadContext()));
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Administrator profile failed: %{public}s', String(error));
+    }
+  }
+
   private displayName(admin: ChatAdministratorDto): string {
     try {
       const user: User | undefined = getAppCoreRuntime().getStore().getState().users.users
@@ -153,6 +164,9 @@ export struct TgChatAdministratorsPage {
               .width('100%')
               .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16, top: TgUiTokens.SPACE_8,
                 bottom: TgUiTokens.SPACE_8 })
+              .onClick(() => {
+                this.openProfile(admin);
+              })
             }
           }, (admin: ChatAdministratorDto) => admin.userId.toString() + (admin.isOwner ? ':o' : ''))
 

@@ -91,6 +91,14 @@ async function main() {
   assert.match(screen, /administrators_unknown_user/);
   assert.match(screen, /administrators_empty/);
   assert.match(screen, /\.get\(admin\.userId\)/);
+  // Tap opens the user profile through the exported params + context helper.
+  assert.match(screen, /private openProfile\(admin: ChatAdministratorDto\): void \{/);
+  assert.match(screen, /new DirectUserProfileRouteParams\(admin\.userId, captureProfileLoadContext\(\)\)/);
+  assert.match(screen, /this\.pageStack\.pushPathByName\('TgProfilePage',/);
+  const membersPage = read('ui/pages/profile/TgProfileMembersPage.ets');
+  assert.match(membersPage, /export class DirectUserProfileRouteParams \{/, 'params are exported');
+  const loadInfo = read('domain/usecases/loadProfileInfo.ets');
+  assert.match(loadInfo, /export function captureProfileLoadContext\(\): ProfileLoadContext \{/, 'context helper is exported');
 
   const routes = JSON.parse(fs.readFileSync(
     path.join(root, '../resources/base/profile/route_map.json'), 'utf8'));

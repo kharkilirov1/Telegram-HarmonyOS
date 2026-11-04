@@ -63,6 +63,16 @@
                 "scheme": "https",
                 "host": "telegram.me",
                 "pathStartWith": "joinchat"
+              },
+              {
+                "scheme": "https",
+                "host": "t.me",
+                "pathStartWith": "+"
+              },
+              {
+                "scheme": "https",
+                "host": "telegram.me",
+                "pathStartWith": "+"
               }
             ]
           }
