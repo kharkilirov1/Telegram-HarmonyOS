@@ -1275,3 +1275,13 @@ Last updated: 2026-10-23
   the session, bindings or ports.
 - `promptAction.showToast` returns void in this SDK, so chaining `.catch` on it does not compile.
 - The app has no settings.language field; the system language is the available target-language source.
+
+## 236. Quantize widget animation into a pure step model
+
+- A looping 0.7s pulse inside a `@ComponentV2` atom is hard to test and easy to leave running. Quantizing it
+  (10 steps of 70ms) into `TgTypingPulse` gives exact assertions for bounds, peak, staggering and wrap while
+  the widget only applies scale/opacity.
+- Start the interval only when the typing subtitle is actually visible; reset the phase when stopping so a
+  later appearance starts clean, and clear it in `aboutToDisappear`.
+- Phase arithmetic: dot i at step s equals dot 0 at step s + i*3 modulo 10; write assertions from that
+  identity rather than from hand-computed decimals.

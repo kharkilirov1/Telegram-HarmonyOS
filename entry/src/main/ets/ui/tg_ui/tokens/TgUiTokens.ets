@@ -237,6 +237,16 @@ export class TgUiTokens {
   // iOS typing indicator: ChatTypingActivityContentNode.swift draws three 3pt
   // dots with a 11/2pt centre pitch to the left of the activity text.
   static readonly CHAT_TOP_BAR_TYPING_DOT_SIZE: number = 3;
+  // ChatTypingActivityContentNode.swift pulses the dot radius over 0.7s; the pulse is quantized
+  // into deterministic steps so the widget stays cheap and the model is testable.
+  static readonly CHAT_TOP_BAR_TYPING_PULSE_DURATION_MS: number = 700;
+  static readonly CHAT_TOP_BAR_TYPING_PULSE_TICK_MS: number = 70;
+  static readonly CHAT_TOP_BAR_TYPING_PULSE_STEPS: number =
+    TgUiTokens.CHAT_TOP_BAR_TYPING_PULSE_DURATION_MS / TgUiTokens.CHAT_TOP_BAR_TYPING_PULSE_TICK_MS;
+  static readonly CHAT_TOP_BAR_TYPING_PULSE_MIN_SCALE: number = 0.6;
+  static readonly CHAT_TOP_BAR_TYPING_PULSE_MIN_OPACITY: number = 0.35;
+  // Each dot starts a third of the cycle after the previous one.
+  static readonly CHAT_TOP_BAR_TYPING_DOT_PHASE_STEP: number = 3;
   static readonly CHAT_TOP_BAR_TYPING_DOT_PITCH: number = 5.5;
   static readonly CHAT_TOP_BAR_TYPING_DOT_GAP: number =
     TgUiTokens.CHAT_TOP_BAR_TYPING_DOT_PITCH - TgUiTokens.CHAT_TOP_BAR_TYPING_DOT_SIZE;

@@ -2,6 +2,7 @@ import { uiMaterial } from '@kit.ArkUI';
 import { Available, deviceInfo } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { TgUiTokens } from '../tokens/TgUiTokens';
+import { typingPulseOpacity, typingPulseScale, nextTypingPulseStep } from '../utils/TgTypingPulse';
 import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
 import { chatTopBarContentTransition } from '../utils/TgChatTopBarMotionPolicy';
 import { TgAvatar } from './TgAvatar';
@@ -33,6 +34,9 @@ export struct TgChatTopBar {
   @Param title: string = '';
   @Param subtitle: string = '';
   @Param subtitleMode: TgChatTopBarSubtitleMode = TgChatTopBarSubtitleMode.Secondary;
+  // C2: 0.7s pulse quantized into deterministic steps (see TgTypingPulse).
+  @Local private typingPulseStep: number = 0;
+  private typingPulseTimer: number = -1;
   @Param showSubtitleSpinner: boolean = false;
   @Param avatarInitials: string = '';
   @Param avatarIsSavedMessages: boolean = false;
@@ -177,12 +181,17 @@ export struct TgChatTopBar {
   }
 
   @Builder
-  private buildTypingDot() {
+  private buildTypingDot(dotIndex: number) {
     Row()
       .width(TgUiTokens.CHAT_TOP_BAR_TYPING_DOT_SIZE)
       .height(TgUiTokens.CHAT_TOP_BAR_TYPING_DOT_SIZE)
       .backgroundColor(this.subtitleColor())
       .borderRadius(TgUiTokens.RADIUS_ROUND_MAX)
+      .scale({
+        x: typingPulseScale(this.typingPulseStep, dotIndex),
+        y: typingPulseScale(this.typingPulseStep, dotIndex)
+      })
+      .opacity(typingPulseOpacity(this.typingPulseStep, dotIndex))
   }
 
   // iOS puts three dots to the left of the activity text and pulses their radius
@@ -191,13 +200,61 @@ export struct TgChatTopBar {
   @Builder
   private buildTypingDots() {
     Row({ space: TgUiTokens.CHAT_TOP_BAR_TYPING_DOT_GAP }) {
-      this.buildTypingDot()
-      this.buildTypingDot()
-      this.buildTypingDot()
+      this.buildTypingDot(0)
+      this.buildTypingDot(1)
+      this.buildTypingDot(2)
     }
     .alignItems(VerticalAlign.Center)
     .hitTestBehavior(HitTestMode.None)
     .accessibilityLevel('no')
+  }
+
+  private isTypingModeVisible(): boolean {
+    return this.subtitleMode === TgChatTopBarSubtitleMode.Typing && this.subtitle.length > 0;
+  }
+
+  private startTypingPulse(): void {
+    if (this.typingPulseTimer >= 0 || !this.isTypingModeVisible()) {
+      return;
+    }
+    this.typingPulseTimer = setInterval(() => {
+      this.typingPulseStep = nextTypingPulseStep(this.typingPulseStep);
+    }, TgUiTokens.CHAT_TOP_BAR_TYPING_PULSE_TICK_MS);
+  }
+
+  private stopTypingPulse(): void {
+    if (this.typingPulseTimer < 0) {
+      return;
+    }
+    clearInterval(this.typingPulseTimer);
+    this.typingPulseTimer = -1;
+    this.typingPulseStep = 0;
+  }
+
+  aboutToAppear(): void {
+    this.startTypingPulse();
+  }
+
+  aboutToDisappear(): void {
+    this.stopTypingPulse();
+  }
+
+  @Monitor('subtitleMode')
+  onSubtitleModeChange(): void {
+    if (this.isTypingModeVisible()) {
+      this.startTypingPulse();
+    } else {
+      this.stopTypingPulse();
+    }
+  }
+
+  @Monitor('subtitle')
+  onSubtitleChange(): void {
+    if (this.isTypingModeVisible()) {
+      this.startTypingPulse();
+    } else {
+      this.stopTypingPulse();
+    }
   }
 
   @Builder

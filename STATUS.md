@@ -146,6 +146,12 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **C2-typing-pulse (lead).** Пульсация typing-точек по iOS (0,7 s): токены длительности/тика/минимумов,
+  чистый модель-модуль `TgTypingPulse` (10 шагов, scale 0.6→1, opacity 0.35→1, фаза +3 шага, wrap),
+  `TgChatTopBar` держит `typingPulseStep` и interval только когда Typing-подзаголовок видим, сбрасывает
+  фазу и чистит таймер при уходе/смене режима. Суита `test-typing-pulse.cjs` (134-я): токены, bounds,
+  пик/сдвиг фаз, wrap, шаг, проводка виджета. Гейты: host **134/134**, оба smoke, hvigor BUILD
+  SUCCESSFUL. Остаток C2: device witness (анимация).
 - **D24-translate (lead).** Перевод сообщений: команда `translateText` (+payload/фабрика),
   сериализатор `_text_json`/`to_language_code`, `TranslateMessageUseCase` (trim, лимит 4096,
   валидация кода языка `xx`/`xxx-YY`, парсер `TranslatedText`, AppError), пункт меню Translate для
