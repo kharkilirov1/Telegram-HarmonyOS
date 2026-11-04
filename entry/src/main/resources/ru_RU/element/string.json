@@ -813,6 +813,10 @@
       "value": "Администраторы"
     },
     {
+      "name": "action_show_translation",
+      "value": "Показать перевод"
+    },
+    {
       "name": "action_translate",
       "value": "Перевести"
     },

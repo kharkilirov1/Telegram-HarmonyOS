@@ -4,7 +4,7 @@
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { navigationUIState } from '../../../core/model/UIStateModels';
 import { openMessageThread } from './chatAdminNavigation';
-import { createTranslateMessageUseCase, isValidLanguageCode } from '../../../domain/usecases/translateMessage';
+import { createTranslateMessageUseCase } from '../../../domain/usecases/translateMessage';
 import { i18n } from '@kit.LocalizationKit';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
@@ -50,6 +50,9 @@ export class ChatMessageActionItem {
     this.enabled = enabled;
   }
 }
+
+// D24: translations are re-fetched only once per message and target language.
+export const MAX_CACHED_TRANSLATIONS = 50;
 
 export interface ChatMessageActionsHost extends ChatDeleteMessageHost, ChatEditMessageHost {
   canSendNewMessages(sendKind?: string): boolean;
@@ -97,6 +100,8 @@ export class ChatMessageActionsController {
   private forwardPickerLifecycle: number = 0;
   private forwardPickerUseCase?: ForwardMessagesUseCase;
   private deleteController?: ChatDeleteMessageController;
+  private translationCache: Map<string, string> = new Map<string, string>();
+  private translatedMessageId: string = '';
 
   cancelPendingMessageActions(): void {
     this.cancelPendingForwardPicker();
@@ -335,7 +340,44 @@ export class ChatMessageActionsController {
       language = '';
     }
     const primary = language.split('-')[0];
-    return isValidLanguageCode(primary) ? primary : 'en';
+    return this.isSupportedLanguageCode(primary) ? primary : 'en';
+  }
+
+  private translationKey(messageId: string, language: string): string {
+    return this.getActiveChatKey() + ':' + messageId + ':' + language;
+  }
+
+  private getActiveChatKey(): string {
+    return String(this.activeChatKeyForCache);
+  }
+
+  private activeChatKeyForCache: number = 0;
+
+  private cacheTranslation(key: string, text: string): void {
+    if (this.translationCache.size >= MAX_CACHED_TRANSLATIONS) {
+      const oldest = this.translationCache.keys().next();
+      if (!oldest.done) {
+        this.translationCache.delete(oldest.value);
+      }
+    }
+    this.translationCache.set(key, text);
+  }
+
+  private showTranslation(text: string, host: ChatMessageActionsHost): void {
+    const promptAction = host.getChatUIContext().getPromptAction();
+    promptAction.showDialog({
+      title: localized($r('app.string.translation_title').id, 'Translation'),
+      message: text,
+      buttons: [{ text: localized($r('app.string.cancel').id, 'Close'),
+        color: TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND }]
+    }).catch((error: Error) => {
+      hilog.warn(DOMAIN, TAG, 'Translation dialog failed: %{public}s', error.message);
+    });
+  }
+
+  // Kept local so building the menu never depends on the translation use-case module.
+  private isSupportedLanguageCode(code: string): boolean {
+    return /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})?$/.test(code);
   }
 
   private translateMessage(entry: ChatTimelineEntryVO, host: ChatMessageActionsHost): void {
@@ -343,22 +385,26 @@ export class ChatMessageActionsController {
     if (text.trim().length === 0) {
       return;
     }
-    const promptAction = host.getChatUIContext().getPromptAction();
+    this.activeChatKeyForCache = host.getActiveChatId();
+    const language = this.targetLanguageCode();
+    const messageId = entry.message.messageId;
+    // A cached translation opens immediately and never hits the network again.
+    const cached = this.translationCache.get(this.translationKey(messageId, language));
+    if (cached !== undefined) {
+      this.translatedMessageId = messageId;
+      this.showTranslation(cached, host);
+      return;
+    }
     try {
       const useCase = createTranslateMessageUseCase(getTdGatewayAdapter());
-      useCase.translate(text, this.targetLanguageCode())
+      useCase.translate(text, language)
         .then((translated) => {
-          promptAction.showDialog({
-            title: localized($r('app.string.translation_title').id, 'Translation'),
-            message: translated.text,
-            buttons: [{ text: localized($r('app.string.cancel').id, 'Close'),
-              color: TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND }]
-          }).catch((error: Error) => {
-            hilog.warn(DOMAIN, TAG, 'Translation dialog failed: %{public}s', error.message);
-          });
+          this.cacheTranslation(this.translationKey(messageId, language), translated.text);
+          this.translatedMessageId = messageId;
+          this.showTranslation(translated.text, host);
         })
         .catch((error: Error) => {
-          promptAction.showToast({
+          host.getChatUIContext().getPromptAction().showToast({
             message: localized($r('app.string.translation_failed').id, 'Could not translate the message')
           });
           hilog.warn(DOMAIN, TAG, 'Translation failed: %{public}s', error.message);
@@ -387,7 +433,9 @@ export class ChatMessageActionsController {
     if (hasText) {
       items.push(new ChatMessageActionItem('copy', localized($r('app.string.action_copy').id, 'Copy')));
       items.push(new ChatMessageActionItem('translate',
-        localized($r('app.string.action_translate').id, 'Translate')));
+        this.translationCache.has(this.translationKey(entry.message.messageId, this.targetLanguageCode()))
+          ? localized($r('app.string.action_show_translation').id, 'Show Translation')
+          : localized($r('app.string.action_translate').id, 'Translate')));
     }
 
     // D11: a channel post with a discussion thread opens its comments.

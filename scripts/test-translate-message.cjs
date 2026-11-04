@@ -93,20 +93,35 @@ async function main() {
     { send: () => Promise.resolve(TdObject.fromJSON('{"@type":"formattedText","text":"","entities":[]}')) })
     .translate('hello', 'en'), /Translation unavailable/);
 
+  // Cache and toggle ------------------------------------------------------------------------------
+  const cacheSource = read('ui/pages/chat/ChatMessageActionsController.ets');
+  assert.match(cacheSource, /export const MAX_CACHED_TRANSLATIONS = 50;/);
+  assert.match(cacheSource, /private translationCache: Map<string, string> = new Map<string, string>\(\);/);
+  assert.match(cacheSource, /private translationKey\(messageId: string, language: string\): string \{/);
+  assert.match(cacheSource, /private getActiveChatKey\(\): string \{/, 'the cache is per chat');
+  assert.match(cacheSource, /this\.translationCache\.size >= MAX_CACHED_TRANSLATIONS/, 'the cache is bounded');
+  assert.match(cacheSource, /const cached = this\.translationCache\.get\(this\.translationKey\(messageId, language\)\);/);
+  assert.match(cacheSource, /if \(cached !== undefined\) \{/, 'a cached translation never hits the network');
+  assert.match(cacheSource, /this\.cacheTranslation\(this\.translationKey\(messageId, language\), translated\.text\);/);
+  assert.match(cacheSource, /private showTranslation\(text: string, host: ChatMessageActionsHost\): void \{/);
+  assert.match(cacheSource, /this\.translationCache\.has\(this\.translationKey\(entry\.message\.messageId, this\.targetLanguageCode\(\)\)\)/,
+    'the menu label reflects the cache');
+  assert.match(cacheSource, /action_show_translation/, 'a translated message offers Show Translation');
+
   // Menu action -----------------------------------------------------------------------------------
   const actions = read('ui/pages/chat/ChatMessageActionsController.ets');
   assert.match(actions, /new ChatMessageActionItem\('translate',/, 'the menu offers Translate');
   assert.match(actions, /if \(actionId === 'translate'\) \{/);
   assert.match(actions, /private translateMessage\(entry: ChatTimelineEntryVO, host: ChatMessageActionsHost\): void \{/);
   assert.match(actions, /createTranslateMessageUseCase\(getTdGatewayAdapter\(\)\)/);
-  assert.match(actions, /useCase\.translate\(text, this\.targetLanguageCode\(\)\)/);
+  assert.match(actions, /useCase\.translate\(text, language\)/);
   assert.match(actions, /i18n\.System\.getSystemLanguage\(\)\.toLowerCase\(\)/);
   assert.match(actions, /if \(text\.trim\(\)\.length === 0\) \{/, 'empty messages are ignored');
   assert.match(actions, /translation_failed/);
   for (const locale of ['base', 'ru_RU', 'zh_CN']) {
     const strings = JSON.parse(fs.readFileSync(
       path.join(root, '../resources/' + locale + '/element/string.json'), 'utf8'));
-    for (const name of ['action_translate', 'translation_title', 'translation_failed']) {
+    for (const name of ['action_translate', 'action_show_translation', 'translation_title', 'translation_failed']) {
       assert.ok(strings.string.find((item) => item.name === name), locale + ' has ' + name);
     }
   }

@@ -146,6 +146,13 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **D24-translation-cache (lead).** Кэш переводов в контроллере меню: bounded 50 записей по
+  `chatId:messageId:lang`, вытеснение старейшей, повторный Translate не ходит в сеть; лейбл меню
+  переключается на Show Translation, если перевод уже есть; локальный валидатор кода языка, чтобы сборка
+  меню не зависела от модуля use case. Строка `action_show_translation` в base/ru/zh. Суита
+  `test-translate-message.cjs` расширена (кэш, per-chat ключ, вытеснение, лейбл). Гейты: host
+  **134/134**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток D24: inline-перевод под баблом, выбор языка,
+  witness.
 - **C2-typing-pulse (lead).** Пульсация typing-точек по iOS (0,7 s): токены длительности/тика/минимумов,
   чистый модель-модуль `TgTypingPulse` (10 шагов, scale 0.6→1, opacity 0.35→1, фаза +3 шага, wrap),
   `TgChatTopBar` держит `typingPulseStep` и interval только когда Typing-подзаголовок видим, сбрасывает

@@ -1285,3 +1285,13 @@ Last updated: 2026-10-23
   later appearance starts clean, and clear it in `aboutToDisappear`.
 - Phase arithmetic: dot i at step s equals dot 0 at step s + i*3 modulo 10; write assertions from that
   identity rather than from hand-computed decimals.
+
+## 237. Keep menu construction free of heavy module references
+
+- Building menu labels called `targetLanguageCode`, which referenced the translation use-case module; the
+  fixture suites that load the actions controller then failed with `isValidLanguageCode is not defined`.
+  Move a small validator into the controller and keep use-case references inside the action handler.
+- A bounded `Map` with oldest-key eviction is enough for the translation cache; the map must be keyed by
+  chat because message ids are only unique per chat.
+- Docs write scripts must avoid quoting tricks that break the JS string (the previous round shipped code
+  without docs); write the docs in a separate commit when the code commit is already green.

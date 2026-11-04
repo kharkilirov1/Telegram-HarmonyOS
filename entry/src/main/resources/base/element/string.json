@@ -813,6 +813,10 @@
       "value": "Administrators"
     },
     {
+      "name": "action_show_translation",
+      "value": "Show Translation"
+    },
+    {
       "name": "action_translate",
       "value": "Translate"
     },
