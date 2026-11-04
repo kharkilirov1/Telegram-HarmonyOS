@@ -999,3 +999,14 @@ Last updated: 2026-10-23
   integers at the boundary, never send the raw strings.
 - Clear the report intent whenever selection closes, otherwise the next selection session silently
   offers Report for a stale chat.
+
+## 209. Role lookups must never block the menu, and menu slots are literal
+
+- `getChatMember` failing (offline, private chat, old account) must fall back to the plain member set
+  instead of leaving the user with no menu; the use case returns `unknown` and logs a warning.
+- `showActionMenu` takes a fixed six-slot tuple of `promptAction.Button` whose `color` is
+  `string | Resource`: collect labels/colors into arrays, then build `b0..b5` explicitly — pushing
+  into a `Button[]` and passing it does not type-check.
+- Replacing an index-based menu switch with typed actions keeps the report/leave/share mapping
+  readable and makes the admin variant a one-line insertion; update the contract test in the same
+  slice instead of keeping both mappings alive.

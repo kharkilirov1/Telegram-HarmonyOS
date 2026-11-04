@@ -641,6 +641,14 @@
       "value": "已屏蔽用户"
     },
     {
+      "name": "chat_actions_members",
+      "value": "成员"
+    },
+    {
+      "name": "chat_actions_members_failed",
+      "value": "无法打开成员"
+    },
+    {
       "name": "chat_actions_report",
       "value": "举报"
     },

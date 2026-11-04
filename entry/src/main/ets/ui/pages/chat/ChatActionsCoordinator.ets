@@ -12,6 +12,11 @@ import { createSetChatMuteUseCase, MUTE_FOREVER } from '../../../domain/usecases
 import { createDeleteChatHistoryUseCase } from '../../../domain/usecases/deleteChatHistory';
 import { createLeaveChatUseCase, createShareMyContactUseCase } from '../../../domain/usecases/chatMembership';
 import { createReportChatUseCase } from '../../../domain/usecases/reportChat';
+import {
+  canManageChat,
+  ChatMemberRole,
+  createChatMemberRoleUseCase
+} from '../../../domain/usecases/chatMemberRole';
 import { ReportChatOptionDto, ReportChatStepDto } from '../../../core/model/dto/ReportChatDto';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 
@@ -33,7 +38,9 @@ export class ChatActionsHost {
     profileAction: () => void,
     backAction: () => void,
     reportCommentAction: (chatId: number, optionId: string) => void,
-    reportMessagesAction: (chatId: number, optionId: string) => void
+    reportMessagesAction: (chatId: number, optionId: string) => void,
+    currentUserIdProvider: () => number,
+    membersAction: (chatId: number, title: string) => void
   ) {
     this.uiContextProvider = uiContextProvider;
     this.titleProvider = titleProvider;
@@ -42,6 +49,8 @@ export class ChatActionsHost {
     this.backAction = backAction;
     this.reportCommentHandler = reportCommentAction;
     this.reportMessagesHandler = reportMessagesAction;
+    this.currentUserIdProvider = currentUserIdProvider;
+    this.membersHandler = membersAction;
   }
 
   uiContext(): UIContext {
@@ -66,15 +75,37 @@ export class ChatActionsHost {
 
   private reportCommentHandler: (chatId: number, optionId: string) => void;
   private reportMessagesHandler: (chatId: number, optionId: string) => void;
+  private currentUserIdProvider: () => number;
+  private membersHandler: (chatId: number, title: string) => void;
 
   requestReportComment(chatId: number, optionId: string): void {
     this.reportCommentHandler(chatId, optionId);
+  }
+
+  // Current account id (0 when signed out) and the members screen entry; both are page-owned.
+  currentUserId(): number {
+    return this.currentUserIdProvider();
+  }
+
+  openMembers(chatId: number, title: string): void {
+    this.membersHandler(chatId, title);
   }
 
   requestReportMessages(chatId: number, optionId: string): void {
     this.reportMessagesHandler(chatId, optionId);
   }
 
+}
+
+export enum ChatMenuAction {
+  Info,
+  Mute,
+  ClearHistory,
+  DeleteChat,
+  Members,
+  Leave,
+  ShareContact,
+  Report
 }
 
 export class ChatActionsCoordinator {
@@ -122,61 +153,104 @@ export class ChatActionsCoordinator {
     if (chatId <= 0 || chat === undefined) {
       return;
     }
+    const userId: number = this.host.currentUserId();
+    const groupLike: boolean = this.canLeaveChat(chat);
+    if (!groupLike || userId <= 0) {
+      this.showMenu(chatId, chat, 'unknown');
+      return;
+    }
+    // The role decides whether admin entries appear; a failed lookup falls back to the member set.
+    const token: number = this.host.lifecycleToken();
+    createChatMemberRoleUseCase(getTdGatewayAdapter()).load(chatId, userId)
+      .then((role: ChatMemberRole) => {
+        if (token !== this.host.lifecycleToken()) {
+          return;
+        }
+        this.showMenu(chatId, chat, role);
+      })
+      .catch(() => {
+        if (token !== this.host.lifecycleToken()) {
+          return;
+        }
+        this.showMenu(chatId, chat, 'unknown');
+      });
+  }
+
+  private showMenu(chatId: number, chat: Chat, role: ChatMemberRole): void {
     const muteTitle: string = this.isMuted()
       ? localized($r('app.string.profile_unmute').id, 'Unmute')
       : localized($r('app.string.profile_mute').id, 'Mute');
     const membershipTitle: string = this.canLeaveChat(chat)
       ? localized($r('app.string.chat_actions_leave').id, 'Leave Chat')
       : localized($r('app.string.chat_actions_share_contact').id, 'Share My Contact');
-    const destructive: ResourceColor = TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE;
-    const normal: ResourceColor = TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND;
-    const menu: promptAction.ActionMenuOptions = chat.canBeReported
-      ? {
-        title: this.host.title(),
-        buttons: [
-          { text: localized($r('app.string.chat_actions_info').id, 'Chat Info'), color: normal },
-          { text: muteTitle, color: normal },
-          { text: localized($r('app.string.profile_clear_history').id, 'Clear History'), color: normal },
-          { text: localized($r('app.string.profile_delete_chat').id, 'Delete Chat'), color: destructive },
-          { text: membershipTitle, color: destructive },
-          { text: localized($r('app.string.chat_actions_report').id, 'Report'), color: destructive }
-        ]
-      }
-      : {
-        title: this.host.title(),
-        buttons: [
-          { text: localized($r('app.string.chat_actions_info').id, 'Chat Info'), color: normal },
-          { text: muteTitle, color: normal },
-          { text: localized($r('app.string.profile_clear_history').id, 'Clear History'), color: normal },
-          { text: localized($r('app.string.profile_delete_chat').id, 'Delete Chat'), color: destructive },
-          { text: membershipTitle, color: destructive }
-        ]
-      };
-    this.host.uiContext().getPromptAction().showActionMenu(menu)
+    const destructive: Resource = TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE;
+    const normal: Resource = TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND;
+    const actions: ChatMenuAction[] = [];
+    const labels: string[] = [];
+    const colors: Resource[] = [];
+    const push = (action: ChatMenuAction, label: string, color: Resource): void => {
+      actions.push(action);
+      labels.push(label);
+      colors.push(color);
+    };
+    push(ChatMenuAction.Info, localized($r('app.string.chat_actions_info').id, 'Chat Info'), normal);
+    push(ChatMenuAction.Mute, muteTitle, normal);
+    push(ChatMenuAction.ClearHistory, localized($r('app.string.profile_clear_history').id, 'Clear History'),
+      normal);
+    push(ChatMenuAction.DeleteChat, localized($r('app.string.profile_delete_chat').id, 'Delete Chat'),
+      destructive);
+    // Admin entries take the slot the destructive Report normally uses (the menu is capped at six).
+    if (canManageChat(role)) {
+      push(ChatMenuAction.Members, localized($r('app.string.chat_actions_members').id, 'Members'), normal);
+    }
+    push(this.canLeaveChat(chat) ? ChatMenuAction.Leave : ChatMenuAction.ShareContact, membershipTitle,
+      destructive);
+    if (!canManageChat(role) && chat.canBeReported && labels.length < 6) {
+      push(ChatMenuAction.Report, localized($r('app.string.chat_actions_report').id, 'Report'), destructive);
+    }
+    // showActionMenu takes a fixed six-slot tuple; the menu never exceeds it.
+    const b0: promptAction.Button = { text: labels[0], color: colors[0] };
+    const b1: promptAction.Button | undefined = labels.length > 1
+      ? { text: labels[1], color: colors[1] } : undefined;
+    const b2: promptAction.Button | undefined = labels.length > 2
+      ? { text: labels[2], color: colors[2] } : undefined;
+    const b3: promptAction.Button | undefined = labels.length > 3
+      ? { text: labels[3], color: colors[3] } : undefined;
+    const b4: promptAction.Button | undefined = labels.length > 4
+      ? { text: labels[4], color: colors[4] } : undefined;
+    const b5: promptAction.Button | undefined = labels.length > 5
+      ? { text: labels[5], color: colors[5] } : undefined;
+    this.host.uiContext().getPromptAction().showActionMenu({
+      title: this.host.title(),
+      buttons: [b0, b1, b2, b3, b4, b5]
+    })
       .then((result: promptAction.ActionMenuSuccessResponse) => {
-        this.handleChoice(result.index, chatId, chat);
+        this.applyMenuAction(actions[result.index], chatId, chat);
       })
       .catch((error: Error) => {
         hilog.warn(DOMAIN, TAG, 'Chat actions failed: %{public}s', error.message);
       });
   }
 
-  private handleChoice(index: number, chatId: number, chat: Chat): void {
-    if (index === 0) {
+  private applyMenuAction(action: ChatMenuAction | undefined, chatId: number, chat: Chat): void {
+    if (action === undefined) {
+      return;
+    }
+    if (action === ChatMenuAction.Info) {
       this.host.openProfile();
-    } else if (index === 1) {
+    } else if (action === ChatMenuAction.Mute) {
       this.toggleMute(chatId);
-    } else if (index === 2) {
+    } else if (action === ChatMenuAction.ClearHistory) {
       this.confirmDeletion(chatId, false);
-    } else if (index === 3) {
+    } else if (action === ChatMenuAction.DeleteChat) {
       this.confirmDeletion(chatId, true);
-    } else if (index === 4) {
-      if (this.canLeaveChat(chat)) {
-        this.confirmLeave(chatId);
-      } else {
-        this.shareContact(chatId);
-      }
-    } else if (index === 5) {
+    } else if (action === ChatMenuAction.Members) {
+      this.host.openMembers(chatId, this.host.title());
+    } else if (action === ChatMenuAction.Leave) {
+      this.confirmLeave(chatId);
+    } else if (action === ChatMenuAction.ShareContact) {
+      this.shareContact(chatId);
+    } else if (action === ChatMenuAction.Report) {
       this.startReport(chatId);
     }
   }

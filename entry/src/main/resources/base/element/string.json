@@ -641,6 +641,14 @@
       "value": "Blocked Users"
     },
     {
+      "name": "chat_actions_members",
+      "value": "Members"
+    },
+    {
+      "name": "chat_actions_members_failed",
+      "value": "Could not open members"
+    },
+    {
       "name": "chat_actions_report",
       "value": "Report"
     },

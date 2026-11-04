@@ -10,7 +10,7 @@ import {
   CreateChatFolderInviteLinkCommand, DeleteChatFolderInviteLinkCommand, EditChatFolderInviteLinkCommand,
   GetChatFolderCommand, GetChatFolderInviteLinksCommand, GetRecommendedChatFoldersCommand,
   CheckChatFolderInviteLinkCommand, AddChatFolderByInviteLinkCommand,
-  CheckChatInviteLinkCommand, JoinChatByInviteLinkCommand,
+  CheckChatInviteLinkCommand, JoinChatByInviteLinkCommand, GetChatMemberCommand,
   CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand, LeaveChatCommand,
   ReportChatCommand, ShareContactCommand,
   GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
@@ -129,6 +129,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('sendContactMessage', serializeSendContactMes
 COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
 COMMAND_SERIALIZATION_HANDLERS.set('checkChatInviteLink', serializeCheckChatInviteLink);
+COMMAND_SERIALIZATION_HANDLERS.set('getChatMember', serializeGetChatMember);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChatByInviteLink', serializeJoinChatByInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('checkChatFolderInviteLink', serializeCheckChatFolderInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('addChatFolderByInviteLink', serializeAddChatFolderByInviteLink);
@@ -486,6 +487,15 @@ function buildChatFolderJson(draft: ChatFolderDraftPayload): string {
     ',"include_bots":' + (draft.includeBots ? 'true' : 'false') +
     ',"include_groups":' + (draft.includeGroups ? 'true' : 'false') +
     ',"include_channels":' + (draft.includeChannels ? 'true' : 'false') + '}';
+}
+
+function serializeGetChatMember(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetChatMemberCommand;
+  result.method = 'getChatMember';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  // messageSenderUser is a small fixed JSON body; the user id is a validated safe integer.
+  result.params.setString('_member_id_json',
+    '{"@type":"messageSenderUser","user_id":' + cmd.payload.userId.toString() + '}');
 }
 
 function serializeCheckChatInviteLink(command: AnyAppCommand, result: SerializedCommand): void {

@@ -7,18 +7,24 @@ import { TgChatTopBar } from '../../tg_ui/atoms/TgChatTopBar';
 import { TgChatBackground } from '../../tg_ui/atoms/TgChatBackground';
 import { TgPinnedMessagePanel } from '../../tg_ui/atoms/TgPinnedMessagePanel';
 import { localized } from '../../../core/utils/AppResource';
+import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
+import { ProfileMembersRouteParams } from '../profile/TgProfileMembersPage';
 import { ChatScreenViewState } from './ChatScreenViewState';
 import { ChatScreenSession } from './ChatScreenSession';
 import { ChatScreenViewBindings } from './ChatScreenViewBindings';
 import { TgChatTimelineViewport } from './TgChatTimelineViewport';
 import { TgSelectionPanel } from '../../tg_ui/molecules/TgSelectionPanel';
 import { TgChatComposerDock } from './TgChatComposerDock';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { TgReportCommentOverlay } from '../../tg_ui/molecules/TgReportCommentOverlay';
 import { TgChatPinnedOverlay } from './TgChatPinnedOverlay';
 import { TgChatMediaOverlay } from './TgChatMediaOverlay';
 import { NavigationUIState, navigationUIState } from '../../../core/model/UIStateModels';
 import { ChatActionsCoordinator, ChatActionsHost } from './ChatActionsCoordinator';
 import { UIContext } from '@kit.ArkUI';
+
+const DOMAIN = 0x0042;
+const TAG = 'TgChatScreenPage';
 
 @ComponentV2
 export struct TgChatScreenPage {
@@ -54,8 +60,41 @@ export struct TgChatScreenPage {
     },
     (chatId: number, optionId: string): void => {
       this.beginReportSelection(chatId, optionId);
+    },
+    (): number => this.currentUserId(),
+    (chatId: number, title: string): void => {
+      this.openMembersFromChat(chatId, title);
     }
   ));
+
+  private currentUserId(): number {
+    try {
+      return getAppCoreRuntime().getStore().getState().auth.userId;
+    } catch (_error) {
+      return 0;
+    }
+  }
+
+  // Admin entry: the same members screen the profile opens, with the chat's own counts.
+  private openMembersFromChat(chatId: number, title: string): void {
+    const chat = getAppCoreRuntime().getStore().getState().chats.chats.get(chatId);
+    const params = new ProfileMembersRouteParams(chatId, chat?.supergroupId ?? 0, 'all',
+      chat?.memberCount ?? 0);
+    try {
+      const navigation = this.queryNavigationInfo();
+      const stack = navigation?.pathStack;
+      if (stack !== undefined) {
+        stack.pushPathByName('TgProfileMembersPage', params);
+        return;
+      }
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Members navigation failed: %{public}s', String(error));
+    }
+    this.getUIContext().getPromptAction().showToast({
+      message: localized($r('app.string.chat_actions_members_failed').id, 'Could not open members'),
+      duration: 2000
+    });
+  }
 
   private openChatActions(): void {
     this.chatActions.currentChatId = this.view.chrome.activeChatId;

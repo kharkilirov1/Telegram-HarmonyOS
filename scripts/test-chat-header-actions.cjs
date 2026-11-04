@@ -31,9 +31,18 @@ assert.match(page, /onMorePress: \(\): void => \{\n {12}this\.openChatActions\(\
 assert.match(page, /private openChatActions\(\): void \{/);
 assert.match(page, /this\.chatActions\.currentChatId = this\.view\.chrome\.activeChatId;/);
 assert.match(page, /this\.chatActions\.open\(\);/);
-assert.match(actions, /private handleChoice\(index: number, chatId: number, chat: Chat\): void \{/);
+assert.match(actions, /private applyMenuAction\(action: ChatMenuAction \| undefined, chatId: number, chat: Chat\): void \{/);
+assert.match(actions, /this\.applyMenuAction\(actions\[result\.index\], chatId, chat\)/);
 assert.match(actions, /getPromptAction\(\)\.showActionMenu\(/);
 assert.match(actions, /localized\(\$r\('app\.string\.chat_actions_info'\)\.id, 'Chat Info'\)/);
+
+// Role-aware admin entries (C10 remainder): getChatMember decides Members.
+assert.match(actions, /createChatMemberRoleUseCase\(getTdGatewayAdapter\(\)\)\.load\(chatId, userId\)/);
+assert.match(actions, /if \(canManageChat\(role\)\) \{/);
+assert.match(actions, /push\(ChatMenuAction\.Members, localized\(\$r\('app\.string\.chat_actions_members'\)\.id, 'Members'\), normal\);/);
+assert.match(actions, /const b0: promptAction\.Button = \{ text: labels\[0\], color: colors\[0\] \};/);
+assert.match(page, /private openMembersFromChat\(chatId: number, title: string\): void \{/);
+assert.match(page, /new ProfileMembersRouteParams\(chatId, chat\?\.supergroupId \?\? 0, 'all',/);
 
 // Report comment step (C10 remainder): TDLib can require free text after the reason.
 assert.match(actions, /this\.host\.requestReportComment\(chatId, step\.optionId\)/);
@@ -61,6 +70,7 @@ const selectionPanel = read('ui/tg_ui/molecules/TgSelectionPanel.ets');
 assert.match(selectionPanel, /@Param showReport: boolean = false;/);
 assert.match(selectionPanel, /@Event onReport: \(\) => void = \(\) => \{\};/);
 assert.match(selectionPanel, /SELECTION_PANEL_REPORT_GLYPH/);
+
 
 for (const locale of ['base', 'ru_RU', 'zh_CN']) {
   const strings = JSON.parse(fs.readFileSync(
@@ -126,6 +136,22 @@ const C = load('core/model/AppCommand.ets');
 const errors = load('core/model/AppError.ets');
 const serializer = load('infra/td/serialization/CommandSerializer.ets', { ...C, TdObject, hilog });
 const R = load('core/model/dto/ReportChatDto.ets', { TdObjectType: TdObject });
+const roleMod = load('domain/usecases/chatMemberRole.ets',
+  { ...C, ...errors, hilog: { info() {}, warn() {}, error() {} }, TdObject,
+    TdObjectType: TdObject });
+assert.equal(roleMod.readChatMemberRole(TdObject.fromJSON('{"@type":"chatMember",' +
+  '"status":{"@type":"chatMemberStatusCreator"}}')), 'creator');
+assert.equal(roleMod.readChatMemberRole(TdObject.fromJSON('{"@type":"chatMember",' +
+  '"status":{"@type":"chatMemberStatusAdministrator"}}')), 'administrator');
+assert.equal(roleMod.readChatMemberRole(TdObject.fromJSON('{"@type":"chatMember",' +
+  '"status":{"@type":"chatMemberStatusMember"}}')), 'member');
+assert.equal(roleMod.readChatMemberRole(TdObject.fromJSON('{"@type":"chatMember",' +
+  '"status":{"@type":"chatMemberStatusLeft"}}')), 'left');
+assert.equal(roleMod.readChatMemberRole(TdObject.fromJSON('{"@type":"ok"}')), 'unknown');
+assert.equal(roleMod.canManageChat('creator'), true);
+assert.equal(roleMod.canManageChat('administrator'), true);
+assert.equal(roleMod.canManageChat('member'), false);
+
 
 async function checkMembership() {
   const startWire = JSON.parse(serializer.buildTdlibRequestJson('reportChat',
@@ -254,6 +280,27 @@ async function checkMembership() {
   await assert.rejects(() => share.share(9, '+1', '', '', 7), /Invalid contact/);
   await assert.rejects(() => share.share(9, '+1', 'A', '', 0), /Invalid userId/);
   assert.equal(sent.length, 2, 'invalid contact data never reaches the gateway');
+
+  const roleSent = [];
+  const roleUseCase = new roleMod.ChatMemberRoleUseCase({ send: (command) => {
+    roleSent.push(command);
+    return Promise.resolve(TdObject.fromJSON('{"@type":"chatMember",' +
+      '"status":{"@type":"chatMemberStatusAdministrator"}}'));
+  } });
+  assert.equal(await roleUseCase.load(42, 7), 'administrator');
+  assert.equal(roleSent.at(-1).type, 'getChatMember');
+  assert.equal(roleSent.at(-1).payload.chatId, 42);
+  assert.equal(roleSent.at(-1).payload.userId, 7);
+  const memberWire = JSON.parse(serializer.buildTdlibRequestJson('getChatMember',
+    serializer.serializeCommand(roleSent.at(-1)).params));
+  assert.equal(memberWire.chat_id, 42);
+  assert.equal(memberWire.member_id['@type'], 'messageSenderUser');
+  assert.equal(memberWire.member_id.user_id, 7);
+  await assert.rejects(() => roleUseCase.load(0, 7), /Invalid chatId/);
+  await assert.rejects(() => roleUseCase.load(42, 0), /Invalid userId/);
+  assert.equal(await new roleMod.ChatMemberRoleUseCase(
+    { send: () => Promise.reject(new Error('native status')) }).load(42, 7), 'unknown',
+    'a failed lookup falls back to the member menu');
 
   const failing = { send: () => Promise.reject(new Error('native status')) };
   const failingMod = load('domain/usecases/chatMembership.ets', { ...C, ...errors, hilog });

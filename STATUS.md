@@ -146,6 +146,17 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S12g (lead).** C10: ролевые admin-пункты. `getChatMember` (+сериализатор с
+  `_member_id_json`), `ChatMemberRole`/`readChatMemberRole`/`canManageChat` и
+  `ChatMemberRoleUseCase` (валидация id, ошибка роли → `unknown`, меню не блокируется); меню
+  переписано с индексного switch на типизированные `ChatMenuAction` + `applyMenuAction`, для
+  creator/administrator в шестислотовое меню добавляется Members и скрывается Report; страница
+  даёт `currentUserId` и открывает `TgProfileMembersPage` (supergroupId/memberCount из store),
+  route-навигация с фолбэком-тостом. Контракт `test-chat-header-actions.cjs`: роли creator/
+  administrator/member/left/unknown, `canManageChat`, wire `getChatMember` (chat_id + sender JSON),
+  валидация и фолбэк, новые пункты меню, проводка страницы. Гейты: host **120/120**, оба smoke,
+  hvigor BUILD SUCCESSFUL; страница 438 строк. Остаток C10: управление группой/ссылками/правами,
+  witness.
 - **S12f (lead).** C10: Report по выбранным сообщениям. `ReportChatPayload.messageIds` и
   `_message_ids_json` через общий билдер, `ReportChatUseCase.submitMessages` (непустой набор, safe-int
   id, chatId до gateway), `ChatActionsCoordinator.submitReportMessages` + host-колбэк

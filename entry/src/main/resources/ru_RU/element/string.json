@@ -641,6 +641,14 @@
       "value": "Заблокированные"
     },
     {
+      "name": "chat_actions_members",
+      "value": "Участники"
+    },
+    {
+      "name": "chat_actions_members_failed",
+      "value": "Не удалось открыть участников"
+    },
+    {
       "name": "chat_actions_report",
       "value": "Пожаловаться"
     },
