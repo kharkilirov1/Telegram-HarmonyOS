@@ -971,3 +971,14 @@ Last updated: 2026-10-23
   empty-slug case reaches the gateway and the error reads like a TDLib failure.
 - A page that pops a class instance back to the caller gives MainTabsPage the full ChatDto, which is
   what `createNewChatEvent` needs; popping only id/title would force a second TDLib call.
+
+## 206. ChatPanelsState is pinned by the decomposition contract
+
+- Adding five @Trace fields to `ChatPanelsState` broke `test-chat-screen-decomposition.cjs`: the suite
+  asserts an exact 118 reactive fields, each with a bidirectional `ChatScreenContext` alias. Page-local
+  presentation state must either live in the page (`@Local`) or ship with its Context accessors and
+  updated counts in the same slice.
+- A scripted patch that replaces a shared @Trace line can silently drop it (emojiSearchLoading); the
+  compiler caught it, but the field count is the thing to re-check after such edits.
+- Report steps are typed results: route them to page-owned UI through a host callback instead of
+  toasting, otherwise the flow dead-ends with a message the user cannot act on.

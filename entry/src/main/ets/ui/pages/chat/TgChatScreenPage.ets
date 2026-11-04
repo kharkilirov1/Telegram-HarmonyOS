@@ -13,6 +13,7 @@ import { ChatScreenViewBindings } from './ChatScreenViewBindings';
 import { TgChatTimelineViewport } from './TgChatTimelineViewport';
 import { TgSelectionPanel } from '../../tg_ui/molecules/TgSelectionPanel';
 import { TgChatComposerDock } from './TgChatComposerDock';
+import { TgReportCommentOverlay } from '../../tg_ui/molecules/TgReportCommentOverlay';
 import { TgChatPinnedOverlay } from './TgChatPinnedOverlay';
 import { TgChatMediaOverlay } from './TgChatMediaOverlay';
 import { NavigationUIState, navigationUIState } from '../../../core/model/UIStateModels';
@@ -27,6 +28,12 @@ export struct TgChatScreenPage {
     this.view, () => this.getUIContext(), () => this.queryNavigationInfo());
   private bindings: ChatScreenViewBindings = new ChatScreenViewBindings(this.session);
   private pageLifecycleToken: number = 0;
+  // Report comment panel (page-local: the shared panels slice is pinned by the decomposition contract).
+  @Local private reportCommentVisible: boolean = false;
+  @Local private reportCommentChatId: number = 0;
+  @Local private reportCommentOptionId: string = '';
+  @Local private reportCommentDraft: string = '';
+  @Local private reportCommentSubmitting: boolean = false;
 
   private chatActions: ChatActionsCoordinator = new ChatActionsCoordinator(new ChatActionsHost(
     (): UIContext => this.getUIContext(),
@@ -37,6 +44,9 @@ export struct TgChatScreenPage {
     },
     (): void => {
       this.bindings.handleBackPress();
+    },
+    (chatId: number, optionId: string): void => {
+      this.openReportComment(chatId, optionId);
     }
   ));
 
@@ -63,6 +73,90 @@ export struct TgChatScreenPage {
       this.session.isRouteContextCurrent(this.session.routeContext)) {
       this.session.refreshChatInputPanel();
     }
+  }
+
+  private openReportComment(chatId: number, optionId: string): void {
+    this.reportCommentChatId = chatId;
+    this.reportCommentOptionId = optionId;
+    this.reportCommentDraft = '';
+    this.reportCommentVisible = true;
+  }
+
+  private closeReportComment(): void {
+    this.reportCommentVisible = false;
+    this.reportCommentChatId = 0;
+    this.reportCommentOptionId = '';
+    this.reportCommentDraft = '';
+    this.reportCommentSubmitting = false;
+  }
+
+  private submitReportComment(): void {
+    if (this.reportCommentSubmitting) {
+      return;
+    }
+    if (this.reportCommentDraft.trim().length === 0) {
+      this.getUIContext().getPromptAction().showToast({
+        message: localized($r('app.string.chat_actions_report_text_required').id,
+          'Telegram asks for a comment to finish this report'),
+        duration: 2000
+      });
+      return;
+    }
+    const chatId: number = this.reportCommentChatId;
+    const optionId: string = this.reportCommentOptionId;
+    this.reportCommentSubmitting = true;
+    this.chatActions.submitReportComment(chatId, optionId, this.reportCommentDraft)
+      .then((): void => {
+        this.closeReportComment();
+      })
+      .catch((): void => {
+        this.reportCommentSubmitting = false;
+      });
+  }
+
+  @Builder
+  private buildReportCommentPanel() {
+    Column() {
+      Text(localized($r('app.string.chat_actions_report_comment_title').id, 'Report Comment'))
+        .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+        .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+        .width('100%')
+      TextInput({
+        text: this.reportCommentDraft,
+        placeholder: localized($r('app.string.chat_actions_report_comment_placeholder').id,
+          'Describe the problem')
+      })
+        .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+        .height(44)
+        .margin({ top: TgUiTokens.SPACE_8 })
+        .onChange((value: string): void => {
+          this.reportCommentDraft = value;
+        })
+      Row() {
+        Button(localized($r('app.string.chat_actions_report_comment_cancel').id, 'Cancel'))
+          .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+          .height(36)
+          .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
+          .fontColor(TgUiTokens.COLOR_TEXT_META)
+          .onClick(() => {
+            this.closeReportComment();
+          })
+        Button(localized($r('app.string.chat_actions_report_comment_send').id, 'Send'))
+          .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+          .height(36)
+          .margin({ left: TgUiTokens.SPACE_12 })
+          .enabled(!this.reportCommentSubmitting)
+          .onClick(() => {
+            this.submitReportComment();
+          })
+      }
+      .justifyContent(FlexAlign.End)
+      .width('100%')
+      .margin({ top: TgUiTokens.SPACE_12 })
+    }
+    .width('100%')
+    .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16, bottom: TgUiTokens.SPACE_16 })
+    .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
   }
 
   @Builder
@@ -169,6 +263,27 @@ export struct TgChatScreenPage {
 
         if (this.view.media.showMediaGallery) {
           TgChatMediaOverlay({ chrome: this.view.chrome, media: this.view.media, bindings: this.bindings })
+        }
+
+        if (this.reportCommentVisible) {
+          TgReportCommentOverlay({
+            title: localized($r('app.string.chat_actions_report_comment_title').id, 'Report Comment'),
+            placeholder: localized($r('app.string.chat_actions_report_comment_placeholder').id,
+              'Describe the problem'),
+            draft: this.reportCommentDraft,
+            submitting: this.reportCommentSubmitting,
+            cancelLabel: localized($r('app.string.chat_actions_report_comment_cancel').id, 'Cancel'),
+            sendLabel: localized($r('app.string.chat_actions_report_comment_send').id, 'Send'),
+            onDraftChange: (value: string): void => {
+              this.reportCommentDraft = value;
+            },
+            onCancel: (): void => {
+              this.closeReportComment();
+            },
+            onSubmit: (): void => {
+              this.submitReportComment();
+            }
+          })
         }
 
         if (this.view.pinnedSearch.pinnedMessagesListVisible) {

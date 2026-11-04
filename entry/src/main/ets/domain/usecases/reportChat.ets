@@ -34,6 +34,19 @@ export class ReportChatUseCase {
     return this.request(chatId, optionId, '');
   }
 
+  // Finishes a report whose reason requires a free-text comment.
+  async submitComment(chatId: ChatId, optionId: string, text: string): Promise<ReportChatStepDto> {
+    const comment = text.trim();
+    if (optionId.length === 0) {
+      throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid option', 'Input validation failed', 400, false);
+    }
+    if (comment.length === 0) {
+      throw new AppError(AppErrorKind.TDLIB_ERROR, 'Report comment is required',
+        'Input validation failed', 400, false);
+    }
+    return this.request(chatId, optionId, comment);
+  }
+
   private async request(chatId: ChatId, optionId: string, text: string): Promise<ReportChatStepDto> {
     if (!Number.isSafeInteger(chatId) || chatId <= 0) {
       throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid chatId', 'Input validation failed', 400, false);

@@ -653,6 +653,22 @@
       "value": "无法举报此聊天"
     },
     {
+      "name": "chat_actions_report_comment_title",
+      "value": "举报评论"
+    },
+    {
+      "name": "chat_actions_report_comment_placeholder",
+      "value": "描述问题"
+    },
+    {
+      "name": "chat_actions_report_comment_cancel",
+      "value": "取消"
+    },
+    {
+      "name": "chat_actions_report_comment_send",
+      "value": "发送"
+    },
+    {
       "name": "chat_actions_report_text_required",
       "value": "Telegram 要求提供说明以完成举报"
     },

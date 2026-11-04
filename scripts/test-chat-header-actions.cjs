@@ -34,6 +34,30 @@ assert.match(page, /this\.chatActions\.open\(\);/);
 assert.match(actions, /private handleChoice\(index: number, chatId: number, chat: Chat\): void \{/);
 assert.match(actions, /getPromptAction\(\)\.showActionMenu\(/);
 assert.match(actions, /localized\(\$r\('app\.string\.chat_actions_info'\)\.id, 'Chat Info'\)/);
+
+// Report comment step (C10 remainder): TDLib can require free text after the reason.
+assert.match(actions, /this\.host\.requestReportComment\(chatId, step\.optionId\)/);
+assert.match(actions, /submitReportComment\(chatId: number, optionId: string, text: string\): Promise<void> \{/);
+assert.match(actions, /useCase\.submitComment\(chatId, optionId, text\)/);
+assert.match(page, /private openReportComment\(chatId: number, optionId: string\): void \{/);
+assert.match(page, /this\.chatActions\.submitReportComment\(chatId, optionId, this\.reportCommentDraft\)/);
+assert.match(page, /@Local private reportCommentVisible: boolean = false;/);
+assert.match(page, /TgReportCommentOverlay/);
+
+const reportOverlay = fs.readFileSync(
+  path.join(root, 'entry/src/main/ets/ui/tg_ui/molecules/TgReportCommentOverlay.ets'), 'utf8');
+assert.match(reportOverlay, /export struct TgReportCommentOverlay/);
+assert.match(reportOverlay, /@Event onDraftChange/);
+assert.match(reportOverlay, /@Event onSubmit/);
+
+for (const locale of ['base', 'ru_RU', 'zh_CN']) {
+  const strings = JSON.parse(fs.readFileSync(
+    path.join(root, 'entry/src/main/resources', locale, 'element/string.json'), 'utf8'));
+  for (const name of ['chat_actions_report_comment_title', 'chat_actions_report_comment_placeholder',
+    'chat_actions_report_comment_cancel', 'chat_actions_report_comment_send']) {
+    assert.ok(strings.string.some((entry) => entry.name === name), name + ' exists in ' + locale);
+  }
+}
 assert.match(actions, /localized\(\$r\('app\.string\.profile_mute'\)\.id, 'Mute'\)/);
 assert.match(actions, /localized\(\$r\('app\.string\.profile_clear_history'\)\.id, 'Clear History'\)/);
 assert.match(actions, /localized\(\$r\('app\.string\.profile_delete_chat'\)\.id, 'Delete Chat'\)/);
@@ -146,6 +170,20 @@ async function checkMembership() {
   await assert.rejects(() => report.start(0), /Invalid chatId/);
   await assert.rejects(() => new reportMod.ReportChatUseCase(
     { send: () => Promise.reject(new Error('native status')) }).start(1), /Failed to report the chat/);
+
+  await report.submitComment(42, 'AQID', '  spam  ');
+  assert.equal(reportSent.at(-1).type, 'reportChat');
+  assert.equal(reportSent.at(-1).payload.optionId, 'AQID');
+  assert.equal(reportSent.at(-1).payload.text, 'spam', 'the comment is trimmed');
+  await assert.rejects(() => report.submitComment(42, 'AQID', '   '), /Report comment is required/);
+  await assert.rejects(() => report.submitComment(42, '', 'text'), /Invalid option/);
+  await assert.rejects(() => report.submitComment(0, 'AQID', 'text'), /Invalid chatId/);
+  const sentBeforeInvalidComment = reportSent.length;
+  await assert.rejects(() => report.submitComment(42, 'AQID', ' '), /Report comment is required/);
+  assert.equal(reportSent.length, sentBeforeInvalidComment, 'invalid comments never reach the gateway');
+  await assert.rejects(() => new reportMod.ReportChatUseCase(
+    { send: () => Promise.reject(new Error('native status')) }).submitComment(1, 'AQID', 'x'),
+    /Failed to report the chat/);
 
   const leaveWire = JSON.parse(serializer.buildTdlibRequestJson('leaveChat',
     serializer.serializeCommand(C.createLeaveChatCommand(42)).params));

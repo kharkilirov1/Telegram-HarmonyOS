@@ -653,6 +653,22 @@
       "value": "Could not report the chat"
     },
     {
+      "name": "chat_actions_report_comment_title",
+      "value": "Report Comment"
+    },
+    {
+      "name": "chat_actions_report_comment_placeholder",
+      "value": "Describe the problem"
+    },
+    {
+      "name": "chat_actions_report_comment_cancel",
+      "value": "Cancel"
+    },
+    {
+      "name": "chat_actions_report_comment_send",
+      "value": "Send"
+    },
+    {
       "name": "chat_actions_report_text_required",
       "value": "Telegram asks for a comment to finish this report"
     },

@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S12e (lead).** C10: шаг комментария в Report. `ReportChatUseCase.submitComment` (trim,
+  обязательный текст, option_id/chatId до gateway), `ChatActionsCoordinator.submitReportComment` +
+  host-колбэк `requestReportComment` (шаг `text` больше не тост), страница: `@Local`-state и
+  `TgReportCommentOverlay` (молекула, `@Param`/`@Event`), отправка/отмена/ошибки, 4 строки в 3
+  локалях. Контракт `test-chat-header-actions.cjs`: wire `reportChat` с option_id и обрезанным
+  текстом, валидация (пустой текст/option/chatId) до gateway, проводка coordinator/страницы/оверлея.
+  Гейты: host **120/120**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток C10: шаг выбора сообщений
+  (`reportChatResultMessagesRequired`), ролевые admin-пункты.
 - **S14c (lead).** Внешние chat-invite ссылки: команды `checkChatInviteLink`/`joinChatByInviteLink`
   (+сериализаторы), `ChatInviteLinkInfoDto` (chat_id 0 = не участник, title/description/
   member_count/creates_join_request/is_public/тип), `ChatInviteLinkUseCase` (валидация `t.me/+…`/

@@ -653,6 +653,22 @@
       "value": "Не удалось отправить жалобу"
     },
     {
+      "name": "chat_actions_report_comment_title",
+      "value": "Комментарий к жалобе"
+    },
+    {
+      "name": "chat_actions_report_comment_placeholder",
+      "value": "Опишите проблему"
+    },
+    {
+      "name": "chat_actions_report_comment_cancel",
+      "value": "Отмена"
+    },
+    {
+      "name": "chat_actions_report_comment_send",
+      "value": "Отправить"
+    },
+    {
       "name": "chat_actions_report_text_required",
       "value": "Telegram просит комментарий для завершения жалобы"
     },

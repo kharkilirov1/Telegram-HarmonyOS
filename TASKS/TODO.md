@@ -231,3 +231,7 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
   `t.me/+hash` откроется лишь при явном want/из приложения; нужен отдельный механизм
   (уточнение манифеста или фильтр в роутере при старте). Владелец: lead. Триггер: срез по
   App Linking.
+
+- [ ] **C10: Report не умеет выбор сообщений и ролевые admin-пункты.** Шаг комментария
+  закрыт; `reportChatResultMessagesRequired` — только тост; admin-пункты не показываются.
+  Владелец: lead.

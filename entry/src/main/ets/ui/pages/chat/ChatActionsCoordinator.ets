@@ -31,13 +31,15 @@ export class ChatActionsHost {
     titleProvider: () => string,
     tokenProvider: () => number,
     profileAction: () => void,
-    backAction: () => void
+    backAction: () => void,
+    reportCommentAction: (chatId: number, optionId: string) => void
   ) {
     this.uiContextProvider = uiContextProvider;
     this.titleProvider = titleProvider;
     this.tokenProvider = tokenProvider;
     this.profileAction = profileAction;
     this.backAction = backAction;
+    this.reportCommentHandler = reportCommentAction;
   }
 
   uiContext(): UIContext {
@@ -59,6 +61,13 @@ export class ChatActionsHost {
   handleBackPress(): void {
     this.backAction();
   }
+
+  private reportCommentHandler: (chatId: number, optionId: string) => void;
+
+  requestReportComment(chatId: number, optionId: string): void {
+    this.reportCommentHandler(chatId, optionId);
+  }
+
 }
 
 export class ChatActionsCoordinator {
@@ -335,9 +344,8 @@ export class ChatActionsCoordinator {
       return;
     }
     if (step.kind === 'text') {
-      // TDLib wants a free-text comment; the app has no report-comment input yet (debt C10).
-      this.toast(localized($r('app.string.chat_actions_report_text_required').id,
-        'Telegram asks for a comment to finish this report'));
+      // The page owns the comment panel; the reason id travels back with the text.
+      this.host.requestReportComment(chatId, step.optionId);
       return;
     }
     if (step.kind === 'messages') {
@@ -375,6 +383,28 @@ export class ChatActionsCoordinator {
       this.submitReportOption(chatId, option.id);
     }).catch((error: Error) => {
       hilog.warn(DOMAIN, TAG, 'Report options failed: %{public}s', error.message);
+    });
+  }
+
+  submitReportComment(chatId: number, optionId: string, text: string): Promise<void> {
+    const token: number = this.host.lifecycleToken();
+    return new Promise<void>((resolve: () => void, reject: (error: Error) => void): void => {
+      try {
+        const useCase = createReportChatUseCase(getTdGatewayAdapter());
+        useCase.submitComment(chatId, optionId, text).then((step: ReportChatStepDto) => {
+          if (token === this.host.lifecycleToken()) {
+            this.handleReportStep(chatId, step);
+          }
+          resolve();
+        }).catch((error: Error) => {
+          hilog.error(DOMAIN, TAG, 'Report comment failed: %{public}s', error.message);
+          this.toast(localized($r('app.string.chat_actions_report_failed').id, 'Could not report the chat'));
+          reject(error);
+        });
+      } catch (error) {
+        hilog.error(DOMAIN, TAG, 'Report use case init failed: %{public}s', String(error));
+        reject(error as Error);
+      }
     });
   }
 
