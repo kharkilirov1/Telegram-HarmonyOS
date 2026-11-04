@@ -3,9 +3,8 @@
 //
 // iOS geometry: ChatInputPanelNode.defaultHeight = 40; the node lays out circular 40x40 glass buttons
 // spread across the panel width (ChatMessageSelectionInputPanelNode.swift:581-597) and dims them via
-// HighlightTrackingButton on press. Copy has no icon resource in this project, so it renders the same
-// circular button with a copy glyph instead of an asset — visual parity stays partial, interaction
-// parity does not (all four buttons share size, shape and native press feedback).
+// HighlightTrackingButton on press: every action renders a circular icon button with the same size,
+// shape and native press feedback; copy uses the doc.on.doc-shaped SVG like iOS.
 
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgGlassPolicy } from '../tokens/TgGlassPolicy';
@@ -83,7 +82,7 @@ export struct TgSelectionPanel {
         .textAlign(TextAlign.Center)
 
       Row() {
-        this.buildGlyphButton(TgUiTokens.SELECTION_PANEL_COPY_GLYPH, $r('app.string.action_copy'),
+        this.buildIconButton(TgUiTokens.SELECTION_PANEL_COPY_ICON, $r('app.string.action_copy'),
           this.canCopy, () => {
             this.onCopy();
           })

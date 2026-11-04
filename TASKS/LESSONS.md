@@ -1086,3 +1086,12 @@ Last updated: 2026-10-23
   import injected explicitly; otherwise the suite fails with `X is not defined` at module-eval time.
 - Keep the sender set and the legacy scalar fields in sync in one pure helper instead of duplicating
   the rules in the reducer and the header formatter.
+
+## 217. New media assets go in base/media as SVG and reach the panel through a token
+
+- HarmonyOS renders `Image($r('app.media.x'))` with `fillColor`, so a monochrome SVG mirroring an SF
+  Symbol is enough for icon parity; no raster export step is needed.
+- Do not delete the old text-glyph token when a demo still uses it; add the icon token beside it and let
+  the contract assert that the production panel no longer calls the glyph builder.
+- Regex replacements are safer than literal anchors for indented multi-line calls; a wrong leading-space
+  count silently fails the anchor even when the text looks identical.

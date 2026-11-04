@@ -66,6 +66,7 @@
 | H4b | Кэш: график и авто-лимит (H4) | H4 | `shouldAutoEnforce`/`autoEnforce`, полоса занятости total/limit, авто-применение после статистики, контракт расширен; остаток — диаграмма по категориям |
 | H4c | Сегментированная диаграмма кэша (H4) | H4 | `StorageUsageSegment` + `storageChartScale`/`storageSegmentPercent`, `TgStorageUsageChart` с легендой, токены категорий; остаток — анимация/пропорции |
 | C2b | Мульти-typing в группе (C2) | C2 | `ChatTypingInfo.senders`, `applyTypingAction`, формат «A и ещё N», суита `test-multi-typing.cjs`; остаток — пульсация точек |
+| C9b | Иконка Copy в панели выделения (C9) | C9 | SVG `ic_selection_copy` + `SELECTION_PANEL_COPY_ICON`, copy через `buildIconButton`, паспорт обновлён; остаток — witness |
 | S12b | Меню действий в шапке чата (C10) | C10 | `showMoreAction`/`onMorePress` в `TgChatTopBar`, меню Chat Info / Mute / Clear History / Delete в `TgChatScreenPage`, live-store состояние, контракт `test-chat-header-actions.cjs`, smoke-пин на 4 действия; C10 → `available` |
 | S12c | Leave Chat и Share My Contact (C10) | C10 | `leaveChat` + `inputMessageContact` (команды/сериализаторы), `LeaveChatUseCase`/`ShareMyContactUseCase`, пятый контекстный пункт меню в шапке, 6 строк в 3 локалях, контракт расширен |
 | S12d | Report с причинами + `ChatActionsCoordinator` (C10) | C10 | `reportChat`/`ReportChatDto`/`ReportChatUseCase`, `canBeReported` в модели/DTO/reducer, шестой пункт меню, меню вынесено в координатор (страница ≤500 строк), контракт расширен |

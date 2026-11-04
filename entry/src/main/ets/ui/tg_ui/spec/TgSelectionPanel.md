@@ -51,3 +51,10 @@ iOS: `ChatInputPanelNode.defaultHeight` = 40, кнопки — круги 40×40
 `TgChatScreenPage`: при `timeline.selectionActive` вместо `TgChatComposerDock` рендерится
 `TgSelectionPanel`; действия уходят в session → `ChatMessagePopupCoordinator`
 (copy/forward/delete/clear), модель выбора — `selectedMessageIds` в `ChatTimelineViewState`.
+
+## Copy icon (C9)
+
+- Copy uses `SELECTION_PANEL_COPY_ICON` (`app.media.ic_selection_copy`), an SVG shaped like the
+  iOS SF Symbol `doc.on.doc`; the text glyph token remains only for the debug demo.
+- All four actions render the same circular icon button through `buildIconButton`, so press feedback,
+  size and disabled tint stay identical.

@@ -1563,6 +1563,8 @@ export class TgUiTokens {
   static readonly SELECTION_PANEL_ACTION_GAP: number = 8;
   static readonly SELECTION_PANEL_TEXT_SIZE: number = 15;
   static readonly SELECTION_PANEL_TEXT_WEIGHT = FontWeight.Medium;
+  // iOS uses SF Symbol doc.on.doc; the SVG mirrors that shape so copy matches the other actions.
+  static readonly SELECTION_PANEL_COPY_ICON: Resource = $r('app.media.ic_selection_copy');
   static readonly SELECTION_PANEL_COPY_GLYPH: string = '⧉';
   static readonly SELECTION_PANEL_REPORT_GLYPH: string = '⚠';
   static readonly SELECTION_PANEL_BG: Resource = $r('app.color.composer_glass_tint');

@@ -146,6 +146,12 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **C9-остаток (lead).** Иконка копирования: SVG-ассет `ic_selection_copy` в форме iOS SF Symbol
+  `doc.on.doc`, токен `SELECTION_PANEL_COPY_ICON`, панель рисует copy через общий `buildIconButton`
+  (как forward/delete/report) — одинаковая геометрия, press-feedback и disabled-тинт; текстовый глиф
+  остаётся только в демо. Паспорт `spec/TgSelectionPanel.md` дополнен разделом Copy icon. Контракт
+  `test-selection-mode.cjs`: наличие токена/ассета, `buildIconButton` для copy, отсутствие глифа.
+  Гейты: host **124/124**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток C9: device-witness.
 - **C2-остаток (lead).** Мульти-typing в группе: `ChatTypingInfo.senders` (до 5, новые первыми) +
   чистая `applyTypingAction` (upsert/cancel, undefined при последнем cancel), reducer кладёт набор в
   `typingActions`, шапка форматирует «A»/«A и B»/«A и ещё N» через `formatTypingActors`, mode = Typing

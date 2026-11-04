@@ -228,9 +228,20 @@ assert.match(deleteSource, /confirm\(availability, host, current, ids\.length\)/
   'the controller passes the selection size into the confirmation');
 
 for (const token of ['SELECTION_PANEL_HEIGHT', 'SELECTION_PANEL_BG', 'SELECTION_PANEL_BUTTON_SIZE',
-  'SELECTION_PANEL_BUTTON_ICON_SIZE', 'SELECTION_PANEL_COPY_GLYPH', 'SELECTION_CHECK_LANE_WIDTH',
+  'SELECTION_PANEL_BUTTON_ICON_SIZE', 'SELECTION_PANEL_COPY_ICON', 'SELECTION_PANEL_COPY_GLYPH',
+    'SELECTION_CHECK_LANE_WIDTH',
   'SELECTION_CHECK_GLYPH']) {
   assert.ok(tokens.includes(token), `missing token ${token}`);
+  // C9 copy icon: the panel renders the SVG asset instead of a text glyph.
+  const panelSource = fs.readFileSync(path.join(root,
+    'entry/src/main/ets/ui/tg_ui/molecules/TgSelectionPanel.ets'), 'utf8');
+  assert.match(panelSource, /buildIconButton\(TgUiTokens\.SELECTION_PANEL_COPY_ICON/);
+  assert.ok(!panelSource.includes('buildGlyphButton(TgUiTokens.SELECTION_PANEL_COPY_GLYPH'),
+    'copy no longer uses the text glyph');
+  assert.ok(fs.existsSync(path.join(root,
+    'entry/src/main/resources/base/media/ic_selection_copy.svg')), 'copy icon asset exists');
+  assert.match(fs.readFileSync(path.join(root, 'entry/src/main/ets/ui/tg_ui/tokens/TgUiTokens.ets'), 'utf8'),
+    /SELECTION_PANEL_COPY_ICON: Resource = \$r\('app\.media\.ic_selection_copy'\);/);
 }
 // iOS parity: the bar is an input-panel row of 40x40 buttons, not full-height text buttons.
 assert.match(tokens, /SELECTION_PANEL_HEIGHT: number = 40;/);
