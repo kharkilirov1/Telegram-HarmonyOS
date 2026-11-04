@@ -1066,3 +1066,13 @@ Last updated: 2026-10-23
   contract was wrong. Assert the real defaults so the wire stays honest about which bound applies.
 - Test helpers differ per suite: the cache-limit suite auto-collects exports (`storage.X`), so reusing
   an ad-hoc name (`loadMod`) fails with a ReferenceError that reads like a module bug.
+
+## 215. Percentage bars need px-agnostic widths and a clamped scale
+
+- ArkUI accepts a percentage width string for a `Row`, so a stacked bar can stay layout-driven
+  (`percent.toString() + "%"`) instead of measuring pixels; clamping each segment at 100 keeps the bar
+  honest when a category alone exceeds the limit.
+- Scale selection belongs in a pure function (`storageChartScale`): a limit wins over the total, and a
+  zero total must not divide by zero. That made the chart testable without mounting ArkUI.
+- Keep chart colors in tokens (`STORAGE_CHART_*`) built from existing palette resources; do not inline
+  color values in a molecule.

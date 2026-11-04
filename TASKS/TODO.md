@@ -221,9 +221,9 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
 - [ ] **Revoke and reissue the exposed API key** `sk-or-v1-…` (visible in the 2026-08-29 audit
   screenshots) and delete both messages in the File chat, including the prompt-injection text.
 
-- [ ] **H4: нет iOS-диаграммы занятости по категориям.** Полоса total/limit
-  и авто-лимит есть, но iOS рисует сегментированную диаграмму (media/db/language packs/logs) с
-  легендой. Владелец: lead. Триггер: визуальный паритет H4.
+- [ ] **H4: диаграмма без анимации и iOS-пропорций.** Сегменты и легенда
+  есть; iOS анимирует переход и использует свои отступы/толщину. Владелец: lead. Триггер:
+  полировка визуала H4.
 
  TODO — Telegram-HarmonyOS
 

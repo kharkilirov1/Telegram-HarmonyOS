@@ -106,6 +106,20 @@ assert.equal(storage.shouldAutoEnforce(0, 4096), false, 'no limit means no enfor
 assert.equal(storage.shouldAutoEnforce(-1, 4096), false);
 assert.equal(storage.shouldAutoEnforce(1024, -5), false);
 
+// H4c: the segmented chart scales to the limit when one is set, otherwise to the total.
+const segMod = load('core/model/StorageUsageSegment.ets');
+assert.equal(segMod.storageChartScale(4096, 1024), 1024, 'a limit wins over the total');
+assert.equal(segMod.storageChartScale(4096, 0), 4096);
+assert.equal(segMod.storageChartScale(0, 0), 0);
+assert.equal(segMod.storageSegmentPercent(512, 1024), 50);
+assert.equal(segMod.storageSegmentPercent(2048, 1024), 100, 'a segment never exceeds the bar');
+assert.equal(segMod.storageSegmentPercent(0, 1024), 0);
+assert.equal(segMod.storageSegmentPercent(-5, 1024), 0);
+assert.equal(segMod.storageSegmentPercent(512, 0), 0);
+const segment = new segMod.StorageUsageSegment('Media', 512, 0);
+assert.equal(segment.label, 'Media');
+assert.equal(segment.bytes, 512);
+
 const page = read('ui/pages/settings/TgDataStoragePage.ets');
   assert.match(page, /@Local private cacheLimitBytes: number = 0;/);
   assert.match(page, /preferences\.getPreferencesSync\(context, \{ name: 'storage_settings' \}\)/);
@@ -126,6 +140,18 @@ assert.match(page, /useCase\.autoEnforce\(this\.cacheLimitBytes, this\.totalSize
 assert.match(page, /this\.autoEnforceAttempted/);
 assert.match(page, /data_storage_limit_enforced/);
 assert.match(page, /this\.buildUsageBar\(\)/);
+// H4c: the flat bar is replaced by the segmented chart component.
+assert.match(page, /private usageSegments\(\): StorageUsageSegment\[\] \{/);
+assert.match(page, /new StorageUsageSegment\(localized\(\$r\('app\.string\.data_storage_files'\)\.id, 'Media files'\)/);
+assert.match(page, /scaleBytes: storageChartScale\(this\.totalSize, this\.cacheLimitBytes\)/);
+assert.match(page, /TgStorageUsageChart\(\{/);
+const chart = read('ui/tg_ui/molecules/TgStorageUsageChart.ets');
+assert.match(chart, /export struct TgStorageUsageChart/);
+assert.match(chart, /@Param segments: StorageUsageSegment\[\] = \[\];/);
+assert.match(chart, /@Param scaleBytes: number = 0;/);
+assert.match(chart, /storageSegmentPercent\(segment\.bytes, this\.scaleBytes\)/);
+assert.match(chart, /STORAGE_CHART_MEDIA/);
+assert.match(chart, /storageSegmentPercent\(segment\.bytes, this\.scaleBytes\)\.toString\(\) \+ '%'/);
 
   for (const locale of ['base', 'ru_RU', 'zh_CN']) {
     const strings = JSON.parse(fs.readFileSync(

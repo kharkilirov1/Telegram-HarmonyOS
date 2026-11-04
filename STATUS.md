@@ -146,6 +146,13 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **H4c (lead).** Кэш: сегментированная диаграмма. `StorageUsageSegment` + чистые
+  `storageChartScale`/`storageSegmentPercent` (шкала = лимит, иначе total; сегмент не превышает
+  100%), молекула `TgStorageUsageChart` (stacked-полоса, легенда, 4 токена
+  `STORAGE_CHART_*`), страница собирает сегменты из files/database/languagePacks/logs и передаёт
+  caption; плоская полоса заменена. Контракт `test-cache-limit.cjs`: шкала, проценты (в т.ч. clamped
+  100 и нули), модель сегмента, проводка страницы и компонента. Гейты: host **123/123**, оба smoke,
+  hvigor BUILD SUCCESSFUL. Остаток H4: анимация/точные iOS-пропорции, witness.
 - **H4-остаток (lead).** Кэш: график занятости (полоса `total / limit`, красная при достижении,
   подпись `formatStorageBytes(total) / formatStorageBytes(limit)`, без лимита — просто total) и
   авто-применение лимита: `shouldAutoEnforce(limit, usage)` + `autoEnforce` в

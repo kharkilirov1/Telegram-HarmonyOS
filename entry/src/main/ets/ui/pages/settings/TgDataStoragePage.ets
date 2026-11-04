@@ -19,6 +19,11 @@ import {
   StorageChatUsageDto,
   formatStorageBytes
 } from '../../../core/model/dto/StorageStatisticsDto';
+import {
+  StorageUsageSegment,
+  storageChartScale
+} from '../../../core/model/StorageUsageSegment';
+import { TgStorageUsageChart } from '../../tg_ui/molecules/TgStorageUsageChart';
 import { TgChatTopBar } from '../../tg_ui/atoms/TgChatTopBar';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { computeTopBarHeight } from '../../utils/SafeAreaUtils';
@@ -151,6 +156,19 @@ export struct TgDataStoragePage {
     return ratio > 1 ? 1 : ratio;
   }
 
+  // Category split for the chart; labels reuse the row strings so both views stay consistent.
+  private usageSegments(): StorageUsageSegment[] {
+    return [
+      new StorageUsageSegment(localized($r('app.string.data_storage_files').id, 'Media files'),
+        this.filesSize, 0),
+      new StorageUsageSegment(localized($r('app.string.data_storage_database').id, 'Database'),
+        this.databaseSize, 1),
+      new StorageUsageSegment(localized($r('app.string.data_storage_language_packs').id, 'Language packs'),
+        this.languagePackSize, 2),
+      new StorageUsageSegment(localized($r('app.string.data_storage_logs').id, 'Logs'), this.logSize, 3)
+    ];
+  }
+
   private usageCaption(): string {
     if (this.cacheLimitBytes <= 0) {
       return formatStorageBytes(this.totalSize);
@@ -160,38 +178,11 @@ export struct TgDataStoragePage {
 
   @Builder
   private buildUsageBar() {
-    Column() {
-      Row() {
-        Text(localized($r('app.string.data_storage_total').id, 'Total'))
-          .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
-          .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
-          .layoutWeight(1)
-        Text(this.usageCaption())
-          .fontSize(TgUiTokens.FONT_META_SIZE)
-          .fontColor(TgUiTokens.COLOR_TEXT_META)
-      }
-      .width('100%')
-
-      Stack({ alignContent: Alignment.Start }) {
-        Row()
-          .width('100%')
-          .height(6)
-          .borderRadius(3)
-          .backgroundColor(TgUiTokens.COLOR_SEPARATOR)
-        Row()
-          .width((this.usageFillRatio() * 100).toString() + '%')
-          .height(6)
-          .borderRadius(3)
-          .backgroundColor(this.usageFillRatio() >= 1
-            ? TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE
-            : TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT)
-      }
-      .width('100%')
-      .margin({ top: TgUiTokens.SPACE_8 })
-    }
-    .width('100%')
-    .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16, top: TgUiTokens.SPACE_8,
-      bottom: TgUiTokens.SPACE_8 })
+    TgStorageUsageChart({
+      segments: this.usageSegments(),
+      scaleBytes: storageChartScale(this.totalSize, this.cacheLimitBytes),
+      caption: this.usageCaption()
+    })
   }
 
   private chatTitle(chatId: number): string {

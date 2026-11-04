@@ -1402,6 +1402,11 @@ export class TgUiTokens {
   static readonly CHAT_CONTEXT_MENU_BG: Resource = $r('app.color.chat_list_surface_bg');
   static readonly CHAT_CONTEXT_MENU_TEXT: Resource = $r('app.color.text_primary');
   static readonly CHAT_CONTEXT_MENU_DESTRUCTIVE: Resource = $r('app.color.settings_icon_red');
+  // H4c storage chart categories; the palette reuses existing platform colors.
+  static readonly STORAGE_CHART_MEDIA: Resource = $r('app.color.telegram_blue');
+  static readonly STORAGE_CHART_DATABASE: Resource = $r('app.color.settings_icon_green');
+  static readonly STORAGE_CHART_LANGUAGE_PACKS: Resource = $r('app.color.settings_icon_orange');
+  static readonly STORAGE_CHART_LOGS: Resource = $r('app.color.settings_icon_red');
   static readonly CHAT_CONTEXT_MENU_SEPARATOR: Resource = $r('app.color.separator');
   static readonly SWIPE_ACTION_DELETE: Resource = $r('app.color.settings_icon_red');
   static readonly SWIPE_ACTION_ARCHIVE: Resource = $r('app.color.swipe_pin');
