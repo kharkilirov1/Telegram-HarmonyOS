@@ -146,6 +146,13 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **D11-thread-page (lead).** Страница комментариев `TgMessageThreadPage` (route `TgMessageThreadPage`,
+  params `MessageThreadRouteParams`): заголовок с reply-count, список комментариев (автор из users-store,
+  время, текст), пагинация по `next_offset` через `onReachEnd`, состояния loading/empty/error+retry,
+  lifecycle-токен против устаревших ответов; парсер дополнен `MessageThreadComment` (id, senderUserId,
+  date, text, isOutgoing). 4 строки в base/ru/zh. Суита `test-message-thread.cjs` расширена (парсер
+  комментариев, контракт страницы/роута/параметров, лимит 500 строк, локали). Гейты: host **132/132**,
+  оба smoke, hvigor BUILD SUCCESSFUL. Остаток D11: точка входа из поста, отправка комментария, witness.
 - **D11-thread-data (lead).** Слой данных комментариев: команды `getMessageThread` и
   `getMessageThreadHistory` (payload/фабрики), сериализатор с raw int64 для message_id/from_message_id,
   парсеры `MessageThreadPage` (reply_count из `reply_info`, unread из top-level `unread_message_count`,

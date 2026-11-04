@@ -813,6 +813,22 @@
       "value": "Administrators"
     },
     {
+      "name": "comments_title",
+      "value": "Comments"
+    },
+    {
+      "name": "comments_count",
+      "value": "comments"
+    },
+    {
+      "name": "comments_empty",
+      "value": "No comments yet"
+    },
+    {
+      "name": "comments_load_failed",
+      "value": "Could not load comments"
+    },
+    {
       "name": "unblock",
       "value": "Unblock"
     },

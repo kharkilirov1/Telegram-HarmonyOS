@@ -32,7 +32,7 @@ async function main() {
   const U = load('domain/usecases/messageThread.ets',
     ['MessageThreadUseCase', 'createMessageThreadUseCase', 'createMessageThreadPageFromTd',
       'createMessageThreadHistoryFromTd', 'isValidThreadMessageId', 'MESSAGE_THREAD_MAX_LIMIT',
-      'MessageThreadPage'],
+      'MessageThreadPage', 'MessageThreadComment'],
     { ...C, ...errors, ...accessors, TdObject, hilog });
 
   // Wire ------------------------------------------------------------------------------------------
@@ -83,6 +83,64 @@ async function main() {
   assert.equal(history.nextFromMessageId, '13');
   assert.deepEqual(history.messageIds, ['10']);
   assert.equal(U.createMessageThreadHistoryFromTd(TdObject.fromJSON('{"@type":"ok"}')), undefined);
+
+  // Comment rows ----------------------------------------------------------------------------------
+  const withComments = U.createMessageThreadHistoryFromTd(TdObject.fromJSON(JSON.stringify({
+    '@type': 'messages', total_count: 3, next_offset: '0', messages: [
+      { '@type': 'message', id: '21', date: 1700000000, is_outgoing: 0,
+        sender_id: { '@type': 'messageSenderUser', user_id: 55 },
+        content: { '@type': 'messageText', text: { '@type': 'formattedText', text: 'First comment' } } },
+      { '@type': 'message', id: '22', date: 1700000100, is_outgoing: 1,
+        sender_id: { '@type': 'messageSenderChat', chat_id: -100777 },
+        content: { '@type': 'messageText', text: { '@type': 'formattedText', text: 'Second comment' } } },
+      { '@type': 'message', id: '23', date: 0, is_outgoing: 0,
+        sender_id: { '@type': 'messageSenderUser', user_id: 0 },
+        content: { '@type': 'messagePhoto', caption: { '@type': 'formattedText', text: 'pic' } } }
+    ]
+  })));
+  assert.equal(withComments.comments.length, 3);
+  assert.equal(withComments.comments[0].messageId, '21');
+  assert.equal(withComments.comments[0].senderUserId, 55);
+  assert.equal(withComments.comments[0].date, 1700000000);
+  assert.equal(withComments.comments[0].text, 'First comment');
+  assert.equal(withComments.comments[0].isOutgoing, false);
+  assert.equal(withComments.comments[1].isOutgoing, true);
+  assert.equal(withComments.comments[1].senderUserId, 0, 'a chat sender has no user id');
+  assert.equal(withComments.comments[2].text, '', 'a photo comment has no text preview');
+  assert.deepEqual(withComments.comments.map((row) => row.messageId), ['21', '22', '23']);
+
+  // Page and route --------------------------------------------------------------------------------
+  const pageSource = read('ui/pages/chat/TgMessageThreadPage.ets');
+  assert.match(pageSource, /export struct TgMessageThreadPage/);
+  assert.match(pageSource, /export function TgMessageThreadPageBuilder\(\)/);
+  assert.match(pageSource, /createMessageThreadUseCase\(getTdGatewayAdapter\(\)\)/);
+  assert.match(pageSource, /useCase\.loadThread\(this\.chatId, this\.messageId\)/);
+  assert.match(pageSource, /useCase\.loadHistory\(this\.chatId, this\.messageId, this\.nextCursor, 0, THREAD_PAGE_SIZE\)/);
+  assert.match(pageSource, /this\.comments = this\.comments\.concat\(page\.comments\)/);
+  assert.match(pageSource, /\.onReachEnd\(\(\) => \{/);
+  assert.match(pageSource, /this\.pageLifecycleToken/, 'stale responses are dropped');
+  assert.match(pageSource, /comments_empty/);
+  assert.match(pageSource, /comments_load_failed/);
+  assert.ok(pageSource.split('\n').length <= 500, 'page stays within the owner ceiling');
+
+  const routeParams = read('ui/pages/chat/messageThreadRoute.ets');
+  assert.match(routeParams, /export class MessageThreadRouteParams/);
+  for (const field of ['chatId', 'messageId', 'title', 'replyCount']) {
+    assert.ok(routeParams.includes(field), 'route param ' + field);
+  }
+  const routes = JSON.parse(fs.readFileSync(
+    path.join(root, '../resources/base/profile/route_map.json'), 'utf8'));
+  const route = routes.routerMap.find((item) => item.name === 'TgMessageThreadPage');
+  assert.ok(route, 'the thread route is registered');
+  assert.equal(route.buildFunction, 'TgMessageThreadPageBuilder');
+  assert.equal(route.pageSourceFile, 'src/main/ets/ui/pages/chat/TgMessageThreadPage.ets');
+  for (const locale of ['base', 'ru_RU', 'zh_CN']) {
+    const strings = JSON.parse(fs.readFileSync(
+      path.join(root, '../resources/' + locale + '/element/string.json'), 'utf8'));
+    for (const name of ['comments_title', 'comments_count', 'comments_empty', 'comments_load_failed']) {
+      assert.ok(strings.string.find((item) => item.name === name), locale + ' has ' + name);
+    }
+  }
 
   // Id validation ---------------------------------------------------------------------------------
   assert.equal(U.isValidThreadMessageId('9007199254740993'), true);

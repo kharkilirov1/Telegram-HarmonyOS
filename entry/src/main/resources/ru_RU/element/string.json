@@ -813,6 +813,22 @@
       "value": "Администраторы"
     },
     {
+      "name": "comments_title",
+      "value": "Комментарии"
+    },
+    {
+      "name": "comments_count",
+      "value": "комментариев"
+    },
+    {
+      "name": "comments_empty",
+      "value": "Комментариев пока нет"
+    },
+    {
+      "name": "comments_load_failed",
+      "value": "Не удалось загрузить комментарии"
+    },
+    {
       "name": "unblock",
       "value": "Разблокировать"
     },

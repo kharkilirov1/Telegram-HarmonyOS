@@ -15,7 +15,7 @@ import {
   tdGetNumber,
   tdGetObject,
   tdGetString
-} from '../../utils/tdAccessors';
+} from '../../core/utils/tdAccessors';
 import { TdGatewayPort } from '../ports/TdGatewayPort';
 
 const DOMAIN = 0x004B;
@@ -26,6 +26,42 @@ export function isValidThreadMessageId(messageId: string): boolean {
   return /^[1-9][0-9]{0,18}$/.test(messageId);
 }
 
+// One comment row, parsed from the message object TDLib returns in the thread history.
+export class MessageThreadComment {
+  messageId: string = '0';
+  senderUserId: number = 0;
+  date: number = 0;
+  text: string = '';
+  isOutgoing: boolean = false;
+}
+
+function parseComment(td: TdObject): MessageThreadComment | undefined {
+  const messageId = tdGetInt64(td, 'id');
+  if (!isValidThreadMessageId(messageId)) {
+    return undefined;
+  }
+  const comment = new MessageThreadComment();
+  comment.messageId = messageId;
+  const sender = tdGetObject(td, 'sender_id');
+  if (sender !== undefined) {
+    const userId = tdGetNumber(sender, 'user_id');
+    comment.senderUserId = typeof userId === 'number' && Number.isSafeInteger(userId) && userId > 0 ? userId : 0;
+  }
+  const date = tdGetNumber(td, 'date');
+  comment.date = typeof date === 'number' && Number.isSafeInteger(date) && date > 0 ? date : 0;
+  const outgoing = tdGetNumber(td, 'is_outgoing');
+  comment.isOutgoing = outgoing === 1;
+  const content = tdGetObject(td, 'content');
+  if (content !== undefined && content.getTopLevelStringStrict('@type') === 'messageText') {
+    const textObject = tdGetObject(content, 'text');
+    if (textObject !== undefined) {
+      const text = tdGetString(textObject, 'text');
+      comment.text = text ?? '';
+    }
+  }
+  return comment;
+}
+
 // One page of replies plus the thread counters the header shows.
 export class MessageThreadPage {
   chatId: number = 0;
@@ -34,6 +70,7 @@ export class MessageThreadPage {
   unreadCount: number = 0;
   messageIds: string[] = [];
   nextFromMessageId: string = '0';
+  comments: MessageThreadComment[] = [];
 }
 
 function parseReplyCount(td: TdObject | undefined): number {
@@ -67,6 +104,10 @@ export function createMessageThreadPageFromTd(td: TdObject): MessageThreadPage |
       if (isValidThreadMessageId(messageId)) {
         page.messageIds.push(messageId);
       }
+      const comment = parseComment(message);
+      if (comment !== undefined) {
+        page.comments.push(comment);
+      }
     }
   }
   return page;
@@ -88,6 +129,10 @@ export function createMessageThreadHistoryFromTd(td: TdObject): MessageThreadPag
       const messageId = tdGetInt64(message, 'id');
       if (isValidThreadMessageId(messageId)) {
         page.messageIds.push(messageId);
+      }
+      const comment = parseComment(message);
+      if (comment !== undefined) {
+        page.comments.push(comment);
       }
     }
   }

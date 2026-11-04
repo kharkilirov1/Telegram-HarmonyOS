@@ -1238,3 +1238,12 @@ Last updated: 2026-10-23
   the fixture used the real schema. Dump the td_api.tl line for the object before writing a parser.
 - Added trailing-newline and count assertions early in a new suite pay for themselves: two schema slips were
   found before the suite ever reached the wire assertions.
+
+## 232. New page: copy the token names from the token file, not from memory
+
+- `COLOR_TEXT_PRIMARY`, `CHAT_ROW_TIME_FONT_SIZE`, `COLOR_ACCENT`, `SPACE_32` do not exist; the live names
+  are `COLOR_TEXT_TITLE`, `COLOR_TEXT_PREVIEW`, `CHAT_ROW_PREVIEW_FONT_SIZE`, `LINK_PREVIEW_ACCENT_INCOMING`,
+  `COLOR_BG_PRIMARY`. Grep `TgUiTokens.ets` before writing a new page.
+- `TgChatTopBar` exposes `@Event onBackPress`, not `onBack`, and `TdObject` has no `getTopLevelBool` — read
+  booleans with `tdGetNumber` and compare to 1.
+- Store singletons are reached through `getAppCoreRuntime().getStore()`; there is no module-level `getStore`.
