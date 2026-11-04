@@ -1247,3 +1247,12 @@ Last updated: 2026-10-23
 - `TgChatTopBar` exposes `@Event onBackPress`, not `onBack`, and `TdObject` has no `getTopLevelBool` — read
   booleans with `tdGetNumber` and compare to 1.
 - Store singletons are reached through `getAppCoreRuntime().getStore()`; there is no module-level `getStore`.
+
+## 233. Comments availability comes from interaction_info, not is_channel_post alone
+
+- A channel post has `is_channel_post: true` even without a discussion; comments exist only when
+  `interaction_info.reply_info.reply_count > 0`. Gate the menu item on both or every post grows a dead entry.
+- The row fields live on the timeline row (`entry.message`), not on `ChatTimelineEntryVO`; patching
+  `entry.isChannelPost` compiles nowhere. Follow the existing `entry.message.*` access style.
+- Loading the full `MessageDto` parser in a CJS suite drags its content-parser dependency graph; assert the
+  wire-level parse lines in source and keep runtime tests on the narrow parser under test.

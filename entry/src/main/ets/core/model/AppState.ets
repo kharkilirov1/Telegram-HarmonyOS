@@ -319,6 +319,9 @@ export class Message {
   content: MessageContent = new MessageContent();
   timestamp: number = 0;
   isOutgoing: boolean = false;
+  // D11: channel posts carry a comment thread when reply_info.reply_count > 0.
+  isChannelPost: boolean = false;
+  replyCount: number = 0;
   isRead: boolean = false;
   isPending: boolean = false;
   editDate: number = 0;

@@ -146,6 +146,13 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **D11-thread-entry (lead).** Вход в комментарии: `MessageDto.isChannelPost` (`is_channel_post`) и
+  `replyCount` (`interaction_info.reply_info.reply_count`) проходят DTO→Message→reducer→VO→rows;
+  меню сообщения канала показывает Comments (N) при наличии треда, обработчик пушит маршрут через
+  `openMessageThread`/`MessageThreadRouteParams`. Строка `action_comments` в base/ru/zh. Суита
+  `test-message-thread.cjs` расширена: парсинг полей, VO/reducer/menu/nav-контракт, route params.
+  Гейты: host **132/132**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток D11: отправка комментария,
+  witness.
 - **D11-thread-page (lead).** Страница комментариев `TgMessageThreadPage` (route `TgMessageThreadPage`,
   params `MessageThreadRouteParams`): заголовок с reply-count, список комментариев (автор из users-store,
   время, текст), пагинация по `next_offset` через `onReachEnd`, состояния loading/empty/error+retry,

@@ -123,6 +123,8 @@ export class ChatMessageRowVO {
   sourceMessageIds: string[] = [];
   text: string = '';
   isOutgoing: boolean = false;
+  isChannelPost: boolean = false;
+  replyCount: number = 0;
   isEmojiOnly: boolean = false;
   timeText: string = '';
   editedText: string = '';
@@ -902,6 +904,8 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   row.messageId = message.id;
   row.sourceMessageIds = [message.id];
   row.isOutgoing = message.isOutgoing;
+  row.isChannelPost = message.isChannelPost;
+  row.replyCount = message.replyCount;
   row.timeText = formatMessageTime(message.timestamp);
   row.editedText = message.editDate > 0
     ? localizedString($r('app.string.message_edited').id, 'edited')

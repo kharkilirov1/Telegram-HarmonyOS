@@ -8,6 +8,7 @@ import { ChatAdministratorsRouteParams } from './chatAdministratorsRoute';
 import { ChatPermissionsRouteParams } from './chatPermissionsRoute';
 import { ChatAutoDeleteRouteParams } from './chatAutoDeleteRoute';
 import { ChatScheduledMessagesRouteParams } from './chatScheduledMessagesRoute';
+import { MessageThreadRouteParams } from './messageThreadRoute';
 
 export function currentAccountUserId(): number {
   try {
@@ -64,5 +65,15 @@ export function openPermissionsScreen(stack: NavPathStack | undefined, chatId: n
     return false;
   }
   stack.pushPathByName('TgChatPermissionsPage', new ChatPermissionsRouteParams(chatId));
+  return true;
+}
+
+// D11: open the comment thread of a channel post.
+export function openMessageThread(stack: NavPathStack | undefined, chatId: number, messageId: string,
+  title: string, replyCount: number): boolean {
+  if (stack === undefined || chatId <= 0 || messageId === '0') {
+    return false;
+  }
+  stack.pushPathByName('TgMessageThreadPage', new MessageThreadRouteParams(chatId, messageId, title, replyCount));
   return true;
 }

@@ -197,6 +197,8 @@ function messageFromDto(dto: MessageDto): Message {
   message.reactions = buildReactionChips(dto.reactionKeys, dto.reactionCounts, dto.reactionChosen);
   message.timestamp = dto.timestamp;
   message.isOutgoing = dto.isOutgoing;
+  message.isChannelPost = dto.isChannelPost;
+  message.replyCount = dto.replyCount;
   message.isRead = dto.isRead;
   message.isPending = dto.sendingState === 'failed' ? false : dto.isPending;
   message.editDate = dto.editDate;
@@ -345,6 +347,8 @@ function cloneMessage(msg: Message): Message {
   clone.reactions = msg.reactions.map((chip) => chip.clone());
   clone.timestamp = msg.timestamp;
   clone.isOutgoing = msg.isOutgoing;
+  clone.isChannelPost = msg.isChannelPost;
+  clone.replyCount = msg.replyCount;
   clone.isRead = msg.isRead;
   clone.isPending = msg.isPending;
   clone.editDate = msg.editDate;

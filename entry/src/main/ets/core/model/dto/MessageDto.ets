@@ -181,6 +181,8 @@ export class MessageDto {
   reactionChosen: boolean[] = [];
   timestamp: number = 0;
   isOutgoing: boolean = false;
+  isChannelPost: boolean = false;
+  replyCount: number = 0;
   isRead: boolean = false;
   isPending: boolean = false;
   // Authoritative TDLib state retained when new/history messages are hydrated.
@@ -530,6 +532,13 @@ export function createMessageDtoFromTd(tdMessage: TdObject, suppressErrorMessage
   const tdDate = tdGetNumber(tdMessage, 'date');
   messageDto.timestamp = tdDate > 0 ? tdDate : Math.floor(Date.now() / 1000);
   messageDto.isOutgoing = tdGetBoolean(tdMessage, 'is_outgoing');
+  messageDto.isChannelPost = tdGetBoolean(tdMessage, 'is_channel_post');
+  // Comments exist when the channel post has a discussion thread with at least one reply.
+  const interaction = tdGetObject(tdMessage, 'interaction_info');
+  const replyInfo = interaction !== undefined ? tdGetObject(interaction, 'reply_info') : undefined;
+  const replyCount = replyInfo !== undefined ? tdGetNumber(replyInfo, 'reply_count') : 0;
+  messageDto.replyCount = typeof replyCount === 'number' && Number.isSafeInteger(replyCount) && replyCount > 0
+    ? replyCount : 0;
   messageDto.isRead = tdGetBoolean(tdMessage, 'is_read');
   applySendingState(messageDto, tdMessage, suppressErrorMessage);
   messageDto.editDate = tdGetNumber(tdMessage, 'edit_date');

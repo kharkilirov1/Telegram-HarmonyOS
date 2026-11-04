@@ -3,6 +3,7 @@
 
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { navigationUIState } from '../../../core/model/UIStateModels';
+import { openMessageThread } from './chatAdminNavigation';
 import { localized } from '../../../core/utils/AppResource';
 import { DeleteMessagesUseCase } from '../../../domain/usecases/deleteMessages';
 import { ChatDeleteMessageController, ChatDeleteMessageHost } from './ChatDeleteMessageController';
@@ -341,6 +342,12 @@ export class ChatMessageActionsController {
       items.push(new ChatMessageActionItem('copy', localized($r('app.string.action_copy').id, 'Copy')));
     }
 
+    // D11: a channel post with a discussion thread opens its comments.
+    if (entry.message.isChannelPost && entry.message.replyCount > 0) {
+      items.push(new ChatMessageActionItem('comments',
+        localized($r('app.string.action_comments').id, 'Comments') + ' (' + entry.message.replyCount.toString() + ')'));
+    }
+
     const forwardTitle = forwardState === 'allowed' ? localized($r('app.string.action_forward').id, 'Forward')
       : forwardState === 'unavailable' ? localized($r('app.string.forward_source_retry').id, 'Retry forwarding check')
       : forwardState === 'denied' ? localized($r('app.string.forward_source_denied').id, 'Forwarding unavailable')
@@ -362,6 +369,13 @@ export class ChatMessageActionsController {
 
     if (actionId === 'select') {
       host.enterMessageSelection(entry.message.messageId);
+      return;
+    }
+
+    if (actionId === 'comments') {
+      const chatId = host.getActiveChatId();
+      openMessageThread(host.bindNavigationStack(), chatId, entry.message.messageId,
+        entry.message.senderName, entry.message.replyCount);
       return;
     }
 

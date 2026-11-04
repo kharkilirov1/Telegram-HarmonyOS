@@ -142,6 +142,35 @@ async function main() {
     }
   }
 
+  // Entry point from a channel post -----------------------------------------------------------------
+  const dtoSource = read('core/model/dto/MessageDto.ets');
+  assert.match(dtoSource, /messageDto\.isChannelPost = tdGetBoolean\(tdMessage, 'is_channel_post'\);/);
+  assert.match(dtoSource, /const interaction = tdGetObject\(tdMessage, 'interaction_info'\);/);
+  assert.match(dtoSource, /const replyCount = replyInfo !== undefined \? tdGetNumber\(replyInfo, 'reply_count'\) : 0;/);
+  assert.match(dtoSource, /messageDto\.replyCount = typeof replyCount === 'number'/);
+
+  const vo = read('ui/pages/chat/ChatTimelineVO.ets');
+  assert.match(vo, /row\.isChannelPost = message\.isChannelPost;/);
+  assert.match(vo, /row\.replyCount = message\.replyCount;/);
+  const reducer = read('core/reducers/messagesReducer.ets');
+  assert.match(reducer, /message\.isChannelPost = dto\.isChannelPost;/);
+  assert.match(reducer, /clone\.replyCount = msg\.replyCount;/);
+
+  const actions = read('ui/pages/chat/ChatMessageActionsController.ets');
+  assert.match(actions, /entry\.message\.isChannelPost && entry\.message\.replyCount > 0/);
+  assert.match(actions, /new ChatMessageActionItem\('comments',/, 'the menu offers Comments');
+  assert.match(actions, /actionId === 'comments'/);
+  assert.match(actions, /openMessageThread\(host\.bindNavigationStack\(\), chatId, entry\.message\.messageId,/);
+  const navigation = read('ui/pages/chat/chatAdminNavigation.ets');
+  assert.match(navigation, /export function openMessageThread\(stack: NavPathStack \| undefined, chatId: number, messageId: string,/);
+  assert.match(navigation, /pushPathByName\('TgMessageThreadPage', new MessageThreadRouteParams\(/);
+  assert.match(navigation, /if \(stack === undefined \|\| chatId <= 0 \|\| messageId === '0'\)/);
+  const routeSource = read('ui/pages/chat/messageThreadRoute.ets');
+  assert.match(routeSource, /constructor\(chatId: number = 0, messageId: string = '0'/);
+  const actionStrings = JSON.parse(fs.readFileSync(
+    path.join(root, '../resources/base/element/string.json'), 'utf8'));
+  assert.ok(actionStrings.string.find((item) => item.name === 'action_comments'));
+
   // Id validation ---------------------------------------------------------------------------------
   assert.equal(U.isValidThreadMessageId('9007199254740993'), true);
   assert.equal(U.isValidThreadMessageId('0'), false);

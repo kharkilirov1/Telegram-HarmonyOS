@@ -813,6 +813,10 @@
       "value": "Администраторы"
     },
     {
+      "name": "action_comments",
+      "value": "Комментарии"
+    },
+    {
       "name": "comments_title",
       "value": "Комментарии"
     },
