@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **H8-unblock (lead).** Заблокированный peer в приватном/секретном чате получает панель UNBLOCK
+  вместо композера: `selectChatInputPanel` → `unblock`, действие `unblock` в chrome/портах/контексте,
+  лейбл через `bottomBarActionLabel`, обработка в `handleChatBottomBarAction` через
+  `SetMessageSenderBlockedUseCase.unblock(user, peerUserId)` (use case заведён в activation, чистится в
+  teardown); состояние снимает сам TDLib (`updateChatIsBlocked`). 1 строка в base/ru/zh. Суита
+  `test-chat-unblock.cjs` (131-я): политика (private/secret/group), лейбл, проводка derive/handler,
+  chrome/context, activation/teardown, локали. Гейты: host **131/131**, оба smoke, hvigor BUILD
+  SUCCESSFUL. Остаток H8/G4: witness.
 - **G4-delete-and-exit (lead).** Удалённый из группы участник получает панель iOS:
   `chatBottomBarDeleteAndExit` (ChatChromeState), сообщение «You were removed from this group.»,
   красная кнопка Delete and Exit (атом `TgChatBottomBar`, `@Param restrictedActionText` +

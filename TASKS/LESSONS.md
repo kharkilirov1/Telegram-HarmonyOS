@@ -1220,3 +1220,13 @@ Last updated: 2026-10-23
 - The page contract requires every render callback to resolve to a Session delegate whose name equals the
   binding method. Before adding a binding method, check whether an existing session delegate can carry the
   action; reusing `handleChatBottomBarAction` avoided both a new delegate and the 500-line ceiling.
+
+## 230. A panel kind has several union copies to keep in sync
+
+- Adding `unblock` to the input panel required the same literal in `ChatChromeState`, the coordinator port,
+  the context getter/setter and the top-bar port; missing one produced a type error only at the far end
+  ("not assignable") because interfaces extending both ports must agree on the field type.
+- A private chat is chosen by `type === private || type === secret`; the old branch also matched
+  `peerUserId > 0`, which would have turned channel-with-peer rows into unblock panels. Split the branch
+  before adding blocked state.
+- Type aliases exported next to a pure module cannot be requested from the CJS loader; load only values.
