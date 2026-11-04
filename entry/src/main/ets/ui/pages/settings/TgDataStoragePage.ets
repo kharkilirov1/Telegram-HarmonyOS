@@ -52,6 +52,8 @@ export struct TgDataStoragePage {
 
   private loadStorageUseCase?: LoadStorageStatisticsUseCase;
   private pageLifecycleToken: number = 0;
+  // One automatic enforcement per load: a second pass would loop when TDLib keeps some bytes.
+  private autoEnforceAttempted: boolean = false;
 
   aboutToAppear(): void {
     this.restoreCacheLimit();
@@ -88,6 +90,7 @@ export struct TgDataStoragePage {
     const token: number = this.pageLifecycleToken;
     this.isLoading = true;
     this.loadFailed = false;
+    this.autoEnforceAttempted = false;
     useCase.fetchSnapshot()
       .then((snapshot: StorageSnapshot) => {
         if (token !== this.pageLifecycleToken) {
@@ -102,6 +105,7 @@ export struct TgDataStoragePage {
         this.byChat = snapshot.full.byChat;
         this.totalSize = fast.filesSize + fast.databaseSize + fast.languagePackDatabaseSize + fast.logSize;
         this.isLoading = false;
+        this.autoEnforceIfNeeded(useCase, token);
       })
       .catch((error: Error) => {
         if (token !== this.pageLifecycleToken) {
@@ -111,6 +115,83 @@ export struct TgDataStoragePage {
         this.isLoading = false;
         this.loadFailed = true;
       });
+  }
+
+  private autoEnforceIfNeeded(useCase: LoadStorageStatisticsUseCase, token: number): void {
+    if (this.autoEnforceAttempted || this.cacheLimitBytes <= 0) {
+      return;
+    }
+    this.autoEnforceAttempted = true;
+    useCase.autoEnforce(this.cacheLimitBytes, this.totalSize)
+      .then((enforced: boolean) => {
+        if (token !== this.pageLifecycleToken || !enforced) {
+          return;
+        }
+        hilog.info(DOMAIN, TAG, 'Cache limit enforced automatically');
+        this.getUIContext().getPromptAction().showToast({
+          message: localized($r('app.string.data_storage_limit_enforced').id,
+            'Cache trimmed to fit the limit'),
+          duration: 2000
+        });
+        // Registration of the freed space is asynchronous; the next load reflects it.
+        this.reloadStatistics();
+      })
+      .catch((error: Error) => {
+        hilog.warn(DOMAIN, TAG, 'Auto enforce failed: %{public}s', error.message);
+        this.autoEnforceAttempted = false;
+      });
+  }
+
+  // Fill ratio of the cache against the configured limit; 0 when no limit is set.
+  private usageFillRatio(): number {
+    if (this.cacheLimitBytes <= 0 || this.totalSize <= 0) {
+      return 0;
+    }
+    const ratio: number = this.totalSize / this.cacheLimitBytes;
+    return ratio > 1 ? 1 : ratio;
+  }
+
+  private usageCaption(): string {
+    if (this.cacheLimitBytes <= 0) {
+      return formatStorageBytes(this.totalSize);
+    }
+    return formatStorageBytes(this.totalSize) + ' / ' + formatStorageBytes(this.cacheLimitBytes);
+  }
+
+  @Builder
+  private buildUsageBar() {
+    Column() {
+      Row() {
+        Text(localized($r('app.string.data_storage_total').id, 'Total'))
+          .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+          .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+          .layoutWeight(1)
+        Text(this.usageCaption())
+          .fontSize(TgUiTokens.FONT_META_SIZE)
+          .fontColor(TgUiTokens.COLOR_TEXT_META)
+      }
+      .width('100%')
+
+      Stack({ alignContent: Alignment.Start }) {
+        Row()
+          .width('100%')
+          .height(6)
+          .borderRadius(3)
+          .backgroundColor(TgUiTokens.COLOR_SEPARATOR)
+        Row()
+          .width((this.usageFillRatio() * 100).toString() + '%')
+          .height(6)
+          .borderRadius(3)
+          .backgroundColor(this.usageFillRatio() >= 1
+            ? TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE
+            : TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT)
+      }
+      .width('100%')
+      .margin({ top: TgUiTokens.SPACE_8 })
+    }
+    .width('100%')
+    .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16, top: TgUiTokens.SPACE_8,
+      bottom: TgUiTokens.SPACE_8 })
   }
 
   private chatTitle(chatId: number): string {
@@ -318,6 +399,9 @@ export struct TgDataStoragePage {
           } else {
             ListItem() {
               this.buildSectionTitle(localized($r('app.string.data_storage_usage_section').id, 'STORAGE USAGE'))
+            }
+            ListItem() {
+              this.buildUsageBar()
             }
             ListItem() {
               this.buildValueRow(localized($r('app.string.data_storage_total').id, 'Total'),

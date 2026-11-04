@@ -569,6 +569,10 @@
       "value": "Только пресеты: активный профиль в этой версии TDLib не читается."
     },
     {
+      "name": "data_storage_limit_enforced",
+      "value": "Кэш сокращён до лимита"
+    },
+    {
       "name": "data_storage_total",
       "value": "Всего"
     },

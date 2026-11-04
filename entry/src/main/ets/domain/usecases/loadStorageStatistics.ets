@@ -28,6 +28,17 @@ export class StorageSnapshot {
   full: StorageStatisticsDto = new StorageStatisticsDto();
 }
 
+// The limit is only enforced when it is set (0 / -1 mean "no limit") and the usage genuinely exceeds it.
+export function shouldAutoEnforce(limitBytes: number, usageBytes: number): boolean {
+  if (!Number.isSafeInteger(limitBytes) || limitBytes <= 0) {
+    return false;
+  }
+  if (!Number.isSafeInteger(usageBytes) || usageBytes < 0) {
+    return false;
+  }
+  return usageBytes > limitBytes;
+}
+
 export class LoadStorageStatisticsUseCase {
   private gateway: TdGatewayPort;
 
@@ -61,6 +72,14 @@ export class LoadStorageStatisticsUseCase {
 
   // Enforces the user's "Maximum cache size" now: files above the limit are dropped, ttl/count keep
   // their TDLib defaults (-1). A non-positive limit means unlimited and sends nothing.
+  // Called after a statistics load: enforces the persisted limit only when the cache really grew past it.
+  async autoEnforce(limitBytes: number, usageBytes: number): Promise<boolean> {
+    if (!shouldAutoEnforce(limitBytes, usageBytes)) {
+      return false;
+    }
+    return this.enforceCacheLimit(limitBytes);
+  }
+
   async enforceCacheLimit(limitBytes: number): Promise<boolean> {
     if (!Number.isSafeInteger(limitBytes) || limitBytes < 0) {
       throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid cache limit', 'Input validation failed', 400,

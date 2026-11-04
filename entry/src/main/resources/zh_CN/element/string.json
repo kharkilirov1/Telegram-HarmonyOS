@@ -569,6 +569,10 @@
       "value": "仅预设：此版本 TDLib 不提供当前设置。"
     },
     {
+      "name": "data_storage_limit_enforced",
+      "value": "缓存已按上限清理"
+    },
+    {
       "name": "data_storage_total",
       "value": "总计"
     },

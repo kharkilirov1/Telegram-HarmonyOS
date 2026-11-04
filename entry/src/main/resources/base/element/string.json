@@ -569,6 +569,10 @@
       "value": "Presets only: the active preset is not exposed by TDLib in this version."
     },
     {
+      "name": "data_storage_limit_enforced",
+      "value": "Cache trimmed to fit the limit"
+    },
+    {
       "name": "data_storage_total",
       "value": "Total"
     },

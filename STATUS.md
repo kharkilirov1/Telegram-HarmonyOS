@@ -146,6 +146,15 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **H4-остаток (lead).** Кэш: график занятости (полоса `total / limit`, красная при достижении,
+  подпись `formatStorageBytes(total) / formatStorageBytes(limit)`, без лимита — просто total) и
+  авто-применение лимита: `shouldAutoEnforce(limit, usage)` + `autoEnforce` в
+  `LoadStorageStatisticsUseCase`, вызов после загрузки статистики (один раз за загрузку, тост
+  `data_storage_limit_enforced`, перезагрузка статистики), guard сбрасывается при reload. Контракт
+  `test-cache-limit.cjs`: предикат (равенство/0/-1/negative usage), wire `optimizeStorage` с
+  `size = limit` и `ttl/count = -1`, отсутствие запроса ниже лимита, проводка графика и авто-вызова.
+  Гейты: host **123/123**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток H4: iOS-диаграмма по
+  категориям, witness.
 - **S12k + S15 (lead).** C10: тап по администратору открывает профиль — `DirectUserProfileRouteParams`
   экспортирован, `captureProfileLoadContext` переиспользован, `TgChatAdministratorsPage` пушит
   `TgProfilePage` с контекстом и логирует ошибку. App Linking: объявлены `pathStartWith: "+"` для

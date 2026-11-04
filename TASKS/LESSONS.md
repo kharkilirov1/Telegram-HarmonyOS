@@ -1056,3 +1056,13 @@ Last updated: 2026-10-23
   so check domain helpers before duplicating context capture.
 - After closing a debt bullet, delete the TODO line instead of leaving it "closed" in prose; a stale
   open checkbox reads as pending work in the next round.
+
+## 214. Automatic enforcement needs a one-shot guard and honest TDLib defaults
+
+- Enforcing a cache limit right after a statistics load can loop when TDLib keeps bytes it cannot
+  free; guard it with one attempt per load (reset on an explicit reload) and surface a toast only when
+  a request actually ran.
+- `optimizeStorage` leaves `ttl` and `count` at -1 by default, meaning "no bound"; asserting 0 in the
+  contract was wrong. Assert the real defaults so the wire stays honest about which bound applies.
+- Test helpers differ per suite: the cache-limit suite auto-collects exports (`storage.X`), so reusing
+  an ad-hoc name (`loadMod`) fails with a ReferenceError that reads like a module bug.

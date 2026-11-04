@@ -63,6 +63,7 @@
 | S12j | Права участников (C10) | C10 | `setChatPermissions`+`ChatPermissionsDto`+use case, экран с 14 тумблерами, Manage-пункт, `chatAdminNavigation.ets`, суита `test-chat-permissions.cjs`; остаток — профиль из админов |
 | S12k | Профиль из списка администраторов (C10) | C10 | экспорт `DirectUserProfileRouteParams`, `captureProfileLoadContext`, тап → `TgProfilePage`, контракт расширен |
 | S15 | Короткая форма `t.me/+…` в App Linking (B7) | B7 | `pathStartWith: "+"` для `t.me`/`telegram.me`, контракт внешних ссылок расширен |
+| H4b | Кэш: график и авто-лимит (H4) | H4 | `shouldAutoEnforce`/`autoEnforce`, полоса занятости total/limit, авто-применение после статистики, контракт расширен; остаток — диаграмма по категориям |
 | S12b | Меню действий в шапке чата (C10) | C10 | `showMoreAction`/`onMorePress` в `TgChatTopBar`, меню Chat Info / Mute / Clear History / Delete в `TgChatScreenPage`, live-store состояние, контракт `test-chat-header-actions.cjs`, smoke-пин на 4 действия; C10 → `available` |
 | S12c | Leave Chat и Share My Contact (C10) | C10 | `leaveChat` + `inputMessageContact` (команды/сериализаторы), `LeaveChatUseCase`/`ShareMyContactUseCase`, пятый контекстный пункт меню в шапке, 6 строк в 3 локалях, контракт расширен |
 | S12d | Report с причинами + `ChatActionsCoordinator` (C10) | C10 | `reportChat`/`ReportChatDto`/`ReportChatUseCase`, `canBeReported` в модели/DTO/reducer, шестой пункт меню, меню вынесено в координатор (страница ≤500 строк), контракт расширен |

@@ -79,10 +79,34 @@ async function mainCheck() {
   assert.equal(S.formatStorageBytes(256 * 1024 * 1024), '256 MB');
   assert.equal(S.formatStorageBytes(1024 * 1024 * 1024), '1 GB');
   assert.equal(S.formatStorageBytes(0), '0 B');
+
+  const autoSent = [];
+  const autoUseCase = new storage.LoadStorageStatisticsUseCase({ send: (command) => {
+    autoSent.push(command);
+    return Promise.resolve(TdObject.fromJSON('{"@type":"ok"}'));
+  } });
+  assert.equal(await autoUseCase.autoEnforce(2048, 1024), false);
+  assert.equal(autoSent.length, 0, 'usage below the limit sends nothing');
+  assert.equal(await autoUseCase.autoEnforce(2048, 4096), true);
+  assert.equal(autoSent.length, 1);
+  assert.equal(autoSent.at(-1).type, 'optimizeStorage');
+  const autoWire = JSON.parse(serializer.buildTdlibRequestJson('optimizeStorage',
+    serializer.serializeCommand(autoSent.at(-1)).params));
+  assert.equal(autoWire.size, 2048, 'the limit is the size TDLib keeps');
+  assert.equal(autoWire.ttl, -1, 'an unset TTL stays -1: only the size bound applies');
+  assert.equal(autoWire.count, -1);
 }
 
 mainCheck().then(() => {
-  const page = read('ui/pages/settings/TgDataStoragePage.ets');
+  // Auto-enforcement: only a positive limit that the usage actually exceeds triggers a request.
+assert.equal(storage.shouldAutoEnforce(1024, 2048), true);
+assert.equal(storage.shouldAutoEnforce(1024, 1024), false, 'equal usage is within the limit');
+assert.equal(storage.shouldAutoEnforce(1024, 512), false);
+assert.equal(storage.shouldAutoEnforce(0, 4096), false, 'no limit means no enforcement');
+assert.equal(storage.shouldAutoEnforce(-1, 4096), false);
+assert.equal(storage.shouldAutoEnforce(1024, -5), false);
+
+const page = read('ui/pages/settings/TgDataStoragePage.ets');
   assert.match(page, /@Local private cacheLimitBytes: number = 0;/);
   assert.match(page, /preferences\.getPreferencesSync\(context, \{ name: 'storage_settings' \}\)/);
   assert.match(page, /getSync\('max_cache_bytes', 0\)/);
@@ -94,6 +118,14 @@ mainCheck().then(() => {
   assert.match(page, /data_storage_max_cache/);
   assert.match(page, /data_storage_unlimited/);
   assert.match(page, /data_storage_cache_limit_applied/);
+// H4 remainder: the usage chart and the automatic enforcement hook.
+assert.match(page, /private buildUsageBar\(\) \{/);
+assert.match(page, /private usageFillRatio\(\): number \{/);
+assert.match(page, /private usageCaption\(\): string \{/);
+assert.match(page, /useCase\.autoEnforce\(this\.cacheLimitBytes, this\.totalSize\)/);
+assert.match(page, /this\.autoEnforceAttempted/);
+assert.match(page, /data_storage_limit_enforced/);
+assert.match(page, /this\.buildUsageBar\(\)/);
 
   for (const locale of ['base', 'ru_RU', 'zh_CN']) {
     const strings = JSON.parse(fs.readFileSync(
