@@ -146,6 +146,13 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **F6-данные пака (lead).** `sticker.set_id` протянут DTO → `MessageContent` → reducer (map+clone) →
+  `ChatTimelineVO` → `MediaGalleryItem.stickerSetId`; новый `StickerPackUseCase`: `load(setId)`
+  (`getStickerSet` → title/isInstalled/isArchived/stickerCount) и `setInstalled(setId, installed)`
+  (`changeStickerSet`), валидация int64-id (`0` и мусор отвергаются). Суита `test-sticker-pack.cjs`
+  (129-я): валидация, парсинг, wire обеих команд (точные цифры int64), ошибки, вся проводка модели.
+  Гейты: host **129/129**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток F6: UI-карточка пака во
+  вьювере, TGS-анимация, witness.
 - **F6-срез (lead).** Просмотр стикеров: `MediaGalleryItem.type` расширен `sticker`,
   `ChatMediaGalleryCoordinator` добавляет стикер-сообщения в галерею (path/thumbnail/размеры,
   source/author/time), поиск целевого индекса учитывает `sticker`, `TgMediaGalleryPage` рисует

@@ -130,7 +130,7 @@
 | F3 | Видео-плеер | `partial` | `GlobalMediaPlayback.ets` (3/4); до скачивания не открывает | `Components/Media/Video*` | F2, F7 |
 | F4 | Воспроизведение голосовых | `available` | `ChatPlaybackCoordinator.ets` (7/3) | `AudioWaveform*` | D28 |
 | F5 | Открытие документов | `partial` | `ChatScreenSession.ets` (3/0) | `AttachmentFileController` | E6 |
-| F6 | Просмотр стикеров | `partial` | Тап по стикеру открывает общий вьювер: `ChatMediaGalleryCoordinator` собирает `MediaGalleryItem` типа `sticker` (path/thumbnail/width/height), поиск индекса учитывает стикеры, `TgMediaGalleryPage` рисует их фото-веткой (Contain + thumbnail-fallback), `TgMessageRouter` вешает tap на стикер. Нет: карточка пака (title/Add Stickers через `getStickerSet`+`changeStickerSet`, команды готовы), ленивая TGS-анимация, листание по паку, witness | `Components/Chat/Sticker*` | D13 |
+| F6 | Просмотр стикеров | `partial` | Стикер открывается в общем вьювере (галерея: тип `sticker`, поиск индекса, photo-ветка, tap в `TgMessageRouter`); pack id стикера (`sticker.set_id`) проходит DTO→content→reducer→VO→`MediaGalleryItem`, есть `StickerPackUseCase` (`getStickerSet` → title/installed/archived/count, `changeStickerSet` install/remove, валидация int64 id). Нет: UI-карточка пака во вьювере, ленивая TGS-анимация, witness | `Components/Chat/Sticker*` | D13 |
 | F7 | PiP | `missing` | нет | `Components/Media/Video*` | F3 |
 | F8 | Media session / AVSession | `partial` | `GlobalMediaPlayback.ets` (2/4) | платформенное | F3, F4 |
 | F9 | Галерея: свайп между медиа | `partial` | `TgMediaGalleryPage.ets` (32/6) | `PhotoViewer*` | F1 |

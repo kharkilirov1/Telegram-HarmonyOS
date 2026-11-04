@@ -1185,3 +1185,13 @@ Last updated: 2026-10-23
   script silently targets nothing, so resolve files with a recursive search.
 - Multi-replacement scripts must write only after all anchors matched; otherwise a missing third anchor
   discards the first two edits and the failure looks like "the collector was never patched".
+
+## 227. A blanket "insert after stickerEmoji" patch hits every mapping site
+
+- One `includes("stickerEmoji")` loop inserted a clone-shaped line into the DTO→content mapping and a
+  mapping-shaped line into the clone function, because both functions copy the same fields. Iterate the
+  two functions separately, or patch by exact neighbouring lines.
+- `MessageDto` has its own `MessageContentDto` class plus the accessor-based mapping; the field must be
+  declared in that class or the mapping line fails to compile even though `AppState.MessageContent` has it.
+- `getStickerSet` serialises the id as a raw int64 literal, so a round-trip through `JSON.parse` in a test
+  rounds the value; assert on the raw request text as with `deleteMessages` ids.

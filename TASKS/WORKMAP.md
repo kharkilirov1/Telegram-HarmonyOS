@@ -76,6 +76,7 @@
 | G6f | Частичные ограничения (G6) | G6 | `TgChatRestrictRightsPage` (14 разрешений + срок), `permissionsJson` в статусе restricted; остаток — предзаполнение прав админа |
 | G6g | Предзаполнение прав (G6) | G6 | `loadState`/`parseMemberModerationState`, предзаполнение прав админа и текущего ограничения; остаток — demote с сохранением прав |
 | F6b | Просмотр стикеров (F6) | F6 | стикер в общем вьювере (галерея + tap), суита `test-sticker-viewer.cjs`; остаток — карточка пака, TGS |
+| F6c | Данные стикер-пака (F6) | F6 | `stickerSetId` в модели/VO/галерее, `StickerPackUseCase` (load/setInstalled), суита `test-sticker-pack.cjs`; остаток — UI-карточка |
 | S12b | Меню действий в шапке чата (C10) | C10 | `showMoreAction`/`onMorePress` в `TgChatTopBar`, меню Chat Info / Mute / Clear History / Delete в `TgChatScreenPage`, live-store состояние, контракт `test-chat-header-actions.cjs`, smoke-пин на 4 действия; C10 → `available` |
 | S12c | Leave Chat и Share My Contact (C10) | C10 | `leaveChat` + `inputMessageContact` (команды/сериализаторы), `LeaveChatUseCase`/`ShareMyContactUseCase`, пятый контекстный пункт меню в шапке, 6 строк в 3 локалях, контракт расширен |
 | S12d | Report с причинами + `ChatActionsCoordinator` (C10) | C10 | `reportChat`/`ReportChatDto`/`ReportChatUseCase`, `canBeReported` в модели/DTO/reducer, шестой пункт меню, меню вынесено в координатор (страница ≤500 строк), контракт расширен |

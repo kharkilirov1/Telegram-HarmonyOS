@@ -14,9 +14,10 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
 
 ## Debt
 
-- [ ] **F6: нет карточки стикер-пака и TGS-анимации.** Тап по стикеру открывает вьювер, но
-  iOS показывает имя пака, «Add Stickers» и анимированный TGS. Команды `getStickerSet`/
-  `changeStickerSet` уже в контракте. Владелец: lead. Триггер: срез по стикерам.
+- [ ] **F6: нет UI-карточки пака во вьювере.** Данные пака читаются и ставятся
+  (`getStickerSet`/`changeStickerSet`), pack id доезжает до `MediaGalleryItem`, но оверлей не
+  показывает название пака и кнопку Add Stickers: нужен порт `ChatMediaOverlay` + состояние в
+  `ChatMediaViewState`. Владелец: lead. Триггер: срез по стикерам.
 
 Долг оформляется только здесь, по `SLICE_PROTOCOL` §9: что не сделано, почему не сейчас, владелец,
 триггер возврата, видимое пользователю последствие. Пока долг открыт, строка матрицы остаётся
