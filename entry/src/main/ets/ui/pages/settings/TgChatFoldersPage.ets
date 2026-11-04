@@ -59,6 +59,9 @@ export struct TgChatFoldersPage {
   @Local private isLoadingLinks: boolean = false;
   @Local private editingLinkUri: string = '';
   @Local private linkNameDraft: string = '';
+  // Chat ids the link under rename is restricted to; empty means all folder chats.
+  @Local private editingLinkChatIds: number[] = [];
+  @Local private isPickingLinkChats: boolean = false;
   @Local private isBusy: boolean = false;
   @Local private isLoadingFolder: boolean = false;
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
@@ -133,6 +136,8 @@ export struct TgChatFoldersPage {
     this.isLoadingLinks = false;
     this.editingLinkUri = '';
     this.linkNameDraft = '';
+    this.editingLinkChatIds = [];
+    this.isPickingLinkChats = false;
     this.includeContacts = false;
     this.includeNonContacts = false;
     this.includeBots = false;
@@ -209,7 +214,28 @@ export struct TgChatFoldersPage {
       });
   }
 
-  private createInviteLink(): void {
+  private openLinkChatSelection(): void {
+    const folderId = this.editingFolderId;
+    if (folderId <= 0) {
+      return;
+    }
+    this.isPickingLinkChats = true;
+    const params = new FolderChatSelectionRouteParams();
+    // Defaults to the chats explicitly included in the folder; empty means all folder chats.
+    params.selectedChatIds = this.includedChatIds.slice();
+    params.folderTitle = localized($r('app.string.folders_link_chats').id, 'Link Chats');
+    this.pageStack.pushPathByName('TgFolderChatsPage', params,
+      (popInfo: PopInfo): void => {
+        this.isPickingLinkChats = false;
+        const result = popInfo.result as FolderChatSelectionResult | undefined;
+        if (result === undefined) {
+          return;
+        }
+        this.createInviteLink(result.selectedChatIds.slice());
+      });
+  }
+
+  private createInviteLink(chatIds: number[] = []): void {
     const useCase = this.inviteLinksUseCase;
     const folderId = this.editingFolderId;
     if (useCase === undefined || folderId <= 0) {
@@ -219,7 +245,7 @@ export struct TgChatFoldersPage {
     const name: string = localized($r('app.string.folders_link_default_name').id, 'Link') + ' ' +
       (this.inviteLinks.length + 1).toString();
     this.isLoadingLinks = true;
-    useCase.createLink(folderId, name).then(() => {
+    useCase.createLink(folderId, name, chatIds).then(() => {
       if (token !== this.pageLifecycleToken) {
         return;
       }
@@ -239,6 +265,7 @@ export struct TgChatFoldersPage {
   private startRenameLink(link: ChatFolderInviteLinkDto): void {
     this.editingLinkUri = link.inviteLink;
     this.linkNameDraft = link.name;
+    this.editingLinkChatIds = link.chatIds.slice();
   }
 
   private saveLinkName(): void {
@@ -249,12 +276,13 @@ export struct TgChatFoldersPage {
       return;
     }
     const token: number = this.pageLifecycleToken;
-    useCase.editLink(folderId, inviteLink, this.linkNameDraft).then(() => {
+    useCase.editLink(folderId, inviteLink, this.linkNameDraft, this.editingLinkChatIds).then(() => {
       if (token !== this.pageLifecycleToken) {
         return;
       }
       this.editingLinkUri = '';
       this.linkNameDraft = '';
+      this.editingLinkChatIds = [];
       this.toast(localized($r('app.string.folders_link_renamed_toast').id, 'Link renamed'));
       this.loadInviteLinks(folderId);
     }).catch((error: Error) => {
@@ -600,8 +628,8 @@ export struct TgChatFoldersPage {
                     .fontColor(this.isLoadingLinks ? TgUiTokens.COLOR_TEXT_META
                       : TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT)
                     .onClick(() => {
-                      if (!this.isLoadingLinks) {
-                        this.createInviteLink();
+                      if (!this.isLoadingLinks && !this.isPickingLinkChats) {
+                        this.openLinkChatSelection();
                       }
                     })
                 }
@@ -652,7 +680,9 @@ export struct TgChatFoldersPage {
                 } else {
                   ForEach(this.inviteLinks, (link: ChatFolderInviteLinkDto) => {
                     Row() {
-                      Text(link.name.length > 0 ? link.name : link.inviteLink)
+                      Text(link.chatIds.length > 0
+                        ? `${link.name.length > 0 ? link.name : link.inviteLink} · ${link.chatIds.length}`
+                        : (link.name.length > 0 ? link.name : link.inviteLink))
                         .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
                         .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
                         .maxLines(1)

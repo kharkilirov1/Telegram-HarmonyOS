@@ -281,6 +281,10 @@
       "value": "Удалить папку? Чаты останутся в списке."
     },
     {
+      "name": "folders_link_chats",
+      "value": "Чаты ссылки"
+    },
+    {
       "name": "folders_rename_link",
       "value": "Название ссылки"
     },

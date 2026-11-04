@@ -899,3 +899,14 @@ Last updated: 2026-10-23
   decomposition test catches `this.session.aboutToAppear()` missing. Re-read the file after slicing.
 - ArkTS rejects object literals for host interfaces; pass dependencies through a small class with a
   constructor instead of an interface literal.
+
+## 199. A failed patch script leaves the suite green and the claims false
+
+- Two rounds claimed contract coverage for invite-link rename; the patch scripts died on an anchor
+  before writing, and no test failed, so the gap stayed invisible until the next slice touched the
+  same file. After any scripted test edit, grep the new assertion text; never trust only the suite
+  result.
+- Validation placed inside the TDLib try block is re-wrapped as "Failed to …", which hides the real
+  validation error from callers and tests. Validate before the try, then send.
+- Renaming must resend the existing chat_ids: an empty array would widen a restricted invite link to
+  every folder chat.

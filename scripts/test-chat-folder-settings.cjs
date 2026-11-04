@@ -114,6 +114,28 @@ function draft(overrides = {}) {
   assert.equal(createWire.name, 'Friends');
   assert.deepEqual(createWire.chat_ids, []);
 
+  const restrictedCreate = JSON.parse(serializer.buildTdlibRequestJson('createChatFolderInviteLink',
+    serializer.serializeCommand(C.createCreateChatFolderInviteLinkCommand(12, 'Pick', [5, 9007199254740001]))
+      .params));
+  assert.deepEqual(restrictedCreate.chat_ids, [5, 9007199254740001],
+    'restricted link keeps its chat ids, including int53');
+  const filteredCreate = JSON.parse(serializer.buildTdlibRequestJson('createChatFolderInviteLink',
+    serializer.serializeCommand(C.createCreateChatFolderInviteLinkCommand(12, 'Pick', [3, 0, -1])).params));
+  assert.deepEqual(filteredCreate.chat_ids, [3], 'invalid chat ids are dropped from a link');
+
+  const editWire = JSON.parse(serializer.buildTdlibRequestJson('editChatFolderInviteLink',
+    serializer.serializeCommand(C.createEditChatFolderInviteLinkCommand(12, 'https://t.me/addlist/a', 'Best'))
+      .params));
+  assert.equal(editWire.chat_folder_id, 12);
+  assert.equal(editWire.invite_link, 'https://t.me/addlist/a');
+  assert.equal(editWire.name, 'Best');
+  assert.deepEqual(editWire.chat_ids, [], 'no selection means all folder chats');
+  const restrictedEdit = JSON.parse(serializer.buildTdlibRequestJson('editChatFolderInviteLink',
+    serializer.serializeCommand(C.createEditChatFolderInviteLinkCommand(12, 'https://t.me/addlist/a', 'Best',
+      [5, 9007199254740001])).params));
+  assert.deepEqual(restrictedEdit.chat_ids, [5, 9007199254740001],
+    'renaming a restricted link must not widen it to all folder chats');
+
   const deleteWire = JSON.parse(serializer.buildTdlibRequestJson('deleteChatFolderInviteLink',
     serializer.serializeCommand(C.createDeleteChatFolderInviteLinkCommand(12, 'https://t.me/addlist/abc')).params));
   assert.equal(deleteWire.chat_folder_id, 12);
@@ -244,9 +266,17 @@ async function checkUseCase() {
   assert.equal(linkSent.at(-1).payload.folderId, 12);
   assert.equal(listed.length, 2);
 
-  await linksUseCase.createLink(12, '  Friends  ');
+  await linksUseCase.createLink(12, '  Friends  ', [5, 9007199254740001]);
   assert.equal(linkSent.at(-1).type, 'createChatFolderInviteLink');
   assert.equal(linkSent.at(-1).payload.name, 'Friends', 'the link name is trimmed');
+  assert.deepEqual(linkSent.at(-1).payload.chatIds, [5, 9007199254740001],
+    'the restricted chat set reaches the command');
+
+  await linksUseCase.editLink(12, 'https://t.me/addlist/a', '  Best  ', [5]);
+  assert.equal(linkSent.at(-1).type, 'editChatFolderInviteLink');
+  assert.equal(linkSent.at(-1).payload.inviteLink, 'https://t.me/addlist/a');
+  assert.equal(linkSent.at(-1).payload.name, 'Best', 'the renamed link name is trimmed');
+  assert.deepEqual(linkSent.at(-1).payload.chatIds, [5], 'the rename keeps the link chat set');
 
   await linksUseCase.deleteLink(12, 'https://t.me/addlist/a');
   assert.equal(linkSent.at(-1).type, 'deleteChatFolderInviteLink');
@@ -255,8 +285,12 @@ async function checkUseCase() {
   await assert.rejects(() => linksUseCase.listLinks(0), /Invalid folderId/);
   await assert.rejects(() => linksUseCase.createLink(12, '   '), /Invalid link name/);
   await assert.rejects(() => linksUseCase.createLink(12, 'x'.repeat(33)), /Invalid link name/);
+  await assert.rejects(() => linksUseCase.createLink(12, 'A', [0]), /Invalid chat id/);
+  await assert.rejects(() => linksUseCase.editLink(12, 'https://t.me/addlist/a', '   ', []), /Invalid link name/);
+  await assert.rejects(() => linksUseCase.editLink(12, 'https://t.me/addlist/a', 'A', [-1]),
+    /Invalid chat id/);
   await assert.rejects(() => linksUseCase.deleteLink(12, '  '), /Invalid invite link/);
-  assert.equal(linkSent.length, 3, 'invalid input never reaches the gateway');
+  assert.equal(linkSent.length, 4, 'invalid input never reaches the gateway');
 
   const failingLinks = new (load('domain/usecases/manageChatFolderInviteLinks.ets',
     { ...C, ...errors, hilog, TdObject, ChatFolderInviteLinkDto: L.ChatFolderInviteLinkDto,
@@ -265,6 +299,8 @@ async function checkUseCase() {
   await assert.rejects(() => failingLinks.listLinks(1), /Failed to load invite links/);
   await assert.rejects(() => failingLinks.createLink(1, 'A'), /Failed to create the invite link/);
   await assert.rejects(() => failingLinks.deleteLink(1, 'https://t.me/addlist/x'), /Failed to delete the invite link/);
+  await assert.rejects(() => failingLinks.editLink(1, 'https://t.me/addlist/x', 'A'),
+    /Failed to update the invite link/);
   assert.equal(sent.length, 3, 'invalid input never reaches the gateway');
 
   await useCase.createFolder(draft({ title: 'x'.repeat(12) }));
@@ -313,7 +349,15 @@ async function checkUseCase() {
   assert.match(page, /folders_included_chats/);
   assert.match(page, /createManageChatFolderInviteLinksUseCase\(getTdGatewayAdapter\(\)\)/);
   assert.match(page, /useCase\.listLinks\(folderId\)/);
-  assert.match(page, /useCase\.createLink\(folderId, name\)/);
+  assert.match(page, /useCase\.createLink\(folderId, name, chatIds\)/);
+  assert.match(page, /useCase\.editLink\(folderId, inviteLink, this\.linkNameDraft, this\.editingLinkChatIds\)/);
+  assert.match(page, /this\.editingLinkChatIds = link\.chatIds\.slice\(\);/);
+  assert.match(page, /private openLinkChatSelection\(\): void \{/);
+  assert.match(page, /params\.selectedChatIds = this\.includedChatIds\.slice\(\);/);
+  assert.match(page, /this\.createInviteLink\(result\.selectedChatIds\.slice\(\)\);/);
+  assert.match(page, /private startRenameLink\(link: ChatFolderInviteLinkDto\): void \{/);
+  assert.match(page, /private saveLinkName\(\): void \{/);
+  assert.match(page, /folders_rename_link/);
   assert.match(page, /useCase\.deleteLink\(folderId, inviteLink\)/);
   assert.match(page, /pasteboard\.getSystemPasteboard\(\)\.setDataSync\(data\)/);
   assert.match(page, /folders_invite_links/);
@@ -357,7 +401,7 @@ async function checkUseCase() {
       'folders_copy_link', 'folders_delete_link', 'folders_delete_link_confirm',
       'folders_link_default_name', 'folders_link_created_toast', 'folders_link_deleted_toast',
       'folders_link_copied_toast', 'folders_link_copy_failed', 'folders_link_failed_toast',
-      'folders_rename_link', 'folders_link_renamed_toast',
+      'folders_rename_link', 'folders_link_renamed_toast', 'folders_link_chats',
       'folders_created_toast', 'folders_saved_toast', 'folders_deleted_toast',
       'folders_failed_toast']) {
       const item = strings.string.find((entry) => entry.name === name);

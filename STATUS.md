@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S13h (lead).** B7: ограничение invite-ссылки набором чатов + фикс расширения при
+  переименовании. `chatIds` в `ChatFolderInviteLinkPayload` и фабриках, сериализатор create/edit
+  пишет `buildChatIdArrayJson(chatIds)` (пустой массив = все чаты папки), use case валидирует id до
+  gateway (ошибка не заворачивается в «Failed to …»), создание ссылки идёт через выбор чатов
+  (`TgFolderChatsPage`, предвыбор — included-чаты папки), переименование передаёт сохранённый
+  `editingLinkChatIds`, строка ссылки показывает «· N». Контракт
+  `test-chat-folder-settings.cjs`: create/edit wire с int53 и фильтрацией, сохранение набора при
+  rename, валидация, ошибки, проводка страницы, строка `folders_link_chats`. Гейты: host **117/117**,
+  оба smoke, hvigor BUILD SUCCESSFUL. **Осталось (B7):** folder link preview, recommended folders,
+  witness.
 - **S12d (lead).** C10: Report с причинами + вынос меню в координатор. `reportChat` (команда,
   сериализатор с base64 `option_id`, `ReportChatDto` для `reportChatResult*`), `ReportChatUseCase`
   (start → chooseOption, валидация), `chat.can_be_reported` в модели/DTO/reducer; в меню шестой

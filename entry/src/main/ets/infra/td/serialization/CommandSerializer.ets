@@ -492,7 +492,7 @@ function serializeCreateChatFolderInviteLink(command: AnyAppCommand, result: Ser
   result.method = 'createChatFolderInviteLink';
   result.params.setNumber('chat_folder_id', cmd.payload.folderId);
   result.params.setString('name', cmd.payload.name);
-  result.params.setString('_chat_ids_json', '[]');
+  result.params.setString('_chat_ids_json', buildChatIdArrayJson(cmd.payload.chatIds));
 }
 
 function serializeEditChatFolderInviteLink(command: AnyAppCommand, result: SerializedCommand): void {
@@ -501,7 +501,7 @@ function serializeEditChatFolderInviteLink(command: AnyAppCommand, result: Seria
   result.params.setNumber('chat_folder_id', cmd.payload.folderId);
   result.params.setString('invite_link', cmd.payload.inviteLink);
   result.params.setString('name', cmd.payload.name);
-  result.params.setString('_chat_ids_json', '[]');
+  result.params.setString('_chat_ids_json', buildChatIdArrayJson(cmd.payload.chatIds));
 }
 
 function serializeDeleteChatFolderInviteLink(command: AnyAppCommand, result: SerializedCommand): void {

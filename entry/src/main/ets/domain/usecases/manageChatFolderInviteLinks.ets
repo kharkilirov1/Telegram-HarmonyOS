@@ -41,16 +41,17 @@ export class ManageChatFolderInviteLinksUseCase {
     }
   }
 
-  async createLink(folderId: number, name: string): Promise<void> {
+  async createLink(folderId: number, name: string, chatIds: number[] = []): Promise<void> {
     this.validateFolderId(folderId);
     const trimmed = name.trim();
     if (trimmed.length === 0 || trimmed.length > CHAT_FOLDER_INVITE_LINK_NAME_MAX_LENGTH) {
       throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid link name',
         'Expected 1..' + CHAT_FOLDER_INVITE_LINK_NAME_MAX_LENGTH + ' characters', 400, false);
     }
+    const validatedIds = this.validateChatIds(chatIds);
     try {
       hilog.info(DOMAIN, TAG, 'Creating invite link for folder %{public}d', folderId);
-      await this.gateway.send(createCreateChatFolderInviteLinkCommand(folderId, trimmed));
+      await this.gateway.send(createCreateChatFolderInviteLinkCommand(folderId, trimmed, validatedIds));
     } catch (error) {
       const err = error as Error;
       hilog.error(DOMAIN, TAG, 'createChatFolderInviteLink failed: %{public}s', err.message);
@@ -58,7 +59,7 @@ export class ManageChatFolderInviteLinksUseCase {
     }
   }
 
-  async editLink(folderId: number, inviteLink: string, name: string): Promise<void> {
+  async editLink(folderId: number, inviteLink: string, name: string, chatIds: number[] = []): Promise<void> {
     this.validateFolderId(folderId);
     if (inviteLink.trim().length === 0) {
       throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid invite link', 'Input validation failed', 400, false);
@@ -68,9 +69,10 @@ export class ManageChatFolderInviteLinksUseCase {
       throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid link name',
         'Expected 1..' + CHAT_FOLDER_INVITE_LINK_NAME_MAX_LENGTH + ' characters', 400, false);
     }
+    const validatedIds = this.validateChatIds(chatIds);
     try {
       hilog.info(DOMAIN, TAG, 'Editing invite link of folder %{public}d', folderId);
-      await this.gateway.send(createEditChatFolderInviteLinkCommand(folderId, inviteLink, trimmed));
+      await this.gateway.send(createEditChatFolderInviteLinkCommand(folderId, inviteLink, trimmed, validatedIds));
     } catch (error) {
       const err = error as Error;
       hilog.error(DOMAIN, TAG, 'editChatFolderInviteLink failed: %{public}s', err.message);
@@ -91,6 +93,15 @@ export class ManageChatFolderInviteLinksUseCase {
       hilog.error(DOMAIN, TAG, 'deleteChatFolderInviteLink failed: %{public}s', err.message);
       throw new AppError(AppErrorKind.UNKNOWN, 'Failed to delete the invite link', err.message, 0, true);
     }
+  }
+
+  private validateChatIds(chatIds: number[]): number[] {
+    for (const chatId of chatIds) {
+      if (!Number.isSafeInteger(chatId) || chatId <= 0) {
+        throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid chat id', 'Input validation failed', 400, false);
+      }
+    }
+    return chatIds.slice();
   }
 
   private validateFolderId(folderId: number): void {

@@ -310,6 +310,8 @@ export class ChatFolderInviteLinkPayload {
   folderId: number = 0;
   inviteLink: string = '';
   name: string = '';
+  // Empty means "all chats of the folder"; TDLib reads an empty chat_ids that way.
+  chatIds: number[] = [];
 }
 
 export class ChatFolderDraftPayload {
@@ -1554,23 +1556,27 @@ export function createGetChatFolderInviteLinksCommand(folderId: number): GetChat
 
 export function createCreateChatFolderInviteLinkCommand(
   folderId: number,
-  name: string
+  name: string,
+  chatIds: number[] = []
 ): CreateChatFolderInviteLinkCommand {
   const cmd = new CreateChatFolderInviteLinkCommand();
   cmd.payload.folderId = folderId;
   cmd.payload.name = name;
+  cmd.payload.chatIds = chatIds;
   return cmd;
 }
 
 export function createEditChatFolderInviteLinkCommand(
   folderId: number,
   inviteLink: string,
-  name: string
+  name: string,
+  chatIds: number[] = []
 ): EditChatFolderInviteLinkCommand {
   const cmd = new EditChatFolderInviteLinkCommand();
   cmd.payload.folderId = folderId;
   cmd.payload.inviteLink = inviteLink;
   cmd.payload.name = name;
+  cmd.payload.chatIds = chatIds;
   return cmd;
 }
 
