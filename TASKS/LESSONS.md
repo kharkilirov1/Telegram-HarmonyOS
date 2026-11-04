@@ -1230,3 +1230,11 @@ Last updated: 2026-10-23
   `peerUserId > 0`, which would have turned channel-with-peer rows into unblock panels. Split the branch
   before adding blocked state.
 - Type aliases exported next to a pure module cannot be requested from the CJS loader; load only values.
+
+## 231. Read the exact field owner before parsing a counter
+
+- `messageThreadInfo` carries `unread_message_count` at the top level; `reply_info` only has
+  `reply_count`. Parsing both from `reply_info` silently returned 0 and the suite caught it only because
+  the fixture used the real schema. Dump the td_api.tl line for the object before writing a parser.
+- Added trailing-newline and count assertions early in a new suite pay for themselves: two schema slips were
+  found before the suite ever reached the wire assertions.

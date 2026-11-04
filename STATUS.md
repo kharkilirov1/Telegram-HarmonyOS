@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **D11-thread-data (lead).** Слой данных комментариев: команды `getMessageThread` и
+  `getMessageThreadHistory` (payload/фабрики), сериализатор с raw int64 для message_id/from_message_id,
+  парсеры `MessageThreadPage` (reply_count из `reply_info`, unread из top-level `unread_message_count`,
+  список id, `next_offset`), `MessageThreadUseCase.loadThread/loadHistory` с валидацией (chatId,
+  messageId, fromMessageId, offset 0..100, limit 1..100), аккуратные ошибки `AppError`. Суита
+  `test-message-thread.cjs` (132-я): wire, парсеры, валидация, отказы gateway/`@type`. Гейты: host
+  **132/132**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток D11: страница треда, отправка комментария,
+  witness.
 - **H8-unblock (lead).** Заблокированный peer в приватном/секретном чате получает панель UNBLOCK
   вместо композера: `selectChatInputPanel` → `unblock`, действие `unblock` в chrome/портах/контексте,
   лейбл через `bottomBarActionLabel`, обработка в `handleChatBottomBarAction` через

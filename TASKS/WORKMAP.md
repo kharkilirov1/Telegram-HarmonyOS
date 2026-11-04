@@ -80,6 +80,7 @@
 | F6d | Карточка пака во вьювере (F6) | F6 | `ChatStickerPackCoordinator` + поля состояния + порт + плитка Add/Remove; остаток — TGS, листание по паку |
 | G4b | Delete and Exit для удалённого (G4) | G4 | панель banned-group, красная кнопка, `ChatExitCoordinator`; остаток — witness |
 | H8b | Панель UNBLOCK (H8/G4) | H8 | политика unblock, `SetMessageSenderBlockedUseCase`, суита `test-chat-unblock.cjs`; остаток — witness |
+| D11a | Слой данных тредов (D11) | D11 | команды/сериализатор/парсеры/use case, суита `test-message-thread.cjs`; далее страница треда |
 | S12b | Меню действий в шапке чата (C10) | C10 | `showMoreAction`/`onMorePress` в `TgChatTopBar`, меню Chat Info / Mute / Clear History / Delete в `TgChatScreenPage`, live-store состояние, контракт `test-chat-header-actions.cjs`, smoke-пин на 4 действия; C10 → `available` |
 | S12c | Leave Chat и Share My Contact (C10) | C10 | `leaveChat` + `inputMessageContact` (команды/сериализаторы), `LeaveChatUseCase`/`ShareMyContactUseCase`, пятый контекстный пункт меню в шапке, 6 строк в 3 локалях, контракт расширен |
 | S12d | Report с причинами + `ChatActionsCoordinator` (C10) | C10 | `reportChat`/`ReportChatDto`/`ReportChatUseCase`, `canBeReported` в модели/DTO/reducer, шестой пункт меню, меню вынесено в координатор (страница ≤500 строк), контракт расширен |

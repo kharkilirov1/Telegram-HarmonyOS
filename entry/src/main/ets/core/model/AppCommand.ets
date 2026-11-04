@@ -646,6 +646,31 @@ export class GetMessagePropertiesCommand extends AppCommand {
   payload: GetMessagePropertiesPayload = new GetMessagePropertiesPayload();
 }
 
+// D11: comment threads. TDLib: getMessageThread (td_api.tl:10565) and
+// getMessageThreadHistory (:10816). The thread is addressed by the message the comments hang under.
+export class GetMessageThreadPayload {
+  chatId: ChatId = 0;
+  messageId: string = '0';
+}
+
+export class GetMessageThreadCommand extends AppCommand {
+  type: string = 'getMessageThread';
+  payload: GetMessageThreadPayload = new GetMessageThreadPayload();
+}
+
+export class GetMessageThreadHistoryPayload {
+  chatId: ChatId = 0;
+  messageId: string = '0';
+  fromMessageId: string = '0';
+  offset: number = 0;
+  limit: number = 50;
+}
+
+export class GetMessageThreadHistoryCommand extends AppCommand {
+  type: string = 'getMessageThreadHistory';
+  payload: GetMessageThreadHistoryPayload = new GetMessageThreadHistoryPayload();
+}
+
 export class GetRepliedMessageCommand extends AppCommand {
   type: string = 'getRepliedMessage';
   payload: GetRepliedMessagePayload = new GetRepliedMessagePayload();
@@ -1222,6 +1247,8 @@ export type AnyAppCommand =
   | GetMessagePropertiesCommand
   | GetChatPinnedMessageCommand
   | GetRepliedMessageCommand
+| GetMessageThreadCommand
+| GetMessageThreadHistoryCommand
   | CloseChatCommand
   | GetUserFullInfoCommand
   | GetSupergroupCommand
@@ -1544,6 +1571,24 @@ export function createGetMessagePropertiesCommand(chatId: ChatId, messageId: Mes
 export function createGetChatPinnedMessageCommand(chatId: ChatId): GetChatPinnedMessageCommand {
   const cmd = new GetChatPinnedMessageCommand();
   cmd.payload.chatId = chatId;
+  return cmd;
+}
+
+export function createGetMessageThreadCommand(chatId: ChatId, messageId: string): GetMessageThreadCommand {
+  const cmd = new GetMessageThreadCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.messageId = messageId;
+  return cmd;
+}
+
+export function createGetMessageThreadHistoryCommand(chatId: ChatId, messageId: string,
+  fromMessageId: string = '0', offset: number = 0, limit: number = 50): GetMessageThreadHistoryCommand {
+  const cmd = new GetMessageThreadHistoryCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.messageId = messageId;
+  cmd.payload.fromMessageId = fromMessageId;
+  cmd.payload.offset = offset;
+  cmd.payload.limit = limit;
   return cmd;
 }
 

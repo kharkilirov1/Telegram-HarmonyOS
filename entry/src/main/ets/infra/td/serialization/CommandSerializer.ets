@@ -66,7 +66,7 @@ import {
   GetMessageCommand,
   GetMessagePropertiesCommand,
   GetChatPinnedMessageCommand,
-  GetRepliedMessageCommand,
+  GetRepliedMessageCommand, GetMessageThreadCommand, GetMessageThreadHistoryCommand,
   CloseChatCommand,
   SetTdlibOnlineCommand,
   GetUserFullInfoCommand,
@@ -185,6 +185,8 @@ COMMAND_SERIALIZATION_HANDLERS.set('searchPublicChats', serializeSearchPublicCha
 COMMAND_SERIALIZATION_HANDLERS.set('searchCallMessages', serializeSearchCallMessages);
 COMMAND_SERIALIZATION_HANDLERS.set('getChat', serializeGetChat);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessage', serializeGetMessage);
+COMMAND_SERIALIZATION_HANDLERS.set('getMessageThread', serializeGetMessageThread);
+COMMAND_SERIALIZATION_HANDLERS.set('getMessageThreadHistory', serializeGetMessageThreadHistory);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageProperties', serializeGetMessageProperties);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatPinnedMessage', serializeGetChatPinnedMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('getRepliedMessage', serializeGetRepliedMessage);
@@ -989,6 +991,23 @@ function serializeGetChatPinnedMessage(command: AnyAppCommand, result: Serialize
   const cmd = command as GetChatPinnedMessageCommand;
   result.method = 'getChatPinnedMessage';
   result.params.setNumber('chat_id', cmd.payload.chatId);
+}
+
+function serializeGetMessageThread(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetMessageThreadCommand;
+  result.method = 'getMessageThread';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('_message_id_json', cmd.payload.messageId);
+}
+
+function serializeGetMessageThreadHistory(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetMessageThreadHistoryCommand;
+  result.method = 'getMessageThreadHistory';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('_message_id_json', cmd.payload.messageId);
+  result.params.setString('_from_message_id_json', cmd.payload.fromMessageId);
+  result.params.setNumber('offset', cmd.payload.offset);
+  result.params.setNumber('limit', cmd.payload.limit);
 }
 
 function serializeGetMessage(command: AnyAppCommand, result: SerializedCommand): void {
