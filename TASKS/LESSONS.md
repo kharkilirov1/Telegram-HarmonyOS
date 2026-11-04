@@ -910,3 +910,13 @@ Last updated: 2026-10-23
   validation error from callers and tests. Validate before the try, then send.
 - Renaming must resend the existing chat_ids: an empty array would widen a restricted invite link to
   every folder chat.
+
+## 200. A serializer that ignores its command silently reuses the wrong request
+
+- `serializeOptimizeStorage` took `_command` and always sent size/ttl/count = 0, so any limit request
+  would have cleared the whole cache instead of trimming it. When a serializer ignores its command
+  argument, adding the payload belongs to the same slice.
+- Honest limit semantics: `optimizeStorage` has no persistent setting, so the UI says the limit is
+  applied now and keeps the choice locally instead of pretending the cache stays bounded forever.
+- Matrix rows use Russian titles; doc patch scripts must anchor on the row prefix (`| H4 | Данные и`),
+  not an English guess, or the docs update is skipped after the code commit is already made.

@@ -220,3 +220,8 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
 
 - [ ] **Revoke and reissue the exposed API key** `sk-or-v1-…` (visible in the 2026-08-29 audit
   screenshots) and delete both messages in the File chat, including the prompt-injection text.
+
+- [ ] **H4: нет iOS-графика и авто-применения лимита кэша.** Лимит выбирается и
+  применяется вручную (в момент выбора), но не применяется автоматически при росте кэша, нет
+  графика использования и разбивки по типам файлов как в iOS; активный пресет авто-загрузки TDLib
+  по-прежнему не отдаёт. Владелец: lead. Триггер: следующий проход по H4.

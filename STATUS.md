@@ -146,6 +146,15 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S11c (lead).** H4: «Maximum Cache Size». `OptimizeStoragePayload` (size/ttl/count/immunityDelay)
+  и сериализатор (раньше всегда отправлял нули — лимит стёр бы весь кэш),
+  `LoadStorageStatisticsUseCase.enforceCacheLimit` (0 = Unlimited → запрос не отправляется;
+  валидация до gateway; ttl/count = -1 = дефолты TDLib), строка в Data and Storage с выбором
+  256 МБ/512 МБ/1 ГБ/2 ГБ/Unlimited через `showActionMenu`, сохранение в `preferences`
+  (`storage_settings`/`max_cache_bytes`), применение с тостом и перечитыванием статистики. Контракт
+  `test-cache-limit.cjs`: wire clear/limit, use case (unlimited/валидация/ошибка), форматирование,
+  проводка страницы, 3 строки в 3 локалях. Гейты: host **118/118**, оба smoke, hvigor BUILD
+  SUCCESSFUL. Остаток H4: iOS-график, авто-применение лимита, witness.
 - **S13h (lead).** B7: ограничение invite-ссылки набором чатов + фикс расширения при
   переименовании. `chatIds` в `ChatFolderInviteLinkPayload` и фабриках, сериализатор create/edit
   пишет `buildChatIdArrayJson(chatIds)` (пустой массив = все чаты папки), use case валидирует id до
