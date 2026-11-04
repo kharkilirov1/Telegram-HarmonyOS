@@ -641,6 +641,34 @@
       "value": "Заблокированные"
     },
     {
+      "name": "chat_actions_administrators",
+      "value": "Администраторы"
+    },
+    {
+      "name": "administrators_title",
+      "value": "Администраторы"
+    },
+    {
+      "name": "administrators_loading",
+      "value": "Загружаем администраторов…"
+    },
+    {
+      "name": "administrators_failed",
+      "value": "Не удалось загрузить администраторов"
+    },
+    {
+      "name": "administrators_empty",
+      "value": "Нет администраторов"
+    },
+    {
+      "name": "administrators_owner",
+      "value": "Владелец"
+    },
+    {
+      "name": "administrators_unknown_user",
+      "value": "Пользователь"
+    },
+    {
       "name": "chat_actions_manage",
       "value": "Управление"
     },

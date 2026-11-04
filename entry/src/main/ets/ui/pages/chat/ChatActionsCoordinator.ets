@@ -41,7 +41,8 @@ export class ChatActionsHost {
     reportMessagesAction: (chatId: number, optionId: string) => void,
     currentUserIdProvider: () => number,
     membersAction: (chatId: number, title: string) => void,
-    inviteLinksAction: (chatId: number) => void
+    inviteLinksAction: (chatId: number) => void,
+    administratorsAction: (chatId: number) => void
   ) {
     this.uiContextProvider = uiContextProvider;
     this.titleProvider = titleProvider;
@@ -53,6 +54,7 @@ export class ChatActionsHost {
     this.currentUserIdProvider = currentUserIdProvider;
     this.membersHandler = membersAction;
     this.inviteLinksHandler = inviteLinksAction;
+    this.administratorsHandler = administratorsAction;
   }
 
   uiContext(): UIContext {
@@ -80,6 +82,7 @@ export class ChatActionsHost {
   private currentUserIdProvider: () => number;
   private membersHandler: (chatId: number, title: string) => void;
   private inviteLinksHandler: (chatId: number) => void;
+  private administratorsHandler: (chatId: number) => void;
 
   requestReportComment(chatId: number, optionId: string): void {
     this.reportCommentHandler(chatId, optionId);
@@ -98,6 +101,10 @@ export class ChatActionsHost {
     this.inviteLinksHandler(chatId);
   }
 
+  openAdministrators(chatId: number): void {
+    this.administratorsHandler(chatId);
+  }
+
   requestReportMessages(chatId: number, optionId: string): void {
     this.reportMessagesHandler(chatId, optionId);
   }
@@ -112,6 +119,7 @@ export enum ChatMenuAction {
   Manage,
   Members,
   InviteLinks,
+  Administrators,
   Leave,
   ShareContact,
   Report
@@ -244,14 +252,17 @@ export class ChatActionsCoordinator {
 
   private showManageMenu(chatId: number, chat: Chat): void {
     const normal: Resource = TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND;
-    const actions: ChatMenuAction[] = [ChatMenuAction.Members, ChatMenuAction.InviteLinks];
+    const actions: ChatMenuAction[] = [ChatMenuAction.Members, ChatMenuAction.InviteLinks,
+      ChatMenuAction.Administrators];
     const b0: promptAction.Button = {
       text: localized($r('app.string.chat_actions_members').id, 'Members'), color: normal };
     const b1: promptAction.Button = {
       text: localized($r('app.string.chat_actions_invite_links').id, 'Invite Links'), color: normal };
+    const b2: promptAction.Button = {
+      text: localized($r('app.string.chat_actions_administrators').id, 'Administrators'), color: normal };
     this.host.uiContext().getPromptAction().showActionMenu({
       title: localized($r('app.string.chat_actions_manage').id, 'Manage'),
-      buttons: [b0, b1]
+      buttons: [b0, b1, b2]
     }).then((result: promptAction.ActionMenuSuccessResponse) => {
       this.applyMenuAction(actions[result.index], chatId, chat);
     }).catch((error: Error) => {
@@ -277,6 +288,8 @@ export class ChatActionsCoordinator {
       this.host.openMembers(chatId, this.host.title());
     } else if (action === ChatMenuAction.InviteLinks) {
       this.host.openInviteLinks(chatId);
+    } else if (action === ChatMenuAction.Administrators) {
+      this.host.openAdministrators(chatId);
     } else if (action === ChatMenuAction.Leave) {
       this.confirmLeave(chatId);
     } else if (action === ChatMenuAction.ShareContact) {

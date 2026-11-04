@@ -10,6 +10,7 @@ import { localized } from '../../../core/utils/AppResource';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { ProfileMembersRouteParams } from '../profile/TgProfileMembersPage';
 import { ChatInviteLinksRouteParams } from './chatInviteLinksRoute';
+import { ChatAdministratorsRouteParams } from './chatAdministratorsRoute';
 import { ChatScreenViewState } from './ChatScreenViewState';
 import { ChatScreenSession } from './ChatScreenSession';
 import { ChatScreenViewBindings } from './ChatScreenViewBindings';
@@ -68,6 +69,9 @@ export struct TgChatScreenPage {
     },
     (chatId: number): void => {
       this.openInviteLinksFromChat(chatId);
+    },
+    (chatId: number): void => {
+      this.openAdministratorsFromChat(chatId);
     }
   ));
 
@@ -113,6 +117,24 @@ export struct TgChatScreenPage {
     }
     this.getUIContext().getPromptAction().showToast({
       message: localized($r('app.string.invite_links_failed').id, 'Could not load invite links'),
+      duration: 2000
+    });
+  }
+
+  private openAdministratorsFromChat(chatId: number): void {
+    try {
+      const navigation = this.queryNavigationInfo();
+      const stack = navigation?.pathStack;
+      if (stack !== undefined) {
+        stack.pushPathByName('TgChatAdministratorsPage', new ChatAdministratorsRouteParams(chatId));
+        return;
+      }
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Administrators navigation failed: %{public}s', String(error));
+    }
+    this.getUIContext().getPromptAction().showToast({
+      message: localized($r('app.string.administrators_failed').id,
+        'Could not load administrators'),
       duration: 2000
     });
   }

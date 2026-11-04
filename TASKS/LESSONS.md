@@ -1021,3 +1021,13 @@ Last updated: 2026-10-23
   needs its own explicit name list; a missing name surfaces as `Cannot destructure ... of undefined`.
 - Six-button action menus cannot absorb every admin entry: add a Manage submenu instead of dropping
   an existing entry, and update the header contract when the top-level item changes.
+
+## 211. Administrator entries carry ids only; profile navigation is page-private
+
+- `chatAdministrator` has user_id, custom_title and is_owner; names must come from the users store
+  with a neutral placeholder for unknown ids, otherwise the list renders empty titles.
+- `DirectUserProfileRouteParams` and `captureProfileLoadContext` live as file-private helpers in the
+  members page, so a new screen cannot open a profile by importing them; either export the helper or
+  omit the tap and record the debt (done here).
+- Adding a third entry to the Manage submenu required updating two suites that pinned the exact
+  action array; grep for the array literal after any submenu change instead of only the new suite.

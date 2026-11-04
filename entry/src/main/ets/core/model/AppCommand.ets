@@ -780,6 +780,15 @@ export class ChatFolderInviteLinkRequestPayload {
   chatIds: number[] = [];
 }
 
+export class GetChatAdministratorsPayload {
+  chatId: ChatId = 0;
+}
+
+export class GetChatAdministratorsCommand extends AppCommand {
+  type: string = 'getChatAdministrators';
+  payload: GetChatAdministratorsPayload = new GetChatAdministratorsPayload();
+}
+
 export class CreateChatInviteLinkPayload {
   chatId: ChatId = 0;
   name: string = '';
@@ -1142,6 +1151,7 @@ export type AnyAppCommand =
   | JoinChatByInviteLinkCommand
   | CheckChatFolderInviteLinkCommand
   | AddChatFolderByInviteLinkCommand
+  | GetChatAdministratorsCommand
   | CreateChatInviteLinkCommand
   | RevokeChatInviteLinkCommand
   | GetChatInviteLinksCommand
@@ -1674,6 +1684,12 @@ export function createAddChatFolderByInviteLinkCommand(
   const cmd = new AddChatFolderByInviteLinkCommand();
   cmd.payload.inviteLink = inviteLink;
   cmd.payload.chatIds = chatIds;
+  return cmd;
+}
+
+export function createGetChatAdministratorsCommand(chatId: ChatId): GetChatAdministratorsCommand {
+  const cmd = new GetChatAdministratorsCommand();
+  cmd.payload.chatId = chatId;
   return cmd;
 }
 

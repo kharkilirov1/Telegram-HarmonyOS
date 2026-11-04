@@ -641,6 +641,34 @@
       "value": "Blocked Users"
     },
     {
+      "name": "chat_actions_administrators",
+      "value": "Administrators"
+    },
+    {
+      "name": "administrators_title",
+      "value": "Administrators"
+    },
+    {
+      "name": "administrators_loading",
+      "value": "Loading administrators…"
+    },
+    {
+      "name": "administrators_failed",
+      "value": "Could not load administrators"
+    },
+    {
+      "name": "administrators_empty",
+      "value": "No administrators"
+    },
+    {
+      "name": "administrators_owner",
+      "value": "Owner"
+    },
+    {
+      "name": "administrators_unknown_user",
+      "value": "User"
+    },
+    {
       "name": "chat_actions_manage",
       "value": "Manage"
     },

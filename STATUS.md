@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S12i (lead).** C10: администраторы группы. Команда `getChatAdministrators` + сериализатор,
+  `ChatAdministratorDto`/`ChatAdministratorsDto` (user_id/custom_title/is_owner, невалидные и
+  чужие записи отбрасываются), `ChatAdministratorsUseCase` (валидация chatId, ошибки), экран
+  `TgChatAdministratorsPage` (имена из users store, фолбэк «User <id>», owner-метка · custom title,
+  пустое состояние, ошибка), route `TgChatAdministratorsPage` + `ChatAdministratorsRouteParams`,
+  Manage-подменю расширено пунктом Administrators (3 кнопки), host `openAdministrators` и навигация
+  со страницы чата. Новая суита `scripts/test-chat-administrators.cjs` (122-я): разбор DTO
+  (фильтрация невалидных), wire `getChatAdministrators`, валидация до gateway, ошибки, экран/route/
+  подменю/7 строк в 3 локалях. Гейты: host **122/122**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток
+  C10: экран прав (`setChatPermissions`), профиль по тапу из админов, witness.
 - **S12h (lead).** C10: ссылки-приглашения группы. Команды `getChatInviteLinks`/
   `createChatInviteLink`/`revokeChatInviteLink` + сериализаторы, `ChatInviteLinkDto`/
   `ChatInviteLinksDto` (primary/лимит/участники/заявки/revoked), `ChatInviteLinksUseCase`

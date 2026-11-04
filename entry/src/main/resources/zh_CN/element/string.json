@@ -641,6 +641,34 @@
       "value": "已屏蔽用户"
     },
     {
+      "name": "chat_actions_administrators",
+      "value": "管理员"
+    },
+    {
+      "name": "administrators_title",
+      "value": "管理员"
+    },
+    {
+      "name": "administrators_loading",
+      "value": "正在加载管理员…"
+    },
+    {
+      "name": "administrators_failed",
+      "value": "无法加载管理员"
+    },
+    {
+      "name": "administrators_empty",
+      "value": "没有管理员"
+    },
+    {
+      "name": "administrators_owner",
+      "value": "所有者"
+    },
+    {
+      "name": "administrators_unknown_user",
+      "value": "用户"
+    },
+    {
       "name": "chat_actions_manage",
       "value": "管理"
     },
