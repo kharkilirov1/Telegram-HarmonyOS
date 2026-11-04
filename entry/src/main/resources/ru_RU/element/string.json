@@ -125,6 +125,14 @@
       "value": "Файл"
     },
     {
+      "name": "typing_and",
+      "value": "и"
+    },
+    {
+      "name": "typing_others",
+      "value": "других"
+    },
+    {
       "name": "typing",
       "value": "печатает…"
     },

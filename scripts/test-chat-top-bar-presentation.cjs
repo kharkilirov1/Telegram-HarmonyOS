@@ -22,6 +22,20 @@ const slowmodeFixtureDeps = (() => {
 })();
 Object.assign(globalThis, slowmodeFixtureDeps);
 
+// C2 multi-typing: the presentation formatter now shares its rule with the reducer helper.
+const typingFixture = (() => {
+  const etsRoot = path.resolve(__dirname, '../entry/src/main/ets');
+  function module(file, deps = {}) {
+    const source = fs.readFileSync(path.join(etsRoot, file), 'utf8');
+    const names = [...source.matchAll(/^export\s+(?:class|function)\s+(\w+)/gm)].map(match => match[1]);
+    const js = stripTypeScriptTypes(source.replace(/^import[\s\S]*?;\s*/gm, '').replace(/^export\s+/gm, ''),
+      { mode: 'transform' });
+    return new Function(...Object.keys(deps), js + `; return {${names.join(',')}};`)(...Object.values(deps));
+  }
+  const state = module('core/model/AppState.ets');
+  return { ...state, ...module('core/model/TypingActions.ets', { ...state }) };
+})();
+
 const baselinePathIndex = process.argv.indexOf('--baseline-page');
 const baselinePagePath = baselinePathIndex < 0 ? undefined : process.argv[baselinePathIndex + 1];
 let pageSource = readChatSource(baselinePagePath || path.join(root,
@@ -61,9 +75,11 @@ const DateStub = { now: () => now };
 const isSavedMessagesChatFixture = (chat, selfUserId) =>
   chat !== undefined && selfUserId > 0 && chat.type === 'private' && chat.peerUserId === selfUserId;
 const bindingNames = ['localized', 'localizedPlural', '$r', 'fileUri',
-  'TgChatTopBarSubtitleMode', 'TgChatTopBarTrailingAction', 'Date', 'Chat', 'isSavedMessagesChat'];
+  'TgChatTopBarSubtitleMode', 'TgChatTopBarTrailingAction', 'Date', 'Chat', 'isSavedMessagesChat',
+  'activeSenders', 'formatTypingActors', 'typingSetIsPlainTyping'];
 const bindingValues = [localized, localizedPlural, $r, fileUri,
-  TgChatTopBarSubtitleMode, TgChatTopBarTrailingAction, DateStub, Chat, isSavedMessagesChatFixture];
+  TgChatTopBarSubtitleMode, TgChatTopBarTrailingAction, DateStub, Chat, isSavedMessagesChatFixture,
+  typingFixture.activeSenders, typingFixture.formatTypingActors, typingFixture.typingSetIsPlainTyping];
 
 function method(source, name) {
   const match = source.match(new RegExp(`^  private ${name}\\([\\s\\S]*?^  \\}`, 'm'));

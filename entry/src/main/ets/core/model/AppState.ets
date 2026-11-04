@@ -91,10 +91,18 @@ export class Chat {
 }
 
 // Typing indicator per chat
+export class ChatActivitySender {
+  userId: UserId = 0;
+  actionType: string = 'typing';
+  timestamp: number = 0;
+}
+
 export class ChatTypingInfo {
   senderUserId: UserId = 0;
   actionType: string = 'typing'; // 'typing', 'recordingVideo', 'uploadingPhoto', etc.
   timestamp: number = 0;
+  // Every active sender, newest first; senderUserId/actionType mirror the newest for simple callers.
+  senders: ChatActivitySender[] = [];
 }
 
 // Chat folders (TDLib chatFolderInfo, td_api.tl:3115 + updateChatFolders:9683).

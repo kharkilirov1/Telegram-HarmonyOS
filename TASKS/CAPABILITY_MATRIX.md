@@ -62,7 +62,7 @@
 | # | Возможность | Статус | Доказательство | iOS-референс | Связанные / шов |
 |---|---|---|---|---|---|
 | C1 | Шапка чата (title/subtitle/avatar) | `available` | `TgChatTopBar.ets`, `ChatChromeState.ets` (13/6) | `Components/Chat/ChatTitleStatusNode` | C2, G1 |
-| C2 | Индикатор набора | `partial` | `ChatTopBarPresentation.ets:12,169-184` (TTL 8 s как в iOS `PeerInputActivityManager`, режим `Typing`, группа — только имя), `ChatRouteActivationCoordinator.ets:224-231` (откат по дедлайну без новых store-change), `TgChatTopBar.ets:173-194` (3 точки по токенам). Device (2026-10-25): `ChatHeaderStatus` 8/8 PASS. **Не снято:** визуальный кадр «печатает…» — нужен второй участник, а история чатов на прогоне не загрузилась | `ChatTitleView/ChatTitleComponent.swift`, `PeerInputActivityManager.swift` | B12, J3; шов — VO `{subtitle, mode}` |
+| C2 | Индикатор набора текста | `partial` | Мульти-typing: `ChatTypingInfo.senders` (до 5, новые первыми, `applyTypingAction` в `core/model/TypingActions.ets`), reducer обновляет набор и удаляет чат при последнем cancel, шапка форматирует «A», «A и B», «A и ещё N» (`formatTypingActors`, `typing_and`/`typing_others` в 3 локалях), mode = Typing только если все печатают; private-чат сохраняет activity-строку. Нет: пульсация точек 0,7 s (tokens-first), witness | `ChatTitleComponent` typing branch | S9 |
 | C3 | Поиск по чату | `available` | `ChatSearchController.ets` (14/14) | `ChatControllerSearch*` | C8 |
 | C4 | Закреплённое сообщение (бар) | `available` | `ChatMessageActionsController.ets` (24/12) | `Chat/PinnedMessage*` | C8 |
 | C5 | Разделители дат | `available` | `ChatTimelineVO.ets`, `TgDateSeparator.ets` (5/1) | `Components/Chat` | C6 |

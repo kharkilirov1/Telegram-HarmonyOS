@@ -125,6 +125,14 @@
       "value": "文件"
     },
     {
+      "name": "typing_and",
+      "value": "和"
+    },
+    {
+      "name": "typing_others",
+      "value": "人"
+    },
+    {
       "name": "typing",
       "value": "正在输入…"
     },

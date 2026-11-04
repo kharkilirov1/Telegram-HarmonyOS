@@ -1076,3 +1076,13 @@ Last updated: 2026-10-23
   zero total must not divide by zero. That made the chart testable without mounting ArkUI.
 - Keep chart colors in tokens (`STORAGE_CHART_*`) built from existing palette resources; do not inline
   color values in a molecule.
+
+## 216. Mutable per-chat sets break old constructors; normalize at the boundary
+
+- Adding `senders: ChatActivitySender[]` to `ChatTypingInfo` broke a suite that constructs the class
+  with only the scalar fields (`typingInfo.senders is not iterable`). A normalization helper
+  (`activeSenders`) that falls back to the scalars keeps old call sites and fixtures working.
+- Presentation helpers loaded through an ad-hoc `new Function(...bindings)` harness need every new
+  import injected explicitly; otherwise the suite fails with `X is not defined` at module-eval time.
+- Keep the sender set and the legacy scalar fields in sync in one pure helper instead of duplicating
+  the rules in the reducer and the header formatter.

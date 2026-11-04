@@ -2,6 +2,11 @@
 
 import { fileUri } from '@kit.CoreFileKit';
 import { AppState, Chat, ChatTypingInfo, isSavedMessagesChat } from '../../../core/model/AppState';
+import {
+  activeSenders,
+  formatTypingActors,
+  typingSetIsPlainTyping
+} from '../../../core/model/TypingActions';
 import { localized, localizedPlural } from '../../../core/utils/AppResource';
 import { TgChatTopBarSubtitleMode, TgChatTopBarTrailingAction } from '../../tg_ui/atoms/TgChatTopBar';
 
@@ -171,18 +176,24 @@ export function chatSubtitlePresentation(chat: Chat | undefined, state: AppState
 
   const typingInfo = state.chats.typingActions.get(chatId);
   if (typingInfo !== undefined && typingActivityRemainingMs(typingInfo, now()) > 0) {
-    // iOS shows the sender's name alone for a group or channel and the localized
-    // action label for a one-to-one chat: ChatTitleComponent.swift:686-688 takes
-    // `items.first.peer.compactDisplayTitle`, the CloudUser/SecretChat branch takes
-    // the activity string.
-    let actorName: string = '';
-    if (chat.peerUserId <= 0 && typingInfo.senderUserId > 0) {
-      const sender = state.users.users.get(typingInfo.senderUserId);
-      actorName = sender !== undefined
-        ? (sender.firstName.length > 0 ? sender.firstName : sender.username) : '';
+    // iOS shows the senders' names ("A and 3 others") in groups and the localized activity label in a
+    // one-to-one chat: ChatTitleComponent.swift:686-688 takes the first peer's compact title.
+    const actorNames: string[] = [];
+    if (chat.peerUserId <= 0) {
+      for (const sender of activeSenders(typingInfo)) {
+        const user = state.users.users.get(sender.userId);
+        const name: string = user === undefined ? ''
+          : (user.firstName.length > 0 ? user.firstName : user.username);
+        if (name.length > 0) {
+          actorNames.push(name);
+        }
+      }
     }
-    result.subtitle = actorName.length > 0 ? actorName : formatTypingSubtitle(typingInfo.actionType);
-    result.mode = typingInfo.actionType === 'typing'
+    const actors: string = formatTypingActors(actorNames,
+      localized($r('app.string.typing_and').id, 'and'),
+      localized($r('app.string.typing_others').id, 'others'));
+    result.subtitle = actors.length > 0 ? actors : formatTypingSubtitle(typingInfo.actionType);
+    result.mode = typingSetIsPlainTyping(typingInfo)
       ? TgChatTopBarSubtitleMode.Typing : TgChatTopBarSubtitleMode.Activity;
   }
 

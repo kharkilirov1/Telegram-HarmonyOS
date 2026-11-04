@@ -125,6 +125,14 @@
       "value": "File"
     },
     {
+      "name": "typing_and",
+      "value": "and"
+    },
+    {
+      "name": "typing_others",
+      "value": "others"
+    },
+    {
       "name": "typing",
       "value": "typing…"
     },

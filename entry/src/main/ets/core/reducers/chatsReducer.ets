@@ -4,6 +4,7 @@
 // Maintains orderedChatIds sorted by TDLib order (descending); order=0 → removed from list
 
 import { AppState, Chat, ChatLastMessage, ChatTypingInfo, ReducerAction } from '../model/AppState';
+import { applyTypingAction } from '../model/TypingActions';
 import {
   GroupAccessUpdatedEvent,
   SupergroupBoostsUpdatedEvent,
@@ -517,16 +518,14 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
 
     case 'chatAction': {
       const event = action as ChatActionEvent;
-      // Clone the typing map
+      // Clone the typing map; one entry holds every active sender for that chat.
       newState.chats.typingActions = new Map<number, ChatTypingInfo>(state.chats.typingActions);
-      if (event.actionType === 'cancel') {
+      const current = state.chats.typingActions.get(event.chatId);
+      const next = applyTypingAction(current, event.senderUserId, event.actionType, event.timestamp);
+      if (next === undefined) {
         newState.chats.typingActions.delete(event.chatId);
       } else {
-        const info = new ChatTypingInfo();
-        info.senderUserId = event.senderUserId;
-        info.actionType = event.actionType;
-        info.timestamp = event.timestamp;
-        newState.chats.typingActions.set(event.chatId, info);
+        newState.chats.typingActions.set(event.chatId, next);
       }
       break;
     }
