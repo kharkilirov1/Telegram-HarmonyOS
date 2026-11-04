@@ -44,7 +44,8 @@ export class ChatActionsHost {
     inviteLinksAction: (chatId: number) => void,
     administratorsAction: (chatId: number) => void,
     permissionsAction: (chatId: number) => void,
-    autoDeleteAction: (chatId: number) => void
+    autoDeleteAction: (chatId: number) => void,
+    scheduledAction: (chatId: number) => void
   ) {
     this.uiContextProvider = uiContextProvider;
     this.titleProvider = titleProvider;
@@ -59,6 +60,7 @@ export class ChatActionsHost {
     this.administratorsHandler = administratorsAction;
     this.permissionsHandler = permissionsAction;
     this.autoDeleteHandler = autoDeleteAction;
+    this.scheduledHandler = scheduledAction;
   }
 
   uiContext(): UIContext {
@@ -89,6 +91,7 @@ export class ChatActionsHost {
   private administratorsHandler: (chatId: number) => void;
   private permissionsHandler: (chatId: number) => void;
   private autoDeleteHandler: (chatId: number) => void;
+  private scheduledHandler: (chatId: number) => void;
 
   requestReportComment(chatId: number, optionId: string): void {
     this.reportCommentHandler(chatId, optionId);
@@ -119,6 +122,10 @@ export class ChatActionsHost {
     this.autoDeleteHandler(chatId);
   }
 
+  openScheduled(chatId: number): void {
+    this.scheduledHandler(chatId);
+  }
+
   requestReportMessages(chatId: number, optionId: string): void {
     this.reportMessagesHandler(chatId, optionId);
   }
@@ -136,6 +143,7 @@ export enum ChatMenuAction {
   Administrators,
   Permissions,
   AutoDelete,
+  Scheduled,
   Leave,
   ShareContact,
   Report
@@ -268,8 +276,10 @@ export class ChatActionsCoordinator {
 
   private showManageMenu(chatId: number, chat: Chat): void {
     const normal: Resource = TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND;
+    // showActionMenu accepts exactly six buttons; this list must stay at six.
     const actions: ChatMenuAction[] = [ChatMenuAction.Members, ChatMenuAction.InviteLinks,
-      ChatMenuAction.Administrators, ChatMenuAction.Permissions, ChatMenuAction.AutoDelete];
+      ChatMenuAction.Administrators, ChatMenuAction.Permissions, ChatMenuAction.AutoDelete,
+      ChatMenuAction.Scheduled];
     const b0: promptAction.Button = {
       text: localized($r('app.string.chat_actions_members').id, 'Members'), color: normal };
     const b1: promptAction.Button = {
@@ -280,9 +290,11 @@ export class ChatActionsCoordinator {
       text: localized($r('app.string.chat_actions_permissions').id, 'Permissions'), color: normal };
     const b4: promptAction.Button = {
       text: localized($r('app.string.chat_actions_auto_delete').id, 'Auto-Delete'), color: normal };
+    const b5: promptAction.Button = {
+      text: localized($r('app.string.chat_actions_scheduled').id, 'Scheduled'), color: normal };
     this.host.uiContext().getPromptAction().showActionMenu({
       title: localized($r('app.string.chat_actions_manage').id, 'Manage'),
-      buttons: [b0, b1, b2, b3, b4]
+      buttons: [b0, b1, b2, b3, b4, b5]
     }).then((result: promptAction.ActionMenuSuccessResponse) => {
       this.applyMenuAction(actions[result.index], chatId, chat);
     }).catch((error: Error) => {
@@ -314,6 +326,8 @@ export class ChatActionsCoordinator {
       this.host.openPermissions(chatId);
     } else if (action === ChatMenuAction.AutoDelete) {
       this.host.openAutoDelete(chatId);
+    } else if (action === ChatMenuAction.Scheduled) {
+      this.host.openScheduled(chatId);
     } else if (action === ChatMenuAction.Leave) {
       this.confirmLeave(chatId);
     } else if (action === ChatMenuAction.ShareContact) {

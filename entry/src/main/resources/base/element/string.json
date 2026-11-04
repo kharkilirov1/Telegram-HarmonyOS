@@ -653,6 +653,42 @@
       "value": "Blocked Users"
     },
     {
+      "name": "chat_actions_scheduled",
+      "value": "Scheduled"
+    },
+    {
+      "name": "scheduled_title",
+      "value": "Scheduled Messages"
+    },
+    {
+      "name": "scheduled_loading",
+      "value": "Loading scheduled messages…"
+    },
+    {
+      "name": "scheduled_failed",
+      "value": "Could not load scheduled messages"
+    },
+    {
+      "name": "scheduled_empty",
+      "value": "No scheduled messages"
+    },
+    {
+      "name": "scheduled_media",
+      "value": "Media message"
+    },
+    {
+      "name": "scheduled_send_now",
+      "value": "Send Now"
+    },
+    {
+      "name": "scheduled_reschedule_hour",
+      "value": "In 1 hour"
+    },
+    {
+      "name": "scheduled_cancel",
+      "value": "Delete"
+    },
+    {
       "name": "chat_actions_auto_delete",
       "value": "Auto-Delete"
     },

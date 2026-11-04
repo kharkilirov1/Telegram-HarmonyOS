@@ -7,6 +7,7 @@ import { ChatInviteLinksRouteParams } from './chatInviteLinksRoute';
 import { ChatAdministratorsRouteParams } from './chatAdministratorsRoute';
 import { ChatPermissionsRouteParams } from './chatPermissionsRoute';
 import { ChatAutoDeleteRouteParams } from './chatAutoDeleteRoute';
+import { ChatScheduledMessagesRouteParams } from './chatScheduledMessagesRoute';
 
 export function currentAccountUserId(): number {
   try {
@@ -39,6 +40,14 @@ export function openAdministratorsScreen(stack: NavPathStack | undefined, chatId
     return false;
   }
   stack.pushPathByName('TgChatAdministratorsPage', new ChatAdministratorsRouteParams(chatId));
+  return true;
+}
+
+export function openScheduledScreen(stack: NavPathStack | undefined, chatId: number): boolean {
+  if (stack === undefined) {
+    return false;
+  }
+  stack.pushPathByName('TgChatScheduledMessagesPage', new ChatScheduledMessagesRouteParams(chatId));
   return true;
 }
 

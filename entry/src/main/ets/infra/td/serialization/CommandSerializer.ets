@@ -13,6 +13,7 @@ import {
   CheckChatInviteLinkCommand, JoinChatByInviteLinkCommand, GetChatMemberCommand,
   CreateChatInviteLinkCommand, RevokeChatInviteLinkCommand, GetChatInviteLinksCommand,
   GetChatAdministratorsCommand, SetChatPermissionsCommand, SetChatMessageAutoDeleteTimeCommand,
+  GetChatScheduledMessagesCommand, EditMessageSchedulingStateCommand,
   CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand, LeaveChatCommand,
   ReportChatCommand, ShareContactCommand,
   GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
@@ -138,6 +139,8 @@ COMMAND_SERIALIZATION_HANDLERS.set('getChatInviteLinks', serializeGetChatInviteL
 COMMAND_SERIALIZATION_HANDLERS.set('getChatAdministrators', serializeGetChatAdministrators);
 COMMAND_SERIALIZATION_HANDLERS.set('setChatPermissions', serializeSetChatPermissions);
 COMMAND_SERIALIZATION_HANDLERS.set('setChatMessageAutoDeleteTime', serializeSetChatMessageAutoDeleteTime);
+COMMAND_SERIALIZATION_HANDLERS.set('getChatScheduledMessages', serializeGetChatScheduledMessages);
+COMMAND_SERIALIZATION_HANDLERS.set('editMessageSchedulingState', serializeEditMessageSchedulingState);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChatByInviteLink', serializeJoinChatByInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('checkChatFolderInviteLink', serializeCheckChatFolderInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('addChatFolderByInviteLink', serializeAddChatFolderByInviteLink);
@@ -300,6 +303,11 @@ function serializeSendMessage(command: AnyAppCommand, result: SerializedCommand)
   const inputContentJson = `{"@type":"inputMessageText","text":{"@type":"formattedText","text":"${text}","entities":${entities}},"clear_draft":true}`;
   result.params.setString('_input_message_content_json', inputContentJson);
   setReplyToJsonIfNeeded(result.params, cmd.payload.replyToMessageId);
+  if (cmd.payload.scheduledDateSeconds > 0) {
+    result.params.setString('_scheduling_state_json',
+      '{"@type":"messageSchedulingStateSendAtDate","send_date":' +
+      cmd.payload.scheduledDateSeconds.toString() + ',"repeat_period":0}');
+  }
 }
 
 function serializeSendMediaMessage(command: AnyAppCommand, result: SerializedCommand): void {
@@ -495,6 +503,24 @@ function buildChatFolderJson(draft: ChatFolderDraftPayload): string {
     ',"include_bots":' + (draft.includeBots ? 'true' : 'false') +
     ',"include_groups":' + (draft.includeGroups ? 'true' : 'false') +
     ',"include_channels":' + (draft.includeChannels ? 'true' : 'false') + '}';
+}
+
+function serializeGetChatScheduledMessages(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetChatScheduledMessagesCommand;
+  result.method = 'getChatScheduledMessages';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+}
+
+// null sends the message immediately, which is the "send now" action on the scheduled list.
+function serializeEditMessageSchedulingState(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as EditMessageSchedulingStateCommand;
+  result.method = 'editMessageSchedulingState';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('_message_id_json', JSON.stringify(cmd.payload.messageId));
+  result.params.setString('_scheduling_state_json', cmd.payload.scheduledDateSeconds > 0
+    ? '{"@type":"messageSchedulingStateSendAtDate","send_date":' +
+      cmd.payload.scheduledDateSeconds.toString() + ',"repeat_period":0}'
+    : 'null');
 }
 
 function serializeSetChatMessageAutoDeleteTime(command: AnyAppCommand, result: SerializedCommand): void {

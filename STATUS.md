@@ -146,6 +146,18 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **D21-срез (lead).** Отложенные сообщения: `getChatScheduledMessages` + `ScheduledMessageDto`
+  (int64 id строкой, send_date, превью, порядок новые первыми), `EditMessageSchedulingState`
+  (null → отправить сейчас, дата → перенос), отмена через `deleteMessages` (id уходит в wire как
+  точные цифры), поддержка планируемой отправки в `SendMessagePayload.scheduledDateSeconds` +
+  `_scheduling_state_json`, `ScheduledMessagesUseCase` (load/sendNow/reschedule/cancel, валидация
+  id и даты ≤367 дней), экран `TgChatScheduledMessagesPage` (меню строки Send Now / In 1 hour /
+  Delete, пустое состояние, ошибки), route + params, 6-й пункт Manage-меню (ровно шесть кнопок),
+  `openScheduledScreen`. Новая суита `test-scheduled-messages.cjs` (126-я): DTO-фильтрация/порядок,
+  wire всех четырёх команд (включая int64 без потерь в raw JSON), валидация, ошибки, экран/route/
+  подменю, 9 строк в 3 локалях; пять admin-суит обновлены на шестой пункт. Гейты: host **126/126**,
+  оба smoke, hvigor BUILD SUCCESSFUL. Остаток D21: пикер даты из композера, repeat-периоды,
+  доступ у не-админов, witness.
 - **D20-срез (lead).** Автоудаление сообщений в чате: поле `Chat.messageAutoDeleteTime`
   (парсинг `chat.message_auto_delete_time` в `ChatDto` + маппинг в reducer), команда
   `setChatMessageAutoDeleteTime` с валидацией 0…366 дней, `ChatAutoDeleteUseCase`

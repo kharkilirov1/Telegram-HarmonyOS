@@ -399,3 +399,6 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
 
 - [ ] **D20: нет self-destruct в секретных чатах и per-message TTL.** Таймер чата
   готов. Владелец: lead.
+
+- [ ] **D21: нет пикера даты из композера и repeat-периодов.** Список отложенных
+  готов; планирование пока только через API-payload. Владелец: lead.

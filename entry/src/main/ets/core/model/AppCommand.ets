@@ -53,6 +53,8 @@ export class SendMessagePayload {
   text: string = '';
   replyToMessageId: MessageId = '0';
   customEmojiEntities: CustomEmojiTextEntity[] = [];
+  // 0 sends immediately; otherwise the scheduled send date in seconds.
+  scheduledDateSeconds: number = 0;
 }
 
 export class SendMediaMessagePayload {
@@ -780,6 +782,27 @@ export class ChatFolderInviteLinkRequestPayload {
   chatIds: number[] = [];
 }
 
+export class GetChatScheduledMessagesPayload {
+  chatId: ChatId = 0;
+}
+
+export class GetChatScheduledMessagesCommand extends AppCommand {
+  type: string = 'getChatScheduledMessages';
+  payload: GetChatScheduledMessagesPayload = new GetChatScheduledMessagesPayload();
+}
+
+export class EditMessageSchedulingStatePayload {
+  chatId: ChatId = 0;
+  messageId: MessageId = '0';
+  // 0 sends the message immediately; otherwise the scheduled send date.
+  scheduledDateSeconds: number = 0;
+}
+
+export class EditMessageSchedulingStateCommand extends AppCommand {
+  type: string = 'editMessageSchedulingState';
+  payload: EditMessageSchedulingStatePayload = new EditMessageSchedulingStatePayload();
+}
+
 export class SetChatMessageAutoDeleteTimePayload {
   chatId: ChatId = 0;
   // Seconds; 0 disables the timer. TDLib validates the upper bound itself.
@@ -1174,6 +1197,8 @@ export type AnyAppCommand =
   | CheckChatFolderInviteLinkCommand
   | AddChatFolderByInviteLinkCommand
   | SetChatMessageAutoDeleteTimeCommand
+  | GetChatScheduledMessagesCommand
+  | EditMessageSchedulingStateCommand
   | SetChatPermissionsCommand
   | GetChatAdministratorsCommand
   | CreateChatInviteLinkCommand
@@ -1708,6 +1733,21 @@ export function createAddChatFolderByInviteLinkCommand(
   const cmd = new AddChatFolderByInviteLinkCommand();
   cmd.payload.inviteLink = inviteLink;
   cmd.payload.chatIds = chatIds;
+  return cmd;
+}
+
+export function createGetChatScheduledMessagesCommand(chatId: ChatId): GetChatScheduledMessagesCommand {
+  const cmd = new GetChatScheduledMessagesCommand();
+  cmd.payload.chatId = chatId;
+  return cmd;
+}
+
+export function createEditMessageSchedulingStateCommand(chatId: ChatId, messageId: MessageId,
+  scheduledDateSeconds: number): EditMessageSchedulingStateCommand {
+  const cmd = new EditMessageSchedulingStateCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.messageId = messageId;
+  cmd.payload.scheduledDateSeconds = scheduledDateSeconds;
   return cmd;
 }
 

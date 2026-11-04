@@ -1105,3 +1105,15 @@ Last updated: 2026-10-23
   instead of adding route imports to the page, and remember the host constructor gains an argument.
 - Regex anchors with `^\s*` survive indentation drift; literal anchors in multi-line edits silently
   fail and leave a half-applied patch (missing comma) that only the build catches.
+
+## 219. JSON.parse rounds int64 in tests; assert on the raw wire text
+
+- A fixture with a bare int64 `id` was silently rounded by `JSON.parse` before it even reached
+  `TdObject`; int64 fixtures must be quoted strings, matching TDLib JSON.
+- Vector<int53> arguments are emitted as raw digits, so parsing the request back to JSON rounds them
+  again; assert `raw.includes(<exact digits>)` instead of comparing a parsed number.
+- A newline between a call and its `as TdObject` cast is rejected by ArkTS ("arkts-no-structural-typing");
+  keep the cast on one line or extract the command into a local first.
+- The six-slot `showActionMenu` cap is now exactly saturated; adding another admin entry requires
+  restructuring the menu rather than appending, and every suite that pins the action array must change
+  in the same commit.

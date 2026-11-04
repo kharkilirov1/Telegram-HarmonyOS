@@ -653,6 +653,42 @@
       "value": "已屏蔽用户"
     },
     {
+      "name": "chat_actions_scheduled",
+      "value": "定时消息"
+    },
+    {
+      "name": "scheduled_title",
+      "value": "定时消息"
+    },
+    {
+      "name": "scheduled_loading",
+      "value": "正在加载定时消息…"
+    },
+    {
+      "name": "scheduled_failed",
+      "value": "无法加载定时消息"
+    },
+    {
+      "name": "scheduled_empty",
+      "value": "没有定时消息"
+    },
+    {
+      "name": "scheduled_media",
+      "value": "媒体消息"
+    },
+    {
+      "name": "scheduled_send_now",
+      "value": "立即发送"
+    },
+    {
+      "name": "scheduled_reschedule_hour",
+      "value": "1 小时后"
+    },
+    {
+      "name": "scheduled_cancel",
+      "value": "删除"
+    },
+    {
       "name": "chat_actions_auto_delete",
       "value": "自动删除"
     },

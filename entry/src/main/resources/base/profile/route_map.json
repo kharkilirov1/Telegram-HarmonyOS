@@ -6,6 +6,11 @@
       "buildFunction": "TgChatScreenPageBuilder"
     },
     {
+      "name": "TgChatScheduledMessagesPage",
+      "pageSourceFile": "src/main/ets/ui/pages/chat/TgChatScheduledMessagesPage.ets",
+      "buildFunction": "TgChatScheduledMessagesPageBuilder"
+    },
+    {
       "name": "TgChatAutoDeletePage",
       "pageSourceFile": "src/main/ets/ui/pages/chat/TgChatAutoDeletePage.ets",
       "buildFunction": "TgChatAutoDeletePageBuilder"

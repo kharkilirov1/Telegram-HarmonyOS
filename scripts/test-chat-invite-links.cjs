@@ -148,7 +148,7 @@ assert.equal(route.buildFunction, 'TgChatInviteLinksPageBuilder');
 const actions = read('ui/pages/chat/ChatActionsCoordinator.ets');
 assert.match(actions, /private showManageMenu\(chatId: number, chat: Chat\): void \{/);
 assert.match(actions, /push\(ChatMenuAction\.Manage, localized\(\$r\('app\.string\.chat_actions_manage'\)\.id, 'Manage'\), normal\);/);
-assert.match(actions, /const actions: ChatMenuAction\[\] = \[ChatMenuAction\.Members, ChatMenuAction\.InviteLinks,\n      ChatMenuAction\.Administrators, ChatMenuAction\.Permissions, ChatMenuAction\.AutoDelete\];/);
+assert.match(actions, /const actions: ChatMenuAction\[\] = \[ChatMenuAction\.Members, ChatMenuAction\.InviteLinks,\n      ChatMenuAction\.Administrators, ChatMenuAction\.Permissions, ChatMenuAction\.AutoDelete,\n      ChatMenuAction\.Scheduled\];/);
 assert.match(actions, /this\.host\.openInviteLinks\(chatId\)/);
 assert.match(actions, /openInviteLinks\(chatId: number\): void \{/);
 const chatPage = read('ui/pages/chat/TgChatScreenPage.ets');

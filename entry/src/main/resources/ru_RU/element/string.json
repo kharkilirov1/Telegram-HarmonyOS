@@ -653,6 +653,42 @@
       "value": "Заблокированные"
     },
     {
+      "name": "chat_actions_scheduled",
+      "value": "Отложенные"
+    },
+    {
+      "name": "scheduled_title",
+      "value": "Отложенные сообщения"
+    },
+    {
+      "name": "scheduled_loading",
+      "value": "Загружаем отложенные…"
+    },
+    {
+      "name": "scheduled_failed",
+      "value": "Не удалось загрузить отложенные"
+    },
+    {
+      "name": "scheduled_empty",
+      "value": "Нет отложенных сообщений"
+    },
+    {
+      "name": "scheduled_media",
+      "value": "Медиасообщение"
+    },
+    {
+      "name": "scheduled_send_now",
+      "value": "Отправить сейчас"
+    },
+    {
+      "name": "scheduled_reschedule_hour",
+      "value": "Через час"
+    },
+    {
+      "name": "scheduled_cancel",
+      "value": "Удалить"
+    },
+    {
       "name": "chat_actions_auto_delete",
       "value": "Автоудаление"
     },

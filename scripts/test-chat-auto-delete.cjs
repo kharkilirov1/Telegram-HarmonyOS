@@ -108,7 +108,7 @@ async function main() {
   assert.equal(route.buildFunction, 'TgChatAutoDeletePageBuilder');
 
   const actions = read('ui/pages/chat/ChatActionsCoordinator.ets');
-  assert.match(actions, /ChatMenuAction\.Permissions, ChatMenuAction\.AutoDelete\];/);
+  assert.match(actions, /ChatMenuAction\.Permissions, ChatMenuAction\.AutoDelete,\n      ChatMenuAction\.Scheduled\];/);
   assert.match(actions,
     /text: localized\(\$r\('app\.string\.chat_actions_auto_delete'\)\.id, 'Auto-Delete'\), color: normal \};/);
   assert.match(actions, /this\.host\.openAutoDelete\(chatId\)/);
