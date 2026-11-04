@@ -28,6 +28,8 @@ export class ChatChromeState {
   @Trace chatBottomBarAction: 'none' | 'mute' | 'unmute' | 'join' | 'retry' = 'none';
   @Trace chatBottomBarRestricted: boolean = false;
   @Trace chatBottomBarReason: 'restricted' | 'banned' | 'unknown' | '' = '';
+  // iOS ChatRestrictedInputPanelNode: a removed member may only delete the chat and exit.
+  @Trace chatBottomBarDeleteAndExit: boolean = false;
   @Trace composerAllowedKinds: string[] = [];
   @Trace composerSlowmodeSeconds: number = 0;
   @Trace composerAccessRetryVisible: boolean = false;

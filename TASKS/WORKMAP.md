@@ -78,6 +78,7 @@
 | F6b | Просмотр стикеров (F6) | F6 | стикер в общем вьювере (галерея + tap), суита `test-sticker-viewer.cjs`; остаток — карточка пака, TGS |
 | F6c | Данные стикер-пака (F6) | F6 | `stickerSetId` в модели/VO/галерее, `StickerPackUseCase` (load/setInstalled), суита `test-sticker-pack.cjs`; остаток — UI-карточка |
 | F6d | Карточка пака во вьювере (F6) | F6 | `ChatStickerPackCoordinator` + поля состояния + порт + плитка Add/Remove; остаток — TGS, листание по паку |
+| G4b | Delete and Exit для удалённого (G4) | G4 | панель banned-group, красная кнопка, `ChatExitCoordinator`; остаток — witness |
 | S12b | Меню действий в шапке чата (C10) | C10 | `showMoreAction`/`onMorePress` в `TgChatTopBar`, меню Chat Info / Mute / Clear History / Delete в `TgChatScreenPage`, live-store состояние, контракт `test-chat-header-actions.cjs`, smoke-пин на 4 действия; C10 → `available` |
 | S12c | Leave Chat и Share My Contact (C10) | C10 | `leaveChat` + `inputMessageContact` (команды/сериализаторы), `LeaveChatUseCase`/`ShareMyContactUseCase`, пятый контекстный пункт меню в шапке, 6 строк в 3 локалях, контракт расширен |
 | S12d | Report с причинами + `ChatActionsCoordinator` (C10) | C10 | `reportChat`/`ReportChatDto`/`ReportChatUseCase`, `canBeReported` в модели/DTO/reducer, шестой пункт меню, меню вынесено в координатор (страница ≤500 строк), контракт расширен |

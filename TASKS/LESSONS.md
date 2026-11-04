@@ -1209,3 +1209,14 @@ Last updated: 2026-10-23
   dropping a stale comment keeps it there. Prefer that over raising the ceiling.
 - Fixture harnesses keep an explicit factory table (`factoryGatewayIndex`); a new `create*UseCase` in the
   activation path must be registered there or the fixture hides a ReferenceError behind its best-effort catch.
+
+## 229. Delegates must land where the guard proves they do
+
+- `includes("host.chatBottomBarDeleteAndExit) {")` matched the branch already added to a different
+  function, so the label patch reported success and inserted nothing. Anchor insertions on the enclosing
+  function span (`indexOf("export function X")`), not on a generic guard string.
+- ArkTS forbids passing an interface-typed host to another interface type ("structural typing is not
+  supported"); pass primitives plus a callback instead of a second host contract.
+- The page contract requires every render callback to resolve to a Session delegate whose name equals the
+  binding method. Before adding a binding method, check whether an existing session delegate can carry the
+  action; reusing `handleChatBottomBarAction` avoided both a new delegate and the 500-line ceiling.

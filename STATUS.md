@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **G4-delete-and-exit (lead).** Удалённый из группы участник получает панель iOS:
+  `chatBottomBarDeleteAndExit` (ChatChromeState), сообщение «You were removed from this group.»,
+  красная кнопка Delete and Exit (атом `TgChatBottomBar`, `@Param restrictedActionText` +
+  `@Event onRestrictedAction`); derive ставит флаг только для `banned` + group; действие идёт через
+  существующий `handleChatBottomBarAction` → `ChatExitCoordinator.deleteAndExitChat` (leave с
+  игнорированием ошибки → deleteChatHistory(remove, revoke) → назад). 2 строки в base/ru/zh. Суита
+  `test-chat-exit-delete.cjs` (130-я): лейбл/сообщение, derive, флаг в chrome/портах, атом/dock,
+  exit-хелпер. Гейты: host **130/130**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток G4: witness.
 - **F6-карточка пака (lead).** `ChatStickerPackCoordinator`: `visibleStickerSetId`,
   `syncStickerPackCard` (загрузка при смене видимого стикера, очистка на не-стикере), `loadStickerPack`
   (валидация id, токены запроса/жизненного цикла, тихий отказ), `toggleStickerPackInstalled`

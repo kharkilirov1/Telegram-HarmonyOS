@@ -249,6 +249,8 @@ export class ChatScreenContext {
   set chatBottomBarAction(value: 'none' | 'mute' | 'unmute' | 'join' | 'retry') { this.view.chrome.chatBottomBarAction = value; }
   get chatBottomBarRestricted(): boolean { return this.view.chrome.chatBottomBarRestricted; }
   set chatBottomBarRestricted(value: boolean) { this.view.chrome.chatBottomBarRestricted = value; }
+  get chatBottomBarDeleteAndExit(): boolean { return this.view.chrome.chatBottomBarDeleteAndExit; }
+  set chatBottomBarDeleteAndExit(value: boolean) { this.view.chrome.chatBottomBarDeleteAndExit = value; }
   get chatBottomBarReason(): 'restricted' | 'banned' | 'unknown' | '' { return this.view.chrome.chatBottomBarReason; }
   set chatBottomBarReason(value: 'restricted' | 'banned' | 'unknown' | '') { this.view.chrome.chatBottomBarReason = value; }
   get composerAllowedKinds(): string[] { return this.view.chrome.composerAllowedKinds; }

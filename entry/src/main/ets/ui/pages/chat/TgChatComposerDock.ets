@@ -59,6 +59,12 @@ export struct TgChatComposerDock {
               actionText: this.bindings.bottomBarActionLabel(),
               isActionAccent: this.chrome.chatBottomBarAction === 'join',
                 messageText: this.bindings.bottomBarMessage(),
+      restrictedActionText: this.chrome.chatBottomBarDeleteAndExit
+        ? this.bindings.bottomBarActionLabel()
+        : '',
+      onRestrictedAction: (): void => {
+        this.bindings.handleChatBottomBarAction();
+      },
               bottomInset: this.bindings.composerKeyboardPanelVisible() ? 0 : this.chrome.bottomOverlayInset,
               onActionPress: (): void => {
                 this.bindings.handleChatBottomBarAction();

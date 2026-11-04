@@ -813,6 +813,14 @@
       "value": "Administrators"
     },
     {
+      "name": "chat_removed_bottom_bar",
+      "value": "You were removed from this group."
+    },
+    {
+      "name": "chat_delete_and_exit",
+      "value": "Delete and Exit"
+    },
+    {
       "name": "sticker_pack_add",
       "value": "Add Stickers"
     },

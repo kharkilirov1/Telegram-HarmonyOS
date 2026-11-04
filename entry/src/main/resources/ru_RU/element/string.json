@@ -813,6 +813,14 @@
       "value": "Администраторы"
     },
     {
+      "name": "chat_removed_bottom_bar",
+      "value": "Вас удалили из этой группы."
+    },
+    {
+      "name": "chat_delete_and_exit",
+      "value": "Удалить и выйти"
+    },
+    {
       "name": "sticker_pack_add",
       "value": "Добавить стикеры"
     },

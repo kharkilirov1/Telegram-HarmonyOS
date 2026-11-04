@@ -18,10 +18,13 @@ export struct TgChatBottomActionBar {
   @Param actionText: string = '';
   @Param isActionAccent: boolean = false;
   @Param messageText: string = '';
+  // iOS ChatRestrictedInputPanelNode: e.g. "Delete and Exit" when the member was removed.
+  @Param restrictedActionText: string = '';
   @Param glassMode: string = TgGlassPolicy.MODE_AUTO;
   @Param bottomInset: number = 0;
 
   @Event onActionPress: () => void = (): void => {};
+  @Event onRestrictedAction: () => void = (): void => {};
 
   private useBlur(): boolean {
     return TgGlassPolicy.shouldUseRealtimeBlurForMode(this.glassMode);
@@ -55,13 +58,28 @@ export struct TgChatBottomActionBar {
 
   @Builder
   private buildRestrictedContent() {
-    Text(this.messageText)
-      .fontSize(TgUiTokens.CHAT_BOTTOM_BAR_RESTRICTED_FONT_SIZE)
-      .fontWeight(FontWeight.Regular)
-      .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
-      .maxLines(1)
-      .textAlign(TextAlign.Center)
-      .textOverflow({ overflow: TextOverflow.Ellipsis })
+    Column() {
+      Text(this.messageText)
+        .fontSize(TgUiTokens.CHAT_BOTTOM_BAR_RESTRICTED_FONT_SIZE)
+        .fontWeight(FontWeight.Regular)
+        .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+        .maxLines(2)
+        .textAlign(TextAlign.Center)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+      if (this.restrictedActionText.length > 0) {
+        Text(this.restrictedActionText)
+          .fontSize(TgUiTokens.CHAT_BOTTOM_BAR_RESTRICTED_FONT_SIZE)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE)
+          .maxLines(1)
+          .margin({ top: TgUiTokens.SPACE_4 })
+          .onClick(() => {
+            this.onRestrictedAction();
+          })
+      }
+    }
+    .alignItems(HorizontalAlign.Center)
+    .justifyContent(FlexAlign.Center)
   }
 
   @Available({ minApiVersion: '26.0.0' })

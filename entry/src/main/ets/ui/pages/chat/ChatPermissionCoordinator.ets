@@ -11,6 +11,7 @@ import { SetChatMuteUseCase, MUTE_FOREVER } from '../../../domain/usecases/setCh
 import { JoinChatUseCase } from '../../../domain/usecases/joinChat';
 import { localized } from '../../../core/utils/AppResource';
 import { ChatSlowmodeHost, ChatSlowmodeController, currentSlowmodeSeconds } from './ChatSlowmodeController';
+import { deleteAndExitChat } from './ChatExitCoordinator';
 
 export interface ChatPermissionCoordinatorPort extends ChatSlowmodeHost {
   accountStore?: AppStore;
@@ -23,6 +24,8 @@ export interface ChatPermissionCoordinatorPort extends ChatSlowmodeHost {
   chatBottomBarAction: 'none' | 'mute' | 'unmute' | 'join' | 'retry';
   chatBottomBarReason: 'restricted' | 'banned' | 'unknown' | '';
   chatBottomBarRestricted: boolean;
+  chatBottomBarDeleteAndExit: boolean;
+  handleBackPress(): void;
   chatJoinUseCase?: JoinChatUseCase;
   chatMuteUseCase?: SetChatMuteUseCase;
   composerAccessRetryVisible: boolean;
@@ -100,6 +103,8 @@ export function deriveChatBottomBar(host: ChatPermissionCoordinatorPort, chat: C
     host.chatBottomBarRestricted = panel === 'restricted' || panel === 'banned' || panel === 'unknown';
     host.chatBottomBarReason = host.chatBottomBarRestricted ? panel as 'restricted' | 'banned' | 'unknown' : '';
     host.chatBottomBarAction = 'none';
+    // A member removed from a group can only delete the chat and exit (iOS ChatRestrictedInputPanelNode).
+    host.chatBottomBarDeleteAndExit = panel === 'banned' && chat.type === 'group';
     if (panel === 'mute' || panel === 'unmute' || panel === 'join') host.chatBottomBarAction = panel;
     if (panel === 'unknown' && host.chatAccessUnavailable && Number.isSafeInteger(chat.id) && chat.id !== 0 &&
       Number.isSafeInteger(groupId) && groupId > 0) {
@@ -110,7 +115,11 @@ export function deriveChatBottomBar(host: ChatPermissionCoordinatorPort, chat: C
   }
 
 export function bottomBarActionLabel(host: ChatPermissionCoordinatorPort): string {
-    switch (host.chatBottomBarAction) {
+    // The removed-member panel reuses this label as its single destructive action.
+  if (host.chatBottomBarDeleteAndExit) {
+    return localized($r('app.string.chat_delete_and_exit').id, 'Delete and Exit');
+  }
+  switch (host.chatBottomBarAction) {
       case 'retry':
         return localized($r('app.string.retry').id, 'Retry');
       case 'join':
@@ -129,7 +138,11 @@ export function retryChatAccess(host: ChatPermissionCoordinatorPort): void {
   }
 
 export function bottomBarMessage(host: ChatPermissionCoordinatorPort): string {
-    if (host.chatBottomBarReason === 'banned' ||
+    if (host.chatBottomBarDeleteAndExit) {
+    return localized($r('app.string.chat_removed_bottom_bar').id,
+      'You were removed from this group.');
+  }
+  if (host.chatBottomBarReason === 'banned' ||
       (host.chatBottomBarReason === 'unknown' && host.chatAccessUnavailable)) {
       const chat = host.accountStore?.getState().chats.chats.get(host.activeChatId);
       return chat?.type === 'group'
@@ -142,6 +155,11 @@ export function bottomBarMessage(host: ChatPermissionCoordinatorPort): string {
   }
 
 export function handleChatBottomBarAction(host: ChatPermissionCoordinatorPort): void {
+  // A removed member has no composer action: the one thing to do is delete the chat and leave.
+  if (host.chatBottomBarDeleteAndExit) {
+    deleteAndExitChat(host.activeChatId, (): void => { host.handleBackPress(); });
+    return;
+  }
     if (host.activeChatId === 0 || host.chatBottomBarAction === 'none') {
       return;
     }

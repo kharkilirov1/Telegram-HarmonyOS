@@ -113,9 +113,9 @@ check('all 118 reactive fields have one backing model and bidirectional Context 
     const js = stripTypeScriptTypes(code.replace(/^import[\s\S]*?;\s*/gm, '').replace(/@ObservedV2\s*|@Trace\s*|^export /gm, ''), { mode: 'transform' });
     bindings[model] = new Function(...Object.keys(bindings), js + `\nreturn ${model};`)(...Object.values(bindings));
   }
-  // 118 base + 4 sticker-pack card fields in ChatMediaViewState (F6).
-  assert.equal(fields.length, 122);
-  assert.equal(new Set(fields.map(field => field.name)).size, 122);
+  // 118 base + 4 sticker-pack card fields (F6) + removed-member Delete and Exit (G4).
+  assert.equal(fields.length, 123);
+  assert.equal(new Set(fields.map(field => field.name)).size, 123);
   const aggregateJs = stripTypeScriptTypes(aggregate.replace(/^import[\s\S]*?;\s*/gm, '').replace(/^export /gm, ''), { mode: 'transform' });
   const View = new Function(...Object.keys(bindings), aggregateJs + '\nreturn ChatScreenViewState;')(...Object.values(bindings));
   const contextJs = stripTypeScriptTypes(context.replace(/^import[\s\S]*?;\s*/gm, '').replace(/^export /gm, ''), { mode: 'transform' });
