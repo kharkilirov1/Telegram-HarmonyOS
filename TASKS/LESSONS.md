@@ -1256,3 +1256,13 @@ Last updated: 2026-10-23
   `entry.isChannelPost` compiles nowhere. Follow the existing `entry.message.*` access style.
 - Loading the full `MessageDto` parser in a CJS suite drags its content-parser dependency graph; assert the
   wire-level parse lines in source and keep runtime tests on the narrow parser under test.
+
+## 234. `_*_json` params are rewritten, assert the emitted field
+
+- `buildTdlibRequestJson` turns `_topic_id_json` into `"topic_id":<json>`; a suite asserting the underscore
+  key never matches the wire. Assert the real field name.
+- Sending into a thread needs `topic_id` on every send, so the helper writes explicit `null` for normal
+  messages instead of omitting the key; keep that in mind when adding per-message fields.
+- A guard like `includes("_topic_id_json")` matched an unrelated serializer, so the send path stayed
+  unwired while the patch reported success. Edit inside the function span, not by global token search.
+- Serializer helper types are `TdObject`, not a named params class.

@@ -817,6 +817,14 @@
       "value": "评论"
     },
     {
+      "name": "comments_placeholder",
+      "value": "评论"
+    },
+    {
+      "name": "comments_send",
+      "value": "发送"
+    },
+    {
       "name": "comments_title",
       "value": "评论"
     },

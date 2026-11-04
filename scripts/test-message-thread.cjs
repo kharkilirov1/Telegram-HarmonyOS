@@ -24,7 +24,8 @@ async function main() {
   const accessors = load('core/utils/tdAccessors.ets', ['tdGetArray', 'tdGetInt64', 'tdGetNumber',
     'tdGetObject', 'tdGetString'], { TdObject });
   const C = load('core/model/AppCommand.ets',
-    ['createGetMessageThreadCommand', 'createGetMessageThreadHistoryCommand', 'AppCommand',
+    ['createGetMessageThreadCommand', 'createGetMessageThreadHistoryCommand', 'createSendMessageCommand',
+      'AppCommand',
       'GetMessageThreadCommand', 'GetMessageThreadHistoryCommand']);
   const errors = load('core/model/AppError.ets', ['AppError', 'AppErrorKind']);
   const serializer = load('infra/td/serialization/CommandSerializer.ets',
@@ -179,6 +180,18 @@ async function main() {
   assert.equal(U.MESSAGE_THREAD_MAX_LIMIT, 100);
 
   // Use case --------------------------------------------------------------------------------------
+  // Comment send: the message goes into the post's thread -----------------------------------------
+  const sendWire = serializer.buildTdlibRequestJson('sendMessage',
+    serializer.serializeCommand(C.createSendMessageCommand(777, 'nice post', '0', [], '9007199254740993')).params);
+  assert.ok(sendWire.includes('"@type":"sendMessage"'));
+  assert.ok(sendWire.includes('"chat_id":777'), 'comments go to the discussion chat');
+  assert.ok(sendWire.includes('"topic_id":{"@type":"messageTopicThread"'), 'the send carries a thread topic');
+  assert.ok(sendWire.includes('messageTopicThread'), 'the topic is a message thread');
+  assert.ok(sendWire.includes('9007199254740993'), 'the thread id stays exact');
+  const plainSend = serializer.buildTdlibRequestJson('sendMessage',
+    serializer.serializeCommand(C.createSendMessageCommand(777, 'hello', '0', [])).params);
+  assert.ok(plainSend.includes('"topic_id":null'), 'a normal message carries a null topic');
+
   const sent = [];
   const useCase = new U.MessageThreadUseCase({
     send: (command) => {
@@ -233,6 +246,32 @@ async function main() {
   await assert.rejects(() => new U.MessageThreadUseCase(
     { send: () => Promise.resolve(TdObject.fromJSON('{"@type":"ok"}')) }).loadHistory(42, '100'),
     /Unsupported thread history response/);
+
+  // Thread composer -------------------------------------------------------------------------------
+  const threadPage = read('ui/pages/chat/TgMessageThreadPage.ets');
+  assert.match(threadPage, /private sendUseCase\?: SendMessageUseCase;/);
+  assert.match(threadPage, /this\.threadChatId = page\.chatId;/);
+  assert.match(threadPage, /this\.threadId = page\.threadId;/);
+  assert.match(threadPage, /private sendComment\(\): void \{/);
+  assert.match(threadPage, /topicThreadId: this\.threadId/, 'a comment is posted into the thread');
+  assert.match(threadPage, /replyToMessageId: '0'/, 'a new comment does not quote another message');
+  assert.match(threadPage, /this\.sendingComment = true;/);
+  assert.match(threadPage, /this\.commentDraft = '';/, 'the draft clears after a successful send');
+  assert.match(threadPage, /this\.loadThread\(\);/, 'the thread refreshes to show the new comment');
+  assert.match(threadPage, /private buildComposer\(\)/);
+  assert.match(threadPage, /comments_placeholder|Comment/);
+  const sendParams = read('domain/usecases/sendMessage.ets');
+  assert.match(sendParams, /topicThreadId: MessageId = '0';/);
+  assert.match(sendParams, /params\.customEmojiEntities,\n        params\.topicThreadId/);
+  for (const locale of ['base', 'ru_RU', 'zh_CN']) {
+    const strings = JSON.parse(fs.readFileSync(
+      path.join(root, '../resources/' + locale + '/element/string.json'), 'utf8'));
+    for (const name of ['comments_placeholder', 'comments_send']) {
+      assert.ok(strings.string.find((item) => item.name === name), locale + ' has ' + name);
+    }
+  }
+  assert.ok(threadPage.split('\n').length <= 500,
+    'the thread page stays within the owner ceiling');
 
   console.log('PASS message thread contract');
 }

@@ -817,6 +817,14 @@
       "value": "Комментарии"
     },
     {
+      "name": "comments_placeholder",
+      "value": "Комментировать"
+    },
+    {
+      "name": "comments_send",
+      "value": "Отправить"
+    },
+    {
       "name": "comments_title",
       "value": "Комментарии"
     },

@@ -308,6 +308,7 @@ function serializeSendMessage(command: AnyAppCommand, result: SerializedCommand)
   const inputContentJson = `{"@type":"inputMessageText","text":{"@type":"formattedText","text":"${text}","entities":${entities}},"clear_draft":true}`;
   result.params.setString('_input_message_content_json', inputContentJson);
   setReplyToJsonIfNeeded(result.params, cmd.payload.replyToMessageId);
+  setTopicIdJsonIfNeeded(result.params, cmd.payload.topicThreadId);
   if (cmd.payload.scheduledDateSeconds > 0) {
     result.params.setString('_scheduling_state_json',
       '{"@type":"messageSchedulingStateSendAtDate","send_date":' +
@@ -1285,6 +1286,16 @@ function serializeLogout(_command: AnyAppCommand, result: SerializedCommand): vo
   // Сброс auth state на сервере — аналог auth.cancelCode в raw MTProto (Android TL_auth_cancelCode).
   // TDLib после logOut автоматически присылает updateAuthorizationState: waitPhoneNumber.
   result.method = 'logOut';
+}
+
+// D11: comments are sent into the post's message thread (messageTopicThread).
+function setTopicIdJsonIfNeeded(params: TdObject, topicThreadId: string): void {
+  if (topicThreadId === undefined || topicThreadId === '' || topicThreadId === '0') {
+    params.setString('_topic_id_json', 'null');
+    return;
+  }
+  params.setString('_topic_id_json',
+    '{"@type":"messageTopicThread","message_thread_id":' + topicThreadId + '}');
 }
 
 function setReplyToJsonIfNeeded(params: TdObject, replyToId: string): void {

@@ -17,6 +17,7 @@ import { MessageThreadRouteParams } from './messageThreadRoute';
 import { TgChatTopBar } from '../../tg_ui/atoms/TgChatTopBar';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { computeTopBarHeight } from '../../utils/SafeAreaUtils';
+import { SendMessageUseCase, createSendMessageUseCase } from '../../../domain/usecases/sendMessage';
 
 const DOMAIN = 0x004C;
 const TAG = 'TgMessageThreadPage';
@@ -42,7 +43,12 @@ export struct TgMessageThreadPage {
   @Local private errorText: string = '';
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
   @Local private topBarInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
+  @Local private commentDraft: string = '';
+  @Local private sendingComment: boolean = false;
   private useCase?: MessageThreadUseCase;
+  private sendUseCase?: SendMessageUseCase;
+  private threadChatId: number = 0;
+  private threadId: string = '0';
   private pageLifecycleToken: number = 0;
 
   aboutToAppear(): void {
@@ -57,6 +63,7 @@ export struct TgMessageThreadPage {
     }
     try {
       this.useCase = createMessageThreadUseCase(getTdGatewayAdapter());
+      this.sendUseCase = createSendMessageUseCase(getTdGatewayAdapter());
     } catch (error) {
       hilog.error(DOMAIN, TAG, 'Use case init failed: %{public}s', String(error));
       this.useCase = undefined;
@@ -88,6 +95,8 @@ export struct TgMessageThreadPage {
           return;
         }
         this.replyCount = page.replyCount > 0 ? page.replyCount : this.replyCount;
+        this.threadChatId = page.chatId;
+        this.threadId = page.threadId;
         this.unreadCount = page.unreadCount;
         this.comments = page.comments;
         this.nextCursor = page.nextFromMessageId;
@@ -147,6 +156,73 @@ export struct TgMessageThreadPage {
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
+  }
+
+  private sendComment(): void {
+    const sendUseCase = this.sendUseCase;
+    const text = this.commentDraft.trim();
+    if (sendUseCase === undefined || text.length === 0 || this.sendingComment ||
+      this.threadChatId === 0 || this.threadId === '0') {
+      return;
+    }
+    const lifecycleToken = this.pageLifecycleToken;
+    this.sendingComment = true;
+    sendUseCase.execute({
+      chatId: this.threadChatId,
+      text: text,
+      replyToMessageId: '0',
+      customEmojiEntities: [],
+      topicThreadId: this.threadId
+    }).then(() => {
+      if (lifecycleToken !== this.pageLifecycleToken) {
+        return;
+      }
+      this.sendingComment = false;
+      this.commentDraft = '';
+      this.loadThread();
+    }).catch((error: Error) => {
+      if (lifecycleToken !== this.pageLifecycleToken) {
+        return;
+      }
+      this.sendingComment = false;
+      hilog.warn(DOMAIN, TAG, 'Sending a comment failed: %{public}s', error.message);
+    });
+  }
+
+  @Builder
+  private buildComposer() {
+    Row() {
+      TextInput({ text: this.commentDraft, placeholder: localized($r('app.string.comments_placeholder').id, 'Comment') })
+        .fontSize(TgUiTokens.CHAT_ROW_PREVIEW_FONT_SIZE)
+        .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+        .backgroundColor(TgUiTokens.COLOR_BG_SECONDARY)
+        .borderRadius(TgUiTokens.RADIUS_12)
+        .padding({ left: TgUiTokens.SPACE_12, right: TgUiTokens.SPACE_12 })
+        .height(TgUiTokens.COMPOSER_MIN_CAPSULE_HEIGHT)
+        .layoutWeight(1)
+        .enabled(!this.sendingComment)
+        .onChange((value: string) => {
+          this.commentDraft = value;
+        })
+      Text(localized($r('app.string.comments_send').id, 'Send'))
+        .fontSize(TgUiTokens.CHAT_ROW_TITLE_FONT_SIZE)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(this.commentDraft.trim().length > 0 && !this.sendingComment
+          ? TgUiTokens.LINK_PREVIEW_ACCENT_INCOMING
+          : TgUiTokens.COLOR_TEXT_META)
+        .margin({ left: TgUiTokens.SPACE_12 })
+        .onClick(() => {
+          this.sendComment();
+        })
+    }
+    .width('100%')
+    .padding({
+      left: TgUiTokens.SPACE_16,
+      right: TgUiTokens.SPACE_16,
+      top: TgUiTokens.SPACE_8,
+      bottom: TgUiTokens.SPACE_8
+    })
+    .alignItems(VerticalAlign.Center)
   }
 
   @Builder
@@ -276,6 +352,7 @@ export struct TgMessageThreadPage {
         }
         .width('100%')
         .layoutWeight(1)
+        this.buildComposer()
       }
       .width('100%')
       .height('100%')

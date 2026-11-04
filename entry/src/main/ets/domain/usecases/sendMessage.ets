@@ -20,6 +20,8 @@ export class SendMessageParams {
   text: string = '';
   replyToMessageId: MessageId = '0';
   customEmojiEntities: CustomEmojiTextEntity[] = [];
+  // D11: '0' sends into the chat, otherwise into that message thread (comments).
+  topicThreadId: MessageId = '0';
 }
 
 /**
@@ -92,7 +94,8 @@ export class SendMessageUseCase {
         params.chatId,
         params.text,
         params.replyToMessageId,
-        params.customEmojiEntities
+        params.customEmojiEntities,
+        params.topicThreadId
       );
 
       const response = await this.gateway.send(command);

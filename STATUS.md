@@ -146,6 +146,13 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **D11-comment-send (lead).** Отправка комментария: `SendMessageParams.topicThreadId`,
+  `SendMessagePayload.topicThreadId`, `_topic_id_json` (`messageTopicThread`) в `serializeSendMessage`
+  (null для обычных сообщений), фабрика с 5-м аргументом; страница запоминает `threadChatId`/`threadId`
+  из `MessageThreadPage` и шлёт comment через composer (`TextInput` + Send, блокировка на время
+  отправки, очистка драфта и перезагрузка треда после успеха, ошибка не теряет текст). 2 строки в
+  base/ru/zh. Суита `test-message-thread.cjs` расширена: wire топика/обычного send, контракт composer.
+  Гейты: host **132/132**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток D11: witness.
 - **D11-thread-entry (lead).** Вход в комментарии: `MessageDto.isChannelPost` (`is_channel_post`) и
   `replyCount` (`interaction_info.reply_info.reply_count`) проходят DTO→Message→reducer→VO→rows;
   меню сообщения канала показывает Comments (N) при наличии треда, обработчик пушит маршрут через

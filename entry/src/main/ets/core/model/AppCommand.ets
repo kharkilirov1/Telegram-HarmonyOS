@@ -53,6 +53,8 @@ export class SendMessagePayload {
   text: string = '';
   replyToMessageId: MessageId = '0';
   customEmojiEntities: CustomEmojiTextEntity[] = [];
+  // D11: '0' posts into the chat itself; otherwise the message goes into that message thread (comments).
+  topicThreadId: MessageId = '0';
   // 0 sends immediately; otherwise the scheduled send date in seconds.
   scheduledDateSeconds: number = 0;
 }
@@ -1391,13 +1393,15 @@ export function createSendMessageCommand(
   chatId: ChatId,
   text: string,
   replyToMessageId?: MessageId,
-  customEmojiEntities: CustomEmojiTextEntity[] = []
+  customEmojiEntities: CustomEmojiTextEntity[] = [],
+  topicThreadId?: MessageId
 ): SendMessageCommand {
   const cmd = new SendMessageCommand();
   cmd.payload.chatId = chatId;
   cmd.payload.text = text;
   cmd.payload.replyToMessageId = replyToMessageId || '0';
   cmd.payload.customEmojiEntities = customEmojiEntities;
+  cmd.payload.topicThreadId = topicThreadId || '0';
   return cmd;
 }
 

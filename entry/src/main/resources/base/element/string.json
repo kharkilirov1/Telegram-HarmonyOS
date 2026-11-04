@@ -817,6 +817,14 @@
       "value": "Comments"
     },
     {
+      "name": "comments_placeholder",
+      "value": "Comment"
+    },
+    {
+      "name": "comments_send",
+      "value": "Send"
+    },
+    {
       "name": "comments_title",
       "value": "Comments"
     },
