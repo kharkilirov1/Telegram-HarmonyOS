@@ -48,6 +48,9 @@ export struct TgMessageRouter {
 
   // ── Text / fallback ──
   @Param text: string = '';
+  @Param translatedText: string = '';
+  @Param translationVisible: boolean = false;
+  @Event onTranslationToggle: () => void = (): void => {};
   @Param isEmojiOnly: boolean = false;
   @Param forceBreakAll: boolean = false;
   @Param quoteOffsets: number[] = [];
@@ -1081,6 +1084,11 @@ export struct TgMessageRouter {
         TgTextBubbleV3({
           layout: this.computeTextLayout(),
           text: this.text,
+          translatedText: this.translatedText,
+          translationVisible: this.translationVisible,
+          onTranslationToggle: (): void => {
+            this.onTranslationToggle();
+          },
           isOutgoing: this.isOutgoing,
           isEmojiOnly: this.isEmojiOnly,
           forceBreakAll: this.forceBreakAll,

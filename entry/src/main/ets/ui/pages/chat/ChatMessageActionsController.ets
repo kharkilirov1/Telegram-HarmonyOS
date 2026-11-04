@@ -4,6 +4,8 @@
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { navigationUIState } from '../../../core/model/UIStateModels';
 import { openMessageThread } from './chatAdminNavigation';
+import { MessageTranslationEvent } from '../../../core/model/AppEvent';
+import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { createTranslateMessageUseCase } from '../../../domain/usecases/translateMessage';
 import { i18n } from '@kit.LocalizationKit';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
@@ -363,16 +365,14 @@ export class ChatMessageActionsController {
     this.translationCache.set(key, text);
   }
 
-  private showTranslation(text: string, host: ChatMessageActionsHost): void {
-    const promptAction = host.getChatUIContext().getPromptAction();
-    promptAction.showDialog({
-      title: localized($r('app.string.translation_title').id, 'Translation'),
-      message: text,
-      buttons: [{ text: localized($r('app.string.cancel').id, 'Close'),
-        color: TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND }]
-    }).catch((error: Error) => {
-      hilog.warn(DOMAIN, TAG, 'Translation dialog failed: %{public}s', error.message);
-    });
+  // D24: the bubble renders the translation, so visibility travels through the message store.
+  private applyTranslation(chatId: number, messageId: string, text: string, visible: boolean): void {
+    const event = new MessageTranslationEvent();
+    event.chatId = chatId;
+    event.messageId = messageId;
+    event.translatedText = text;
+    event.visible = visible;
+    getAppCoreRuntime().getStore().dispatch(event);
   }
 
   // Kept local so building the menu never depends on the translation use-case module.
@@ -381,18 +381,22 @@ export class ChatMessageActionsController {
   }
 
   private translateMessage(entry: ChatTimelineEntryVO, host: ChatMessageActionsHost): void {
+    const chatId = host.getActiveChatId();
+    const messageId = entry.message.messageId;
+    // Already shown: flip back to the original text without another request.
+    if (entry.message.translationVisible) {
+      this.applyTranslation(chatId, messageId, entry.message.translatedText, false);
+      return;
+    }
     const text = entry.message.text.length > 0 ? entry.message.text : entry.message.caption;
     if (text.trim().length === 0) {
       return;
     }
-    this.activeChatKeyForCache = host.getActiveChatId();
+    this.activeChatKeyForCache = chatId;
     const language = this.targetLanguageCode();
-    const messageId = entry.message.messageId;
-    // A cached translation opens immediately and never hits the network again.
     const cached = this.translationCache.get(this.translationKey(messageId, language));
     if (cached !== undefined) {
-      this.translatedMessageId = messageId;
-      this.showTranslation(cached, host);
+      this.applyTranslation(chatId, messageId, cached, true);
       return;
     }
     try {
@@ -400,8 +404,7 @@ export class ChatMessageActionsController {
       useCase.translate(text, language)
         .then((translated) => {
           this.cacheTranslation(this.translationKey(messageId, language), translated.text);
-          this.translatedMessageId = messageId;
-          this.showTranslation(translated.text, host);
+          this.applyTranslation(chatId, messageId, translated.text, true);
         })
         .catch((error: Error) => {
           host.getChatUIContext().getPromptAction().showToast({
@@ -433,9 +436,11 @@ export class ChatMessageActionsController {
     if (hasText) {
       items.push(new ChatMessageActionItem('copy', localized($r('app.string.action_copy').id, 'Copy')));
       items.push(new ChatMessageActionItem('translate',
-        this.translationCache.has(this.translationKey(entry.message.messageId, this.targetLanguageCode()))
-          ? localized($r('app.string.action_show_translation').id, 'Show Translation')
-          : localized($r('app.string.action_translate').id, 'Translate')));
+        entry.message.translationVisible
+          ? localized($r('app.string.translation_show_original').id, 'Show original')
+          : this.translationCache.has(this.translationKey(entry.message.messageId, this.targetLanguageCode()))
+            ? localized($r('app.string.action_show_translation').id, 'Show Translation')
+            : localized($r('app.string.action_translate').id, 'Translate')));
     }
 
     // D11: a channel post with a discussion thread opens its comments.

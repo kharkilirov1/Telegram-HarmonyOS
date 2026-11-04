@@ -11,6 +11,8 @@ import { ChatMediaViewState } from './ChatMediaViewState';
 import { ChatTimelineViewState } from './ChatTimelineViewState';
 import { ChatTimelineRowPort } from './ChatScreenViewPorts';
 import { TgChatMessageActionsPopup } from './TgChatMessageActionsPopup';
+import { MessageTranslationEvent } from '../../../core/model/AppEvent';
+import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 
 @ComponentV2
 export struct TgChatTimelineRow {
@@ -19,6 +21,16 @@ export struct TgChatTimelineRow {
   @Require @Param timeline: ChatTimelineViewState;
   @Require @Param bindings: ChatTimelineRowPort;
   @Require @Param entry: ChatTimelineEntryVO;
+
+  // D24: the translation lives in the message store, so the toggle is a local event.
+  private toggleTranslation(): void {
+    const event = new MessageTranslationEvent();
+    event.chatId = this.chrome.activeChatId;
+    event.messageId = this.entry.message.messageId;
+    event.translatedText = this.entry.message.translatedText;
+    event.visible = !this.entry.message.translationVisible;
+    getAppCoreRuntime().getStore().dispatch(event);
+  }
 
   private isSelected(): boolean {
     return this.timeline.selectedMessageIds.indexOf(this.entry.message.messageId) >= 0;
@@ -60,6 +72,11 @@ export struct TgChatTimelineRow {
         isBroadcastChannel: this.chrome.activeChatIsChannel,
         groupingFlags: this.entry.message.groupingFlags,
         text: this.entry.message.text,
+        translatedText: this.entry.message.translatedText,
+        translationVisible: this.entry.message.translationVisible,
+        onTranslationToggle: (): void => {
+          this.toggleTranslation();
+        },
         isEmojiOnly: this.entry.message.isEmojiOnly,
         forceBreakAll: this.entry.message.forceBreakAll,
         quoteOffsets: this.entry.message.quoteOffsets,

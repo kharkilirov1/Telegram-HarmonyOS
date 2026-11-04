@@ -174,6 +174,8 @@ export class TgUiTokens {
   static readonly MSG_EMOJI_ONLY_SIZE: number = 40;
   static readonly MSG_EMOJI_ONLY_LINE_HEIGHT: number = 44;
   static readonly MSG_META_SIZE: number = 11;
+  // D24: the translation block is separated from the original text by a faint rule.
+  static readonly TRANSLATION_DIVIDER_OPACITY: number = 0.25;
   static readonly MSG_QUOTE_TEXT_SIZE: number = 14;
   static readonly MSG_QUOTE_TEXT_LINE_HEIGHT: number = 16;
   static readonly TEXT_MAX_LINES: number = 0;

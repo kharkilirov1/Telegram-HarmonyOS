@@ -322,6 +322,9 @@ export class Message {
   // D11: channel posts carry a comment thread when reply_info.reply_count > 0.
   isChannelPost: boolean = false;
   replyCount: number = 0;
+  // D24: the translated text of this message and whether the bubble shows it instead of the original.
+  translatedText: string = '';
+  translationVisible: boolean = false;
   isRead: boolean = false;
   isPending: boolean = false;
   editDate: number = 0;

@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **D24-inline-translation (lead).** Inline-перевод: `MessageTranslationEvent` → `messagesReducer`
+  (клонирование + `translatedText`/`translationVisible`) → row → `TgMessageRouter` → `TgTextBubbleV3`
+  (divider с токеном 0.25, блок перевода, плашки «Translated» и «Show original»), тоггл из плашки
+  возвращает оригинал; меню ведёт Translate → Show Translation → Show original, кэш остаётся источником
+  мгновенного показа. Событие добавлено в routing-таблицу `reducers/index.ets` и в независимую
+  expectation-таблицу `test-unread-count-routing.cjs`. 2 строки в base/ru/zh. Суита
+  `test-translate-message.cjs` расширена (state/reducer/clone, row/router/bubble, тоггл, локали). Гейты:
+  host **134/134**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток D24: выбор языка, witness.
 - **D24-translation-cache (lead).** Кэш переводов в контроллере меню: bounded 50 записей по
   `chatId:messageId:lang`, вытеснение старейшей, повторный Translate не ходит в сеть; лейбл меню
   переключается на Show Translation, если перевод уже есть; локальный валидатор кода языка, чтобы сборка

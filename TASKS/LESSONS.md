@@ -1295,3 +1295,13 @@ Last updated: 2026-10-23
   chat because message ids are only unique per chat.
 - Docs write scripts must avoid quoting tricks that break the JS string (the previous round shipped code
   without docs); write the docs in a separate commit when the code commit is already green.
+
+## 238. A new AppEvent needs three registrations, not one
+
+- Adding the event class and a reducer case is not enough: `core/reducers/index.ets` routes by explicit type
+  list, and `test-unread-count-routing.cjs` pins the full type→reducer table independently. Both must be
+  updated or the routing suite fails with a deep-equal mismatch.
+- Rows are plain VOs; the inline translation only repaints because it lives in the message store. A
+  page-layer flag would have needed a dataSource call the 500-line session cannot host.
+- The row VO has no `chatId`; the active chat id comes from `chrome.activeChatId` inside the timeline row.
+- Bubble/router files omit trailing semicolons on imports — anchor patches accordingly.

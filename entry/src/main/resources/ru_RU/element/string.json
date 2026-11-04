@@ -821,6 +821,14 @@
       "value": "Перевести"
     },
     {
+      "name": "translation_label",
+      "value": "Переведено"
+    },
+    {
+      "name": "translation_show_original",
+      "value": "Показать оригинал"
+    },
+    {
       "name": "translation_title",
       "value": "Перевод"
     },

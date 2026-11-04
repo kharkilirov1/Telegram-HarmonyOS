@@ -821,6 +821,14 @@
       "value": "Translate"
     },
     {
+      "name": "translation_label",
+      "value": "Translated"
+    },
+    {
+      "name": "translation_show_original",
+      "value": "Show original"
+    },
+    {
       "name": "translation_title",
       "value": "Translation"
     },

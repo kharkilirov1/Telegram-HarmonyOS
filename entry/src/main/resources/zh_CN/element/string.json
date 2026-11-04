@@ -821,6 +821,14 @@
       "value": "翻译"
     },
     {
+      "name": "translation_label",
+      "value": "已翻译"
+    },
+    {
+      "name": "translation_show_original",
+      "value": "显示原文"
+    },
+    {
       "name": "translation_title",
       "value": "翻译结果"
     },

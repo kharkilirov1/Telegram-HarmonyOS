@@ -161,6 +161,15 @@ export class MessageUpdatedEvent extends AppEvent {
   updates: MessageUpdateDto = new MessageUpdateDto();
 }
 
+// D24: the translated text arrives outside the TDLib update stream, so it travels as a local event.
+export class MessageTranslationEvent extends AppEvent {
+  type: string = 'messageTranslation';
+  chatId: number = 0;
+  messageId: string = '0';
+  translatedText: string = '';
+  visible: boolean = false;
+}
+
 export class MessageContentUpdatedEvent extends AppEvent {
   type: string = 'messageContentUpdated';
   chatId: ChatId = 0;
@@ -340,6 +349,7 @@ export type AnyAppEvent =
   | NewMessageEvent
   | ReplyMessageHydratedEvent
   | MessageUpdatedEvent
+| MessageTranslationEvent
   | MessageContentUpdatedEvent
   | MessageReactionsUpdatedEvent
   | MessageReactionChangedEvent

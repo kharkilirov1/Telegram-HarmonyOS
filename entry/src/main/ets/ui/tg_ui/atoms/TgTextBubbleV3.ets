@@ -3,6 +3,7 @@
 // Layout is computed by TgBubbleLayout.computeTextBubbleLayout().
 
 import { TgUiTokens } from '../tokens/TgUiTokens'
+import { localized } from '../../../core/utils/AppResource'
 import { TextBubbleLayout } from '../layout/TgBubbleLayoutTypes'
 import { TextEntity } from '../../../core/model/AppState'
 import { TgTextBodyV3 } from './TgTextBodyV3'
@@ -18,6 +19,10 @@ export struct TgTextBubbleV3 {
 
   // ── Content ──
   @Param text: string = ''
+  // D24: inline translation shown under the original text.
+  @Param translatedText: string = ''
+  @Param translationVisible: boolean = false
+  @Event onTranslationToggle: () => void = (): void => {};
   @Param isOutgoing: boolean = false
   @Param isEmojiOnly: boolean = false
   @Param forceBreakAll: boolean = false
@@ -191,6 +196,39 @@ export struct TgTextBubbleV3 {
   }
 
   @Builder
+  buildTranslation() {
+    if (this.translationVisible && this.translatedText.length > 0) {
+      Column() {
+        Divider()
+          .color(TgUiTokens.COLOR_TEXT_META)
+          .opacity(TgUiTokens.TRANSLATION_DIVIDER_OPACITY)
+          .margin({ top: TgUiTokens.SPACE_6, bottom: TgUiTokens.SPACE_6 })
+        Text(this.translatedText)
+          .fontSize(TgUiTokens.MSG_TEXT_SIZE)
+          .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+          .width('100%')
+        Row() {
+          Text(localized($r('app.string.translation_label').id, 'Translated'))
+            .fontSize(TgUiTokens.MSG_META_SIZE)
+            .fontColor(TgUiTokens.COLOR_TEXT_META)
+          Blank()
+          Text(localized($r('app.string.translation_show_original').id, 'Show original'))
+            .fontSize(TgUiTokens.MSG_META_SIZE)
+            .fontColor(TgUiTokens.LINK_PREVIEW_ACCENT_INCOMING)
+            .onClick(() => {
+              this.onTranslationToggle();
+            })
+        }
+        .width('100%')
+        .margin({ top: TgUiTokens.SPACE_4 })
+      }
+      .width('100%')
+      .alignItems(HorizontalAlign.Start)
+      .margin({ top: TgUiTokens.SPACE_4 })
+    }
+  }
+
+  @Builder
   buildLinkPreview() {
     if (this.hasLinkPreview()) {
       TgLinkPreviewBubble({
@@ -236,6 +274,7 @@ export struct TgTextBubbleV3 {
             this.buildLinkPreview()
           }
           this.buildTextContent()
+          this.buildTranslation()
           if (!this.linkPreviewShowAboveText) {
             this.buildLinkPreview()
           }

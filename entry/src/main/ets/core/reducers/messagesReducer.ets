@@ -13,7 +13,8 @@ import {
   MessageSendSucceededEvent,
   MessageSendFailedEvent,
   MessagesDeletedEvent,
-  ChatMessagesResetEvent
+  ChatMessagesResetEvent,
+  MessageTranslationEvent
 } from '../model/AppEvent';
 import { MessageDto, MessageContentDto } from '../model/dto/MessageDto';
 import { cloneStateForMessages } from '../utils/stateClone';
@@ -23,6 +24,7 @@ import { createAssociatedMessageKey } from '../utils/replyMessageKey';
 function isMessageEvent(type: string): boolean {
   return type === 'newMessage' || type === 'replyMessageHydrated' || type === 'messageUpdated' ||
     type === 'messageContentUpdated' || type === 'messageReactionsUpdated' ||
+    type === 'messageTranslation' ||
     type === 'messageReactionChanged' || type === 'messageSendSucceeded' ||
     type === 'messageSendFailed' || type === 'messagesDeleted' ||
     type === 'chatMessagesReset';
@@ -349,6 +351,8 @@ function cloneMessage(msg: Message): Message {
   clone.isOutgoing = msg.isOutgoing;
   clone.isChannelPost = msg.isChannelPost;
   clone.replyCount = msg.replyCount;
+  clone.translatedText = msg.translatedText;
+  clone.translationVisible = msg.translationVisible;
   clone.isRead = msg.isRead;
   clone.isPending = msg.isPending;
   clone.editDate = msg.editDate;
@@ -429,6 +433,24 @@ export function messagesReducer(state: AppState, action: ReducerAction): AppStat
       if (event.updates.editDate !== undefined) {
         updated.editDate = event.updates.editDate;
       }
+
+      const newChatMessages = new Map<string, Message>(chatMessages);
+      newChatMessages.set(event.messageId, updated);
+      newState.messages.messages.set(event.chatId, newChatMessages);
+      break;
+    }
+
+    case 'messageTranslation': {
+      const event = action as MessageTranslationEvent;
+      const chatMessages = newState.messages.messages.get(event.chatId);
+      if (!chatMessages) break;
+
+      const existing = chatMessages.get(event.messageId);
+      if (!existing) break;
+
+      const updated = cloneMessage(existing);
+      updated.translatedText = event.translatedText;
+      updated.translationVisible = event.visible;
 
       const newChatMessages = new Map<string, Message>(chatMessages);
       newChatMessages.set(event.messageId, updated);

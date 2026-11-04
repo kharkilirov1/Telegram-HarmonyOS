@@ -248,7 +248,7 @@ const existingRoutes = {
   chatsReducer: ['groupAccessUpdated', 'newChat', 'chatUpdated', 'chatReadInbox', 'chatReadOutbox',
     'chatsLoadStateChanged', 'chatAction', 'chatFullInfo', 'chatActiveStoriesUpdated'],
   messagesReducer: ['newMessage', 'replyMessageHydrated', 'messageUpdated', 'messageContentUpdated',
-    'messageSendSucceeded', 'messageSendFailed', 'messagesDeleted'],
+    'messageSendSucceeded', 'messageSendFailed', 'messagesDeleted', 'messageTranslation'],
   usersReducer: ['userUpdated', 'userStatusChanged', 'userFullInfo'],
   filesReducer: ['fileDownloaded', 'fileTransferUpdated'],
   accentColorsReducer: ['accentColorsUpdated']

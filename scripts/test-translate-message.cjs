@@ -93,6 +93,42 @@ async function main() {
     { send: () => Promise.resolve(TdObject.fromJSON('{"@type":"formattedText","text":"","entities":[]}')) })
     .translate('hello', 'en'), /Translation unavailable/);
 
+  // Inline translation through the message store -------------------------------------------------
+  const state = read('core/model/AppState.ets');
+  assert.match(state, /translatedText: string = '';/);
+  assert.match(state, /translationVisible: boolean = false;/);
+  const events = read('core/model/AppEvent.ets');
+  assert.match(events, /export class MessageTranslationEvent extends AppEvent \{/);
+  assert.match(events, /type: string = 'messageTranslation';/);
+  const reducer = read('core/reducers/messagesReducer.ets');
+  assert.match(reducer, /case 'messageTranslation': \{/);
+  assert.match(reducer, /type === 'messageTranslation' \|\|/, 'the reducer claims the event');
+  assert.match(reducer, /updated\.translatedText = event\.translatedText;/);
+  assert.match(reducer, /updated\.translationVisible = event\.visible;/);
+  assert.match(reducer, /clone\.translatedText = msg\.translatedText;/, 'the clone keeps the translation');
+  const vo = read('ui/pages/chat/ChatTimelineVO.ets');
+  assert.match(vo, /row\.translatedText = message\.translatedText;/);
+  assert.match(vo, /row\.translationVisible = message\.translationVisible;/);
+
+  // Bubble, router and row wiring.
+  const bubble = read('ui/tg_ui/atoms/TgTextBubbleV3.ets');
+  assert.match(bubble, /@Param translatedText: string = ''/);
+  assert.match(bubble, /@Param translationVisible: boolean = false/);
+  assert.match(bubble, /@Event onTranslationToggle: \(\) => void/);
+  assert.match(bubble, /this\.buildTranslation\(\)/, 'the bubble renders the translation block');
+  assert.match(bubble, /if \(this\.translationVisible && this\.translatedText\.length > 0\)/);
+  assert.match(bubble, /translation_show_original/, 'the block offers Show original');
+  assert.match(bubble, /TgUiTokens\.TRANSLATION_DIVIDER_OPACITY/);
+  const router = read('ui/tg_ui/molecules/TgMessageRouter.ets');
+  assert.match(router, /translatedText: this\.translatedText,/);
+  assert.match(router, /translationVisible: this\.translationVisible,/);
+  assert.match(router, /onTranslationToggle: \(\): void => \{/);
+  const row = read('ui/pages/chat/TgChatTimelineRow.ets');
+  assert.match(row, /translatedText: this\.entry\.message\.translatedText,/);
+  assert.match(row, /private toggleTranslation\(\): void \{/);
+  assert.match(row, /event\.chatId = this\.chrome\.activeChatId;/);
+  assert.match(row, /getAppCoreRuntime\(\)\.getStore\(\)\.dispatch\(event\)/);
+
   // Cache and toggle ------------------------------------------------------------------------------
   const cacheSource = read('ui/pages/chat/ChatMessageActionsController.ets');
   assert.match(cacheSource, /export const MAX_CACHED_TRANSLATIONS = 50;/);
@@ -103,7 +139,8 @@ async function main() {
   assert.match(cacheSource, /const cached = this\.translationCache\.get\(this\.translationKey\(messageId, language\)\);/);
   assert.match(cacheSource, /if \(cached !== undefined\) \{/, 'a cached translation never hits the network');
   assert.match(cacheSource, /this\.cacheTranslation\(this\.translationKey\(messageId, language\), translated\.text\);/);
-  assert.match(cacheSource, /private showTranslation\(text: string, host: ChatMessageActionsHost\): void \{/);
+  assert.match(cacheSource, /private applyTranslation\(chatId: number, messageId: string, text: string, visible: boolean\): void \{/);
+  assert.match(cacheSource, /if \(entry\.message\.translationVisible\) \{/, 'the action toggles the shown translation off');
   assert.match(cacheSource, /this\.translationCache\.has\(this\.translationKey\(entry\.message\.messageId, this\.targetLanguageCode\(\)\)\)/,
     'the menu label reflects the cache');
   assert.match(cacheSource, /action_show_translation/, 'a translated message offers Show Translation');
@@ -121,7 +158,8 @@ async function main() {
   for (const locale of ['base', 'ru_RU', 'zh_CN']) {
     const strings = JSON.parse(fs.readFileSync(
       path.join(root, '../resources/' + locale + '/element/string.json'), 'utf8'));
-    for (const name of ['action_translate', 'action_show_translation', 'translation_title', 'translation_failed']) {
+    for (const name of ['action_translate', 'action_show_translation', 'translation_title', 'translation_failed',
+      'translation_label', 'translation_show_original']) {
       assert.ok(strings.string.find((item) => item.name === name), locale + ' has ' + name);
     }
   }
