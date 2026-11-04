@@ -1164,3 +1164,14 @@ Last updated: 2026-10-23
 - The same applies to factories: find the function start, then its closing brace, and edit that slice.
 - When a payload grows an optional JSON override, keep the previous hardcoded default as the fallback in
   the serializer so existing callers keep their behaviour, and assert both paths in the suite.
+
+## 225. Every imported factory is a loader dependency
+
+- The use case gained `createGetChatMemberCommand`; the CJS loader strips imports, so the symbol was
+  undefined at runtime and the failure surfaced as a caught "Failed to load the member state" AppError,
+  not as a ReferenceError. Add each new factory to the suite deps as soon as the module uses it.
+- A string replace that inserts a dependency object can leave the old `{ ...C, ...errors, hilog }` line
+  behind; the resulting `SyntaxError: Rest parameter must be last formal parameter` points at the
+  `new Function(...names)` call, not at the duplicated line.
+- Pre-filling a screen from TDLib must tolerate a different status than expected: `loadState` returns
+  every status and each page only applies the branch it owns.

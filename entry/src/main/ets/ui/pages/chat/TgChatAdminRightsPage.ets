@@ -114,11 +114,63 @@ export struct TgChatAdminRightsPage {
       initial.push(false);
     }
     this.selected = initial;
+    this.prefill();
   }
 
   aboutToDisappear(): void {
     this.pageLifecycleToken += 1;
     this.useCase = undefined;
+  }
+
+  // Editing an existing administrator must start from their current rights, not from all-off.
+  private prefill(): void {
+    const useCase = this.useCase;
+    if (useCase === undefined || this.chatId <= 0 || this.userId <= 0) {
+      return;
+    }
+    const token: number = this.pageLifecycleToken;
+    useCase.loadState(this.chatId, this.userId)
+      .then((state) => {
+        if (token !== this.pageLifecycleToken || state.statusKind !== 'administrator') {
+          return;
+        }
+        const rights = state.rights;
+        const values: boolean[] = [];
+        for (let i = 0; i < ADMIN_RIGHT_ROWS.length; i += 1) {
+          values.push(this.rightValue(rights, ADMIN_RIGHT_ROWS[i].key));
+        }
+        this.selected = values;
+      })
+      .catch((error: Error) => {
+        hilog.warn(DOMAIN, TAG, 'Right prefill failed: %{public}s', error.message);
+      });
+  }
+
+  private rightValue(rights: ChatAdminRightsPayload, key: string): boolean {
+    switch (key) {
+      case 'canManageChat':
+        return rights.canManageChat;
+      case 'canChangeInfo':
+        return rights.canChangeInfo;
+      case 'canDeleteMessages':
+        return rights.canDeleteMessages;
+      case 'canInviteUsers':
+        return rights.canInviteUsers;
+      case 'canRestrictMembers':
+        return rights.canRestrictMembers;
+      case 'canPinMessages':
+        return rights.canPinMessages;
+      case 'canManageTopics':
+        return rights.canManageTopics;
+      case 'canManageVideoChats':
+        return rights.canManageVideoChats;
+      case 'canPromoteMembers':
+        return rights.canPromoteMembers;
+      case 'isAnonymous':
+        return rights.isAnonymous;
+      default:
+        return false;
+    }
   }
 
   private toggle(index: number): void {

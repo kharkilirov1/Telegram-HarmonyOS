@@ -22,16 +22,18 @@ async function main() {
   const hilog = { info() {}, warn() {}, error() {}, debug() {} };
   const { TdObject } = load('models/td/common/index.ets', ['TdObject']);
   const C = load('core/model/AppCommand.ets',
-    ['createSetChatMemberStatusCommand', 'AppCommand', 'ChatAdminRightsPayload']);
-  const P = load('core/model/dto/ChatPermissionsDto.ets',
-    ['ChatPermissionsDto', 'chatPermissionsToJson']);
+    ['createSetChatMemberStatusCommand', 'createGetChatMemberCommand', 'AppCommand',
+      'ChatAdminRightsPayload']);
   const errors = load('core/model/AppError.ets', ['AppError', 'AppErrorKind']);
   const serializer = load('infra/td/serialization/CommandSerializer.ets',
     ['serializeCommand', 'buildTdlibRequestJson'], { ...C, TdObject, hilog });
+  const P = load('core/model/dto/ChatPermissionsDto.ets',
+    ['ChatPermissionsDto', 'chatPermissionsToJson', 'createChatPermissionsFromTd']);
   const U = load('domain/usecases/chatMemberAdmin.ets',
     ['ChatMemberAdminUseCase', 'createChatMemberAdminUseCase', 'memberStatusKind',
-      'MODERATION_DURATION_SECONDS', 'MODERATION_DURATION_OPTIONS', 'moderationUntilDate'],
-    { ...C, ...errors, hilog });
+      'MODERATION_DURATION_SECONDS', 'MODERATION_DURATION_OPTIONS', 'moderationUntilDate',
+      'parseMemberModerationState', 'ChatMemberModerationState'],
+    { ...P, ...C, ...errors, hilog, TdObject });
 
   // Action → status mapping ------------------------------------------------------------------------
   assert.equal(U.memberStatusKind('ban'), 'banned');
@@ -139,6 +141,89 @@ async function main() {
   assert.equal(wire.status.permissions.can_send_basic_messages, false,
     'without a permission object every right stays denied');
 
+  // Member state parsing: pre-fill for the rights and restrict screens --------------------------------
+  const adminState = U.parseMemberModerationState(TdObject.fromJSON(JSON.stringify({
+    '@type': 'chatMember',
+    member_id: { '@type': 'messageSenderUser', user_id: 7 },
+    status: {
+      '@type': 'chatMemberStatusAdministrator', custom_title: '', can_be_edited: true,
+      rights: { '@type': 'chatAdministratorRights', can_manage_chat: true, can_change_info: false,
+        can_post_messages: false, can_edit_messages: false, can_delete_messages: true,
+        can_invite_users: true, can_restrict_members: false, can_pin_messages: false,
+        can_manage_topics: false, can_promote_members: false, can_manage_video_chats: false,
+        can_post_stories: false, can_edit_stories: false, can_delete_stories: false,
+        can_manage_direct_messages: false, is_anonymous: true }
+    }
+  })));
+  assert.equal(adminState.statusKind, 'administrator');
+  assert.equal(adminState.rights.canManageChat, true);
+  assert.equal(adminState.rights.canDeleteMessages, true);
+  assert.equal(adminState.rights.canInviteUsers, true);
+  assert.equal(adminState.rights.isAnonymous, true);
+  assert.equal(adminState.rights.canChangeInfo, false, 'unspecified rights stay false');
+
+  const restrictedState = U.parseMemberModerationState(TdObject.fromJSON(JSON.stringify({
+    '@type': 'chatMember',
+    member_id: { '@type': 'messageSenderUser', user_id: 7 },
+    status: {
+      '@type': 'chatMemberStatusRestricted', is_member: true, restricted_until_date: 1999999999,
+      permissions: { '@type': 'chatPermissions', can_send_basic_messages: true,
+        can_send_audios: false, can_send_documents: false, can_send_photos: true,
+        can_send_videos: false, can_send_video_notes: false, can_send_voice_notes: false,
+        can_send_polls: false, can_send_other_messages: false, can_add_link_previews: false,
+        can_change_info: false, can_invite_users: false, can_pin_messages: false,
+        can_create_topics: false }
+    }
+  })));
+  assert.equal(restrictedState.statusKind, 'restricted');
+  assert.equal(restrictedState.untilDate, 1999999999);
+  assert.equal(restrictedState.permissions.canSendBasicMessages, true);
+  assert.equal(restrictedState.permissions.canSendPhotos, true);
+  assert.equal(restrictedState.permissions.canSendVideos, false);
+
+  const bannedState = U.parseMemberModerationState(TdObject.fromJSON(JSON.stringify({
+    '@type': 'chatMember',
+    member_id: { '@type': 'messageSenderUser', user_id: 7 },
+    status: { '@type': 'chatMemberStatusBanned', banned_until_date: 0 }
+  })));
+  assert.equal(bannedState.statusKind, 'banned');
+  assert.equal(bannedState.untilDate, 0, '0 means forever, never a stale deadline');
+  assert.equal(U.parseMemberModerationState(
+    TdObject.fromJSON('{"@type":"ok"}')), undefined);
+
+  const memberState = U.parseMemberModerationState(TdObject.fromJSON(JSON.stringify({
+    '@type': 'chatMember', member_id: { '@type': 'messageSenderUser', user_id: 7 },
+    status: { '@type': 'chatMemberStatusMember', member_until_date: 0 }
+  })));
+  assert.equal(memberState.statusKind, 'member');
+
+  // loadState round-trip through the gateway.
+  const stateSent = [];
+  const stateUseCase = new U.ChatMemberAdminUseCase({
+    send: (command) => {
+      stateSent.push(command);
+      return Promise.resolve(TdObject.fromJSON(JSON.stringify({
+        '@type': 'chatMember', member_id: { '@type': 'messageSenderUser', user_id: 7 },
+        status: { '@type': 'chatMemberStatusAdministrator', custom_title: '', can_be_edited: false,
+          rights: { '@type': 'chatAdministratorRights', can_manage_chat: true } }
+      })));
+    }
+  });
+  const loadedState = await stateUseCase.loadState(42, 7);
+  assert.equal(stateSent.at(-1).type, 'getChatMember');
+  assert.equal(stateSent.at(-1).payload.chatId, 42);
+  assert.equal(stateSent.at(-1).payload.userId, 7);
+  assert.equal(loadedState.statusKind, 'administrator');
+  assert.equal(loadedState.rights.canManageChat, true);
+  await assert.rejects(() => stateUseCase.loadState(0, 7), /Invalid chatId/);
+  await assert.rejects(() => stateUseCase.loadState(42, 0), /Invalid userId/);
+  await assert.rejects(() => new U.ChatMemberAdminUseCase(
+    { send: () => Promise.resolve(TdObject.fromJSON('{"@type":"ok"}')) }).loadState(42, 7),
+    /Unsupported member response/);
+  await assert.rejects(() => new U.ChatMemberAdminUseCase(
+    { send: () => Promise.reject(new Error('native status')) }).loadState(42, 7),
+    /Failed to load the member state/);
+
   // Validation and failures ------------------------------------------------------------------------
   const before = sent.length;
   await assert.rejects(() => useCase.apply(0, 7, 'ban'), /Invalid chatId/);
@@ -172,6 +257,8 @@ async function main() {
   assert.match(restrictPage, /useCase\.apply\(this\.chatId, this\.userId, 'restrict', untilDate,/);
   assert.match(restrictPage, /chatPermissionsToJson\(this\.buildPermissions\(\)\)/);
   assert.match(restrictPage, /const RESTRICT_PERMISSION_ROWS: RestrictPermissionRow\[\] = \[/);
+  assert.match(restrictPage, /useCase\.loadState\(this\.chatId, this\.userId\)/);
+  assert.match(restrictPage, /private permissionValue\(permissions: ChatPermissionsDto, key: string\): boolean \{/);
   for (const key of ['canSendBasicMessages', 'canSendPhotos', 'canSendVideos', 'canSendAudios',
     'canSendVoiceNotes', 'canSendVideoNotes', 'canSendDocuments', 'canSendPolls',
     'canSendOtherMessages', 'canAddLinkPreviews', 'canInviteUsers', 'canPinMessages',
@@ -191,6 +278,8 @@ async function main() {
   assert.match(rightsPage, /createChatMemberAdminUseCase\(getTdGatewayAdapter\(\)\)/);
   assert.match(rightsPage, /useCase\.apply\(this\.chatId, this\.userId, 'promote', 0, this\.buildRights\(\)\)/);
   assert.match(rightsPage, /const ADMIN_RIGHT_ROWS: AdminRightRow\[\] = \[/);
+  assert.match(rightsPage, /useCase\.loadState\(this\.chatId, this\.userId\)/);
+  assert.match(rightsPage, /private rightValue\(rights: ChatAdminRightsPayload, key: string\): boolean \{/);
   for (const key of ['canManageChat', 'canChangeInfo', 'canDeleteMessages', 'canInviteUsers',
     'canRestrictMembers', 'canPinMessages', 'canManageTopics', 'canManageVideoChats',
     'canPromoteMembers', 'isAnonymous']) {

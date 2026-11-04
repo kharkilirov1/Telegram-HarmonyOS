@@ -124,11 +124,82 @@ export struct TgChatRestrictRightsPage {
       initial.push(false);
     }
     this.allowed = initial;
+    this.prefill();
   }
 
   aboutToDisappear(): void {
     this.pageLifecycleToken += 1;
     this.useCase = undefined;
+  }
+
+  // An already restricted member opens with the permissions they still have.
+  private prefill(): void {
+    const useCase = this.useCase;
+    if (useCase === undefined || this.chatId <= 0 || this.userId <= 0) {
+      return;
+    }
+    const token: number = this.pageLifecycleToken;
+    useCase.loadState(this.chatId, this.userId)
+      .then((state) => {
+        if (token !== this.pageLifecycleToken || state.statusKind !== 'restricted') {
+          return;
+        }
+        const values: boolean[] = [];
+        for (let i = 0; i < RESTRICT_PERMISSION_ROWS.length; i += 1) {
+          values.push(this.permissionValue(state.permissions, RESTRICT_PERMISSION_ROWS[i].key));
+        }
+        this.allowed = values;
+        if (state.untilDate > 0) {
+          const remaining: number = Math.max(0, state.untilDate - Math.floor(Date.now() / 1000));
+          if (remaining <= 3600) {
+            this.durationSeconds = 3600;
+          } else if (remaining <= 86400) {
+            this.durationSeconds = 86400;
+          } else if (remaining <= 7 * 86400) {
+            this.durationSeconds = 7 * 86400;
+          } else {
+            this.durationSeconds = MODERATION_DURATION_SECONDS[2];
+          }
+        }
+      })
+      .catch((error: Error) => {
+        hilog.warn(DOMAIN, TAG, 'Restriction prefill failed: %{public}s', error.message);
+      });
+  }
+
+  private permissionValue(permissions: ChatPermissionsDto, key: string): boolean {
+    switch (key) {
+      case 'canSendBasicMessages':
+        return permissions.canSendBasicMessages;
+      case 'canSendPhotos':
+        return permissions.canSendPhotos;
+      case 'canSendVideos':
+        return permissions.canSendVideos;
+      case 'canSendAudios':
+        return permissions.canSendAudios;
+      case 'canSendVoiceNotes':
+        return permissions.canSendVoiceNotes;
+      case 'canSendVideoNotes':
+        return permissions.canSendVideoNotes;
+      case 'canSendDocuments':
+        return permissions.canSendDocuments;
+      case 'canSendPolls':
+        return permissions.canSendPolls;
+      case 'canSendOtherMessages':
+        return permissions.canSendOtherMessages;
+      case 'canAddLinkPreviews':
+        return permissions.canAddLinkPreviews;
+      case 'canInviteUsers':
+        return permissions.canInviteUsers;
+      case 'canPinMessages':
+        return permissions.canPinMessages;
+      case 'canChangeInfo':
+        return permissions.canChangeInfo;
+      case 'canCreateTopics':
+        return permissions.canCreateTopics;
+      default:
+        return false;
+    }
   }
 
   private toggle(index: number): void {

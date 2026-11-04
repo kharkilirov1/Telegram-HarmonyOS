@@ -74,6 +74,7 @@
 | G6d | Экран прав администратора (G6) | G6 | `TgChatAdminRightsPage` + route, 10 тоглов прав, promote через экран; остаток — частичные ограничения, сроки, предзаполнение |
 | G6e | Сроки бана/ограничения (G6) | G6 | меню срока + `moderationUntilDate`, timed restrict/ban в wire; остаток — частичные права, предзаполнение |
 | G6f | Частичные ограничения (G6) | G6 | `TgChatRestrictRightsPage` (14 разрешений + срок), `permissionsJson` в статусе restricted; остаток — предзаполнение прав админа |
+| G6g | Предзаполнение прав (G6) | G6 | `loadState`/`parseMemberModerationState`, предзаполнение прав админа и текущего ограничения; остаток — demote с сохранением прав |
 | S12b | Меню действий в шапке чата (C10) | C10 | `showMoreAction`/`onMorePress` в `TgChatTopBar`, меню Chat Info / Mute / Clear History / Delete в `TgChatScreenPage`, live-store состояние, контракт `test-chat-header-actions.cjs`, smoke-пин на 4 действия; C10 → `available` |
 | S12c | Leave Chat и Share My Contact (C10) | C10 | `leaveChat` + `inputMessageContact` (команды/сериализаторы), `LeaveChatUseCase`/`ShareMyContactUseCase`, пятый контекстный пункт меню в шапке, 6 строк в 3 локалях, контракт расширен |
 | S12d | Report с причинами + `ChatActionsCoordinator` (C10) | C10 | `reportChat`/`ReportChatDto`/`ReportChatUseCase`, `canBeReported` в модели/DTO/reducer, шестой пункт меню, меню вынесено в координатор (страница ≤500 строк), контракт расширен |

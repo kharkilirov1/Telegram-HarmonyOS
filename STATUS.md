@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **G6-предзаполнение (lead).** `parseMemberModerationState` (chatMember → administrator rights по
+  16 флагам / restricted permissions+until / banned until / creator / member) и
+  `ChatMemberAdminUseCase.loadState` через `getChatMember`; `TgChatAdminRightsPage` подставляет
+  текущие 10 прав админа, `TgChatRestrictRightsPage` — текущие 14 разрешений и ближайший пресет
+  срока по остатку. Суита `test-chat-member-admin.cjs` расширена: парсинг admin/restricted/banned/
+  member-состояний, `getChatMember`-wire и ошибки `loadState`, предзаполнение на обоих экранах.
+  Гейты: host **127/127**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток G6: «снять админа» с
+  сохранением прав, witness.
 - **G6-частичные права (lead).** `TgChatRestrictRightsPage`: 14 разрешений (текст/фото/видео/аудио/
   голосовые/видеосообщения/документы/опросы/GIF-стикеры/превью ссылок/приглашения/закрепление/
   профиль/темы) + строка срока (1ч/1д/1н/навсегда) + кнопка Restrict; переключатели означают
