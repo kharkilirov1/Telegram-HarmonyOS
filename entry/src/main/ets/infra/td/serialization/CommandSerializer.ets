@@ -578,13 +578,15 @@ function serializeGetStorageStatisticsFast(_command: AnyAppCommand, result: Seri
   result.method = 'getStorageStatisticsFast';
 }
 
-function serializeOptimizeStorage(_command: AnyAppCommand, result: SerializedCommand): void {
+function serializeOptimizeStorage(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as OptimizeStorageCommand;
   result.method = 'optimizeStorage';
-  // size/ttl/count zero = release every droppable cache file (td_api.tl:14444).
-  result.params.setNumber('size', 0);
-  result.params.setNumber('ttl', 0);
-  result.params.setNumber('count', 0);
-  result.params.setNumber('immunity_delay', 0);
+  // size/ttl/count zero = release every droppable cache file (td_api.tl:14444); -1 keeps a TDLib
+  // default, which is what the max-cache-size limit uses for ttl/count.
+  result.params.setNumber('size', cmd.payload.size);
+  result.params.setNumber('ttl', cmd.payload.ttl);
+  result.params.setNumber('count', cmd.payload.count);
+  result.params.setNumber('immunity_delay', cmd.payload.immunityDelay);
   result.params.setString('_file_types_json', '[]');
   result.params.setString('_chat_ids_json', '[]');
   result.params.setString('_exclude_chat_ids_json', '[]');

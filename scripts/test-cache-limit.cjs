@@ -1,0 +1,111 @@
+// H4 contract: "Maximum cache size" limit on the Data and Storage screen.
+// TDLib: optimizeStorage (td_api.tl:14444) with size/ttl/count; -1 keeps a TDLib default.
+const fs = require('node:fs');
+const path = require('node:path');
+const assert = require('node:assert/strict');
+const { stripTypeScriptTypes } = require('node:module');
+
+const root = path.resolve(__dirname, '..');
+const main = path.join(root, 'entry/src/main/ets') + path.sep;
+const read = (relative) => fs.readFileSync(main + relative, 'utf8').replaceAll('\r\n', '\n');
+
+function load(relative, deps = {}) {
+  const text = read(relative);
+  const names = [...text.matchAll(/^export\s+(?:async\s+)?(?:class|function|enum|const)\s+(\w+)/gm)]
+    .map((match) => match[1]);
+  const code = text.replace(/^import[\s\S]*?;\s*/gm, '').replace(/^export\s+/gm, '')
+    .replace(/^@ObservedV2\s*\n/gm, '').replace(/^(\s*)@Trace\s+/gm, '$1');
+  return new Function(...Object.keys(deps), stripTypeScriptTypes(code, { mode: 'transform' }) +
+    `\nreturn {${names.join(',')}};`)(...Object.values(deps));
+}
+
+const hilog = { info() {}, debug() {}, warn() {}, error() {} };
+const { TdObject } = load('models/td/common/index.ets');
+const C = load('core/model/AppCommand.ets');
+const errors = load('core/model/AppError.ets');
+const S = load('core/model/dto/StorageStatisticsDto.ets', { TdObjectType: TdObject, TdObject, hilog });
+const serializer = load('infra/td/serialization/CommandSerializer.ets', { ...C, TdObject, hilog });
+const storage = load('domain/usecases/loadStorageStatistics.ets',
+  { ...C, ...errors, hilog, TdObject, ...S });
+
+async function mainCheck() {
+  // Clear-cache keeps the old zeroed request.
+  const clearWire = JSON.parse(serializer.buildTdlibRequestJson('optimizeStorage',
+    serializer.serializeCommand(C.createOptimizeStorageCommand()).params));
+  assert.equal(clearWire.size, 0);
+  assert.equal(clearWire.ttl, 0);
+  assert.equal(clearWire.count, 0);
+
+  // Limit request carries the byte limit and TDLib defaults for the other limits.
+  const payload = new C.OptimizeStoragePayload();
+  payload.size = 1024 * 1024 * 1024;
+  payload.ttl = -1;
+  payload.count = -1;
+  payload.immunityDelay = -1;
+  const limitWire = JSON.parse(serializer.buildTdlibRequestJson('optimizeStorage',
+    serializer.serializeCommand(C.createOptimizeStorageCommand(payload)).params));
+  assert.equal(limitWire.size, 1073741824);
+  assert.equal(limitWire.ttl, -1);
+  assert.equal(limitWire.count, -1);
+  assert.equal(limitWire.immunity_delay, -1);
+  assert.deepEqual(limitWire.file_types, []);
+  assert.deepEqual(limitWire.chat_ids, []);
+  assert.equal(limitWire.return_deleted_file_statistics, false);
+
+  const sent = [];
+  const gateway = {
+    send: (command) => {
+      sent.push(command);
+      return Promise.resolve(TdObject.fromJSON('{"@type":"storageStatistics","size":"0","count":0,' +
+        '"by_chat":[]}'));
+    }
+  };
+  const useCase = new storage.LoadStorageStatisticsUseCase(gateway);
+
+  assert.equal(await useCase.enforceCacheLimit(0), false, 'unlimited sends nothing');
+  assert.equal(sent.length, 0);
+  assert.equal(await useCase.enforceCacheLimit(536870912), true);
+  assert.equal(sent.at(-1).type, 'optimizeStorage');
+  assert.equal(sent.at(-1).payload.size, 536870912);
+  assert.equal(sent.at(-1).payload.ttl, -1);
+  await assert.rejects(() => useCase.enforceCacheLimit(-1), /Invalid cache limit/);
+  await assert.rejects(() => useCase.enforceCacheLimit(1.5), /Invalid cache limit/);
+  assert.equal(sent.length, 1, 'invalid limits never reach the gateway');
+  await assert.rejects(() => new storage.LoadStorageStatisticsUseCase(
+    { send: () => Promise.reject(new Error('native status')) }).enforceCacheLimit(1024),
+    /Failed to apply the cache limit/);
+
+  // Formatting used in the row/menu labels.
+  assert.equal(S.formatStorageBytes(256 * 1024 * 1024), '256 MB');
+  assert.equal(S.formatStorageBytes(1024 * 1024 * 1024), '1 GB');
+  assert.equal(S.formatStorageBytes(0), '0 B');
+}
+
+mainCheck().then(() => {
+  const page = read('ui/pages/settings/TgDataStoragePage.ets');
+  assert.match(page, /@Local private cacheLimitBytes: number = 0;/);
+  assert.match(page, /preferences\.getPreferencesSync\(context, \{ name: 'storage_settings' \}\)/);
+  assert.match(page, /getSync\('max_cache_bytes', 0\)/);
+  assert.match(page, /putSync\('max_cache_bytes', limitBytes\)/);
+  assert.match(page, /private selectCacheLimit\(\): void \{/);
+  assert.match(page, /256 \* 1024 \* 1024/);
+  assert.match(page, /private applyCacheLimit\(limitBytes: number\): void \{/);
+  assert.match(page, /useCase\.enforceCacheLimit\(limitBytes\)/);
+  assert.match(page, /data_storage_max_cache/);
+  assert.match(page, /data_storage_unlimited/);
+  assert.match(page, /data_storage_cache_limit_applied/);
+
+  for (const locale of ['base', 'ru_RU', 'zh_CN']) {
+    const strings = JSON.parse(fs.readFileSync(
+      path.join(root, 'entry/src/main/resources', locale, 'element/string.json'), 'utf8'));
+    for (const [name, expected] of [['data_storage_max_cache', /./], ['data_storage_unlimited', /./],
+      ['data_storage_cache_limit_applied', /./]]) {
+      const item = strings.string.find((entry) => entry.name === name);
+      assert.ok(item && expected.test(item.value), name + ' exists in ' + locale);
+    }
+  }
+  console.log('PASS cache limit contract');
+}).catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

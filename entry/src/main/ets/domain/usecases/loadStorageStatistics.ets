@@ -5,6 +5,7 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { TdObject } from '../../models/TdTypes';
 import {
+  OptimizeStoragePayload,
   createGetStorageStatisticsCommand,
   createGetStorageStatisticsFastCommand,
   createOptimizeStorageCommand
@@ -56,6 +57,32 @@ export class LoadStorageStatisticsUseCase {
       hilog.warn(DOMAIN, TAG, 'getStorageStatistics failed: %{public}s', err.message);
     }
     return snapshot;
+  }
+
+  // Enforces the user's "Maximum cache size" now: files above the limit are dropped, ttl/count keep
+  // their TDLib defaults (-1). A non-positive limit means unlimited and sends nothing.
+  async enforceCacheLimit(limitBytes: number): Promise<boolean> {
+    if (!Number.isSafeInteger(limitBytes) || limitBytes < 0) {
+      throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid cache limit', 'Input validation failed', 400,
+        false);
+    }
+    if (limitBytes === 0) {
+      return false;
+    }
+    const payload = new OptimizeStoragePayload();
+    payload.size = limitBytes;
+    payload.ttl = -1;
+    payload.count = -1;
+    payload.immunityDelay = -1;
+    try {
+      hilog.info(DOMAIN, TAG, 'Enforcing cache limit %{public}d bytes', limitBytes);
+      await this.gateway.send(createOptimizeStorageCommand(payload));
+      return true;
+    } catch (error) {
+      const err = error as Error;
+      hilog.error(DOMAIN, TAG, 'optimizeStorage(limit) failed: %{public}s', err.message);
+      throw new AppError(AppErrorKind.UNKNOWN, 'Failed to apply the cache limit', err.message, 0, true);
+    }
   }
 
   // "Clear cache": TDLib drops every cache file it may free; database and logs stay.

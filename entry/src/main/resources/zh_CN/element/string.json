@@ -497,6 +497,18 @@
       "value": "按聊天"
     },
     {
+      "name": "data_storage_max_cache",
+      "value": "最大缓存大小"
+    },
+    {
+      "name": "data_storage_unlimited",
+      "value": "无限制"
+    },
+    {
+      "name": "data_storage_cache_limit_applied",
+      "value": "缓存已裁剪到新上限"
+    },
+    {
       "name": "data_storage_clear_cache",
       "value": "清除缓存"
     },

@@ -497,6 +497,18 @@
       "value": "ПО ЧАТАМ"
     },
     {
+      "name": "data_storage_max_cache",
+      "value": "Максимальный размер кэша"
+    },
+    {
+      "name": "data_storage_unlimited",
+      "value": "Без ограничения"
+    },
+    {
+      "name": "data_storage_cache_limit_applied",
+      "value": "Кэш сокращён до нового лимита"
+    },
+    {
       "name": "data_storage_clear_cache",
       "value": "Очистить кэш"
     },

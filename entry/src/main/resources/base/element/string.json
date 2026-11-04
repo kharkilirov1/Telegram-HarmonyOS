@@ -497,6 +497,18 @@
       "value": "BY CHAT"
     },
     {
+      "name": "data_storage_max_cache",
+      "value": "Maximum Cache Size"
+    },
+    {
+      "name": "data_storage_unlimited",
+      "value": "Unlimited"
+    },
+    {
+      "name": "data_storage_cache_limit_applied",
+      "value": "Cache trimmed to the new limit"
+    },
+    {
       "name": "data_storage_clear_cache",
       "value": "Clear Cache"
     },

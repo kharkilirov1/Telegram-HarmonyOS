@@ -831,9 +831,18 @@ export class GetStorageStatisticsFastCommand extends AppCommand {
   type: string = 'getStorageStatisticsFast';
 }
 
+export class OptimizeStoragePayload {
+  // -1 means "use the TDLib default" for each limit; 0 for the clear-cache case.
+  size: number = 0;
+  ttl: number = 0;
+  count: number = 0;
+  immunityDelay: number = 0;
+}
+
 export class OptimizeStorageCommand extends AppCommand {
   // "Clear cache": size/ttl/count 0 means remove every cache file TDLib is allowed to drop.
   type: string = 'optimizeStorage';
+  payload: OptimizeStoragePayload = new OptimizeStoragePayload();
 }
 
 export class GetBlockedMessageSendersCommand extends AppCommand {
@@ -1640,8 +1649,12 @@ export function createGetStorageStatisticsFastCommand(): GetStorageStatisticsFas
   return new GetStorageStatisticsFastCommand();
 }
 
-export function createOptimizeStorageCommand(): OptimizeStorageCommand {
-  return new OptimizeStorageCommand();
+export function createOptimizeStorageCommand(payload?: OptimizeStoragePayload): OptimizeStorageCommand {
+  const cmd = new OptimizeStorageCommand();
+  if (payload !== undefined) {
+    cmd.payload = payload;
+  }
+  return cmd;
 }
 
 export function createGetBlockedMessageSendersCommand(

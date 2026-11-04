@@ -4,6 +4,7 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { promptAction } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
+import { preferences } from '@kit.ArkData';
 import { localized } from '../../../core/utils/AppResource';
 import { AppState } from '../../../core/model/AppState';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
@@ -43,6 +44,9 @@ export struct TgDataStoragePage {
   @Local private isLoading: boolean = true;
   @Local private loadFailed: boolean = false;
   @Local private isClearing: boolean = false;
+  // Maximum cache size in bytes; 0 means unlimited. Persisted locally, applied on demand.
+  @Local private cacheLimitBytes: number = 0;
+  private cacheLimitStore?: preferences.Preferences;
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
   @Local private topBarInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
 
@@ -50,6 +54,7 @@ export struct TgDataStoragePage {
   private pageLifecycleToken: number = 0;
 
   aboutToAppear(): void {
+    this.restoreCacheLimit();
     this.pageLifecycleToken += 1;
     try {
       const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
@@ -120,6 +125,86 @@ export struct TgDataStoragePage {
       return chat.title;
     }
     return localized($r('app.string.data_storage_unknown_chat').id, 'Chat') + ' ' + chatId.toString();
+  }
+
+  private restoreCacheLimit(): void {
+    try {
+      const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      this.cacheLimitStore = preferences.getPreferencesSync(context, { name: 'storage_settings' });
+      const stored = this.cacheLimitStore.getSync('max_cache_bytes', 0) as number;
+      this.cacheLimitBytes = Number.isSafeInteger(stored) && stored >= 0 ? stored : 0;
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Cache limit preference unavailable: %{public}s', String(error));
+      this.cacheLimitBytes = 0;
+    }
+  }
+
+  private cacheLimitLabel(bytes: number): string {
+    return bytes > 0
+      ? formatStorageBytes(bytes)
+      : localized($r('app.string.data_storage_unlimited').id, 'Unlimited');
+  }
+
+  private selectCacheLimit(): void {
+    const options: number[] = [256 * 1024 * 1024, 512 * 1024 * 1024, 1024 * 1024 * 1024,
+      2 * 1024 * 1024 * 1024, 0];
+    this.getUIContext().getPromptAction().showActionMenu({
+      title: localized($r('app.string.data_storage_max_cache').id, 'Maximum Cache Size'),
+      buttons: [
+        { text: formatStorageBytes(options[0]), color: TgUiTokens.COLOR_TEXT_TITLE },
+        { text: formatStorageBytes(options[1]), color: TgUiTokens.COLOR_TEXT_TITLE },
+        { text: formatStorageBytes(options[2]), color: TgUiTokens.COLOR_TEXT_TITLE },
+        { text: formatStorageBytes(options[3]), color: TgUiTokens.COLOR_TEXT_TITLE },
+        { text: this.cacheLimitLabel(0), color: TgUiTokens.COLOR_TEXT_TITLE }
+      ]
+    }).then((result: promptAction.ActionMenuSuccessResponse) => {
+      const chosen = options[result.index];
+      if (chosen === undefined) {
+        return;
+      }
+      this.applyCacheLimit(chosen);
+    }).catch((error: Error) => {
+      hilog.warn(DOMAIN, TAG, 'Cache limit menu failed: %{public}s', error.message);
+    });
+  }
+
+  private applyCacheLimit(limitBytes: number): void {
+    const useCase = this.loadStorageUseCase;
+    if (useCase === undefined) {
+      return;
+    }
+    this.cacheLimitBytes = limitBytes;
+    this.persistCacheLimit(limitBytes);
+    const token: number = this.pageLifecycleToken;
+    useCase.enforceCacheLimit(limitBytes)
+      .then((applied: boolean) => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        if (applied) {
+          this.getUIContext().getPromptAction().showToast({
+            message: localized($r('app.string.data_storage_cache_limit_applied').id,
+              'Cache trimmed to the new limit'),
+            duration: 2000
+          });
+          this.reloadStatistics();
+        }
+      })
+      .catch((error: Error) => {
+        hilog.error(DOMAIN, TAG, 'Cache limit failed: %{public}s', error.message);
+      });
+  }
+
+  private persistCacheLimit(limitBytes: number): void {
+    try {
+      if (this.cacheLimitStore === undefined) {
+        return;
+      }
+      this.cacheLimitStore.putSync('max_cache_bytes', limitBytes);
+      this.cacheLimitStore.flush();
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Cache limit persist failed: %{public}s', String(error));
+    }
   }
 
   private confirmClearCache(): void {
@@ -273,6 +358,23 @@ export struct TgDataStoragePage {
               .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16 })
               .onClick(() => {
                 this.pageStack.pushPathByName('TgAutoDownloadPage', undefined);
+              })
+            }
+            ListItem() {
+              Row() {
+                Text(localized($r('app.string.data_storage_max_cache').id, 'Maximum Cache Size'))
+                  .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+                  .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+                  .layoutWeight(1)
+                Text(this.cacheLimitLabel(this.cacheLimitBytes))
+                  .fontSize(TgUiTokens.FONT_META_SIZE)
+                  .fontColor(TgUiTokens.COLOR_TEXT_META)
+              }
+              .width('100%')
+              .height(44)
+              .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16 })
+              .onClick(() => {
+                this.selectCacheLimit();
               })
             }
             ListItem() {
