@@ -1266,3 +1266,12 @@ Last updated: 2026-10-23
 - A guard like `includes("_topic_id_json")` matched an unrelated serializer, so the send path stayed
   unwired while the patch reported success. Edit inside the function span, not by global token search.
 - Serializer helper types are `TdObject`, not a named params class.
+
+## 235. Page-layer actions can own their use case when no session slot exists
+
+- The chat session sits at the 500-line owner ceiling, so adding a host getter for translation would have
+  required trimming unrelated lines. `ChatMessageActionsController` already lives in the page layer: it can
+  create the use case from `getTdGatewayAdapter()` and read the locale from `i18n.System` without touching
+  the session, bindings or ports.
+- `promptAction.showToast` returns void in this SDK, so chaining `.catch` on it does not compile.
+- The app has no settings.language field; the system language is the available target-language source.

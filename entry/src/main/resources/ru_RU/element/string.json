@@ -813,6 +813,18 @@
       "value": "Администраторы"
     },
     {
+      "name": "action_translate",
+      "value": "Перевести"
+    },
+    {
+      "name": "translation_title",
+      "value": "Перевод"
+    },
+    {
+      "name": "translation_failed",
+      "value": "Не удалось перевести сообщение"
+    },
+    {
       "name": "action_comments",
       "value": "Комментарии"
     },

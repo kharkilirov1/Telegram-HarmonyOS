@@ -813,6 +813,18 @@
       "value": "Administrators"
     },
     {
+      "name": "action_translate",
+      "value": "Translate"
+    },
+    {
+      "name": "translation_title",
+      "value": "Translation"
+    },
+    {
+      "name": "translation_failed",
+      "value": "Could not translate the message"
+    },
+    {
       "name": "action_comments",
       "value": "Comments"
     },

@@ -673,6 +673,17 @@ export class GetMessageThreadHistoryCommand extends AppCommand {
   payload: GetMessageThreadHistoryPayload = new GetMessageThreadHistoryPayload();
 }
 
+// D24: message translation. TDLib: translateText(formattedText, to_language_code) = FormattedText.
+export class TranslateTextPayload {
+  text: string = '';
+  toLanguageCode: string = '';
+}
+
+export class TranslateTextCommand extends AppCommand {
+  type: string = 'translateText';
+  payload: TranslateTextPayload = new TranslateTextPayload();
+}
+
 export class GetRepliedMessageCommand extends AppCommand {
   type: string = 'getRepliedMessage';
   payload: GetRepliedMessagePayload = new GetRepliedMessagePayload();
@@ -1249,6 +1260,7 @@ export type AnyAppCommand =
   | GetMessagePropertiesCommand
   | GetChatPinnedMessageCommand
   | GetRepliedMessageCommand
+| TranslateTextCommand
 | GetMessageThreadCommand
 | GetMessageThreadHistoryCommand
   | CloseChatCommand
@@ -1593,6 +1605,13 @@ export function createGetMessageThreadHistoryCommand(chatId: ChatId, messageId: 
   cmd.payload.fromMessageId = fromMessageId;
   cmd.payload.offset = offset;
   cmd.payload.limit = limit;
+  return cmd;
+}
+
+export function createTranslateTextCommand(text: string, toLanguageCode: string): TranslateTextCommand {
+  const cmd = new TranslateTextCommand();
+  cmd.payload.text = text;
+  cmd.payload.toLanguageCode = toLanguageCode;
   return cmd;
 }
 

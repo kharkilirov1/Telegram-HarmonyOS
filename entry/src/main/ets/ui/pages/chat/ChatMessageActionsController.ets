@@ -4,6 +4,10 @@
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { navigationUIState } from '../../../core/model/UIStateModels';
 import { openMessageThread } from './chatAdminNavigation';
+import { createTranslateMessageUseCase, isValidLanguageCode } from '../../../domain/usecases/translateMessage';
+import { i18n } from '@kit.LocalizationKit';
+import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
+import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { localized } from '../../../core/utils/AppResource';
 import { DeleteMessagesUseCase } from '../../../domain/usecases/deleteMessages';
 import { ChatDeleteMessageController, ChatDeleteMessageHost } from './ChatDeleteMessageController';
@@ -322,6 +326,48 @@ export class ChatMessageActionsController {
     }
   }
 
+  // D24: iOS translates into the app language; the system language is the closest available source here.
+  private targetLanguageCode(): string {
+    let language = '';
+    try {
+      language = i18n.System.getSystemLanguage().toLowerCase();
+    } catch (_error) {
+      language = '';
+    }
+    const primary = language.split('-')[0];
+    return isValidLanguageCode(primary) ? primary : 'en';
+  }
+
+  private translateMessage(entry: ChatTimelineEntryVO, host: ChatMessageActionsHost): void {
+    const text = entry.message.text.length > 0 ? entry.message.text : entry.message.caption;
+    if (text.trim().length === 0) {
+      return;
+    }
+    const promptAction = host.getChatUIContext().getPromptAction();
+    try {
+      const useCase = createTranslateMessageUseCase(getTdGatewayAdapter());
+      useCase.translate(text, this.targetLanguageCode())
+        .then((translated) => {
+          promptAction.showDialog({
+            title: localized($r('app.string.translation_title').id, 'Translation'),
+            message: translated.text,
+            buttons: [{ text: localized($r('app.string.cancel').id, 'Close'),
+              color: TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND }]
+          }).catch((error: Error) => {
+            hilog.warn(DOMAIN, TAG, 'Translation dialog failed: %{public}s', error.message);
+          });
+        })
+        .catch((error: Error) => {
+          promptAction.showToast({
+            message: localized($r('app.string.translation_failed').id, 'Could not translate the message')
+          });
+          hilog.warn(DOMAIN, TAG, 'Translation failed: %{public}s', error.message);
+        });
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, 'Translation use case init failed: %{public}s', String(error));
+    }
+  }
+
   buildMessageActionItems(entry: ChatTimelineEntryVO, forwardState: string = 'loading'): ChatMessageActionItem[] {
     const messageText = entry.message.text.length > 0 ? entry.message.text :
       (entry.message.caption.length > 0 ? entry.message.caption : '');
@@ -340,6 +386,8 @@ export class ChatMessageActionsController {
 
     if (hasText) {
       items.push(new ChatMessageActionItem('copy', localized($r('app.string.action_copy').id, 'Copy')));
+      items.push(new ChatMessageActionItem('translate',
+        localized($r('app.string.action_translate').id, 'Translate')));
     }
 
     // D11: a channel post with a discussion thread opens its comments.
@@ -369,6 +417,11 @@ export class ChatMessageActionsController {
 
     if (actionId === 'select') {
       host.enterMessageSelection(entry.message.messageId);
+      return;
+    }
+
+    if (actionId === 'translate') {
+      this.translateMessage(entry, host);
       return;
     }
 

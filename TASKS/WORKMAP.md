@@ -84,6 +84,7 @@
 | D11b | Страница треда (D11) | D11 | `TgMessageThreadPage` + route + парсер комментариев; далее вход из поста |
 | D11c | Вход в тред из поста (D11) | D11 | Comments (N) в меню, поля `isChannelPost`/`replyCount`, `openMessageThread`; далее отправка комментария |
 | D11d | Отправка комментария (D11) | D11 | `topicThreadId` в sendMessage, composer треда; остаток — witness |
+| D24a | Перевод сообщений (D24) | D24 | `translateText` + use case + пункт меню; далее inline-перевод |
 | S12b | Меню действий в шапке чата (C10) | C10 | `showMoreAction`/`onMorePress` в `TgChatTopBar`, меню Chat Info / Mute / Clear History / Delete в `TgChatScreenPage`, live-store состояние, контракт `test-chat-header-actions.cjs`, smoke-пин на 4 действия; C10 → `available` |
 | S12c | Leave Chat и Share My Contact (C10) | C10 | `leaveChat` + `inputMessageContact` (команды/сериализаторы), `LeaveChatUseCase`/`ShareMyContactUseCase`, пятый контекстный пункт меню в шапке, 6 строк в 3 локалях, контракт расширен |
 | S12d | Report с причинами + `ChatActionsCoordinator` (C10) | C10 | `reportChat`/`ReportChatDto`/`ReportChatUseCase`, `canBeReported` в модели/DTO/reducer, шестой пункт меню, меню вынесено в координатор (страница ≤500 строк), контракт расширен |
