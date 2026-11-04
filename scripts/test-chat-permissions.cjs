@@ -126,7 +126,7 @@ async function main() {
 
   const actions = read('ui/pages/chat/ChatActionsCoordinator.ets');
   assert.match(actions,
-    /ChatMenuAction\.Administrators, ChatMenuAction\.Permissions\];/);
+    /ChatMenuAction\.Administrators, ChatMenuAction\.Permissions, ChatMenuAction\.AutoDelete\];/);
   assert.match(actions, /text: localized\(\$r\('app\.string\.chat_actions_permissions'\)\.id, 'Permissions'\), color: normal \};/);
   assert.match(actions, /this\.host\.openPermissions\(chatId\)/);
   const chatPage = read('ui/pages/chat/TgChatScreenPage.ets');

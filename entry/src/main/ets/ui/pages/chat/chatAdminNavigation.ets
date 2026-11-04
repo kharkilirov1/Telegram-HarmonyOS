@@ -6,6 +6,7 @@ import { ProfileMembersRouteParams } from '../profile/TgProfileMembersPage';
 import { ChatInviteLinksRouteParams } from './chatInviteLinksRoute';
 import { ChatAdministratorsRouteParams } from './chatAdministratorsRoute';
 import { ChatPermissionsRouteParams } from './chatPermissionsRoute';
+import { ChatAutoDeleteRouteParams } from './chatAutoDeleteRoute';
 
 export function currentAccountUserId(): number {
   try {
@@ -38,6 +39,14 @@ export function openAdministratorsScreen(stack: NavPathStack | undefined, chatId
     return false;
   }
   stack.pushPathByName('TgChatAdministratorsPage', new ChatAdministratorsRouteParams(chatId));
+  return true;
+}
+
+export function openAutoDeleteScreen(stack: NavPathStack | undefined, chatId: number): boolean {
+  if (stack === undefined) {
+    return false;
+  }
+  stack.pushPathByName('TgChatAutoDeletePage', new ChatAutoDeleteRouteParams(chatId));
   return true;
 }
 

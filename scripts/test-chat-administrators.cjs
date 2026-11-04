@@ -108,7 +108,7 @@ async function main() {
 
   const actions = read('ui/pages/chat/ChatActionsCoordinator.ets');
   assert.match(actions,
-    /const actions: ChatMenuAction\[\] = \[ChatMenuAction\.Members, ChatMenuAction\.InviteLinks,\n      ChatMenuAction\.Administrators, ChatMenuAction\.Permissions\];/);
+    /const actions: ChatMenuAction\[\] = \[ChatMenuAction\.Members, ChatMenuAction\.InviteLinks,\n      ChatMenuAction\.Administrators, ChatMenuAction\.Permissions, ChatMenuAction\.AutoDelete\];/);
   assert.match(actions, /text: localized\(\$r\('app\.string\.chat_actions_administrators'\)\.id, 'Administrators'\), color: normal \};/);
   assert.match(actions, /this\.host\.openAdministrators\(chatId\)/);
   assert.match(actions, /openAdministrators\(chatId: number\): void \{/);

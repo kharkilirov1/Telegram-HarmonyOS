@@ -6,6 +6,11 @@
       "buildFunction": "TgChatScreenPageBuilder"
     },
     {
+      "name": "TgChatAutoDeletePage",
+      "pageSourceFile": "src/main/ets/ui/pages/chat/TgChatAutoDeletePage.ets",
+      "buildFunction": "TgChatAutoDeletePageBuilder"
+    },
+    {
       "name": "TgChatPermissionsPage",
       "pageSourceFile": "src/main/ets/ui/pages/chat/TgChatPermissionsPage.ets",
       "buildFunction": "TgChatPermissionsPageBuilder"

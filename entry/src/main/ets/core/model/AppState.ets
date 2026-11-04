@@ -75,6 +75,8 @@ export class Chat {
   // chatListFolder membership: folder id -> order. Absent = the chat is not in that folder.
   folderOrders: Map<number, string> = new Map<number, string>();
   memberCount: number = 0;
+  // TDLib chat.message_auto_delete_time in seconds; 0 disables the timer.
+  messageAutoDeleteTime: number = 0;
   description: string = '';
   supergroupId: number = 0; // TDLib supergroup_id for fetching full info
   basicGroupId: number = 0; // TDLib basic_group_id for fetching full info

@@ -96,7 +96,7 @@
 | D17 | Превью ссылок | `partial` | `TgLinkPreviewBubble.ets`, `TdTypes.ets` (3/0) | `Chat/LinkPreview*` | D1 |
 | D18 | Упоминания/хэштеги | `partial` | `stateClone.ets`, `ChatTimelineVO.ets` (21/6) | `ChatEntityKeyboardInputNode` | D1 |
 | D19 | Slow mode | `available` | `ChatChromeState.ets` (21/29) | `ChatScheduleTimeController` | E? |
-| D20 | TTL / self-destruct | `missing` | нет: только DTO `models/td/messages/index.ets:49,80-81` и явный `"self_destruct_type":null` в `CommandSerializer.ets:940,944,949`; `setChatMessageTtl`, UI настройки и отсчёт отсутствуют | `Chat/TTL*` | D22; шов — `ChatChromeState` |
+| D20 | TTL / self-destruct | `partial` | Автоудаление чата: `Chat.messageAutoDeleteTime` из `chat.message_auto_delete_time`, `TgChatAutoDeletePage` (Off/1 час/1 день/1 неделя/1 месяц, текущее значение, откат при ошибке), `setChatMessageAutoDeleteTime` + валидация (0…366 дней), пункт Manage-меню (5-й). Нет: self-destruct в секретных чатах (UI таймера после прочтения), per-message TTL, witness | `ChatAutoDeleteTimeController` | S12 |
 | D21 | Отложенные сообщения | `missing` | нет | `ChatScheduleTimeScreen` | D22 |
 | D22 | Секретные чаты | `frozen` | — | `Sources/SecretChat*` | D20 |
 | D23 | Inline-боты / команды | `partial` | `CommandSerializer.ets` (9/5) | `ChatControllerContentData` | D17 |

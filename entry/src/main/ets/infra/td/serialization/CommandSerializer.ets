@@ -12,7 +12,7 @@ import {
   CheckChatFolderInviteLinkCommand, AddChatFolderByInviteLinkCommand,
   CheckChatInviteLinkCommand, JoinChatByInviteLinkCommand, GetChatMemberCommand,
   CreateChatInviteLinkCommand, RevokeChatInviteLinkCommand, GetChatInviteLinksCommand,
-  GetChatAdministratorsCommand, SetChatPermissionsCommand,
+  GetChatAdministratorsCommand, SetChatPermissionsCommand, SetChatMessageAutoDeleteTimeCommand,
   CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand, LeaveChatCommand,
   ReportChatCommand, ShareContactCommand,
   GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
@@ -137,6 +137,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('revokeChatInviteLink', serializeRevokeChatIn
 COMMAND_SERIALIZATION_HANDLERS.set('getChatInviteLinks', serializeGetChatInviteLinks);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatAdministrators', serializeGetChatAdministrators);
 COMMAND_SERIALIZATION_HANDLERS.set('setChatPermissions', serializeSetChatPermissions);
+COMMAND_SERIALIZATION_HANDLERS.set('setChatMessageAutoDeleteTime', serializeSetChatMessageAutoDeleteTime);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChatByInviteLink', serializeJoinChatByInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('checkChatFolderInviteLink', serializeCheckChatFolderInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('addChatFolderByInviteLink', serializeAddChatFolderByInviteLink);
@@ -494,6 +495,13 @@ function buildChatFolderJson(draft: ChatFolderDraftPayload): string {
     ',"include_bots":' + (draft.includeBots ? 'true' : 'false') +
     ',"include_groups":' + (draft.includeGroups ? 'true' : 'false') +
     ',"include_channels":' + (draft.includeChannels ? 'true' : 'false') + '}';
+}
+
+function serializeSetChatMessageAutoDeleteTime(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SetChatMessageAutoDeleteTimeCommand;
+  result.method = 'setChatMessageAutoDeleteTime';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setNumber('message_auto_delete_time', cmd.payload.seconds);
 }
 
 function serializeSetChatPermissions(command: AnyAppCommand, result: SerializedCommand): void {

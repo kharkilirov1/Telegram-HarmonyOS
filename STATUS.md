@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **D20-срез (lead).** Автоудаление сообщений в чате: поле `Chat.messageAutoDeleteTime`
+  (парсинг `chat.message_auto_delete_time` в `ChatDto` + маппинг в reducer), команда
+  `setChatMessageAutoDeleteTime` с валидацией 0…366 дней, `ChatAutoDeleteUseCase`
+  (`load`/`set`, пресеты `AUTO_DELETE_PRESETS`), экран `TgChatAutoDeletePage` (текущее значение,
+  5 пресетов, ✓ на выбранном, оптимистичная запись с откатом, loading/error), route + params,
+  пункт Auto-Delete в Manage-подменю (5 кнопок), `openAutoDeleteScreen` в навигационном helper.
+  Новая суита `test-chat-auto-delete.cjs` (125-я): пресеты/валидация, load/set wire, ошибки,
+  маппинг Chat↔DTO↔reducer, экран/route/подменю, 11 строк в 3 локалях; четыре admin-суиты обновлены
+  на пятый пункт подменю. Гейты: host **125/125**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток D20:
+  self-destruct секретных чатов, per-message TTL, witness.
 - **C9-остаток (lead).** Иконка копирования: SVG-ассет `ic_selection_copy` в форме iOS SF Symbol
   `doc.on.doc`, токен `SELECTION_PANEL_COPY_ICON`, панель рисует copy через общий `buildIconButton`
   (как forward/delete/report) — одинаковая геометрия, press-feedback и disabled-тинт; текстовый глиф

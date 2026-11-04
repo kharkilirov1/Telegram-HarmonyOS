@@ -37,6 +37,7 @@ export class ChatDto {
   isMarkedAsUnread: boolean = false;
   isBlocked: boolean = false;
   canBeReported: boolean = false;
+  messageAutoDeleteTime: number = 0;
   unreadMentionCount: number = 0;
   muteFor: number = 0;
   lastReadOutboxMessageId: string = '0';
@@ -131,6 +132,10 @@ export function createChatDtoFromTd(tdChat: TdObject): ChatDto {
   chatDto.isMarkedAsUnread = tdGetBoolean(tdChat, 'is_marked_as_unread');
   chatDto.isBlocked = extractBlockList(tdChat);
   chatDto.canBeReported = tdGetBoolean(tdChat, 'can_be_reported');
+  const autoDelete = tdChat.getTopLevelNumberStrict('message_auto_delete_time');
+  if (typeof autoDelete === 'number' && Number.isInteger(autoDelete) && autoDelete >= 0) {
+    chatDto.messageAutoDeleteTime = autoDelete;
+  }
   const permissions = tdChat.getTopLevelObjectStrict('permissions');
   if (permissions !== undefined && permissions.getTopLevelBooleanStrict('can_send_basic_messages') !== undefined) {
     chatDto.sendPermissions = GroupSendPermissionsDto.fromTd(permissions);

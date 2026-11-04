@@ -58,6 +58,7 @@ function chatFromDto(dto: ChatDto): Chat {
   chat.isMarkedAsUnread = dto.isMarkedAsUnread;
   chat.isBlocked = dto.isBlocked;
   chat.canBeReported = dto.canBeReported;
+  chat.messageAutoDeleteTime = dto.messageAutoDeleteTime;
   chat.unreadMentionCount = dto.unreadMentionCount;
   chat.muteForSeconds = dto.muteFor;
   chat.lastReadOutboxMessageId = dto.lastReadOutboxMessageId;

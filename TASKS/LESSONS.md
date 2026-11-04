@@ -1095,3 +1095,13 @@ Last updated: 2026-10-23
   the contract assert that the production panel no longer calls the glyph builder.
 - Regex replacements are safer than literal anchors for indented multi-line calls; a wrong leading-space
   count silently fails the anchor even when the text looks identical.
+
+## 218. A new chat field needs the DTO, the reducer mapping and a tolerant anchor
+
+- Adding `messageAutoDeleteTime` to `Chat` was not enough: `ChatDto` has its own class and the reducer
+  maps DTO fields into `Chat` explicitly, so all three places must be updated together or the build
+  fails with "does not exist on type ChatDto" / an empty value at runtime.
+- Navigation for admin screens lives in `chatAdminNavigation.ets`, not in the page; follow that pattern
+  instead of adding route imports to the page, and remember the host constructor gains an argument.
+- Regex anchors with `^\s*` survive indentation drift; literal anchors in multi-line edits silently
+  fail and leave a half-applied patch (missing comma) that only the build catches.

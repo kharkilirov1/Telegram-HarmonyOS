@@ -13,7 +13,8 @@ import {
   openAdministratorsScreen,
   openInviteLinksScreen,
   openMembersScreen,
-  openPermissionsScreen
+  openPermissionsScreen,
+  openAutoDeleteScreen
 } from './chatAdminNavigation';
 
 import { ChatScreenViewState } from './ChatScreenViewState';
@@ -80,6 +81,9 @@ export struct TgChatScreenPage {
     },
     (chatId: number): void => {
       this.openPermissionsFromChat(chatId);
+    },
+    (chatId: number): void => {
+      this.openAutoDeleteFromChat(chatId);
     }
   ));
 
@@ -98,6 +102,10 @@ export struct TgChatScreenPage {
 
   private openPermissionsFromChat(chatId: number): void {
     openPermissionsScreen(this.queryNavigationInfo()?.pathStack, chatId);
+  }
+
+  private openAutoDeleteFromChat(chatId: number): void {
+    openAutoDeleteScreen(this.queryNavigationInfo()?.pathStack, chatId);
   }
 
   private openChatActions(): void {

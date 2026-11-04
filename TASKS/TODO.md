@@ -396,3 +396,6 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
   администраторов и экран прав готовы, но `DirectUserProfileRouteParams`/`captureProfileLoadContext`
   приватны в members page — нужно экспортировать helper и включить переход. Владелец: lead.
   Триггер: следующий проход по C10.
+
+- [ ] **D20: нет self-destruct в секретных чатах и per-message TTL.** Таймер чата
+  готов. Владелец: lead.

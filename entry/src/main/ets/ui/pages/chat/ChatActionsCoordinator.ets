@@ -43,7 +43,8 @@ export class ChatActionsHost {
     membersAction: (chatId: number, title: string) => void,
     inviteLinksAction: (chatId: number) => void,
     administratorsAction: (chatId: number) => void,
-    permissionsAction: (chatId: number) => void
+    permissionsAction: (chatId: number) => void,
+    autoDeleteAction: (chatId: number) => void
   ) {
     this.uiContextProvider = uiContextProvider;
     this.titleProvider = titleProvider;
@@ -57,6 +58,7 @@ export class ChatActionsHost {
     this.inviteLinksHandler = inviteLinksAction;
     this.administratorsHandler = administratorsAction;
     this.permissionsHandler = permissionsAction;
+    this.autoDeleteHandler = autoDeleteAction;
   }
 
   uiContext(): UIContext {
@@ -86,6 +88,7 @@ export class ChatActionsHost {
   private inviteLinksHandler: (chatId: number) => void;
   private administratorsHandler: (chatId: number) => void;
   private permissionsHandler: (chatId: number) => void;
+  private autoDeleteHandler: (chatId: number) => void;
 
   requestReportComment(chatId: number, optionId: string): void {
     this.reportCommentHandler(chatId, optionId);
@@ -112,6 +115,10 @@ export class ChatActionsHost {
     this.permissionsHandler(chatId);
   }
 
+  openAutoDelete(chatId: number): void {
+    this.autoDeleteHandler(chatId);
+  }
+
   requestReportMessages(chatId: number, optionId: string): void {
     this.reportMessagesHandler(chatId, optionId);
   }
@@ -128,6 +135,7 @@ export enum ChatMenuAction {
   InviteLinks,
   Administrators,
   Permissions,
+  AutoDelete,
   Leave,
   ShareContact,
   Report
@@ -261,7 +269,7 @@ export class ChatActionsCoordinator {
   private showManageMenu(chatId: number, chat: Chat): void {
     const normal: Resource = TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND;
     const actions: ChatMenuAction[] = [ChatMenuAction.Members, ChatMenuAction.InviteLinks,
-      ChatMenuAction.Administrators, ChatMenuAction.Permissions];
+      ChatMenuAction.Administrators, ChatMenuAction.Permissions, ChatMenuAction.AutoDelete];
     const b0: promptAction.Button = {
       text: localized($r('app.string.chat_actions_members').id, 'Members'), color: normal };
     const b1: promptAction.Button = {
@@ -270,9 +278,11 @@ export class ChatActionsCoordinator {
       text: localized($r('app.string.chat_actions_administrators').id, 'Administrators'), color: normal };
     const b3: promptAction.Button = {
       text: localized($r('app.string.chat_actions_permissions').id, 'Permissions'), color: normal };
+    const b4: promptAction.Button = {
+      text: localized($r('app.string.chat_actions_auto_delete').id, 'Auto-Delete'), color: normal };
     this.host.uiContext().getPromptAction().showActionMenu({
       title: localized($r('app.string.chat_actions_manage').id, 'Manage'),
-      buttons: [b0, b1, b2, b3]
+      buttons: [b0, b1, b2, b3, b4]
     }).then((result: promptAction.ActionMenuSuccessResponse) => {
       this.applyMenuAction(actions[result.index], chatId, chat);
     }).catch((error: Error) => {
@@ -302,6 +312,8 @@ export class ChatActionsCoordinator {
       this.host.openAdministrators(chatId);
     } else if (action === ChatMenuAction.Permissions) {
       this.host.openPermissions(chatId);
+    } else if (action === ChatMenuAction.AutoDelete) {
+      this.host.openAutoDelete(chatId);
     } else if (action === ChatMenuAction.Leave) {
       this.confirmLeave(chatId);
     } else if (action === ChatMenuAction.ShareContact) {

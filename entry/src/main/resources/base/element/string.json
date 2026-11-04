@@ -653,6 +653,50 @@
       "value": "Blocked Users"
     },
     {
+      "name": "chat_actions_auto_delete",
+      "value": "Auto-Delete"
+    },
+    {
+      "name": "auto_delete_title",
+      "value": "Auto-Delete"
+    },
+    {
+      "name": "auto_delete_current",
+      "value": "Current"
+    },
+    {
+      "name": "auto_delete_off",
+      "value": "Off"
+    },
+    {
+      "name": "auto_delete_1h",
+      "value": "1 hour"
+    },
+    {
+      "name": "auto_delete_1d",
+      "value": "1 day"
+    },
+    {
+      "name": "auto_delete_1w",
+      "value": "1 week"
+    },
+    {
+      "name": "auto_delete_1m",
+      "value": "1 month"
+    },
+    {
+      "name": "auto_delete_loading",
+      "value": "Loading…"
+    },
+    {
+      "name": "auto_delete_failed",
+      "value": "Could not load the auto-delete timer"
+    },
+    {
+      "name": "auto_delete_save_failed",
+      "value": "Could not save the auto-delete timer"
+    },
+    {
       "name": "chat_actions_permissions",
       "value": "Permissions"
     },

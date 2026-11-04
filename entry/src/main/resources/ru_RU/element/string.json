@@ -653,6 +653,50 @@
       "value": "Заблокированные"
     },
     {
+      "name": "chat_actions_auto_delete",
+      "value": "Автоудаление"
+    },
+    {
+      "name": "auto_delete_title",
+      "value": "Автоудаление"
+    },
+    {
+      "name": "auto_delete_current",
+      "value": "Текущее"
+    },
+    {
+      "name": "auto_delete_off",
+      "value": "Выкл"
+    },
+    {
+      "name": "auto_delete_1h",
+      "value": "1 час"
+    },
+    {
+      "name": "auto_delete_1d",
+      "value": "1 день"
+    },
+    {
+      "name": "auto_delete_1w",
+      "value": "1 неделя"
+    },
+    {
+      "name": "auto_delete_1m",
+      "value": "1 месяц"
+    },
+    {
+      "name": "auto_delete_loading",
+      "value": "Загружаем…"
+    },
+    {
+      "name": "auto_delete_failed",
+      "value": "Не удалось загрузить таймер"
+    },
+    {
+      "name": "auto_delete_save_failed",
+      "value": "Не удалось сохранить таймер"
+    },
+    {
       "name": "chat_actions_permissions",
       "value": "Права"
     },

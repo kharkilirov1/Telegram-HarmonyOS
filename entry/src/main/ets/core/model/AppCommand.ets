@@ -780,6 +780,17 @@ export class ChatFolderInviteLinkRequestPayload {
   chatIds: number[] = [];
 }
 
+export class SetChatMessageAutoDeleteTimePayload {
+  chatId: ChatId = 0;
+  // Seconds; 0 disables the timer. TDLib validates the upper bound itself.
+  seconds: number = 0;
+}
+
+export class SetChatMessageAutoDeleteTimeCommand extends AppCommand {
+  type: string = 'setChatMessageAutoDeleteTime';
+  payload: SetChatMessageAutoDeleteTimePayload = new SetChatMessageAutoDeleteTimePayload();
+}
+
 export class SetChatPermissionsPayload {
   chatId: ChatId = 0;
   // The full chatPermissions object; the screen edits single bits but writes the whole object back.
@@ -1162,6 +1173,7 @@ export type AnyAppCommand =
   | JoinChatByInviteLinkCommand
   | CheckChatFolderInviteLinkCommand
   | AddChatFolderByInviteLinkCommand
+  | SetChatMessageAutoDeleteTimeCommand
   | SetChatPermissionsCommand
   | GetChatAdministratorsCommand
   | CreateChatInviteLinkCommand
@@ -1696,6 +1708,14 @@ export function createAddChatFolderByInviteLinkCommand(
   const cmd = new AddChatFolderByInviteLinkCommand();
   cmd.payload.inviteLink = inviteLink;
   cmd.payload.chatIds = chatIds;
+  return cmd;
+}
+
+export function createSetChatMessageAutoDeleteTimeCommand(chatId: ChatId,
+  seconds: number): SetChatMessageAutoDeleteTimeCommand {
+  const cmd = new SetChatMessageAutoDeleteTimeCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.seconds = seconds;
   return cmd;
 }
 
