@@ -1136,3 +1136,13 @@ Last updated: 2026-10-23
   them explicitly instead of emitting a partial object, otherwise TDLib rejects the status JSON.
 - `showActionMenu` still has room at five buttons, so administrator and moderation actions can share one
   member menu; the six-slot cap now leaves no space for a sixth entry.
+
+## 222. ArkTS class field initialisers run before @Local defaults settle
+
+- Building `ADMIN_RIGHT_ROWS` at module scope with `$r(...)` keeps the row table immutable and lets the
+  page mirror it into a `boolean[]`; a plain `string[]` of labels plus a switch in `buildRights()` avoids
+  indexed property assignment, which ArkTS forbids on class instances.
+- A new page must register in `route_map.json` before the first build, otherwise the Navigation build
+  fails at the push site, not in the page itself.
+- Token names drift: `COMPOSER_SEND_BUTTON_SIZE` does not exist, the real token is `COMPOSER_BUTTON_SIZE`;
+  grep `TgUiTokens.` before inventing a size.

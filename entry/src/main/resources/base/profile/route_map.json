@@ -6,6 +6,11 @@
       "buildFunction": "TgChatScreenPageBuilder"
     },
     {
+      "name": "TgChatAdminRightsPage",
+      "pageSourceFile": "src/main/ets/ui/pages/chat/TgChatAdminRightsPage.ets",
+      "buildFunction": "TgChatAdminRightsPageBuilder"
+    },
+    {
       "name": "TgChatScheduledMessagesPage",
       "pageSourceFile": "src/main/ets/ui/pages/chat/TgChatScheduledMessagesPage.ets",
       "buildFunction": "TgChatScheduledMessagesPageBuilder"

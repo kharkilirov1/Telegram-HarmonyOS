@@ -813,6 +813,62 @@
       "value": "Administrators"
     },
     {
+      "name": "admin_rights_title",
+      "value": "Administrator Rights"
+    },
+    {
+      "name": "admin_rights_save",
+      "value": "Add Administrator"
+    },
+    {
+      "name": "admin_rights_saved",
+      "value": "Administrator added"
+    },
+    {
+      "name": "admin_rights_failed",
+      "value": "Could not add the administrator"
+    },
+    {
+      "name": "admin_rights_manage_chat",
+      "value": "Manage Chat"
+    },
+    {
+      "name": "admin_rights_change_info",
+      "value": "Change Info"
+    },
+    {
+      "name": "admin_rights_delete_messages",
+      "value": "Delete Messages"
+    },
+    {
+      "name": "admin_rights_invite_users",
+      "value": "Invite Users"
+    },
+    {
+      "name": "admin_rights_restrict_members",
+      "value": "Restrict Members"
+    },
+    {
+      "name": "admin_rights_pin_messages",
+      "value": "Pin Messages"
+    },
+    {
+      "name": "admin_rights_manage_topics",
+      "value": "Manage Topics"
+    },
+    {
+      "name": "admin_rights_manage_video_chats",
+      "value": "Manage Video Chats"
+    },
+    {
+      "name": "admin_rights_promote_members",
+      "value": "Promote Members"
+    },
+    {
+      "name": "admin_rights_anonymous",
+      "value": "Remain Anonymous"
+    },
+    {
       "name": "member_action_promote",
       "value": "Add Admin"
     },

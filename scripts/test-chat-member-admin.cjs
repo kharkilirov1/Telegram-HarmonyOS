@@ -117,12 +117,34 @@ async function main() {
   assert.match(page, /useCase\.apply\(this\.chatId, userId, action\)/);
   assert.match(page, /onLongPress: \(\): void => \{\n              this\.openMemberActions\(row\);/);
 
+  // Promotion navigates to the rights screen, which applies the status itself.
+  assert.match(page, /pushPathByName\('TgChatAdminRightsPage',/);
+  const rightsPage = read('ui/pages/chat/TgChatAdminRightsPage.ets');
+  assert.match(rightsPage, /export function TgChatAdminRightsPageBuilder\(\)/);
+  assert.match(rightsPage, /createChatMemberAdminUseCase\(getTdGatewayAdapter\(\)\)/);
+  assert.match(rightsPage, /useCase\.apply\(this\.chatId, this\.userId, 'promote', 0, this\.buildRights\(\)\)/);
+  assert.match(rightsPage, /const ADMIN_RIGHT_ROWS: AdminRightRow\[\] = \[/);
+  for (const key of ['canManageChat', 'canChangeInfo', 'canDeleteMessages', 'canInviteUsers',
+    'canRestrictMembers', 'canPinMessages', 'canManageTopics', 'canManageVideoChats',
+    'canPromoteMembers', 'isAnonymous']) {
+    assert.ok(rightsPage.includes("'" + key + "'"), 'rights page exposes ' + key);
+  }
+  const routes = JSON.parse(fs.readFileSync(
+    path.join(root, '../resources/base/profile/route_map.json'), 'utf8'));
+  const rightsRoute = routes.routerMap.find((item) => item.name === 'TgChatAdminRightsPage');
+  assert.ok(rightsRoute, 'TgChatAdminRightsPage is registered');
+  assert.equal(rightsRoute.buildFunction, 'TgChatAdminRightsPageBuilder');
+
   for (const locale of ['base', 'ru_RU', 'zh_CN']) {
     const strings = JSON.parse(fs.readFileSync(
       path.join(root, '../resources', locale, 'element/string.json'), 'utf8'));
     for (const name of ['member_action_ban', 'member_action_unban', 'member_action_restrict',
       'member_action_promote', 'member_action_demote', 'member_action_applied',
-      'member_action_failed']) {
+      'member_action_failed', 'admin_rights_title', 'admin_rights_save', 'admin_rights_saved',
+      'admin_rights_failed', 'admin_rights_manage_chat', 'admin_rights_change_info',
+      'admin_rights_delete_messages', 'admin_rights_invite_users', 'admin_rights_restrict_members',
+      'admin_rights_pin_messages', 'admin_rights_manage_topics', 'admin_rights_manage_video_chats',
+      'admin_rights_promote_members', 'admin_rights_anonymous']) {
       assert.ok(strings.string.some((entry) => entry.name === name), name + ' exists in ' + locale);
     }
   }

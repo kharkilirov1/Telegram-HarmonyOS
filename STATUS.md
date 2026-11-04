@@ -146,6 +146,15 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **G6-экран прав (lead).** `TgChatAdminRightsPage`: 10 тоглов `chatAdministratorRights`
+  (manage chat, change info, delete messages, invite, restrict, pin, topics, video chats,
+  promote, anonymous), кнопка Add Administrator, сохранение через
+  `ChatMemberAdminUseCase.apply(..., 'promote', 0, rights)`, тост и pop, ошибка сохранения; route +
+  params, `TgProfileMemberRow`/список участников: пункт Add Admin теперь навигирует на экран вместо
+  назначения с правами по умолчанию. 14 строк в base/ru/zh. Суита `test-chat-member-admin.cjs`
+  расширена: проводка навигации, экран/route, все 10 ключей прав, локали. Гейты: host **127/127**,
+  оба smoke, hvigor BUILD SUCCESSFUL. Остаток G6: частичные ограничения, сроки, предзаполнение прав,
+  witness.
 - **G6-продолжение (lead).** Promote/demote: `ChatAdminRightsPayload` (16 флагов
   `chatAdministratorRights`, по умолчанию все false), `buildAdminRightsJson`, статус
   `chatMemberStatusAdministrator`, действия `promote`/`demote` в use case, меню участника

@@ -21,6 +21,7 @@ import {
 } from '../../tg_ui/atoms/TgChatTopBar';
 import { TgProfileMemberRoleKind, TgProfileMemberRow } from '../../tg_ui/atoms/TgProfileMemberRow';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
+import { ChatAdminRightsRouteParams } from '../chat/chatAdminRightsRoute';
 import { promptAction } from '@kit.ArkUI';
 import {
   ChatMemberAdminUseCase,
@@ -520,6 +521,12 @@ export struct TgProfileMembersPage {
   private applyMemberAction(action: ChatMemberModerationAction | undefined, userId: number): void {
     const useCase = this.memberAdminUseCase;
     if (useCase === undefined || action === undefined) {
+      return;
+    }
+    // Promotion needs the rights screen first; the page applies the status itself.
+    if (action === 'promote') {
+      this.pageStack.pushPathByName('TgChatAdminRightsPage',
+        new ChatAdminRightsRouteParams(this.chatId, userId));
       return;
     }
     useCase.apply(this.chatId, userId, action)

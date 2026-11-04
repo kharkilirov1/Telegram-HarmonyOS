@@ -813,6 +813,62 @@
       "value": "Администраторы"
     },
     {
+      "name": "admin_rights_title",
+      "value": "Права администратора"
+    },
+    {
+      "name": "admin_rights_save",
+      "value": "Назначить администратором"
+    },
+    {
+      "name": "admin_rights_saved",
+      "value": "Администратор назначен"
+    },
+    {
+      "name": "admin_rights_failed",
+      "value": "Не удалось назначить администратора"
+    },
+    {
+      "name": "admin_rights_manage_chat",
+      "value": "Управление чатом"
+    },
+    {
+      "name": "admin_rights_change_info",
+      "value": "Изменение профиля"
+    },
+    {
+      "name": "admin_rights_delete_messages",
+      "value": "Удаление сообщений"
+    },
+    {
+      "name": "admin_rights_invite_users",
+      "value": "Приглашение участников"
+    },
+    {
+      "name": "admin_rights_restrict_members",
+      "value": "Ограничение участников"
+    },
+    {
+      "name": "admin_rights_pin_messages",
+      "value": "Закрепление сообщений"
+    },
+    {
+      "name": "admin_rights_manage_topics",
+      "value": "Управление темами"
+    },
+    {
+      "name": "admin_rights_manage_video_chats",
+      "value": "Управление видеозвонками"
+    },
+    {
+      "name": "admin_rights_promote_members",
+      "value": "Назначение админов"
+    },
+    {
+      "name": "admin_rights_anonymous",
+      "value": "Оставаться анонимным"
+    },
+    {
       "name": "member_action_promote",
       "value": "Назначить админом"
     },
