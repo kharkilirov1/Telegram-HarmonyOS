@@ -813,6 +813,82 @@
       "value": "Администраторы"
     },
     {
+      "name": "restrict_rights_title",
+      "value": "Ограничить участника"
+    },
+    {
+      "name": "restrict_rights_save",
+      "value": "Ограничить"
+    },
+    {
+      "name": "restrict_rights_saved",
+      "value": "Участник ограничен"
+    },
+    {
+      "name": "restrict_rights_failed",
+      "value": "Не удалось ограничить участника"
+    },
+    {
+      "name": "restrict_rights_duration",
+      "value": "Срок"
+    },
+    {
+      "name": "restrict_perm_text",
+      "value": "Текстовые сообщения"
+    },
+    {
+      "name": "restrict_perm_photos",
+      "value": "Фото"
+    },
+    {
+      "name": "restrict_perm_videos",
+      "value": "Видео"
+    },
+    {
+      "name": "restrict_perm_audios",
+      "value": "Аудиофайлы"
+    },
+    {
+      "name": "restrict_perm_voice",
+      "value": "Голосовые"
+    },
+    {
+      "name": "restrict_perm_video_notes",
+      "value": "Видеосообщения"
+    },
+    {
+      "name": "restrict_perm_documents",
+      "value": "Документы"
+    },
+    {
+      "name": "restrict_perm_polls",
+      "value": "Опросы"
+    },
+    {
+      "name": "restrict_perm_other",
+      "value": "GIF и стикеры"
+    },
+    {
+      "name": "restrict_perm_links",
+      "value": "Превью ссылок"
+    },
+    {
+      "name": "restrict_perm_invite",
+      "value": "Приглашать участников"
+    },
+    {
+      "name": "restrict_perm_pin",
+      "value": "Закреплять сообщения"
+    },
+    {
+      "name": "restrict_perm_info",
+      "value": "Менять профиль чата"
+    },
+    {
+      "name": "restrict_perm_topics",
+      "value": "Создавать темы"
+    },
+    {
       "name": "moderation_duration_title",
       "value": "Срок"
     },

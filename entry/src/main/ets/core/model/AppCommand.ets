@@ -867,6 +867,8 @@ export class SetChatMemberStatusPayload {
   statusKind: string = 'member';
   untilDate: number = 0;
   rights: ChatAdminRightsPayload = new ChatAdminRightsPayload();
+  // chatPermissions object for the 'restricted' status; empty keeps the deny-everything default.
+  permissionsJson: string = '';
 }
 
 export class SetChatMemberStatusCommand extends AppCommand {
@@ -1820,13 +1822,15 @@ export function createSetChatPermissionsCommand(chatId: ChatId,
 
 export function createSetChatMemberStatusCommand(chatId: ChatId, userId: UserId,
   statusKind: string, untilDate: number = 0,
-  rights: ChatAdminRightsPayload = new ChatAdminRightsPayload()): SetChatMemberStatusCommand {
+  rights: ChatAdminRightsPayload = new ChatAdminRightsPayload(),
+  permissionsJson: string = ''): SetChatMemberStatusCommand {
   const cmd = new SetChatMemberStatusCommand();
   cmd.payload.chatId = chatId;
   cmd.payload.userId = userId;
   cmd.payload.statusKind = statusKind;
   cmd.payload.untilDate = untilDate;
   cmd.payload.rights = rights;
+  cmd.payload.permissionsJson = permissionsJson;
   return cmd;
 }
 

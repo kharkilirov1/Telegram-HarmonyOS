@@ -813,6 +813,82 @@
       "value": "Administrators"
     },
     {
+      "name": "restrict_rights_title",
+      "value": "Restrict Member"
+    },
+    {
+      "name": "restrict_rights_save",
+      "value": "Restrict"
+    },
+    {
+      "name": "restrict_rights_saved",
+      "value": "Member restricted"
+    },
+    {
+      "name": "restrict_rights_failed",
+      "value": "Could not restrict the member"
+    },
+    {
+      "name": "restrict_rights_duration",
+      "value": "Duration"
+    },
+    {
+      "name": "restrict_perm_text",
+      "value": "Text messages"
+    },
+    {
+      "name": "restrict_perm_photos",
+      "value": "Photos"
+    },
+    {
+      "name": "restrict_perm_videos",
+      "value": "Videos"
+    },
+    {
+      "name": "restrict_perm_audios",
+      "value": "Audio files"
+    },
+    {
+      "name": "restrict_perm_voice",
+      "value": "Voice messages"
+    },
+    {
+      "name": "restrict_perm_video_notes",
+      "value": "Video messages"
+    },
+    {
+      "name": "restrict_perm_documents",
+      "value": "Documents"
+    },
+    {
+      "name": "restrict_perm_polls",
+      "value": "Polls"
+    },
+    {
+      "name": "restrict_perm_other",
+      "value": "GIFs and stickers"
+    },
+    {
+      "name": "restrict_perm_links",
+      "value": "Link previews"
+    },
+    {
+      "name": "restrict_perm_invite",
+      "value": "Invite users"
+    },
+    {
+      "name": "restrict_perm_pin",
+      "value": "Pin messages"
+    },
+    {
+      "name": "restrict_perm_info",
+      "value": "Change chat info"
+    },
+    {
+      "name": "restrict_perm_topics",
+      "value": "Create topics"
+    },
+    {
       "name": "moderation_duration_title",
       "value": "Duration"
     },

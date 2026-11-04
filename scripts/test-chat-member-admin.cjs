@@ -23,6 +23,8 @@ async function main() {
   const { TdObject } = load('models/td/common/index.ets', ['TdObject']);
   const C = load('core/model/AppCommand.ets',
     ['createSetChatMemberStatusCommand', 'AppCommand', 'ChatAdminRightsPayload']);
+  const P = load('core/model/dto/ChatPermissionsDto.ets',
+    ['ChatPermissionsDto', 'chatPermissionsToJson']);
   const errors = load('core/model/AppError.ets', ['AppError', 'AppErrorKind']);
   const serializer = load('infra/td/serialization/CommandSerializer.ets',
     ['serializeCommand', 'buildTdlibRequestJson'], { ...C, TdObject, hilog });
@@ -117,6 +119,26 @@ async function main() {
   assert.equal(wire.status['@type'], 'chatMemberStatusBanned');
   assert.equal(wire.status.banned_until_date, 87400, 'a timed ban carries the deadline');
 
+  // Partial restriction: choose which send rights stay allowed -----------------------------------------
+  const partial = new P.ChatPermissionsDto();
+  partial.canSendBasicMessages = true;
+  partial.canSendPhotos = true;
+  const partialJson = P.chatPermissionsToJson(partial);
+  await useCase.apply(42, 7, 'restrict', 0, new C.ChatAdminRightsPayload(), partialJson);
+  wire = JSON.parse(serializer.buildTdlibRequestJson('setChatMemberStatus',
+    serializer.serializeCommand(sent.at(-1)).params));
+  assert.equal(wire.status['@type'], 'chatMemberStatusRestricted');
+  assert.equal(wire.status.permissions.can_send_basic_messages, true, 'allowed rights survive');
+  assert.equal(wire.status.permissions.can_send_photos, true);
+  assert.equal(wire.status.permissions.can_send_videos, false, 'untoggled rights stay denied');
+  assert.equal(wire.status.permissions.can_invite_users, false);
+
+  await useCase.apply(42, 7, 'restrict', 0);
+  wire = JSON.parse(serializer.buildTdlibRequestJson('setChatMemberStatus',
+    serializer.serializeCommand(sent.at(-1)).params));
+  assert.equal(wire.status.permissions.can_send_basic_messages, false,
+    'without a permission object every right stays denied');
+
   // Validation and failures ------------------------------------------------------------------------
   const before = sent.length;
   await assert.rejects(() => useCase.apply(0, 7, 'ban'), /Invalid chatId/);
@@ -141,9 +163,26 @@ async function main() {
   assert.match(page, /useCase\.apply\(this\.chatId, userId, action\)/);
   assert.match(page, /onLongPress: \(\): void => \{\n              this\.openMemberActions\(row\);/);
   assert.match(page, /private openModerationDuration\(action: ChatMemberModerationAction, userId: number\): void \{/);
-  assert.match(page, /if \(action === 'ban' \|\| action === 'restrict'\) \{/);
+  assert.match(page, /if \(action === 'ban'\) \{/);
   assert.match(page, /buttons: \[d0, d1, d2, d3\]/);
   assert.match(page, /moderationUntilDate\(Math\.floor\(Date\.now\(\) \/ 1000\),/);
+  assert.match(page, /pushPathByName\('TgChatRestrictRightsPage',/);
+  const restrictPage = read('ui/pages/chat/TgChatRestrictRightsPage.ets');
+  assert.match(restrictPage, /export function TgChatRestrictRightsPageBuilder\(\)/);
+  assert.match(restrictPage, /useCase\.apply\(this\.chatId, this\.userId, 'restrict', untilDate,/);
+  assert.match(restrictPage, /chatPermissionsToJson\(this\.buildPermissions\(\)\)/);
+  assert.match(restrictPage, /const RESTRICT_PERMISSION_ROWS: RestrictPermissionRow\[\] = \[/);
+  for (const key of ['canSendBasicMessages', 'canSendPhotos', 'canSendVideos', 'canSendAudios',
+    'canSendVoiceNotes', 'canSendVideoNotes', 'canSendDocuments', 'canSendPolls',
+    'canSendOtherMessages', 'canAddLinkPreviews', 'canInviteUsers', 'canPinMessages',
+    'canChangeInfo', 'canCreateTopics']) {
+    assert.ok(restrictPage.includes("'" + key + "'"), 'restrict page exposes ' + key);
+  }
+  const restrictRoutes = JSON.parse(fs.readFileSync(
+    path.join(root, '../resources/base/profile/route_map.json'), 'utf8'));
+  const restrictRoute = restrictRoutes.routerMap.find((item) => item.name === 'TgChatRestrictRightsPage');
+  assert.ok(restrictRoute, 'TgChatRestrictRightsPage is registered');
+  assert.equal(restrictRoute.buildFunction, 'TgChatRestrictRightsPageBuilder');
 
   // Promotion navigates to the rights screen, which applies the status itself.
   assert.match(page, /pushPathByName\('TgChatAdminRightsPage',/);
@@ -174,7 +213,12 @@ async function main() {
       'admin_rights_pin_messages', 'admin_rights_manage_topics', 'admin_rights_manage_video_chats',
       'admin_rights_promote_members', 'admin_rights_anonymous', 'moderation_duration_title',
       'moderation_duration_1h', 'moderation_duration_1d', 'moderation_duration_1w',
-      'moderation_duration_forever']) {
+      'moderation_duration_forever', 'restrict_rights_title', 'restrict_rights_save',
+      'restrict_rights_saved', 'restrict_rights_failed', 'restrict_rights_duration',
+      'restrict_perm_text', 'restrict_perm_photos', 'restrict_perm_videos', 'restrict_perm_audios',
+      'restrict_perm_voice', 'restrict_perm_video_notes', 'restrict_perm_documents',
+      'restrict_perm_polls', 'restrict_perm_other', 'restrict_perm_links', 'restrict_perm_invite',
+      'restrict_perm_pin', 'restrict_perm_info', 'restrict_perm_topics']) {
       assert.ok(strings.string.some((entry) => entry.name === name), name + ' exists in ' + locale);
     }
   }

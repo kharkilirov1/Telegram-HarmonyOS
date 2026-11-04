@@ -1155,3 +1155,12 @@ Last updated: 2026-10-23
   literal tuple, so tests can assert the ordering without duplicating labels.
 - Time arithmetic belongs in a pure helper (`moderationUntilDate`) because `Date.now()` inside a page
   makes the wire contract untestable: 0 duration is "forever", invalid input collapses to 0.
+
+## 224. Guard patches by class span, not by field name
+
+- `if (!t.includes("permissionsJson: string = '';"))` matched the unrelated `SetChatPermissionsPayload`
+  and reported "already patched", so the member-status payload silently kept the old shape and the build
+  failed twice. Locate `export class <Name> {` and splice inside its span instead.
+- The same applies to factories: find the function start, then its closing brace, and edit that slice.
+- When a payload grows an optional JSON override, keep the previous hardcoded default as the fallback in
+  the serializer so existing callers keep their behaviour, and assert both paths in the suite.

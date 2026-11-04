@@ -144,7 +144,7 @@
 | G3 | Участники и поиск | `available` | `TgProfileMembersPage.ets` (7/17) | `ChatParticipantRightsScreen` | G2 |
 | G4 | Права/доступ в чате | `available` | `ChatChromeState.ets` (19/28) | `ChatParticipantRightsScreen` | G5, D1 |
 | G5 | Инвайт-ссылка | `partial` | `AppEvent.ets`, `index.ets` (9/2) | `Sources/Invite*` | G2 |
-| G6 | Админ-действия | `partial` | Модерация участника: `setChatMemberStatus` (`member`/`banned`/`restricted`/`administrator`), `ChatMemberAdminUseCase.apply` (promote/demote/ban/unban/restrict, валидация), long-press участника → меню Add Admin/Remove Admin/Ban/Unban/Restrict; promote → `TgChatAdminRightsPage` (10 тоглов прав); ban/restrict → меню срока (1 час/1 день/1 неделя/навсегда, `moderationUntilDate`). Нет: restrict с частичными правами, предзаполнение прав существующего админа, witness | `AdminUserActionsSheet` | G4 |
+| G6 | Админ-действия | `partial` | Модерация участника: `setChatMemberStatus` (`member`/`banned`/`restricted`/`administrator`), `ChatMemberAdminUseCase.apply` (promote/demote/ban/unban/restrict + опциональный `permissionsJson`), long-press участника → меню Add Admin/Remove Admin/Ban/Unban/Restrict; promote → `TgChatAdminRightsPage` (10 прав), restrict → `TgChatRestrictRightsPage` (14 разрешений + срок), ban → меню срока (1ч/1д/1н/навсегда). Нет: предзаполнение прав существующего админа, выбор срока в одном экране с правами для promote, witness | `AdminUserActionsSheet` | G4 |
 
 ## H. Настройки
 

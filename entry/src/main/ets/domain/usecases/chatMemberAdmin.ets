@@ -64,12 +64,13 @@ export class ChatMemberAdminUseCase {
 
   async apply(chatId: ChatId, userId: UserId, action: ChatMemberModerationAction,
     untilDate: number = 0,
-    rights: ChatAdminRightsPayload = new ChatAdminRightsPayload()): Promise<void> {
+    rights: ChatAdminRightsPayload = new ChatAdminRightsPayload(),
+    permissionsJson: string = ''): Promise<void> {
     this.validate(chatId, userId, untilDate);
     const statusKind: string = memberStatusKind(action);
     try {
       await this.gateway.send(createSetChatMemberStatusCommand(chatId, userId, statusKind, untilDate,
-        rights));
+        rights, permissionsJson));
       hilog.info(DOMAIN, TAG, 'Member status updated: %{public}s', statusKind);
     } catch (error) {
       const err = error as Error;

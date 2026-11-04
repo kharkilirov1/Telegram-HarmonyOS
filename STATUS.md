@@ -146,6 +146,15 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **G6-частичные права (lead).** `TgChatRestrictRightsPage`: 14 разрешений (текст/фото/видео/аудио/
+  голосовые/видеосообщения/документы/опросы/GIF-стикеры/превью ссылок/приглашения/закрепление/
+  профиль/темы) + строка срока (1ч/1д/1н/навсегда) + кнопка Restrict; переключатели означают
+  «разрешено», `chatPermissionsToJson` уходит в `SetChatMemberStatusPayload.permissionsJson`,
+  статус restricted собирается из переданного объекта (пусто → всё запрещено). Пункт Restrict в меню
+  участника навигирует на экран, ban остаётся с inline-меню срока. 19 строк в base/ru/zh. Суита
+  `test-chat-member-admin.cjs` расширена: partial-wire (разрешённые права true, остальные false),
+  дефолт «всё запрещено», экран/route/14 ключей/локали. Гейты: host **127/127**, оба smoke, hvigor
+  BUILD SUCCESSFUL. Остаток G6: предзаполнение прав админа, срок в promote-экране, witness.
 - **G6-сроки (lead).** Ban/restrict спрашивают срок вторым меню (1 час/1 день/1 неделя/навсегда),
   `MODERATION_DURATION_SECONDS`/`MODERATION_DURATION_OPTIONS`/`moderationUntilDate(now, duration)`
   (0 = forever, невалидные → 0), до вызова `apply` с `untilDate`; 5 строк в base/ru/zh. Суита

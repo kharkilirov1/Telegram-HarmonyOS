@@ -813,6 +813,82 @@
       "value": "管理员"
     },
     {
+      "name": "restrict_rights_title",
+      "value": "限制成员"
+    },
+    {
+      "name": "restrict_rights_save",
+      "value": "限制"
+    },
+    {
+      "name": "restrict_rights_saved",
+      "value": "已限制成员"
+    },
+    {
+      "name": "restrict_rights_failed",
+      "value": "无法限制成员"
+    },
+    {
+      "name": "restrict_rights_duration",
+      "value": "时长"
+    },
+    {
+      "name": "restrict_perm_text",
+      "value": "文本消息"
+    },
+    {
+      "name": "restrict_perm_photos",
+      "value": "照片"
+    },
+    {
+      "name": "restrict_perm_videos",
+      "value": "视频"
+    },
+    {
+      "name": "restrict_perm_audios",
+      "value": "音频文件"
+    },
+    {
+      "name": "restrict_perm_voice",
+      "value": "语音消息"
+    },
+    {
+      "name": "restrict_perm_video_notes",
+      "value": "视频消息"
+    },
+    {
+      "name": "restrict_perm_documents",
+      "value": "文件"
+    },
+    {
+      "name": "restrict_perm_polls",
+      "value": "投票"
+    },
+    {
+      "name": "restrict_perm_other",
+      "value": "GIF 和贴纸"
+    },
+    {
+      "name": "restrict_perm_links",
+      "value": "链接预览"
+    },
+    {
+      "name": "restrict_perm_invite",
+      "value": "邀请用户"
+    },
+    {
+      "name": "restrict_perm_pin",
+      "value": "置顶消息"
+    },
+    {
+      "name": "restrict_perm_info",
+      "value": "修改聊天信息"
+    },
+    {
+      "name": "restrict_perm_topics",
+      "value": "创建话题"
+    },
+    {
       "name": "moderation_duration_title",
       "value": "时长"
     },

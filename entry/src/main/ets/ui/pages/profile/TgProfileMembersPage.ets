@@ -22,6 +22,7 @@ import {
 import { TgProfileMemberRoleKind, TgProfileMemberRow } from '../../tg_ui/atoms/TgProfileMemberRow';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { ChatAdminRightsRouteParams } from '../chat/chatAdminRightsRoute';
+import { ChatRestrictRightsRouteParams } from '../chat/chatRestrictRightsRoute';
 import { promptAction } from '@kit.ArkUI';
 import {
   ChatMemberAdminUseCase,
@@ -577,9 +578,15 @@ export struct TgProfileMembersPage {
         new ChatAdminRightsRouteParams(this.chatId, userId));
       return;
     }
+    // A restriction needs the permission set and duration, so it opens its own screen.
+    if (action === 'restrict') {
+      this.pageStack.pushPathByName('TgChatRestrictRightsPage',
+        new ChatRestrictRightsRouteParams(this.chatId, userId));
+      return;
+    }
     // Ban and restrict ask for a duration first (iOS offers the same presets); other actions are
     // immediate and take no until date.
-    if (action === 'ban' || action === 'restrict') {
+    if (action === 'ban') {
       this.openModerationDuration(action, userId);
       return;
     }

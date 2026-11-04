@@ -555,7 +555,7 @@ function buildAdminRightsJson(rights: ChatAdminRightsPayload): string {
 }
 
 function buildMemberStatusJson(statusKind: string, untilDate: number,
-  rights: ChatAdminRightsPayload): string {
+  rights: ChatAdminRightsPayload, permissionsJson: string): string {
   if (statusKind === 'banned') {
     return '{"@type":"chatMemberStatusBanned","banned_until_date":' + untilDate.toString() + '}';
   }
@@ -564,13 +564,17 @@ function buildMemberStatusJson(statusKind: string, untilDate: number,
       '"rights":' + buildAdminRightsJson(rights) + '}';
   }
   if (statusKind === 'restricted') {
+    // A caller may pass the whole chatPermissions object; otherwise every right stays denied.
+    const permissions: string = permissionsJson.length > 0
+      ? permissionsJson
+      : '{"@type":"chatPermissions"' +
+        ',"can_send_basic_messages":false,"can_send_audios":false,"can_send_documents":false' +
+        ',"can_send_photos":false,"can_send_videos":false,"can_send_video_notes":false' +
+        ',"can_send_voice_notes":false,"can_send_polls":false,"can_send_other_messages":false' +
+        ',"can_add_link_previews":false,"can_change_info":false,"can_invite_users":false' +
+        ',"can_pin_messages":false,"can_create_topics":false}';
     return '{"@type":"chatMemberStatusRestricted","is_member":true,"restricted_until_date":' +
-      untilDate.toString() + ',"permissions":{"@type":"chatPermissions"' +
-      ',"can_send_basic_messages":false,"can_send_audios":false,"can_send_documents":false' +
-      ',"can_send_photos":false,"can_send_videos":false,"can_send_video_notes":false' +
-      ',"can_send_voice_notes":false,"can_send_polls":false,"can_send_other_messages":false' +
-      ',"can_add_link_previews":false,"can_change_info":false,"can_invite_users":false' +
-      ',"can_pin_messages":false,"can_create_topics":false}}';
+      untilDate.toString() + ',"permissions":' + permissions + '}';
   }
   return '{"@type":"chatMemberStatusMember","member_until_date":0}';
 }
@@ -582,7 +586,7 @@ function serializeSetChatMemberStatus(command: AnyAppCommand, result: Serialized
   result.params.setString('_member_id_json',
     '{"@type":"messageSenderUser","user_id":' + cmd.payload.userId.toString() + '}');
   result.params.setString('_status_json', buildMemberStatusJson(cmd.payload.statusKind,
-    cmd.payload.untilDate, cmd.payload.rights));
+    cmd.payload.untilDate, cmd.payload.rights, cmd.payload.permissionsJson));
 }
 
 function serializeSetChatPermissions(command: AnyAppCommand, result: SerializedCommand): void {
