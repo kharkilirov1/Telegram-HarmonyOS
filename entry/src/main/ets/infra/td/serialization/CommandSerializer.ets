@@ -418,7 +418,7 @@ function serializeReportChat(command: AnyAppCommand, result: SerializedCommand):
   result.params.setNumber('chat_id', cmd.payload.chatId);
   // bytes are base64 strings in the JSON bridge; the first request sends empty bytes.
   result.params.setString('_option_id_json', JSON.stringify(cmd.payload.optionId));
-  result.params.setString('_message_ids_json', '[]');
+  result.params.setString('_message_ids_json', buildChatIdArrayJson(cmd.payload.messageIds));
   result.params.setString('text', cmd.payload.text);
 }
 

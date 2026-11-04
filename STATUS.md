@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S12f (lead).** C10: Report по выбранным сообщениям. `ReportChatPayload.messageIds` и
+  `_message_ids_json` через общий билдер, `ReportChatUseCase.submitMessages` (непустой набор, safe-int
+  id, chatId до gateway), `ChatActionsCoordinator.submitReportMessages` + host-колбэк
+  `requestReportMessages` (шаг `messages` больше не тост), страница входит в режим выделения
+  (`view.timeline.selectionActive`, пустой набор), `TgSelectionPanel` получил `showReport`/
+  `reportLabel`/`onReport` (+ токен `SELECTION_PANEL_REPORT_GLYPH`), отправка конвертирует строковые
+  id в числа и очищает выделение после успеха, закрытие панели снимает intent. Контракт
+  `test-chat-header-actions.cjs`: wire с int53 message_ids, валидация (пусто/0/chatId) до gateway,
+  проводка coordinator/страницы/панели/токена. Гейты: host **120/120**, оба smoke, hvigor BUILD
+  SUCCESSFUL; страница 399 строк. Остаток C10: ролевые admin-пункты, witness.
 - **S12e (lead).** C10: шаг комментария в Report. `ReportChatUseCase.submitComment` (trim,
   обязательный текст, option_id/chatId до gateway), `ChatActionsCoordinator.submitReportComment` +
   host-колбэк `requestReportComment` (шаг `text` больше не тост), страница: `@Local`-state и

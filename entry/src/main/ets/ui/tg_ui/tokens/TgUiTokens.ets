@@ -1559,6 +1559,7 @@ export class TgUiTokens {
   static readonly SELECTION_PANEL_TEXT_SIZE: number = 15;
   static readonly SELECTION_PANEL_TEXT_WEIGHT = FontWeight.Medium;
   static readonly SELECTION_PANEL_COPY_GLYPH: string = '⧉';
+  static readonly SELECTION_PANEL_REPORT_GLYPH: string = '⚠';
   static readonly SELECTION_PANEL_BG: Resource = $r('app.color.composer_glass_tint');
 
   // S5b (C9): selection-mode row indicator drawn in the leading lane.

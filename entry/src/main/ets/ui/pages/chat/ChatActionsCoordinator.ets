@@ -32,7 +32,8 @@ export class ChatActionsHost {
     tokenProvider: () => number,
     profileAction: () => void,
     backAction: () => void,
-    reportCommentAction: (chatId: number, optionId: string) => void
+    reportCommentAction: (chatId: number, optionId: string) => void,
+    reportMessagesAction: (chatId: number, optionId: string) => void
   ) {
     this.uiContextProvider = uiContextProvider;
     this.titleProvider = titleProvider;
@@ -40,6 +41,7 @@ export class ChatActionsHost {
     this.profileAction = profileAction;
     this.backAction = backAction;
     this.reportCommentHandler = reportCommentAction;
+    this.reportMessagesHandler = reportMessagesAction;
   }
 
   uiContext(): UIContext {
@@ -63,9 +65,14 @@ export class ChatActionsHost {
   }
 
   private reportCommentHandler: (chatId: number, optionId: string) => void;
+  private reportMessagesHandler: (chatId: number, optionId: string) => void;
 
   requestReportComment(chatId: number, optionId: string): void {
     this.reportCommentHandler(chatId, optionId);
+  }
+
+  requestReportMessages(chatId: number, optionId: string): void {
+    this.reportMessagesHandler(chatId, optionId);
   }
 
 }
@@ -349,8 +356,8 @@ export class ChatActionsCoordinator {
       return;
     }
     if (step.kind === 'messages') {
-      this.toast(localized($r('app.string.chat_actions_report_messages_required').id,
-        'Telegram asks for the messages to report'));
+      // The page enters selection mode and reports the chosen message ids.
+      this.host.requestReportMessages(chatId, step.optionId);
       return;
     }
     this.toast(localized($r('app.string.chat_actions_report_failed').id, 'Could not report the chat'));
@@ -398,6 +405,28 @@ export class ChatActionsCoordinator {
           resolve();
         }).catch((error: Error) => {
           hilog.error(DOMAIN, TAG, 'Report comment failed: %{public}s', error.message);
+          this.toast(localized($r('app.string.chat_actions_report_failed').id, 'Could not report the chat'));
+          reject(error);
+        });
+      } catch (error) {
+        hilog.error(DOMAIN, TAG, 'Report use case init failed: %{public}s', String(error));
+        reject(error as Error);
+      }
+    });
+  }
+
+  submitReportMessages(chatId: number, optionId: string, messageIds: number[]): Promise<void> {
+    const token: number = this.host.lifecycleToken();
+    return new Promise<void>((resolve: () => void, reject: (error: Error) => void): void => {
+      try {
+        const useCase = createReportChatUseCase(getTdGatewayAdapter());
+        useCase.submitMessages(chatId, optionId, messageIds).then((step: ReportChatStepDto) => {
+          if (token === this.host.lifecycleToken()) {
+            this.handleReportStep(chatId, step);
+          }
+          resolve();
+        }).catch((error: Error) => {
+          hilog.error(DOMAIN, TAG, 'Report messages failed: %{public}s', error.message);
           this.toast(localized($r('app.string.chat_actions_report_failed').id, 'Could not report the chat'));
           reject(error);
         });

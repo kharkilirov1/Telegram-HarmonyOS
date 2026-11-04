@@ -49,6 +49,18 @@ const reportOverlay = fs.readFileSync(
 assert.match(reportOverlay, /export struct TgReportCommentOverlay/);
 assert.match(reportOverlay, /@Event onDraftChange/);
 assert.match(reportOverlay, /@Event onSubmit/);
+// Report by message selection: TDLib can ask for the offending messages instead.
+assert.match(actions, /this\.host\.requestReportMessages\(chatId, step\.optionId\)/);
+assert.match(actions, /submitReportMessages\(chatId: number, optionId: string, messageIds: number\[\]\): Promise<void> \{/);
+assert.match(actions, /useCase\.submitMessages\(chatId, optionId, messageIds\)/);
+assert.match(page, /private beginReportSelection\(chatId: number, optionId: string\): void \{/);
+assert.match(page, /this\.view\.timeline\.selectionActive = true;/);
+assert.match(page, /this\.chatActions\.submitReportMessages\(chatId, optionId, messageIds\)/);
+assert.match(page, /showReport: this\.reportSelectionActive,/);
+const selectionPanel = read('ui/tg_ui/molecules/TgSelectionPanel.ets');
+assert.match(selectionPanel, /@Param showReport: boolean = false;/);
+assert.match(selectionPanel, /@Event onReport: \(\) => void = \(\) => \{\};/);
+assert.match(selectionPanel, /SELECTION_PANEL_REPORT_GLYPH/);
 
 for (const locale of ['base', 'ru_RU', 'zh_CN']) {
   const strings = JSON.parse(fs.readFileSync(
@@ -183,6 +195,23 @@ async function checkMembership() {
   assert.equal(reportSent.length, sentBeforeInvalidComment, 'invalid comments never reach the gateway');
   await assert.rejects(() => new reportMod.ReportChatUseCase(
     { send: () => Promise.reject(new Error('native status')) }).submitComment(1, 'AQID', 'x'),
+    /Failed to report the chat/);
+
+  await report.submitMessages(42, 'AQID', [9007199254740001, 7]);
+  assert.equal(reportSent.at(-1).type, 'reportChat');
+  assert.equal(reportSent.at(-1).payload.optionId, 'AQID');
+  assert.deepEqual(reportSent.at(-1).payload.messageIds, [9007199254740001, 7]);
+  const messagesWire = JSON.parse(serializer.buildTdlibRequestJson('reportChat',
+    serializer.serializeCommand(reportSent.at(-1)).params));
+  assert.deepEqual(messagesWire.message_ids, [9007199254740001, 7], 'selected ids reach the request');
+  await assert.rejects(() => report.submitMessages(42, 'AQID', []), /Report messages are required/);
+  await assert.rejects(() => report.submitMessages(42, 'AQID', [0]), /Invalid message id/);
+  await assert.rejects(() => report.submitMessages(0, 'AQID', [1]), /Invalid chatId/);
+  const sentBeforeInvalidMessages = reportSent.length;
+  await assert.rejects(() => report.submitMessages(42, 'AQID', []), /Report messages are required/);
+  assert.equal(reportSent.length, sentBeforeInvalidMessages, 'invalid selections never reach the gateway');
+  await assert.rejects(() => new reportMod.ReportChatUseCase(
+    { send: () => Promise.reject(new Error('native status')) }).submitMessages(1, 'AQID', [3]),
     /Failed to report the chat/);
 
   const leaveWire = JSON.parse(serializer.buildTdlibRequestJson('leaveChat',

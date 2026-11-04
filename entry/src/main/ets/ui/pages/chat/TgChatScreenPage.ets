@@ -34,6 +34,10 @@ export struct TgChatScreenPage {
   @Local private reportCommentOptionId: string = '';
   @Local private reportCommentDraft: string = '';
   @Local private reportCommentSubmitting: boolean = false;
+  // Report by message selection: TDLib can require the offending messages instead of a comment.
+  @Local private reportSelectionActive: boolean = false;
+  @Local private reportSelectionChatId: number = 0;
+  @Local private reportSelectionOptionId: string = '';
 
   private chatActions: ChatActionsCoordinator = new ChatActionsCoordinator(new ChatActionsHost(
     (): UIContext => this.getUIContext(),
@@ -47,6 +51,9 @@ export struct TgChatScreenPage {
     },
     (chatId: number, optionId: string): void => {
       this.openReportComment(chatId, optionId);
+    },
+    (chatId: number, optionId: string): void => {
+      this.beginReportSelection(chatId, optionId);
     }
   ));
 
@@ -80,6 +87,46 @@ export struct TgChatScreenPage {
     this.reportCommentOptionId = optionId;
     this.reportCommentDraft = '';
     this.reportCommentVisible = true;
+  }
+
+  private beginReportSelection(chatId: number, optionId: string): void {
+    this.reportSelectionChatId = chatId;
+    this.reportSelectionOptionId = optionId;
+    this.reportSelectionActive = true;
+    if (!this.view.timeline.selectionActive) {
+      this.view.timeline.selectionActive = true;
+      this.view.timeline.selectedMessageIds = [];
+    }
+  }
+
+  private clearReportSelection(): void {
+    this.reportSelectionActive = false;
+    this.reportSelectionChatId = 0;
+    this.reportSelectionOptionId = '';
+  }
+
+  private submitReportSelection(): void {
+    const rawIds = this.view.timeline.selectedMessageIds;
+    const messageIds: number[] = [];
+    for (const rawId of rawIds) {
+      const value = Number(rawId);
+      if (Number.isSafeInteger(value) && value > 0) {
+        messageIds.push(value);
+      }
+    }
+    if (messageIds.length === 0) {
+      return;
+    }
+    const chatId: number = this.reportSelectionChatId;
+    const optionId: string = this.reportSelectionOptionId;
+    this.chatActions.submitReportMessages(chatId, optionId, messageIds)
+      .then((): void => {
+        this.bindings.clearMessageSelection();
+        this.clearReportSelection();
+      })
+      .catch((): void => {
+        // Keep the selection so the user can retry.
+      });
   }
 
   private closeReportComment(): void {
@@ -245,6 +292,7 @@ export struct TgChatScreenPage {
           TgSelectionPanel({
             title: this.bindings.selectionTitle(),
             onClose: (): void => {
+              this.clearReportSelection();
               this.bindings.clearMessageSelection();
             },
             onCopy: (): void => {
@@ -255,6 +303,11 @@ export struct TgChatScreenPage {
             },
             onDelete: (): void => {
               this.bindings.deleteSelectedMessages();
+            },
+            showReport: this.reportSelectionActive,
+            reportLabel: $r('app.string.chat_actions_report'),
+            onReport: (): void => {
+              this.submitReportSelection();
             }
           })
         } else {

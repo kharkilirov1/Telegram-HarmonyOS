@@ -17,10 +17,14 @@ export struct TgSelectionPanel {
   @Param canCopy: boolean = true;
   @Param canForward: boolean = true;
   @Param canDelete: boolean = true;
+  // Report intent: the panel only offers it while TDLib waits for reported messages.
+  @Param showReport: boolean = false;
+  @Param reportLabel: Resource = $r('app.string.chat_actions_report');
   @Event onClose: () => void = () => {};
   @Event onCopy: () => void = () => {};
   @Event onForward: () => void = () => {};
   @Event onDelete: () => void = () => {};
+  @Event onReport: () => void = () => {};
 
   @Builder
   private buildIconButton(icon: Resource, label: Resource, enabled: boolean, action: () => void) {
@@ -89,6 +93,12 @@ export struct TgSelectionPanel {
         this.buildIconButton($r('app.media.ic_delete'), $r('app.string.action_delete'), this.canDelete, () => {
           this.onDelete();
         })
+        if (this.showReport) {
+          this.buildGlyphButton(TgUiTokens.SELECTION_PANEL_REPORT_GLYPH, this.reportLabel,
+            this.canDelete, () => {
+              this.onReport();
+            })
+        }
       }
       .alignItems(VerticalAlign.Center)
       .padding({ left: TgUiTokens.SELECTION_PANEL_ACTION_GAP })

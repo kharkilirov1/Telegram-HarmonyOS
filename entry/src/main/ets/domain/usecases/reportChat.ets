@@ -47,7 +47,26 @@ export class ReportChatUseCase {
     return this.request(chatId, optionId, comment);
   }
 
-  private async request(chatId: ChatId, optionId: string, text: string): Promise<ReportChatStepDto> {
+  // Finishes a report whose reason requires the offending messages.
+  async submitMessages(chatId: ChatId, optionId: string, messageIds: number[]): Promise<ReportChatStepDto> {
+    if (!Number.isSafeInteger(chatId) || chatId <= 0) {
+      throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid chatId', 'Input validation failed', 400, false);
+    }
+    if (messageIds.length === 0) {
+      throw new AppError(AppErrorKind.TDLIB_ERROR, 'Report messages are required',
+        'Input validation failed', 400, false);
+    }
+    for (const messageId of messageIds) {
+      if (!Number.isSafeInteger(messageId) || messageId <= 0) {
+        throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid message id', 'Input validation failed', 400,
+          false);
+      }
+    }
+    return this.request(chatId, optionId, '', messageIds);
+  }
+
+  private async request(chatId: ChatId, optionId: string, text: string,
+    messageIds: number[] = []): Promise<ReportChatStepDto> {
     if (!Number.isSafeInteger(chatId) || chatId <= 0) {
       throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid chatId', 'Input validation failed', 400, false);
     }
@@ -55,6 +74,7 @@ export class ReportChatUseCase {
     payload.chatId = chatId;
     payload.optionId = optionId;
     payload.text = text;
+    payload.messageIds = messageIds;
     try {
       const response = await this.gateway.send(createReportChatCommand(payload)) as TdObject;
       return createReportChatStepFromTd(response);

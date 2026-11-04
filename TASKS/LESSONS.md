@@ -989,3 +989,13 @@ Last updated: 2026-10-23
   the code commit already described the new step. Anchor on the row prefix and rewrite the whole row,
   then assert the written file contains the new marker (as the script did — but the log said false and
   the commit still went out; treat a false marker as a failed gate).
+
+## 208. Selection-mode features must share the existing selection owner
+
+- Report-by-messages reuses `view.timeline.selectionActive` / `selectedMessageIds` instead of a second
+  selection model, and the panel gained one optional action instead of a new bar. Any second owner
+  would desync the counter, copy/forward/delete and the report intent.
+- `selectedMessageIds` is `string[]` while `reportChat` needs numbers: convert and filter safe
+  integers at the boundary, never send the raw strings.
+- Clear the report intent whenever selection closes, otherwise the next selection session silently
+  offers Report for a stale chat.

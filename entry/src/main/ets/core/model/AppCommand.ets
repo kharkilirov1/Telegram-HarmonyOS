@@ -725,6 +725,8 @@ export class ReportChatPayload {
   // Base64 option id returned by TDLib; empty for the first (option list) request.
   optionId: string = '';
   text: string = '';
+  // Messages selected for a report whose reason requires them (td_api.tl:14338).
+  messageIds: number[] = [];
 }
 
 export class LeaveChatPayload {
