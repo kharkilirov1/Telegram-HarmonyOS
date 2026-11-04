@@ -10,6 +10,7 @@ import {
   CreateChatFolderInviteLinkCommand, DeleteChatFolderInviteLinkCommand, EditChatFolderInviteLinkCommand,
   GetChatFolderCommand, GetChatFolderInviteLinksCommand, GetRecommendedChatFoldersCommand,
   CheckChatFolderInviteLinkCommand, AddChatFolderByInviteLinkCommand,
+  CheckChatInviteLinkCommand, JoinChatByInviteLinkCommand,
   CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand, LeaveChatCommand,
   ReportChatCommand, ShareContactCommand,
   GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
@@ -127,6 +128,8 @@ COMMAND_SERIALIZATION_HANDLERS.set('leaveChat', serializeLeaveChat);
 COMMAND_SERIALIZATION_HANDLERS.set('sendContactMessage', serializeSendContactMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
+COMMAND_SERIALIZATION_HANDLERS.set('checkChatInviteLink', serializeCheckChatInviteLink);
+COMMAND_SERIALIZATION_HANDLERS.set('joinChatByInviteLink', serializeJoinChatByInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('checkChatFolderInviteLink', serializeCheckChatFolderInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('addChatFolderByInviteLink', serializeAddChatFolderByInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('getRecommendedChatFolders', serializeGetRecommendedChatFolders);
@@ -483,6 +486,18 @@ function buildChatFolderJson(draft: ChatFolderDraftPayload): string {
     ',"include_bots":' + (draft.includeBots ? 'true' : 'false') +
     ',"include_groups":' + (draft.includeGroups ? 'true' : 'false') +
     ',"include_channels":' + (draft.includeChannels ? 'true' : 'false') + '}';
+}
+
+function serializeCheckChatInviteLink(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as CheckChatInviteLinkCommand;
+  result.method = 'checkChatInviteLink';
+  result.params.setString('invite_link', cmd.payload.inviteLink);
+}
+
+function serializeJoinChatByInviteLink(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as JoinChatByInviteLinkCommand;
+  result.method = 'joinChatByInviteLink';
+  result.params.setString('invite_link', cmd.payload.inviteLink);
 }
 
 function serializeCheckChatFolderInviteLink(command: AnyAppCommand, result: SerializedCommand): void {

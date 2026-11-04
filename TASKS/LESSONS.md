@@ -961,3 +961,13 @@ Last updated: 2026-10-23
 - ChatDto is not standalone: it needs `tdAccessors`, `GroupAccessDto` and `AppCommand`; a test that
   resolves a chat must pass them, and `TdObject` must be initialised before the modules that capture it.
 - Top-level `await` is invalid in a `.cjs` suite; wrap async checks in a function and run it once.
+
+## 205. App Linking pathStartWith cannot express t.me/+hash
+
+- The browsable skill matches path prefixes, so `addlist` and `joinchat` are declarable but the short
+  invite form `t.me/+hash` is not; declaring it as a prefix would swallow unrelated paths. Keep the
+  class/route/UI ready and record the manifest limitation instead of claiming full App Linking.
+- Prefix checks must test the remaining length (`t.me/+` alone is not a valid invite), otherwise the
+  empty-slug case reaches the gateway and the error reads like a TDLib failure.
+- A page that pops a class instance back to the caller gives MainTabsPage the full ChatDto, which is
+  what `createNewChatEvent` needs; popping only id/title would force a second TDLib call.

@@ -293,6 +293,42 @@
       "value": "Link renamed"
     },
     {
+      "name": "chat_invite_title",
+      "value": "Invite Link"
+    },
+    {
+      "name": "chat_invite_checking",
+      "value": "Checking the invite link…"
+    },
+    {
+      "name": "chat_invite_invalid",
+      "value": "This invite link is not valid"
+    },
+    {
+      "name": "chat_invite_failed",
+      "value": "Could not open the invite link"
+    },
+    {
+      "name": "chat_invite_members",
+      "value": "members"
+    },
+    {
+      "name": "chat_invite_request_hint",
+      "value": "An admin must approve your join request."
+    },
+    {
+      "name": "chat_invite_join",
+      "value": "Join"
+    },
+    {
+      "name": "chat_invite_open",
+      "value": "Open Chat"
+    },
+    {
+      "name": "chat_invite_join_failed",
+      "value": "Could not join the chat"
+    },
+    {
       "name": "external_link_failed",
       "value": "Could not open the link"
     },

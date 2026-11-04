@@ -146,6 +146,17 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S14c (lead).** Внешние chat-invite ссылки: команды `checkChatInviteLink`/`joinChatByInviteLink`
+  (+сериализаторы), `ChatInviteLinkInfoDto` (chat_id 0 = не участник, title/description/
+  member_count/creates_join_request/is_public/тип), `ChatInviteLinkUseCase` (валидация `t.me/+…`/
+  `t.me/joinchat/…` до gateway, trim, check/join), экран `TgChatInvitePage` (проверка при входе,
+  превью, Join/Open Chat, подсказка про заявку, ошибки), route зарегистрирован,
+  `MainTabsPage` маршрутизирует `chatInvite` с pop-callback → `openJoinedChat` (гидрация
+  `createNewChatEvent` + chat screen), App Linking объявляет `t.me/joinchat` и `telegram.me/joinchat`
+  (плюс уже объявленный `addlist`). Контракт `test-external-links.cjs`: 5 валидных/5 невалидных форм,
+  wire обеих команд, разбор info, success/trim/ошибки, страница/route/9 строк в 3 локалях. Гейты:
+  host **120/120**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток: `t.me/+…` в манифесте не выразить
+  через pathStartWith (нужен отдельный фильтр/уточнение), witness.
 - **S14b (lead).** Внешние `t.me/<username>` открывают чат: `ResolveUsernameUseCase`
   (`searchPublicChat`, валидация username 4..32, trim, ошибки «Invalid username»/«Username not found»),
   в `MainTabsPage.consumeExternalLink` ветка `username` → `openUsernameLink`: DTO гидрируется в store

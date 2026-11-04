@@ -293,6 +293,42 @@
       "value": "Ссылка переименована"
     },
     {
+      "name": "chat_invite_title",
+      "value": "Ссылка-приглашение"
+    },
+    {
+      "name": "chat_invite_checking",
+      "value": "Проверяем ссылку…"
+    },
+    {
+      "name": "chat_invite_invalid",
+      "value": "Ссылка недействительна"
+    },
+    {
+      "name": "chat_invite_failed",
+      "value": "Не удалось открыть ссылку"
+    },
+    {
+      "name": "chat_invite_members",
+      "value": "участников"
+    },
+    {
+      "name": "chat_invite_request_hint",
+      "value": "Администратор должен одобрить заявку."
+    },
+    {
+      "name": "chat_invite_join",
+      "value": "Вступить"
+    },
+    {
+      "name": "chat_invite_open",
+      "value": "Открыть чат"
+    },
+    {
+      "name": "chat_invite_join_failed",
+      "value": "Не удалось вступить"
+    },
+    {
       "name": "external_link_failed",
       "value": "Не удалось открыть ссылку"
     },

@@ -62,9 +62,11 @@ import { createPrivateChatUseCase } from '../../domain/usecases/createPrivateCha
 import { createNewChatEvent } from '../../core/model/AppEvent';
 import { isSavedMessagesChat } from '../../core/model/AppState';
 import { ChatScreenRouteParams } from './chat/ChatScreenRouteParams';
+import { ChatDto } from '../../core/model/dto/ChatDto';
 import { createResolveUsernameUseCase as resolveUsernameUseCase } from '../../domain/usecases/resolveUsername';
 import { externalLinkIntake, ExternalLinkTarget } from '../../core/model/ExternalLink';
 import { FolderLinkRouteParams } from './settings/folderLinkRoute';
+import { ChatInviteJoinResult, ChatInviteRouteParams } from './chat/chatInviteRoute';
 import { pushChatScreenRoute } from './chat/ChatOpenTransaction';
 
 const DOMAIN = 0x0020;
@@ -614,6 +616,18 @@ export struct MainTabsPage {
       params.inviteLink = target.value;
       this.chatDetailNavStack.pushPathByName('TgFolderLinkPage', params);
       hilog.info(DOMAIN, TAG, 'Routed folder invite link');
+    } else if (target.kind === 'chatInvite') {
+      const inviteParams = new ChatInviteRouteParams();
+      inviteParams.inviteLink = target.value;
+      this.chatDetailNavStack.pushPathByName('TgChatInvitePage', inviteParams,
+        (popInfo: PopInfo): void => {
+          const result = popInfo.result as ChatInviteJoinResult | undefined;
+          if (result === undefined || result.chat.id === 0) {
+            return;
+          }
+          this.openJoinedChat(result.chat);
+        });
+      hilog.info(DOMAIN, TAG, 'Routed chat invite link');
     } else if (target.kind === 'username') {
       this.openUsernameLink(target.value);
     } else {
@@ -736,6 +750,20 @@ export struct MainTabsPage {
 
   // t.me/<username> opens that chat: searchPublicChat resolves it, the DTO is hydrated into the store
   // (same contract as Saved Messages) and the chat screen is pushed with the resolved title.
+  // A joined chat comes back as a DTO from TgChatInvitePage; hydrate it and open the chat screen.
+  private openJoinedChat(chat: ChatDto): void {
+    const runtime = getAppCoreRuntime();
+    const store = runtime.getStore();
+    const gateway = getTdGatewayAdapter();
+    try {
+      store.dispatch(createNewChatEvent(chat.id, chat));
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Joined chat hydration failed: %{public}s', String(error));
+    }
+    pushChatScreenRoute(new ChatScreenRouteParams(chat.id, chat.title, store, gateway),
+      this.chatDetailNavStack, store);
+  }
+
   private openUsernameLink(username: string): void {
     const runtime = getAppCoreRuntime();
     const store = runtime.getStore();

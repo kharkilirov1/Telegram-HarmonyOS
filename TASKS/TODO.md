@@ -226,7 +226,8 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
   графика использования и разбивки по типам файлов как в iOS; активный пресет авто-загрузки TDLib
   по-прежнему не отдаёт. Владелец: lead. Триггер: следующий проход по H4.
 
-- [ ] **B7: chat-invite ссылки не маршрутизируются.** `t.me/+hash` и
-  `t.me/joinchat/...` классифицируются, но join-preview экрана нет (нужен
-  `checkChatInviteLink`/`joinChatByInviteLink` + экран превью чата). Username-ссылки уже открывают
-  чат. Владелец: lead. Триггер: срез по invite-ссылкам чатов.
+- [ ] **B7: `t.me/+…` не объявлен в App Linking.** Манифест умеет только
+  `pathStartWith`, поэтому в browsable-skill попали `addlist` и `joinchat`, а короткая форма
+  `t.me/+hash` откроется лишь при явном want/из приложения; нужен отдельный механизм
+  (уточнение манифеста или фильтр в роутере при старте). Владелец: lead. Триггер: срез по
+  App Linking.

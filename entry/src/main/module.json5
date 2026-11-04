@@ -53,6 +53,16 @@
                 "scheme": "https",
                 "host": "telegram.me",
                 "pathStartWith": "addlist"
+              },
+              {
+                "scheme": "https",
+                "host": "t.me",
+                "pathStartWith": "joinchat"
+              },
+              {
+                "scheme": "https",
+                "host": "telegram.me",
+                "pathStartWith": "joinchat"
               }
             ]
           }

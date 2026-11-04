@@ -293,6 +293,42 @@
       "value": "链接已重命名"
     },
     {
+      "name": "chat_invite_title",
+      "value": "邀请链接"
+    },
+    {
+      "name": "chat_invite_checking",
+      "value": "正在检查邀请链接…"
+    },
+    {
+      "name": "chat_invite_invalid",
+      "value": "邀请链接无效"
+    },
+    {
+      "name": "chat_invite_failed",
+      "value": "无法打开邀请链接"
+    },
+    {
+      "name": "chat_invite_members",
+      "value": "成员"
+    },
+    {
+      "name": "chat_invite_request_hint",
+      "value": "管理员需要批准你的加入请求。"
+    },
+    {
+      "name": "chat_invite_join",
+      "value": "加入"
+    },
+    {
+      "name": "chat_invite_open",
+      "value": "打开聊天"
+    },
+    {
+      "name": "chat_invite_join_failed",
+      "value": "无法加入聊天"
+    },
+    {
       "name": "external_link_failed",
       "value": "无法打开链接"
     },
