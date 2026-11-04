@@ -293,6 +293,50 @@
       "value": "Ссылка переименована"
     },
     {
+      "name": "folders_link_open",
+      "value": "Открыть ссылку папки"
+    },
+    {
+      "name": "folders_link_title",
+      "value": "Ссылка папки"
+    },
+    {
+      "name": "folders_link_hint",
+      "value": "Вставьте пригласительную ссылку, чтобы посмотреть папку перед добавлением."
+    },
+    {
+      "name": "folders_link_check",
+      "value": "Проверить"
+    },
+    {
+      "name": "folders_link_checking",
+      "value": "Проверка…"
+    },
+    {
+      "name": "folders_link_invalid",
+      "value": "Вставьте ссылку вида https://t.me/addlist/..."
+    },
+    {
+      "name": "folders_link_check_failed",
+      "value": "Не удалось проверить ссылку"
+    },
+    {
+      "name": "folders_link_join",
+      "value": "Добавить папку"
+    },
+    {
+      "name": "folders_link_added",
+      "value": "Папка добавлена"
+    },
+    {
+      "name": "folders_link_add_failed",
+      "value": "Не удалось добавить папку"
+    },
+    {
+      "name": "folders_link_missing",
+      "value": "нет в папке"
+    },
+    {
       "name": "folders_recommended",
       "value": "РЕКОМЕНДОВАННЫЕ"
     },

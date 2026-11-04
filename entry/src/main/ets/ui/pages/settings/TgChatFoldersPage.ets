@@ -607,6 +607,22 @@ export struct TgChatFoldersPage {
               }, (folder: ChatFolderInfo) => folder.id.toString())
             }
 
+            Row() {
+              Text(localized($r('app.string.folders_link_open').id, 'Open Folder Link'))
+                .fontSize(TgUiTokens.FONT_PREVIEW_SIZE)
+                .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+                .layoutWeight(1)
+              Text('›')
+                .fontSize(TgUiTokens.FONT_META_SIZE)
+                .fontColor(TgUiTokens.COLOR_TEXT_META)
+            }
+            .width('100%')
+            .height(44)
+            .padding({ left: TgUiTokens.SPACE_16, right: TgUiTokens.SPACE_16, top: TgUiTokens.SPACE_8 })
+            .onClick(() => {
+              this.pageStack.pushPathByName('TgFolderLinkPage', undefined);
+            })
+
             Column() {
               Row() {
                 Text(this.editingFolderId > 0

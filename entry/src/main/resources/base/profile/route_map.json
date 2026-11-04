@@ -6,6 +6,11 @@
       "buildFunction": "TgChatScreenPageBuilder"
     },
     {
+      "name": "TgFolderLinkPage",
+      "pageSourceFile": "src/main/ets/ui/pages/settings/TgFolderLinkPage.ets",
+      "buildFunction": "TgFolderLinkPageBuilder"
+    },
+    {
       "name": "TgFolderChatsPage",
       "pageSourceFile": "src/main/ets/ui/pages/settings/TgFolderChatsPage.ets",
       "buildFunction": "TgFolderChatsPageBuilder"

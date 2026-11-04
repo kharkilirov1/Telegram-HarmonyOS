@@ -773,6 +773,21 @@ export class AddChatToListCommand extends AppCommand {
   payload: AddChatToListPayload = new AddChatToListPayload();
 }
 
+export class ChatFolderInviteLinkRequestPayload {
+  inviteLink: string = '';
+  chatIds: number[] = [];
+}
+
+export class CheckChatFolderInviteLinkCommand extends AppCommand {
+  type: string = 'checkChatFolderInviteLink';
+  payload: ChatFolderInviteLinkRequestPayload = new ChatFolderInviteLinkRequestPayload();
+}
+
+export class AddChatFolderByInviteLinkCommand extends AppCommand {
+  type: string = 'addChatFolderByInviteLink';
+  payload: ChatFolderInviteLinkRequestPayload = new ChatFolderInviteLinkRequestPayload();
+}
+
 export class GetRecommendedChatFoldersCommand extends AppCommand {
   type: string = 'getRecommendedChatFolders';
 }
@@ -1059,6 +1074,8 @@ export type AnyAppCommand =
   | JoinChatCommand
   | ToggleChatPinnedCommand
   | AddChatToListCommand
+  | CheckChatFolderInviteLinkCommand
+  | AddChatFolderByInviteLinkCommand
   | GetRecommendedChatFoldersCommand
   | GetChatFolderInviteLinksCommand
   | CreateChatFolderInviteLinkCommand
@@ -1559,6 +1576,22 @@ export function createAddChatToListCommand(
   cmd.payload.chatId = chatId;
   cmd.payload.chatList = chatList;
   cmd.payload.folderId = folderId;
+  return cmd;
+}
+
+export function createCheckChatFolderInviteLinkCommand(inviteLink: string): CheckChatFolderInviteLinkCommand {
+  const cmd = new CheckChatFolderInviteLinkCommand();
+  cmd.payload.inviteLink = inviteLink;
+  return cmd;
+}
+
+export function createAddChatFolderByInviteLinkCommand(
+  inviteLink: string,
+  chatIds: number[]
+): AddChatFolderByInviteLinkCommand {
+  const cmd = new AddChatFolderByInviteLinkCommand();
+  cmd.payload.inviteLink = inviteLink;
+  cmd.payload.chatIds = chatIds;
   return cmd;
 }
 

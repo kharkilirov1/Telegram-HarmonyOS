@@ -931,3 +931,13 @@ Last updated: 2026-10-23
 - Page anchors differ from screen to screen (folder page renders Rows inside a Column, not List and
   ListItem); re-read the region before scripting an insert, and split test/doc patches so one missed
   anchor does not discard the successful parts.
+
+## 202. Link-preview slices need their own entry point when there is no URL router
+
+- The app has no app-link/URL router, so a `t.me/addlist/...` tapped in a message cannot open a
+  preview. Shipping the preview behind a manual "Open Folder Link" row is honest and useful, but the
+  missing router must stay recorded as debt instead of being implied by the feature name.
+- `isFolderInviteLink` must strip the scheme before matching; without it a pasted `t.me/addlist/x`
+  and the `https://` form would need separate branches.
+- Link validation errors must be raised before the TDLib try block, otherwise the callers see the
+  generic transport message (same rule as the invite-link slice).

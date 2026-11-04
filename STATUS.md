@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S13j (lead).** B7: превью папки по invite-ссылке и добавление. Команды
+  `checkChatFolderInviteLink`/`addChatFolderByInviteLink` (+сериализаторы, ids через
+  `buildChatIdArrayJson`), `ChatFolderInviteLinkInfoDto` (chatFolderInfo + missing/added, int53),
+  `FolderInviteLinkUseCase` (check/add, trim, проверка формы `t.me/addlist/...` до gateway), новый
+  экран `TgFolderLinkPage` (ввод ссылки, Check → карточка «название, N chats, M missing», Add Folder)
+  и строка «Open Folder Link» в экране папок; route зарегистрирован. Контракт
+  `test-folder-link-preview.cjs`: wire обеих команд с int53, DTO, 13 вариантов формы ссылки,
+  use case успех/валидация/ошибки, проводка страницы/route, 12 строк в 3 локалях. Гейты: host
+  **119/119**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток B7: автоматическое открытие внешних
+  `t.me/addlist` (нет роутера ссылок), witness.
 - **S13i (lead).** B7: рекомендованные папки. `getRecommendedChatFolders` (команда + сериализатор),
   `RecommendedChatFolderDto` (переиспользует `ChatFolderDto`, int53 included-чаты, пустой folder
   отбрасывается), `LoadRecommendedChatFoldersUseCase`; секция RECOMMENDED в `TgChatFoldersPage`:

@@ -293,6 +293,50 @@
       "value": "Link renamed"
     },
     {
+      "name": "folders_link_open",
+      "value": "Open Folder Link"
+    },
+    {
+      "name": "folders_link_title",
+      "value": "Folder Link"
+    },
+    {
+      "name": "folders_link_hint",
+      "value": "Paste a folder invite link to preview the folder before adding it."
+    },
+    {
+      "name": "folders_link_check",
+      "value": "Check Link"
+    },
+    {
+      "name": "folders_link_checking",
+      "value": "Checking…"
+    },
+    {
+      "name": "folders_link_invalid",
+      "value": "Paste a folder link like https://t.me/addlist/..."
+    },
+    {
+      "name": "folders_link_check_failed",
+      "value": "Could not check the folder link"
+    },
+    {
+      "name": "folders_link_join",
+      "value": "Add Folder"
+    },
+    {
+      "name": "folders_link_added",
+      "value": "Folder added"
+    },
+    {
+      "name": "folders_link_add_failed",
+      "value": "Could not add the folder"
+    },
+    {
+      "name": "folders_link_missing",
+      "value": "missing"
+    },
+    {
       "name": "folders_recommended",
       "value": "RECOMMENDED"
     },

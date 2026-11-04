@@ -293,6 +293,50 @@
       "value": "链接已重命名"
     },
     {
+      "name": "folders_link_open",
+      "value": "打开文件夹链接"
+    },
+    {
+      "name": "folders_link_title",
+      "value": "文件夹链接"
+    },
+    {
+      "name": "folders_link_hint",
+      "value": "粘贴邀请链接以在添加前预览文件夹。"
+    },
+    {
+      "name": "folders_link_check",
+      "value": "检查链接"
+    },
+    {
+      "name": "folders_link_checking",
+      "value": "检查中…"
+    },
+    {
+      "name": "folders_link_invalid",
+      "value": "粘贴类似 https://t.me/addlist/... 的链接"
+    },
+    {
+      "name": "folders_link_check_failed",
+      "value": "无法检查链接"
+    },
+    {
+      "name": "folders_link_join",
+      "value": "添加文件夹"
+    },
+    {
+      "name": "folders_link_added",
+      "value": "文件夹已添加"
+    },
+    {
+      "name": "folders_link_add_failed",
+      "value": "无法添加文件夹"
+    },
+    {
+      "name": "folders_link_missing",
+      "value": "缺失"
+    },
+    {
       "name": "folders_recommended",
       "value": "推荐"
     },
