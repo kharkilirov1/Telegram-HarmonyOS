@@ -62,6 +62,8 @@ import { createPrivateChatUseCase } from '../../domain/usecases/createPrivateCha
 import { createNewChatEvent } from '../../core/model/AppEvent';
 import { isSavedMessagesChat } from '../../core/model/AppState';
 import { ChatScreenRouteParams } from './chat/ChatScreenRouteParams';
+import { externalLinkIntake, ExternalLinkTarget } from '../../core/model/ExternalLink';
+import { FolderLinkRouteParams } from './settings/folderLinkRoute';
 import { pushChatScreenRoute } from './chat/ChatOpenTransaction';
 
 const DOMAIN = 0x0020;
@@ -591,6 +593,27 @@ export struct MainTabsPage {
       hilog.warn(DOMAIN, TAG, 'attachAvSession failed: %{public}s', String(error));
     }
     hilog.info(DOMAIN, TAG, 'MainTabsPage appeared with tab index: %{public}d', this.selectedIndex);
+    this.consumeExternalLink();
+  }
+
+  // A cold start from a t.me link lands here after the runtime is ready; a warm start re-enters through
+  // onShown. Folder links open the preview page; other kinds are classified but not routed yet.
+  private consumeExternalLink(): void {
+    if (!externalLinkIntake.hasPending()) {
+      return;
+    }
+    const target: ExternalLinkTarget | undefined = externalLinkIntake.take();
+    if (target === undefined) {
+      return;
+    }
+    if (target.kind === 'folderInvite') {
+      const params = new FolderLinkRouteParams();
+      params.inviteLink = target.value;
+      this.chatDetailNavStack.pushPathByName('TgFolderLinkPage', params);
+      hilog.info(DOMAIN, TAG, 'Routed folder invite link');
+    } else {
+      hilog.info(DOMAIN, TAG, 'External link classified as %{public}s, not routed yet', target.kind);
+    }
   }
 
   aboutToDisappear(): void {

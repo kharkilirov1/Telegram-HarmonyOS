@@ -15,6 +15,7 @@ import {
 import { TgChatTopBar } from '../../tg_ui/atoms/TgChatTopBar';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { computeTopBarHeight } from '../../utils/SafeAreaUtils';
+import { FolderLinkRouteParams } from './folderLinkRoute';
 
 const DOMAIN = 0x003f;
 const TAG = 'TgFolderLinkPage';
@@ -52,6 +53,16 @@ export struct TgFolderLinkPage {
     } catch (error) {
       hilog.error(DOMAIN, TAG, 'Use case init failed: %{public}s', String(error));
       this.useCase = undefined;
+    }
+    const params = this.pageStack.getParamByName('TgFolderLinkPage') as Object[];
+    if (params.length > 0) {
+      const routeParams = params[0] as FolderLinkRouteParams;
+      const link: string = routeParams.inviteLink;
+      if (link.length > 0) {
+        this.linkDraft = link;
+        // An external link is checked immediately so the user sees the folder, not an empty form.
+        this.checkLink();
+      }
     }
   }
 

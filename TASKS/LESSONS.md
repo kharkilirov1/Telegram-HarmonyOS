@@ -941,3 +941,14 @@ Last updated: 2026-10-23
   and the `https://` form would need separate branches.
 - Link validation errors must be raised before the TDLib try block, otherwise the callers see the
   generic transport message (same rule as the invite-link slice).
+
+## 203. Changing an ability signature touches the stabilization harness
+
+- `onCreate(want, launchParam)` broke two stabilization suites: the harness builds EntryAbility from a
+  fixed method list with hand-made deps, so a new method (`captureExternalLink`) and the
+  `externalLinkIntake` dep must be added there, and its calls must pass a `want`. The failure surfaced
+  as "captureExternalLink is not a function" and as a negative-control crash, not as a compile error.
+- Case-insensitive URL matching must not lowercase the slug: match on a lower-cased copy, slice the
+  original text. Reserved paths (`addlist`, `joinchat`) must be excluded from username detection.
+- Scripted file rewrites can duplicate a block when an anchor search ends in the wrong scope; when a
+  patch corrupts a file, rewrite the whole file from a clean template instead of patching the damage.

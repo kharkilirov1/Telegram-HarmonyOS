@@ -35,6 +35,26 @@
             "actions": [
               "action.system.home"
             ]
+          },
+          {
+            "entities": [
+              "entity.system.browsable"
+            ],
+            "actions": [
+              "ohos.want.action.viewData"
+            ],
+            "uris": [
+              {
+                "scheme": "https",
+                "host": "t.me",
+                "pathStartWith": "addlist"
+              },
+              {
+                "scheme": "https",
+                "host": "telegram.me",
+                "pathStartWith": "addlist"
+              }
+            ]
           }
         ]
       }

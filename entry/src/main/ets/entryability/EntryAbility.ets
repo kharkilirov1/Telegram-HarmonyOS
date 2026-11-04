@@ -1,7 +1,7 @@
 // Minimal EntryAbility - no UI, only core initialization
 // UI layers will be added separately in presentation/ui
 
-import { UIAbility, AbilityConstant, Configuration, ConfigurationConstant, common } from '@kit.AbilityKit';
+import { UIAbility, AbilityConstant, Configuration, ConfigurationConstant, common, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window, KeyboardAvoidMode } from '@kit.ArkUI';
 import { getAppCoreRuntime, resetAppCoreRuntime } from '../app/bootstrap/AppCoreRuntime';
@@ -10,6 +10,7 @@ import { getMessageCacheManager } from '../core/utils/MessageLruCache';
 import { setAppContext } from '../core/utils/AppResource';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { navigationUIState } from '../core/model/UIStateModels';
+import { externalLinkIntake } from '../core/model/ExternalLink';
 
 const TAG = 'EntryAbility';
 const DOMAIN = 0x0000;
@@ -18,8 +19,9 @@ export default class EntryAbility extends UIAbility {
   private mainWindow: window.Window | null = null;
   private abilityLifecycleToken: number = 0;
 
-  onCreate(): void {
+  onCreate(want: Want, _launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(DOMAIN, TAG, 'onCreate');
+    this.captureExternalLink(want);
     this.abilityLifecycleToken += 1;
     const abilityToken: number = this.abilityLifecycleToken;
 
@@ -107,6 +109,19 @@ export default class EntryAbility extends UIAbility {
   onWindowStageDestroy(): void {
     hilog.info(DOMAIN, TAG, 'onWindowStageDestroy');
     this.mainWindow = null;
+  }
+
+  onNewWant(want: Want, _launchParam: AbilityConstant.LaunchParam): void {
+    hilog.info(DOMAIN, TAG, 'onNewWant');
+    this.captureExternalLink(want);
+  }
+
+  private captureExternalLink(want: Want): void {
+    const uri: string = want.uri ?? '';
+    if (uri.length > 0) {
+      hilog.info(DOMAIN, TAG, 'Captured external link: %{public}s', uri);
+      externalLinkIntake.set(uri);
+    }
   }
 
   onForeground(): void {

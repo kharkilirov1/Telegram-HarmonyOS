@@ -146,6 +146,16 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S14 (lead).** Внешние ссылки: `t.me/addlist`. `ExternalLink` (классификатор folder/chat-invite/
+  username/unknown + одноразовый `externalLinkIntake`), `EntryAbility.onCreate(want)`/`onNewWant`
+  сохраняют `want.uri`, `MainTabsPage.consumeExternalLink` маршрутизирует folder-ссылку в
+  `TgFolderLinkPage` с `FolderLinkRouteParams` (страница подставляет ссылку и сразу проверяет),
+  `module.json5` объявляет browsable-skill (`entity.system.browsable` + `ohos.want.action.viewData`)
+  для `https://t.me/addlist` и `https://telegram.me/addlist`. Классификатор сохраняет регистр slug,
+  резервирует `addlist`/`joinchat`. Контракт `test-external-links.cjs` (13 случаев, intake, проводка,
+  module.json5); stabilization-харнесс обновлён под новую сигнатуру onCreate (обе мутационные
+  контроли снова проходят). Гейты: host **120/120**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток:
+  маршрутизация chat-invite/username, witness.
 - **S13j (lead).** B7: превью папки по invite-ссылке и добавление. Команды
   `checkChatFolderInviteLink`/`addChatFolderByInviteLink` (+сериализаторы, ids через
   `buildChatIdArrayJson`), `ChatFolderInviteLinkInfoDto` (chatFolderInfo + missing/added, int53),
