@@ -1,7 +1,7 @@
 import { Chat } from '../../../core/model/AppState';
 import { GroupAccessDto, GroupSendPermissionsDto, SupergroupBoostsDto } from '../../../core/model/dto/GroupAccessDto';
 
-export type ChatInputPanelKind = 'composer' | 'mute' | 'unmute' | 'join' | 'restricted' | 'banned' | 'unknown';
+export type ChatInputPanelKind = 'composer' | 'mute' | 'unmute' | 'join' | 'restricted' | 'banned' | 'unknown' | 'unblock';
 
 function permitsKind(permissions: GroupSendPermissionsDto | undefined, kind: string): boolean {
   if (permissions === undefined) return false;
@@ -73,7 +73,12 @@ export function selectChatInputPanel(chat: Chat, access?: GroupAccessDto,
     return 'restricted';
   }
   if (chat.type !== 'channel') {
-    if (chat.type === 'private' || chat.type === 'secret' || chat.peerUserId > 0) return 'composer';
+    if (chat.type === 'private' || chat.type === 'secret') {
+    // iOS shows an UNBLOCK panel instead of the composer while the peer is blocked.
+    if (chat.isBlocked) return 'unblock';
+    return 'composer';
+  }
+  if (chat.peerUserId > 0) return 'composer';
     return chat.canSendBasicMessages ? 'composer' : 'restricted';
   }
   if (!access || access.kind !== 'supergroup' || !Number.isSafeInteger(chat.supergroupId) || chat.supergroupId <= 0 ||

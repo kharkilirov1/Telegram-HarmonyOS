@@ -21,6 +21,7 @@ import { DeleteMessagesUseCase } from '../../../domain/usecases/deleteMessages';
 import { ForwardMessagesUseCase } from '../../../domain/usecases/forwardMessages';
 import { SetChatMuteUseCase } from '../../../domain/usecases/setChatMute';
 import { JoinChatUseCase } from '../../../domain/usecases/joinChat';
+import { SetMessageSenderBlockedUseCase } from '../../../domain/usecases/setMessageSenderBlocked';
 import { SearchChatMessagesUseCase } from '../../../domain/usecases/searchChatMessages';
 import { PinChatMessageUseCase } from '../../../domain/usecases/pinChatMessage';
 import { LoadChatHistoryUseCase, LoadChatHistoryParams } from '../../../domain/usecases/loadChatHistory';
@@ -39,6 +40,7 @@ export interface ChatPageTeardownCoordinatorPort {
   composerSlowmodeSeconds: number;
   chatGateway?: TdGatewayPort;
   chatJoinUseCase?: JoinChatUseCase;
+  chatUnblockUseCase?: SetMessageSenderBlockedUseCase;
   chatMuteUseCase?: SetChatMuteUseCase;
   deleteUseCase?: DeleteMessagesUseCase;
   draftDebounceTimerId: number;
@@ -184,6 +186,7 @@ export function aboutToDisappear(host: ChatPageTeardownCoordinatorPort): void {
     host.forwardUseCase = undefined;
     host.chatMuteUseCase = undefined;
     host.chatJoinUseCase = undefined;
+  host.chatUnblockUseCase = undefined;
     host.chatAccessController?.dispose();
     host.chatAccessController = undefined;
     host.slowmodeController.dispose();

@@ -19,6 +19,7 @@ import { createDeleteMessagesUseCase, DeleteMessagesUseCase } from '../../../dom
 import { ForwardMessagesUseCase, createForwardMessagesUseCase } from '../../../domain/usecases/forwardMessages';
 import { createSetChatMuteUseCase, SetChatMuteUseCase } from '../../../domain/usecases/setChatMute';
 import { createJoinChatUseCase, JoinChatUseCase } from '../../../domain/usecases/joinChat';
+import { createSetMessageSenderBlockedUseCase, SetMessageSenderBlockedUseCase } from '../../../domain/usecases/setMessageSenderBlocked';
 import { SearchChatMessagesUseCase, createSearchChatMessagesUseCase } from '../../../domain/usecases/searchChatMessages';
 import { PinChatMessageUseCase, createPinChatMessageUseCase } from '../../../domain/usecases/pinChatMessage';
 import { LoadChatHistoryUseCase, LoadChatHistoryParams, createLoadChatHistoryUseCase } from '../../../domain/usecases/loadChatHistory';
@@ -39,6 +40,7 @@ export interface ChatRouteActivationCoordinatorPort {
   chatAccessController?: ChatAccessController;
   chatGateway?: TdGatewayPort;
   chatJoinUseCase?: JoinChatUseCase;
+  chatUnblockUseCase?: SetMessageSenderBlockedUseCase;
   chatMuteUseCase?: SetChatMuteUseCase;
   currentScrollChatId: number;
   deleteUseCase?: DeleteMessagesUseCase;
@@ -155,6 +157,7 @@ export function activateChatRoute(host: ChatRouteActivationCoordinatorPort): voi
       host.forwardUseCase = createForwardMessagesUseCase(gateway);
       host.chatMuteUseCase = createSetChatMuteUseCase(gateway);
       host.chatJoinUseCase = createJoinChatUseCase(gateway);
+      host.chatUnblockUseCase = createSetMessageSenderBlockedUseCase(gateway);
       host.searchUseCase = createSearchChatMessagesUseCase(gateway);
       host.pinUseCase = createPinChatMessageUseCase(gateway);
       host.stickerPanelUseCase = createStickerPanelUseCase(gateway);

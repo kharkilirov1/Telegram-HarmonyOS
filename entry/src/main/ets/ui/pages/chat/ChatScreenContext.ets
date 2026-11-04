@@ -30,6 +30,7 @@ import { DeleteMessagesUseCase } from '../../../domain/usecases/deleteMessages';
 import { ForwardMessagesUseCase } from '../../../domain/usecases/forwardMessages';
 import { SetChatMuteUseCase } from '../../../domain/usecases/setChatMute';
 import { JoinChatUseCase } from '../../../domain/usecases/joinChat';
+import { SetMessageSenderBlockedUseCase } from '../../../domain/usecases/setMessageSenderBlocked';
 import { SearchChatMessagesUseCase } from '../../../domain/usecases/searchChatMessages';
 import { PinChatMessageUseCase } from '../../../domain/usecases/pinChatMessage';
 import { LoadChatHistoryUseCase, LoadChatHistoryParams } from '../../../domain/usecases/loadChatHistory';
@@ -83,6 +84,7 @@ export class ChatScreenContext {
   forwardUseCase?: ForwardMessagesUseCase;
   chatMuteUseCase?: SetChatMuteUseCase;
   chatJoinUseCase?: JoinChatUseCase;
+  chatUnblockUseCase?: SetMessageSenderBlockedUseCase;
   accountStore?: AppStore;
   routeAccountStore?: AppStore;
   chatGateway?: TdGatewayPort;
@@ -245,8 +247,8 @@ export class ChatScreenContext {
   set composerTotalHeight(value: number) { this.view.chrome.composerTotalHeight = value; }
   get composerDraftText(): string { return this.view.composer.composerDraftText; }
   set composerDraftText(value: string) { if (this.view.composer.composerDraftText !== value) this.composerInputRevision++; this.view.composer.composerDraftText = value; }
-  get chatBottomBarAction(): 'none' | 'mute' | 'unmute' | 'join' | 'retry' { return this.view.chrome.chatBottomBarAction; }
-  set chatBottomBarAction(value: 'none' | 'mute' | 'unmute' | 'join' | 'retry') { this.view.chrome.chatBottomBarAction = value; }
+  get chatBottomBarAction(): 'none' | 'mute' | 'unmute' | 'join' | 'retry' | 'unblock' { return this.view.chrome.chatBottomBarAction; }
+  set chatBottomBarAction(value: 'none' | 'mute' | 'unmute' | 'join' | 'retry' | 'unblock') { this.view.chrome.chatBottomBarAction = value; }
   get chatBottomBarRestricted(): boolean { return this.view.chrome.chatBottomBarRestricted; }
   set chatBottomBarRestricted(value: boolean) { this.view.chrome.chatBottomBarRestricted = value; }
   get chatBottomBarDeleteAndExit(): boolean { return this.view.chrome.chatBottomBarDeleteAndExit; }

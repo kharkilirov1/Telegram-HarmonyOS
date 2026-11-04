@@ -25,7 +25,7 @@ export class ChatChromeState {
   @Trace bottomOverlayInset: number = TgUiTokens.SPACE_8;
   @Trace composerTotalHeight: number = TgUiTokens.COMPOSER_MIN_CAPSULE_HEIGHT +
     TgUiTokens.COMPOSER_VERTICAL_INSET * 2 + TgUiTokens.SPACE_8;
-  @Trace chatBottomBarAction: 'none' | 'mute' | 'unmute' | 'join' | 'retry' = 'none';
+  @Trace chatBottomBarAction: 'none' | 'mute' | 'unmute' | 'join' | 'retry' | 'unblock' = 'none';
   @Trace chatBottomBarRestricted: boolean = false;
   @Trace chatBottomBarReason: 'restricted' | 'banned' | 'unknown' | '' = '';
   // iOS ChatRestrictedInputPanelNode: a removed member may only delete the chat and exit.

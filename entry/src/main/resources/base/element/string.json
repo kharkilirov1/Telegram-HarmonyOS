@@ -813,6 +813,10 @@
       "value": "Administrators"
     },
     {
+      "name": "unblock",
+      "value": "Unblock"
+    },
+    {
       "name": "chat_removed_bottom_bar",
       "value": "You were removed from this group."
     },

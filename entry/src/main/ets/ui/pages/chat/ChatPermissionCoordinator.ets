@@ -9,6 +9,7 @@ import { SendMediaMessageUseCase } from '../../../domain/usecases/sendMediaMessa
 import { ForwardMessagesUseCase } from '../../../domain/usecases/forwardMessages';
 import { SetChatMuteUseCase, MUTE_FOREVER } from '../../../domain/usecases/setChatMute';
 import { JoinChatUseCase } from '../../../domain/usecases/joinChat';
+import { SetMessageSenderBlockedUseCase } from '../../../domain/usecases/setMessageSenderBlocked';
 import { localized } from '../../../core/utils/AppResource';
 import { ChatSlowmodeHost, ChatSlowmodeController, currentSlowmodeSeconds } from './ChatSlowmodeController';
 import { deleteAndExitChat } from './ChatExitCoordinator';
@@ -21,13 +22,14 @@ export interface ChatPermissionCoordinatorPort extends ChatSlowmodeHost {
   activeChatId: number;
   chatAccessController?: ChatAccessController;
   chatAccessUnavailable: boolean;
-  chatBottomBarAction: 'none' | 'mute' | 'unmute' | 'join' | 'retry';
+  chatBottomBarAction: 'none' | 'mute' | 'unmute' | 'join' | 'retry' | 'unblock';
   chatBottomBarReason: 'restricted' | 'banned' | 'unknown' | '';
   chatBottomBarRestricted: boolean;
   chatBottomBarDeleteAndExit: boolean;
   handleBackPress(): void;
   chatJoinUseCase?: JoinChatUseCase;
   chatMuteUseCase?: SetChatMuteUseCase;
+  chatUnblockUseCase?: SetMessageSenderBlockedUseCase;
   composerAccessRetryVisible: boolean;
   composerAllowedKinds: string[];
   composerDraftText: string;
@@ -106,6 +108,7 @@ export function deriveChatBottomBar(host: ChatPermissionCoordinatorPort, chat: C
     // A member removed from a group can only delete the chat and exit (iOS ChatRestrictedInputPanelNode).
     host.chatBottomBarDeleteAndExit = panel === 'banned' && chat.type === 'group';
     if (panel === 'mute' || panel === 'unmute' || panel === 'join') host.chatBottomBarAction = panel;
+    if (panel === 'unblock') host.chatBottomBarAction = 'unblock';
     if (panel === 'unknown' && host.chatAccessUnavailable && Number.isSafeInteger(chat.id) && chat.id !== 0 &&
       Number.isSafeInteger(groupId) && groupId > 0) {
       host.chatBottomBarRestricted = false;
@@ -128,6 +131,8 @@ export function bottomBarActionLabel(host: ChatPermissionCoordinatorPort): strin
         return localized($r('app.string.unmute').id, 'Unmute');
       case 'mute':
         return localized($r('app.string.mute').id, 'Mute');
+      case 'unblock':
+        return localized($r('app.string.unblock').id, 'Unblock');
       default:
         return '';
     }
@@ -168,7 +173,15 @@ export function handleChatBottomBarAction(host: ChatPermissionCoordinatorPort): 
     // next derive pass on success.
     const muteUseCase = host.chatMuteUseCase;
     const joinUseCase = host.chatJoinUseCase;
-    if (host.chatBottomBarAction === 'retry') {
+    const unblockUseCase = host.chatUnblockUseCase;
+    if (host.chatBottomBarAction === 'unblock') {
+      // The peer user id is the only blocked sender a private-chat panel can offer.
+      const chat = host.accountStore?.getState().chats.chats.get(host.activeChatId);
+      const peerUserId = chat?.peerUserId ?? 0;
+      if (unblockUseCase !== undefined && peerUserId > 0) {
+        unblockUseCase.unblock('user', peerUserId).catch((): void => {});
+      }
+    } else if (host.chatBottomBarAction === 'retry') {
       host.chatAccessController?.retry();
     } else if (host.chatBottomBarAction === 'mute' && muteUseCase !== undefined) {
       muteUseCase.mute(host.activeChatId, MUTE_FOREVER).catch((): void => {});

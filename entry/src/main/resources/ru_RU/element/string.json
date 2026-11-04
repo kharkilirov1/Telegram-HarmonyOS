@@ -813,6 +813,10 @@
       "value": "Администраторы"
     },
     {
+      "name": "unblock",
+      "value": "Разблокировать"
+    },
+    {
       "name": "chat_removed_bottom_bar",
       "value": "Вас удалили из этой группы."
     },

@@ -16,7 +16,7 @@ export interface ChatTopBarCoordinatorPort extends ChatSlowmodeHost {
   chatAvatarImageSrc: string;
   chatAvatarInitials: string;
   chatIsSavedMessages: boolean;
-  chatBottomBarAction: 'none' | 'mute' | 'unmute' | 'join' | 'retry';
+  chatBottomBarAction: 'none' | 'mute' | 'unmute' | 'join' | 'retry' | 'unblock';
   chatBottomBarReason: 'restricted' | 'banned' | 'unknown' | '';
   chatBottomBarRestricted: boolean;
   chatIsOnline: boolean;
