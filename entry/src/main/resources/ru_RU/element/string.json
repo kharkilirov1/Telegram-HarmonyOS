@@ -293,6 +293,10 @@
       "value": "Ссылка переименована"
     },
     {
+      "name": "external_link_failed",
+      "value": "Не удалось открыть ссылку"
+    },
+    {
       "name": "folders_link_open",
       "value": "Открыть ссылку папки"
     },

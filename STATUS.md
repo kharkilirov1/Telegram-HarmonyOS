@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S14b (lead).** Внешние `t.me/<username>` открывают чат: `ResolveUsernameUseCase`
+  (`searchPublicChat`, валидация username 4..32, trim, ошибки «Invalid username»/«Username not found»),
+  в `MainTabsPage.consumeExternalLink` ветка `username` → `openUsernameLink`: DTO гидрируется в store
+  через `createNewChatEvent` и открывается chat screen (`pushChatScreenRoute`), токен отсекает
+  устаревшие ответы, ошибка — тост `external_link_failed` (3 локали). Контракт `test-external-links.cjs`
+  расширен: валидные/невалидные username, wire `searchPublicChat`, success/trim/not-found/failure,
+  проводка MainTabsPage и строки. Гейты: host **120/120**, оба smoke, hvigor BUILD SUCCESSFUL.
+  Остаток: chat-invite ссылки, witness.
 - **S14 (lead).** Внешние ссылки: `t.me/addlist`. `ExternalLink` (классификатор folder/chat-invite/
   username/unknown + одноразовый `externalLinkIntake`), `EntryAbility.onCreate(want)`/`onNewWant`
   сохраняют `want.uri`, `MainTabsPage.consumeExternalLink` маршрутизирует folder-ссылку в

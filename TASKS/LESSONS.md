@@ -952,3 +952,12 @@ Last updated: 2026-10-23
   original text. Reserved paths (`addlist`, `joinchat`) must be excluded from username detection.
 - Scripted file rewrites can duplicate a block when an anchor search ends in the wrong scope; when a
   patch corrupts a file, rewrite the whole file from a clean template instead of patching the damage.
+
+## 204. Suites with different loaders need the real transitive deps
+
+- The external-link suite loads ETS with a loader that collects exported names automatically and takes
+  only a deps object. Passing a names array as the second argument produced
+  `new Function(0,1,2,...)` and a confusing `Unexpected number`.
+- ChatDto is not standalone: it needs `tdAccessors`, `GroupAccessDto` and `AppCommand`; a test that
+  resolves a chat must pass them, and `TdObject` must be initialised before the modules that capture it.
+- Top-level `await` is invalid in a `.cjs` suite; wrap async checks in a function and run it once.

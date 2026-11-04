@@ -293,6 +293,10 @@
       "value": "链接已重命名"
     },
     {
+      "name": "external_link_failed",
+      "value": "无法打开链接"
+    },
+    {
       "name": "folders_link_open",
       "value": "打开文件夹链接"
     },

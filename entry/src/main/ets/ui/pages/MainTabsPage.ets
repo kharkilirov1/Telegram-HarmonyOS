@@ -62,6 +62,7 @@ import { createPrivateChatUseCase } from '../../domain/usecases/createPrivateCha
 import { createNewChatEvent } from '../../core/model/AppEvent';
 import { isSavedMessagesChat } from '../../core/model/AppState';
 import { ChatScreenRouteParams } from './chat/ChatScreenRouteParams';
+import { createResolveUsernameUseCase as resolveUsernameUseCase } from '../../domain/usecases/resolveUsername';
 import { externalLinkIntake, ExternalLinkTarget } from '../../core/model/ExternalLink';
 import { FolderLinkRouteParams } from './settings/folderLinkRoute';
 import { pushChatScreenRoute } from './chat/ChatOpenTransaction';
@@ -90,6 +91,8 @@ export struct MainTabsPage {
   @Local private playerUserCollapsed: boolean = false;
   // Island player body-tap → ChatListPage.openChat bridge (tick + payload).
   @Local private islandOpenChatTick: number = 0;
+  // Latest username-link resolution; a newer link supersedes an older in-flight one.
+  private usernameOpenToken: number = 0;
   @Local private islandOpenChatId: number = 0;
   // v3: full player card in a native sheet (audio body-tap).
   @Local private playerCardExpanded: boolean = false;
@@ -611,6 +614,8 @@ export struct MainTabsPage {
       params.inviteLink = target.value;
       this.chatDetailNavStack.pushPathByName('TgFolderLinkPage', params);
       hilog.info(DOMAIN, TAG, 'Routed folder invite link');
+    } else if (target.kind === 'username') {
+      this.openUsernameLink(target.value);
     } else {
       hilog.info(DOMAIN, TAG, 'External link classified as %{public}s, not routed yet', target.kind);
     }
@@ -727,6 +732,39 @@ export struct MainTabsPage {
       }
     });
     return found;
+  }
+
+  // t.me/<username> opens that chat: searchPublicChat resolves it, the DTO is hydrated into the store
+  // (same contract as Saved Messages) and the chat screen is pushed with the resolved title.
+  private openUsernameLink(username: string): void {
+    const runtime = getAppCoreRuntime();
+    const store = runtime.getStore();
+    const gateway = getTdGatewayAdapter();
+    const openToken: number = ++this.usernameOpenToken;
+    resolveUsernameUseCase(gateway).resolve(username)
+      .then((chat): void => {
+        if (openToken !== this.usernameOpenToken) {
+          return;
+        }
+        try {
+          store.dispatch(createNewChatEvent(chat.id, chat));
+        } catch (error) {
+          hilog.warn(DOMAIN, TAG, 'Username chat hydration failed: %{public}s', String(error));
+        }
+        pushChatScreenRoute(new ChatScreenRouteParams(chat.id, chat.title, store, gateway),
+          this.chatDetailNavStack, store);
+        hilog.info(DOMAIN, TAG, 'Routed username link to chat');
+      })
+      .catch((error: Error): void => {
+        if (openToken !== this.usernameOpenToken) {
+          return;
+        }
+        hilog.error(DOMAIN, TAG, 'Username link failed: %{public}s', error.message);
+        this.getUIContext().getPromptAction().showToast({
+          message: localized($r('app.string.external_link_failed').id, 'Could not open the link'),
+          duration: 2000
+        });
+      });
   }
 
   private openSavedMessages(): void {

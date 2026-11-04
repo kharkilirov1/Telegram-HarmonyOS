@@ -20,7 +20,18 @@ function load(relative, deps = {}) {
 }
 
 const links = load('core/model/ExternalLink.ets');
+const C = load('core/model/AppCommand.ets');
+const errors = load('core/model/AppError.ets');
+const { TdObject } = load('models/td/common/index.ets');
+const accessors = load('core/utils/tdAccessors.ets', { TdObject });
+const permissions = load('core/model/dto/GroupAccessDto.ets', { TdObject });
+const chatDto = load('core/model/dto/ChatDto.ets',
+  { TdObject, hilog: { info() {}, warn() {}, error() {}, debug() {} }, ...accessors, ...permissions, ...C });
+const U = load('domain/usecases/resolveUsername.ets',
+  { ...C, ...errors, hilog: { info() {}, warn() {}, error() {} }, TdObject,
+    ChatDto: chatDto.ChatDto, createChatDtoFromTd: chatDto.createChatDtoFromTd });
 
+async function runChecks() {
 // Classification --------------------------------------------------------------------------------
 const folder = links.classifyExternalLink('https://t.me/addlist/AbCd12');
 assert.equal(folder.kind, 'folderInvite');
@@ -65,6 +76,35 @@ intake.set('https://t.me/addlist/xyz');
 intake.clear();
 assert.equal(intake.hasPending(), false);
 
+// Username resolution ---------------------------------------------------------------------------
+for (const valid of ['durov', 'telegram', 'a_b1', 'x'.repeat(32)]) {
+  assert.equal(U.isValidUsername(valid), true, 'accepted username: ' + valid);
+}
+for (const invalid of ['', 'abc', '1abc', 'with space', 'with-dash', 'x'.repeat(33), 'user!']) {
+  assert.equal(U.isValidUsername(invalid), false, 'rejected username: ' + invalid);
+}
+
+const CHAT_TEXT = '{"@type":"chat","id":42,"title":"Durov","type":' +
+  '{"@type":"chatTypePrivate","user_id":7}}';
+const sent = [];
+const resolveUseCase = new U.ResolveUsernameUseCase({ send: (command) => {
+  sent.push(command);
+  return Promise.resolve(TdObject.fromJSON(CHAT_TEXT));
+} });
+const resolved = await resolveUseCase.resolve('  durov  ');
+assert.equal(sent.at(-1).type, 'searchPublicChat');
+assert.equal(sent.at(-1).payload.username, 'durov', 'the username is trimmed');
+assert.equal(resolved.id, 42);
+assert.equal(resolved.title, 'Durov');
+await assert.rejects(() => resolveUseCase.resolve('bad name'), /Invalid username/);
+assert.equal(sent.length, 1, 'invalid usernames never reach the gateway');
+await assert.rejects(() => new U.ResolveUsernameUseCase(
+  { send: () => Promise.reject(new Error('native status')) }).resolve('durov'),
+  /Failed to open the username/);
+await assert.rejects(() => new U.ResolveUsernameUseCase(
+  { send: () => Promise.resolve(TdObject.fromJSON('{"@type":"ok"}')) }).resolve('durov'),
+  /Username not found/);
+
 // Wiring ---------------------------------------------------------------------------------------
 const ability = read('entryability/EntryAbility.ets');
 assert.match(ability, /import \{ externalLinkIntake \} from '\.\.\/core\/model\/ExternalLink';/);
@@ -74,12 +114,27 @@ assert.match(ability, /private captureExternalLink\(want: Want\): void \{/);
 assert.match(ability, /externalLinkIntake\.set\(uri\)/);
 
 const tabs = read('ui/pages/MainTabsPage.ets');
+assert.match(tabs, /else if \(target\.kind === 'username'\) \{/);
+assert.match(tabs, /this\.openUsernameLink\(target\.value\)/);
+assert.match(tabs, /private openUsernameLink\(username: string\): void \{/);
+assert.match(tabs, /resolveUsernameUseCase\(gateway\)\.resolve\(username\)/);
+assert.match(tabs, /store\.dispatch\(createNewChatEvent\(chat\.id, chat\)\)/);
+assert.match(tabs, /pushChatScreenRoute\(new ChatScreenRouteParams\(chat\.id, chat\.title, store, gateway\)/);
+assert.match(tabs, /private usernameOpenToken: number = 0;/);
+assert.match(tabs, /external_link_failed/);
 assert.match(tabs, /this\.consumeExternalLink\(\);/);
 assert.match(tabs, /private consumeExternalLink\(\): void \{/);
 assert.match(tabs, /externalLinkIntake\.take\(\)/);
 assert.match(tabs, /if \(target\.kind === 'folderInvite'\) \{/);
 assert.match(tabs, /this\.chatDetailNavStack\.pushPathByName\('TgFolderLinkPage', params\)/);
 assert.match(tabs, /import \{ FolderLinkRouteParams \} from '\.\/settings\/folderLinkRoute';/);
+
+for (const locale of ['base', 'ru_RU', 'zh_CN']) {
+  const strings = JSON.parse(fs.readFileSync(
+    path.join(root, 'entry/src/main/resources', locale, 'element/string.json'), 'utf8'));
+  assert.ok(strings.string.some((entry) => entry.name === 'external_link_failed'),
+    'external_link_failed exists in ' + locale);
+}
 
 const page = read('ui/pages/settings/TgFolderLinkPage.ets');
 assert.match(page, /import \{ FolderLinkRouteParams \} from '\.\/folderLinkRoute';/);
@@ -98,4 +153,10 @@ assert.ok(uris.some((uri) => uri.scheme === 'https' && uri.host === 't.me' &&
 assert.ok(uris.some((uri) => uri.scheme === 'https' && uri.host === 'telegram.me' &&
   uri.pathStartWith === 'addlist'), 'telegram.me/addlist is declared');
 
-console.log('PASS external link routing contract');
+  console.log('PASS external link routing contract');
+}
+
+runChecks().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

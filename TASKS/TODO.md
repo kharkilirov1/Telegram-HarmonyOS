@@ -226,7 +226,7 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
   графика использования и разбивки по типам файлов как в iOS; активный пресет авто-загрузки TDLib
   по-прежнему не отдаёт. Владелец: lead. Триггер: следующий проход по H4.
 
-- [ ] **B7: chat-invite и username ссылки не маршрутизируются.** Классификатор
-  распознаёт `t.me/+hash`/`t.me/joinchat/...` и `t.me/<username>`, но роутер открывает только
-  папки; для чатов нужен join-preview, для username — профиль. Владелец: lead. Триггер: срез по
-  ссылкам чатов/профилей.
+- [ ] **B7: chat-invite ссылки не маршрутизируются.** `t.me/+hash` и
+  `t.me/joinchat/...` классифицируются, но join-preview экрана нет (нужен
+  `checkChatInviteLink`/`joinChatByInviteLink` + экран превью чата). Username-ссылки уже открывают
+  чат. Владелец: lead. Триггер: срез по invite-ссылкам чатов.

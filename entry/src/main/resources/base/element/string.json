@@ -293,6 +293,10 @@
       "value": "Link renamed"
     },
     {
+      "name": "external_link_failed",
+      "value": "Could not open the link"
+    },
+    {
       "name": "folders_link_open",
       "value": "Open Folder Link"
     },
