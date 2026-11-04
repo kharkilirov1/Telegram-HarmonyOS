@@ -8,9 +8,14 @@ import { TgChatBackground } from '../../tg_ui/atoms/TgChatBackground';
 import { TgPinnedMessagePanel } from '../../tg_ui/atoms/TgPinnedMessagePanel';
 import { localized } from '../../../core/utils/AppResource';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
-import { ProfileMembersRouteParams } from '../profile/TgProfileMembersPage';
-import { ChatInviteLinksRouteParams } from './chatInviteLinksRoute';
-import { ChatAdministratorsRouteParams } from './chatAdministratorsRoute';
+import {
+  currentAccountUserId,
+  openAdministratorsScreen,
+  openInviteLinksScreen,
+  openMembersScreen,
+  openPermissionsScreen
+} from './chatAdminNavigation';
+
 import { ChatScreenViewState } from './ChatScreenViewState';
 import { ChatScreenSession } from './ChatScreenSession';
 import { ChatScreenViewBindings } from './ChatScreenViewBindings';
@@ -63,80 +68,36 @@ export struct TgChatScreenPage {
     (chatId: number, optionId: string): void => {
       this.beginReportSelection(chatId, optionId);
     },
-    (): number => this.currentUserId(),
-    (chatId: number, title: string): void => {
-      this.openMembersFromChat(chatId, title);
+    (): number => currentAccountUserId(),
+    (chatId: number, _title: string): void => {
+      this.openMembersFromChat(chatId);
     },
     (chatId: number): void => {
       this.openInviteLinksFromChat(chatId);
     },
     (chatId: number): void => {
       this.openAdministratorsFromChat(chatId);
+    },
+    (chatId: number): void => {
+      this.openPermissionsFromChat(chatId);
     }
   ));
 
-  private currentUserId(): number {
-    try {
-      return getAppCoreRuntime().getStore().getState().auth.userId;
-    } catch (_error) {
-      return 0;
-    }
-  }
-
-  // Admin entry: the same members screen the profile opens, with the chat's own counts.
-  private openMembersFromChat(chatId: number, title: string): void {
-    const chat = getAppCoreRuntime().getStore().getState().chats.chats.get(chatId);
-    const params = new ProfileMembersRouteParams(chatId, chat?.supergroupId ?? 0, 'all',
-      chat?.memberCount ?? 0);
-    try {
-      const navigation = this.queryNavigationInfo();
-      const stack = navigation?.pathStack;
-      if (stack !== undefined) {
-        stack.pushPathByName('TgProfileMembersPage', params);
-        return;
-      }
-    } catch (error) {
-      hilog.warn(DOMAIN, TAG, 'Members navigation failed: %{public}s', String(error));
-    }
-    this.getUIContext().getPromptAction().showToast({
-      message: localized($r('app.string.chat_actions_members_failed').id, 'Could not open members'),
-      duration: 2000
-    });
+  // Admin navigation lives in a helper module; the page only forwards the live stack.
+  private openMembersFromChat(chatId: number): void {
+    openMembersScreen(this.queryNavigationInfo()?.pathStack, chatId);
   }
 
   private openInviteLinksFromChat(chatId: number): void {
-    try {
-      const navigation = this.queryNavigationInfo();
-      const stack = navigation?.pathStack;
-      if (stack !== undefined) {
-        stack.pushPathByName('TgChatInviteLinksPage', new ChatInviteLinksRouteParams(chatId));
-        return;
-      }
-    } catch (error) {
-      hilog.warn(DOMAIN, TAG, 'Invite links navigation failed: %{public}s', String(error));
-    }
-    this.getUIContext().getPromptAction().showToast({
-      message: localized($r('app.string.invite_links_failed').id, 'Could not load invite links'),
-      duration: 2000
-    });
+    openInviteLinksScreen(this.queryNavigationInfo()?.pathStack, chatId);
   }
 
   private openAdministratorsFromChat(chatId: number): void {
-    try {
-      const navigation = this.queryNavigationInfo();
-      const stack = navigation?.pathStack;
-      if (stack !== undefined) {
-        stack.pushPathByName('TgChatAdministratorsPage', new ChatAdministratorsRouteParams(chatId));
-        return;
-      }
-    } catch (error) {
-      hilog.warn(DOMAIN, TAG, 'Administrators navigation failed: %{public}s', String(error));
-    }
-    this.getUIContext().getPromptAction().showToast({
-      message: localized($r('app.string.administrators_failed').id,
-        'Could not load administrators'),
-      duration: 2000
-    });
+    openAdministratorsScreen(this.queryNavigationInfo()?.pathStack, chatId);
+  }
+
+  private openPermissionsFromChat(chatId: number): void {
+    openPermissionsScreen(this.queryNavigationInfo()?.pathStack, chatId);
   }
 
   private openChatActions(): void {

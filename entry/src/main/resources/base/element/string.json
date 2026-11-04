@@ -641,6 +641,82 @@
       "value": "Blocked Users"
     },
     {
+      "name": "chat_actions_permissions",
+      "value": "Permissions"
+    },
+    {
+      "name": "permissions_title",
+      "value": "Permissions"
+    },
+    {
+      "name": "permissions_loading",
+      "value": "Loading permissions…"
+    },
+    {
+      "name": "permissions_failed",
+      "value": "Could not load permissions"
+    },
+    {
+      "name": "permissions_save_failed",
+      "value": "Could not save permissions"
+    },
+    {
+      "name": "permissions_send_messages",
+      "value": "Send Messages"
+    },
+    {
+      "name": "permissions_send_audios",
+      "value": "Send Audio Files"
+    },
+    {
+      "name": "permissions_send_documents",
+      "value": "Send Documents"
+    },
+    {
+      "name": "permissions_send_photos",
+      "value": "Send Photos"
+    },
+    {
+      "name": "permissions_send_videos",
+      "value": "Send Videos"
+    },
+    {
+      "name": "permissions_send_video_notes",
+      "value": "Send Video Messages"
+    },
+    {
+      "name": "permissions_send_voice_notes",
+      "value": "Send Voice Messages"
+    },
+    {
+      "name": "permissions_send_polls",
+      "value": "Send Polls"
+    },
+    {
+      "name": "permissions_send_other",
+      "value": "Send Stickers and GIFs"
+    },
+    {
+      "name": "permissions_link_previews",
+      "value": "Embed Link Previews"
+    },
+    {
+      "name": "permissions_change_info",
+      "value": "Change Chat Info"
+    },
+    {
+      "name": "permissions_invite_users",
+      "value": "Invite Users"
+    },
+    {
+      "name": "permissions_pin_messages",
+      "value": "Pin Messages"
+    },
+    {
+      "name": "permissions_create_topics",
+      "value": "Create Topics"
+    },
+    {
       "name": "chat_actions_administrators",
       "value": "Administrators"
     },

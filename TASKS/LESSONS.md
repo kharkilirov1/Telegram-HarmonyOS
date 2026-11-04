@@ -1031,3 +1031,17 @@ Last updated: 2026-10-23
   omit the tap and record the debt (done here).
 - Adding a third entry to the Manage submenu required updating two suites that pinned the exact
   action array; grep for the array literal after any submenu change instead of only the new suite.
+
+## 212. @Builder with parameters and reserved member names in V2 components
+
+- A `@Builder` method with parameters called fourteen times inside `ListItem()` produced
+  "Argument of type 'X' is not assignable to parameter of type 'Object'". A small
+  `@ComponentV2` row struct with `@Param`/`@Event` is the reliable shape for repeated rows.
+- Naming a method `valueOf` overrides Object.prototype.valueOf and breaks call resolution; rename it
+  (`permissionValue`). A `@Param enabled` also collides with the CustomComponent base member — use
+  `isEnabled`.
+- The bounded-owner check is exact: the chat page crossed 500 lines after four navigation helpers, so
+  move navigation into a helper module and update every suite that pinned the old wiring in the same
+  commit, otherwise four suites fail on stale anchors.
+- A native-bridge compile failure under the parallel host runner can be transient: standalone run was
+  green and the next full run passed; re-run before treating it as a regression.

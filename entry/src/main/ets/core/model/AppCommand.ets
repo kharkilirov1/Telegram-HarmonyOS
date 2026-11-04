@@ -780,6 +780,17 @@ export class ChatFolderInviteLinkRequestPayload {
   chatIds: number[] = [];
 }
 
+export class SetChatPermissionsPayload {
+  chatId: ChatId = 0;
+  // The full chatPermissions object; the screen edits single bits but writes the whole object back.
+  permissionsJson: string = '';
+}
+
+export class SetChatPermissionsCommand extends AppCommand {
+  type: string = 'setChatPermissions';
+  payload: SetChatPermissionsPayload = new SetChatPermissionsPayload();
+}
+
 export class GetChatAdministratorsPayload {
   chatId: ChatId = 0;
 }
@@ -1151,6 +1162,7 @@ export type AnyAppCommand =
   | JoinChatByInviteLinkCommand
   | CheckChatFolderInviteLinkCommand
   | AddChatFolderByInviteLinkCommand
+  | SetChatPermissionsCommand
   | GetChatAdministratorsCommand
   | CreateChatInviteLinkCommand
   | RevokeChatInviteLinkCommand
@@ -1684,6 +1696,14 @@ export function createAddChatFolderByInviteLinkCommand(
   const cmd = new AddChatFolderByInviteLinkCommand();
   cmd.payload.inviteLink = inviteLink;
   cmd.payload.chatIds = chatIds;
+  return cmd;
+}
+
+export function createSetChatPermissionsCommand(chatId: ChatId,
+  permissionsJson: string): SetChatPermissionsCommand {
+  const cmd = new SetChatPermissionsCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.permissionsJson = permissionsJson;
   return cmd;
 }
 

@@ -40,11 +40,13 @@ assert.match(actions, /localized\(\$r\('app\.string\.chat_actions_info'\)\.id, '
 assert.match(actions, /createChatMemberRoleUseCase\(getTdGatewayAdapter\(\)\)\.load\(chatId, userId\)/);
 assert.match(actions, /if \(canManageChat\(role\)\) \{/);
 assert.match(actions, /push\(ChatMenuAction\.Manage, localized\(\$r\('app\.string\.chat_actions_manage'\)\.id, 'Manage'\), normal\);/);
-assert.match(actions, /const actions: ChatMenuAction\[\] = \[ChatMenuAction\.Members, ChatMenuAction\.InviteLinks,\n      ChatMenuAction\.Administrators\];/);
+assert.match(actions, /const actions: ChatMenuAction\[\] = \[ChatMenuAction\.Members, ChatMenuAction\.InviteLinks,\n      ChatMenuAction\.Administrators, ChatMenuAction\.Permissions\];/);
 assert.match(actions, /this\.host\.openInviteLinks\(chatId\)/);
 assert.match(actions, /const b0: promptAction\.Button = \{ text: labels\[0\], color: colors\[0\] \};/);
-assert.match(page, /private openMembersFromChat\(chatId: number, title: string\): void \{/);
-assert.match(page, /new ProfileMembersRouteParams\(chatId, chat\?\.supergroupId \?\? 0, 'all',/);
+assert.match(page, /private openMembersFromChat\(chatId: number\): void \{/);
+assert.match(page, /openMembersScreen\(this\.queryNavigationInfo\(\)\?\.pathStack, chatId\)/);
+const adminNav = read('ui/pages/chat/chatAdminNavigation.ets');
+assert.match(adminNav, /new ProfileMembersRouteParams\(chatId,/);
 
 // Report comment step (C10 remainder): TDLib can require free text after the reason.
 assert.match(actions, /this\.host\.requestReportComment\(chatId, step\.optionId\)/);

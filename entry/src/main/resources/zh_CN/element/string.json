@@ -641,6 +641,82 @@
       "value": "已屏蔽用户"
     },
     {
+      "name": "chat_actions_permissions",
+      "value": "权限"
+    },
+    {
+      "name": "permissions_title",
+      "value": "权限"
+    },
+    {
+      "name": "permissions_loading",
+      "value": "正在加载权限…"
+    },
+    {
+      "name": "permissions_failed",
+      "value": "无法加载权限"
+    },
+    {
+      "name": "permissions_save_failed",
+      "value": "无法保存权限"
+    },
+    {
+      "name": "permissions_send_messages",
+      "value": "发送消息"
+    },
+    {
+      "name": "permissions_send_audios",
+      "value": "发送音频文件"
+    },
+    {
+      "name": "permissions_send_documents",
+      "value": "发送文件"
+    },
+    {
+      "name": "permissions_send_photos",
+      "value": "发送照片"
+    },
+    {
+      "name": "permissions_send_videos",
+      "value": "发送视频"
+    },
+    {
+      "name": "permissions_send_video_notes",
+      "value": "发送视频消息"
+    },
+    {
+      "name": "permissions_send_voice_notes",
+      "value": "发送语音消息"
+    },
+    {
+      "name": "permissions_send_polls",
+      "value": "发送投票"
+    },
+    {
+      "name": "permissions_send_other",
+      "value": "发送贴纸和 GIF"
+    },
+    {
+      "name": "permissions_link_previews",
+      "value": "嵌入链接预览"
+    },
+    {
+      "name": "permissions_change_info",
+      "value": "更改聊天信息"
+    },
+    {
+      "name": "permissions_invite_users",
+      "value": "邀请用户"
+    },
+    {
+      "name": "permissions_pin_messages",
+      "value": "置顶消息"
+    },
+    {
+      "name": "permissions_create_topics",
+      "value": "创建话题"
+    },
+    {
       "name": "chat_actions_administrators",
       "value": "管理员"
     },

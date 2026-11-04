@@ -6,6 +6,11 @@
       "buildFunction": "TgChatScreenPageBuilder"
     },
     {
+      "name": "TgChatPermissionsPage",
+      "pageSourceFile": "src/main/ets/ui/pages/chat/TgChatPermissionsPage.ets",
+      "buildFunction": "TgChatPermissionsPageBuilder"
+    },
+    {
       "name": "TgChatAdministratorsPage",
       "pageSourceFile": "src/main/ets/ui/pages/chat/TgChatAdministratorsPage.ets",
       "buildFunction": "TgChatAdministratorsPageBuilder"

@@ -100,14 +100,16 @@ async function main() {
 
   const actions = read('ui/pages/chat/ChatActionsCoordinator.ets');
   assert.match(actions,
-    /const actions: ChatMenuAction\[\] = \[ChatMenuAction\.Members, ChatMenuAction\.InviteLinks,\n      ChatMenuAction\.Administrators\];/);
+    /const actions: ChatMenuAction\[\] = \[ChatMenuAction\.Members, ChatMenuAction\.InviteLinks,\n      ChatMenuAction\.Administrators, ChatMenuAction\.Permissions\];/);
   assert.match(actions, /text: localized\(\$r\('app\.string\.chat_actions_administrators'\)\.id, 'Administrators'\), color: normal \};/);
   assert.match(actions, /this\.host\.openAdministrators\(chatId\)/);
   assert.match(actions, /openAdministrators\(chatId: number\): void \{/);
 
   const chatPage = read('ui/pages/chat/TgChatScreenPage.ets');
   assert.match(chatPage, /private openAdministratorsFromChat\(chatId: number\): void \{/);
-  assert.match(chatPage,
+  assert.match(chatPage, /openAdministratorsScreen\(this\.queryNavigationInfo\(\)\?\.pathStack, chatId\)/);
+  const adminNav = read('ui/pages/chat/chatAdminNavigation.ets');
+  assert.match(adminNav,
     /stack\.pushPathByName\('TgChatAdministratorsPage', new ChatAdministratorsRouteParams\(chatId\)\)/);
 
   for (const locale of ['base', 'ru_RU', 'zh_CN']) {

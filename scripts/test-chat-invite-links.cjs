@@ -148,12 +148,14 @@ assert.equal(route.buildFunction, 'TgChatInviteLinksPageBuilder');
 const actions = read('ui/pages/chat/ChatActionsCoordinator.ets');
 assert.match(actions, /private showManageMenu\(chatId: number, chat: Chat\): void \{/);
 assert.match(actions, /push\(ChatMenuAction\.Manage, localized\(\$r\('app\.string\.chat_actions_manage'\)\.id, 'Manage'\), normal\);/);
-assert.match(actions, /const actions: ChatMenuAction\[\] = \[ChatMenuAction\.Members, ChatMenuAction\.InviteLinks,\n      ChatMenuAction\.Administrators\];/);
+assert.match(actions, /const actions: ChatMenuAction\[\] = \[ChatMenuAction\.Members, ChatMenuAction\.InviteLinks,\n      ChatMenuAction\.Administrators, ChatMenuAction\.Permissions\];/);
 assert.match(actions, /this\.host\.openInviteLinks\(chatId\)/);
 assert.match(actions, /openInviteLinks\(chatId: number\): void \{/);
 const chatPage = read('ui/pages/chat/TgChatScreenPage.ets');
 assert.match(chatPage, /private openInviteLinksFromChat\(chatId: number\): void \{/);
-assert.match(chatPage, /stack\.pushPathByName\('TgChatInviteLinksPage', new ChatInviteLinksRouteParams\(chatId\)\)/);
+assert.match(chatPage, /openInviteLinksScreen\(this\.queryNavigationInfo\(\)\?\.pathStack, chatId\)/);
+const adminNav = read('ui/pages/chat/chatAdminNavigation.ets');
+assert.match(adminNav, /stack\.pushPathByName\('TgChatInviteLinksPage', new ChatInviteLinksRouteParams\(chatId\)\)/);
 
 for (const locale of ['base', 'ru_RU', 'zh_CN']) {
   const strings = JSON.parse(fs.readFileSync(

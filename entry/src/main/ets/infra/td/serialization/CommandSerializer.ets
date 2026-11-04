@@ -12,7 +12,7 @@ import {
   CheckChatFolderInviteLinkCommand, AddChatFolderByInviteLinkCommand,
   CheckChatInviteLinkCommand, JoinChatByInviteLinkCommand, GetChatMemberCommand,
   CreateChatInviteLinkCommand, RevokeChatInviteLinkCommand, GetChatInviteLinksCommand,
-  GetChatAdministratorsCommand,
+  GetChatAdministratorsCommand, SetChatPermissionsCommand,
   CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand, LeaveChatCommand,
   ReportChatCommand, ShareContactCommand,
   GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
@@ -136,6 +136,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('createChatInviteLink', serializeCreateChatIn
 COMMAND_SERIALIZATION_HANDLERS.set('revokeChatInviteLink', serializeRevokeChatInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatInviteLinks', serializeGetChatInviteLinks);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatAdministrators', serializeGetChatAdministrators);
+COMMAND_SERIALIZATION_HANDLERS.set('setChatPermissions', serializeSetChatPermissions);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChatByInviteLink', serializeJoinChatByInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('checkChatFolderInviteLink', serializeCheckChatFolderInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('addChatFolderByInviteLink', serializeAddChatFolderByInviteLink);
@@ -493,6 +494,13 @@ function buildChatFolderJson(draft: ChatFolderDraftPayload): string {
     ',"include_bots":' + (draft.includeBots ? 'true' : 'false') +
     ',"include_groups":' + (draft.includeGroups ? 'true' : 'false') +
     ',"include_channels":' + (draft.includeChannels ? 'true' : 'false') + '}';
+}
+
+function serializeSetChatPermissions(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SetChatPermissionsCommand;
+  result.method = 'setChatPermissions';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('_permissions_json', cmd.payload.permissionsJson);
 }
 
 function serializeGetChatAdministrators(command: AnyAppCommand, result: SerializedCommand): void {

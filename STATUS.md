@@ -146,6 +146,17 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S12j (lead).** C10: права участников. Команда `setChatPermissions` (полный JSON объекта),
+  `ChatPermissionsDto` (14 бит + `clone` + `chatPermissionsToJson`), `ChatPermissionsUseCase`
+  (`load` через `getChat` → `chat.permissions`, `save` целиком, валидация chatId), экран
+  `TgChatPermissionsPage` (14 тумблеров `PermissionToggleRow`, оптимистичная запись с откатом при
+  ошибке, loading/error), route + params, пункт Permissions в Manage-подменю (4 кнопки), host
+  `openPermissions`. Навигация admin-экранов вынесена из страницы в `chatAdminNavigation.ets`
+  (страница 442 строки). Новая суита `scripts/test-chat-permissions.cjs` (123-я): round-trip DTO/JSON
+  (15 ключей), wire `setChatPermissions` с вложенным `permissions`, валидация до gateway, ошибки
+  (нет прав/unsupported), экран/route/подменю/19 строк в 3 локалях; контракты admin-экранов
+  обновлены на helper. Гейты: host **123/123**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток C10:
+  профиль по тапу из админов, witness.
 - **S12i (lead).** C10: администраторы группы. Команда `getChatAdministrators` + сериализатор,
   `ChatAdministratorDto`/`ChatAdministratorsDto` (user_id/custom_title/is_owner, невалидные и
   чужие записи отбрасываются), `ChatAdministratorsUseCase` (валидация chatId, ошибки), экран

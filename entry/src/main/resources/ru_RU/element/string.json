@@ -641,6 +641,82 @@
       "value": "Заблокированные"
     },
     {
+      "name": "chat_actions_permissions",
+      "value": "Права"
+    },
+    {
+      "name": "permissions_title",
+      "value": "Права"
+    },
+    {
+      "name": "permissions_loading",
+      "value": "Загружаем права…"
+    },
+    {
+      "name": "permissions_failed",
+      "value": "Не удалось загрузить права"
+    },
+    {
+      "name": "permissions_save_failed",
+      "value": "Не удалось сохранить права"
+    },
+    {
+      "name": "permissions_send_messages",
+      "value": "Отправка сообщений"
+    },
+    {
+      "name": "permissions_send_audios",
+      "value": "Отправка аудио"
+    },
+    {
+      "name": "permissions_send_documents",
+      "value": "Отправка документов"
+    },
+    {
+      "name": "permissions_send_photos",
+      "value": "Отправка фото"
+    },
+    {
+      "name": "permissions_send_videos",
+      "value": "Отправка видео"
+    },
+    {
+      "name": "permissions_send_video_notes",
+      "value": "Отправка видеосообщений"
+    },
+    {
+      "name": "permissions_send_voice_notes",
+      "value": "Отправка голосовых"
+    },
+    {
+      "name": "permissions_send_polls",
+      "value": "Отправка опросов"
+    },
+    {
+      "name": "permissions_send_other",
+      "value": "Отправка стикеров и GIF"
+    },
+    {
+      "name": "permissions_link_previews",
+      "value": "Превью ссылок"
+    },
+    {
+      "name": "permissions_change_info",
+      "value": "Изменение информации"
+    },
+    {
+      "name": "permissions_invite_users",
+      "value": "Приглашение участников"
+    },
+    {
+      "name": "permissions_pin_messages",
+      "value": "Закрепление сообщений"
+    },
+    {
+      "name": "permissions_create_topics",
+      "value": "Создание тем"
+    },
+    {
       "name": "chat_actions_administrators",
       "value": "Администраторы"
     },
