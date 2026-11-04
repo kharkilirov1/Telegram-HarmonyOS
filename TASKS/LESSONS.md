@@ -982,3 +982,10 @@ Last updated: 2026-10-23
   compiler caught it, but the field count is the thing to re-check after such edits.
 - Report steps are typed results: route them to page-owned UI through a host callback instead of
   toasting, otherwise the flow dead-ends with a message the user cannot act on.
+
+## 207. Matrix rows are long prose; a replace on a guessed fragment silently no-ops
+
+- The C10 update targeted a substring that did not exist, so the docs commit shipped unchanged while
+  the code commit already described the new step. Anchor on the row prefix and rewrite the whole row,
+  then assert the written file contains the new marker (as the script did — but the log said false and
+  the commit still went out; treat a false marker as a failed gate).
