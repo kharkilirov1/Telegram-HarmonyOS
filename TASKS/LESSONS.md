@@ -920,3 +920,14 @@ Last updated: 2026-10-23
   applied now and keeps the choice locally instead of pretending the cache stays bounded forever.
 - Matrix rows use Russian titles; doc patch scripts must anchor on the row prefix (`| H4 | Данные и`),
   not an English guess, or the docs update is skipped after the code commit is already made.
+
+## 201. The JSON bridge always adds @type — empty requests are not `{}` in tests
+
+- A command with no arguments still serializes `{"@type":"method"}`, so asserting deepEqual to `{}`
+  fails. Assert the key set (`['@type']`) instead.
+- `TdObjectType` accessors are typed: `getTopLevelObjectStrict` already returns a parsed object, so
+  feeding it to `TdObjectType.fromJSON` is a type error and passing it to the DTO factory directly is
+  the intended path.
+- Page anchors differ from screen to screen (folder page renders Rows inside a Column, not List and
+  ListItem); re-read the region before scripting an insert, and split test/doc patches so one missed
+  anchor does not discard the successful parts.

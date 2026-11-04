@@ -24,12 +24,33 @@ const C = load('core/model/AppCommand.ets');
 const errors = load('core/model/AppError.ets');
 const serializer = load('infra/td/serialization/CommandSerializer.ets', { ...C, TdObject, hilog });
 const D = load('core/model/dto/ChatFolderDto.ets', { TdObjectType: TdObject });
+const RECOMMENDED_TEXT = '{"@type":"recommendedChatFolders","chat_folders":[' +
+  '{"@type":"recommendedChatFolder","description":"News and channels",' +
+  '"folder":{"@type":"chatFolder","name":{"@type":"chatFolderName","text":{"@type":"formattedText",' +
+  '"text":"Channels","entities":[]},"animate_custom_emoji":false},' +
+  '"icon":{"@type":"chatFolderIcon","name":"Channel"},"color_id":3,"is_shareable":true,' +
+  '"pinned_chat_ids":[],"included_chat_ids":[],"excluded_chat_ids":[],' +
+  '"exclude_muted":false,"exclude_read":false,"exclude_archived":false,' +
+  '"include_contacts":false,"include_non_contacts":false,"include_bots":false,' +
+  '"include_groups":false,"include_channels":true}},' +
+  '{"@type":"recommendedChatFolder","description":"","folder":' +
+  '{"@type":"chatFolder","name":{"@type":"chatFolderName","text":{"@type":"formattedText",' +
+  '"text":"Work","entities":[]},"animate_custom_emoji":false},' +
+  '"icon":{"@type":"chatFolderIcon","name":"Work"},"color_id":0,"is_shareable":false,' +
+  '"pinned_chat_ids":[],"included_chat_ids":[9007199254740001],"excluded_chat_ids":[],' +
+  '"exclude_muted":true,"exclude_read":false,"exclude_archived":true,' +
+  '"include_contacts":true,"include_non_contacts":false,"include_bots":false,' +
+  '"include_groups":true,"include_channels":false}}]}';
+
 const LINKS_TEXT = '{"@type":"chatFolderInviteLinks","invite_links":[' +
   '{"@type":"chatFolderInviteLink","invite_link":"https://t.me/addlist/a","name":"First",' +
   '"chat_ids":[5,9007199254740001]},' +
   '{"@type":"chatFolderInviteLink","invite_link":"https://t.me/addlist/b","name":"",' +
   '"chat_ids":[]}]}';
 const L = load('core/model/dto/ChatFolderInviteLinkDto.ets', { TdObjectType: TdObject });
+const REC = load('core/model/dto/RecommendedChatFolderDto.ets',
+  { TdObjectType: TdObject, ChatFolderDto: D.ChatFolderDto,
+    createChatFolderDtoFromTd: D.createChatFolderDtoFromTd });
 
 function draft(overrides = {}) {
   return Object.assign(new C.ChatFolderDraftPayload(), overrides);
@@ -151,6 +172,29 @@ function draft(overrides = {}) {
   assert.equal(L.createChatFolderInviteLinksFromTd(TdObject.fromJSON('{"@type":"ok"}')).links.length, 0);
   assert.equal(L.createChatFolderInviteLinkFromTd(TdObject.fromJSON(
     '{"@type":"chatFolderInviteLink","invite_link":"","name":"x"}')), undefined);
+}
+
+// Recommended folders: request shape and parsing -------------------------------------------------
+{
+  const wire = JSON.parse(serializer.buildTdlibRequestJson('getRecommendedChatFolders',
+    serializer.serializeCommand(C.createGetRecommendedChatFoldersCommand()).params));
+  // The JSON bridge always carries @type; the request has no arguments of its own.
+  assert.deepEqual(Object.keys(wire), ['@type']);
+  assert.equal(wire['@type'], 'getRecommendedChatFolders');
+
+  const recommended = REC.createRecommendedChatFoldersFromTd(TdObject.fromJSON(RECOMMENDED_TEXT));
+  assert.equal(recommended.folders.length, 2);
+  assert.equal(recommended.folders[0].folder.title, 'Channels');
+  assert.equal(recommended.folders[0].description, 'News and channels');
+  assert.equal(recommended.folders[0].folder.includeChannels, true);
+  assert.equal(recommended.folders[0].folder.isShareable, true);
+  assert.deepEqual(recommended.folders[1].folder.includedChatIds, [9007199254740001]);
+  assert.equal(recommended.folders[1].folder.excludeMuted, true);
+  assert.equal(recommended.folders[1].folder.excludeArchived, true);
+  assert.equal(recommended.folders[1].description, '');
+  assert.equal(REC.createRecommendedChatFoldersFromTd(TdObject.fromJSON('{"@type":"ok"}')).folders.length, 0);
+  assert.equal(REC.createRecommendedChatFolderFromTd(TdObject.fromJSON(
+    '{"@type":"recommendedChatFolder","description":"x"}')), undefined);
 }
 
 // getChatFolder read-back: full folder including the flags chatFolderInfo omits -------------------
@@ -292,6 +336,23 @@ async function checkUseCase() {
   await assert.rejects(() => linksUseCase.deleteLink(12, '  '), /Invalid invite link/);
   assert.equal(linkSent.length, 4, 'invalid input never reaches the gateway');
 
+  const recommendedSent = [];
+  const recommendedUseCase = new (load('domain/usecases/loadRecommendedChatFolders.ets',
+    { ...C, ...errors, hilog, TdObject, RecommendedChatFolderDto: REC.RecommendedChatFolderDto,
+      createRecommendedChatFoldersFromTd: REC.createRecommendedChatFoldersFromTd })
+    .LoadRecommendedChatFoldersUseCase)({ send: (command) => {
+      recommendedSent.push(command);
+      return Promise.resolve(TdObject.fromJSON(RECOMMENDED_TEXT));
+    } });
+  const recommendedList = await recommendedUseCase.fetch();
+  assert.equal(recommendedSent.at(-1).type, 'getRecommendedChatFolders');
+  assert.equal(recommendedList.length, 2);
+  await assert.rejects(() => new (load('domain/usecases/loadRecommendedChatFolders.ets',
+    { ...C, ...errors, hilog, TdObject, RecommendedChatFolderDto: REC.RecommendedChatFolderDto,
+      createRecommendedChatFoldersFromTd: REC.createRecommendedChatFoldersFromTd })
+    .LoadRecommendedChatFoldersUseCase)({ send: () => Promise.reject(new Error('native status')) }).fetch(),
+    /Failed to load recommended folders/);
+
   const failingLinks = new (load('domain/usecases/manageChatFolderInviteLinks.ets',
     { ...C, ...errors, hilog, TdObject, ChatFolderInviteLinkDto: L.ChatFolderInviteLinkDto,
       createChatFolderInviteLinksFromTd: L.createChatFolderInviteLinksFromTd })
@@ -362,6 +423,12 @@ async function checkUseCase() {
   assert.match(page, /pasteboard\.getSystemPasteboard\(\)\.setDataSync\(data\)/);
   assert.match(page, /folders_invite_links/);
   assert.match(page, /folders_create_link/);
+  assert.match(page, /private loadRecommendedFolders\(\): void \{/);
+  assert.match(page, /createLoadRecommendedChatFoldersUseCase\(getTdGatewayAdapter\(\)\)/);
+  assert.match(page, /private addRecommendedFolder\(recommended: RecommendedChatFolderDto\): void \{/);
+  assert.match(page, /draft\.includedChatIds = recommended\.folder\.includedChatIds\.slice\(\);/);
+  assert.match(page, /useCase\.createFolder\(draft\)/);
+  assert.match(page, /folders_recommended/);
 
   const selectionPage = read('ui/pages/settings/TgFolderChatsPage.ets');
   assert.match(selectionPage, /export function TgFolderChatsPageBuilder\(\)/);
@@ -402,6 +469,7 @@ async function checkUseCase() {
       'folders_link_default_name', 'folders_link_created_toast', 'folders_link_deleted_toast',
       'folders_link_copied_toast', 'folders_link_copy_failed', 'folders_link_failed_toast',
       'folders_rename_link', 'folders_link_renamed_toast', 'folders_link_chats',
+      'folders_recommended', 'folders_add', 'folders_recommended_added', 'folders_recommended_failed',
       'folders_created_toast', 'folders_saved_toast', 'folders_deleted_toast',
       'folders_failed_toast']) {
       const item = strings.string.find((entry) => entry.name === name);

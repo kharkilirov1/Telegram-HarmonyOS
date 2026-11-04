@@ -8,7 +8,7 @@ import {
   AnyAppCommand,
   ChatFolderDraftPayload,
   CreateChatFolderInviteLinkCommand, DeleteChatFolderInviteLinkCommand, EditChatFolderInviteLinkCommand,
-  GetChatFolderCommand, GetChatFolderInviteLinksCommand,
+  GetChatFolderCommand, GetChatFolderInviteLinksCommand, GetRecommendedChatFoldersCommand,
   CreateChatFolderCommand, DeleteChatFolderCommand, EditChatFolderCommand, LeaveChatCommand,
   ReportChatCommand, ShareContactCommand,
   GetBlockedMessageSendersCommand, SetMessageSenderBlockListCommand,
@@ -126,6 +126,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('leaveChat', serializeLeaveChat);
 COMMAND_SERIALIZATION_HANDLERS.set('sendContactMessage', serializeSendContactMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('joinChat', serializeJoinChat);
 COMMAND_SERIALIZATION_HANDLERS.set('toggleChatIsPinned', serializeToggleChatIsPinned);
+COMMAND_SERIALIZATION_HANDLERS.set('getRecommendedChatFolders', serializeGetRecommendedChatFolders);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatFolderInviteLinks', serializeGetChatFolderInviteLinks);
 COMMAND_SERIALIZATION_HANDLERS.set('createChatFolderInviteLink', serializeCreateChatFolderInviteLink);
 COMMAND_SERIALIZATION_HANDLERS.set('editChatFolderInviteLink', serializeEditChatFolderInviteLink);
@@ -479,6 +480,10 @@ function buildChatFolderJson(draft: ChatFolderDraftPayload): string {
     ',"include_bots":' + (draft.includeBots ? 'true' : 'false') +
     ',"include_groups":' + (draft.includeGroups ? 'true' : 'false') +
     ',"include_channels":' + (draft.includeChannels ? 'true' : 'false') + '}';
+}
+
+function serializeGetRecommendedChatFolders(_command: AnyAppCommand, result: SerializedCommand): void {
+  result.method = 'getRecommendedChatFolders';
 }
 
 function serializeGetChatFolderInviteLinks(command: AnyAppCommand, result: SerializedCommand): void {

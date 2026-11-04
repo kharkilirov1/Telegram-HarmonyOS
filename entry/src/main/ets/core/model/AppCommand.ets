@@ -773,6 +773,10 @@ export class AddChatToListCommand extends AppCommand {
   payload: AddChatToListPayload = new AddChatToListPayload();
 }
 
+export class GetRecommendedChatFoldersCommand extends AppCommand {
+  type: string = 'getRecommendedChatFolders';
+}
+
 export class GetChatFolderInviteLinksCommand extends AppCommand {
   type: string = 'getChatFolderInviteLinks';
   payload: ChatFolderInviteLinkPayload = new ChatFolderInviteLinkPayload();
@@ -1055,6 +1059,7 @@ export type AnyAppCommand =
   | JoinChatCommand
   | ToggleChatPinnedCommand
   | AddChatToListCommand
+  | GetRecommendedChatFoldersCommand
   | GetChatFolderInviteLinksCommand
   | CreateChatFolderInviteLinkCommand
   | EditChatFolderInviteLinkCommand
@@ -1555,6 +1560,10 @@ export function createAddChatToListCommand(
   cmd.payload.chatList = chatList;
   cmd.payload.folderId = folderId;
   return cmd;
+}
+
+export function createGetRecommendedChatFoldersCommand(): GetRecommendedChatFoldersCommand {
+  return new GetRecommendedChatFoldersCommand();
 }
 
 export function createGetChatFolderInviteLinksCommand(folderId: number): GetChatFolderInviteLinksCommand {

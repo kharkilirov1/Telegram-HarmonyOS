@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **S13i (lead).** B7: рекомендованные папки. `getRecommendedChatFolders` (команда + сериализатор),
+  `RecommendedChatFolderDto` (переиспользует `ChatFolderDto`, int53 included-чаты, пустой folder
+  отбрасывается), `LoadRecommendedChatFoldersUseCase`; секция RECOMMENDED в `TgChatFoldersPage`:
+  название + описание + Add, добавление создаёт обычную папку через `createChatFolder` с флагами и
+  included-чатами рекомендованной папки, строка исчезает после успеха. Контракт
+  `test-chat-folder-settings.cjs`: wire (только `@type`), разбор двух папок с int53, use case
+  успех/ошибка, проводка страницы, 4 строки в 3 локалях. Гейты: host **118/118**, оба smoke, hvigor
+  BUILD SUCCESSFUL. Остаток B7: folder link preview/`addChatFolderByInviteLink`, witness.
 - **S11c (lead).** H4: «Maximum Cache Size». `OptimizeStoragePayload` (size/ttl/count/immunityDelay)
   и сериализатор (раньше всегда отправлял нули — лимит стёр бы весь кэш),
   `LoadStorageStatisticsUseCase.enforceCacheLimit` (0 = Unlimited → запрос не отправляется;

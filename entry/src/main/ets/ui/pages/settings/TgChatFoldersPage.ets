@@ -13,6 +13,11 @@ import { ChatFolderDraftPayload } from '../../../core/model/AppCommand';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { ChatFolderDto } from '../../../core/model/dto/ChatFolderDto';
 import { ChatFolderInviteLinkDto } from '../../../core/model/dto/ChatFolderInviteLinkDto';
+import { RecommendedChatFolderDto } from '../../../core/model/dto/RecommendedChatFolderDto';
+import {
+  createLoadRecommendedChatFoldersUseCase,
+  LoadRecommendedChatFoldersUseCase
+} from '../../../domain/usecases/loadRecommendedChatFolders';
 import {
   createManageChatFolderInviteLinksUseCase,
   ManageChatFolderInviteLinksUseCase
@@ -62,6 +67,9 @@ export struct TgChatFoldersPage {
   // Chat ids the link under rename is restricted to; empty means all folder chats.
   @Local private editingLinkChatIds: number[] = [];
   @Local private isPickingLinkChats: boolean = false;
+  @Local private recommendedFolders: RecommendedChatFolderDto[] = [];
+  @Local private isLoadingRecommended: boolean = false;
+  private recommendedUseCase?: LoadRecommendedChatFoldersUseCase;
   @Local private isBusy: boolean = false;
   @Local private isLoadingFolder: boolean = false;
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
@@ -85,6 +93,8 @@ export struct TgChatFoldersPage {
     try {
       this.manageUseCase = createManageChatFoldersUseCase(getTdGatewayAdapter());
       this.inviteLinksUseCase = createManageChatFolderInviteLinksUseCase(getTdGatewayAdapter());
+      this.recommendedUseCase = createLoadRecommendedChatFoldersUseCase(getTdGatewayAdapter());
+      this.loadRecommendedFolders();
       const store = getAppCoreRuntime().getStore();
       this.refreshFolders(store.getState());
       this.storeUnsubscribe = store.subscribe((state: AppState): void => {
@@ -103,6 +113,7 @@ export struct TgChatFoldersPage {
     }
     this.manageUseCase = undefined;
     this.inviteLinksUseCase = undefined;
+    this.recommendedUseCase = undefined;
   }
 
   private refreshFolders(state: AppState): void {
@@ -414,6 +425,70 @@ export struct TgChatFoldersPage {
       this.toast(error.message.length > 0
         ? error.message : localized($r('app.string.folders_failed_toast').id, 'Could not update the folder'));
     });
+  }
+
+  private loadRecommendedFolders(): void {
+    const useCase = this.recommendedUseCase;
+    if (useCase === undefined) {
+      return;
+    }
+    const token: number = this.pageLifecycleToken;
+    this.isLoadingRecommended = true;
+    useCase.fetch()
+      .then((folders: RecommendedChatFolderDto[]) => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        this.isLoadingRecommended = false;
+        this.recommendedFolders = folders;
+      })
+      .catch((error: Error) => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        this.isLoadingRecommended = false;
+        hilog.warn(DOMAIN, TAG, 'Load recommended folders failed: %{public}s', error.message);
+      });
+  }
+
+  private addRecommendedFolder(recommended: RecommendedChatFolderDto): void {
+    const useCase = this.manageUseCase;
+    if (useCase === undefined || this.isBusy) {
+      return;
+    }
+    const token: number = this.pageLifecycleToken;
+    // A recommended folder is a full chatFolder payload; reuse the normal create path with its flags.
+    const draft = new ChatFolderDraftPayload();
+    draft.title = recommended.folder.title;
+    draft.excludeMuted = recommended.folder.excludeMuted;
+    draft.excludeRead = recommended.folder.excludeRead;
+    draft.excludeArchived = recommended.folder.excludeArchived;
+    draft.includeContacts = recommended.folder.includeContacts;
+    draft.includeNonContacts = recommended.folder.includeNonContacts;
+    draft.includeBots = recommended.folder.includeBots;
+    draft.includeGroups = recommended.folder.includeGroups;
+    draft.includeChannels = recommended.folder.includeChannels;
+    draft.includedChatIds = recommended.folder.includedChatIds.slice();
+    this.isBusy = true;
+    useCase.createFolder(draft)
+      .then(() => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        this.isBusy = false;
+        this.toast(localized($r('app.string.folders_recommended_added').id, 'Folder added'));
+        this.recommendedFolders = this.recommendedFolders.filter(
+          (item: RecommendedChatFolderDto) => item !== recommended);
+      })
+      .catch((error: Error) => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        this.isBusy = false;
+        this.toast(error.message.length > 0
+          ? error.message : localized($r('app.string.folders_recommended_failed').id,
+            'Could not add the folder'));
+      });
   }
 
   private confirmDelete(): void {

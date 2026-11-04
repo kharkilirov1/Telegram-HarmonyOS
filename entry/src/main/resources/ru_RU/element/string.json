@@ -293,6 +293,22 @@
       "value": "Ссылка переименована"
     },
     {
+      "name": "folders_recommended",
+      "value": "РЕКОМЕНДОВАННЫЕ"
+    },
+    {
+      "name": "folders_add",
+      "value": "Добавить"
+    },
+    {
+      "name": "folders_recommended_added",
+      "value": "Папка добавлена"
+    },
+    {
+      "name": "folders_recommended_failed",
+      "value": "Не удалось добавить папку"
+    },
+    {
       "name": "folders_invite_links",
       "value": "Пригласительные ссылки"
     },

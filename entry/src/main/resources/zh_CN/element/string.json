@@ -293,6 +293,22 @@
       "value": "链接已重命名"
     },
     {
+      "name": "folders_recommended",
+      "value": "推荐"
+    },
+    {
+      "name": "folders_add",
+      "value": "添加"
+    },
+    {
+      "name": "folders_recommended_added",
+      "value": "文件夹已添加"
+    },
+    {
+      "name": "folders_recommended_failed",
+      "value": "无法添加文件夹"
+    },
+    {
       "name": "folders_invite_links",
       "value": "邀请链接"
     },

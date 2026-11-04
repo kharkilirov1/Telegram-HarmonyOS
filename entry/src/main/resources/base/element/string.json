@@ -293,6 +293,22 @@
       "value": "Link renamed"
     },
     {
+      "name": "folders_recommended",
+      "value": "RECOMMENDED"
+    },
+    {
+      "name": "folders_add",
+      "value": "Add"
+    },
+    {
+      "name": "folders_recommended_added",
+      "value": "Folder added"
+    },
+    {
+      "name": "folders_recommended_failed",
+      "value": "Could not add the folder"
+    },
+    {
       "name": "folders_invite_links",
       "value": "Invite Links"
     },
