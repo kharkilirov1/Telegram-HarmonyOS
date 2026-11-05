@@ -967,7 +967,8 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
     // Keep the TDLib minithumbnail visible while the higher-quality poster is in flight.
     row.linkPreviewPhotoPath = row.linkPreviewPhotoMinithumb;
   }
-  row.isEmojiOnly = content.type === 'text' && isEmojiOnlyText(row.text);
+  // D27: a dice message is one emoji, so it uses the same large-emoji presentation as an emoji-only text.
+  row.isEmojiOnly = (content.type === 'text' || content.type === 'dice') && isEmojiOnlyText(row.text);
   row.forceBreakAll = content.type === 'text' && shouldForceBreakAll(row.text);
   if (content.type === 'text' && content.quoteEntities.length > 0) {
     const quoteRanges = buildQuoteRanges(row.text, content.quoteEntities);

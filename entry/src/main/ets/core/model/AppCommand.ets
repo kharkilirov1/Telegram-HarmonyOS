@@ -48,6 +48,17 @@ export class CustomEmojiTextEntity {
   }
 }
 
+// D27: dice/darts/slots go through sendMessage with inputMessageDice.
+export class SendDicePayload {
+  chatId: ChatId = 0;
+  emoji: string = '🎲';
+}
+
+export class SendDiceCommand extends AppCommand {
+  type: string = 'sendDice';
+  payload: SendDicePayload = new SendDicePayload();
+}
+
 export class SendMessagePayload {
   chatId: ChatId = 0;
   text: string = '';
@@ -1408,6 +1419,7 @@ export type AnyAppCommand =
 | GetCustomEmojiStickersCommand
 | SetProfileNameCommand
 | SetProfileBioCommand
+| SendDiceCommand
 | SetProfileUsernameCommand
 | CheckChatUsernameCommand
 | SetProfilePhotoCommand
@@ -1582,6 +1594,13 @@ export function createOpenChatCommand(chatId: ChatId): OpenChatCommand {
 export function createSetTdlibOnlineCommand(online: boolean): SetTdlibOnlineCommand {
   const cmd = new SetTdlibOnlineCommand();
   cmd.payload.online = online;
+  return cmd;
+}
+
+export function createSendDiceCommand(chatId: ChatId, emoji: string): SendDiceCommand {
+  const cmd = new SendDiceCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.emoji = emoji;
   return cmd;
 }
 

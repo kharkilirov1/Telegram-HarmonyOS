@@ -74,7 +74,7 @@ import {
   GetMessagePropertiesCommand,
   GetChatPinnedMessageCommand,
   GetRepliedMessageCommand, GetMessageThreadCommand, GetMessageThreadHistoryCommand, TranslateTextCommand,
-  SetProfileNameCommand, SetProfileBioCommand, SetProfileUsernameCommand, CheckChatUsernameCommand, GetCustomEmojiStickersCommand,
+  SetProfileNameCommand, SetProfileBioCommand, SetProfileUsernameCommand, CheckChatUsernameCommand, SendDiceCommand, GetCustomEmojiStickersCommand,
   SetProfilePhotoCommand,
   CloseChatCommand,
   SetTdlibOnlineCommand,
@@ -207,6 +207,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('getCustomEmojiStickers', serializeGetCustomE
 COMMAND_SERIALIZATION_HANDLERS.set('setBio', serializeSetProfileBio);
 COMMAND_SERIALIZATION_HANDLERS.set('setUsername', serializeSetProfileUsername);
   COMMAND_SERIALIZATION_HANDLERS.set('checkChatUsername', serializeCheckChatUsername);
+  COMMAND_SERIALIZATION_HANDLERS.set('sendDice', serializeSendDice);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageThreadHistory', serializeGetMessageThreadHistory);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageProperties', serializeGetMessageProperties);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatPinnedMessage', serializeGetChatPinnedMessage);
@@ -1141,6 +1142,15 @@ function serializeSetProfileBio(command: AnyAppCommand, result: SerializedComman
   const cmd = command as SetProfileBioCommand;
   result.method = 'setBio';
   result.params.setString('bio', cmd.payload.bio);
+}
+
+// D27: the dice emoji is the whole message content; TDLib rolls the value server-side.
+function serializeSendDice(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SendDiceCommand;
+  result.method = 'sendMessage';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('_input_message_content_json',
+    `{"@type":"inputMessageDice","emoji":"${escapeForJson(cmd.payload.emoji)}","clear_draft":true}`);
 }
 
 function serializeCheckChatUsername(command: AnyAppCommand, result: SerializedCommand): void {

@@ -12,6 +12,7 @@ export enum MessageContentType {
   AUDIO = 'audio',
   VOICE = 'voice',
   STICKER = 'sticker',
+  DICE = 'dice',
   LOCATION = 'location',
   CONTACT = 'contact',
   POLL = 'poll',
@@ -125,6 +126,8 @@ export class MessageContentDto {
   stickerThumbnailPath: string = '';
   stickerFileId: number = 0;
   stickerEmoji: string = '';
+  diceEmoji: string = '';
+  diceValue: number = 0;
   stickerSetId: string = '0';
   stickerWidth: number = 0;
   stickerHeight: number = 0;
@@ -703,6 +706,15 @@ export function parseMessageContent(contentObj: TdObject): MessageContentDto {
       contentDto.voiceDuration = tdGetNumber(voiceObj, 'duration');
       contentDto.voiceWaveform = tdGetString(voiceObj, 'waveform');
       contentDto.isVoiceListened = tdGetBoolean(contentObj, 'is_listened');
+      break;
+    }
+    case 'messageDice': {
+      // D27: the dice content carries the emoji and the rolled value; the sticker frames are not needed
+      // because the value is what the user reads.
+      contentDto.type = MessageContentType.DICE;
+      contentDto.diceEmoji = tdGetString(contentObj, 'emoji');
+      contentDto.diceValue = tdGetNumber(contentObj, 'value');
+      contentDto.text = contentDto.diceEmoji.length > 0 ? contentDto.diceEmoji : '🎲';
       break;
     }
     case 'messageSticker': {

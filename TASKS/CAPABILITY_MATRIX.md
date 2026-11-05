@@ -103,7 +103,7 @@
 | D24 | Inline-перевод | `partial` | Store-путь, плашка, кэш (50). Язык: 14 кодов, нормализация, порядок chat→global→system→en, per-chat + глобальный default. UI: Settings → `TgTranslationLanguagePage` (route, 3 локали) и `TgChatMessageActionsPopup` — строка «Translate to <CODE>» с раскрываемым списком кодов, выбор сохраняет язык чата и переотправляет перевод (`translateIntoLanguage`, `force`), порт/биндинги/делегаты согласованы, событие добавлено в contract-source. Нет: witness | `ChatController` translation | — |
 | D25 | Геолокация | `partial` | `ChatMessageActionsController.ets` (23/9) | `Chat/Location*` | D26 |
 | D26 | Контакты (отправка) | `partial` | 44/16 | `Chat/Contact*` | D25 |
-| D27 | Dice/игры | `partial` | `TgBubbleLayout.ets` (9/2) | `ChatControllerDisplayDiceTooltip` | D12 |
+| D27 | Dice/игры | `partial` | `MessageDto` (`messageDice` → `diceEmoji`/`diceValue`, text = emoji), `ChatTimelineVO` (dice = large emoji), `TgMessageRouter` (dice через текстовый бабл), `SendDiceCommand` + сериализация `inputMessageDice`, `SendDiceUseCase` (набор 6 эмодзи, локальный отказ) | `ChatControllerDisplayDiceTooltip` | D12 |
 | D28 | Голосовые сообщения (отправка) | `partial` | `CHAT` 26/17 | `Chat/Recording*` | F4 |
 | D29 | Кружки (video messages) | `partial` | приём/рендер/скачивание есть: `TgInstantVideoBubble.ets:1-249` + роутинг `TgMessageRouter.ets:724-743` + парсинг `MessageDto.ets:784-797` + `downloadMessageMedia.ets:185`; записи и отправки нет — `CommandSerializer.ets:937-951` не знает `inputMessageVideoNote`, камеры для кружка в композере нет | `Chat/Recording*` | D28, F3; шов — recorder + `sendMedia` |
 | D30 | Альбомы/медиагруппы | `available` | `ChatComposerController.ets` (37/29) | `Chat/Album*` | E6 |

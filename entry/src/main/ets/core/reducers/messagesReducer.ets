@@ -35,7 +35,7 @@ function contentFromDto(dto: MessageContentDto): MessageContent {
   const content = new MessageContent();
   // Map enum to string type
   content.type = dto.type as 'text' | 'photo' | 'video' | 'document' | 'audio' |
-    'voice' | 'sticker' | 'location' | 'contact' | 'poll' | 'animation' | 'videoNote' | 'unknown';
+    'voice' | 'sticker' | 'dice' | 'location' | 'contact' | 'poll' | 'animation' | 'videoNote' | 'unknown';
   content.text = dto.text;
   content.caption = dto.caption;
   content.quoteEntities = dto.quoteEntities.map((entity) => {
@@ -143,6 +143,8 @@ function contentFromDto(dto: MessageContentDto): MessageContent {
   content.stickerPath = dto.stickerPath;
   content.stickerFileId = dto.stickerFileId;
   content.stickerEmoji = dto.stickerEmoji;
+content.diceEmoji = dto.diceEmoji;
+content.diceValue = dto.diceValue;
   content.stickerSetId = dto.stickerSetId;
   content.stickerWidth = dto.stickerWidth;
   content.stickerHeight = dto.stickerHeight;
@@ -317,6 +319,8 @@ function cloneMessage(msg: Message): Message {
   clonedContent.stickerPath = msg.content.stickerPath;
   clonedContent.stickerFileId = msg.content.stickerFileId;
   clonedContent.stickerEmoji = msg.content.stickerEmoji;
+clonedContent.diceEmoji = msg.content.diceEmoji;
+clonedContent.diceValue = msg.content.diceValue;
   clonedContent.stickerSetId = msg.content.stickerSetId;
   clonedContent.stickerWidth = msg.content.stickerWidth;
   clonedContent.stickerHeight = msg.content.stickerHeight;

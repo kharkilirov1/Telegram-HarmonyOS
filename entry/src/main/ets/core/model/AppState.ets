@@ -12,7 +12,7 @@ export type AuthStatus = 'notInitialized' | 'waitTdlibParameters' | 'waitPhoneNu
 export type ConnectionStatus = 'updating' | 'ready' | 'connecting' | 'waitingForNetwork';
 export type ChatType = 'private' | 'secret' | 'group' | 'supergroup' | 'channel';
 export type ChatsLoadPhase = 'idle' | 'bootstrap' | 'pagination';
-export type MessageContentType = 'text' | 'photo' | 'video' | 'document' | 'audio' | 'voice' | 'sticker' | 'location' | 'contact' | 'poll' | 'animation' | 'videoNote' | 'service' | 'unknown';
+export type MessageContentType = 'text' | 'photo' | 'video' | 'document' | 'audio' | 'voice' | 'sticker' | 'dice' | 'location' | 'contact' | 'poll' | 'animation' | 'videoNote' | 'service' | 'unknown';
 export type MessageSendStatus = 'none' | 'pending' | 'sent' | 'failed';
 export type UserStatusType = 'online' | 'offline' | 'recently' | 'lastWeek' | 'lastMonth' | 'longTimeAgo';
 
@@ -264,6 +264,10 @@ export class MessageContent {
   stickerThumbnailPath: string = '';
   stickerFileId: number = 0;
   stickerEmoji: string = '';
+
+  // D27: dice / darts / slots. TDLib reports the rolled value; iOS animates from the initial state to it.
+  diceEmoji: string = '';
+  diceValue: number = 0;
   // TDLib sticker.set_id as a decimal string; '0' when the pack is unknown.
   stickerSetId: string = '0';
   stickerWidth: number = 0;

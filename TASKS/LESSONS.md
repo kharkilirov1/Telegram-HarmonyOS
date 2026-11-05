@@ -1584,3 +1584,10 @@ Last updated: 2026-10-23
   cross-check the layout dump and `screenCap` first.
 - A fresh-process check is `ps -ef` STIME against `date` on the device, not the `aa start` success line.
 - Witness runs are repeatable: `scripts/witness-emulator.ps1` boots, launches, captures and counts faults.
+
+## 274. An unparsed content type is a blank bubble, not a fallback
+
+- `messageDice` had no parser branch, so it became `unknown` with empty text and rendered as an empty
+  bubble. Routing the dice through the existing emoji-only text path fixed the visible defect without a
+  new bubble atom; a dedicated badge/animation remains a separate, larger slice.
+- The value is server-rolled: the client sends only the emoji, so validation is a whitelist, not a range.

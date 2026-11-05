@@ -271,6 +271,7 @@ export struct TgMessageRouter {
   private isTextLike(): boolean {
     const ct = this.contentType;
     return ct === 'text'
+      || ct === 'dice'
       || ct === 'unknown'
       || ct === 'unsupported'
       || ct.length === 0;

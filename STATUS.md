@@ -56,6 +56,13 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D27-dice (lead).** Кости/дартс/слоты: `messageDice` больше не проваливается в «unknown» — парсер
+  отдаёт `diceEmoji`/`diceValue`, текст = эмодзи, `ChatTimelineVO` помечает dice как emoji-only (крупный
+  эмодзи в текстовом бабле), роутер проводит dice через текстовый путь. Добавлены `SendDiceCommand`
+  (`sendMessage` + `inputMessageDice`) и `SendDiceUseCase` (набор из 6 анимируемых эмодзи, локальный
+  отказ вне набора, ошибка → false). Новая суита `test-dice.cjs` (155-я): парсер, плюмбинг состояния,
+  презентация, команда/сериализация, use case. Остаток D27: бейдж значения, анимация прокрутки и вход
+  отправки из UI. Гейты: host **155/155**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **Witness-прогон на API 26 (lead).** Впервые за сессию снят живой witness: эмулятор "Mate 90 Pro"
   (HarmonyOS 7.0.0, API 26), свежий процесс после `aa force-stop`/`aa start`, 0 fault-логов, экран
   входа отрисован полностью, ввод номера открывает клавиатуру, шит выбора страны с поиском/секциями/
