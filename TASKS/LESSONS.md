@@ -1640,3 +1640,13 @@ Last updated: 2026-10-23
 - God-file splits therefore need a shared module loader (resolve local imports, cache modules) before they can
   land. Until then the size gate still prevents growth, and every split must be verified with the full suite
   runner, not the build.
+
+## 281. A shared loader needs the ambient runtime stubbed first
+
+- The prototype resolved imports correctly but evaluation died on ArkUI ambient symbols: `FontWeight`,
+  `$r`, `TextAlign` and friends exist in the app runtime, not in Node. Stubbing ~28 enum proxies and the
+  resource helpers took the migration from 12 to 30 failing suites because every newly resolved module pulled
+  in more ambient usage — the failure count is a function of how much of the UI graph the suites now execute.
+- Swallowing resolution errors (`catch → {}`) is worse than failing: the suite then crashes later with
+  `undefined.COLOR_TEXT_TITLE` far from the cause. Propagate with the importer name.
+- Migrate in units and re-run the full runner each unit; the migration was reverted rather than left half-done.

@@ -56,6 +56,11 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **Разведка общего загрузчика (lead).** Прототип `scripts/lib/ets-load.cjs` (резолв локальных импортов,
+  кэш, обе сигнатуры `load`) прошёл одну суиту, но миграция 29 суит упёрлась в амбиентные символы ArkUI
+  (`FontWeight`, `$r`): 12 → 30 падений по мере роста исполняемого графа. Миграция откачена, host
+  **159/159**. Точный план добивки (стубы + пропагация ошибок + сплит команд) записан в `TASKS/TODO.md`,
+  урок — №281.
 - **God-файлы: разведка сплита (lead).** Попытка вынести story-команды из `AppCommand.ets` в
   `core/model/commands/StoryCommands.ets` показала ограничение тестового харнесса: каждая из 99 суит
   загружает `.ets` своим `load()`, который вырезает `import`/`export`, поэтому вынесенные классы становятся

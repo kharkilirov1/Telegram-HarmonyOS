@@ -14,11 +14,13 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
 
 ## Debt
 
-- [ ] **Сплит god-файлов блокирован отсутствием общего загрузчика.** Каждая суита несёт свой `load()`,
-  вырезающий `import`/`export`; поэтому вынос классов из `AppCommand.ets` (и любого файла, который суиты
-  исполняют) даёт `ReferenceError` в 53 суитах при зелёной сборке. Порядок: (1) `scripts/lib/ets-load.cjs`
-  с разрешением локальных импортов и одним кэшем модулей; (2) перевести 99 суит на него; (3) сплит
-  `AppCommand.ets` → `commands/*`, затем `ChatTimelineVO.ets`. Владелец: lead. Триггер: срез инфраструктуры.
+- [ ] **Сплит god-файлов блокирован отсутствием общего загрузчика.** Прототип `scripts/lib/ets-load.cjs`
+  (разрешение локальных импортов, кэш модулей, обе сигнатуры `load`) написан и проверен на одной суите:
+  после него нужны амбиентные стубы ArkUI (`$r`, `$rawfile`, ~28 enum-прокси вроде `FontWeight`/`Color`),
+  иначе импорт `TgUiTokens`/`ChatAvatarPresentation` падает (`FontWeight is not defined`). Ошибки резолва
+  нельзя глотать (`catch → {}`): они превращаются в `undefined.COLOR_TEXT_TITLE` в случайном месте.
+  Порядок: (1) стубы + прогон 159 суит на общем загрузчике, (2) сплит `AppCommand.ets` → `commands/*`,
+  затем `ChatTimelineVO.ets`. Владелец: lead. Триггер: срез инфраструктуры.
 - [ ] **God-файлы: 12 файлов выше жёсткого лимита 900 строк.** Самые крупные: `AppCommand.ets` (2599),
   `ChatListPage.ets` (1780), `CommandSerializer.ets` (1665), `TgUiTokens.ets` (1632), `TgMessageRouter.ets`
   (1582), `ChatTimelineVO.ets` (1524), `TgComposerInput.ets` (1517). Гейт держит их от роста; следующий шаг —
