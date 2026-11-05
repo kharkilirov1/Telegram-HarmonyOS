@@ -1713,3 +1713,11 @@ Last updated: 2026-10-23
   needed. Resolve the target from the entity at span-build time, not from the tapped character.
 - `textUrl` hides the real URL behind the visible text, so the entity is the only correct source; its absence
   falls back to the typed text.
+
+## 289. One owner parses the tap target, the atom only describes it
+
+- The atom now emits a typed target (`mention:<id>`, `https://t.me/...`, `mailto:`, `tel:`) and knows nothing about
+  navigation. `openMessageTarget` owns the decision: profile push in-app for a resolved user id, external open
+  otherwise. Adding the mention case touched no router code and cost one session line.
+- `hashtag`/`cashtag` return an empty target on purpose: sending `#tag` to `openLink` would hand it to the browser.
+  Inert until a hashtag search route exists is the honest state, not a silent wrong action.

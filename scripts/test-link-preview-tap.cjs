@@ -23,7 +23,7 @@ function checkChain() {
   assert.match(router, /onLinkPreviewPress: \(url: string\): void => \{\n            this\.onMessageLinkPress\(url\);\n          \},/);
 
   const row = read('ui/pages/chat/TgChatTimelineRow.ets');
-  assert.match(row, /onMessageLinkPress: \(url: string\): void => \{\n          this\.bindings\.openSharedMediaLink\(url\);\n        \},/);
+  assert.match(row, /onMessageLinkPress: \(url: string\): void => \{\n          this\.bindings\.openMessageTarget\(url\);\n        \},/);
 
   const ports = read('ui/pages/chat/ChatScreenViewPorts.ets');
   assert.match(ports, /openSharedMediaLink\(value: string\): boolean;/);

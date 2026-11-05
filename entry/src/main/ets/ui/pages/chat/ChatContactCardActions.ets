@@ -10,15 +10,43 @@ import { createPrivateChatUseCase } from '../../../domain/usecases/createPrivate
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { CONTACT_WRITE_PERMISSIONS, saveContactToDevice } from '../../../infra/contacts/DeviceContacts';
 import { ChatScreenRouteParams } from './ChatScreenRouteParams';
+import { ProfileRouteParams } from '../profile/TgProfilePage';
 import { pushChatScreenRoute } from './ChatOpenTransaction';
 
 const DOMAIN = 0x00D26;
 const TAG = 'ContactCard';
 
+export interface ChatMessageTargetPort {
+  pageStack: NavPathStack;
+  openSharedMediaLink(value: string): boolean;
+}
+
 export interface ChatContactCardPort {
   pageStack: NavPathStack;
   getChatUIContext(): UIContext;
   createChatRouteParams(chatId: number, chatTitle: string): ChatScreenRouteParams | undefined;
+}
+
+const PROFILE_ROUTE = 'TgProfilePage';
+
+// D18: a tapped target inside a message. "mention:<id>" opens the profile in-app; everything else is a link,
+// so it goes through the shared link opener (normalization + openLink live there).
+export function openMessageTarget(host: ChatMessageTargetPort, value: string): boolean {
+  const target = value.trim();
+  if (target.startsWith('mention:')) {
+    const userId = Number.parseInt(target.slice('mention:'.length), 10);
+    if (Number.isSafeInteger(userId) && userId > 0) {
+      try {
+        host.pageStack.pushPathByName(PROFILE_ROUTE, new ProfileRouteParams(0, userId));
+        return true;
+      } catch (error) {
+        hilog.error(DOMAIN, TAG, 'Opening the mention profile failed: %{public}s', String(error));
+        return false;
+      }
+    }
+    return false;
+  }
+  return host.openSharedMediaLink(target);
 }
 
 export function openContactChat(host: ChatContactCardPort, userId: number): void {

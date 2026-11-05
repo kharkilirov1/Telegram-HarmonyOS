@@ -78,7 +78,7 @@ export struct TgChatTimelineRow {
           this.toggleTranslation();
         },
         onMessageLinkPress: (url: string): void => {
-          this.bindings.openSharedMediaLink(url);
+          this.bindings.openMessageTarget(url);
         },
         isEmojiOnly: this.entry.message.isEmojiOnly,
     diceEmoji: this.entry.message.diceEmoji,

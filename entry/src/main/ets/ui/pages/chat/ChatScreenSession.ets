@@ -29,7 +29,7 @@ import { CustomEmojiTextEntity } from '../../../core/model/AppCommand';
 import { MediaGalleryItem } from '../../../models/MediaGalleryItem';
 import { uiObserver } from '@kit.ArkUI';
 import { ChatScreenContext } from './ChatScreenContext';
-import { openContactChat as delegateOpenContactChat, addContactCard as delegateAddContactCard } from './ChatContactCardActions';
+import { openContactChat as delegateOpenContactChat, openMessageTarget as delegateOpenMessageTarget, addContactCard as delegateAddContactCard } from './ChatContactCardActions';
 import { ChatScreenViewState } from './ChatScreenViewState';
 import { ChatScreenSessionPorts } from './ChatScreenSessionPorts';
 import { toggleMessageReaction as delegateToggleMessageReaction } from './ChatReactionController';
@@ -477,6 +477,7 @@ export class ChatScreenSession extends ChatScreenContext implements ChatScreenSe
   scheduleDraftDebounce(): void { delegateScheduleDraftDebounce(this); }
   openProfile(): void { delegateOpenProfile(this); }
   openContactChat(userId: number): void { delegateOpenContactChat(this, userId); }
+  openMessageTarget(value: string): boolean { return delegateOpenMessageTarget(this, value); }
   addContactCard(firstName: string, lastName: string, phoneNumber: string): void { delegateAddContactCard(this, firstName, lastName, phoneNumber); }
   handleBackPress(): void { delegateHandleBackPress(this); }
   bindNavigationStack(): NavPathStack | undefined { return delegateBindNavigationStack(this); }

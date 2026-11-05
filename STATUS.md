@@ -56,6 +56,12 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D18: упоминания резолвятся в профиль (lead).** `linkTargetForSpan` теперь отдаёт `mention:<user_id>` для
+  `mentionName` и `https://t.me/<username>` для `@username`; хэштеги намеренно инертны, пока нет поиска по ним.
+  Новый владелец `openMessageTarget` (`ChatContactCardActions`) разбирает `mention:<id>` и пушит `TgProfilePage`,
+  всё остальное уходит в `openSharedMediaLink`. Цепочка: atom → пузырь → роутер → строка → `openMessageTarget` →
+  делегат сессии. Сессия удержана в 499 строк, роутер не тронут (pinned). Гейты: host **161/161**, оба smoke,
+  hvigor OK. Урок — №289.
 - **D18: кликабельные ссылки в тексте (lead).** `Span` в ArkUI наследует `CommonMethod`, поэтому клик вешается на
   сам span. Значение резолвится из энтити: `url`/`textUrl` → URL (для `textUrl` берётся настоящий `entity.url`),
   `emailAddress` → `mailto:`, `phoneNumber` → `tel:<digits>`, прочее → видимый текст. Цепочка идёт через уже

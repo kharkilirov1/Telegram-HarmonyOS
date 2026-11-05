@@ -34,6 +34,7 @@ export interface ChatTimelineRowPort extends ChatMessageActionsPopupPort {
   // D26: contact card actions.
   openContactChat(userId: number): void;
   openSharedMediaLink(value: string): boolean;
+  openMessageTarget(value: string): boolean;
   createChatRouteParams(chatId: number, chatTitle: string): ChatScreenRouteParams | undefined;
   addContactCard(firstName: string, lastName: string, phoneNumber: string): void;
   toggleMessageReaction(messageId: string, key: string): void;

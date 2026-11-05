@@ -26,6 +26,18 @@ function linkTargetForSpan(typed: string, entity: TextEntity): string {
     const explicit = entity.url !== undefined ? String(entity.url).trim() : '';
     return explicit.length > 0 ? explicit : value;
   }
+  if (entity.type === 'mentionName') {
+    // TDLib already resolved the username to a user id; the owner opens the profile.
+    return entity.userId > 0 ? 'mention:' + entity.userId : '';
+  }
+  if (entity.type === 'mention') {
+    // @username: the public profile is reachable as a t.me link.
+    return value.startsWith('@') ? 'https://t.me/' + value.slice(1) : '';
+  }
+  if (entity.type === 'hashtag' || entity.type === 'cashtag') {
+    // No hashtag search route yet: keep the text inert instead of sending it to the browser.
+    return '';
+  }
   if (entity.type === 'emailAddress') {
     return value.length > 0 ? 'mailto:' + value : '';
   }

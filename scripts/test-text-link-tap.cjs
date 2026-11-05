@@ -31,7 +31,7 @@ function checkChain() {
 
   // Same single opening path as preview taps: bindings -> session delegate -> ability context.
   const row = read('ui/pages/chat/TgChatTimelineRow.ets');
-  assert.match(row, /onMessageLinkPress: \(url: string\): void => \{\n          this\.bindings\.openSharedMediaLink\(url\);\n        \},/);
+  assert.match(row, /onMessageLinkPress: \(url: string\): void => \{\n          this\.bindings\.openMessageTarget\(url\);\n        \},/);
   const bindings = read('ui/pages/chat/ChatScreenViewBindings.ets');
   assert.match(bindings, /openSharedMediaLink\(value: string\): boolean \{ return this\.session\.openSharedMediaLink\(value\); \}/);
 

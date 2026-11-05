@@ -11,6 +11,7 @@ const manifest = require('./chat-screen-probe-signatures.cjs');
 const eventArguments = {
   // D26: contact card actions.
   openContactChat: ['userId'],
+  openMessageTarget: ['value'],
   addContactCard: ['firstName', 'lastName', 'phoneNumber'],
   getComposerInputRevision: [],
   removePendingPhoto: ['uri'],
