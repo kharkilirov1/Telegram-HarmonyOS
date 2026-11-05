@@ -56,6 +56,12 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D18: `@username` открывается внутри приложения (lead).** `openMessageTarget` распознаёт `t.me`-ссылку и
+  резолвит её через уже существующий `createResolveUsernameUseCase(chatGateway).resolve()` (`searchPublicChat`),
+  затем `createChatRouteParams` + `pushChatScreenRoute` — тот же транзакционный переход, что из списка чатов.
+  Если резолв не удался (нет gateway, ошибка, неизвестный username) — откат на внешний `openSharedMediaLink`,
+  а не молчание. Порт получил `chatGateway?: TdGatewayPort` и `createChatRouteParams`. Хэштеги по-прежнему
+  инертны. Гейты: host **161/161**, оба smoke, hvigor OK, размер — PASS. Урок — №290.
 - **D18: упоминания резолвятся в профиль (lead).** `linkTargetForSpan` теперь отдаёт `mention:<user_id>` для
   `mentionName` и `https://t.me/<username>` для `@username`; хэштеги намеренно инертны, пока нет поиска по ним.
   Новый владелец `openMessageTarget` (`ChatContactCardActions`) разбирает `mention:<id>` и пушит `TgProfilePage`,

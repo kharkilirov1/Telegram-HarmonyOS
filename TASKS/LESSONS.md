@@ -1721,3 +1721,11 @@ Last updated: 2026-10-23
   otherwise. Adding the mention case touched no router code and cost one session line.
 - `hashtag`/`cashtag` return an empty target on purpose: sending `#tag` to `openLink` would hand it to the browser.
   Inert until a hashtag search route exists is the honest state, not a silent wrong action.
+
+## 290. Reuse the resolver and keep the external fallback
+
+- Tapping `t.me/<name>` from a chat looked like a new feature, but `resolveUsername` (`searchPublicChat`) and
+  `pushChatScreenRoute` already existed for deeplinks. The slice was wiring: parse the username, reuse the use
+  case, open the chat with the same navigation transaction.
+- A resolution failure must fall back to the browser rather than swallow the tap: no gateway (cold start), an
+  unknown username or a network error all land in the same `.catch`, which calls the external opener.

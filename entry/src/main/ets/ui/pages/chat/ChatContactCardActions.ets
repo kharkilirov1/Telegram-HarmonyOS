@@ -8,8 +8,10 @@ import { localized } from '../../../core/utils/AppResource';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { createPrivateChatUseCase } from '../../../domain/usecases/createPrivateChat';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
+import { createResolveUsernameUseCase } from '../../../domain/usecases/resolveUsername';
 import { CONTACT_WRITE_PERMISSIONS, saveContactToDevice } from '../../../infra/contacts/DeviceContacts';
 import { ChatScreenRouteParams } from './ChatScreenRouteParams';
+import { TdGatewayPort } from '../../../domain/ports/TdGatewayPort';
 import { ProfileRouteParams } from '../profile/TgProfilePage';
 import { pushChatScreenRoute } from './ChatOpenTransaction';
 
@@ -19,6 +21,8 @@ const TAG = 'ContactCard';
 export interface ChatMessageTargetPort {
   pageStack: NavPathStack;
   openSharedMediaLink(value: string): boolean;
+  createChatRouteParams(chatId: number, chatTitle: string): ChatScreenRouteParams | undefined;
+  chatGateway?: TdGatewayPort;
 }
 
 export interface ChatContactCardPort {
@@ -46,7 +50,37 @@ export function openMessageTarget(host: ChatMessageTargetPort, value: string): b
     }
     return false;
   }
+  if (isTelegramUsernameLink(target)) {
+    return openResolvedUsername(host, target);
+  }
   return host.openSharedMediaLink(target);
+}
+
+// t.me/<name> written as a mention is a Telegram profile, not a web page: resolve it in-app first.
+function isTelegramUsernameLink(target: string): boolean {
+  const lowered = target.toLowerCase();
+  return lowered.startsWith('https://t.me/') || lowered.startsWith('https://telegram.me/');
+}
+
+function openResolvedUsername(host: ChatMessageTargetPort, target: string): boolean {
+  const name = target.slice(target.indexOf('/') + 2).replace(/^\/+|\/+$/g, '');
+  const username = name.split('?')[0].split('/')[0];
+  const gateway = host.chatGateway;
+  if (username.length === 0 || gateway === undefined) {
+    return host.openSharedMediaLink(target);
+  }
+  createResolveUsernameUseCase(gateway).resolve(username)
+    .then((chat) => {
+      const params = host.createChatRouteParams(chat.id, chat.title);
+      if (params !== undefined) {
+        pushChatScreenRoute(params, host.pageStack, getAppCoreRuntime().getStore());
+      }
+    })
+    .catch((error: Error) => {
+      hilog.info(DOMAIN, TAG, 'Username resolution failed, opening externally: %{public}s', String(error));
+      host.openSharedMediaLink(target);
+    });
+  return true;
 }
 
 export function openContactChat(host: ChatContactCardPort, userId: number): void {

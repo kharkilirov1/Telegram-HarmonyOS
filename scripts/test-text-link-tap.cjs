@@ -39,6 +39,15 @@ function checkChain() {
   assert.ok(!body.includes('linkTargetForSpan(span.text, e);\n            break;\n          default'),
     'only link entities resolve a target');
 
+
+  // @username mentions resolve inside the app and only fall back to the browser.
+  const actions = read('ui/pages/chat/ChatContactCardActions.ets');
+  assert.match(actions, /export function openMessageTarget\(host: ChatMessageTargetPort, value: string\): boolean \{/);
+  assert.match(actions, /function isTelegramUsernameLink\(target: string\): boolean \{/);
+  assert.match(actions, /createResolveUsernameUseCase\(gateway\)\.resolve\(username\)/);
+  assert.match(actions, /pushChatScreenRoute\(params, host\.pageStack, getAppCoreRuntime\(\)\.getStore\(\)\)/);
+  assert.match(actions, /chatGateway\?: TdGatewayPort;/);
+  assert.match(actions, /host\.openSharedMediaLink\(target\);\n    \}\);/, 'fallback opens externally');
   console.log('PASS text link tap contract');
 }
 
