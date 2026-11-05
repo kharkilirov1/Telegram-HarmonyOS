@@ -680,6 +680,16 @@ export class TranslateTextPayload {
 }
 
 // A5: current-user profile editing. TDLib: setName(first_name,last_name) / setBio(bio) / setUsername(username).
+// D16: resolve custom emoji ids to sticker documents (td_api.tl: getCustomEmojiStickers custom_emoji_ids).
+export class GetCustomEmojiStickersPayload {
+  customEmojiIds: string[] = [];
+}
+
+export class GetCustomEmojiStickersCommand extends AppCommand {
+  type: string = 'getCustomEmojiStickers';
+  payload: GetCustomEmojiStickersPayload = new GetCustomEmojiStickersPayload();
+}
+
 export class SetProfileNamePayload {
   firstName: string = '';
   lastName: string = '';
@@ -1290,6 +1300,7 @@ export type AnyAppCommand =
   | GetChatPinnedMessageCommand
   | GetRepliedMessageCommand
 | TranslateTextCommand
+| GetCustomEmojiStickersCommand
 | SetProfileNameCommand
 | SetProfileBioCommand
 | SetProfileUsernameCommand
@@ -1637,6 +1648,12 @@ export function createGetMessageThreadHistoryCommand(chatId: ChatId, messageId: 
   cmd.payload.fromMessageId = fromMessageId;
   cmd.payload.offset = offset;
   cmd.payload.limit = limit;
+  return cmd;
+}
+
+export function createGetCustomEmojiStickersCommand(customEmojiIds: string[]): GetCustomEmojiStickersCommand {
+  const cmd = new GetCustomEmojiStickersCommand();
+  cmd.payload.customEmojiIds = customEmojiIds.slice();
   return cmd;
 }
 

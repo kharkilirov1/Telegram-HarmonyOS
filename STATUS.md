@@ -146,6 +146,13 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **D16-custom-emoji-resolver (lead).** Резолвер кастомных эмодзи: `getCustomEmojiStickers` (команда,
+  сериализатор int64-массива), `CustomEmojiResolverUseCase` — валидация int64-строк, дедуп, батч ≤50, кэш
+  ≤200 с вытеснением, парсер файла/thumbnail/format (TGS/WebM), запрос `downloadFile` при отсутствии файла,
+  `invalidate` для повторного чтения после file-update, ошибки не кэшируются. Суита
+  `test-custom-emoji-resolver.cjs` (137-я): wire, границы id, парсинг, кэш/батч/скачивание, отказы,
+  вытеснение. Гейты: host **137/137**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток D16: рендер картинки,
+  выбор кастомной реакции, witness.
 - **D16-custom-emoji-entity (lead).** Идентичность кастомного эмодзи в тексте больше не теряется:
   `TextEntityDto.customEmojiId` парсится из `custom_emoji_id`, `TextEntity.customEmojiId` живёт в AppState,
   копируется в двух builder-ах reducer-а (including `cloneMessage`) и в `stateClone` → `CustomEmojiTextEntity`.

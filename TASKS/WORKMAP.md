@@ -94,6 +94,7 @@
 | A5a | Слой данных профиля (A5) | A5 | setName/setBio/setUsername + use case; далее страница редактирования |
 | A5b | Экран редактирования профиля (A5) | A5 | route + форма + вход из настроек; остаток — аватар и witness |
 | D16a | Идентичность кастомного эмодзи в тексте (D16) | D16 | DTO→AppState→clone; далее резолв стикера и рендер |
+| D16b | Резолвер кастомных эмодзи (D16) | D16 | getCustomEmojiStickers + кэш + download; далее рендер |
 | S12b | Меню действий в шапке чата (C10) | C10 | `showMoreAction`/`onMorePress` в `TgChatTopBar`, меню Chat Info / Mute / Clear History / Delete в `TgChatScreenPage`, live-store состояние, контракт `test-chat-header-actions.cjs`, smoke-пин на 4 действия; C10 → `available` |
 | S12c | Leave Chat и Share My Contact (C10) | C10 | `leaveChat` + `inputMessageContact` (команды/сериализаторы), `LeaveChatUseCase`/`ShareMyContactUseCase`, пятый контекстный пункт меню в шапке, 6 строк в 3 локалях, контракт расширен |
 | S12d | Report с причинами + `ChatActionsCoordinator` (C10) | C10 | `reportChat`/`ReportChatDto`/`ReportChatUseCase`, `canBeReported` в модели/DTO/reducer, шестой пункт меню, меню вынесено в координатор (страница ≤500 строк), контракт расширен |

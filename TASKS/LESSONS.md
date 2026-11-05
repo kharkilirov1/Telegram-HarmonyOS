@@ -1357,3 +1357,11 @@ Last updated: 2026-10-23
   places (DTO parse, AppState field, two reducer builders, stateClone).
 - `tdGetInt64` returns a string; keep it a string end to end so ids above 2^53 survive.
 - Fixtures for nested TdObject arrays are simpler as plain objects inside one `td({...})` call; wrapping  each nested object separately yields empty arrays.
+
+## 245. Sticker metadata is nested objects, not flat strings
+
+- `sticker.format` is an object (`{"@type":"stickerFormatTgs"}`), so `getString("format")` silently yields
+  empty; use `getObject("format").getType()`. The same trap applies to `full_type`.
+- `is_downloading_completed` is a JSON boolean: `getNumber(...) === 1` is always false, `getBool` is right.
+- Emitting int64 arrays: reuse the `_*_json` convention (`_custom_emoji_ids_json`) so the request builder
+  rewrites it into the real field; keep ids unquoted so TDLib parses them as integers.

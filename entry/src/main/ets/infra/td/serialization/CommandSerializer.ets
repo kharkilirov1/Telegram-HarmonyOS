@@ -67,7 +67,7 @@ import {
   GetMessagePropertiesCommand,
   GetChatPinnedMessageCommand,
   GetRepliedMessageCommand, GetMessageThreadCommand, GetMessageThreadHistoryCommand, TranslateTextCommand,
-  SetProfileNameCommand, SetProfileBioCommand, SetProfileUsernameCommand,
+  SetProfileNameCommand, SetProfileBioCommand, SetProfileUsernameCommand, GetCustomEmojiStickersCommand,
   CloseChatCommand,
   SetTdlibOnlineCommand,
   GetUserFullInfoCommand,
@@ -189,6 +189,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('getMessage', serializeGetMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageThread', serializeGetMessageThread);
 COMMAND_SERIALIZATION_HANDLERS.set('translateText', serializeTranslateText);
 COMMAND_SERIALIZATION_HANDLERS.set('setName', serializeSetProfileName);
+COMMAND_SERIALIZATION_HANDLERS.set('getCustomEmojiStickers', serializeGetCustomEmojiStickers);
 COMMAND_SERIALIZATION_HANDLERS.set('setBio', serializeSetProfileBio);
 COMMAND_SERIALIZATION_HANDLERS.set('setUsername', serializeSetProfileUsername);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageThreadHistory', serializeGetMessageThreadHistory);
@@ -997,6 +998,12 @@ function serializeGetChatPinnedMessage(command: AnyAppCommand, result: Serialize
   const cmd = command as GetChatPinnedMessageCommand;
   result.method = 'getChatPinnedMessage';
   result.params.setNumber('chat_id', cmd.payload.chatId);
+}
+
+function serializeGetCustomEmojiStickers(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetCustomEmojiStickersCommand;
+  result.method = 'getCustomEmojiStickers';
+  result.params.setString('_custom_emoji_ids_json', '[' + cmd.payload.customEmojiIds.join(',') + ']');
 }
 
 function serializeSetProfileName(command: AnyAppCommand, result: SerializedCommand): void {
