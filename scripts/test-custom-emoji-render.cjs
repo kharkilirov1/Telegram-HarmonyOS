@@ -90,6 +90,101 @@ async function main() {
   assert.match(bubble, /@Param customEmojiPaths: Map<string, string>/);
   assert.match(bubble, /customEmojiPaths: this\.customEmojiPaths,/);
 
+  // Path cache and prefetch producer ---------------------------------------------------------------
+  const fileUri = { getUriFromPath: (p) => 'file://' + p };
+  const Cache = load('domain/usecases/customEmojiPathCache.ets',
+    ['customEmojiPathCache', 'CustomEmojiPathCacheStore'], { fileUri });
+  const cache = new Cache.CustomEmojiPathCacheStore();
+  cache.setPath('7', '/data/emoji.tgs');
+  assert.equal(cache.getPath('7'), 'file:///data/emoji.tgs', 'a plain path becomes a file URI');
+  cache.setPath('8', 'file:///data/already.webp');
+  assert.equal(cache.getPath('8'), 'file:///data/already.webp', 'an existing URI is kept');
+  cache.setPath('0', '/x');
+  cache.setPath('9', '');
+  assert.equal(cache.hasPath('0'), false);
+  assert.equal(cache.hasPath('9'), false);
+  assert.equal(cache.size(), 2);
+  cache.clear();
+  assert.equal(cache.size(), 0);
+  assert.ok(Cache.customEmojiPathCache, 'the cache is a process singleton');
+
+  const hilogStub = { info() {}, warn() {}, error() {} };
+  const Td = load('models/td/common/index.ets', ['TdObject']).TdObject;
+  const Cmds = load('core/model/AppCommand.ets',
+    ['createGetCustomEmojiStickersCommand', 'createDownloadFileCommand', 'AppCommand']);
+  const Err = load('core/model/AppError.ets', ['AppError', 'AppErrorKind']);
+  const ResolverMod = load('domain/usecases/customEmojiResolver.ets',
+    ['CustomEmojiResolverUseCase', 'createCustomEmojiResolverUseCase', 'parseCustomEmojiSticker',
+      'isValidCustomEmojiId', 'CustomEmojiSticker'], { ...Cmds, ...Err, TdObject: Td, hilog: hilogStub });
+  const Prefetch = load('domain/usecases/customEmojiPrefetch.ets',
+    ['CustomEmojiPrefetchCoordinator', 'collectPendingCustomEmojiIds', 'CUSTOM_EMOJI_PREFETCH_LIMIT'],
+    { ...Cmds, ...Err, TdObject: Td, hilog: hilogStub, fileUri,
+      customEmojiPathCache: Cache.customEmojiPathCache,
+      CustomEmojiResolverUseCase: ResolverMod.CustomEmojiResolverUseCase,
+      createCustomEmojiResolverUseCase: ResolverMod.createCustomEmojiResolverUseCase });
+
+  const entity = (id) => {
+    const item = new A.TextEntity();
+    item.type = 'customEmoji';
+    item.customEmojiId = id;
+    return item;
+  };
+  Cache.customEmojiPathCache.setPath('99', '/cached');
+  const pending = Prefetch.collectPendingCustomEmojiIds([
+    [entity('5'), entity('5'), entity('0')],
+    [(() => { const e = new A.TextEntity(); e.type = 'bold'; return e; })(), entity('6'), entity('99')]
+  ]);
+  assert.deepEqual(pending, ['5', '6'], 'ids are deduped, filtered and skip already cached ones');
+
+  const manyEntities = [];
+  for (let index = 1; index <= Prefetch.CUSTOM_EMOJI_PREFETCH_LIMIT + 5; index += 1) {
+    manyEntities.push(entity(String(index)));
+  }
+  Cache.customEmojiPathCache.clear();
+  assert.equal(Prefetch.collectPendingCustomEmojiIds([manyEntities]).length, Prefetch.CUSTOM_EMOJI_PREFETCH_LIMIT);
+
+  const sticker = (id, path) => ({
+    '@type': 'sticker',
+    format: { '@type': 'stickerFormatTgs' },
+    full_type: { '@type': 'stickerFullTypeCustomEmoji', custom_emoji_id: id },
+    sticker: { '@type': 'file', id: 11,
+      local: { '@type': 'localFile', is_downloading_completed: path.length > 0, path } },
+    thumbnail: { '@type': 'thumbnail', file: { '@type': 'file', id: 12,
+      local: { '@type': 'localFile', is_downloading_completed: false, path: '' } } }
+  });
+  const gatewayCalls = [];
+  const coordinator = new Prefetch.CustomEmojiPrefetchCoordinator({
+    send: (command) => {
+      gatewayCalls.push(command);
+      if (command.type === 'getCustomEmojiStickers') {
+        return Promise.resolve(Td.fromJSON(JSON.stringify({ '@type': 'stickers',
+          stickers: command.payload.customEmojiIds.map((id) => sticker(id, '/data/' + id + '.tgs')) })));
+      }
+      return Promise.resolve(Td.fromJSON('{"@type":"ok"}'));
+    }
+  });
+  const filled = await coordinator.prefetch([[entity('21'), entity('22')]]);
+  assert.equal(filled, 2);
+  assert.equal(Cache.customEmojiPathCache.getPath('21'), 'file:///data/21.tgs');
+  assert.equal(Cache.customEmojiPathCache.getPath('22'), 'file:///data/22.tgs');
+
+  // A second pass with everything resolved costs no request.
+  const before = gatewayCalls.length;
+  assert.equal(await coordinator.prefetch([[entity('21'), entity('22')]]), 0);
+  assert.equal(gatewayCalls.length, before, 'cached ids are not requested again');
+
+  // Failure leaves the ids retryable.
+  const failingCoordinator = new Prefetch.CustomEmojiPrefetchCoordinator({ send: () => Promise.reject(new Error('offline')) });
+  assert.equal(await failingCoordinator.prefetch([[entity('31')]]), 0);
+  assert.equal(Cache.customEmojiPathCache.hasPath('31'), false);
+
+  // The pure row builder reads the cache.
+  const voSource = read('ui/pages/chat/ChatTimelineVO.ets');
+  assert.match(voSource, /import \{ customEmojiPathCache \} from '\.\.\/\.\.\/\.\.\/domain\/usecases\/customEmojiPathCache';/);
+  assert.match(voSource, /const emojiPath = customEmojiPathCache\.getPath\(entity\.customEmojiId\);/);
+  assert.match(voSource, /row\.customEmojiPaths\.set\(entity\.customEmojiId, emojiPath\);/);
+  assert.match(voSource, /if \(entity\.type !== 'customEmoji' \|\| entity\.customEmojiId === '0'\) \{/);
+
   console.log('PASS custom emoji rendering contract');
 }
 

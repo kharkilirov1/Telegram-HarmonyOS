@@ -146,6 +146,13 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **D16-custom-emoji-producer (lead).** Продюсер карты путей: `customEmojiPathCache` (синглтон id→file URI,
+  принимает путь или готовый URI) и `CustomEmojiPrefetchCoordinator.prefetch` (сбор pending id из сущностей,
+  лимит 64, дедуп, in-flight-набор, запись `localPath`/thumbnail в кэш, ошибки не кэшируются). Чистый
+  `buildChatTimeline` заполняет `row.customEmojiPaths` из кэша. Суита `test-custom-emoji-render.cjs`
+  расширена (кэш-нормализация, сбор pending, лимит, prefetch, повторный проход без запроса, отказ, чтение
+  кэша builder-ом). Гейты: host **138/138**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток D16: вызов prefetch
+  из страницы и перестройка строк, TGS-анимация, выбор кастомной реакции, witness.
 - **D16-custom-emoji-render (lead).** Цепочка рендера: `splitRichSpans` помечает спан `customEmojiId`,
   `TgTextBodyV3` рисует `ImageSpan` (20 px, CENTER) при наличии пути и глиф-fallback без него;
   `customEmojiPaths` добавлен в row VO и протянут row → router → bubble → body. Суита

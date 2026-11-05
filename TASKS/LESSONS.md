@@ -1372,3 +1372,11 @@ Last updated: 2026-10-23
   asynchronously and needs a coordinator that reads visible ids and writes the map back into the row VO.
 - The param chain row → router → bubble → body is four hops; add the field at every hop before testing,
   otherwise the default argument silently disables the feature.
+
+## 247. Cache state must cross module boundaries as one instance
+
+- `instanceof TdObject` gates the resolver response; a suite that loads the TD module twice hands the
+  resolver an instance of a different class, the response silently fails the check and the prefetch looks
+  broken while every unit passes. Load the TD module once and inject the same class everywhere.
+- A process cache lets a pure row builder see async results; the remaining cost is triggering a rebuild
+  after prefetch, which belongs to the page, not the builder.

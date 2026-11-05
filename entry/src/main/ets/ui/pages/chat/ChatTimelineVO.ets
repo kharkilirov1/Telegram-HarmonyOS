@@ -1,6 +1,7 @@
 import { AppState, Chat, FileTransfer, Message, MessageQuoteEntity, ReactionChipData, TextEntity, User, isSavedMessagesChat, packReactionChips } from '../../../core/model/AppState';
 
 import { selectChatMessagesForChatView } from '../../../domain/selectors/messageSelectors';
+import { customEmojiPathCache } from '../../../domain/usecases/customEmojiPathCache';
 import { compareInt64 } from '../../../core/utils/tdAccessors';
 import { getString } from '../../../core/utils/AppResource';
 import { resolveReplyLookupKey } from '../../../core/utils/replyMessageKey';
@@ -929,6 +930,16 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
     row.captionQuoteCollapsedFlags = captionQuoteRanges.map((range) => range.isCollapsed);
   }
   row.textEntities = content.textEntities;
+  // D16: the builder is synchronous, so resolved files come from the process cache the prefetch fills.
+  for (const entity of content.textEntities) {
+    if (entity.type !== 'customEmoji' || entity.customEmojiId === '0') {
+      continue;
+    }
+    const emojiPath = customEmojiPathCache.getPath(entity.customEmojiId);
+    if (emojiPath.length > 0) {
+      row.customEmojiPaths.set(entity.customEmojiId, emojiPath);
+    }
+  }
   row.captionEntities = content.captionEntities;
   row.linkPreviewUrl = content.linkPreviewUrl;
   row.linkPreviewDisplayUrl = content.linkPreviewDisplayUrl;
