@@ -159,6 +159,8 @@ export default class EntryAbility extends UIAbility {
 
   onForeground(): void {
     navigationUIState.applicationForeground = true;
+    // H9: the mode may have changed while the app was in the background.
+    TgsPlaybackPolicy.setPowerSaving(refreshPowerMode());
     hilog.info(DOMAIN, TAG, 'onForeground');
   }
 

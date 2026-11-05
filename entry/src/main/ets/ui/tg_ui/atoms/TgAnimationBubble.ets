@@ -1,3 +1,4 @@
+import { shouldAutoplayMedia } from '../../../infra/device/PowerModeMonitor';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgIcon } from './TgIcon';
 import { TgInlineVideoView } from './TgInlineVideoView';
@@ -247,7 +248,7 @@ export struct TgAnimationBubble {
           thumbnailPath: this.thumbnailPath,
           videoWidth: this.computedMediaWidth(),
           videoHeight: this.computedMediaHeight(),
-          autoPlay: true,
+          autoPlay: shouldAutoplayMedia(),
           loop: true,
           muted: true,
           showControls: false,

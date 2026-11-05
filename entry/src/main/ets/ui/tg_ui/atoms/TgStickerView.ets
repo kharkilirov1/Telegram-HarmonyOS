@@ -1,3 +1,4 @@
+import { shouldAutoplayMedia } from '../../../infra/device/PowerModeMonitor';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgIcon } from './TgIcon';
 import { TgInlineVideoView } from './TgInlineVideoView';
@@ -94,7 +95,7 @@ export struct TgStickerView {
           thumbnailPath: this.stickerThumbnailPath,
           videoWidth: this.computedStickerWidth(),
           videoHeight: this.computedStickerHeight(),
-          autoPlay: true,
+          autoPlay: shouldAutoplayMedia(),
           loop: true,
           muted: true,
           showControls: false,

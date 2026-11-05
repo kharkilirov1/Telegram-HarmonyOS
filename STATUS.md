@@ -56,6 +56,11 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **H9-autoplay (lead).** Power saving теперь и на autoplay: `shouldAutoplayMedia()` в
+  `PowerModeMonitor`, гейт в `TgVideoBubble`/`TgAnimationBubble`/`TgStickerView` и видео-галерее (вместо
+  захардкоженного `autoPlay: true`), повторный сэмплинг режима в `onForeground` (подписки API не даёт).
+  Суита `test-power-saving.cjs` расширена (autoplay-политика, атомы без хардкода, foreground-хук).
+  Гейты: host **145/145**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток H9: witness.
 - **H9-power-saving (lead).** `PowerModeMonitor` (`power.getPowerMode` → `isPowerSavingMode`, кеш и
   флаг опроса, ошибка чтения не меняет политику) и гейт `TgsPlaybackPolicy.setPowerSaving` — в режиме
   энергосбережения TGS не проигрывается ни на одной поверхности; EntryAbility сэмплит режим при старте.

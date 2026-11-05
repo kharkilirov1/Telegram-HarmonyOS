@@ -1491,3 +1491,10 @@ Last updated: 2026-10-23
   quoted 39/58/8). Recount from the rows whenever the header is reported.
 - Power mode has no change subscription in the SDK: sample it on start and cache it, and treat a failed
   read as "no change" so a transient permission error does not silently disable animation.
+
+## 262. Autoplay belongs to a policy, not to each atom
+
+- `autoPlay: true` was duplicated in three atoms and the gallery. Route every motion decision through
+  one function (`shouldAutoplayMedia`) so power saving and future settings cannot be missed in one place.
+- The power mode has no change subscription: sample on start and on `onForeground`, which is the only
+  reliable moment the value can differ.

@@ -53,3 +53,8 @@ export function setPowerSavingForTest(value: boolean): void {
   state.sampled = true;
   state.powerSaving = value;
 }
+
+// Video and GIF autoplay follow the same rule: power saving means no motion until the user asks for it.
+export function shouldAutoplayMedia(): boolean {
+  return !state.powerSaving;
+}

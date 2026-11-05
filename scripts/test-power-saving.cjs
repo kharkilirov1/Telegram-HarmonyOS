@@ -32,7 +32,7 @@ async function main() {
   const hilog = { info() {}, warn() {}, error() {} };
   const M = load('infra/device/PowerModeMonitor.ets',
     ['isPowerSavingMode', 'refreshPowerMode', 'isPowerSaving', 'hasSampledPowerMode',
-      'setPowerSavingForTest'],
+      'setPowerSavingForTest', 'shouldAutoplayMedia'],
     { power: powerApi, hilog });
 
   // Classification ---------------------------------------------------------------------------------
@@ -68,6 +68,13 @@ async function main() {
   M.setPowerSavingForTest(false);
   assert.equal(M.isPowerSaving(), false);
 
+  // Autoplay ---------------------------------------------------------------------------------------
+  M.setPowerSavingForTest(false);
+  assert.equal(M.shouldAutoplayMedia(), true, 'autoplay is allowed without power saving');
+  M.setPowerSavingForTest(true);
+  assert.equal(M.shouldAutoplayMedia(), false, 'power saving stops autoplay');
+  M.setPowerSavingForTest(false);
+
   // Playback gate ----------------------------------------------------------------------------------
   const player = read('ui/tg_ui/atoms/TgTgsPlayer.ets');
   assert.match(player, /private static powerSaving: boolean = false;/);
@@ -97,10 +104,27 @@ async function main() {
   assert.equal(P.TgsPlaybackPolicy.shouldPlay(true, P.TgsPlaybackSurface.StickerViewer), false);
   P.TgsPlaybackPolicy.setPowerSaving(false);
 
+  // Atoms follow the shared autoplay decision -------------------------------------------------------
+  const gated = [
+    'ui/tg_ui/atoms/TgAnimationBubble.ets',
+    'ui/tg_ui/atoms/TgVideoBubble.ets',
+    'ui/tg_ui/atoms/TgStickerView.ets'
+  ];
+  for (const file of gated) {
+    const source = read(file);
+    assert.match(source, /import \{ shouldAutoplayMedia \} from '\.\.\/\.\.\/\.\.\/infra\/device\/PowerModeMonitor';/, file + ' imports the policy');
+    assert.match(source, /autoPlay: shouldAutoplayMedia\(\),/, file + ' gates autoplay');
+    assert.equal(source.includes('autoPlay: true,'), false, file + ' has no hardcoded autoplay');
+  }
+  const gallery = read('ui/tg_ui/atoms/TgMediaGalleryPage.ets');
+  assert.match(gallery, /autoPlay: index === this\.currentIndex && shouldAutoplayMedia\(\),/);
+
   // Ability hook -----------------------------------------------------------------------------------
   const ability = read('entryability/EntryAbility.ets');
   assert.match(ability, /import \{ refreshPowerMode \} from '\.\.\/infra\/device\/PowerModeMonitor';/);
   assert.match(ability, /TgsPlaybackPolicy\.setPowerSaving\(refreshPowerMode\(\)\);/);
+  assert.match(ability, /onForeground\(\): void \{\n    navigationUIState\.applicationForeground = true;\n    \/\/ H9: the mode may have changed while the app was in the background\.\n    TgsPlaybackPolicy\.setPowerSaving\(refreshPowerMode\(\)\);/,
+    'the mode is re-sampled on foreground');
 
   console.log('PASS power saving contract');
 }

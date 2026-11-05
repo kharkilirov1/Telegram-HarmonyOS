@@ -1,3 +1,4 @@
+import { shouldAutoplayMedia } from '../../../infra/device/PowerModeMonitor';
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgInlineVideoView } from './TgInlineVideoView';
 import { TgTgsPlayer, TgsPlaybackSurface } from './TgTgsPlayer';
@@ -422,7 +423,7 @@ export struct TgMediaGalleryPage {
           thumbnailPath: item.thumbnailPath,
           videoWidth: item.width > 0 ? item.width : 360,
           videoHeight: item.height > 0 ? item.height : 640,
-          autoPlay: index === this.currentIndex,
+          autoPlay: index === this.currentIndex && shouldAutoplayMedia(),
           loop: item.type === 'animation',
           muted: item.type === 'animation',
           showControls: item.type !== 'animation',
