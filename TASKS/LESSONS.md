@@ -1668,3 +1668,12 @@ Last updated: 2026-10-23
   not be batched.
 - Two loader fixes carried the batch: `export default` must be stripped (reducer modules), and platform imports
   (`fileIo`, `promptAction`) need a callable proxy, since they are used both as objects and as functions.
+
+## 284. Snippet harnesses need the whole export surface
+
+- Extracting 21 command classes that no suite names looked safe, yet 15 suites failed: their harness evaluates
+  code strings with `{...C}` in scope, so any missing export becomes `X is not defined` even though the suite
+  never mentions X in its own source. Textual reference counting cannot see inside evaluated snippets.
+- Consequence: the command inventory can only be split after every suite runs on the shared loader, and the
+  loader needs a `source` hook to serve the mutation harnesses. The experiment was reverted and the budget
+  map kept, so AppCommand stays pinned at 2599.

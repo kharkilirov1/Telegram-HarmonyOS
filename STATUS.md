@@ -56,6 +56,11 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **Сплит AppCommand: отрицательный результат (lead).** Вынес 21 класс команд + 2 payload-хелпера в
+  `commands/MessageCommands.ets` и `SessionCommands.ets` (-127 строк, сборка зелёная), но 15 суит упали с
+  `EditMessageTextPayload is not defined`: их харнессы исполняют сниппеты с `{...C}` и ждут весь экспорт
+  AppCommand, хотя сами эти имена не упоминают. Эксперимент откачен, host **159/159**, гейт размера — PASS.
+  Вывод: сплит возможен только после перевода всех суит на общий загрузчик; урок — №284.
 - **Миграция суит на общий загрузчик (lead).** 64 из 159 суит уже на `scripts/lib/ets-load.cjs`:
   миграция шла по одной с прогоном и откатом при падении. Доводка загрузчика: снятие `export default`,
   каllable-прокси для платформенных импортов (`fileIo`, `promptAction`), прокси для нерезолвленных
