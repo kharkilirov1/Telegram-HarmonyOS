@@ -181,6 +181,13 @@ Documentation and repository structure were reconciled; no product code changed.
   Суита `test-reactions-model.cjs` расширена (`parseMessageContent` с custom-сущностью, поле у обычной
   сущности, клонирование). Гейты: host **136/136**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток D16:
   рендер картинки стикера, выбор кастомной реакции, witness.
+- **A5-avatar-crop (lead).** Кроп аватара: `avatarCrop` (центрированный квадрат, uniform scale до 512,
+  валидация rect) и `AvatarImagePreparation` (decode через ImageKit, `crop` с `Region{size}`, scale,
+  JPEG-пакер, запись в `cacheDir`, release pixelMap/source, ошибка → пустой путь). Страница использует
+  подготовку вместо прямой копии. Новая суита `test-avatar-crop.cjs` (139-я): квадрат для landscape/portrait/
+  square/tiny/мусорных размеров, scale-границы, вся pipeline и release, проводка страницы. Гейты: host
+  **139/139**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток A5: интерактивный редактор/зум, «username
+  занят», witness.
 - **A5-avatar (lead).** Смена аватара: `setProfilePhoto` (команда + сериализатор, `inputChatPhotoStatic` +
   `inputFileLocal`, `is_public`), `EditProfileUseCase.updatePhoto` (trim, пустой путь — ошибка, Ok-контракт).
   На странице — «Change photo»: `PhotoViewPicker` (1 изображение) → копия в `cacheDir` (`fileIo`) →

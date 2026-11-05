@@ -1397,3 +1397,10 @@ Last updated: 2026-10-23
   `uploadFile` round trip is needed.
 - The photo picker returns a media URI, not a sandbox path: copy it into `cacheDir` with `fileIo` and pass
   that path to TDLib.
+
+## 250. image.Region takes a Size object and a real interface is not structural
+
+- `pixelMap.crop` needs `{ x, y, size: { width, height } }`; a plain numeric `size` fails type-checking,
+  and a local mirror class cannot be cast to `image.Region` (ArkTS rejects the conversion).
+- Decode with `desiredSize` at the crop size so a camera photo never inflates the heap, and release both
+  the pixel map and the source in `finally`.

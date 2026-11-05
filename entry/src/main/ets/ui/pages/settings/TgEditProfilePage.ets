@@ -4,7 +4,7 @@
 
 import { common } from '@kit.AbilityKit';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
-import { fileIo } from '@kit.CoreFileKit';
+import { AvatarImagePreparation } from './avatarImagePrep';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { localized } from '../../../core/utils/AppResource';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
@@ -132,20 +132,15 @@ export struct TgEditProfilePage {
     this.errorText = '';
   }
 
+  // A5: the picked image is cropped to a square and packed as JPEG before upload.
   private copyPickedPhoto(sourceUri: string): Promise<string> {
-    return new Promise<string>((resolve) => {
-      try {
-        const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
-        const target = context.cacheDir + '/profile_photo_' + Date.now().toString() + '.jpg';
-        const source = fileIo.openSync(sourceUri, fileIo.OpenMode.READ_ONLY);
-        fileIo.copyFileSync(source.fd, target);
-        fileIo.closeSync(source);
-        resolve(target);
-      } catch (error) {
-        hilog.warn(DOMAIN, TAG, 'Copying the picked photo failed: %{public}s', String(error));
-        resolve('');
-      }
-    });
+    try {
+      const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      return AvatarImagePreparation.prepare(context, sourceUri);
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Preparing the picked photo failed: %{public}s', String(error));
+      return Promise.resolve('');
+    }
   }
 
   private save(): void {
