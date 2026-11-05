@@ -1450,3 +1450,11 @@ Last updated: 2026-10-23
   path in assertions and regexes. Restore from git and patch only the actual `load(...)` call site.
 - A controller gaining imports needs a stub in every suite that evaluates it; count the load sites first,
   then patch each one.
+
+## 257. Settings rows are token-bound, not hand-styled
+
+- `TgSettingsRow` has no checkmark trailing and there is no `TgSettingsHeader`; reuse the existing
+  `TgChatTopBar` + explicit rows inside the page instead of inventing atoms. Existing icon tokens only:
+  `ICON_RES_LANGUAGE` does not exist, so use a shipped token rather than a missing media resource.
+- The settings tab owns `settingsNavStack`, not a page-level stack; pushing from the wrong stack silently
+  fails to compile.

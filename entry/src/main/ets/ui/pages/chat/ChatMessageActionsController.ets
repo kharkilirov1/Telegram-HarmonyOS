@@ -350,7 +350,7 @@ export class ChatMessageActionsController {
       language = '';
     }
     const stored = chatId !== 0 ? translationLanguagePreferences.get(chatId) : '';
-    return resolveTranslationLanguage(stored, language);
+    return resolveTranslationLanguage(stored, language, translationLanguagePreferences.globalDefault());
   }
 
   // Picker data: the supported codes with their compact labels.

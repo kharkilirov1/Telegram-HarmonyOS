@@ -56,6 +56,13 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D24-translation-picker (lead).** UI выбора языка перевода: глобальный default в
+  `translationLanguagePreferences` (`GLOBAL_TRANSLATION_CHAT_ID`), порядок chat→global→system→en;
+  строка «Translation Language» в Settings (значение = выбранный код) → `TgTranslationLanguagePage`
+  (список 14 языков, ✓, назад, `settingsNavStack`), route + builder + строки в 3 локалях. Суита
+  `test-translation-language.cjs` расширена (глобальный default, новый порядок, страница, Settings,
+  route, локали); в 14 суитах-загрузчиках stub получил `globalDefault`. Гейты: host **143/143**, оба
+  smoke, hvigor BUILD SUCCESSFUL. Остаток D24: выбор языка из меню сообщения, witness.
 - **D24-translation-language (lead).** Выбор языка перевода (слой данных): `translationLanguage` —
   поддерживаемые коды, нормализация с региональным суффиксом (`pt-BR`→`pt`), порядок
   stored→system→en, метки; `translationLanguagePreferences` — per-chat выбор; контроллер получил

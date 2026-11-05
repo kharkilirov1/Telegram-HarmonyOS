@@ -1865,6 +1865,14 @@
       "value": "Calls"
     },
     {
+      "name": "translation_language_title",
+      "value": "Translation Language"
+    },
+    {
+      "name": "settings_translation_language",
+      "value": "Translation Language"
+    },
+    {
       "name": "settings_recent_calls",
       "value": "Recent Calls"
     },

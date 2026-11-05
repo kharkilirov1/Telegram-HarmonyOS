@@ -8,6 +8,8 @@ const { stripTypeScriptTypes } = require('node:module');
 
 const root = path.resolve(__dirname, '../entry/src/main/ets');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8').replaceAll('\r\n', '\n');
+const readResource = (relative) =>
+  fs.readFileSync(path.join(root, '..', 'resources', relative), 'utf8').replaceAll('\r\n', '\n');
 
 function load(relative, names, deps = {}) {
   const source = read(relative)
@@ -23,7 +25,7 @@ async function main() {
   const L = load('domain/usecases/translationLanguage.ets',
     ['SUPPORTED_TRANSLATION_LANGUAGES', 'FALLBACK_TRANSLATION_LANGUAGE',
       'normalizeTranslationLanguage', 'isSupportedTranslationLanguage', 'resolveTranslationLanguage',
-      'translationLanguageLabel', 'translationLanguagePreferences'], { hilog });
+      'translationLanguageLabel', 'translationLanguagePreferences', 'GLOBAL_TRANSLATION_CHAT_ID'], { hilog });
 
   // Supported list --------------------------------------------------------------------------------
   assert.ok(L.SUPPORTED_TRANSLATION_LANGUAGES.includes('en'));
@@ -49,12 +51,28 @@ async function main() {
   assert.equal(L.isSupportedTranslationLanguage('xx'), false);
   assert.equal(L.isSupportedTranslationLanguage(''), false);
 
+  // App-wide default ------------------------------------------------------------------------------
+  L.translationLanguagePreferences.clearAll();
+  assert.equal(L.GLOBAL_TRANSLATION_CHAT_ID, 1);
+  assert.equal(L.translationLanguagePreferences.globalDefault(), '');
+  assert.equal(L.translationLanguagePreferences.setGlobalDefault('xx'), false, 'an unsupported default is refused');
+  assert.equal(L.translationLanguagePreferences.setGlobalDefault('fr'), true);
+  assert.equal(L.translationLanguagePreferences.globalDefault(), 'fr');
+  assert.equal(L.translationLanguagePreferences.set(9, 'de'), true, 'a chat choice coexists with the default');
+  assert.equal(L.translationLanguagePreferences.globalDefault(), 'fr');
+  L.translationLanguagePreferences.clearAll();
+
   // Resolution order ------------------------------------------------------------------------------
   assert.equal(L.resolveTranslationLanguage('de', 'ru-RU'), 'de', 'the stored choice wins');
   assert.equal(L.resolveTranslationLanguage('', 'ru-RU'), 'ru', 'the system language is the fallback');
   assert.equal(L.resolveTranslationLanguage('xx', 'ru'), 'ru', 'an unsupported stored value is ignored');
   assert.equal(L.resolveTranslationLanguage('', 'xx'), 'en', 'an unsupported system language falls to English');
   assert.equal(L.resolveTranslationLanguage('', ''), 'en');
+  assert.equal(L.resolveTranslationLanguage('', 'xx', 'de'), 'de', 'the app default beats the system language');
+  assert.equal(L.resolveTranslationLanguage('it', 'xx', 'de'), 'it', 'the chat choice beats the app default');
+  assert.equal(L.resolveTranslationLanguage('', 'ru', 'de'), 'de');
+  assert.equal(L.resolveTranslationLanguage('', 'ru', 'yy'), 'ru', 'an unsupported default is skipped');
+  assert.equal(L.resolveTranslationLanguage('zz', '', 'yy'), 'en');
   assert.equal(L.resolveTranslationLanguage('pt-BR', ''), 'pt');
 
   assert.equal(L.translationLanguageLabel('en'), 'EN');
@@ -80,7 +98,7 @@ async function main() {
   assert.match(controller, /import \{[\s\S]*translationLanguagePreferences[\s\S]*\} from '\.\.\/\.\.\/\.\.\/domain\/usecases\/translationLanguage';/);
   assert.match(controller, /private targetLanguageCode\(chatId: number = 0\): string \{/);
   assert.match(controller, /const stored = chatId !== 0 \? translationLanguagePreferences\.get\(chatId\) : '';/);
-  assert.match(controller, /return resolveTranslationLanguage\(stored, language\);/);
+  assert.match(controller, /return resolveTranslationLanguage\(stored, language, translationLanguagePreferences\.globalDefault\(\)\);/);
   assert.match(controller, /translationLanguages\(\): string\[\] \{/);
   assert.match(controller, /return SUPPORTED_TRANSLATION_LANGUAGES\.slice\(\);/);
   assert.match(controller, /translationLanguageFor\(chatId: number\): string \{/);
@@ -88,6 +106,41 @@ async function main() {
   assert.match(controller, /const prefix = chatId\.toString\(\) \+ ':';/, 'cache keys are invalidated per chat');
   assert.match(controller, /const language = this\.targetLanguageCode\(chatId\);/, 'translation uses the chat choice');
   assert.match(controller, /translationLanguageLabelFor\(code: string\): string \{/);
+
+  // Picker page + settings wiring -----------------------------------------------------------------
+  const page = read('ui/pages/settings/TgTranslationLanguagePage.ets');
+  assert.match(page, /export class TranslationLanguageRouteParams/);
+  assert.match(page, /private choose\(code: string\): void \{/);
+  assert.match(page, /translationLanguagePreferences\.setGlobalDefault\(code\)/);
+  assert.match(page, /ForEach\(SUPPORTED_TRANSLATION_LANGUAGES, \(code: string\) => \{/);
+  assert.match(page, /this\.selected === code/);
+  assert.match(page, /TgChatTopBar\(\{/);
+  assert.match(page, /translation_language_title/);
+
+  const settings = read('ui/pages/settings/SettingsPage.ets');
+  assert.match(settings, /@Event onOpenTranslationLanguage: \(\) => void = \(\): void => \{\};/);
+  assert.match(settings, /private translationLanguageText\(\): string \{/);
+  assert.match(settings, /settings_translation_language/);
+  assert.match(settings, /this\.onOpenTranslationLanguage\(\);/);
+  assert.match(settings, /import \{ translationLanguagePreferences \} from '\.\.\/\.\.\/\.\.\/domain\/usecases\/translationLanguage';/);
+
+  const tabs = read('ui/pages/MainTabsPage.ets');
+  assert.match(tabs, /private pushTranslationLanguage\(\): void \{/);
+  assert.match(tabs, /this\.settingsNavStack\.pushPathByName\('TgTranslationLanguagePage', new TranslationLanguageRouteParams\(\)\);/);
+  assert.match(tabs, /onOpenTranslationLanguage: \(\): void => \{\n\s+this\.pushTranslationLanguage\(\);/);
+
+  const routes = JSON.parse(readResource('base/profile/route_map.json')).routerMap;
+  const route = routes.find((entry) => entry.name === 'TgTranslationLanguagePage');
+  assert.ok(route, 'the picker route is registered');
+  assert.equal(route.buildFunction, 'TgTranslationLanguagePageBuilder');
+
+  for (const locale of ['base', 'ru_RU', 'zh_CN']) {
+    const strings = JSON.parse(readResource(`${locale}/element/string.json`)).string;
+    for (const name of ['translation_language_title', 'settings_translation_language']) {
+      assert.ok(strings.some((entry) => entry.name === name), `${locale} ships ${name}`);
+      assert.ok(strings.find((entry) => entry.name === name).value.length > 0);
+    }
+  }
 
   console.log('PASS translation language contract');
 }

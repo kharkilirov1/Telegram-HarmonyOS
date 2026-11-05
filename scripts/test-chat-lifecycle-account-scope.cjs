@@ -345,7 +345,7 @@ async function main({ fixturesOnly = false, draftMutant = false,
       { ...moduleDeps, typingActivityRemainingMs: topBarPresentation.typingActivityRemainingMs });
     const deps = { ...moduleDeps, ...ownerHelpers };
     f.transfer = load('ui/pages/chat/PendingForwardTransfer.ets').pendingForwardTransfer;
-    const actions = load('ui/pages/chat/ChatMessageActionsController.ets', {resolveTranslationLanguage:(s,y)=>['en','ru','uk','de','fr','es','it','pt','pl','tr','ar','zh','ja','ko'].includes(String(s||'').trim().toLowerCase().split('-')[0])?String(s||'').trim().toLowerCase().split('-')[0]:('en'),translationLanguagePreferences:{set:()=>false,get:()=>'',clear:()=>{},clearAll:()=>{},size:()=>0},SUPPORTED_TRANSLATION_LANGUAGES:['en','ru'],normalizeTranslationLanguage:(c)=>String(c||'').trim().toLowerCase(),isSupportedTranslationLanguage:()=>false,translationLanguageLabel:(c)=>String(c||'').toUpperCase(),
+    const actions = load('ui/pages/chat/ChatMessageActionsController.ets', {resolveTranslationLanguage:(s,y)=>['en','ru','uk','de','fr','es','it','pt','pl','tr','ar','zh','ja','ko'].includes(String(s||'').trim().toLowerCase().split('-')[0])?String(s||'').trim().toLowerCase().split('-')[0]:('en'),translationLanguagePreferences:{set:()=>false,get:()=>'',globalDefault:()=>'',setGlobalDefault:()=>false,clear:()=>{},clearAll:()=>{},size:()=>0},SUPPORTED_TRANSLATION_LANGUAGES:['en','ru'],normalizeTranslationLanguage:(c)=>String(c||'').trim().toLowerCase(),isSupportedTranslationLanguage:()=>false,translationLanguageLabel:(c)=>String(c||'').toUpperCase(),
     
       hilog, localized: deps.localized, $r: deps.$r, pendingForwardTransfer: f.transfer });
     const Page = actualDelegates ? require('./chat-screen-source.cjs').compileExports(

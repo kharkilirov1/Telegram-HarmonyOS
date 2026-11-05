@@ -10,6 +10,7 @@ import { TgSettingsRow, TgSettingsTrailing } from '../../tg_ui/atoms/TgSettingsR
 import { fileUri } from '@kit.CoreFileKit';
 import { localized } from '../../../core/utils/AppResource';
 import { computeTopBarHeight, computeTabBottomInset, getMainWindow, addWindowSizeListener, removeWindowSizeListener } from '../../utils/SafeAreaUtils';
+import { translationLanguagePreferences } from '../../../domain/usecases/translationLanguage';
 import { ROOT_TAB_BAR_FALLBACK_CONTENT_INSET } from '../../utils/RootTabBarGeometry';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
@@ -53,6 +54,7 @@ export struct SettingsPage {
   @Event onOpenDataStorage: () => void = (): void => {};
   @Event onOpenChatFolders: () => void = (): void => {};
   @Event onOpenEditProfile: () => void = (): void => {};
+  @Event onOpenTranslationLanguage: () => void = (): void => {};
 
   private unsubscribe?: () => void;
   private pageLifecycleToken: number = 0;
@@ -211,6 +213,12 @@ export struct SettingsPage {
     })
   }
 
+  // D24: the app-wide default, shown as the row value.
+  private translationLanguageText(): string {
+    const code = translationLanguagePreferences.globalDefault();
+    return code.length > 0 ? code.toUpperCase() : '';
+  }
+
   build() {
     Stack({ alignContent: Alignment.Top }) {
       Scroll() {
@@ -257,6 +265,17 @@ export struct SettingsPage {
               showSeparator: true,
               onRowClick: (): void => {
                 this.onOpenBlockedUsers();
+              }
+            })
+            TgSettingsRow({
+              title: localized($r('app.string.settings_translation_language').id, 'Translation Language'),
+              iconRes: TgUiTokens.ICON_RES_SETTINGS,
+              iconBgColor: TgUiTokens.SETTINGS_ICON_COLOR_BLUE,
+              trailingType: TgSettingsTrailing.Text,
+              trailingText: this.translationLanguageText(),
+              showSeparator: true,
+              onRowClick: (): void => {
+                this.onOpenTranslationLanguage();
               }
             })
             TgSettingsRow({

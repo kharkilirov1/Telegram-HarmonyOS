@@ -27,11 +27,16 @@ export function isSupportedTranslationLanguage(code: string): boolean {
   return normalized.length > 0 && SUPPORTED_TRANSLATION_LANGUAGES.includes(normalized);
 }
 
-// Stored per chat wins, then the system language, then English; unsupported values never leak through.
-export function resolveTranslationLanguage(stored: string, systemLanguage: string): string {
+// Per-chat choice wins, then the app-wide default, then the system language, then English.
+export function resolveTranslationLanguage(stored: string, systemLanguage: string,
+  globalDefault: string = ''): string {
   const storedNormalized = normalizeTranslationLanguage(stored);
   if (isSupportedTranslationLanguage(storedNormalized)) {
     return storedNormalized;
+  }
+  const globalNormalized = normalizeTranslationLanguage(globalDefault);
+  if (isSupportedTranslationLanguage(globalNormalized)) {
+    return globalNormalized;
   }
   const systemNormalized = normalizeTranslationLanguage(systemLanguage);
   if (isSupportedTranslationLanguage(systemNormalized)) {
@@ -39,6 +44,10 @@ export function resolveTranslationLanguage(stored: string, systemLanguage: strin
   }
   return FALLBACK_TRANSLATION_LANGUAGE;
 }
+
+// The app-wide default is stored under a reserved key so the settings picker and a future per-chat
+// override share one store.
+export const GLOBAL_TRANSLATION_CHAT_ID = 1;
 
 // Picker labels: the codes are shown upper-case, matching the iOS compact list.
 export function translationLanguageLabel(code: string): string {
@@ -68,6 +77,15 @@ class TranslationLanguagePreferencesStore {
 
   clear(chatId: number): void {
     this.perChat.delete(chatId);
+  }
+
+  // Settings picker: the app-wide default, independent of any chat.
+  globalDefault(): string {
+    return this.perChat.get(GLOBAL_TRANSLATION_CHAT_ID) ?? '';
+  }
+
+  setGlobalDefault(code: string): boolean {
+    return this.set(GLOBAL_TRANSLATION_CHAT_ID, code);
   }
 
   clearAll(): void {

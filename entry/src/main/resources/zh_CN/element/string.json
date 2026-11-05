@@ -1865,6 +1865,14 @@
       "value": "通话"
     },
     {
+      "name": "translation_language_title",
+      "value": "翻译语言"
+    },
+    {
+      "name": "settings_translation_language",
+      "value": "翻译语言"
+    },
+    {
       "name": "settings_recent_calls",
       "value": "最近通话"
     },

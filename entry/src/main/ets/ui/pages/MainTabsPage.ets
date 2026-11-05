@@ -63,6 +63,7 @@ import { createNewChatEvent } from '../../core/model/AppEvent';
 import { isSavedMessagesChat } from '../../core/model/AppState';
 import { ChatScreenRouteParams } from './chat/ChatScreenRouteParams';
 import { EditProfileRouteParams } from './settings/TgEditProfilePage';
+import { TranslationLanguageRouteParams } from './settings/TgTranslationLanguagePage';
 import { ChatDto } from '../../core/model/dto/ChatDto';
 import { createResolveUsernameUseCase as resolveUsernameUseCase } from '../../domain/usecases/resolveUsername';
 import { externalLinkIntake, ExternalLinkTarget } from '../../core/model/ExternalLink';
@@ -778,6 +779,10 @@ export struct MainTabsPage {
   // (same contract as Saved Messages) and the chat screen is pushed with the resolved title.
   // A joined chat comes back as a DTO from TgChatInvitePage; hydrate it and open the chat screen.
   // A5: the settings header opens the editor with the current values pre-filled.
+  private pushTranslationLanguage(): void {
+    this.settingsNavStack.pushPathByName('TgTranslationLanguagePage', new TranslationLanguageRouteParams());
+  }
+
   private pushEditProfile(): void {
     const store = getAppCoreRuntime().getStore();
     const state = store.getState();
@@ -1070,7 +1075,10 @@ export struct MainTabsPage {
             onOpenChatFolders: (): void => {
               this.chatDetailNavStack.pushPathByName('TgChatFoldersPage', undefined);
             },
-            onOpenEditProfile: (): void => {
+            onOpenTranslationLanguage: (): void => {
+            this.pushTranslationLanguage();
+          },
+          onOpenEditProfile: (): void => {
               this.pushEditProfile();
             }
           })

@@ -1865,6 +1865,14 @@
       "value": "Звонки"
     },
     {
+      "name": "translation_language_title",
+      "value": "Язык перевода"
+    },
+    {
+      "name": "settings_translation_language",
+      "value": "Язык перевода"
+    },
+    {
       "name": "settings_recent_calls",
       "value": "Недавние звонки"
     },

@@ -16,6 +16,11 @@
       "buildFunction": "TgChatAdminRightsPageBuilder"
     },
     {
+      "name": "TgTranslationLanguagePage",
+      "pageSourceFile": "src/main/ets/ui/pages/settings/TgTranslationLanguagePage.ets",
+      "buildFunction": "TgTranslationLanguagePageBuilder"
+    },
+    {
       "name": "TgEditProfilePage",
       "pageSourceFile": "src/main/ets/ui/pages/settings/TgEditProfilePage.ets",
       "buildFunction": "TgEditProfilePageBuilder"
