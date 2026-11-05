@@ -36,11 +36,11 @@ export class ChatTextSendController {
   private readonly textConsumptionCounts: Map<string, number> = new Map();
   private diceUseCase?: SendDiceUseCase;
   private textConsumptionOverflow: number = 0;
-  handleSend(text: string, host: ChatTextSendHost): void {
+  handleSend(text: string, host: ChatTextSendHost, scheduledDateSeconds: number = 0): void {
     // D27: a message that is exactly one interactive emoji is a dice, the way iOS sends it.
     const trimmed = text.trim();
     const diceEmoji = INTERACTIVE_DICE_EMOJIS.includes(trimmed) ? trimmed : '';
-    if (diceEmoji.length > 0 && host.getReplyToMessageId() === '0') {
+    if (diceEmoji.length > 0 && scheduledDateSeconds === 0 && host.getReplyToMessageId() === '0') {
       this.handleSendDice(diceEmoji, host);
       return;
     }
@@ -57,6 +57,7 @@ export class ChatTextSendController {
     const params = new SendMessageParams();
     params.chatId = chatId;
     params.text = text;
+    params.scheduledDateSeconds = scheduledDateSeconds;
     const originalDraft = host.getDraftText();
     const originalEntities = host.getCustomEmojiEntities().map((entity: CustomEmojiTextEntity): CustomEmojiTextEntity =>
       new CustomEmojiTextEntity(entity.offset, entity.length, entity.customEmojiId));

@@ -172,7 +172,8 @@ export struct TgMessageThreadPage {
       text: text,
       replyToMessageId: '0',
       customEmojiEntities: [],
-      topicThreadId: this.threadId
+      topicThreadId: this.threadId,
+        scheduledDateSeconds: 0
     }).then(() => {
       if (lifecycleToken !== this.pageLifecycleToken) {
         return;

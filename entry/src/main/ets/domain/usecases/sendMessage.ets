@@ -22,6 +22,8 @@ export class SendMessageParams {
   customEmojiEntities: CustomEmojiTextEntity[] = [];
   // D11: '0' sends into the chat, otherwise into that message thread (comments).
   topicThreadId: MessageId = '0';
+  // D21: >0 asks TDLib to deliver at that Unix time instead of now.
+  scheduledDateSeconds: number = 0;
 }
 
 /**
@@ -95,7 +97,8 @@ export class SendMessageUseCase {
         params.text,
         params.replyToMessageId,
         params.customEmojiEntities,
-        params.topicThreadId
+        params.topicThreadId,
+        params.scheduledDateSeconds
       );
 
       const response = await this.gateway.send(command);

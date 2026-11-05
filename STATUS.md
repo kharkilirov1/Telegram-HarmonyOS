@@ -56,6 +56,13 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D21: «Отправить позже» из композера (lead).** Долгое нажатие на Send при наличии текста открывает меню с
+  двумя пресетами («Через час», «Завтра в 9:00»); выбор уходит тем же путём отправки с `scheduledDateSeconds`,
+  который доходит до `createSendMessageCommand` (сериализатор уже формировал `messageSchedulingStateSendAtDate`).
+  Запланированный текст не превращается в dice. Ключевое: разблокировка без новой строки в сессии — меню живёт в
+  `ChatComposerController`, а binding вызывает его через page-contract bridge (`composerCtrl`), поэтому
+  `ChatScreenSession` осталась на 499 строках. Новый гейт `scripts/test-scheduled-send.cjs` (162-я суита).
+  Гейты: host **162/162**, оба smoke, hvigor OK, размер — PASS. Урок — №293.
 - **Раунд 125: «Отправить позже» — попытка откатилась (lead).** Планировщик (D21) доведён до зелёной сборки:
   `SendMessageParams.scheduledDateSeconds`, фабрика команды, `ChatTextSendController.handleSend(..., seconds)`,
   `ChatComposerController`, long-press на Send и меню `showActionMenu`. Но контрактный гейт страницы требует

@@ -21,6 +21,18 @@
       "value": "Не удалось открыть чат"
     },
     {
+      "name": "schedule_send_title",
+      "value": "Отправить позже"
+    },
+    {
+      "name": "schedule_send_in_hour",
+      "value": "Через час"
+    },
+    {
+      "name": "schedule_send_tomorrow",
+      "value": "Завтра в 9:00"
+    },
+    {
       "name": "contact_card_added",
       "value": "Контакт добавлен"
     },

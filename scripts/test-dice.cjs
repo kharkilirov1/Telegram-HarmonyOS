@@ -120,7 +120,7 @@ async function main() {
     assert.ok(controllerList.includes(emoji), 'the controller knows ' + emoji);
   }
   assert.equal(controllerList.match(/[^,]+/g).length, U.DICE_EMOJIS.length, 'both lists have the same size');
-  assert.match(controller, /if \(diceEmoji\.length > 0 && host\.getReplyToMessageId\(\) === '0'\) \{/);
+  assert.match(controller, /if \(diceEmoji\.length > 0 && (?:scheduledDateSeconds === 0 && )?host\.getReplyToMessageId\(\) === '0'\) \{/);
   assert.match(controller, /private handleSendDice\(emoji: string, host: ChatTextSendHost\): void \{/);
   assert.match(controller, /createSendDiceUseCase\(getTdGatewayAdapter\(\)\)/);
   assert.match(controller, /diceUseCase\.execute\(chatId, emoji\)/);

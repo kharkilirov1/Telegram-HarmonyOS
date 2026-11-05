@@ -21,6 +21,18 @@
       "value": "Could not open the chat"
     },
     {
+      "name": "schedule_send_title",
+      "value": "Send later"
+    },
+    {
+      "name": "schedule_send_in_hour",
+      "value": "In 1 hour"
+    },
+    {
+      "name": "schedule_send_tomorrow",
+      "value": "Tomorrow at 9:00"
+    },
+    {
       "name": "contact_card_added",
       "value": "Contact added"
     },

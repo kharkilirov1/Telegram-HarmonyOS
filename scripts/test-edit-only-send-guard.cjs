@@ -360,7 +360,7 @@ test('rights revoked during recorder release: fresh media accessor prevents late
 const atomSource = read('ui/tg_ui/atoms/TgComposerInput.ets').replaceAll('\r\n', '\n');
 const atomMethods = new Map();
 function includeAtom(name) {
-  if (atomMethods.has(name) || ['onSendPress', 'onVoicePress', 'onVoiceRecordStart'].includes(name)) return;
+  if (atomMethods.has(name) || ['onSendPress', 'onSendLongPress', 'onVoicePress', 'onVoiceRecordStart'].includes(name)) return;
   const match = new RegExp(`^  private ${name}\\(`, 'm').exec(atomSource);
   assert.ok(match, `required actual atom method missing: ${name}`);
   const end = atomSource.indexOf('\n  }', match.index);

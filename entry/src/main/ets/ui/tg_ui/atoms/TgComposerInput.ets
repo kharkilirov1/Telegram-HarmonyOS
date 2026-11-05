@@ -107,6 +107,8 @@ export struct TgComposerInput {
   @Param bottomInset: number = 0;
 
   @Event onSendPress: (text: string) => void = (_: string) => {};
+  // D21: holding Send with text opens the schedule menu.
+  @Event onSendLongPress: (text: string) => void = (_: string) => {};
   @Event onAccessRetryPress: () => void = () => {};
   @Event onTextChange: (text: string) => void = (_: string) => {};
   @Event onTextSelectionChange: (start: number, end: number) => void = (_: number, __: number) => {};
@@ -290,6 +292,13 @@ export struct TgComposerInput {
   }
 
   private beginVoiceRecordingGesture(): void {
+    if (this.hasSendIntent()) {
+      const trimmed = this.text.trim();
+      if (trimmed.length > 0 && this.canSend()) {
+        this.onSendLongPress(trimmed);
+      }
+      return;
+    }
     if (this.isDisabled || this.isSlowmodeActive() || !this.voiceEnabled || this.showEditSnippet ||
       this.hasSendIntent() || this.isVoiceRecordingActive()) {
       return;
@@ -1386,7 +1395,6 @@ export struct TgComposerInput {
       }
     })
   }
-
   @Available({ minApiVersion: '26.0.0' })
   @Builder
   private buildNativeRecordingAction() {
@@ -1411,7 +1419,6 @@ export struct TgComposerInput {
     .borderRadius(TgUiTokens.COMPOSER_BUTTON_SIZE / 2)
     .clip(true)
   }
-
   @Builder
   private buildRecordingAction() {
     if (deviceInfo.apiAvailable('26.0.0')) {
@@ -1424,7 +1431,6 @@ export struct TgComposerInput {
       this.buildFallbackRecordingAction()
     }
   }
-
   @Builder
   private buildRecordingComposer() {
     Row({ space: TgUiTokens.COMPOSER_ELEMENT_GAP }) {
@@ -1441,21 +1447,17 @@ export struct TgComposerInput {
       bottom: TgUiTokens.COMPOSER_VERTICAL_INSET
     })
   }
-
   @Builder
   private buildIdleComposer() {
     Row({ space: TgUiTokens.COMPOSER_ELEMENT_GAP }) {
       if (this.showBotMenu) {
         this.buildBotMenu()
       }
-
       // Attach button remains a distinct liquid circle next to the optional bot menu.
       if (this.showAttachButton) {
         this.buildAttachButton()
       }
-
       this.buildTextCapsule()
-
       this.buildActionButton()
     }
     .width('100%')
@@ -1468,7 +1470,6 @@ export struct TgComposerInput {
       bottom: TgUiTokens.COMPOSER_VERTICAL_INSET
     })
   }
-
   build() {
     Column() {
       // Partial permission failure must not replace a still-working composer.
@@ -1485,7 +1486,6 @@ export struct TgComposerInput {
       if (this.botMenuOpen) {
         this.buildBotMenuPanel()
       }
-
       if (this.isVoiceRecordingActive()) {
         this.buildRecordingComposer()
       } else {

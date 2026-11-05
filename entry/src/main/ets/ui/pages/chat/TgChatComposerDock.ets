@@ -149,6 +149,9 @@ export struct TgChatComposerDock {
               onSendPress: (text: string): void => {
                 this.bindings.handleSendMessage(text);
               },
+              onSendLongPress: (text: string): void => {
+                this.bindings.openScheduledSendMenu(text);
+              },
               onAttachPress: (): void => {
                 this.bindings.handleComposerAttachPress();
               },

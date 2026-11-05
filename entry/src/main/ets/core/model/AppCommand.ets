@@ -243,7 +243,6 @@ export class EditMessageEntity {
   offset: number = 0;
   length: number = 0;
   typeJson: string = '';
-
   constructor(offset: number = 0, length: number = 0, typeJson: string = '') {
     this.offset = offset;
     this.length = length;
@@ -257,7 +256,6 @@ export class EditMessageLinkPreviewOptions {
   forceSmallMedia: boolean = false;
   forceLargeMedia: boolean = false;
   showAboveText: boolean = false;
-
   constructor(
     isDisabled: boolean = false,
     url: string = '',
@@ -1633,7 +1631,8 @@ export function createSendMessageCommand(
   text: string,
   replyToMessageId?: MessageId,
   customEmojiEntities: CustomEmojiTextEntity[] = [],
-  topicThreadId?: MessageId
+  topicThreadId?: MessageId,
+  scheduledDateSeconds: number = 0
 ): SendMessageCommand {
   const cmd = new SendMessageCommand();
   cmd.payload.chatId = chatId;
@@ -1641,6 +1640,7 @@ export function createSendMessageCommand(
   cmd.payload.replyToMessageId = replyToMessageId || '0';
   cmd.payload.customEmojiEntities = customEmojiEntities;
   cmd.payload.topicThreadId = topicThreadId || '0';
+  cmd.payload.scheduledDateSeconds = scheduledDateSeconds;
   return cmd;
 }
 

@@ -21,6 +21,18 @@
       "value": "无法打开聊天"
     },
     {
+      "name": "schedule_send_title",
+      "value": "稍后发送"
+    },
+    {
+      "name": "schedule_send_in_hour",
+      "value": "1 小时后"
+    },
+    {
+      "name": "schedule_send_tomorrow",
+      "value": "明天 9:00"
+    },
+    {
       "name": "contact_card_added",
       "value": "已添加联系人"
     },

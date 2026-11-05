@@ -113,7 +113,8 @@ export interface ChatComposerDockPort extends ChatKeyboardPanelsPort {
   handleComposerVoicePress(): void;
   handleComposerWillFocus(): void;
   handleScrollToBottomPress(): void;
-  handleSendMessage(text: string): void;
+  handleSendMessage(text: string, scheduledDateSeconds?: number): void;
+  openScheduledSendMenu(text: string): void;
   handleVoiceRecordCancel(): void;
   handleVoiceRecordLock(): void;
   handleVoiceRecordSend(): void;

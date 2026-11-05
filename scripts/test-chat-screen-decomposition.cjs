@@ -29,7 +29,8 @@ const at = name => {
 const controllerBridges = {
   goToOlderSearchResult: ['searchCtrl', 'goToOlderResult', 'ChatSearchController'],
   goToNewerSearchResult: ['searchCtrl', 'goToNewerResult', 'ChatSearchController'],
-  openChannelShare: ['messageActionsCtrl', 'openForwardTargetPickerForEntry', 'ChatMessageActionsController']
+  openChannelShare: ['messageActionsCtrl', 'openForwardTargetPickerForEntry', 'ChatMessageActionsController'],
+  openScheduledSendMenu: ['composerCtrl', 'openScheduledSendMenu', 'ChatComposerController']
 };
 // These inputs trigger observed presentation dependencies; the Session API
 // deliberately takes only the preceding operational arguments.
@@ -57,7 +58,8 @@ function verifyBindingPayloads(candidateGraph) {
     const parameters = signature[1].trim() ? signature[1].split(',').map(item => item.trim().match(/^(\w+)\??\s*:/)?.[1]) : [];
     assert.ok(parameters.every(Boolean), `named ViewBindings inputs: ${name}`);
     const bridge = controllerBridges[name];
-    const expectedNames = bridge ? (name === 'openChannelShare' ? ['entry'] : []) : candidateGraph.delegates.get(name).arguments;
+    const bridgeArguments = { openChannelShare: ['entry'], openScheduledSendMenu: ['text'] };
+    const expectedNames = bridge ? (bridgeArguments[name] || []) : candidateGraph.delegates.get(name).arguments;
     assert.deepEqual(parameters, [...expectedNames, ...(presentationInputs[name] || [])],
       `ViewBindings input contract: ${name}`);
     const payloads = parameters.map((parameter, index) => Object.freeze({ name, parameter, index }));

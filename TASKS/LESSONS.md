@@ -1749,3 +1749,12 @@ Last updated: 2026-10-23
   such as D21 send-later.
 - Reverting a half-built slice is the correct end state when the contract gate cannot be satisfied in the round:
   the tree stayed green and the constraint is now written down instead of hiding in a broken branch.
+
+## 293. Bridge to a controller instead of growing the session
+
+- The page contract has two escape hatches, not one: a Session delegate, or a `controllerBridges` entry where the
+  binding calls a controller already owned by `ChatScreenContext` (`this.session.composerCtrl.method(arg, this.session)`).
+  The second needs no session line, which is exactly what a full 499-line session needs.
+- A bridge is checked harder than a delegate: the gate derives the ViewBindings parameter names from
+  `bridgeArguments` and executes the binding against a frozen payload, so the argument list has to be declared
+  there, not inferred.
