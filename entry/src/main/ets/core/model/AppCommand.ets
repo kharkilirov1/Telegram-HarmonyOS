@@ -679,6 +679,35 @@ export class TranslateTextPayload {
   toLanguageCode: string = '';
 }
 
+// A5: current-user profile editing. TDLib: setName(first_name,last_name) / setBio(bio) / setUsername(username).
+export class SetProfileNamePayload {
+  firstName: string = '';
+  lastName: string = '';
+}
+
+export class SetProfileNameCommand extends AppCommand {
+  type: string = 'setName';
+  payload: SetProfileNamePayload = new SetProfileNamePayload();
+}
+
+export class SetProfileBioPayload {
+  bio: string = '';
+}
+
+export class SetProfileBioCommand extends AppCommand {
+  type: string = 'setBio';
+  payload: SetProfileBioPayload = new SetProfileBioPayload();
+}
+
+export class SetProfileUsernamePayload {
+  username: string = '';
+}
+
+export class SetProfileUsernameCommand extends AppCommand {
+  type: string = 'setUsername';
+  payload: SetProfileUsernamePayload = new SetProfileUsernamePayload();
+}
+
 export class TranslateTextCommand extends AppCommand {
   type: string = 'translateText';
   payload: TranslateTextPayload = new TranslateTextPayload();
@@ -1261,6 +1290,9 @@ export type AnyAppCommand =
   | GetChatPinnedMessageCommand
   | GetRepliedMessageCommand
 | TranslateTextCommand
+| SetProfileNameCommand
+| SetProfileBioCommand
+| SetProfileUsernameCommand
 | GetMessageThreadCommand
 | GetMessageThreadHistoryCommand
   | CloseChatCommand
@@ -1605,6 +1637,25 @@ export function createGetMessageThreadHistoryCommand(chatId: ChatId, messageId: 
   cmd.payload.fromMessageId = fromMessageId;
   cmd.payload.offset = offset;
   cmd.payload.limit = limit;
+  return cmd;
+}
+
+export function createSetProfileNameCommand(firstName: string, lastName: string = ''): SetProfileNameCommand {
+  const cmd = new SetProfileNameCommand();
+  cmd.payload.firstName = firstName;
+  cmd.payload.lastName = lastName;
+  return cmd;
+}
+
+export function createSetProfileBioCommand(bio: string): SetProfileBioCommand {
+  const cmd = new SetProfileBioCommand();
+  cmd.payload.bio = bio;
+  return cmd;
+}
+
+export function createSetProfileUsernameCommand(username: string): SetProfileUsernameCommand {
+  const cmd = new SetProfileUsernameCommand();
+  cmd.payload.username = username;
   return cmd;
 }
 

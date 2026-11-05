@@ -1332,3 +1332,12 @@ Last updated: 2026-10-23
   same commit.
 - Animating in `aboutToAppear` with `animateTo` on a numeric field keeps the layout width interpolation
   short and tokenized; the measured share stays a pure function so the model is unchanged.
+
+## 242. Mirror the server constraints in the use case, not in the UI
+
+- TDLib answers setUsername/setBio with a generic error, so a bad username should never cost a round
+  trip: 5..32 characters, latin letters/digits/underscore, first character a letter; empty removes it.
+- `ReturnType<typeof factory>` is not usable as a parameter type in ArkTS here; type the command argument
+  as `AnyAppCommand`.
+- Status-vs-Ok responses differ per method; assert `@type === "ok"` explicitly instead of trusting a
+  resolved promise.

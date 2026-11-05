@@ -67,6 +67,7 @@ import {
   GetMessagePropertiesCommand,
   GetChatPinnedMessageCommand,
   GetRepliedMessageCommand, GetMessageThreadCommand, GetMessageThreadHistoryCommand, TranslateTextCommand,
+  SetProfileNameCommand, SetProfileBioCommand, SetProfileUsernameCommand,
   CloseChatCommand,
   SetTdlibOnlineCommand,
   GetUserFullInfoCommand,
@@ -187,6 +188,9 @@ COMMAND_SERIALIZATION_HANDLERS.set('getChat', serializeGetChat);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessage', serializeGetMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageThread', serializeGetMessageThread);
 COMMAND_SERIALIZATION_HANDLERS.set('translateText', serializeTranslateText);
+COMMAND_SERIALIZATION_HANDLERS.set('setName', serializeSetProfileName);
+COMMAND_SERIALIZATION_HANDLERS.set('setBio', serializeSetProfileBio);
+COMMAND_SERIALIZATION_HANDLERS.set('setUsername', serializeSetProfileUsername);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageThreadHistory', serializeGetMessageThreadHistory);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageProperties', serializeGetMessageProperties);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatPinnedMessage', serializeGetChatPinnedMessage);
@@ -993,6 +997,25 @@ function serializeGetChatPinnedMessage(command: AnyAppCommand, result: Serialize
   const cmd = command as GetChatPinnedMessageCommand;
   result.method = 'getChatPinnedMessage';
   result.params.setNumber('chat_id', cmd.payload.chatId);
+}
+
+function serializeSetProfileName(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SetProfileNameCommand;
+  result.method = 'setName';
+  result.params.setString('first_name', cmd.payload.firstName);
+  result.params.setString('last_name', cmd.payload.lastName);
+}
+
+function serializeSetProfileBio(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SetProfileBioCommand;
+  result.method = 'setBio';
+  result.params.setString('bio', cmd.payload.bio);
+}
+
+function serializeSetProfileUsername(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SetProfileUsernameCommand;
+  result.method = 'setUsername';
+  result.params.setString('username', cmd.payload.username);
 }
 
 function serializeTranslateText(command: AnyAppCommand, result: SerializedCommand): void {

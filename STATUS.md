@@ -146,6 +146,13 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **A5-edit-profile-data (lead).** Слой данных редактирования профиля: команды `setName`/`setBio`/
+  `setUsername` (+payload/фабрики) и сериализатор; `EditProfileUseCase.updateName/updateBio/
+  updateUsername` — trim, снятие `@`, лимиты (имя 64, био 70, username 5..32, латиница/цифры/`_`,
+  первая буква), пустой username удаляет, строгий Ok-контракт ответа, ошибки `AppError`. Суита
+  `test-edit-profile.cjs` (136-я): wire трёх методов, границы валидации, trimmed payloads, отказы
+  gateway/не-Ok. Гейты: host **136/136**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток A5: UI-страница,
+  аватар, witness.
 - **H4-chart-reveal (lead).** Анимация диаграммы хранилища: `revealProgress` 0→1 через `animateTo`
   (420 ms, EaseOut, токен `STORAGE_CHART_REVEAL_DURATION_MS`), ширина сегмента = измеренная доля ×
   reveal, нулевые сегменты не попадают в дерево. Суита `test-data-storage.cjs` расширена (токен,
