@@ -8,6 +8,7 @@ import { AppState } from '../../../core/model/AppState';
 import { createDownloadFileCommand } from '../../../core/model/AppCommand';
 import { StoryFullDto } from '../../../core/model/dto/StoryDto';
 import { MessageAvailableReactionsSnapshot } from '../../../core/model/dto/MessageDto';
+import { StoryViewsRouteParams } from './TgStoryViewsPage';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { LoadStoryUseCase, createLoadStoryUseCase } from '../../../domain/usecases/loadStory';
@@ -299,6 +300,17 @@ export struct TgStoryViewerPage {
     this.pageStack.pop();
   }
 
+  // I6: only an owned story has interaction info, so only then the counter is tappable.
+  private openStoryViews(): void {
+    const story = this.story;
+    const storyId = this.currentStoryId();
+    if (story === undefined || storyId === 0 || story.viewCount <= 0) {
+      return;
+    }
+    this.pageStack.pushPathByName('TgStoryViewsPage',
+      new StoryViewsRouteParams(storyId, story.viewCount, story.reactionCount));
+  }
+
   @Builder
   private buildHeader() {
     Column() {
@@ -335,6 +347,9 @@ export struct TgStoryViewerPage {
             .fontSize(TgUiTokens.FONT_META_SIZE)
             .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
             .margin({ right: TgUiTokens.SPACE_8 })
+            .onClick((): void => {
+              this.openStoryViews();
+            })
         }
         if (storyReactionsLabel(this.story).length > 0) {
           Text('♥ ' + storyReactionsLabel(this.story))

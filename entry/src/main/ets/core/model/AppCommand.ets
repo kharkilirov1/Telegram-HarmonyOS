@@ -605,6 +605,22 @@ export class PostStoryCommand extends AppCommand {
   payload: PostStoryPayload = new PostStoryPayload();
 }
 
+// I6: viewers of an owned story.
+export class GetStoryInteractionsPayload {
+  storyId: number = 0;
+  query: string = '';
+  onlyContacts: boolean = false;
+  preferForwards: boolean = false;
+  preferWithReaction: boolean = false;
+  offset: string = '';
+  limit: number = 20;
+}
+
+export class GetStoryInteractionsCommand extends AppCommand {
+  type: string = 'getStoryInteractions';
+  payload: GetStoryInteractionsPayload = new GetStoryInteractionsPayload();
+}
+
 export class OpenChatCommand extends AppCommand {
   type: string = 'openChat';
   payload: OpenChatPayload = new OpenChatPayload();
@@ -1352,6 +1368,7 @@ export type AnyAppCommand =
   | SetStoryReactionCommand
   | GetStoryAvailableReactionsCommand
   | PostStoryCommand
+  | GetStoryInteractionsCommand
   | OpenChatCommand
   | SetTdlibOnlineCommand
   | SendMessageCommand
@@ -1513,6 +1530,12 @@ export function createSetStoryReactionCommand(posterChatId: ChatId, storyId: num
   cmd.payload.posterChatId = posterChatId;
   cmd.payload.storyId = storyId;
   cmd.payload.reactionKey = reactionKey;
+  return cmd;
+}
+
+export function createGetStoryInteractionsCommand(payload: GetStoryInteractionsPayload): GetStoryInteractionsCommand {
+  const cmd = new GetStoryInteractionsCommand();
+  cmd.payload = payload;
   return cmd;
 }
 

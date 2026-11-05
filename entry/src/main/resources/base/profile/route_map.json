@@ -16,6 +16,11 @@
       "buildFunction": "TgChatAdminRightsPageBuilder"
     },
     {
+      "name": "TgStoryViewsPage",
+      "pageSourceFile": "src/main/ets/ui/pages/stories/TgStoryViewsPage.ets",
+      "buildFunction": "TgStoryViewsPageBuilder"
+    },
+    {
       "name": "TgStoryComposerPage",
       "pageSourceFile": "src/main/ets/ui/pages/stories/TgStoryComposerPage.ets",
       "buildFunction": "TgStoryComposerPageBuilder"

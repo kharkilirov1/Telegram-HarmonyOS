@@ -56,6 +56,14 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **I6-story-views (lead).** Просмотры истории: `getStoryInteractions` (query/onlyContacts/
+  preferForwards/preferWithReaction, offset, limit) + сериализация, `parseStoryInteractions`
+  (view/forward/repost, реакция зрителя, chat-актор), `LoadStoryInteractionsUseCase` (страницы по
+  next_offset, exhausted, reset, ошибка → пустая страница), `TgStoryViewsPage` (итоги, список с
+  инициалами и реакциями, догрузка у конца списка) + route; вход по тапу на счётчик 👁 в вьювере.
+  Строки в 3 локалях. Новая суита `test-story-views.cjs` (151-я): DTO, парсинг, команда/сериализация,
+  курсор use case, страница/route/строки, вход. Гейты: host **151/151**, оба smoke, hvigor BUILD
+  SUCCESSFUL. Остаток I6: ответ на историю, выбор адресатов, witness.
 - **I6-story-composer (lead).** Экран публикации: `StoryComposerModel` (mediaKind по расширению,
   clamp caption 200, цикл приватности без недоступного режима, сборка payload, гейт Publish),
   `StoryMediaPrep` (копия выбранного файла в кэш), `TgStoryComposerPage` (пикер IMAGE_VIDEO_TYPE,

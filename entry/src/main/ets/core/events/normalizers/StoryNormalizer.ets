@@ -10,6 +10,9 @@ import {
   StoryContentKind,
   StoryFullDto,
   StoryInfoDto,
+  StoryInteractionDto,
+  StoryInteractionKind,
+  StoryInteractionsPageDto,
   StoryListType
 } from '../../model/dto/StoryDto';
 import { TdObject } from '../../../models/TdTypes';
@@ -170,3 +173,48 @@ function handleStoryFull(events: AnyAppEvent[], update: TdObject): void {
   events.push(createStoryFullUpdatedEvent(dto));
 }
 
+
+// I6: viewers of an owned story (getStoryInteractions). The actor is a message sender, so a chat actor
+// stays a chat id; the stats screen resolves names from the users/chats stores.
+function storyInteractionKindFromTd(tdInteractionType: TdObject | undefined): StoryInteractionKind {
+  if (tdInteractionType === undefined) {
+    return 'view';
+  }
+  const type = tdGetType(tdInteractionType);
+  if (type === 'storyInteractionTypeForward') {
+    return 'forward';
+  }
+  if (type === 'storyInteractionTypeRepost') {
+    return 'repost';
+  }
+  return 'view';
+}
+
+export function parseStoryInteractions(tdInteractions: TdObject): StoryInteractionsPageDto {
+  const page = new StoryInteractionsPageDto();
+  page.totalCount = tdGetNumber(tdInteractions, 'total_count');
+  page.totalForwardCount = tdGetNumber(tdInteractions, 'total_forward_count');
+  page.totalReactionCount = tdGetNumber(tdInteractions, 'total_reaction_count');
+  page.nextOffset = tdGetString(tdInteractions, 'next_offset');
+  for (const tdInteraction of tdGetArray(tdInteractions, 'interactions')) {
+    const dto = new StoryInteractionDto();
+    const actor = tdGetObject(tdInteraction, 'actor_id');
+    if (actor !== undefined) {
+      if (tdGetType(actor) === 'messageSenderUser') {
+        dto.actorUserId = tdGetNumber(actor, 'user_id');
+      } else {
+        dto.actorChatId = tdGetNumber(actor, 'chat_id');
+      }
+    }
+    dto.date = tdGetNumber(tdInteraction, 'interaction_date');
+    const interactionType = tdGetObject(tdInteraction, 'type');
+    dto.kind = storyInteractionKindFromTd(interactionType);
+    if (dto.kind === 'view' && interactionType !== undefined) {
+      dto.reactionKey = parseReactionTypeKey(tdGetObject(interactionType, 'chosen_reaction_type'));
+    }
+    if (dto.actorUserId !== 0 || dto.actorChatId !== 0) {
+      page.interactions.push(dto);
+    }
+  }
+  return page;
+}

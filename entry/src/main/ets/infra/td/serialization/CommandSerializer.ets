@@ -33,6 +33,8 @@ import {
   GetStoryAvailableReactionsCommand,
   PostStoryCommand,
   PostStoryPayload,
+  GetStoryInteractionsCommand,
+  GetStoryInteractionsPayload,
   OpenChatCommand,
   SendMessageCommand,
   SendMediaMessageCommand,
@@ -127,6 +129,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('loadActiveStories', serializeLoadActiveStori
   COMMAND_SERIALIZATION_HANDLERS.set('setStoryReaction', serializeSetStoryReaction);
   COMMAND_SERIALIZATION_HANDLERS.set('getStoryAvailableReactions', serializeGetStoryAvailableReactions);
   COMMAND_SERIALIZATION_HANDLERS.set('postStory', serializePostStory);
+  COMMAND_SERIALIZATION_HANDLERS.set('getStoryInteractions', serializeGetStoryInteractions);
 COMMAND_SERIALIZATION_HANDLERS.set('openChat', serializeOpenChat);
 COMMAND_SERIALIZATION_HANDLERS.set('sendMessage', serializeSendMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('sendMediaMessage', serializeSendMediaMessage);
@@ -301,6 +304,19 @@ function serializeLoadChats(command: AnyAppCommand, result: SerializedCommand): 
       ? '{"@type":"chatListFolder","chat_folder_id":' + cmd.payload.folderId.toString() + '}'
       : '{"@type":"chatListMain"}');
   result.params.setString('_chat_list_json', chatListJson);
+  result.params.setNumber('limit', cmd.payload.limit);
+}
+
+// getStoryInteractions (td_api.tl:12502): paged viewers of an owned story.
+function serializeGetStoryInteractions(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetStoryInteractionsCommand;
+  result.method = 'getStoryInteractions';
+  result.params.setNumber('story_id', cmd.payload.storyId);
+  result.params.setString('query', cmd.payload.query);
+  result.params.setBool('only_contacts', cmd.payload.onlyContacts);
+  result.params.setBool('prefer_forwards', cmd.payload.preferForwards);
+  result.params.setBool('prefer_with_reaction', cmd.payload.preferWithReaction);
+  result.params.setString('offset', cmd.payload.offset);
   result.params.setNumber('limit', cmd.payload.limit);
 }
 

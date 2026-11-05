@@ -829,6 +829,14 @@
       "value": "Change photo"
     },
     {
+      "name": "story_views_title",
+      "value": "Viewers"
+    },
+    {
+      "name": "story_views_count",
+      "value": "Views"
+    },
+    {
       "name": "story_composer_title",
       "value": "New Story"
     },

@@ -1544,3 +1544,11 @@ Last updated: 2026-10-23
   nobody. The cycle now skips that mode and the gate refuses it, so the visible options are all viable.
 - Picker URIs only live during the picker session: copy the media into the cache first, then hand the
   cached path to TDLib (`inputFileLocal`).
+
+## 269. Opaque cursors belong to the use case, not the screen
+
+- TDLib pages with an opaque offset and signals the end with an empty next offset. Keeping the cursor and
+  the exhausted flag inside the use case means the screen asks "load" and never builds a query itself;
+  reset is an explicit call so reopening the list starts over.
+- Viewer rows must survive not-yet-loaded users: keep the row and fill the name later from the store
+  instead of dropping it, otherwise a page looks shorter than its total count.

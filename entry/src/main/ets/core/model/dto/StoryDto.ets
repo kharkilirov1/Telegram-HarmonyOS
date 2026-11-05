@@ -70,3 +70,24 @@ export class StoryFullDto {
 export function storyContentKey(posterChatId: number, storyId: number): string {
   return posterChatId.toString() + ':' + storyId.toString();
 }
+
+// I6: one viewer/forwarder of an owned story, plus the paged answer. The stats screen shows these rows.
+export type StoryInteractionKind = 'view' | 'forward' | 'repost';
+
+export class StoryInteractionDto {
+  // Exactly one of the two actor ids is non-zero.
+  actorUserId: number = 0;
+  actorChatId: number = 0;
+  date: number = 0;
+  kind: StoryInteractionKind = 'view';
+  // 'emoji:…' / 'custom:…' when the viewer reacted, empty otherwise.
+  reactionKey: string = '';
+}
+
+export class StoryInteractionsPageDto {
+  totalCount: number = 0;
+  totalForwardCount: number = 0;
+  totalReactionCount: number = 0;
+  interactions: StoryInteractionDto[] = [];
+  nextOffset: string = '';
+}
