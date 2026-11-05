@@ -129,6 +129,9 @@ export class ChatMessageRowVO {
   translatedText: string = '';
   translationVisible: boolean = false;
   isEmojiOnly: boolean = false;
+  // D27: dice need their value for the badge and the roll animation.
+  diceEmoji: string = '';
+  diceValue: number = 0;
   timeText: string = '';
   editedText: string = '';
   sendStatus: TgMessageSendStatus = TgMessageSendStatus.None;
@@ -969,6 +972,8 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   }
   // D27: a dice message is one emoji, so it uses the same large-emoji presentation as an emoji-only text.
   row.isEmojiOnly = (content.type === 'text' || content.type === 'dice') && isEmojiOnlyText(row.text);
+  row.diceEmoji = content.diceEmoji;
+  row.diceValue = content.diceValue;
   row.forceBreakAll = content.type === 'text' && shouldForceBreakAll(row.text);
   if (content.type === 'text' && content.quoteEntities.length > 0) {
     const quoteRanges = buildQuoteRanges(row.text, content.quoteEntities);

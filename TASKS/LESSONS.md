@@ -1591,3 +1591,11 @@ Last updated: 2026-10-23
   bubble. Routing the dice through the existing emoji-only text path fixed the visible defect without a
   new bubble atom; a dedicated badge/animation remains a separate, larger slice.
 - The value is server-rolled: the client sends only the emoji, so validation is a whitelist, not a range.
+
+## 275. Keep cross-cutting interception out of the text path
+
+- Detecting a dice inside the shared text-send controller pulled the gateway module into every suite that
+  exercises text sending, and ten suites failed with an undefined identifier before any dice ran. Inlining
+  the six-emoji list in the controller (with a parity assertion in the dice suite) kept the text path free of
+  dice plumbing while the actual send still goes through its use case.
+- `scale`/`rotation` are reserved names on `CustomComponent`; local animation state needs different names.

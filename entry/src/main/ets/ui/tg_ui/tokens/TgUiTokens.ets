@@ -1329,6 +1329,18 @@ export class TgUiTokens {
   static readonly STORY_REACTION_EMOJI_SIZE: number = 22;
   static readonly STORY_REACTION_CHIP_RADIUS: number = 16;
   static readonly STORY_REPLY_FIELD_RADIUS: number = 18;
+
+  // D27: dice bubble.
+  static readonly DICE_EMOJI_SIZE: number = 96;
+  static readonly DICE_VALUE_SIZE: number = 13;
+  static readonly DICE_VALUE_BADGE_RADIUS: number = 10;
+  static readonly COLOR_DICE_VALUE_BADGE_BG: Resource = $r('app.color.chatlist_separator');
+  static readonly DICE_VALUE_BADGE_PADDING_H: number = 8;
+  static readonly DICE_VALUE_BADGE_PADDING_V: number = 2;
+  static readonly DICE_BUBBLE_PADDING: number = 4;
+  static readonly DICE_ROLL_DURATION_MS: number = 220;
+  static readonly DICE_ROLL_PEAK_SCALE: number = 1.18;
+  static readonly DICE_ROLL_PEAK_ROTATION: number = 18;
   static readonly STORY_REACTION_CHIP_BG: ResourceColor = 'rgba(255, 255, 255, 0.16)';
   static readonly STORY_REACTION_CHOSEN_BG: ResourceColor = 'rgba(51, 144, 236, 0.5)';
   // A5: avatar editor viewport and controls.

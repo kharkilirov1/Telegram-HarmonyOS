@@ -12,6 +12,12 @@ const TAG = 'SendDice';
 // The set Telegram animates in the attachment/sticker pickers; anything else is rejected locally.
 export const DICE_EMOJIS: string[] = ['🎲', '🎯', '🏀', '⚽', '🎳', '🎰'];
 
+// iOS sends a dice when the whole message is one interactive emoji, not only from a dedicated button.
+export function diceEmojiFromText(text: string): string {
+  const trimmed = text.trim();
+  return isSupportedDiceEmoji(trimmed) ? trimmed : '';
+}
+
 export function isSupportedDiceEmoji(emoji: string): boolean {
   return DICE_EMOJIS.includes(emoji);
 }

@@ -90,7 +90,7 @@ async function main() {
     }
   };
   const U = load('domain/usecases/sendDice.ets',
-    ['SendDiceUseCase', 'createSendDiceUseCase', 'DICE_EMOJIS', 'isSupportedDiceEmoji'], {
+    ['SendDiceUseCase', 'createSendDiceUseCase', 'DICE_EMOJIS', 'isSupportedDiceEmoji', 'diceEmojiFromText'], {
       createSendDiceCommand: (chatId, emoji) => ({ type: 'sendDice', payload: { chatId, emoji } }),
       TdObject: TdObjectFixture,
       hilog
@@ -98,6 +98,12 @@ async function main() {
   assert.deepEqual(U.DICE_EMOJIS, ['🎲', '🎯', '🏀', '⚽', '🎳', '🎰']);
   assert.equal(U.isSupportedDiceEmoji('🎲'), true);
   assert.equal(U.isSupportedDiceEmoji('🍕'), false);
+  assert.equal(U.diceEmojiFromText('🎲'), '🎲');
+  assert.equal(U.diceEmojiFromText('  🎯  '), '🎯', 'surrounding whitespace is ignored');
+  assert.equal(U.diceEmojiFromText('🎲🎲'), '', 'two dice are text, not a roll');
+  assert.equal(U.diceEmojiFromText('roll 🎲'), '', 'dice inside a sentence stay text');
+  assert.equal(U.diceEmojiFromText('🍕'), '');
+  assert.equal(U.diceEmojiFromText(''), '');
   const useCase = new U.SendDiceUseCase(gateway);
   assert.equal(await useCase.execute(0, '🎲'), false, 'no chat means no send');
   assert.equal(await useCase.execute(7, '🍕'), false, 'an unsupported emoji is rejected locally');
@@ -109,6 +115,42 @@ async function main() {
   assert.equal(sent[1].payload.emoji, '🎯');
   fail = true;
   assert.equal(await useCase.execute(7, '🎲'), false);
+
+  // Chat interception and bubble --------------------------------------------------------------------
+  const controller = read('ui/pages/chat/ChatTextSendController.ets');
+  assert.match(controller, /const diceEmoji = INTERACTIVE_DICE_EMOJIS\.includes\(trimmed\) \? trimmed : '';/);
+  assert.match(controller, /const INTERACTIVE_DICE_EMOJIS: string\[\] = \['🎲', '🎯', '🏀', '⚽', '🎳', '🎰'\];/);
+  // The controller list must match the use case whitelist, or a dice the UI sends would be rejected.
+  const controllerList = controller.match(/INTERACTIVE_DICE_EMOJIS: string\[\] = \[([^\]]*)\]/)[1];
+  for (const emoji of U.DICE_EMOJIS) {
+    assert.ok(controllerList.includes(emoji), 'the controller knows ' + emoji);
+  }
+  assert.equal(controllerList.match(/[^,]+/g).length, U.DICE_EMOJIS.length, 'both lists have the same size');
+  assert.match(controller, /if \(diceEmoji\.length > 0 && host\.getReplyToMessageId\(\) === '0'\) \{/);
+  assert.match(controller, /private handleSendDice\(emoji: string, host: ChatTextSendHost\): void \{/);
+  assert.match(controller, /createSendDiceUseCase\(getTdGatewayAdapter\(\)\)/);
+  assert.match(controller, /diceUseCase\.execute\(chatId, emoji\)/);
+  assert.doesNotMatch(controller, /if \(revision < 0\)/);
+
+  assert.match(vo, /diceEmoji: string = '';/);
+  assert.match(vo, /row\.diceValue = content\.diceValue;/);
+  const row = read('ui/pages/chat/TgChatTimelineRow.ets');
+  assert.match(row, /diceEmoji: this\.entry\.message\.diceEmoji,/);
+  assert.match(router, /private isDice\(\): boolean \{/);
+  assert.match(router, /if \(this\.isDice\(\)\) \{/);
+  assert.match(router, /TgDiceBubble\(\{/);
+  assert.match(router, /value: this\.diceValue/);
+
+  const bubble = read('ui/tg_ui/atoms/TgDiceBubble.ets');
+  assert.match(bubble, /@Param emoji: string = '🎲';/);
+  assert.match(bubble, /@Param value: number = 0;/);
+  assert.match(bubble, /@Monitor\('value'\)/);
+  assert.match(bubble, /this\.getUIContext\(\)\.animateTo\(/);
+  assert.match(bubble, /private rollScale: number = 1;/);
+  assert.match(bubble, /TgUiTokens\.DICE_EMOJI_SIZE/);
+  const tokens = read('ui/tg_ui/tokens/TgUiTokens.ets');
+  assert.match(tokens, /static readonly DICE_EMOJI_SIZE: number = 96;/);
+  assert.match(tokens, /static readonly DICE_ROLL_DURATION_MS: number = 220;/);
 
   console.log('PASS dice contract');
 }

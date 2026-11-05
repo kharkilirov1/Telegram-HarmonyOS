@@ -56,6 +56,13 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D27-dice-tail (lead).** Кости до паритета по поведению: `TgDiceBubble` (крупный эмодзи, бейдж
+  значения, анимация прокрутки на `@Monitor('value')`), проброс `diceEmoji`/`diceValue` через
+  `ChatTimelineVO` → строку → роутер, ветка `isDice()` в роутере. Отправка как в iOS: сообщение из одного
+  интерактивного эмодзи перехватывается в `ChatTextSendController` и уходит `SendDiceCommand`, минуя
+  текстовый пайплайн; список эмодзи продублирован локально, чтобы обычная отправка не зависела от dice-
+  плюмбинга (суита проверяет совпадение списков). Токены dice добавлены. Суита `test-dice.cjs` расширена
+  (перехват, бар, роутер, токены). Гейты: host **155/155**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **D27-dice (lead).** Кости/дартс/слоты: `messageDice` больше не проваливается в «unknown» — парсер
   отдаёт `diceEmoji`/`diceValue`, текст = эмодзи, `ChatTimelineVO` помечает dice как emoji-only (крупный
   эмодзи в текстовом бабле), роутер проводит dice через текстовый путь. Добавлены `SendDiceCommand`

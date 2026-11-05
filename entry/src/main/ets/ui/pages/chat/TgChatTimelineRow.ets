@@ -78,6 +78,8 @@ export struct TgChatTimelineRow {
           this.toggleTranslation();
         },
         isEmojiOnly: this.entry.message.isEmojiOnly,
+    diceEmoji: this.entry.message.diceEmoji,
+    diceValue: this.entry.message.diceValue,
         forceBreakAll: this.entry.message.forceBreakAll,
         quoteOffsets: this.entry.message.quoteOffsets,
         quoteLengths: this.entry.message.quoteLengths,

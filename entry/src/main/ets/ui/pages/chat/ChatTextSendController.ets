@@ -7,10 +7,15 @@ import { AppError, isSilentTdlibError, isWriteOutcomeUnknown } from '../../../co
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { normalizeCustomEmojiEntitiesForSubstring } from '../../tg_ui/utils/TgCustomEmojiDraftPolicy';
 import { ChatPhotoAlbumHost } from './ChatPhotoAlbumController';
+import { SendDiceUseCase, createSendDiceUseCase } from '../../../domain/usecases/sendDice';
+import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 
 const DOMAIN = 0x0021;
 const TAG = 'ChatTextSend';
 const MAX_TEXT_CONSUMPTION_MARKS = 128;
+// Duplicated from SendDiceUseCase on purpose: the text path must decide "is this a dice" without touching
+// the gateway module, so a plain text send never depends on dice plumbing. The dice suite asserts parity.
+const INTERACTIVE_DICE_EMOJIS: string[] = ['🎲', '🎯', '🏀', '⚽', '🎳', '🎰'];
 
 class TextConsumptionMark {
   key: string = '';
@@ -29,8 +34,16 @@ export class ChatTextSendController {
   private textConsumptionLifecycle: number = 0;
   private textConsumptionUseCase?: SendMessageUseCase;
   private readonly textConsumptionCounts: Map<string, number> = new Map();
+  private diceUseCase?: SendDiceUseCase;
   private textConsumptionOverflow: number = 0;
   handleSend(text: string, host: ChatTextSendHost): void {
+    // D27: a message that is exactly one interactive emoji is a dice, the way iOS sends it.
+    const trimmed = text.trim();
+    const diceEmoji = INTERACTIVE_DICE_EMOJIS.includes(trimmed) ? trimmed : '';
+    if (diceEmoji.length > 0 && host.getReplyToMessageId() === '0') {
+      this.handleSendDice(diceEmoji, host);
+      return;
+    }
     const useCase = host.getSendUseCase();
     const chatId = host.getActiveChatId();
     if (host.isSendingMessage() || chatId === 0 || !useCase || !host.canSendNewMessages('text')) {
@@ -133,6 +146,46 @@ export class ChatTextSendController {
         }
         host.setSendingMessage(false);
       });
+  }
+
+  // Dice bypass the text pipeline: TDLib rolls the value server-side, so there is no local echo to accept.
+  private handleSendDice(emoji: string, host: ChatTextSendHost): void {
+    const chatId = host.getActiveChatId();
+    if (host.isSendingMessage() || chatId === 0 || !host.canSendNewMessages('dice')) {
+      return;
+    }
+    if (this.diceUseCase === undefined) {
+      this.diceUseCase = createSendDiceUseCase(getTdGatewayAdapter());
+    }
+    const diceUseCase = this.diceUseCase;
+    host.setEmojiPanelVisible(false);
+    host.setSendingMessage(true);
+    const operation = host.getSendOperationToken();
+    const lifecycleToken: number = host.getLifecycleToken();
+    const wasNearBottom = host.isNearBottom();
+    host.setCustomEmojiEntities([]);
+    host.setDraftText('');
+    host.setDraftSelection(0, 0);
+    diceUseCase.execute(chatId, emoji).then((accepted: boolean) => {
+      if (!this.ownsSendOperation(host, lifecycleToken, chatId, operation) || !accepted) {
+        return;
+      }
+      if (wasNearBottom) {
+        host.scrollToBottomSoon();
+      }
+    }).catch((error: Error) => {
+      if (!this.ownsSendOperation(host, lifecycleToken, chatId, operation)) {
+        return;
+      }
+      // The draft was already cleared; restore nothing, the message simply did not go out.
+      hilog.error(DOMAIN, TAG, 'Dice send failed: %{public}s', error.message);
+      this.showPendingToast(host, localized($r('app.string.composer_media_send_failed').id, 'Could not send message'));
+    }).finally(() => {
+      if (!this.ownsSendOperation(host, lifecycleToken, chatId, operation)) {
+        return;
+      }
+      host.setSendingMessage(false);
+    });
   }
 
   private matchesTextConsumptionOwner(chatId: number, lifecycle: number, useCase: SendMessageUseCase): boolean {

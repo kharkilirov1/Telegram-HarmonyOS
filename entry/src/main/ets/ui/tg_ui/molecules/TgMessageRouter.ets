@@ -14,6 +14,7 @@ import { TgAnimationBubble } from '../atoms/TgAnimationBubble';
 import { TgDocumentRow } from '../atoms/TgDocumentRow';
 import { TgAudioBubble } from '../atoms/TgAudioBubble';
 import { TgVoiceBubble } from '../atoms/TgVoiceBubble';
+import { TgDiceBubble } from '../atoms/TgDiceBubble';
 import { TgStickerView } from '../atoms/TgStickerView';
 import { TgMessageMeta, TgMessageSendStatus } from '../atoms/TgMessageMeta';
 import { TgReplySnippet } from '../atoms/TgReplySnippet';
@@ -179,6 +180,8 @@ export struct TgMessageRouter {
   @Local private expandedQuoteIndices: number[] = [];
 
   // ── Sticker ──
+  @Param diceEmoji: string = '';
+  @Param diceValue: number = 0;
   @Param stickerPath: string = '';
   @Param stickerFileId: number = 0;
   @Param stickerThumbnailPath: string = '';
@@ -242,6 +245,10 @@ export struct TgMessageRouter {
   @Param timeText: string = '';
   @Param editedText: string = '';
   @Param sendStatus: TgMessageSendStatus = TgMessageSendStatus.None;
+
+  private isDice(): boolean {
+    return this.contentType === 'dice';
+  }
 
   private isSticker(): boolean {
     return this.contentType === 'sticker';
@@ -1024,7 +1031,37 @@ export struct TgMessageRouter {
   }
 
   build() {
-    if (this.isSticker()) {
+    if (this.isDice()) {
+      Row() {
+        this.buildAvatarSlot()
+
+        Column() {
+          if (this.showSenderName && this.senderName.length > 0) {
+            Text(this.senderName)
+              .fontSize(TgUiTokens.MSG_SENDER_NAME_SIZE)
+              .fontWeight(TgUiTokens.MSG_SENDER_NAME_WEIGHT)
+              .fontColor(this.senderColorHex)
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .margin({ bottom: TgUiTokens.SPACE_2 })
+          }
+          Stack({ alignContent: Alignment.BottomEnd }) {
+            TgDiceBubble({
+              emoji: this.diceEmoji,
+              value: this.diceValue
+            })
+            this.buildOverlayMetaPill(true)
+          }
+          this.buildReactionsRow()
+        }
+        .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
+
+        this.buildChannelShareButton()
+      }
+      .width('100%')
+      .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
+      .alignItems(VerticalAlign.Bottom)
+    } else if (this.isSticker()) {
       // ── Sticker: no bubble background ──
       Row() {
         this.buildAvatarSlot()
