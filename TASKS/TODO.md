@@ -14,6 +14,11 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
 
 ## Debt
 
+- [ ] **God-файлы: 12 файлов выше жёсткого лимита 900 строк.** Самые крупные: `AppCommand.ets` (2599),
+  `ChatListPage.ets` (1780), `CommandSerializer.ets` (1665), `TgUiTokens.ets` (1632), `TgMessageRouter.ets`
+  (1582), `ChatTimelineVO.ets` (1524), `TgComposerInput.ets` (1517). Гейт держит их от роста; следующий шаг —
+  выносить по одному owner-модулю за срез. Владелец: lead. Триггер: любой срез, который трогает такой файл.
+
 - [ ] **D26: нет выбора номера и «Написать» как чата.** При нескольких номерах берётся первый, а
   «Написать» открывает профиль, а не чат. Владелец: lead. Триггер: следующий срез D26.
 

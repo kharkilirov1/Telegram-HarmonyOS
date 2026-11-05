@@ -1622,3 +1622,12 @@ Last updated: 2026-10-23
   the delegate-count assertion, and one-line forwarders in the bindings (the decomposition suite matches
   `^  name(...): void { this.session.name(`). Missing any of them turns one change into a red gate.
 - Free budget by compacting a signature, never by deleting behavior.
+
+## 279. A size rule without a ratchet is prose
+
+- A hard cap alone freezes the past: 24 files were already above 600 lines, so a plain new-code limit would
+  have failed on day one and then been ignored. Pinning each legacy file to its exact size turns the rule
+  into a ratchet — growth fails, splits are permanent, and a rename cannot silently drop the budget because
+  every entry must still point at an existing file.
+- The line count must ignore the trailing newline, or every file reads one line larger than the editor shows
+  and every budget is off by one.
