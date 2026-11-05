@@ -126,14 +126,8 @@ for (const locale of ['base', 'ru_RU', 'zh_CN']) {
 
 // Wire + use cases: leaveChat and inputMessageContact -------------------------------------------
 const { stripTypeScriptTypes } = require('node:module');
-function load(relative, deps = {}) {
-  const text = read(relative);
-  const names = [...text.matchAll(/^export\s+(?:async\s+)?(?:class|function|enum|const)\s+(\w+)/gm)].map((m) => m[1]);
-  const code = text.replace(/^import[\s\S]*?;\s*/gm, '').replace(/^export\s+/gm, '')
-    .replace(/^@ObservedV2\s*\n/gm, '').replace(/^(\s*)@Trace\s+/gm, '$1');
-  return new Function(...Object.keys(deps), stripTypeScriptTypes(code, { mode: 'transform' }) +
-    `\nreturn {${names.join(',')}};`)(...Object.values(deps));
-}
+const { createLoader } = require('./lib/ets-load.cjs');
+const load = createLoader(main);
 const hilog = { info() {}, debug() {}, warn() {}, error() {} };
 const { TdObject } = load('models/td/common/index.ets');
 const C = load('core/model/AppCommand.ets');

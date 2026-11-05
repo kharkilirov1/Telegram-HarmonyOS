@@ -1650,3 +1650,12 @@ Last updated: 2026-10-23
 - Swallowing resolution errors (`catch → {}`) is worse than failing: the suite then crashes later with
   `undefined.COLOR_TEXT_TITLE` far from the cause. Propagate with the importer name.
 - Migrate in units and re-run the full runner each unit; the migration was reverted rather than left half-done.
+
+## 282. Auto-stubs make the shared loader viable; propagated mocks do not
+
+- The loader only became usable once ambient ArkUI was generated rather than enumerated: scanning for
+  `Capitalised.` member bases and injecting a proxy per unknown name fixed tokens and presentation modules
+  without a stub table. Excluding local declarations from that scan matters — `COMMAND_SERIALIZATION_HANDLERS`
+  is a module const, not an ambient enum, and stubbing it collides with its own declaration.
+- Propagating suite mocks into resolved child modules fixes semantics but kills the module cache (mocks differ
+  per call), and the runner went from seconds to an unbounded run. Migrate suite by suite instead.
