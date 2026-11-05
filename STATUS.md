@@ -56,6 +56,12 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D17: тап по превью ссылки (lead).** Превью было декоративным — тап ничего не делал. Добавлен `onPreviewPress(url)`
+  в `TgLinkPreviewBubble` (клик по корневому `Stack`), сквозной `onLinkPreviewPress` через `TgTextBubbleV3`,
+  `onMessageLinkPress` в `TgMessageRouter` и `TgChatTimelineRow`, и переиспользован существующий делегат
+  `ChatScreenViewBindings.openSharedMediaLink` → `context.openLink`. Новый гейт `scripts/test-link-preview-tap.cjs`
+  (160-я суита) проверяет всю цепочку. Ограничение: ссылки внутри текста по-прежнему не кликабельны — Span в
+  ArkUI не принимает `onClick`, нужен hit-test по раскладке. Гейты: host **160/160**, оба smoke, hvigor OK. Урок — №287.
 - **D26 «Написать» из карточки контакта (lead).** Кнопка Message больше не открывает профиль: резолвится
   личный чат (`createPrivateChatUseCase(getTdGatewayAdapter()).execute(userId)`), строятся параметры
   маршрута через уже существующий `Session.createChatRouteParams` и выполняется `pushChatScreenRoute`, то есть

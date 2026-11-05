@@ -126,6 +126,7 @@ export class ChatScreenViewBindings implements ChatMessageActionsPopupPort, Chat
 
   // D26: contact card actions live in ChatContactCardActions; the bindings only forward.
   openContactChat(userId: number): void { this.session.openContactChat(userId); }
+  openSharedMediaLink(value: string): boolean { return this.session.openSharedMediaLink(value); }
   createChatRouteParams(chatId: number, chatTitle: string): ChatScreenRouteParams | undefined { return this.session.createChatRouteParams(chatId, chatTitle); }
 
   addContactCard(firstName: string, lastName: string, phoneNumber: string): void { this.session.addContactCard(firstName, lastName, phoneNumber); }

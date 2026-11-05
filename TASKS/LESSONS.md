@@ -1696,3 +1696,12 @@ Last updated: 2026-10-23
 - The gateway type matters: `AppCoreRuntime.getGateway()` returns `TdGateway`, while use cases need the
   `TdGatewayPort` adapter, and ArkTS refuses structural typing — use `getTdGatewayAdapter()` as the compose and
   settings pages do.
+
+## 287. The page contract gate only knows names that already delegate
+
+- A render callback must map to an existing Session delegate: the gate derives delegates from methods that call
+  `delegateX(this, ...)`. A convenience forwarder inside the session (`openMessageLink` → `openSharedMediaLink`)
+  is invisible to it and fails with "render callback has Session delegate". Reuse the delegate name in the port
+  and bindings instead of adding a wrapper.
+- Pinned god-file budgets apply to the files the slice touches: adding five lines to `TgMessageRouter` failed the
+  gate, so the wiring had to be paid for by compacting blank lines in the same file.

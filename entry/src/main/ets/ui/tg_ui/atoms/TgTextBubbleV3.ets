@@ -41,6 +41,8 @@ export struct TgTextBubbleV3 {
   @Param linkPreviewShowLargeMedia: boolean = false
   @Param linkPreviewShowMediaAboveDescription: boolean = false
   @Param linkPreviewShowAboveText: boolean = false
+  // A tapped preview opens its URL in the browser, like iOS.
+  @Event onLinkPreviewPress: (url: string) => void = (_: string) => {}
 
   // ── Sender ──
   @Param showSenderName: boolean = false
@@ -235,6 +237,7 @@ export struct TgTextBubbleV3 {
   buildLinkPreview() {
     if (this.hasLinkPreview()) {
       TgLinkPreviewBubble({
+        onPreviewPress: (url: string): void => { this.onLinkPreviewPress(url); },
         url: this.linkPreviewUrl,
         displayUrl: this.linkPreviewDisplayUrl,
         siteName: this.linkPreviewSiteName,

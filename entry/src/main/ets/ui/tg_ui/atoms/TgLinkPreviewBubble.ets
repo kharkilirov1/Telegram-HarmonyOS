@@ -14,6 +14,8 @@ export struct TgLinkPreviewBubble {
   @Param showMediaAboveDescription: boolean = false;
   @Param isOutgoing: boolean = false;
   @Param availableWidth: number = TgUiTokens.LINK_PREVIEW_MIN_WIDTH;
+  // The preview is a link: iOS opens the URL when the card is tapped.
+  @Event onPreviewPress: (url: string) => void = (_: string) => {};
 
   private accentColor(): ResourceColor {
     return this.isOutgoing ? TgUiTokens.LINK_PREVIEW_ACCENT_OUTGOING
@@ -201,5 +203,10 @@ export struct TgLinkPreviewBubble {
         .borderRadius(TgUiTokens.LINK_PREVIEW_RAIL_RADIUS)
     }
     .width(this.availableWidth)
+    .onClick((): void => {
+      if (this.url.trim().length > 0) {
+        this.onPreviewPress(this.url);
+      }
+    })
   }
 }

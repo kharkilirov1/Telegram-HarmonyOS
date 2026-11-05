@@ -14,6 +14,10 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
 
 ## Debt
 
+- [ ] **D18: ссылки/упоминания внутри текста не кликабельны.** `Span` в ArkUI не принимает `onClick`, поэтому
+  тап по `url`/`textUrl`/`mention`/`hashtag` нужен через hit-test по раскладке (`TgTextLayout` уже считает
+  позиции) либо через `RichEditor`. После этого открывать ссылки тем же `openSharedMediaLink`, а упоминания —
+  профилем (`mentionName.userId`) / `t.me/<username>`. Владелец: lead. Триггер: следующий срез по тексту.
 - [ ] **D26 хвост: выбор номера.** Если у контакта несколько телефонов, карточка показывает первый, а
   `addContactCard` сохраняет его же. Нужен выбор номера (iOS показывает список), затем witness на устройстве.
   Владелец: lead. Триггер: следующий срез по контактам.

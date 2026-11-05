@@ -196,6 +196,8 @@ export struct TgMessageRouter {
   @Param contactLastName: string = '';
   @Param contactPhoneNumber: string = '';
   @Event onContactMessagePress: () => void = () => {};
+  // Opening a tapped link (message text previews today).
+  @Event onMessageLinkPress: (url: string) => void = (_: string) => {};
   @Event onContactAddPress: () => void = () => {};
   @Param contactUserId: number = 0;
 
@@ -1130,6 +1132,9 @@ export struct TgMessageRouter {
           onTranslationToggle: (): void => {
             this.onTranslationToggle();
           },
+          onLinkPreviewPress: (url: string): void => {
+            this.onMessageLinkPress(url);
+          },
           isOutgoing: this.isOutgoing,
           isEmojiOnly: this.isEmojiOnly,
           forceBreakAll: this.forceBreakAll,
@@ -1515,11 +1520,9 @@ export struct TgMessageRouter {
               top: TgUiTokens.SPACE_2
             })
           }
-
           if (this.contentType === 'voice') {
             Column() {
               this.buildMediaContent()
-
               Row() {
                 this.buildInlineMeta()
               }
@@ -1537,7 +1540,6 @@ export struct TgMessageRouter {
             // Audio/music: meta aligned to audio bubble width
             Column() {
               this.buildMediaContent()
-
               Row() {
                 this.buildInlineMeta()
               }
@@ -1554,7 +1556,6 @@ export struct TgMessageRouter {
           } else {
             // Document: meta in separate row below
             this.buildMediaContent()
-
             Row() {
               this.buildInlineMeta()
             }
@@ -1570,7 +1571,6 @@ export struct TgMessageRouter {
         .constraintSize({ maxWidth: this.maxBubbleWidth() })
         .backgroundColor(this.bubbleColor())
         .borderRadius(this.bubbleRadius())
-
         this.buildChannelShareButton()
         this.buildOutgoingTail()
       }
