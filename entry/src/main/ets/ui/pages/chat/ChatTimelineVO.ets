@@ -171,6 +171,8 @@ export class ChatMessageRowVO {
 
   // Rich text entities (bold, italic, code, links, mentions, etc.)
   textEntities: TextEntity[] = [];
+  // D16: resolved custom emoji files for this row's entities, keyed by custom emoji id.
+  customEmojiPaths: Map<string, string> = new Map<string, string>();
   captionEntities: TextEntity[] = [];
 
   // Link preview for messageText

@@ -57,6 +57,7 @@ export struct TgMessageRouter {
   @Param quoteLengths: number[] = [];
   @Param quoteCollapsedFlags: boolean[] = [];
   @Param textEntities: TextEntity[] = [];
+  @Param customEmojiPaths: Map<string, string> = new Map<string, string>();
 
   // ── Reactions (S3b, read-only footer) ──
   @Param reactionEmojis: string[] = [];
@@ -1096,6 +1097,7 @@ export struct TgMessageRouter {
           quoteLengths: this.quoteLengths,
           quoteCollapsedFlags: this.quoteCollapsedFlags,
           textEntities: this.textEntities,
+          customEmojiPaths: this.customEmojiPaths,
           linkPreviewUrl: this.linkPreviewUrl,
           linkPreviewDisplayUrl: this.linkPreviewDisplayUrl,
           linkPreviewSiteName: this.linkPreviewSiteName,

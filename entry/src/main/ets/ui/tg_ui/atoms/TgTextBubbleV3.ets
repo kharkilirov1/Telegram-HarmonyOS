@@ -21,6 +21,8 @@ export struct TgTextBubbleV3 {
   @Param text: string = ''
   // D24: inline translation shown under the original text.
   @Param translatedText: string = ''
+  // D16: resolved custom emoji files for the text body.
+  @Param customEmojiPaths: Map<string, string> = new Map<string, string>()
   @Param translationVisible: boolean = false
   @Event onTranslationToggle: () => void = (): void => {};
   @Param isOutgoing: boolean = false
@@ -186,6 +188,7 @@ export struct TgTextBubbleV3 {
           quoteCollapsedFlags: this.quoteCollapsedFlags,
           expandedQuoteIndices: this.expandedQuoteIndices,
           textEntities: this.textEntities,
+          customEmojiPaths: this.customEmojiPaths,
           quoteAccentHex: this.quoteAccentHex,
           onQuoteToggle: (quoteIndex: number): void => {
             this.onQuoteToggle(quoteIndex)

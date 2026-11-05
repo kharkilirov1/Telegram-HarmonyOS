@@ -146,6 +146,13 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **D16-custom-emoji-render (lead).** Цепочка рендера: `splitRichSpans` помечает спан `customEmojiId`,
+  `TgTextBodyV3` рисует `ImageSpan` (20 px, CENTER) при наличии пути и глиф-fallback без него;
+  `customEmojiPaths` добавлен в row VO и протянут row → router → bubble → body. Суита
+  `test-custom-emoji-render.cjs` (138-я): splitter (id на emoji-спане, plain/другие типы, смещённый
+  сегмент), наличие ImageSpan/fallback, токен, проводка карты. Гейты: host **138/138**, оба smoke,
+  hvigor BUILD SUCCESSFUL. Остаток D16: координатор заполнения карты, TGS-анимация, выбор кастомной
+  реакции, witness.
 - **D16-custom-emoji-resolver (lead).** Резолвер кастомных эмодзи: `getCustomEmojiStickers` (команда,
   сериализатор int64-массива), `CustomEmojiResolverUseCase` — валидация int64-строк, дедуп, батч ≤50, кэш
   ≤200 с вытеснением, парсер файла/thumbnail/format (TGS/WebM), запрос `downloadFile` при отсутствии файла,

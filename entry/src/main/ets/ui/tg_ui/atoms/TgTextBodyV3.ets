@@ -13,6 +13,8 @@ class RichSpan {
   isStrikethrough: boolean = false;
   isCode: boolean = false;
   isLink: boolean = false;
+  // D16: the custom emoji id when this span is one, '0' otherwise.
+  customEmojiId: string = '0';
 }
 
 function splitRichSpans(text: string, segStart: number, entities: TextEntity[]): RichSpan[] {
@@ -48,6 +50,7 @@ function splitRichSpans(text: string, segStart: number, entities: TextEntity[]):
           case 'url': case 'textUrl': case 'mention': case 'mentionName':
           case 'emailAddress': case 'phoneNumber': case 'hashtag':
           case 'cashtag': case 'botCommand': span.isLink = true; break;
+          case 'customEmoji': span.customEmojiId = e.customEmojiId; break;
           default: break;
         }
       }
@@ -85,6 +88,8 @@ export struct TgTextBodyV3 {
   @Param quoteLengths: number[] = []
   @Param quoteCollapsedFlags: boolean[] = []
   @Param textEntities: TextEntity[] = []
+  // D16: resolved sticker files by custom emoji id; an id without a path keeps the plain glyph.
+  @Param customEmojiPaths: Map<string, string> = new Map<string, string>()
 
   // Accent color for quote bar (sender color in groups)
   @Param quoteAccentHex: string = ''
@@ -256,13 +261,29 @@ export struct TgTextBodyV3 {
     return false;
   }
 
+  // D16: a custom emoji is drawn only when the resolver produced a file; otherwise it stays a glyph.
+  private customEmojiPath(span: RichSpan): string {
+    if (span.customEmojiId === '0' || span.customEmojiId.length === 0) {
+      return '';
+    }
+    const path = this.customEmojiPaths.get(span.customEmojiId);
+    return path !== undefined && path.length > 0 ? path : '';
+  }
+
   @Builder
   buildPlainSegment(segText: string, segStart: number = 0, isLast: boolean = false) {
     if (this.hasEntities(segStart, segText.length) || (isLast && this.metaReserveText.length > 0)) {
       Text() {
         ForEach(splitRichSpans(segText, segStart, this.textEntities),
           (span: RichSpan) => {
-            Span(span.text)
+            if (this.customEmojiPath(span).length > 0) {
+              ImageSpan(this.customEmojiPath(span))
+                .width(TgUiTokens.MSG_CUSTOM_EMOJI_SIZE)
+                .height(TgUiTokens.MSG_CUSTOM_EMOJI_SIZE)
+                .objectFit(ImageFit.Contain)
+                .verticalAlign(ImageSpanAlignment.CENTER)
+            } else {
+              Span(span.text)
               .fontSize(span.isCode ? TgUiTokens.MSG_CODE_SIZE : TgUiTokens.MSG_TEXT_SIZE)
               .fontWeight(span.isBold ? FontWeight.Bold : TgUiTokens.MSG_TEXT_WEIGHT)
               .fontStyle(span.isItalic ? FontStyle.Italic : FontStyle.Normal)
@@ -274,6 +295,7 @@ export struct TgTextBodyV3 {
               })
               .fontFamily(span.isCode ? 'monospace' : 'HarmonyOS Sans')
               .textBackgroundStyle(span.isCode ? { color: this.codeBg(), radius: 4 } : undefined)
+            }
           })
 
         if (isLast && this.metaReserveText.length > 0) {

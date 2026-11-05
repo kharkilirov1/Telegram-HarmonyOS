@@ -83,6 +83,7 @@ export struct TgChatTimelineRow {
         quoteLengths: this.entry.message.quoteLengths,
         quoteCollapsedFlags: this.entry.message.quoteCollapsedFlags,
         textEntities: this.entry.message.textEntities,
+        customEmojiPaths: this.entry.message.customEmojiPaths,
         reactionEmojis: this.entry.message.reactionEmojis,
         reactionKeys: this.entry.message.reactionKeys,
         reactionCounts: this.entry.message.reactionCounts,

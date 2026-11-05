@@ -178,6 +178,8 @@ export class TgUiTokens {
   static readonly TRANSLATION_DIVIDER_OPACITY: number = 0.25;
   // H4: the storage bar grows from zero once its numbers are known, like StorageUsageScreen on iOS.
   static readonly STORAGE_CHART_REVEAL_DURATION_MS: number = 420;
+  // D16: inline custom emoji match the text line height, like the iOS emoji glyph.
+  static readonly MSG_CUSTOM_EMOJI_SIZE: number = 20;
   // A5: profile form fields reuse the generic field metrics; the bio gets its own height.
   static readonly GENERIC_TEXT_FIELD_HEIGHT: number = 44;
   static readonly GENERIC_TEXT_FIELD_FONT_SIZE: number = 16;

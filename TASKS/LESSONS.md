@@ -1365,3 +1365,10 @@ Last updated: 2026-10-23
 - `is_downloading_completed` is a JSON boolean: `getNumber(...) === 1` is always false, `getBool` is right.
 - Emitting int64 arrays: reuse the `_*_json` convention (`_custom_emoji_ids_json`) so the request builder
   rewrites it into the real field; keep ids unquoted so TDLib parses them as integers.
+
+## 246. A rendering param is dead code until a producer exists
+
+- `ImageSpan` + `customEmojiPaths` are green in tests but the map is always empty: the resolver runs
+  asynchronously and needs a coordinator that reads visible ids and writes the map back into the row VO.
+- The param chain row → router → bubble → body is four hops; add the field at every hop before testing,
+  otherwise the default argument silently disables the feature.
