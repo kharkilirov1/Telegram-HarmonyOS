@@ -22,12 +22,8 @@ const slowmodeFixtureDeps = (() => {
 })();
 Object.assign(globalThis, slowmodeFixtureDeps);
 
-function load(p, deps = {}) {
-  const source = readChatSource(path.join(root, p), 'utf8');
-  const names = [...source.matchAll(/^export\s+(?:async\s+)?(?:class|function|enum|const)\s+(\w+)/gm)].map(m => m[1]);
-  const js = stripTypeScriptTypes(source.replace(/^import[\s\S]*?;\s*/gm, '').replace(/^export\s+default\s+\w+;?\s*/gm, '').replace(/^export\s+/gm, ''), { mode: 'transform' });
-  return new Function(...Object.keys(deps), js + `; return {${names.join(',')}};`)(...Object.values(deps));
-}
+const { createLoader } = require('./lib/ets-load.cjs');
+const load = createLoader(root);
 const hilog = { info() {}, warn() {}, error() {}, debug() {} };
 const A = load('core/model/AppState.ets'), C = load('core/model/AppCommand.ets');
 const { TdObject } = load('models/td/common/index.ets');

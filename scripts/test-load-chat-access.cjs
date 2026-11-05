@@ -9,16 +9,8 @@ const root = path.resolve(__dirname, '../entry/src/main/ets');
 const sources = {};
 const errors = [];
 const hilog = { debug() {}, info() {}, warn() {}, error(...args) { errors.push(args); } };
-function load(relative, deps = {}) {
-  const file = path.join(root, relative);
-  assert.ok(fs.existsSync(file), `required R6 source missing: ${relative}`);
-  const source = fs.readFileSync(file, 'utf8');
-  sources[relative] = createHash('sha256').update(source).digest('hex');
-  const names = [...source.matchAll(/^export\s+(?:default\s+)?(?:class|function|const|enum)\s+(\w+)/gm)].map(m => m[1]);
-  const code = source.replace(/^import[\s\S]*?;\s*/gm, '').replace(/^export\s+(?:default\s+)?/gm, '');
-  const js = stripTypeScriptTypes(code, { mode: 'transform', sourceUrl: relative });
-  return new Function(...Object.keys(deps), `${js}\nreturn {${names.join(',')}};`)(...Object.values(deps));
-}
+const { createLoader } = require('./lib/ets-load.cjs');
+const load = createLoader(root);
 const td = load('models/td/common/index.ets');
 const commands = load('core/model/AppCommand.ets');
 const serializer = load('infra/td/serialization/CommandSerializer.ets', { ...td, ...commands, hilog });

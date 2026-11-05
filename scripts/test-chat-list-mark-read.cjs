@@ -5,12 +5,8 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 const { stripTypeScriptTypes } = require('node:module');
 const root = path.resolve(__dirname, '../entry/src/main/ets');
-function load(relative, deps = {}) {
-  const source = fs.readFileSync(path.join(root, relative), 'utf8');
-  const names = [...source.matchAll(/^export\s+(?:class|function|enum|const)\s+(\w+)/gm)].map(m => m[1]);
-  const js = stripTypeScriptTypes(source.replace(/^import[\s\S]*?;\s*/gm, '').replace(/^export\s+/gm, ''), { mode: 'transform' });
-  return new Function(...Object.keys(deps), `${js}\nreturn {${names.join(',')}};`)(...Object.values(deps));
-}
+const { createLoader } = require('./lib/ets-load.cjs');
+const load = createLoader(root);
 const td = load('models/td/common/index.ets');
 const commands = load('core/model/AppCommand.ets');
 const errors = load('core/model/AppError.ets');

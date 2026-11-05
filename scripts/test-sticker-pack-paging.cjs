@@ -9,15 +9,8 @@ const { stripTypeScriptTypes } = require('node:module');
 const root = path.resolve(__dirname, '../entry/src/main/ets');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8').replaceAll('\r\n', '\n');
 
-function load(relative, names, deps = {}) {
-  const source = read(relative)
-    .replace(/^import\s[\s\S]*?;\s*/gm, '')
-    .replace(/^export\s*\{[^}]*\};?\s*/gm, '')
-    .replace(/^export\s+/gm, '');
-  const stripped = source.replace(/@ObservedV2\s*\n/g, '').replace(/^\s*@Trace\s+/gm, '');
-  const js = stripTypeScriptTypes(stripped, { mode: 'transform', sourceUrl: relative });
-  return new Function(...Object.keys(deps), js + '\nreturn {' + names.join(',') + '};')(...Object.values(deps));
-}
+const { createLoader } = require('./lib/ets-load.cjs');
+const load = createLoader(root);
 
 async function main() {
   const tdMod = load('models/td/common/index.ets', ['TdObject']);

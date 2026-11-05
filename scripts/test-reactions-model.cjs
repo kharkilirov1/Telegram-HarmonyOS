@@ -8,15 +8,8 @@ const { stripTypeScriptTypes } = require('node:module');
 const root = path.resolve(__dirname, '..');
 const etsRoot = path.join(root, 'entry/src/main/ets');
 
-function load(file, deps = {}) {
-  const source = fs.readFileSync(path.join(etsRoot, file), 'utf8');
-  const names = [...source.matchAll(/^export\s+(?:class|function|const)\s+(\w+)/gm)].map((match) => match[1]);
-  const js = stripTypeScriptTypes(
-    source.replace(/^import[\s\S]*?;\s*/gm, '').replace(/^export\s+/gm, ''),
-    { mode: 'transform' }
-  );
-  return new Function(...Object.keys(deps), js + `; return {${names.join(',')}};`)(...Object.values(deps));
-}
+const { createLoader } = require('./lib/ets-load.cjs');
+const load = createLoader(etsRoot);
 
 const tdCommon = load('models/td/common/index.ets');
 const accessors = load('core/utils/tdAccessors.ets', { TdObject: tdCommon.TdObject });

@@ -8,16 +8,8 @@ const root = path.resolve(__dirname, '..');
 const main = path.join(root, 'entry/src/main/ets') + path.sep;
 const read = (relative) => fs.readFileSync(main + relative, 'utf8').replaceAll('\r\n', '\n');
 
-function load(relative, deps = {}) {
-  const text = read(relative);
-  const names = [...text.matchAll(/^export\s+(?:async\s+)?(?:class|function|enum|const)\s+(\w+)/gm)]
-    .map((match) => match[1]);
-  const code = text.replace(/^import[\s\S]*?;\s*/gm, '').replace(/^export\s+/gm, '')
-    .replace(/^export\s+type\s+\w+\s*=[^;]+;/gm, '')
-    .replace(/^@ObservedV2\s*\n/gm, '').replace(/^(\s*)@Trace\s+/gm, '$1');
-  return new Function(...Object.keys(deps), stripTypeScriptTypes(code, { mode: 'transform' }) +
-    `\nreturn {${names.join(',')}};`)(...Object.values(deps));
-}
+const { createLoader } = require('./lib/ets-load.cjs');
+const load = createLoader(main);
 
 const links = load('core/model/ExternalLink.ets');
 const C = load('core/model/AppCommand.ets');

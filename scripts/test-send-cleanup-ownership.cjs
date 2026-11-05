@@ -32,15 +32,8 @@ function read(relative) {
   sources[relative] = createHash('sha256').update(source).digest('hex');
   return source;
 }
-function load(relative, deps = {}) {
-  const source = read(relative);
-  const names = [...source.matchAll(/^export\s+(?:class|function|const|enum)\s+(\w+)/gm)].map(m => m[1]);
-  const code = source.replace(/^import[\s\S]*?;\s*/gm, '')
-    .replace(/^export\s+\{[^}]*\};?\s*/gm, '')
-    .replace(/^export\s+default\s+\w+;?\s*/gm, '').replace(/^export\s+/gm, '');
-  const js = stripTypeScriptTypes(code, { mode: 'transform', sourceUrl: relative });
-  return new Function(...Object.keys(deps), `${js}\nreturn {${names.join(',')}};`)(...Object.values(deps));
-}
+const { createLoader } = require('./lib/ets-load.cjs');
+const load = createLoader(root);
 const hilog = { info() {}, debug() {}, warn() {}, error() {} };
 const platform = { hilog, localized: (_id, fallback) => fallback, $r: id => ({ id }) };
 const C = load('core/model/AppCommand.ets');

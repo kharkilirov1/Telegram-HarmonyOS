@@ -28,12 +28,15 @@ const NATIVE_GLOBALS = new Set([
 ]);
 
 function memberProxy() {
-  return new Proxy({}, {
+  const callable = function () { return memberProxy(); };
+  return new Proxy(callable, {
     get: (target, property) => {
       if (property === 'toString' || property === 'valueOf') return () => '';
       if (property === Symbol.toPrimitive) return () => '';
-      return typeof property === 'string' ? property : undefined;
-    }
+      if (property === 'then') return undefined;
+      return memberProxy();
+    },
+    apply: () => memberProxy()
   });
 }
 
@@ -83,7 +86,10 @@ function createLoader(baseDirectory) {
         const specifier = match[2];
         const names = bindingNames(match[1]);
         if (!specifier.startsWith('.')) {
-          for (const binding of names) external.add(binding.local);
+          for (const binding of names) {
+            external.add(binding.local);
+            if (!(binding.local in overrides)) resolved[binding.local] = memberProxy();
+          }
           continue;
         }
         let child;
@@ -130,6 +136,7 @@ function createLoader(baseDirectory) {
         .replace(SIDE_EFFECT_IMPORT, '')
         .replace(EXPORT_FROM_PATTERN, '')
         .replace(EXPORT_LIST_PATTERN, '')
+        .replace(/^export\s+default\s+/gm, '')
         .replace(/^export\s+/gm, '')
         .replace(/^@ObservedV2\s*\n/gm, '')
         .replace(/^(\s*)@Trace\s+/gm, '$1');

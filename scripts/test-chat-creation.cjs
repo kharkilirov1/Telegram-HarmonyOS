@@ -5,13 +5,8 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 const { stripTypeScriptTypes } = require('node:module');
 const root = path.resolve(__dirname, '../entry/src/main/ets');
-function load(relative, names, deps = {}) {
-  const source = fs.readFileSync(path.join(root, relative), 'utf8')
-    .replace(/^import\s[\s\S]*?;\s*/gm, '')
-    .replace(/^export\s*\{[^}]*\};?\s*/gm, '').replace(/^export\s+/gm, '');
-  const js = stripTypeScriptTypes(source, { mode: 'transform', sourceUrl: relative });
-  return new Function(...Object.keys(deps), `${js}\nreturn {${names.join(',')}};`)(...Object.values(deps));
-}
+const { createLoader } = require('./lib/ets-load.cjs');
+const load = createLoader(root);
 const hilog = { info() {}, warn() {}, error() {}, debug() {} };
 const { TdObject } = load('models/td/common/index.ets', ['TdObject']);
 const accessors = load('core/utils/tdAccessors.ets',

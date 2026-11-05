@@ -12,31 +12,8 @@ const mutant = process.argv.find(arg => arg.startsWith('--mutant='))?.slice(9);
 assert.ok(!mutant || ['registration', 'revoke', 'mutation'].includes(mutant));
 const sources = new Map();
 let mutationApplied = false;
-function load(file, deps = {}) {
-  const source = fs.readFileSync(path.join(root, file), 'utf8');
-  sources.set(file, createHash('sha256').update(source).digest('hex'));
-  let body = source;
-  const mutations = {
-    registration: ['core/events/normalizers/ChatNormalizer.ets',
-      "handlers.set('updateChatPermissions', handleChatPermissions);", ''],
-    revoke: ['core/reducers/chatsReducer.ets',
-      'if (event.updates.canSendBasicMessages !== undefined)', 'if (event.updates.canSendBasicMessages)'],
-    mutation: ['core/reducers/chatsReducer.ets',
-      'const updatedChat = cloneChat(existingChat);', 'const updatedChat = existingChat;']
-  };
-  const change = mutations[mutant];
-  if (change && file === change[0]) {
-    assert.ok(body.includes(change[1]), 'Mutation anchor missing');
-    body = body.replaceAll(change[1], change[2]);
-    mutationApplied = true;
-  }
-  const exports = [...source.matchAll(/^export\s+(?:class|function|enum|const)\s+(\w+)/gm)]
-    .map(match => match[1]);
-  body = stripTypeScriptTypes(body.replace(/^import[\s\S]*?;\s*/gm, '')
-    .replace(/^export\s+default\s+\w+;?\s*/gm, '').replace(/^export\s+/gm, ''), { mode: 'transform' });
-  return new Function(...Object.keys(deps), '"use strict";\n' + body +
-    `\nreturn {${exports.join(',')}};`)(...Object.values(deps));
-}
+const { createLoader } = require('./lib/ets-load.cjs');
+const load = createLoader(root);
 const errors = [];
 const hilog = { info() {}, warn() {}, debug() {}, error(...args) { errors.push(args); } };
 const td = load('models/td/common/index.ets');

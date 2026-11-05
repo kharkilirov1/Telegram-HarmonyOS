@@ -1659,3 +1659,12 @@ Last updated: 2026-10-23
   is a module const, not an ambient enum, and stubbing it collides with its own declaration.
 - Propagating suite mocks into resolved child modules fixes semantics but kills the module cache (mocks differ
   per call), and the runner went from seconds to an unbounded run. Migrate suite by suite instead.
+
+## 283. Migrate loaders per suite, because the failing ones are custom harnesses
+
+- A per-file loop (patch → run that suite → keep on success, `git checkout` on failure) migrated 56 suites in
+  one pass and made the residue self-describing: every remaining failure was a suite whose loader deliberately
+  rewrites the source (`mutant=...`, injected adapters, clock control). Those are not migration bugs and must
+  not be batched.
+- Two loader fixes carried the batch: `export default` must be stripped (reducer modules), and platform imports
+  (`fileIo`, `promptAction`) need a callable proxy, since they are used both as objects and as functions.

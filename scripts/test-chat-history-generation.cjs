@@ -10,15 +10,8 @@ const { createHash } = require('node:crypto');
 const root = path.resolve(__dirname, '../entry/src/main/ets');
 const sources = new Map();
 const hash = text => createHash('sha256').update(text).digest('hex');
-function load(relative, deps = {}) {
-  const source = fs.readFileSync(path.join(root, relative), 'utf8');
-  sources.set(relative, hash(source));
-  const names = [...source.matchAll(/^export\s+(?:class|function|const|enum)\s+(\w+)/gm)].map(m => m[1]);
-  const code = source.replace(/^import[\s\S]*?;\s*/gm, '')
-    .replace(/^export\s*\{[^}]*\};?\s*/gm, '').replace(/^export\s+/gm, '');
-  return new Function(...Object.keys(deps), stripTypeScriptTypes(code, { mode: 'transform' }) +
-    `\nreturn {${names.join(',')}};`)(...Object.values(deps));
-}
+const { createLoader } = require('./lib/ets-load.cjs');
+const load = createLoader(root);
 const errors = [];
 const hilog = { info() {}, debug() {}, warn() {}, error(...args) { errors.push(args); } };
 const td = load('models/td/common/index.ets');

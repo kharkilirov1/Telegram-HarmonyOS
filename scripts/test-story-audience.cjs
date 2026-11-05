@@ -10,14 +10,8 @@ const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8').re
 const readResource = (relative) =>
   fs.readFileSync(path.join(root, '..', 'resources', relative), 'utf8').replaceAll('\r\n', '\n');
 
-function load(relative, names, deps = {}) {
-  const source = read(relative)
-    .replace(/^import\s[\s\S]*?;\s*/gm, '')
-    .replace(/^export\s*\{[^}]*\};?\s*/gm, '')
-    .replace(/^export\s+/gm, '');
-  const js = stripTypeScriptTypes(source, { mode: 'transform', sourceUrl: relative });
-  return new Function(...Object.keys(deps), js + '\nreturn {' + names.join(',') + '};')(...Object.values(deps));
-}
+const { createLoader } = require('./lib/ets-load.cjs');
+const load = createLoader(root);
 
 async function main() {
   const M = load('ui/pages/stories/StoryAudienceModel.ets',
