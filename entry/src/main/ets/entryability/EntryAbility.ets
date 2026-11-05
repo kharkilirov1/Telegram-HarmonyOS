@@ -12,6 +12,7 @@ import { setAppContext } from '../core/utils/AppResource';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { navigationUIState } from '../core/model/UIStateModels';
 import { externalLinkIntake } from '../core/model/ExternalLink';
+import { chatOpenIntake } from '../core/model/ChatOpenIntake';
 
 const TAG = 'EntryAbility';
 const DOMAIN = 0x0000;
@@ -20,8 +21,26 @@ export default class EntryAbility extends UIAbility {
   private mainWindow: window.Window | null = null;
   private abilityLifecycleToken: number = 0;
 
+  // I1: a notification tap carries the chat id; the page consumes it once navigation exists.
+  private captureChatOpen(want: Want): void {
+    const parameters = want.parameters;
+    if (parameters === undefined) {
+      return;
+    }
+    const rawChatId = parameters['chatId'];
+    if (rawChatId === undefined || rawChatId === null) {
+      return;
+    }
+    const chatId = typeof rawChatId === 'number' ? rawChatId : Number(String(rawChatId));
+    if (!Number.isSafeInteger(chatId) || chatId === 0) {
+      return;
+    }
+    chatOpenIntake.set(chatId);
+  }
+
   onCreate(want: Want, _launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(DOMAIN, TAG, 'onCreate');
+    this.captureChatOpen(want);
     this.captureExternalLink(want);
     this.abilityLifecycleToken += 1;
     const abilityToken: number = this.abilityLifecycleToken;
@@ -122,6 +141,7 @@ export default class EntryAbility extends UIAbility {
 
   onNewWant(want: Want, _launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(DOMAIN, TAG, 'onNewWant');
+    this.captureChatOpen(want);
     this.captureExternalLink(want);
   }
 

@@ -3,6 +3,7 @@
 // iOS counterpart: Notifications/MessageNotifications.
 
 import { notificationManager } from '@kit.NotificationKit';
+import { wantAgent, WantAgent } from '@kit.AbilityKit';
 import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppState } from '../../core/model/AppState';
@@ -26,6 +27,8 @@ export class MessageNotificationBridge implements MessageNotificationSink {
   private nextNotificationId: number = NOTIFICATION_ID_BASE;
   // The chat currently on screen, so its new messages never produce a notification.
   private activeChatIdProvider: () => number = (): number => 0;
+  private bundleName: string = '';
+  private abilityName: string = 'EntryAbility';
 
   setActiveChatIdProvider(provider: () => number): void {
     this.activeChatIdProvider = provider;
@@ -34,6 +37,8 @@ export class MessageNotificationBridge implements MessageNotificationSink {
   // Permission is requested once per process; a denial leaves the bridge disabled rather than noisy.
   async start(context: common.UIAbilityContext): Promise<void> {
     try {
+      this.bundleName = context.abilityInfo.bundleName;
+      this.abilityName = context.abilityInfo.name;
       await notificationManager.requestEnableNotification(context);
       this.enabled = true;
       hilog.info(DOMAIN, TAG, 'Message notifications enabled');
@@ -71,20 +76,51 @@ export class MessageNotificationBridge implements MessageNotificationSink {
     }
   }
 
+  // Tapping the notification opens the chat: the want carries the chat id for MainTabsPage.
+  private async buildChatWantAgent(chatId: number): Promise<WantAgent | undefined> {
+    if (this.bundleName.length === 0) {
+      return undefined;
+    }
+    try {
+      const parameters: Record<string, Object> = {};
+      parameters['chatId'] = chatId;
+      const info: wantAgent.WantAgentInfo = {
+        wants: [{
+          bundleName: this.bundleName,
+          abilityName: this.abilityName,
+          parameters: parameters
+        }],
+        actionType: wantAgent.OperationType.START_ABILITY,
+        requestCode: this.nextNotificationId,
+        wantAgentFlags: [wantAgent.WantAgentFlags.UPDATE_PRESENT_FLAG]
+      };
+      return await wantAgent.getWantAgent(info);
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'WantAgent for a notification failed: %{public}s', String(error));
+      return undefined;
+    }
+  }
+
   private publish(content: MessageNotificationContent): void {
-    const request: notificationManager.NotificationRequest = {
-      id: this.nextNotificationId,
-      content: {
-        notificationContentType: notificationManager.ContentType.NOTIFICATION_CONTENT_BASIC_TEXT,
-        normal: {
-          title: content.title,
-          text: content.body,
-          additionalText: ''
-        }
-      }
-    };
+    const notificationId = this.nextNotificationId;
     this.nextNotificationId += 1;
-    notificationManager.publish(request)
+    this.buildChatWantAgent(content.chatId).then((agent: WantAgent | undefined): Promise<void> => {
+      const request: notificationManager.NotificationRequest = {
+        id: notificationId,
+        content: {
+          notificationContentType: notificationManager.ContentType.NOTIFICATION_CONTENT_BASIC_TEXT,
+          normal: {
+            title: content.title,
+            text: content.body,
+            additionalText: ''
+          }
+        }
+      };
+      if (agent !== undefined) {
+        request.wantAgent = agent;
+      }
+      return notificationManager.publish(request);
+    })
       .then((): void => {
         hilog.info(DOMAIN, TAG, 'Notification published for chat %{public}d', content.chatId);
       })

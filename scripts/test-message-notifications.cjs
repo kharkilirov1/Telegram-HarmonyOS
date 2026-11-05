@@ -100,6 +100,48 @@ async function main() {
   assert.ok(long.body.endsWith('…'));
   assert.equal(P.NOTIFICATION_BODY_MAX_LENGTH, 160);
 
+  // Notification tap opens the chat ----------------------------------------------------------------
+  const Intake = load('core/model/ChatOpenIntake.ets', ['ChatOpenIntakeStore', 'chatOpenIntake']);
+  const intake = new Intake.ChatOpenIntakeStore();
+  assert.equal(intake.hasPending(), false);
+  intake.set(-100500);
+  assert.equal(intake.hasPending(), true);
+  assert.equal(intake.take(), -100500);
+  assert.equal(intake.hasPending(), false, 'taking clears the request');
+  assert.equal(intake.take(), 0, 'an empty request takes 0');
+  intake.set(0);
+  assert.equal(intake.hasPending(), false, 'chat 0 is not a valid request');
+  intake.set(1.5);
+  assert.equal(intake.hasPending(), false, 'non-integer ids are rejected');
+  intake.set(-100500);
+  intake.clear();
+  assert.equal(intake.hasPending(), false);
+  assert.ok(Intake.chatOpenIntake, 'the intake is a process singleton');
+
+  const bridgeAgent = read('app/notifications/MessageNotificationBridge.ets');
+  assert.match(bridgeAgent, /import \{ wantAgent, WantAgent \} from '@kit\.AbilityKit';/);
+  assert.match(bridgeAgent, /this\.bundleName = context\.abilityInfo\.bundleName;/);
+  assert.match(bridgeAgent, /parameters\['chatId'\] = chatId;/);
+  assert.match(bridgeAgent, /actionType: wantAgent\.OperationType\.START_ABILITY,/);
+  assert.match(bridgeAgent, /wantAgentFlags: \[wantAgent\.WantAgentFlags\.UPDATE_PRESENT_FLAG\]/);
+  assert.match(bridgeAgent, /request\.wantAgent = agent;/, 'the notification carries the tap target');
+  assert.match(bridgeAgent, /'WantAgent for a notification failed: %\{public\}s'/, 'a failed agent degrades to a plain notification');
+
+  const abilityIntake = read('entryability/EntryAbility.ets');
+  assert.match(abilityIntake, /import \{ chatOpenIntake \} from '\.\.\/core\/model\/ChatOpenIntake';/);
+  assert.match(abilityIntake, /private captureChatOpen\(want: Want\): void \{/);
+  assert.match(abilityIntake, /const rawChatId = parameters\['chatId'\];/);
+  assert.match(abilityIntake, /chatOpenIntake\.set\(chatId\);/);
+  assert.match(abilityIntake, /this\.captureChatOpen\(want\);\n\s+this\.captureExternalLink\(want\);/, 'a warm tap is captured');
+
+  const tabs = read('ui/pages/MainTabsPage.ets');
+  assert.match(tabs, /import \{ chatOpenIntake \} from '\.\.\/\.\.\/core\/model\/ChatOpenIntake';/);
+  assert.match(tabs, /private consumeChatOpen\(\): void \{/);
+  assert.match(tabs, /const chatId = chatOpenIntake\.take\(\);/);
+  assert.match(tabs, /pushChatScreenRoute\(new ChatScreenRouteParams\(chatId, title, store, gateway\), this\.chatDetailNavStack, store\)/);
+  assert.match(tabs, /chatOpenIntake\.set\(chatId\);\n\s+return;\n\s+\}/, 'an unauthorized tap is retried later');
+  assert.match(tabs, /this\.consumeExternalLink\(\);\n\s+this\.consumeChatOpen\(\);/, 'both intakes are consumed on appearance');
+
   // Bridge and lifecycle wiring -------------------------------------------------------------------
   const bridge = read('app/notifications/MessageNotificationBridge.ets');
   assert.match(bridge, /import \{ notificationManager \} from '@kit\.NotificationKit';/);

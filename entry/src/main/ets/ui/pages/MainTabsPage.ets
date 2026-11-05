@@ -68,6 +68,7 @@ import { externalLinkIntake, ExternalLinkTarget } from '../../core/model/Externa
 import { FolderLinkRouteParams } from './settings/folderLinkRoute';
 import { ChatInviteJoinResult, ChatInviteRouteParams } from './chat/chatInviteRoute';
 import { pushChatScreenRoute } from './chat/ChatOpenTransaction';
+import { chatOpenIntake } from '../../core/model/ChatOpenIntake';
 
 const DOMAIN = 0x0020;
 const TAG = 'MainTabsPage';
@@ -599,6 +600,30 @@ export struct MainTabsPage {
     }
     hilog.info(DOMAIN, TAG, 'MainTabsPage appeared with tab index: %{public}d', this.selectedIndex);
     this.consumeExternalLink();
+    this.consumeChatOpen();
+  }
+
+  // I1: a notification tap lands here with the chat id captured by EntryAbility.
+  private consumeChatOpen(): void {
+    if (!chatOpenIntake.hasPending()) {
+      return;
+    }
+    const chatId = chatOpenIntake.take();
+    if (chatId === 0) {
+      return;
+    }
+    const runtime = getAppCoreRuntime();
+    const store = runtime.getStore();
+    if (store.getState().auth.userId <= 0) {
+      // Not authorized yet: keep the request for the next appearance instead of dropping the tap.
+      chatOpenIntake.set(chatId);
+      return;
+    }
+    const chat = store.getState().chats.chats.get(chatId);
+    const title = chat !== undefined && chat.title.length > 0 ? chat.title : '';
+    const gateway = getTdGatewayAdapter();
+    pushChatScreenRoute(new ChatScreenRouteParams(chatId, title, store, gateway), this.chatDetailNavStack, store);
+    hilog.info(DOMAIN, TAG, 'Opened chat %{public}d from a notification', chatId);
   }
 
   // A cold start from a t.me link lands here after the runtime is ready; a warm start re-enters through

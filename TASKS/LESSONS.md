@@ -1315,3 +1315,12 @@ Last updated: 2026-10-23
 - Keeping NotificationKit out of AppCoreRuntime avoids eleven suite failures; inject a sink interface from
   the ability instead, and keep the runtime testable with a plain object.
 - Chat ids are negative for groups and channels: `<= 0` guards silently drop every group. Compare to `=== 0`.
+
+## 240. A notification wantAgent needs the ability identity captured at start
+
+- `wantAgent.getWantAgent` needs `bundleName`+`abilityName`; the bridge takes both from the UIAbilityContext
+  in `start()`, so publish stays a plain call later.
+- Tapping routes through an intake store (validated chat id, take-once) rather than the ability pushing a
+  route: navigation does not exist at `onNewWant` time, and an unauthorized session must keep the request.
+- Harnesses that copy a fixed method list need the new `captureChatOpen` listed, and a stubbed intake module,
+  or onCreate fails with a missing method.

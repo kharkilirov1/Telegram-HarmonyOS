@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **I1-notification-tap (lead).** Тап по уведомлению открывает чат: `wantAgent` START_ABILITY с
+  `parameters.chatId` и UPDATE_PRESENT_FLAG (ошибка агента деградирует в обычное уведомление),
+  `chatOpenIntake` (валидация id, take/clear, singleton), `captureChatOpen` в onCreate/onNewWant,
+  `MainTabsPage.consumeChatOpen` пушит `ChatScreenRouteParams`; при неавторизованной сессии запрос
+  сохраняется до следующего появления. Суита `test-message-notifications.cjs` расширена (intake, wantAgent,
+  ability/tabs-проводка); стабилизационный харнесс получил `captureChatOpen` и стаб intake. Гейты: host
+  **135/135**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток I1: inline reply, группировка, per-chat
+  настройки, witness.
 - **I1-message-notifications (lead).** Локальные уведомления: чистый `notificationPolicy` (background +
   входящее + не активный чат + не mute; текст «Имя: превью», caption/медиа-fallback, лимит 160) и
   `MessageNotificationBridge` на NotificationKit (basic text, `requestEnableNotification` с деградацией в
