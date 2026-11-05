@@ -579,6 +579,32 @@ export class GetStoryAvailableReactionsPayload {
   rowSize: number = 12;
 }
 
+// I6: publishing a story. The local file is uploaded by TDLib (inputFileLocal), so the UI only chooses
+// the media and the visibility.
+export type StoryPrivacy = 'everyone' | 'contacts' | 'closeFriends' | 'selectedUsers';
+
+export class PostStoryPayload {
+  chatId: ChatId = 0;
+  // 'photo' | 'video'
+  mediaKind: string = 'photo';
+  localPath: string = '';
+  caption: string = '';
+  privacy: StoryPrivacy = 'everyone';
+  selectedUserIds: number[] = [];
+  // Video only; zero means "let TDLib fill it".
+  durationSeconds: number = 0;
+  isAnimation: boolean = false;
+  // Seconds the story stays active; 0 uses the server default.
+  activePeriodSeconds: number = 0;
+  isPostedToChatPage: boolean = true;
+  protectContent: boolean = false;
+}
+
+export class PostStoryCommand extends AppCommand {
+  type: string = 'postStory';
+  payload: PostStoryPayload = new PostStoryPayload();
+}
+
 export class OpenChatCommand extends AppCommand {
   type: string = 'openChat';
   payload: OpenChatPayload = new OpenChatPayload();
@@ -1325,6 +1351,7 @@ export type AnyAppCommand =
   | GetStoryCommand
   | SetStoryReactionCommand
   | GetStoryAvailableReactionsCommand
+  | PostStoryCommand
   | OpenChatCommand
   | SetTdlibOnlineCommand
   | SendMessageCommand
@@ -1486,6 +1513,12 @@ export function createSetStoryReactionCommand(posterChatId: ChatId, storyId: num
   cmd.payload.posterChatId = posterChatId;
   cmd.payload.storyId = storyId;
   cmd.payload.reactionKey = reactionKey;
+  return cmd;
+}
+
+export function createPostStoryCommand(payload: PostStoryPayload): PostStoryCommand {
+  const cmd = new PostStoryCommand();
+  cmd.payload = payload;
   return cmd;
 }
 

@@ -56,6 +56,14 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **I6-story-publish (lead).** Слой публикации: `PostStoryCommand`/`PostStoryPayload` (`StoryPrivacy`
+  everyone/contacts/closeFriends/selectedUsers, mediaKind photo/video, caption, active_period,
+  protect_content), сериализация `postStory` (inputStoryContent JSON, inputFileLocal, areas, caption,
+  privacy, album_ids, from_story_full_id null), `PostStoryUseCase` (валидация длины caption/медиа/адресатов,
+  дедуп «уже публикуется», парсинг ответа через `parseStoryFull` и dispatch `storyFullUpdated`). Новая
+  суита `test-story-publish.cjs` (149-я): дефолты, маппинг приватности/контента, валидация, успех и
+  отказ. Гейты: host **149/149**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток I6: UI выбора медиа и
+  приватности, статистика, witness.
 - **I6-story-counters + housekeeping (lead).** Счётчики истории: `viewCount/reactionCount/forwardCount`
   из `interaction_info`, `compactStoryCount` (K/M), подписи в header вьювера. Уборка: TODO избавлен от
   устаревших долгов (редактор аватара, выбор языка, F6-пагинация/TGS закрыты кодом), счётчики матрицы

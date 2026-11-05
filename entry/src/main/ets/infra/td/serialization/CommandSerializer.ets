@@ -31,6 +31,8 @@ import {
   GetStoryCommand,
   SetStoryReactionCommand,
   GetStoryAvailableReactionsCommand,
+  PostStoryCommand,
+  PostStoryPayload,
   OpenChatCommand,
   SendMessageCommand,
   SendMediaMessageCommand,
@@ -124,6 +126,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('loadActiveStories', serializeLoadActiveStori
   COMMAND_SERIALIZATION_HANDLERS.set('getStory', serializeGetStory);
   COMMAND_SERIALIZATION_HANDLERS.set('setStoryReaction', serializeSetStoryReaction);
   COMMAND_SERIALIZATION_HANDLERS.set('getStoryAvailableReactions', serializeGetStoryAvailableReactions);
+  COMMAND_SERIALIZATION_HANDLERS.set('postStory', serializePostStory);
 COMMAND_SERIALIZATION_HANDLERS.set('openChat', serializeOpenChat);
 COMMAND_SERIALIZATION_HANDLERS.set('sendMessage', serializeSendMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('sendMediaMessage', serializeSendMediaMessage);
@@ -299,6 +302,51 @@ function serializeLoadChats(command: AnyAppCommand, result: SerializedCommand): 
       : '{"@type":"chatListMain"}');
   result.params.setString('_chat_list_json', chatListJson);
   result.params.setNumber('limit', cmd.payload.limit);
+}
+
+// postStory (td_api.tl:12398): the story media, its caption, privacy and lifetime.
+function buildStoryContentJson(payload: PostStoryPayload): string {
+  const fileJson = buildInputFileLocalJson(payload.localPath);
+  if (payload.mediaKind === 'video') {
+    const duration = payload.durationSeconds > 0 ? payload.durationSeconds : 0;
+    return `{"@type":"inputStoryContentVideo","video":${fileJson},"added_sticker_file_ids":[],` +
+      `"duration":${duration},"cover_frame_timestamp":0,"is_animation":${payload.isAnimation ? 'true' : 'false'}}`;
+  }
+  return `{"@type":"inputStoryContentPhoto","photo":${fileJson},"added_sticker_file_ids":[]}`;
+}
+
+function buildStoryPrivacyJson(payload: PostStoryPayload): string {
+  if (payload.privacy === 'contacts') {
+    return '{"@type":"storyPrivacySettingsContacts","except_user_ids":[]}';
+  }
+  if (payload.privacy === 'closeFriends') {
+    return '{"@type":"storyPrivacySettingsCloseFriends"}';
+  }
+  if (payload.privacy === 'selectedUsers') {
+    const userIds: string[] = [];
+    for (const userId of payload.selectedUserIds) {
+      if (Number.isFinite(userId) && userId !== 0) {
+        userIds.push(Math.floor(userId).toString());
+      }
+    }
+    return '{"@type":"storyPrivacySettingsSelectedUsers","user_ids":[' + userIds.join(',') + ']}';
+  }
+  return '{"@type":"storyPrivacySettingsEveryone","except_user_ids":[]}';
+}
+
+function serializePostStory(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as PostStoryCommand;
+  result.method = 'postStory';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('_content_json', buildStoryContentJson(cmd.payload));
+  result.params.setString('_areas_json', '{"@type":"inputStoryAreas","areas":[]}');
+  result.params.setString('_caption_json', buildFormattedTextJson(cmd.payload.caption));
+  result.params.setString('_privacy_settings_json', buildStoryPrivacyJson(cmd.payload));
+  result.params.setString('_album_ids_json', '[]');
+  result.params.setNumber('active_period', cmd.payload.activePeriodSeconds > 0 ? cmd.payload.activePeriodSeconds : 86400);
+  result.params.setString('_from_story_full_id_json', 'null');
+  result.params.setBool('is_posted_to_chat_page', cmd.payload.isPostedToChatPage);
+  result.params.setBool('protect_content', cmd.payload.protectContent);
 }
 
 // setStoryReaction (td_api.tl:12492): reaction_type is nullable, so an empty key serializes as null.

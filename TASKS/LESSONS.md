@@ -1529,3 +1529,11 @@ Last updated: 2026-10-23
   numbers; the story dropped from 8 to 2 `missing` this way.
 - Compact counters need their own pure formatter: rounding and the K/M thresholds are user-visible and
   cheaper to test than to eyeball in the UI.
+
+## 267. A method that returns the full object is not an update
+
+- `postStory` answers with a complete `story`, so feeding it to the update normalizer silently produces
+  nothing. Parse it with `parseStoryFull` and dispatch the same `storyFullUpdated` event the update path
+  uses, which keeps one store entry point.
+- Optional TDLib values are nullable objects (`from_story_full_id`), so the serializer sends `null` rather
+  than an empty object; vectors are JSON arrays, not concatenated strings.
