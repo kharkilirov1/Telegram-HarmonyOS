@@ -4,7 +4,7 @@
 import { ChatId, UserId, MessageId } from './EntityId';
 import { AnyAppEvent } from './AppEvent';
 import { CustomEmojiTextEntity } from './AppCommand';
-import { ChatActiveStoriesDto } from './dto/StoryDto';
+import { ChatActiveStoriesDto, StoryFullDto } from './dto/StoryDto';
 import { GroupAccessDto, GroupSendPermissionsDto, SupergroupBoostsDto, SupergroupSlowmodeDto } from './dto/GroupAccessDto';
 
 // Type definitions
@@ -138,6 +138,8 @@ export class ChatsState {
   archivedChatIds: ChatId[] = [];
   activeStoriesByChatId: Map<ChatId, ChatActiveStoriesDto> = new Map<ChatId, ChatActiveStoriesDto>();
   orderedStoryChatIds: ChatId[] = [];
+  // I6: parsed story content keyed by `posterChatId:storyId`; list updates carry ids only.
+  storyContentsByKey: Map<string, StoryFullDto> = new Map<string, StoryFullDto>();
   // TDLib updateUnreadMessageCount aggregates. -1 means that the first
   // authoritative update has not arrived yet and selectors must use fallback data.
   mainUnreadMessageCount: number = -1;

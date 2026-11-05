@@ -169,7 +169,7 @@
 | I3 | Inline reply из шторки | `missing` | нет | `Components/Calls`/push extension | I2 |
 | I4 | VoIP-звонки | `frozen` | — | `Components/Calls` | — |
 | I5 | Список звонков (read-only) | `available` | `loadCalls.ets`, `TgCallRow.ets` | `Components/Calls` | I4 |
-| I6 | Stories (UI) | `missing` | данные есть (D31), просмотра нет | `Sources/Stories*` | D31 |
+| I6 | Stories (UI) | `partial` | Данные: `ChatActiveStoriesDto`/`StoryInfoDto`, update-нормализатор активных историй, порядок чатов с историями. Контент: `StoryFullDto` (`photo`/`video`/`unsupported`, caption, размеры, файл, длительность, minithumbnail), `parseStoryFull`, `updateStory` → `storyFullUpdated` → `chats.storyContentsByKey`; `getStory` команда+сериализация (`poster_chat_id`, `story_id`, `only_local`), `LoadStoryUseCase` (кэш, in-flight). Нет: вьювера, реакций, публикации, witness | `Stories` | — |
 
 ## J. Платформа и качество
 

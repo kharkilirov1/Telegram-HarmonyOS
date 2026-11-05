@@ -546,6 +546,17 @@ export class LoadActiveStoriesCommand extends AppCommand {
   type: string = 'loadActiveStories';
 }
 
+// I6: full story content for the viewer; the list update only carries ids.
+export class GetStoryPayload {
+  posterChatId: ChatId = 0;
+  storyId: number = 0;
+}
+
+export class GetStoryCommand extends AppCommand {
+  type: string = 'getStory';
+  payload: GetStoryPayload = new GetStoryPayload();
+}
+
 export class OpenChatCommand extends AppCommand {
   type: string = 'openChat';
   payload: OpenChatPayload = new OpenChatPayload();
@@ -1289,6 +1300,7 @@ export type AnyAppCommand =
   | ResendAuthCodeCommand
   | LoadChatsCommand
   | LoadActiveStoriesCommand
+  | GetStoryCommand
   | OpenChatCommand
   | SetTdlibOnlineCommand
   | SendMessageCommand
@@ -1442,6 +1454,13 @@ export function createLoadChatsCommand(
 
 export function createLoadActiveStoriesCommand(): LoadActiveStoriesCommand {
   return new LoadActiveStoriesCommand();
+}
+
+export function createGetStoryCommand(posterChatId: ChatId, storyId: number): GetStoryCommand {
+  const cmd = new GetStoryCommand();
+  cmd.payload.posterChatId = posterChatId;
+  cmd.payload.storyId = storyId;
+  return cmd;
 }
 
 export function createOpenChatCommand(chatId: ChatId): OpenChatCommand {

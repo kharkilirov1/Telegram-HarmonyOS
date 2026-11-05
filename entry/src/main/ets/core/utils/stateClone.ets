@@ -20,7 +20,7 @@ import {
   FileTransfer
 } from '../model/AppState';
 import { CustomEmojiTextEntity } from '../model/AppCommand';
-import { ChatActiveStoriesDto } from '../model/dto/StoryDto';
+import { ChatActiveStoriesDto, StoryFullDto } from '../model/dto/StoryDto';
 import { GroupAccessDto, SupergroupBoostsDto, SupergroupSlowmodeDto } from '../model/dto/GroupAccessDto';
 
 /**
@@ -85,6 +85,7 @@ export function cloneChatsState(chats: ChatsState): ChatsState {
   newChats.archivedChatIds = chats.archivedChatIds.slice();
   newChats.activeStoriesByChatId = new Map<number, ChatActiveStoriesDto>(chats.activeStoriesByChatId);
   newChats.orderedStoryChatIds = chats.orderedStoryChatIds.slice();
+  newChats.storyContentsByKey = new Map<string, StoryFullDto>(chats.storyContentsByKey);
   newChats.mainUnreadMessageCount = chats.mainUnreadMessageCount;
   newChats.mainUnreadUnmutedMessageCount = chats.mainUnreadUnmutedMessageCount;
   newChats.archiveUnreadMessageCount = chats.archiveUnreadMessageCount;

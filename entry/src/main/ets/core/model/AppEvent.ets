@@ -7,7 +7,7 @@ import { ChatDto, ChatUpdateDto } from './dto/ChatDto';
 import { AccentColorDto } from './dto/AccentColorDto';
 import { MessageDto, MessageUpdateDto, MessageContentDto } from './dto/MessageDto';
 import { UserDto, UserUpdateDto } from './dto/UserDto';
-import { ChatActiveStoriesDto } from './dto/StoryDto';
+import { ChatActiveStoriesDto, StoryFullDto } from './dto/StoryDto';
 import { GroupAccessDto, SupergroupBoostsDto, SupergroupSlowmodeDto } from './dto/GroupAccessDto';
 
 // Base event class
@@ -138,6 +138,12 @@ export class ChatActiveStoriesUpdatedEvent extends AppEvent {
 }
 
 // updateChatAvailableReactions (td_api.tl:9613): the chat-level list the reaction picker shows.
+// I6: parsed story content from getStory or updateStory.
+export class StoryFullUpdatedEvent extends AppEvent {
+  type: string = 'storyFullUpdated';
+  story: StoryFullDto = new StoryFullDto();
+}
+
 export class ChatAvailableReactionsUpdatedEvent extends AppEvent {
   type: string = 'chatAvailableReactionsUpdated';
   chatId: ChatId = 0;
@@ -345,6 +351,7 @@ export type AnyAppEvent =
   | ChatFoldersUpdatedEvent
   | ChatsLoadStateChangedEvent
   | ChatActiveStoriesUpdatedEvent
+  | StoryFullUpdatedEvent
   | ChatAvailableReactionsUpdatedEvent
   | NewMessageEvent
   | ReplyMessageHydratedEvent
@@ -472,6 +479,13 @@ export function createChatUpdatedEvent(
   const event = new ChatUpdatedEvent();
   event.chatId = chatId;
   event.updates = updates;
+  event.timestamp = Date.now();
+  return event;
+}
+
+export function createStoryFullUpdatedEvent(story: StoryFullDto): StoryFullUpdatedEvent {
+  const event = new StoryFullUpdatedEvent();
+  event.story = story;
   event.timestamp = Date.now();
   return event;
 }

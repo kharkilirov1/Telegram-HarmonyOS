@@ -56,6 +56,13 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **I6-story-content (lead).** Слой контента историй: `StoryFullDto` (`photo`/`video`/`unsupported`,
+  caption, размеры, файл, длительность, minithumbnail), `parseStoryFull` (крупнейший размер фото),
+  `updateStory` → `storyFullUpdated` → `chats.storyContentsByKey` (reducer, маршрут, clone),
+  `getStory` команда + сериализация, `LoadStoryUseCase` с кэшем и in-flight. Новая суита
+  `test-story-content.cjs` (146-я): DTO/ключи, парсинг трёх типов, обработчики, событие, reducer и
+  маршрут, команда/сериализация, use case. Гейты: host **146/146**, оба smoke, hvigor BUILD SUCCESSFUL.
+  Остаток I6: вьювер, реакции, публикация, witness.
 - **H9-autoplay (lead).** Power saving теперь и на autoplay: `shouldAutoplayMedia()` в
   `PowerModeMonitor`, гейт в `TgVideoBubble`/`TgAnimationBubble`/`TgStickerView` и видео-галерее (вместо
   захардкоженного `autoPlay: true`), повторный сэмплинг режима в `onForeground` (подписки API не даёт).

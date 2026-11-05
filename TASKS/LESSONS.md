@@ -1498,3 +1498,10 @@ Last updated: 2026-10-23
   one function (`shouldAutoplayMedia`) so power saving and future settings cannot be missed in one place.
 - The power mode has no change subscription: sample on start and on `onForeground`, which is the only
   reliable moment the value can differ.
+
+## 263. A new event is not complete until the root router knows it
+
+- Adding a reducer case is not enough: `reducers/index.ets` routes by explicit type lists, and the
+  routing audit suite fails on the omission instead of silently dropping the event.
+- Type aliases cannot be read through the loader name list, and a parser module needs the DTO class and
+  event factories injected, otherwise `new StoryFullDto()` is a ReferenceError at runtime.

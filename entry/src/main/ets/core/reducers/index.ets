@@ -28,7 +28,7 @@ export function appReducer(state: AppState, action: ReducerAction): AppState {
     action.type === 'chatListUnreadMessageCountChanged' ||
     action.type === 'chatsLoadStateChanged' || action.type === 'chatAction' ||
     action.type === 'chatFullInfo' || action.type === 'chatActiveStoriesUpdated' ||
-    action.type === 'chatAvailableReactionsUpdated') {
+    action.type === 'chatAvailableReactionsUpdated' || action.type === 'storyFullUpdated') {
     return chatsReducer(state, action);
   }
 

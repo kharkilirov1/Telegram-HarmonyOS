@@ -17,10 +17,11 @@ import {
   ChatsLoadStateChangedEvent,
   ChatActiveStoriesUpdatedEvent,
   ChatAvailableReactionsUpdatedEvent,
+  StoryFullUpdatedEvent,
   ChatActionEvent,
   ChatFullInfoEvent
 } from '../model/AppEvent';
-import { ChatActiveStoriesDto } from '../model/dto/StoryDto';
+import { ChatActiveStoriesDto, StoryFullDto, storyContentKey } from '../model/dto/StoryDto';
 import { ChatDto, ChatType as DtoChatType, ChatUpdateDto } from '../model/dto/ChatDto';
 import { compareInt64 } from '../utils/tdAccessors';
 import { cloneStateForChats, cloneChat, cloneGroupAccess } from '../utils/stateClone';
@@ -28,6 +29,7 @@ import { cloneStateForChats, cloneChat, cloneGroupAccess } from '../utils/stateC
 // Events this reducer handles
 function isChatEvent(type: string): boolean {
   return type === 'supergroupSlowmodeUpdated' || type === 'supergroupBoostsUpdated' || type === 'groupAccessUpdated' || type === 'newChat' || type === 'chatUpdated' ||
+    type === 'storyFullUpdated' ||
     type === 'chatReadInbox' || type === 'chatReadOutbox' ||
     type === 'chatListUnreadMessageCountChanged' ||
     type === 'chatsLoadStateChanged' || type === 'chatActiveStoriesUpdated' ||
@@ -486,6 +488,15 @@ export function chatsReducer(state: AppState, action: ReducerAction): AppState {
         newState.chats.loadPhase = event.phase;
       } else {
         newState.chats.loadPhase = 'idle';
+      }
+      break;
+    }
+
+    case 'storyFullUpdated': {
+      const event = action as StoryFullUpdatedEvent;
+      const story = event.story;
+      if (story.storyId > 0 && story.posterChatId !== 0) {
+        newState.chats.storyContentsByKey.set(storyContentKey(story.posterChatId, story.storyId), story);
       }
       break;
     }

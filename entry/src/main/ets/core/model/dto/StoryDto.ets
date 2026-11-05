@@ -39,3 +39,26 @@ export function hasUnreadCloseFriendsStories(activeStories: ChatActiveStoriesDto
   }
   return false;
 }
+
+// I6: the full story content shown by the viewer. Story list updates only carry ids, so the viewer asks
+// TDLib for one story at a time and the store keeps the parsed content.
+export type StoryContentKind = 'photo' | 'video' | 'unsupported';
+
+export class StoryFullDto {
+  storyId: number = 0;
+  posterChatId: number = 0;
+  date: number = 0;
+  kind: StoryContentKind = 'unsupported';
+  caption: string = '';
+  // Photo: largest size file id; video: the video file id. Zero when the content has no media.
+  mediaFileId: number = 0;
+  mediaWidth: number = 0;
+  mediaHeight: number = 0;
+  // Video only.
+  duration: number = 0;
+  minithumbnail: string = '';
+}
+
+export function storyContentKey(posterChatId: number, storyId: number): string {
+  return posterChatId.toString() + ':' + storyId.toString();
+}

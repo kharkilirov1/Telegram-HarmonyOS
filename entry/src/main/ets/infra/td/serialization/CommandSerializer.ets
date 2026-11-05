@@ -28,6 +28,7 @@ import {
   CheckAuthPasswordCommand,
   LoadChatsCommand,
   LoadActiveStoriesCommand,
+  GetStoryCommand,
   OpenChatCommand,
   SendMessageCommand,
   SendMediaMessageCommand,
@@ -118,6 +119,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('requestPasswordRecovery', serializeRequestPa
 COMMAND_SERIALIZATION_HANDLERS.set('resendAuthCode', serializeResendAuthCode);
 COMMAND_SERIALIZATION_HANDLERS.set('loadChats', serializeLoadChats);
 COMMAND_SERIALIZATION_HANDLERS.set('loadActiveStories', serializeLoadActiveStories);
+  COMMAND_SERIALIZATION_HANDLERS.set('getStory', serializeGetStory);
 COMMAND_SERIALIZATION_HANDLERS.set('openChat', serializeOpenChat);
 COMMAND_SERIALIZATION_HANDLERS.set('sendMessage', serializeSendMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('sendMediaMessage', serializeSendMediaMessage);
@@ -293,6 +295,14 @@ function serializeLoadChats(command: AnyAppCommand, result: SerializedCommand): 
       : '{"@type":"chatListMain"}');
   result.params.setString('_chat_list_json', chatListJson);
   result.params.setNumber('limit', cmd.payload.limit);
+}
+
+function serializeGetStory(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetStoryCommand;
+  result.method = 'getStory';
+  result.params.setString('poster_chat_id', cmd.payload.posterChatId.toString());
+  result.params.setNumber('story_id', cmd.payload.storyId);
+  result.params.setBool('only_local', false);
 }
 
 function serializeLoadActiveStories(_command: AnyAppCommand, result: SerializedCommand): void {
