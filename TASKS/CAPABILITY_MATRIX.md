@@ -164,7 +164,7 @@
 
 | # | Возможность | Статус | Доказательство | iOS-референс | Связанные / шов |
 |---|---|---|---|---|---|
-| I1 | In-app уведомления | `missing` | нет `notificationManager` | `Sources/Notifications*` | I2, H3 |
+| I1 | In-app уведомления | `partial` | Локальные уведомления о входящих: `notificationPolicy` (чистые `shouldPublishMessageNotification` — только background, только входящие, не активный чат, не mute; `buildMessageNotificationContent` — title чата, «Имя: текст», caption/медиа-fallback, обрезка 160), `MessageNotificationBridge` (NotificationKit publish basic text, requestEnableNotification с деградацией в disabled, уникальные id), sink инжектится из EntryAbility в runtime (`setMessageNotificationSink`), hook после committed batch, foreground из `navigationUIState.applicationForeground`. Нет: тап по уведомлению → открытие чата (wantAgent), inline reply, группировка, per-chat настройки | `Notifications/MessageNotifications` | I2, H2 |
 | I2 | Push-уведомления | `blocked` | нужен AGC/Push Kit | `Sources/Push*` | I3, I1 |
 | I3 | Inline reply из шторки | `missing` | нет | `Components/Calls`/push extension | I2 |
 | I4 | VoIP-звонки | `frozen` | — | `Components/Calls` | — |

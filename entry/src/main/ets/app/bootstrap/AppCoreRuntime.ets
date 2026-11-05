@@ -15,6 +15,7 @@ import { getTdGatewayAdapter, resetTdGatewayAdapter } from '../../infra/td/adapt
 import { getMainThreadDispatcher } from '../../infra/threading/MainThreadDispatcher';
 import { EventNormalizer, getEventNormalizer, NormalizerStats } from '../../core/events/EventNormalizer';
 import { AppStore } from '../../core/store/AppStore';
+import { AppState } from '../../core/model/AppState';
 import { appReducer } from '../../core/reducers/index';
 import { AnyAppEvent, createChatUpdatedEvent, createAuthStateChangedEvent } from '../../core/model/AppEvent';
 import { AppError, AppErrorKind } from '../../core/model/AppError';
@@ -53,6 +54,11 @@ export class PipelineStats {
   dispatcherHandlerErrors: number = 0;
 }
 
+// I1: the runtime never formats notifications itself; EntryAbility injects this sink.
+export interface MessageNotificationSink {
+  handleEvents(state: AppState, events: AnyAppEvent[]): void;
+}
+
 export class AppCoreRuntime {
   private bindings?: AppCoreRuntimeBindings;
   private gateway: TdGateway;
@@ -69,6 +75,7 @@ export class AppCoreRuntime {
   private shutdownTask?: Promise<void>;
   private retired: boolean = false;
   private unsubscribeGateway?: () => void;
+  private notificationSink?: MessageNotificationSink;
 
   constructor(bindings?: AppCoreRuntimeBindings) {
     this.bindings = bindings;
@@ -432,11 +439,23 @@ export class AppCoreRuntime {
     if (!this.isCurrentRun(runtimeToken)) return;
     try {
       await accountStore.dispatchBatch(events, (): boolean => this.isCurrentRun(runtimeToken));
+      // I1: notifications read the committed state, so they can never describe an older message.
+      this.notificationSink?.handleEvents(accountStore.getState(), events);
     } catch (error) {
       if (!this.isCurrentRun(runtimeToken)) return;
       const err = error as Error;
       hilog.error(DOMAIN, TAG, 'Error dispatching batch: %{public}s', err.message);
     }
+  }
+
+  // I1: EntryAbility owns the notification lifecycle and injects the sink; the runtime only taps the
+  // committed batch, so core stays free of NotificationKit and UI-state imports.
+  setMessageNotificationSink(sink: MessageNotificationSink): void {
+    this.notificationSink = sink;
+  }
+
+  clearMessageNotificationSink(): void {
+    this.notificationSink = undefined;
   }
 
   getStore(): AppStore {

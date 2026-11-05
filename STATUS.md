@@ -146,6 +146,15 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **I1-message-notifications (lead).** Локальные уведомления: чистый `notificationPolicy` (background +
+  входящее + не активный чат + не mute; текст «Имя: превью», caption/медиа-fallback, лимит 160) и
+  `MessageNotificationBridge` на NotificationKit (basic text, `requestEnableNotification` с деградацией в
+  disabled, уникальные id, ошибки логируются). Runtime получает sink через `setMessageNotificationSink` и
+  вызывает его после committed batch; EntryAbility запрашивает разрешение после initialize, чистит sink и
+  останавливает bridge в onDestroy; foreground берётся из существующего
+  `navigationUIState.applicationForeground`. Суита `test-message-notifications.cjs` (135-я): гейт, текст,
+  bridge/runtime/ability-проводка. Гейты: host **135/135**, оба smoke, hvigor BUILD SUCCESSFUL.
+  Остаток I1: переход по тапу (wantAgent), inline reply, группировка, witness.
 - **D24-inline-translation (lead).** Inline-перевод: `MessageTranslationEvent` → `messagesReducer`
   (клонирование + `translatedText`/`translationVisible`) → row → `TgMessageRouter` → `TgTextBubbleV3`
   (divider с токеном 0.25, блок перевода, плашки «Translated» и «Show original»), тоггл из плашки

@@ -1305,3 +1305,13 @@ Last updated: 2026-10-23
   page-layer flag would have needed a dataSource call the 500-line session cannot host.
 - The row VO has no `chatId`; the active chat id comes from `chrome.activeChatId` inside the timeline row.
 - Bubble/router files omit trailing semicolons on imports — anchor patches accordingly.
+
+## 239. Test harnesses that copy methods do not run field initializers
+
+- Adding `private bridge = new Bridge()` to EntryAbility broke three stabilization fixtures: the harness
+  copies methods onto an object without running class field initializers, so `this.bridge` was undefined.
+  A module-level lazy singleton (`getMessageNotificationBridge()`) survives that harness and keeps the
+  ability stateless.
+- Keeping NotificationKit out of AppCoreRuntime avoids eleven suite failures; inject a sink interface from
+  the ability instead, and keep the runtime testable with a plain object.
+- Chat ids are negative for groups and channels: `<= 0` guards silently drop every group. Compare to `=== 0`.

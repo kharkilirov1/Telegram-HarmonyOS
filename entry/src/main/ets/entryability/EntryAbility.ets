@@ -5,6 +5,7 @@ import { UIAbility, AbilityConstant, Configuration, ConfigurationConstant, commo
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window, KeyboardAvoidMode } from '@kit.ArkUI';
 import { getAppCoreRuntime, resetAppCoreRuntime } from '../app/bootstrap/AppCoreRuntime';
+import { getMessageNotificationBridge } from '../app/notifications/MessageNotificationBridge';
 import { StorageKeys } from '../app/bridge/AppStoreBridge';
 import { getMessageCacheManager } from '../core/utils/MessageLruCache';
 import { setAppContext } from '../core/utils/AppResource';
@@ -39,6 +40,12 @@ export default class EntryAbility extends UIAbility {
         if (abilityToken !== this.abilityLifecycleToken) return;
         AppStorage.setOrCreate<string>(StorageKeys.GLASS_MODE, 'auto');
         hilog.info(DOMAIN, TAG, 'AppCoreRuntime initialized');
+        // I1: ask for notification permission only after the pipeline is alive.
+        getMessageNotificationBridge().setActiveChatIdProvider((): number => navigationUIState.activeChatId);
+        runtime.setMessageNotificationSink(getMessageNotificationBridge());
+        getMessageNotificationBridge().start(this.context).catch((error: Error): void => {
+          hilog.warn(DOMAIN, TAG, 'Message notifications unavailable: %{public}s', error.message);
+        });
       }, (error: Error): void => {
         if (abilityToken !== this.abilityLifecycleToken) return;
         hilog.error(DOMAIN, TAG, 'Failed to initialize AppCoreRuntime: %{public}s', error.message);
@@ -52,6 +59,8 @@ export default class EntryAbility extends UIAbility {
   async onDestroy(): Promise<void> {
     hilog.info(DOMAIN, TAG, 'onDestroy');
     this.abilityLifecycleToken += 1;
+    getAppCoreRuntime().clearMessageNotificationSink();
+    getMessageNotificationBridge().stop();
     this.mainWindow = null;
 
     // Reset runtime singleton without creating a new runtime during teardown.
