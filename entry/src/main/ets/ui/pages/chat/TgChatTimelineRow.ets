@@ -80,6 +80,9 @@ export struct TgChatTimelineRow {
         onMessageLinkPress: (url: string): void => {
           this.bindings.openMessageTarget(url);
         },
+        onLocationMessagePress: (latitude: number, longitude: number): void => {
+          this.bindings.openMessageTarget('geo:' + latitude + ',' + longitude);
+        },
         isEmojiOnly: this.entry.message.isEmojiOnly,
     diceEmoji: this.entry.message.diceEmoji,
     diceValue: this.entry.message.diceValue,

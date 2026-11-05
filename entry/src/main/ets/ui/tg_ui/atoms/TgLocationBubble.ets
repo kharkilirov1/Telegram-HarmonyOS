@@ -10,6 +10,9 @@ export struct TgLocationBubble {
   @Param venueTitle: string = '';
   @Param venueAddress: string = '';
   @Param isOutgoing: boolean = false;
+  // D25: tapping the map opens the point in a maps application.
+  @Event onLocationPress: (latitude: number, longitude: number) => void =
+    (_latitude: number, _longitude: number) => {};
 
   private hasVenue(): boolean {
     return this.venueTitle.length > 0;
@@ -46,6 +49,9 @@ export struct TgLocationBubble {
       .aspectRatio(2)
       .borderRadius({ topLeft: TgUiTokens.MSG_BUBBLE_RADIUS, topRight: TgUiTokens.MSG_BUBBLE_RADIUS })
       .clip(true)
+      .onClick((): void => {
+        this.onLocationPress(this.latitude, this.longitude);
+      })
 
       // Venue info (if available)
       if (this.hasVenue()) {

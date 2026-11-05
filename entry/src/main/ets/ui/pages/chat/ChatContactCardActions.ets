@@ -58,6 +58,9 @@ export function openMessageTarget(host: ChatMessageTargetPort, value: string): b
     host.handleSearchQueryChange(target.slice('hashtag:'.length));
     return true;
   }
+  if (target.startsWith('geo:')) {
+    return openGeoPoint(host, target);
+  }
   if (isTelegramUsernameLink(target)) {
     return openResolvedUsername(host, target);
   }
@@ -65,6 +68,18 @@ export function openMessageTarget(host: ChatMessageTargetPort, value: string): b
 }
 
 // t.me/<name> written as a mention is a Telegram profile, not a web page: resolve it in-app first.
+// "geo:lat,lon" is the platform shape for a point; maps apps accept it, and a maps URL is the fallback that
+// every device can open.
+function openGeoPoint(host: ChatMessageTargetPort, target: string): boolean {
+  const coords = target.slice('geo:'.length).split(',');
+  const latitude = Number.parseFloat(coords[0] ?? '');
+  const longitude = Number.parseFloat(coords[1] ?? '');
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return false;
+  }
+  return host.openSharedMediaLink('https://maps.google.com/?q=' + latitude + ',' + longitude);
+}
+
 function isTelegramUsernameLink(target: string): boolean {
   const lowered = target.toLowerCase();
   return lowered.startsWith('https://t.me/') || lowered.startsWith('https://telegram.me/');

@@ -1775,3 +1775,11 @@ Last updated: 2026-10-23
   picker usable from the scheduled-messages page with one line.
 - When an owner module is shared by two screens, its inputs should be platform values and plain callbacks, never
   one screen's host interface.
+
+## 296. A placeholder that does nothing is worse than a link out
+
+- The location bubble rendered a grey placeholder with a pin emoji and spent a tap doing nothing. Routing the
+  coordinates into the existing message-target owner (`geo:lat,lon` → maps URL) needed no new navigation code and
+  made the bubble honest until a real map snapshot exists.
+- When a block is a placeholder, give it the cheapest truthful action first; the expensive renderer (Map Kit with
+  an AGC key) can arrive later without changing the contract.

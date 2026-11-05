@@ -14,6 +14,9 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
 
 ## Debt
 
+- [ ] **D25: встроенная карта и выбор точки.** Тап по локации уже открывает точку во внешних картах. Для
+  паритета с iOS нужен static map snapshot в бабле (Map Kit с AGC-ключом либо растровые тайлы с сетевым
+  контрактом и кэшем) и экран выбора точки перед отправкой. Триггер: срез по картам.
 - [x] **Разблокировать `ChatScreenSession`.** Решено не сжатием, а мостом: `controllerBridges` в
   `test-chat-screen-decomposition` позволяют binding вызывать контроллер напрямую
   (`this.session.composerCtrl.method(text, this.session)`), без делегата сессии. Так сделан D21.

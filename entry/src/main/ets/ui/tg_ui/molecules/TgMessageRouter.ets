@@ -198,6 +198,9 @@ export struct TgMessageRouter {
   @Event onContactMessagePress: () => void = () => {};
   // Opening a tapped link (message text previews today).
   @Event onMessageLinkPress: (url: string) => void = (_: string) => {};
+  // D25: a tapped location bubble asks the owner to open the point.
+  @Event onLocationMessagePress: (latitude: number, longitude: number) => void =
+    (_latitude: number, _longitude: number) => {};
   @Event onContactAddPress: () => void = () => {};
   @Param contactUserId: number = 0;
 
@@ -1347,7 +1350,6 @@ export struct TgMessageRouter {
       .width('100%')
       .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
       .alignItems(VerticalAlign.Bottom)
-
     } else if (this.contentType === 'location') {
       // ── Location / venue bubble ──
       Row() {
@@ -1367,25 +1369,29 @@ export struct TgMessageRouter {
             if (!this.hasVenueInfo()) {
               Stack({ alignContent: Alignment.BottomEnd }) {
                 TgLocationBubble({
-                  latitude: this.locationLatitude,
+                  onLocationPress: (latitude: number, longitude: number): void => {
+          this.onLocationMessagePress(latitude, longitude);
+        },
+        latitude: this.locationLatitude,
                   longitude: this.locationLongitude,
                   venueTitle: this.locationVenueTitle,
                   venueAddress: this.locationVenueAddress,
                   isOutgoing: this.isOutgoing
                 })
-
                 this.buildOverlayMetaPill(false)
               }
               .width(this.maxBubbleWidth())
             } else {
               TgLocationBubble({
-                latitude: this.locationLatitude,
+                onLocationPress: (latitude: number, longitude: number): void => {
+          this.onLocationMessagePress(latitude, longitude);
+        },
+        latitude: this.locationLatitude,
                 longitude: this.locationLongitude,
                 venueTitle: this.locationVenueTitle,
                 venueAddress: this.locationVenueAddress,
                 isOutgoing: this.isOutgoing
               })
-
               Row() {
                 this.buildInlineMeta(false)
               }
@@ -1400,14 +1406,12 @@ export struct TgMessageRouter {
           this.buildReactionsRow()
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
-
         this.buildChannelShareButton()
         this.buildOutgoingTail()
       }
       .width('100%')
       .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
       .alignItems(VerticalAlign.Bottom)
-
     } else if (this.contentType === 'poll') {
       // ── Poll bubble ──
       Row() {
@@ -1450,25 +1454,21 @@ export struct TgMessageRouter {
           this.buildReactionsRow()
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
-
         this.buildChannelShareButton()
         this.buildOutgoingTail()
       }
       .width('100%')
       .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
       .alignItems(VerticalAlign.Bottom)
-
     } else if (this.isVisualMedia()) {
       // ── Visual media shell: live swap onto the parallel V2 media-family atom ──
       Row() {
         this.buildAvatarSlot()
-
         Column() {
           this.buildVisualMediaBubbleShell()
           this.buildReactionsRow()
         }
         .alignItems(this.isOutgoing ? HorizontalAlign.End : HorizontalAlign.Start)
-
         this.buildChannelShareButton()
       }
       .width('100%')

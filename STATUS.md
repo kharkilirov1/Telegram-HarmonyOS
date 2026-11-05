@@ -56,6 +56,12 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D25: тап по локации открывает точку на карте (lead).** Бабл локации был картинкой-заглушкой без действия.
+  Теперь `onLocationPress(lat, lon)` уходит через роутер (оба варианта бабла) и строку в `geo:lat,lon`, а владелец
+  `openMessageTarget` парсит координаты и открывает `https://maps.google.com/?q=lat,lon` общим
+  `openSharedMediaLink` — один путь открытия на все ссылки. Некорректные координаты отклоняются. Новый гейт
+  `scripts/test-location-tap.cjs` (163-я суита). Нет: встроенной статической карты (нужен Map Kit/AGC-ключ),
+  выбора точки и live location. Гейты: host **163/163**, оба smoke, hvigor OK. Урок — №296.
 - **D21: перенос запланированного сообщения на выбранную дату (lead).** В меню строки
   `TgChatScheduledMessagesPage` появился четвёртый пункт «Дата и время» (`rescheduleCustom`): он переиспользует
   `pickScheduledDate` из owner-модуля (теперь функция принимает `UIContext`, а не host — так её может звать и
