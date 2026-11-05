@@ -16,7 +16,8 @@ function read(file){let s=fs.readFileSync(path.join(root,file),'utf8').replaceAl
     if(mutant==='old-cleanup'){from='if (generation !== this.generation) return;';to='';}
     if(mutant==='flow-context'){from='generation === this.generation && host.hasActiveChatState() &&\n      host.getActiveChatId() === chatId && host.getLifecycleToken() === lifecycle && host.getDeleteUseCase() === useCase';to='true';}
   }
-  if(file==='ui/pages/chat/ChatMessageActionsController.ets'&&mutant==='forward-intent'){from='this.deleteController?.cancel();\n    this.editController?.cancel();\n    if (this.forwardPickerOpen';to='this.editController?.cancel();\n    if (this.forwardPickerOpen';}
+  if(file==='ui/pages/chat/ChatMessageActionsController.ets'&&mutant==='forward-intent'){
+    from='this.deleteController?.cancel();\n    this.editController?.cancel();\n    if (this.forwardPickerOpen';to='this.editController?.cancel();\n    if (this.forwardPickerOpen';}
   if(from){assert.ok(s.includes(from),'mutation engages '+mutant);s=s.replaceAll(from,to);mutated.add(file);}return s;}
 function load(file,deps={}){const s=read(file),names=[...s.matchAll(/^export\s+(?:default\s+)?(?:class|function|const|enum)\s+(\w+)/gm)].map(m=>m[1]);const js=stripTypeScriptTypes(s.replace(/^import[\s\S]*?;\s*/gm,'').replace(/^export\s+(?:default\s+)?/gm,''),{mode:'transform',sourceUrl:file});return new Function(...Object.keys(deps),`${js}\nreturn {${names.join(',')}};`)(...Object.values(deps));}
 const platform={hilog:{info(){},warn(){},error(){}},localized:(_id,fallback)=>fallback,$r:id=>({id})};
@@ -24,7 +25,7 @@ const C=load('core/model/AppCommand.ets'),td=load('models/td/common/index.ets'),
 const D=load('domain/usecases/deleteMessages.ets',{...C,...td,...E,...platform});
 const F=load('domain/usecases/forwardMessages.ets',{...C,...td,...E,...platform});
 const UI=load('ui/pages/chat/ChatDeleteMessageController.ets',{...D,...platform,TgUiTokens:{COLOR_TEXT_TITLE:'primary',COLOR_TEXT_ERROR:'error'}});
-const A=load('ui/pages/chat/ChatMessageActionsController.ets',{...D,...F,...UI,...platform});
+const A=load('ui/pages/chat/ChatMessageActionsController.ets',{resolveTranslationLanguage:(s,y)=>['en','ru','uk','de','fr','es','it','pt','pl','tr','ar','zh','ja','ko'].includes(String(s||'').trim().toLowerCase().split('-')[0])?String(s||'').trim().toLowerCase().split('-')[0]:('en'),translationLanguagePreferences:{set:()=>false,get:()=>'',clear:()=>{},clearAll:()=>{},size:()=>0},SUPPORTED_TRANSLATION_LANGUAGES:['en','ru'],normalizeTranslationLanguage:(c)=>String(c||'').trim().toLowerCase(),isSupportedTranslationLanguage:()=>false,translationLanguageLabel:(c)=>String(c||'').toUpperCase(),...D,...F,...UI,...platform});
 const serializer=load('infra/td/serialization/CommandSerializer.ets',{...C,...td,...platform});
 const raw=value=>td.TdObject.fromJSON(JSON.stringify(value));const tick=()=>new Promise(resolve=>setImmediate(resolve));
 const props=(self=true,all=true)=>raw({'@type':'messageProperties',can_be_deleted_only_for_self:self,can_be_deleted_for_all_users:all});

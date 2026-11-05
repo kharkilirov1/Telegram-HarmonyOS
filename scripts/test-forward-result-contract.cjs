@@ -40,6 +40,7 @@ function read(relative) {
     if(mutant === 'legacy-array') { from="response.getTopLevelObjectArrayStrict('messages')"; to="response.getArray('messages')"; }
   }
   if(relative === 'ui/pages/chat/ChatMessageActionsController.ets') {
+    
     if(mutant === 'skip-preflight') { from='prepared = forwardUseCase.prepare(input);'; to='prepared = input;'; }
     if(mutant === 'replay-all') { from='err instanceof ForwardMessagesResultError ? err.retryMessageIds : messageIds'; to='messageIds'; }
   }
@@ -94,7 +95,7 @@ const attachmentFiles = load('ui/pages/chat/ChatAttachmentFilePreparer.ets', { .
 const { ChatComposerController } = load('ui/pages/chat/ChatComposerController.ets', {
   ...errors, ...textController, ...sequentialMedia, ...text, ...media, ...photoAlbum, ...attachmentFiles, ...emoji, ...platform, fileIo
 });
-const actions = load('ui/pages/chat/ChatMessageActionsController.ets', { ...errors, ...text, ...forwarding, ...platform });
+const actions = load('ui/pages/chat/ChatMessageActionsController.ets', {resolveTranslationLanguage:(s,y)=>['en','ru','uk','de','fr','es','it','pt','pl','tr','ar','zh','ja','ko'].includes(String(s||'').trim().toLowerCase().split('-')[0])?String(s||'').trim().toLowerCase().split('-')[0]:('en'),translationLanguagePreferences:{set:()=>false,get:()=>'',clear:()=>{},clearAll:()=>{},size:()=>0},SUPPORTED_TRANSLATION_LANGUAGES:['en','ru'],normalizeTranslationLanguage:(c)=>String(c||'').trim().toLowerCase(),isSupportedTranslationLanguage:()=>false,translationLanguageLabel:(c)=>String(c||'').toUpperCase(), ...errors, ...text, ...forwarding, ...platform });
 const ui = {
   setEmojiPanelVisible(value) { this.showComposerEmojiPanel = value; },
   setStickerPanelVisible(value) { this.showComposerStickerPanel = value; },

@@ -37,6 +37,7 @@ function read(file) {
   }
   if (file === 'ui/pages/chat/TgChatScreenPage.ets' && mutant === 'target-kind') { from = "targetType !== 'group' && targetType !== 'supergroup'"; to = "targetType !== 'group'"; }
   if (file === 'ui/pages/chat/ChatMessageActionsController.ets' && mutant === 'before-comment') {
+    
     from = 'await forwardUseCase.validateEligibility(prepared, (): boolean =>'; to = 'await Promise.resolve(((): boolean =>';
     assert.ok(s.includes(from)); s = s.replace(from, to);
     const end = 'trimmedComment.length > 0 ? sendUseCase : undefined, targetChatId, sourceChatId, messageIds));';
@@ -57,7 +58,7 @@ const G = load('core/model/dto/GroupAccessDto.ets', accessors), P = load('ui/pag
 const errors = load('core/model/AppError.ets');
 const forwarding = load('domain/usecases/forwardMessages.ets', { ...C, ...td, ...errors, ...platform });
 const sending = load('domain/usecases/sendMessage.ets', { ...C, ...td, ...errors, ...platform });
-const actions = load('ui/pages/chat/ChatMessageActionsController.ets', { ...errors, ...forwarding, ...sending, ...platform });
+const actions = load('ui/pages/chat/ChatMessageActionsController.ets', {resolveTranslationLanguage:(s,y)=>['en','ru','uk','de','fr','es','it','pt','pl','tr','ar','zh','ja','ko'].includes(String(s||'').trim().toLowerCase().split('-')[0])?String(s||'').trim().toLowerCase().split('-')[0]:('en'),translationLanguagePreferences:{set:()=>false,get:()=>'',clear:()=>{},clearAll:()=>{},size:()=>0},SUPPORTED_TRANSLATION_LANGUAGES:['en','ru'],normalizeTranslationLanguage:(c)=>String(c||'').trim().toLowerCase(),isSupportedTranslationLanguage:()=>false,translationLanguageLabel:(c)=>String(c||'').toUpperCase(), ...errors, ...forwarding, ...sending, ...platform });
 const serializer = load('infra/td/serialization/CommandSerializer.ets', { ...C, ...td, ...platform });
 const page = read('ui/pages/chat/TgChatScreenPage.ets');
 const methods = ['getForwardUseCase', 'canUseComposer', 'canSendNewMessages'].map(name => {

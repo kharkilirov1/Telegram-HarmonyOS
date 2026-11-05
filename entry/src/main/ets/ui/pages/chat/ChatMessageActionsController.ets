@@ -7,6 +7,14 @@ import { openMessageThread } from './chatAdminNavigation';
 import { MessageTranslationEvent } from '../../../core/model/AppEvent';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { createTranslateMessageUseCase } from '../../../domain/usecases/translateMessage';
+import {
+  SUPPORTED_TRANSLATION_LANGUAGES,
+  isSupportedTranslationLanguage,
+  normalizeTranslationLanguage,
+  resolveTranslationLanguage,
+  translationLanguageLabel,
+  translationLanguagePreferences
+} from '../../../domain/usecases/translationLanguage';
 import { i18n } from '@kit.LocalizationKit';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
@@ -333,16 +341,51 @@ export class ChatMessageActionsController {
     }
   }
 
-  // D24: iOS translates into the app language; the system language is the closest available source here.
-  private targetLanguageCode(): string {
+  // D24: a per-chat choice wins; otherwise the system language, then English.
+  private targetLanguageCode(chatId: number = 0): string {
     let language = '';
     try {
       language = i18n.System.getSystemLanguage().toLowerCase();
     } catch (_error) {
       language = '';
     }
-    const primary = language.split('-')[0];
-    return this.isSupportedLanguageCode(primary) ? primary : 'en';
+    const stored = chatId !== 0 ? translationLanguagePreferences.get(chatId) : '';
+    return resolveTranslationLanguage(stored, language);
+  }
+
+  // Picker data: the supported codes with their compact labels.
+  translationLanguages(): string[] {
+    return SUPPORTED_TRANSLATION_LANGUAGES.slice();
+  }
+
+  translationLanguageLabelFor(code: string): string {
+    return translationLanguageLabel(code);
+  }
+
+  translationLanguageFor(chatId: number): string {
+    return this.targetLanguageCode(chatId);
+  }
+
+  // Choosing a language drops the cached translations of that chat so the next tap re-requests.
+  setTranslationLanguage(chatId: number, code: string): boolean {
+    const normalized = normalizeTranslationLanguage(code);
+    if (!isSupportedTranslationLanguage(normalized)) {
+      return false;
+    }
+    if (!translationLanguagePreferences.set(chatId, normalized)) {
+      return false;
+    }
+    const prefix = chatId.toString() + ':';
+    const stale: string[] = [];
+    for (const key of this.translationCache.keys()) {
+      if (key.startsWith(prefix)) {
+        stale.push(key);
+      }
+    }
+    for (const key of stale) {
+      this.translationCache.delete(key);
+    }
+    return true;
   }
 
   private translationKey(messageId: string, language: string): string {
@@ -393,7 +436,7 @@ export class ChatMessageActionsController {
       return;
     }
     this.activeChatKeyForCache = chatId;
-    const language = this.targetLanguageCode();
+    const language = this.targetLanguageCode(chatId);
     const cached = this.translationCache.get(this.translationKey(messageId, language));
     if (cached !== undefined) {
       this.applyTranslation(chatId, messageId, cached, true);

@@ -41,6 +41,7 @@ const mutants = {
 };
 assert.ok(!mutation || mutants[mutation], 'Named supported behavioral mutation required');
 function read(relative) {
+    
   const filename = path.join(baseline && relative.startsWith(main) ? path.resolve(baseline) : root, relative);
   let value = fs.readFileSync(filename, 'utf8'); hashes[filename] = createHash('sha256').update(value).digest('hex');
   value = value.replaceAll('\r\n', '\n');
@@ -89,7 +90,7 @@ const sequentialFile = main + 'ui/pages/chat/ChatSequentialMediaController.ets';
 const sequential = fs.existsSync(path.join(baseline ? path.resolve(baseline) : root, sequentialFile))
   ? load(sequentialFile, { ...dependencies, ...media }) : {};
 const composer = load(main + 'ui/pages/chat/ChatComposerController.ets', { ...dependencies, ...text, ...media, ...photo, ...preparer, ...emoji, ...textController, ...sequential });
-const actions = load(main + 'ui/pages/chat/ChatMessageActionsController.ets', { ...dependencies, ...text, ...forward });
+const actions = load(main + 'ui/pages/chat/ChatMessageActionsController.ets', {resolveTranslationLanguage:(s,y)=>['en','ru','uk','de','fr','es','it','pt','pl','tr','ar','zh','ja','ko'].includes(String(s||'').trim().toLowerCase().split('-')[0])?String(s||'').trim().toLowerCase().split('-')[0]:('en'),translationLanguagePreferences:{set:()=>false,get:()=>'',clear:()=>{},clearAll:()=>{},size:()=>0},SUPPORTED_TRANSLATION_LANGUAGES:['en','ru'],normalizeTranslationLanguage:(c)=>String(c||'').trim().toLowerCase(),isSupportedTranslationLanguage:()=>false,translationLanguageLabel:(c)=>String(c||'').toUpperCase(), ...dependencies, ...text, ...forward });
 const tests = [];
 const hypium = { describe: (_name, body) => body(), it: (name, _flags, run) => tests.push({ name, run, scope: 'actual unchanged Hypium callback' }),
   expect: value => ({ assertEqual: other => assert.strictEqual(value, other), assertTrue: () => assert.strictEqual(value, true), assertFalse: () => assert.strictEqual(value, false) }) };

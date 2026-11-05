@@ -81,7 +81,8 @@ const sequential = load('ui/pages/chat/ChatSequentialMediaController.ets', { ...
 const textOwner = load('ui/pages/chat/ChatTextSendController.ets', { ...dependencies, ...sends, ...emoji });
 const preparer = load('ui/pages/chat/ChatAttachmentFilePreparer.ets', { ...platform, fileIo: {} });
 const composer = load('ui/pages/chat/ChatComposerController.ets', { ...dependencies, ...sends, ...media, ...photo, ...sequential, ...textOwner, ...preparer, ...emoji });
-const actions = load('ui/pages/chat/ChatMessageActionsController.ets', { ...dependencies, ...sends, ...forward });
+const actions = load('ui/pages/chat/ChatMessageActionsController.ets', {resolveTranslationLanguage:(s,y)=>['en','ru','uk','de','fr','es','it','pt','pl','tr','ar','zh','ja','ko'].includes(String(s||'').trim().toLowerCase().split('-')[0])?String(s||'').trim().toLowerCase().split('-')[0]:('en'),translationLanguagePreferences:{set:()=>false,get:()=>'',clear:()=>{},clearAll:()=>{},size:()=>0},SUPPORTED_TRANSLATION_LANGUAGES:['en','ru'],normalizeTranslationLanguage:(c)=>String(c||'').trim().toLowerCase(),isSupportedTranslationLanguage:()=>false,translationLanguageLabel:(c)=>String(c||'').toUpperCase(),
+     ...dependencies, ...sends, ...forward });
 const barSource = read('ui/tg_ui/atoms/TgChatTopBar.ets'), enums = ['TgChatTopBarSubtitleMode', 'TgChatTopBarTrailingAction'];
 const enumCode = enums.map(name => { const match = barSource.match(new RegExp('export enum ' + name + ' \\{[\\s\\S]*?\\}')); assert.ok(match); return match[0].replace('export ', ''); }).join('\n');
 const barEnums = new Function(stripTypeScriptTypes(enumCode, { mode: 'transform' }) + '\nreturn {' + enums.join(',') + '};')();

@@ -56,6 +56,14 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D24-translation-language (lead).** Выбор языка перевода (слой данных): `translationLanguage` —
+  поддерживаемые коды, нормализация с региональным суффиксом (`pt-BR`→`pt`), порядок
+  stored→system→en, метки; `translationLanguagePreferences` — per-chat выбор; контроллер получил
+  `translationLanguages()`, `translationLanguageFor(chatId)`, `translationLanguageLabelFor`,
+  `setTranslationLanguage()` (сброс кэша переводов чата), `targetLanguageCode(chatId)` учитывает выбор.
+  Новая суита `test-translation-language.cjs` (143-я): список, нормализация, порядок, префы, карта кэша,
+  проводка. Обновлено 14 суит-загрузчиков контроллера. Гейты: host **143/143**, оба smoke, hvigor BUILD
+  SUCCESSFUL. Остаток D24: UI-пикер в меню сообщения, witness.
 - **F6-gallery-sticker-animation (lead).** TGS во вьювере: `GalleryStickerLayout` (`isTgsPath`,
   contained-fit `galleryStickerSize` с долей 0.86 и фолбэком на квадрат), `TgMediaGalleryPage.buildStickerItem`
   играет `TgTgsPlayer` только когда стикер — текущая страница, с поверхностью `StickerViewer`;

@@ -35,6 +35,7 @@ function read(relative) {
   sources[relative] = createHash('sha256').update(source).digest('hex');
   source = source.replaceAll('\r\n', '\n');
   if (relative === 'ui/pages/chat/ChatMessageActionsController.ets') {
+    
     if (mutant === 'no-dispatch-guards') {
       const block = /        if \(!this\.ownsForwardOperation\([^]*?throw new Error\('Forward context changed (?:before dispatch|after comment)'\);\n        }\n/g;
       const matches = [...source.matchAll(block)];
@@ -97,7 +98,7 @@ const attachmentFiles = load('ui/pages/chat/ChatAttachmentFilePreparer.ets', { .
 const { ChatComposerController } = load('ui/pages/chat/ChatComposerController.ets', {
   ...errors, ...textController, ...sequentialMedia, ...text, ...media, ...photoAlbum, ...attachmentFiles, ...emoji, ...platform, fileIo
 });
-const actions = load('ui/pages/chat/ChatMessageActionsController.ets', { ...errors, ...text, ...forwarding, ...platform });
+const actions = load('ui/pages/chat/ChatMessageActionsController.ets', {resolveTranslationLanguage:(s,y)=>['en','ru','uk','de','fr','es','it','pt','pl','tr','ar','zh','ja','ko'].includes(String(s||'').trim().toLowerCase().split('-')[0])?String(s||'').trim().toLowerCase().split('-')[0]:('en'),translationLanguagePreferences:{set:()=>false,get:()=>'',clear:()=>{},clearAll:()=>{},size:()=>0},SUPPORTED_TRANSLATION_LANGUAGES:['en','ru'],normalizeTranslationLanguage:(c)=>String(c||'').trim().toLowerCase(),isSupportedTranslationLanguage:()=>false,translationLanguageLabel:(c)=>String(c||'').toUpperCase(), ...errors, ...text, ...forwarding, ...platform });
 const ui = {
   setEmojiPanelVisible(value) { this.showComposerEmojiPanel = value; },
   setStickerPanelVisible(value) { this.showComposerStickerPanel = value; },

@@ -1443,3 +1443,10 @@ Last updated: 2026-10-23
   the second surface honest.
 - Rendering the animated node only for `index === currentIndex` keeps the player budget bounded without a
   per-item visibility callback.
+
+## 256. Patch suite loaders by anchor, never by global string replace
+
+- Inserting loader stubs with a global replace of a file path corrupted suites that merely read the same
+  path in assertions and regexes. Restore from git and patch only the actual `load(...)` call site.
+- A controller gaining imports needs a stub in every suite that evaluates it; count the load sites first,
+  then patch each one.

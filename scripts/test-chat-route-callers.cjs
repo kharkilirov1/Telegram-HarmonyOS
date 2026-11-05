@@ -23,6 +23,7 @@ function read(file) {
   if (mutant === 'scope' && file === 'ui/pages/chat/ChatScreenRouteParams.ets') from = 'this.accountScope.isScopeCurrent()';
   if (mutant === 'rollback-token' && ['ui/pages/chat/ChatMessageActionsController.ets',
     'ui/pages/chat/ChatOpenTransaction.ets'].includes(file)) {
+    
     from = 'navigationUIState.activeChatOwnerToken === params.navigationToken';
   }
   if (from) {
@@ -256,7 +257,7 @@ function forwardFixture(options = {}) {
   const useCase = { prepare: input => ({ ...input, messageIds: [...new Set(input.messageIds)] }),
     getSourceAvailability: () => options.availability ?? Promise.resolve({ ordinaryTargets: true, secretTargets: false }) };
   class ForwardMessagesParams {}
-  const { ChatMessageActionsController } = load('ui/pages/chat/ChatMessageActionsController.ets', {
+  const { ChatMessageActionsController } = load('ui/pages/chat/ChatMessageActionsController.ets', {resolveTranslationLanguage:(s,y)=>['en','ru','uk','de','fr','es','it','pt','pl','tr','ar','zh','ja','ko'].includes(String(s||'').trim().toLowerCase().split('-')[0])?String(s||'').trim().toLowerCase().split('-')[0]:('en'),translationLanguagePreferences:{set:()=>false,get:()=>'',clear:()=>{},clearAll:()=>{},size:()=>0},SUPPORTED_TRANSLATION_LANGUAGES:['en','ru'],normalizeTranslationLanguage:(c)=>String(c||'').trim().toLowerCase(),isSupportedTranslationLanguage:()=>false,translationLanguageLabel:(c)=>String(c||'').toUpperCase(),
     ...f.deps, pendingForwardTransfer: transfer, ForwardMessagesParams,
     ForwardTargetPickerRouteParams: class { constructor(sourceChatId) { this.sourceChatId = sourceChatId; } } });
   const Parent = page('ui/pages/chat/TgChatScreenPage.ets', ['createChatRouteParams', 'isRouteContextCurrent', 'getChatRouteToken'], f.deps, false);

@@ -89,7 +89,8 @@ const sequentialFile = main + 'ui/pages/chat/ChatSequentialMediaController.ets';
 // No candidate-source fallback: the baseline Composer has no new dependency.
 const sequential = exists(sequentialFile) ? load(sequentialFile, { ...dependencies, ...media, ...emoji }) : {};
 const composer = load(main + 'ui/pages/chat/ChatComposerController.ets', { ...dependencies, ...text, ...media, ...photo, ...preparer, ...emoji, ...textController, ...sequential, picker, cameraPicker, camera, photoAccessHelper });
-const actions = load(main + 'ui/pages/chat/ChatMessageActionsController.ets', { ...dependencies, ...text, ...forward });
+const actions = load(main + 'ui/pages/chat/ChatMessageActionsController.ets', {resolveTranslationLanguage:(s,y)=>['en','ru','uk','de','fr','es','it','pt','pl','tr','ar','zh','ja','ko'].includes(String(s||'').trim().toLowerCase().split('-')[0])?String(s||'').trim().toLowerCase().split('-')[0]:('en'),translationLanguagePreferences:{set:()=>false,get:()=>'',clear:()=>{},clearAll:()=>{},size:()=>0},SUPPORTED_TRANSLATION_LANGUAGES:['en','ru'],normalizeTranslationLanguage:(c)=>String(c||'').trim().toLowerCase(),isSupportedTranslationLanguage:()=>false,translationLanguageLabel:(c)=>String(c||'').toUpperCase(),
+     ...dependencies, ...text, ...forward });
 const barSource = read(main + 'ui/tg_ui/atoms/TgChatTopBar.ets');
 const barEnums = ['TgChatTopBarSubtitleMode', 'TgChatTopBarTrailingAction'];
 const enumCode = barEnums.map(name => {
