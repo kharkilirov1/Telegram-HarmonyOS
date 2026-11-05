@@ -1328,6 +1328,7 @@ export class TgUiTokens {
   static readonly STORY_COMPOSER_PLUS_SIZE: number = 44;
   static readonly STORY_REACTION_EMOJI_SIZE: number = 22;
   static readonly STORY_REACTION_CHIP_RADIUS: number = 16;
+  static readonly STORY_REPLY_FIELD_RADIUS: number = 18;
   static readonly STORY_REACTION_CHIP_BG: ResourceColor = 'rgba(255, 255, 255, 0.16)';
   static readonly STORY_REACTION_CHOSEN_BG: ResourceColor = 'rgba(51, 144, 236, 0.5)';
   // A5: avatar editor viewport and controls.

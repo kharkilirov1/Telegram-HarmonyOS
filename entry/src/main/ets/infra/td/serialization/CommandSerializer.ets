@@ -403,6 +403,17 @@ function serializeOpenChat(command: AnyAppCommand, result: SerializedCommand): v
   result.params.setNumber('chat_id', cmd.payload.chatId);
 }
 
+// I6: replying to a story targets the story, not a message, so the reply object is built here.
+function setReplyToStoryJsonIfNeeded(params: TdObject, posterChatId: number, storyId: number): boolean {
+  if (posterChatId === 0 || storyId <= 0) {
+    return false;
+  }
+  params.setString('_reply_to_json',
+    `{"@type":"inputMessageReplyToStory","story_poster_chat_id":${posterChatId.toString()},` +
+    `"story_id":${storyId.toString()}}`);
+  return true;
+}
+
 function serializeSendMessage(command: AnyAppCommand, result: SerializedCommand): void {
   const cmd = command as SendMessageCommand;
   result.method = 'sendMessage';
@@ -412,7 +423,10 @@ function serializeSendMessage(command: AnyAppCommand, result: SerializedCommand)
   const entities = buildCustomEmojiEntitiesJson(cmd.payload.customEmojiEntities);
   const inputContentJson = `{"@type":"inputMessageText","text":{"@type":"formattedText","text":"${text}","entities":${entities}},"clear_draft":true}`;
   result.params.setString('_input_message_content_json', inputContentJson);
-  setReplyToJsonIfNeeded(result.params, cmd.payload.replyToMessageId);
+  if (!setReplyToStoryJsonIfNeeded(result.params, cmd.payload.replyToStoryPosterChatId,
+    cmd.payload.replyToStoryId)) {
+    setReplyToJsonIfNeeded(result.params, cmd.payload.replyToMessageId);
+  }
   setTopicIdJsonIfNeeded(result.params, cmd.payload.topicThreadId);
   if (cmd.payload.scheduledDateSeconds > 0) {
     result.params.setString('_scheduling_state_json',

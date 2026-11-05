@@ -1552,3 +1552,11 @@ Last updated: 2026-10-23
   reset is an explicit call so reopening the list starts over.
 - Viewer rows must survive not-yet-loaded users: keep the row and fill the name later from the store
   instead of dropping it, otherwise a page looks shorter than its total count.
+
+## 270. A reply target is one field, not two features
+
+- `sendMessage` already carries `reply_to`; a story reply is the same method with a different object
+  (`inputMessageReplyToStory`). Extending the payload and preferring the story object keeps one send path
+  instead of a parallel story-reply command.
+- Story replies are private messages to the author, so the viewer keeps the reply bar separate from the
+  reaction row and never closes the story on send.

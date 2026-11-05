@@ -9,6 +9,7 @@ import { createDownloadFileCommand } from '../../../core/model/AppCommand';
 import { StoryFullDto } from '../../../core/model/dto/StoryDto';
 import { MessageAvailableReactionsSnapshot } from '../../../core/model/dto/MessageDto';
 import { StoryViewsRouteParams } from './TgStoryViewsPage';
+import { ReplyToStoryUseCase, createReplyToStoryUseCase, STORY_REPLY_MAX_LENGTH } from '../../../domain/usecases/replyToStory';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { LoadStoryUseCase, createLoadStoryUseCase } from '../../../domain/usecases/loadStory';
@@ -48,6 +49,8 @@ export struct TgStoryViewerPage {
   @Local private progress: number = 0;
   @Local private topInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
   @Local private reactionKeys: string[] = [];
+  @Local private replyText: string = '';
+  @Local private replySending: boolean = false;
 
   private pageStack: NavPathStack = new NavPathStack();
   private store?: AppStore;
@@ -55,6 +58,7 @@ export struct TgStoryViewerPage {
   private loadStoryUseCase?: LoadStoryUseCase;
   private availableReactionsUseCase?: GetStoryAvailableReactionsUseCase;
   private setReactionUseCase?: SetStoryReactionUseCase;
+  private replyUseCase?: ReplyToStoryUseCase;
   private unsubscribe?: () => void;
   private pageLifecycleToken: number = 0;
   private progressTimerId: number = -1;
@@ -75,6 +79,7 @@ export struct TgStoryViewerPage {
     this.loadStoryUseCase = createLoadStoryUseCase(store, getTdGatewayAdapter());
     this.availableReactionsUseCase = createGetStoryAvailableReactionsUseCase(getTdGatewayAdapter());
     this.setReactionUseCase = createSetStoryReactionUseCase(getTdGatewayAdapter());
+    this.replyUseCase = createReplyToStoryUseCase(getTdGatewayAdapter());
     this.loadReactionKeys();
     const token = this.pageLifecycleToken;
     let activeUnsubscribe: (() => void) | undefined = undefined;
@@ -101,6 +106,7 @@ export struct TgStoryViewerPage {
     this.loadStoryUseCase = undefined;
     this.availableReactionsUseCase = undefined;
     this.setReactionUseCase = undefined;
+    this.replyUseCase = undefined;
   }
 
   // I6: the story reaction row. Chips come from TDLib; keys are the same ones messages use.
@@ -375,6 +381,62 @@ export struct TgStoryViewerPage {
     .padding({ left: TgUiTokens.SPACE_12, right: TgUiTokens.SPACE_12 })
   }
 
+  // I6: replying sends a message to the author's chat; the story stays open.
+  private sendReply(): void {
+    const useCase = this.replyUseCase;
+    const storyId = this.currentStoryId();
+    if (useCase === undefined || storyId === 0 || this.replySending || this.chatId === 0) {
+      return;
+    }
+    if (useCase.validate(this.replyText).length > 0) {
+      return;
+    }
+    this.replySending = true;
+    const token = this.pageLifecycleToken;
+    useCase.execute(this.chatId, storyId, this.replyText).then((accepted: boolean) => {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
+      if (accepted) {
+        this.replyText = '';
+      }
+    }).catch((): void => {}).finally((): void => {
+      if (token === this.pageLifecycleToken) {
+        this.replySending = false;
+      }
+    });
+  }
+
+  @Builder
+  private buildReplyBar() {
+    Row() {
+      TextInput({ text: this.replyText, placeholder: localizedText('Reply privately') })
+        .fontSize(TgUiTokens.GENERIC_TEXT_FIELD_FONT_SIZE)
+        .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+        .placeholderColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+        .maxLength(STORY_REPLY_MAX_LENGTH)
+        .backgroundColor(TgUiTokens.STORY_REACTION_CHIP_BG)
+        .borderRadius(TgUiTokens.STORY_REPLY_FIELD_RADIUS)
+        .padding({ left: TgUiTokens.SPACE_12, right: TgUiTokens.SPACE_12 })
+        .layoutWeight(1)
+        .onChange((value: string): void => {
+          this.replyText = value;
+        })
+      Text('➤')
+        .fontSize(TgUiTokens.STORY_REACTION_EMOJI_SIZE)
+        .fontColor(this.replySending || this.replyText.trim().length === 0
+          ? TgUiTokens.COLOR_TEXT_PREVIEW
+          : TgUiTokens.MSG_LINK_INCOMING)
+        .margin({ left: TgUiTokens.SPACE_12 })
+        .onClick((): void => {
+          this.sendReply();
+        })
+    }
+    .width('100%')
+    .padding({ left: TgUiTokens.SPACE_12, right: TgUiTokens.SPACE_12, bottom: TgUiTokens.SPACE_8 })
+    .alignItems(VerticalAlign.Center)
+  }
+
   @Builder
   private buildReactionRow() {
     Row() {
@@ -470,6 +532,7 @@ export struct TgStoryViewerPage {
         if (this.reactionKeys.length > 0) {
           this.buildReactionRow()
         }
+        this.buildReplyBar()
       }
       .width('100%')
       .height('100%')

@@ -56,6 +56,12 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **I6-story-reply (lead).** Ответ на историю: `SendMessagePayload` получил `replyToStoryPosterChatId`/
+  `replyToStoryId`, сериализация `sendMessage` предпочитает `inputMessageReplyToStory` обычному ответу,
+  `ReplyToStoryUseCase` (валидация пустого/4096, отправка в чат автора, ошибка → false), поле
+  «Reply privately» с отправкой в вьювере. Новая суита `test-story-reply.cjs` (152-я): payload,
+  сериализация, use case на gateway-дубле, бар вьювера. Гейты: host **152/152**, оба smoke, hvigor
+  BUILD SUCCESSFUL. Остаток I6: выбор адресатов, witness.
 - **I6-story-views (lead).** Просмотры истории: `getStoryInteractions` (query/onlyContacts/
   preferForwards/preferWithReaction, offset, limit) + сериализация, `parseStoryInteractions`
   (view/forward/repost, реакция зрителя, chat-актор), `LoadStoryInteractionsUseCase` (страницы по

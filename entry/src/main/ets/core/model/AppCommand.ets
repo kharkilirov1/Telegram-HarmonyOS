@@ -55,6 +55,9 @@ export class SendMessagePayload {
   customEmojiEntities: CustomEmojiTextEntity[] = [];
   // D11: '0' posts into the chat itself; otherwise the message goes into that message thread (comments).
   topicThreadId: MessageId = '0';
+  // I6: a reply to a story goes into the author's chat; both ids must be set to take effect.
+  replyToStoryPosterChatId: number = 0;
+  replyToStoryId: number = 0;
   // 0 sends immediately; otherwise the scheduled send date in seconds.
   scheduledDateSeconds: number = 0;
 }
