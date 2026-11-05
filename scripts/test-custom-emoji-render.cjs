@@ -185,6 +185,32 @@ async function main() {
   assert.match(voSource, /row\.customEmojiPaths\.set\(entity\.customEmojiId, emojiPath\);/);
   assert.match(voSource, /if \(entity\.type !== 'customEmoji' \|\| entity\.customEmojiId === '0'\) \{/);
 
+  // Page-level producer: row entities → prefetch → one rebuild -----------------------------------
+  const transaction = read('ui/pages/chat/ChatTimelineTransactionCoordinator.ets');
+  assert.match(transaction, /import \{ prefetchMessageCustomEmoji \} from '\.\/ChatMessageCustomEmojiCoordinator';/);
+  assert.match(transaction, /host\.dataSource\.applyDiff\(result\.entries\);\n\s+\/\/ D16: resolve custom emoji files/);
+  assert.match(transaction, /prefetchMessageCustomEmoji\(host\.activeChatId, result\.entries, \(\): void => \{/);
+  assert.match(transaction, /rebuildTimeline\(host, nativeState\);/, 'the resolved files trigger one rebuild');
+
+  const coordinatorSource = read('ui/pages/chat/ChatMessageCustomEmojiCoordinator.ets');
+  assert.match(coordinatorSource, /export function collectRowCustomEmojiEntities\(entries: ChatTimelineEntryVO\[\]\): TextEntity\[\]\[\]/);
+  assert.match(coordinatorSource, /if \(entry\.kind !== 'message'\) \{/);
+  assert.match(coordinatorSource, /entry\.message\.captionEntities\.length > 0/);
+  assert.match(coordinatorSource, /if \(emojiState\.inFlight \|\| emojiState\.resolvedChatIds\.has\(chatId\)\) \{/,
+    'one pass per chat visit');
+  assert.match(coordinatorSource, /if \(emojiState\.chatId !== chatId\) \{/, 'a chat switch resets the pass');
+  assert.match(coordinatorSource, /emojiState\.resolvedChatIds\.add\(chatId\);\n\s+rebuild\(\);/,
+    'the rebuild runs after the pass is recorded');
+  assert.match(coordinatorSource, /export function invalidateMessageCustomEmoji\(chatId: number\): void \{/);
+
+  // The render key includes resolved paths, so the rebuild reaches the list.
+  const voKeySource = read('ui/pages/chat/ChatTimelineVO.ets');
+  assert.match(voKeySource, /function customEmojiRenderStamp\(row: ChatMessageRowVO\): number \{/);
+  assert.match(voKeySource, /if \(row\.customEmojiPaths\.size === 0\) \{\n\s+return 0;/);
+  assert.match(voKeySource, /entry\.key = entry\.key \+ '_e' \+ customEmojiRenderStamp\(row\)\.toString\(\);/);
+  assert.match(voKeySource, /const ids: string\[\] = Array\.from\(row\.customEmojiPaths\.keys\(\)\)\.sort\(\);/,
+    'the stamp is deterministic');
+
   console.log('PASS custom emoji rendering contract');
 }
 

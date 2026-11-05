@@ -62,7 +62,12 @@ export class CustomEmojiPrefetchCoordinator {
     let filled = 0;
     try {
       const resolved = await this.useCase().resolve(ids);
-      for (const [id, sticker] of resolved) {
+      const resolvedIds: string[] = Array.from(resolved.keys());
+      for (const id of resolvedIds) {
+        const sticker = resolved.get(id);
+        if (sticker === undefined) {
+          continue;
+        }
         const path = sticker.localPath.length > 0 ? sticker.localPath : sticker.thumbnailPath;
         if (path.length === 0) {
           continue;

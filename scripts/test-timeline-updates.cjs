@@ -110,7 +110,7 @@ const viewport=load(main+'ui/pages/chat/ChatTimelineViewportCoordinator.ets',{
   ...platform,ChatScrollPositionCache:{positions:new Map()},ScrollAlign:{START:0,END:2}
 });
 const events=load(main+'ui/pages/chat/ChatScreenViewEventHandlers.ets');
-const transaction=load(main+'ui/pages/chat/ChatTimelineTransactionCoordinator.ets',{
+const transaction=load(main+'ui/pages/chat/ChatTimelineTransactionCoordinator.ets',{prefetchMessageCustomEmoji:()=>{},
   ...vo,...platform,...bars,StorageKeys:{ACTIVE_CHAT_TITLE:'fixture'},
   navigationUIState:{activeChatId:0},chatUIState:{},AppStorage:{set(){}}
 });

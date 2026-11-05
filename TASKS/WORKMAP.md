@@ -97,6 +97,7 @@
 | D16b | Резолвер кастомных эмодзи (D16) | D16 | getCustomEmojiStickers + кэш + download; далее рендер |
 | D16c | Рендер кастомного эмодзи (D16) | D16 | splitter + ImageSpan + карта путей; далее координатор |
 | D16d | Продюсер карты путей (D16) | D16 | cache + prefetch + VO fill; далее вызов из страницы |
+| D16e | Prefetch со страницы + перестройка (D16) | D16 | coordinator + хук + render key; далее TGS/реакции |
 | S12b | Меню действий в шапке чата (C10) | C10 | `showMoreAction`/`onMorePress` в `TgChatTopBar`, меню Chat Info / Mute / Clear History / Delete в `TgChatScreenPage`, live-store состояние, контракт `test-chat-header-actions.cjs`, smoke-пин на 4 действия; C10 → `available` |
 | S12c | Leave Chat и Share My Contact (C10) | C10 | `leaveChat` + `inputMessageContact` (команды/сериализаторы), `LeaveChatUseCase`/`ShareMyContactUseCase`, пятый контекстный пункт меню в шапке, 6 строк в 3 локалях, контракт расширен |
 | S12d | Report с причинами + `ChatActionsCoordinator` (C10) | C10 | `reportChat`/`ReportChatDto`/`ReportChatUseCase`, `canBeReported` в модели/DTO/reducer, шестой пункт меню, меню вынесено в координатор (страница ≤500 строк), контракт расширен |

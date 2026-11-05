@@ -1218,6 +1218,7 @@ function buildMessageEntry(message: Message, chat: Chat, state: AppState, messag
   // would rewrite the LazyForEach key of every message and churn the whole list on upgrade.
   if (row.hasReactions || row.reactionHiddenCount > 0) {
     entry.key = entry.key + '_x' + reactionRenderStamp(row).toString();
+  entry.key = entry.key + '_e' + customEmojiRenderStamp(row).toString();
   }
   entry.message = row;
   return entry;
@@ -1266,6 +1267,23 @@ function mediaRenderStamp(row: ChatMessageRowVO): number {
     + (row.linkPreviewPhotoPath.length > 0 ? 65536 : 0)
     + progressBuckets * 131072;
   return ((baseStamp * 31) + albumStateStamp) | 0;
+}
+
+// D16: the row must rebuild when a custom emoji file appears, so its resolved paths join the render key.
+function customEmojiRenderStamp(row: ChatMessageRowVO): number {
+  if (row.customEmojiPaths.size === 0) {
+    return 0;
+  }
+  let hash = 7;
+  const ids: string[] = Array.from(row.customEmojiPaths.keys()).sort();
+  for (const id of ids) {
+    hash = ((hash * 31) + stringRenderStamp(id)) | 0;
+    const path = row.customEmojiPaths.get(id);
+    if (path !== undefined) {
+      hash = ((hash * 31) + stringRenderStamp(path)) | 0;
+    }
+  }
+  return hash;
 }
 
 function stringRenderStamp(value: string): number {

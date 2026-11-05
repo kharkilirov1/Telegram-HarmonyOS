@@ -1380,3 +1380,13 @@ Last updated: 2026-10-23
   broken while every unit passes. Load the TD module once and inject the same class everywhere.
 - A process cache lets a pure row builder see async results; the remaining cost is triggering a rebuild
   after prefetch, which belongs to the page, not the builder.
+
+## 248. A rebuild needs a key change, not just new row data
+
+- `applyDiff` compares stableKey/kind/key: rebuilding rows with a new path map but the same key produces no
+  list update. Adding a deterministic render stamp for the map into `entry.key` is what makes the resolved
+  files visible.
+- A coordinator that rebuilds must be one-shot per chat visit (`inFlight`, `resolvedChatIds`, reset on chat
+  switch), otherwise the rebuild triggers prefetch again and loops.
+- ArkTS rejects destructuring declarations and structural typing on narrow port interfaces: pass primitives
+  or a callback instead of importing the wider port type into a coordinator.

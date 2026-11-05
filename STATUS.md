@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **D16-custom-emoji-page (lead).** Prefetch теперь запускается со страницы: `ChatMessageCustomEmojiCoordinator`
+  собирает сущности из строк сообщений (текст и подпись), делает один проход на чат (in-flight +
+  `resolvedChatIds`, сброс при смене чата), по прибытии файлов вызывает один `rebuildTimeline`; хук стоит
+  в `ChatTimelineTransactionCoordinator` сразу после `applyDiff`. Render key строки получил
+  `customEmojiRenderStamp` (ноль при пустой карте, иначе хэш по сортированным id+path), поэтому
+  перестройка доходит до списка. Суита `test-custom-emoji-render.cjs` расширена (хук, порт, проход, ключ);
+  `test-timeline-updates.cjs` получил стаб. Гейты: host **138/138**, оба smoke, hvigor BUILD SUCCESSFUL.
+  Остаток D16: TGS-анимация, выбор кастомной реакции, witness.
 - **D16-custom-emoji-producer (lead).** Продюсер карты путей: `customEmojiPathCache` (синглтон id→file URI,
   принимает путь или готовый URI) и `CustomEmojiPrefetchCoordinator.prefetch` (сбор pending id из сущностей,
   лимит 64, дедуп, in-flight-набор, запись `localPath`/thumbnail в кэш, ошибки не кэшируются). Чистый

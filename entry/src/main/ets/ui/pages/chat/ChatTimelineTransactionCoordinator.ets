@@ -7,9 +7,11 @@ import { TgChatTopBarSubtitleMode, TgChatTopBarTrailingAction } from '../../tg_u
 import { ChatTimelineDataSource } from './ChatTimelineDataSource';
 import { ChatTimelineEntryVO, buildChatTimeline } from './ChatTimelineVO';
 import { PendingMediaOpenIntent } from './PendingMediaOpenIntent';
+import { prefetchMessageCustomEmoji } from './ChatMessageCustomEmojiCoordinator';
 import { LoadChatHistoryUseCase } from '../../../domain/usecases/loadChatHistory';
 import { localized } from '../../../core/utils/AppResource';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 
 const DOMAIN = 0x0021;
 const TAG = 'TgChatScreenPage';
@@ -133,6 +135,11 @@ export function rebuildTimeline(host: ChatTimelineTransactionCoordinatorPort, st
     host.isApplyingTimelineDiff = true;
     try {
       host.dataSource.applyDiff(result.entries);
+  // D16: resolve custom emoji files for the rebuilt rows; the row key rebuild brings them in.
+  prefetchMessageCustomEmoji(host.activeChatId, result.entries, (): void => {
+    const nativeState = getAppCoreRuntime().getStore().getState();
+    rebuildTimeline(host, nativeState);
+  });
     } finally {
       host.isApplyingTimelineDiff = false;
     }
