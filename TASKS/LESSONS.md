@@ -1560,3 +1560,10 @@ Last updated: 2026-10-23
   instead of a parallel story-reply command.
 - Story replies are private messages to the author, so the viewer keeps the reply bar separate from the
   reaction row and never closes the story on send.
+
+## 271. Navigation results are the cheapest way back to a picker
+
+- `pushPathByName` takes an onPop callback, so a picker can return a typed result without global state:
+  the composer owns the selection and the picker only pops it.
+- The "selected users" mode should not be a dead end: cycling into it opens the picker instead of
+  choosing a mode the user cannot complete.

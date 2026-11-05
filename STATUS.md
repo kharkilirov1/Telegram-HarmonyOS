@@ -56,6 +56,13 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **I6-story-audience (lead).** Выбор адресатов истории: `StoryAudienceModel` (фильтр по имени/username,
+  toggle без мутации, подписи Select People/1 Person/N People, гейт Done), `TgStoryAudiencePage`
+  (приватные чаты без себя, сортировка, поиск, чекбоксы, возврат `StoryAudienceResult` через `pop`),
+  route; композер при цикле приватности доходит до selected users и открывает пикер, публикация несёт
+  `selectedUserIds`, строка показывает количество. Строки в 3 локалях. Новая суита
+  `test-story-audience.cjs` (153-я); обновлена `test-story-composer.cjs`. Гейты: host **153/153**, оба
+  smoke, hvigor BUILD SUCCESSFUL. I6 функционально закрыт, остаётся только witness.
 - **I6-story-reply (lead).** Ответ на историю: `SendMessagePayload` получил `replyToStoryPosterChatId`/
   `replyToStoryId`, сериализация `sendMessage` предпочитает `inputMessageReplyToStory` обычному ответу,
   `ReplyToStoryUseCase` (валидация пустого/4096, отправка в чат автора, ошибка → false), поле

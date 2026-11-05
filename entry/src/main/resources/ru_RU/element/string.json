@@ -829,6 +829,26 @@
       "value": "Изменить фото"
     },
     {
+      "name": "story_audience_cancel",
+      "value": "Отмена"
+    },
+    {
+      "name": "story_audience_done",
+      "value": "Готово"
+    },
+    {
+      "name": "story_audience_subtitle",
+      "value": "Кто увидит вашу историю"
+    },
+    {
+      "name": "story_audience_search",
+      "value": "Поиск"
+    },
+    {
+      "name": "story_audience_empty",
+      "value": "Выбрать людей"
+    },
+    {
       "name": "story_views_title",
       "value": "Просмотры"
     },

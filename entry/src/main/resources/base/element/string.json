@@ -829,6 +829,26 @@
       "value": "Change photo"
     },
     {
+      "name": "story_audience_cancel",
+      "value": "Cancel"
+    },
+    {
+      "name": "story_audience_done",
+      "value": "Done"
+    },
+    {
+      "name": "story_audience_subtitle",
+      "value": "Who can see your story"
+    },
+    {
+      "name": "story_audience_search",
+      "value": "Search"
+    },
+    {
+      "name": "story_audience_empty",
+      "value": "Select People"
+    },
+    {
       "name": "story_views_title",
       "value": "Viewers"
     },

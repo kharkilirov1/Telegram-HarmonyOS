@@ -108,8 +108,8 @@ async function main() {
   assert.match(page, /picker\.select\(\{\n      MIMEType: photoAccessHelper\.PhotoViewMIMETypes\.IMAGE_VIDEO_TYPE,/);
   assert.match(page, /this\.mediaKind = storyMediaKindFromPath\(path\);/);
   assert.match(page, /private cyclePrivacy\(\): void \{/);
-  assert.match(page, /this\.privacy = nextStoryPrivacy\(this\.privacy, 1\);/);
-  assert.match(page, /if \(this\.privacy === 'selectedUsers'\) \{/);
+  assert.match(page, /const next = nextStoryPrivacy\(this\.privacy, 1\);/);
+  assert.match(page, /if \(next === 'selectedUsers'\) \{/);
   assert.match(page, /const payload: PostStoryPayload = buildStoryPayload\(this\.selfUserId, this\.mediaPath,/);
   assert.match(page, /useCase\.execute\(payload\)/);
   assert.match(page, /this\.pageStack\.pop\(\);/);

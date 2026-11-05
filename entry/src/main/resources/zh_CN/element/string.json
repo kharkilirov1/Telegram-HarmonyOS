@@ -829,6 +829,26 @@
       "value": "更换照片"
     },
     {
+      "name": "story_audience_cancel",
+      "value": "取消"
+    },
+    {
+      "name": "story_audience_done",
+      "value": "完成"
+    },
+    {
+      "name": "story_audience_subtitle",
+      "value": "谁可以看你的故事"
+    },
+    {
+      "name": "story_audience_search",
+      "value": "搜索"
+    },
+    {
+      "name": "story_audience_empty",
+      "value": "选择联系人"
+    },
+    {
       "name": "story_views_title",
       "value": "观众"
     },

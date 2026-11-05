@@ -20,6 +20,7 @@ import {
   buildStoryPayload
 } from './StoryComposerModel';
 import { StoryMediaPrep } from './storyMediaPrep';
+import { StoryAudienceRouteParams, StoryAudienceResult } from './TgStoryAudiencePage';
 import { localized } from '../../../core/utils/AppResource';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { computeTopBarHeight } from '../../utils/SafeAreaUtils';
@@ -33,6 +34,7 @@ export struct TgStoryComposerPage {
   @Local private mediaKind: string = 'photo';
   @Local private caption: string = '';
   @Local private privacy: StoryPrivacy = 'everyone';
+  @Local private selectedUserIds: number[] = [];
   @Local private busy: boolean = false;
   @Local private errorText: string = '';
   @Local private noticeText: string = '';
@@ -120,11 +122,12 @@ export struct TgStoryComposerPage {
   }
 
   private cyclePrivacy(): void {
-    this.privacy = nextStoryPrivacy(this.privacy, 1);
-    if (this.privacy === 'selectedUsers') {
-      // Without a people picker this mode cannot publish, so skip it instead of blocking the user.
-      this.privacy = nextStoryPrivacy(this.privacy, 1);
+    const next = nextStoryPrivacy(this.privacy, 1);
+    if (next === 'selectedUsers') {
+      this.openAudiencePicker();
+      return;
     }
+    this.privacy = next;
   }
 
   private publish(): void {
@@ -132,12 +135,12 @@ export struct TgStoryComposerPage {
     if (useCase === undefined || this.busy || this.selfUserId <= 0) {
       return;
     }
-    if (!canPublishStory(this.mediaPath, this.privacy, 0)) {
+    if (!canPublishStory(this.mediaPath, this.privacy, this.selectedUserIds.length)) {
       this.errorText = localized($r('app.string.story_error_media').id, 'Choose a photo or a video first');
       return;
     }
     const payload: PostStoryPayload = buildStoryPayload(this.selfUserId, this.mediaPath,
-      clampStoryCaption(this.caption), this.privacy);
+      clampStoryCaption(this.caption), this.privacy, this.selectedUserIds);
     this.busy = true;
     this.errorText = '';
     this.noticeText = '';
@@ -160,6 +163,23 @@ export struct TgStoryComposerPage {
     }).finally((): void => {
       this.busy = false;
     });
+  }
+
+  // I6: selected people needs the audience picker; the row opens it and the mode publishes once chosen.
+  private openAudiencePicker(): void {
+    const token = this.pageLifecycleToken;
+    this.pageStack.pushPathByName('TgStoryAudiencePage', new StoryAudienceRouteParams(this.selectedUserIds),
+      (info: PopInfo) => {
+        if (token !== this.pageLifecycleToken) {
+          return;
+        }
+        const result = info.result as StoryAudienceResult;
+        if (result === undefined || result.selectedIds.length === 0) {
+          return;
+        }
+        this.selectedUserIds = result.selectedIds.slice();
+        this.privacy = 'selectedUsers';
+      });
   }
 
   @Builder
@@ -200,7 +220,7 @@ export struct TgStoryComposerPage {
   }
 
   private canPublish(): boolean {
-    return !this.busy && canPublishStory(this.mediaPath, this.privacy, 0);
+    return !this.busy && canPublishStory(this.mediaPath, this.privacy, this.selectedUserIds.length);
   }
 
   @Builder
@@ -259,7 +279,9 @@ export struct TgStoryComposerPage {
           .fontSize(TgUiTokens.GENERIC_TEXT_FIELD_FONT_SIZE)
           .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
           .layoutWeight(1)
-        Text(storyPrivacyLabel(this.privacy))
+        Text(this.privacy === 'selectedUsers'
+          ? storyPrivacyLabel(this.privacy) + ' (' + this.selectedUserIds.length.toString() + ')'
+          : storyPrivacyLabel(this.privacy))
           .fontSize(TgUiTokens.GENERIC_TEXT_FIELD_FONT_SIZE)
           .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
         Text('›')
