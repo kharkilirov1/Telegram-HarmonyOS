@@ -8,7 +8,7 @@ import { ChatMediaOverlayPort } from './ChatScreenViewPorts';
 import { localized } from '../../../core/utils/AppResource';
 import { MediaGalleryItem } from '../../../models/MediaGalleryItem';
 import { StickerPackInfo } from '../../../domain/usecases/stickerPack';
-import { buildStickerPackGalleryItems, stickerPackStartIndex } from './StickerPackGalleryItems';
+import { buildStickerPackGalleryItems, stickerPackPreloadFileIds, stickerPackStartIndex } from './StickerPackGalleryItems';
 
 @ComponentV2
 export struct TgChatMediaOverlay {
@@ -60,6 +60,18 @@ export struct TgChatMediaOverlay {
     }
     this.packGalleryIndex = start;
     this.media.stickerPackPagingIndex = start;
+    this.preloadPackNeighbours();
+  }
+
+  // F6: neighbours are requested before the swipe so the next sticker is already on disk.
+  private preloadPackNeighbours(): void {
+    if (this.packGalleryItems.length === 0 || this.packGalleryIndex < 0) {
+      return;
+    }
+    const ids = stickerPackPreloadFileIds(this.media.stickerPackStickers, this.packGalleryIndex);
+    for (const fileId of ids) {
+      this.bindings.requestMediaDownload(fileId);
+    }
   }
 
   private galleryItems(): MediaGalleryItem[] {

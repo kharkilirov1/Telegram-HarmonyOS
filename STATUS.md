@@ -56,6 +56,11 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **F6-sticker-pack-preload (lead).** Предзагрузка соседних стикеров: `stickerPackPreloadPlan`/
+  `stickerPackPreloadFileIds` (next-first, пропуск скачанных и без download-хэндла, границы, одиночный пак,
+  инвалидный индекс) и вызовы `requestMediaDownload` в оверлее при входе в пак и смене индекса. Суита
+  `test-sticker-pack-paging.cjs` расширена (14 новых кейсов плана и проводки). Гейты: host **141/141**,
+  оба smoke, hvigor BUILD SUCCESSFUL. Остаток F6: TGS-анимация в вьювере, witness.
 - **F6-sticker-pack-paging (lead).** Листание по стикер-паку: `StickerPackSticker` + парсер `getStickerSet`
   (id/files/thumbnail/emoji/format/размер), `nextStickerPackIndex` (клампинг без зацикливания),
   `buildStickerPackGalleryItems`/`stickerPackStartIndex`, `ChatMediaViewState.stickerPackStickers`/

@@ -29,7 +29,8 @@ async function main() {
     { TdObject: Td, hilog, createGetStickerSetCommand: () => ({}), createChangeStickerSetCommand: () => ({}),
       AppError: class extends Error {}, AppErrorKind: { UNKNOWN: 'UNKNOWN' } });
   const Items = load('ui/pages/chat/StickerPackGalleryItems.ets',
-    ['buildStickerPackGalleryItems', 'stickerPackStartIndex', 'stepStickerPackIndex'],
+    ['buildStickerPackGalleryItems', 'stickerPackStartIndex', 'stepStickerPackIndex',
+      'stickerPackPreloadPlan', 'stickerPackPreloadFileIds', 'StickerPackPreloadPlan'],
     { MediaGalleryItem: load('models/MediaGalleryItem.ets', ['MediaGalleryItem']).MediaGalleryItem,
       StickerPackInfo: Pack.StickerPackInfo, StickerPackSticker: Pack.StickerPackSticker,
       nextStickerPackIndex: Pack.nextStickerPackIndex });
@@ -97,6 +98,39 @@ async function main() {
   assert.equal(Items.stickerPackStartIndex([], '11'), 0);
   assert.equal(Items.stepStickerPackIndex(1, parsed, 1), 1);
 
+  // Neighbour preload -----------------------------------------------------------------------------
+  const packOf = (localPaths) => {
+    const info = new Pack.StickerPackInfo();
+    info.setId = '1';
+    for (let index = 0; index < localPaths.length; index += 1) {
+      const sticker = new Pack.StickerPackSticker();
+      sticker.stickerId = String(index + 1);
+      sticker.fileId = 100 + index;
+      sticker.localPath = localPaths[index];
+      info.stickers.push(sticker);
+    }
+    return info;
+  };
+  const fresh = packOf(['', '', '']);
+  assert.deepEqual(Items.stickerPackPreloadFileIds(fresh.stickers, 1), [102, 100],
+    'both neighbours are preloaded, next first');
+  assert.deepEqual(Items.stickerPackPreloadFileIds(fresh.stickers, 0), [101], 'the first sticker has one neighbour');
+  assert.deepEqual(Items.stickerPackPreloadFileIds(fresh.stickers, 2), [101], 'the last sticker has one neighbour');
+  assert.deepEqual(Items.stickerPackPreloadFileIds(packOf(['/s/0.tgs', '', '']).stickers, 0), [101],
+    'an on-disk neighbour is skipped');
+  assert.deepEqual(Items.stickerPackPreloadFileIds(fresh.stickers, -1), [], 'no preload without an index');
+  assert.deepEqual(Items.stickerPackPreloadFileIds(fresh.stickers, 5), [],
+    'an out-of-range index preloads nothing');
+  assert.deepEqual(Items.stickerPackPreloadFileIds(packOf(['']).stickers, 0), [],
+    'a single-sticker pack preloads nothing');
+  const noHandle = packOf(['', '']);
+  noHandle.stickers[1].fileId = 0;
+  assert.deepEqual(Items.stickerPackPreloadFileIds(noHandle.stickers, 0), [],
+    'a sticker without a download handle is skipped');
+  const plan = Items.stickerPackPreloadPlan(fresh.stickers, 1);
+  assert.equal(plan.nextFileId, 102);
+  assert.equal(plan.previousFileId, 100);
+
   // Viewer wiring ---------------------------------------------------------------------------------
   const viewState = read('ui/pages/chat/ChatMediaViewState.ets');
   assert.match(viewState, /@Trace stickerPackStickers: StickerPackSticker\[\] = \[\];/);
@@ -114,6 +148,10 @@ async function main() {
   assert.match(overlay, /mediaItems: this\.galleryItems\(\),/);
   assert.match(overlay, /initialIndex: this\.galleryStartIndex\(\),/);
   assert.match(overlay, /stickers\[index\]\.fileId === tappedFileId/, 'the tapped sticker picks the start index');
+  assert.match(overlay, /private preloadPackNeighbours\(\): void \{/);
+  assert.match(overlay, /const ids = stickerPackPreloadFileIds\(this\.media\.stickerPackStickers, this\.packGalleryIndex\);/);
+  assert.match(overlay, /this\.bindings\.requestMediaDownload\(fileId\);/);
+  assert.match(overlay, /this\.preloadPackNeighbours\(\);/);
   assert.match(overlay, /if \(this\.packGalleryItems\.length > 0\) \{\n\s+this\.packGalleryIndex = index;/,
     'paging stays inside the pack');
 

@@ -1428,3 +1428,10 @@ Last updated: 2026-10-23
   declare page lifecycle methods; drive their first sync from an `@Monitor` on the inputs instead.
 - Adding `@Trace` fields to a view-state model shifts the pinned field counts in the decomposition suite;
   update both the number and its comment.
+
+## 254. Preload plans belong in the pure layer
+
+- A plan object (`next`/`previous` file ids) keeps the policy testable and the component only issues the
+  download calls; putting the checks in the overlay would make them untestable without a UI harness.
+- Skip neighbours that are already on disk and those without a download handle: an id of 0 reaches the
+  download pipeline as an invalid request.
