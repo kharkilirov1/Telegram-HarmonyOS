@@ -3,6 +3,8 @@
 // Data layer: EditProfileUseCase (setName/setBio/setUsername); this page only owns the form.
 
 import { common } from '@kit.AbilityKit';
+import { photoAccessHelper } from '@kit.MediaLibraryKit';
+import { fileIo } from '@kit.CoreFileKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { localized } from '../../../core/utils/AppResource';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
@@ -50,6 +52,8 @@ export struct TgEditProfilePage {
   @Local private bio: string = '';
   @Local private saving: boolean = false;
   @Local private errorText: string = '';
+  @Local private photoNotice: string = '';
+  @Local private photoBusy: boolean = false;
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
   @Local private topBarInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
   private useCase?: EditProfileUseCase;
@@ -90,6 +94,58 @@ export struct TgEditProfilePage {
     }
     const username = this.username.trim().replace(/^@/, '');
     return username.length === 0 || isValidProfileUsername(username);
+  }
+
+  // A5: pick one image, copy it into the sandbox, then hand the real path to setProfilePhoto.
+  private pickProfilePhoto(): void {
+    const useCase = this.useCase;
+    if (useCase === undefined || this.photoBusy || this.saving) {
+      return;
+    }
+    const picker = new photoAccessHelper.PhotoViewPicker();
+    picker.select({
+      MIMEType: photoAccessHelper.PhotoViewMIMETypes.IMAGE_TYPE,
+      maxSelectNumber: 1
+    }).then((result: photoAccessHelper.PhotoSelectResult) => {
+      const uris = result.photoUris;
+      if (uris.length === 0) {
+        return;
+      }
+      const sourceUri = uris[0];
+      return this.copyPickedPhoto(sourceUri).then((localPath: string): Promise<void> => {
+        if (localPath.length === 0) {
+          throw new Error('Could not copy the selected photo');
+        }
+        return useCase.updatePhoto(localPath).then((): void => {
+          this.photoNotice = localized($r('app.string.edit_profile_photo_updated').id, 'Profile photo updated');
+          this.errorText = '';
+        });
+      });
+    }).catch((error: Error) => {
+      this.errorText = error.message;
+      hilog.warn(DOMAIN, TAG, 'Profile photo update failed: %{public}s', error.message);
+    }).finally(() => {
+      this.photoBusy = false;
+    });
+    this.photoBusy = true;
+    this.photoNotice = '';
+    this.errorText = '';
+  }
+
+  private copyPickedPhoto(sourceUri: string): Promise<string> {
+    return new Promise<string>((resolve) => {
+      try {
+        const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+        const target = context.cacheDir + '/profile_photo_' + Date.now().toString() + '.jpg';
+        const source = fileIo.openSync(sourceUri, fileIo.OpenMode.READ_ONLY);
+        fileIo.copyFileSync(source.fd, target);
+        fileIo.closeSync(source);
+        resolve(target);
+      } catch (error) {
+        hilog.warn(DOMAIN, TAG, 'Copying the picked photo failed: %{public}s', String(error));
+        resolve('');
+      }
+    });
   }
 
   private save(): void {
@@ -246,6 +302,27 @@ export struct TgEditProfilePage {
         })
         Scroll() {
           Column() {
+            Row() {
+              Text(this.photoBusy
+                ? localized($r('app.string.edit_profile_photo_busy').id, 'Updating photo…')
+                : localized($r('app.string.edit_profile_change_photo').id, 'Change photo'))
+                .fontSize(TgUiTokens.GENERIC_TEXT_FIELD_FONT_SIZE)
+                .fontColor(this.photoBusy ? TgUiTokens.COLOR_TEXT_META : TgUiTokens.LINK_PREVIEW_ACCENT_INCOMING)
+                .onClick(() => {
+                  this.pickProfilePhoto();
+                })
+            }
+            .width('100%')
+            .margin({ top: TgUiTokens.SPACE_8 })
+
+            if (this.photoNotice.length > 0) {
+              Text(this.photoNotice)
+                .fontSize(TgUiTokens.FONT_META_SIZE)
+                .fontColor(TgUiTokens.COLOR_TEXT_META)
+                .width('100%')
+                .margin({ top: TgUiTokens.SPACE_4 })
+            }
+
             this.buildFieldLabel(localized($r('app.string.edit_profile_name').id, 'Name'))
             this.buildNameFields()
             this.buildFieldLabel(localized($r('app.string.edit_profile_username').id, 'Username'))

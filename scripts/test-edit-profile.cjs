@@ -23,7 +23,7 @@ async function main() {
   const { TdObject } = load('models/td/common/index.ets', ['TdObject']);
   const C = load('core/model/AppCommand.ets',
     ['createSetProfileNameCommand', 'createSetProfileBioCommand', 'createSetProfileUsernameCommand',
-      'AppCommand']);
+      'createSetProfilePhotoCommand', 'AppCommand']);
   const errors = load('core/model/AppError.ets', ['AppError', 'AppErrorKind']);
   const serializer = load('infra/td/serialization/CommandSerializer.ets',
     ['serializeCommand', 'buildTdlibRequestJson'], { ...C, TdObject, hilog, ...errors });
@@ -47,6 +47,15 @@ async function main() {
     serializer.serializeCommand(C.createSetProfileUsernameCommand('ann_lee')).params);
   assert.ok(usernameWire.includes('"@type":"setUsername"'));
   assert.ok(usernameWire.includes('"username":"ann_lee"'));
+
+  // Avatar wire: a local file goes straight into inputChatPhotoStatic.
+  const photoWire = serializer.buildTdlibRequestJson('setProfilePhoto',
+    serializer.serializeCommand(C.createSetProfilePhotoCommand('/data/photo.jpg', true)).params);
+  assert.ok(photoWire.includes('"@type":"setProfilePhoto"'));
+  assert.ok(photoWire.includes('"@type":"inputChatPhotoStatic"'));
+  assert.ok(photoWire.includes('"@type":"inputFileLocal"'));
+  assert.ok(photoWire.includes('"path":"/data/photo.jpg"'));
+  assert.ok(photoWire.includes('"is_public":true'));
 
   // Validation ------------------------------------------------------------------------------------
   assert.equal(U.isValidProfileUsername('ann_lee'), true);
@@ -86,6 +95,12 @@ async function main() {
   assert.equal(sent.at(-1).payload.username, 'ann_lee', 'a leading @ is dropped');
   await ok.updateUsername('');
   assert.equal(sent.at(-1).payload.username, '', 'an empty value removes the username');
+  await ok.updatePhoto('  /data/photo.jpg  ');
+  assert.equal(sent.at(-1).type, 'setProfilePhoto');
+  assert.equal(sent.at(-1).payload.photoPath, '/data/photo.jpg', 'the path is trimmed');
+  assert.equal(sent.at(-1).payload.isPublic, true);
+  await ok.updatePhoto('/data/private.jpg', false);
+  assert.equal(sent.at(-1).payload.isPublic, false, 'a private photo is supported');
 
   const before = sent.length;
   await assert.rejects(() => ok.updateName('   '), /First name is required/);
@@ -93,6 +108,7 @@ async function main() {
   await assert.rejects(() => ok.updateBio('a'.repeat(71)), /Bio is too long/);
   await assert.rejects(() => ok.updateUsername('1bad'), /Invalid username/);
   await assert.rejects(() => ok.updateUsername('a'.repeat(33)), /Invalid username/);
+  await assert.rejects(() => ok.updatePhoto('   '), /No photo selected/);
   assert.equal(sent.length, before, 'invalid input never reaches the gateway');
 
   await assert.rejects(() => new U.EditProfileUseCase(
@@ -111,7 +127,7 @@ async function main() {
     assert.ok(commandsSource.includes(name), 'command exists: ' + name);
   }
   const serializerSource = read('infra/td/serialization/CommandSerializer.ets');
-  for (const method of ['setName', 'setBio', 'setUsername']) {
+  for (const method of ['setName', 'setBio', 'setUsername', 'setProfilePhoto']) {
     assert.ok(serializerSource.includes(`COMMAND_SERIALIZATION_HANDLERS.set('${method}'`), method + ' is registered');
   }
   const useCaseSource = read('domain/usecases/editProfile.ets');
@@ -136,6 +152,15 @@ async function main() {
   assert.match(page, /maxLength\(PROFILE_BIO_MAX_LENGTH\)/);
   assert.match(page, /this\.errorText = error\.message;/, 'a rejected update stays on screen');
   assert.match(page, /localized\(\$r\('app\.string\.edit_profile_save'\)\.id, 'Save'\)/);
+  assert.match(page, /import \{ photoAccessHelper \} from '@kit\.MediaLibraryKit';/);
+  assert.match(page, /import \{ fileIo \} from '@kit\.CoreFileKit';/);
+  assert.match(page, /private pickProfilePhoto\(\): void \{/);
+  assert.match(page, /maxSelectNumber: 1/);
+  assert.match(page, /private copyPickedPhoto\(sourceUri: string\): Promise<string> \{/);
+  assert.match(page, /context\.cacheDir \+ '\/profile_photo_' \+ Date\.now\(\)\.toString\(\) \+ '\.jpg'/);
+  assert.match(page, /fileIo\.copyFileSync\(source\.fd, target\);/);
+  assert.match(page, /useCase\.updatePhoto\(localPath\)/);
+  assert.match(page, /edit_profile_change_photo/);
 
   const routes = JSON.parse(fs.readFileSync(path.join(root, '../module.json5'), 'utf8'));
   assert.ok(routes.module);
@@ -161,7 +186,8 @@ async function main() {
       root, '../resources', locale, 'element/string.json'), 'utf8'));
     for (const name of ['edit_profile_title', 'edit_profile_first_name', 'edit_profile_last_name',
       'edit_profile_username', 'edit_profile_bio', 'edit_profile_save', 'edit_profile_saving',
-      'edit_profile_username_hint']) {
+      'edit_profile_username_hint', 'edit_profile_change_photo', 'edit_profile_photo_busy',
+      'edit_profile_photo_updated']) {
       assert.ok(strings.string.some((entry) => entry.name === name), name + ' exists in ' + locale);
     }
   }

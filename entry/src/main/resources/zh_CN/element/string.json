@@ -821,6 +821,18 @@
       "value": "翻译"
     },
     {
+      "name": "edit_profile_change_photo",
+      "value": "更换照片"
+    },
+    {
+      "name": "edit_profile_photo_busy",
+      "value": "正在更新照片…"
+    },
+    {
+      "name": "edit_profile_photo_updated",
+      "value": "头像已更新"
+    },
+    {
       "name": "edit_profile_title",
       "value": "编辑资料"
     },

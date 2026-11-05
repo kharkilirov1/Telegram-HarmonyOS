@@ -1390,3 +1390,10 @@ Last updated: 2026-10-23
   switch), otherwise the rebuild triggers prefetch again and loops.
 - ArkTS rejects destructuring declarations and structural typing on narrow port interfaces: pass primitives
   or a callback instead of importing the wider port type into a coordinator.
+
+## 249. A local file can be a profile photo without an upload step
+
+- `inputChatPhotoStatic` takes `InputFile`, so `inputFileLocal` goes straight into `setProfilePhoto`; no
+  `uploadFile` round trip is needed.
+- The photo picker returns a media URI, not a sandbox path: copy it into `cacheDir` with `fileIo` and pass
+  that path to TDLib.

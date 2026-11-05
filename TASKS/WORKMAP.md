@@ -93,6 +93,7 @@
 | H4a | Анимация диаграммы хранилища (H4) | H4 | reveal через animateTo + токен; остаток — witness |
 | A5a | Слой данных профиля (A5) | A5 | setName/setBio/setUsername + use case; далее страница редактирования |
 | A5b | Экран редактирования профиля (A5) | A5 | route + форма + вход из настроек; остаток — аватар и witness |
+| A5c | Смена аватара (A5) | A5 | setProfilePhoto + picker/copy; остаток — кроп и witness |
 | D16a | Идентичность кастомного эмодзи в тексте (D16) | D16 | DTO→AppState→clone; далее резолв стикера и рендер |
 | D16b | Резолвер кастомных эмодзи (D16) | D16 | getCustomEmojiStickers + кэш + download; далее рендер |
 | D16c | Рендер кастомного эмодзи (D16) | D16 | splitter + ImageSpan + карта путей; далее координатор |

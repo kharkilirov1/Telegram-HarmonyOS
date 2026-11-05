@@ -181,6 +181,13 @@ Documentation and repository structure were reconciled; no product code changed.
   Суита `test-reactions-model.cjs` расширена (`parseMessageContent` с custom-сущностью, поле у обычной
   сущности, клонирование). Гейты: host **136/136**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток D16:
   рендер картинки стикера, выбор кастомной реакции, witness.
+- **A5-avatar (lead).** Смена аватара: `setProfilePhoto` (команда + сериализатор, `inputChatPhotoStatic` +
+  `inputFileLocal`, `is_public`), `EditProfileUseCase.updatePhoto` (trim, пустой путь — ошибка, Ok-контракт).
+  На странице — «Change photo»: `PhotoViewPicker` (1 изображение) → копия в `cacheDir` (`fileIo`) →
+  `updatePhoto`, busy/notice-состояния и inline-ошибка; 3 строки в base/ru/zh. Суита
+  `test-edit-profile.cjs` расширена (wire фото, updatePhoto, валидация, picker/copy-проводка, локали).
+  Гейты: host **138/138**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток A5: кроп/редактор, «username
+  занят», witness.
 - **A5-edit-profile-page (lead).** Экран редактирования: `TgEditProfilePage` (route + `EditProfileRouteParams`),
   поля first/last/username/bio с лимитами, inline-хинт username, счётчик био, Save-гейт, последовательные
   updateName→updateUsername→updateBio, pop по успеху, inline-ошибка при отказе. Вход — шапка профиля в

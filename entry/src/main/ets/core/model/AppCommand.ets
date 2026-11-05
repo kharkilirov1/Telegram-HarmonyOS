@@ -709,6 +709,17 @@ export class SetProfileBioCommand extends AppCommand {
   payload: SetProfileBioPayload = new SetProfileBioPayload();
 }
 
+// A5: setProfilePhoto(photo: InputChatPhoto, is_public) — a static local file needs no separate upload.
+export class SetProfilePhotoPayload {
+  photoPath: string = '';
+  isPublic: boolean = true;
+}
+
+export class SetProfilePhotoCommand extends AppCommand {
+  type: string = 'setProfilePhoto';
+  payload: SetProfilePhotoPayload = new SetProfilePhotoPayload();
+}
+
 export class SetProfileUsernamePayload {
   username: string = '';
 }
@@ -1304,6 +1315,7 @@ export type AnyAppCommand =
 | SetProfileNameCommand
 | SetProfileBioCommand
 | SetProfileUsernameCommand
+| SetProfilePhotoCommand
 | GetMessageThreadCommand
 | GetMessageThreadHistoryCommand
   | CloseChatCommand
@@ -1667,6 +1679,13 @@ export function createSetProfileNameCommand(firstName: string, lastName: string 
 export function createSetProfileBioCommand(bio: string): SetProfileBioCommand {
   const cmd = new SetProfileBioCommand();
   cmd.payload.bio = bio;
+  return cmd;
+}
+
+export function createSetProfilePhotoCommand(photoPath: string, isPublic: boolean = true): SetProfilePhotoCommand {
+  const cmd = new SetProfilePhotoCommand();
+  cmd.payload.photoPath = photoPath;
+  cmd.payload.isPublic = isPublic;
   return cmd;
 }
 

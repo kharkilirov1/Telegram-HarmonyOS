@@ -68,6 +68,7 @@ import {
   GetChatPinnedMessageCommand,
   GetRepliedMessageCommand, GetMessageThreadCommand, GetMessageThreadHistoryCommand, TranslateTextCommand,
   SetProfileNameCommand, SetProfileBioCommand, SetProfileUsernameCommand, GetCustomEmojiStickersCommand,
+  SetProfilePhotoCommand,
   CloseChatCommand,
   SetTdlibOnlineCommand,
   GetUserFullInfoCommand,
@@ -189,6 +190,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('getMessage', serializeGetMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageThread', serializeGetMessageThread);
 COMMAND_SERIALIZATION_HANDLERS.set('translateText', serializeTranslateText);
 COMMAND_SERIALIZATION_HANDLERS.set('setName', serializeSetProfileName);
+COMMAND_SERIALIZATION_HANDLERS.set('setProfilePhoto', serializeSetProfilePhoto);
 COMMAND_SERIALIZATION_HANDLERS.set('getCustomEmojiStickers', serializeGetCustomEmojiStickers);
 COMMAND_SERIALIZATION_HANDLERS.set('setBio', serializeSetProfileBio);
 COMMAND_SERIALIZATION_HANDLERS.set('setUsername', serializeSetProfileUsername);
@@ -1004,6 +1006,15 @@ function serializeGetCustomEmojiStickers(command: AnyAppCommand, result: Seriali
   const cmd = command as GetCustomEmojiStickersCommand;
   result.method = 'getCustomEmojiStickers';
   result.params.setString('_custom_emoji_ids_json', '[' + cmd.payload.customEmojiIds.join(',') + ']');
+}
+
+function serializeSetProfilePhoto(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SetProfilePhotoCommand;
+  result.method = 'setProfilePhoto';
+  // inputChatPhotoStatic takes an InputFile directly, so the local photo needs no upload round trip.
+  result.params.setString('_photo_json',
+    '{"@type":"inputChatPhotoStatic","photo":' + buildInputFileLocalJson(cmd.payload.photoPath) + '}');
+  result.params.setBool('is_public', cmd.payload.isPublic);
 }
 
 function serializeSetProfileName(command: AnyAppCommand, result: SerializedCommand): void {

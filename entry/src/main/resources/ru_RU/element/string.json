@@ -821,6 +821,18 @@
       "value": "Перевести"
     },
     {
+      "name": "edit_profile_change_photo",
+      "value": "Изменить фото"
+    },
+    {
+      "name": "edit_profile_photo_busy",
+      "value": "Обновление фото…"
+    },
+    {
+      "name": "edit_profile_photo_updated",
+      "value": "Фото профиля обновлено"
+    },
+    {
       "name": "edit_profile_title",
       "value": "Изменить профиль"
     },

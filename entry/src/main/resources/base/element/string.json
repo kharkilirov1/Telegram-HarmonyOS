@@ -821,6 +821,18 @@
       "value": "Translate"
     },
     {
+      "name": "edit_profile_change_photo",
+      "value": "Change photo"
+    },
+    {
+      "name": "edit_profile_photo_busy",
+      "value": "Updating photo…"
+    },
+    {
+      "name": "edit_profile_photo_updated",
+      "value": "Profile photo updated"
+    },
+    {
       "name": "edit_profile_title",
       "value": "Edit Profile"
     },

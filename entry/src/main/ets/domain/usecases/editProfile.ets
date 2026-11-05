@@ -7,6 +7,7 @@ import {
   AnyAppCommand,
   createSetProfileBioCommand,
   createSetProfileNameCommand,
+  createSetProfilePhotoCommand,
   createSetProfileUsernameCommand
 } from '../../core/model/AppCommand';
 import { AppError, AppErrorKind } from '../../core/model/AppError';
@@ -75,6 +76,15 @@ export class EditProfileUseCase {
       throw new AppError(AppErrorKind.TDLIB_ERROR, 'Invalid username', 'Input validation failed', 400, false);
     }
     await this.send(createSetProfileUsernameCommand(value), 'setUsername');
+  }
+
+  // A local image becomes the profile photo; TDLib performs the upload from inputFileLocal.
+  async updatePhoto(localPath: string, isPublic: boolean = true): Promise<void> {
+    const path = localPath.trim();
+    if (path.length === 0) {
+      throw new AppError(AppErrorKind.TDLIB_ERROR, 'No photo selected', 'Input validation failed', 400, false);
+    }
+    await this.send(createSetProfilePhotoCommand(path, isPublic), 'setProfilePhoto');
   }
 
   private async send(command: AnyAppCommand, what: string): Promise<void> {
