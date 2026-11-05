@@ -74,7 +74,7 @@ import {
   GetMessagePropertiesCommand,
   GetChatPinnedMessageCommand,
   GetRepliedMessageCommand, GetMessageThreadCommand, GetMessageThreadHistoryCommand, TranslateTextCommand,
-  SetProfileNameCommand, SetProfileBioCommand, SetProfileUsernameCommand, CheckChatUsernameCommand, SendDiceCommand, GetCustomEmojiStickersCommand,
+  SetProfileNameCommand, SetProfileBioCommand, SetProfileUsernameCommand, CheckChatUsernameCommand, SendDiceCommand, SendLocationCommand, GetCustomEmojiStickersCommand,
   SetProfilePhotoCommand,
   CloseChatCommand,
   SetTdlibOnlineCommand,
@@ -208,6 +208,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('setBio', serializeSetProfileBio);
 COMMAND_SERIALIZATION_HANDLERS.set('setUsername', serializeSetProfileUsername);
   COMMAND_SERIALIZATION_HANDLERS.set('checkChatUsername', serializeCheckChatUsername);
   COMMAND_SERIALIZATION_HANDLERS.set('sendDice', serializeSendDice);
+  COMMAND_SERIALIZATION_HANDLERS.set('sendLocation', serializeSendLocation);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageThreadHistory', serializeGetMessageThreadHistory);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageProperties', serializeGetMessageProperties);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatPinnedMessage', serializeGetChatPinnedMessage);
@@ -1142,6 +1143,17 @@ function serializeSetProfileBio(command: AnyAppCommand, result: SerializedComman
   const cmd = command as SetProfileBioCommand;
   result.method = 'setBio';
   result.params.setString('bio', cmd.payload.bio);
+}
+
+// D25: a static location point. live_period 0 keeps it a one-off pin, not a live broadcast.
+function serializeSendLocation(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SendLocationCommand;
+  result.method = 'sendMessage';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('_input_message_content_json',
+    `{"@type":"inputMessageLocation","location":{"@type":"location","latitude":${cmd.payload.latitude},` +
+    `"longitude":${cmd.payload.longitude},"horizontal_accuracy":${cmd.payload.horizontalAccuracy}},` +
+    `"live_period":0,"heading":0,"proximity_alert_radius":0}`);
 }
 
 // D27: the dice emoji is the whole message content; TDLib rolls the value server-side.

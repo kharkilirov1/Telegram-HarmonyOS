@@ -4109,6 +4109,18 @@
       "value": "已注销账户"
     },
     {
+      "name": "composer_location_denied",
+      "value": "定位权限已关闭"
+    },
+    {
+      "name": "composer_location_unavailable",
+      "value": "无法获取你的位置"
+    },
+    {
+      "name": "composer_location_failed",
+      "value": "无法发送位置"
+    },
+    {
       "name": "composer_voice_slide_cancel",
       "value": "滑动取消"
     },

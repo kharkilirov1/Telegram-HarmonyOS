@@ -56,6 +56,14 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D25-send-location (lead).** Плитка Location в меню вложений заработала: `SendLocationCommand`
+  (`sendMessage` + `inputMessageLocation`, `live_period` 0 — обычный пин), `SendLocationUseCase`
+  (проверка WGS-84 границ, отказ на null island, отрицательная/нулевая точность → 0), `DeviceLocation`
+  (one-shot `FIRST_FIX`, таймаут 10 с, разрешения `APPROXIMATELY_LOCATION` + `LOCATION`), поток
+  «permission → чтение → отправка» с тостами отказа, недоступности и ошибки отправки; плитка включена в
+  dock. Строки в 3 локалях. Новая суита `test-send-location.cjs` (156-я): команда, сериализация,
+  валидация, use case, обёртка устройства, проводка. Гейты: host **156/156**, оба smoke, hvigor BUILD
+  SUCCESSFUL. Остаток D25: карта, live location, выбор точки.
 - **D27-dice-tail (lead).** Кости до паритета по поведению: `TgDiceBubble` (крупный эмодзи, бейдж
   значения, анимация прокрутки на `@Monitor('value')`), проброс `diceEmoji`/`diceValue` через
   `ChatTimelineVO` → строку → роутер, ветка `isDice()` в роутере. Отправка как в iOS: сообщение из одного

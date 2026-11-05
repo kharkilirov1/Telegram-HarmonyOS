@@ -4109,6 +4109,18 @@
       "value": "Удалённый аккаунт"
     },
     {
+      "name": "composer_location_denied",
+      "value": "Доступ к геолокации выключен"
+    },
+    {
+      "name": "composer_location_unavailable",
+      "value": "Не удалось получить местоположение"
+    },
+    {
+      "name": "composer_location_failed",
+      "value": "Не удалось отправить геолокацию"
+    },
+    {
       "name": "composer_voice_slide_cancel",
       "value": "Сдвиньте для отмены"
     },

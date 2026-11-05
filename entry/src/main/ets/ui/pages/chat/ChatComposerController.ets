@@ -20,6 +20,12 @@ import { ChatPhotoAlbumController, ChatPhotoAlbumHost } from './ChatPhotoAlbumCo
 import { ChatAttachmentFilePreparer } from './ChatAttachmentFilePreparer';
 import { ChatTextSendController, ChatTextSendHost } from './ChatTextSendController';
 import { ChatSequentialMediaController, ChatSequentialMediaHost } from './ChatSequentialMediaController';
+import {
+  SendLocationUseCase,
+  createSendLocationUseCase
+} from '../../../domain/usecases/sendLocation';
+import { DeviceLocationPoint, LOCATION_PERMISSIONS, getDeviceLocationOnce } from '../../../infra/location/DeviceLocation';
+import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 
 const DOMAIN = 0x0021;
 const TAG = 'ChatComposerController';
@@ -59,6 +65,8 @@ export interface ChatComposerControllerHost extends ChatTextSendHost, ChatSequen
 
 export class ChatComposerController {
   private pickerGeneration: number = 0;
+  private locationUseCase?: SendLocationUseCase;
+  private locationRequestInFlight: boolean = false;
   private readonly attachmentFiles: ChatAttachmentFilePreparer = new ChatAttachmentFilePreparer();
   private readonly photoAlbums: ChatPhotoAlbumController = new ChatPhotoAlbumController();
   private readonly textSender: ChatTextSendController = new ChatTextSendController();
@@ -91,6 +99,9 @@ export class ChatComposerController {
         break;
       case 2:
         this.openDocumentAttachmentPicker(host);
+        break;
+      case 3:
+        this.sendCurrentLocation(host);
         break;
       default:
         break;
@@ -366,6 +377,62 @@ export class ChatComposerController {
       host.getSendMediaUseCase('photo') === photoUseCase && host.getSendMediaUseCase('video') === videoUseCase &&
       host.getComposerInputRevision() === inputRevision && !host.isSendingMessage() &&
       !host.isEditModeActive() && !host.isForwardModeActive();
+  }
+
+  // D25: location is one attachment tile. The permission prompt, the reading and the send are one flow so a
+  // refused permission never leaves a half-sent message behind.
+  async sendCurrentLocation(host: ChatComposerControllerHost): Promise<void> {
+    const chatId = host.getActiveChatId();
+    if (this.locationRequestInFlight || host.isSendingMessage() || chatId === 0 ||
+      !host.canSendNewMessages('location') || host.isEditModeActive() || host.isForwardModeActive()) {
+      return;
+    }
+    this.locationRequestInFlight = true;
+    const lifecycleToken = host.getLifecycleToken();
+    try {
+      const granted = await this.requestLocationPermission(host);
+      if (!granted) {
+        this.showPendingToast(host, localized($r('app.string.composer_location_denied').id,
+          'Location access is off'));
+        return;
+      }
+      const point: DeviceLocationPoint | undefined = await getDeviceLocationOnce();
+      if (point === undefined) {
+        this.showPendingToast(host, localized($r('app.string.composer_location_unavailable').id,
+          'Could not get your location'));
+        return;
+      }
+      if (lifecycleToken !== host.getLifecycleToken() || host.getActiveChatId() !== chatId) {
+        return;
+      }
+      if (this.locationUseCase === undefined) {
+        this.locationUseCase = createSendLocationUseCase(getTdGatewayAdapter());
+      }
+      host.setSendingMessage(true);
+      const accepted = await this.locationUseCase.execute(chatId, point.latitude, point.longitude,
+        point.accuracy);
+      if (!accepted && lifecycleToken === host.getLifecycleToken()) {
+        this.showPendingToast(host, localized($r('app.string.composer_location_failed').id,
+          'Could not send the location'));
+      }
+    } finally {
+      this.locationRequestInFlight = false;
+      if (lifecycleToken === host.getLifecycleToken()) {
+        host.setSendingMessage(false);
+      }
+    }
+  }
+
+  private async requestLocationPermission(host: ChatComposerControllerHost): Promise<boolean> {
+    try {
+      const context = host.getChatUIContext().getHostContext() as common.UIAbilityContext;
+      const result = await abilityAccessCtrl.createAtManager()
+        .requestPermissionsFromUser(context, LOCATION_PERMISSIONS);
+      return result.authResults.length > 0 && result.authResults[0] === 0;
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Location permission request failed: %{public}s', String(error));
+      return false;
+    }
   }
 
   private async openDocumentAttachmentPicker(host: ChatComposerControllerHost): Promise<void> {

@@ -48,6 +48,19 @@ export class CustomEmojiTextEntity {
   }
 }
 
+// D25: a location point goes through sendMessage with inputMessageLocation.
+export class SendLocationPayload {
+  chatId: ChatId = 0;
+  latitude: number = 0;
+  longitude: number = 0;
+  horizontalAccuracy: number = 0;
+}
+
+export class SendLocationCommand extends AppCommand {
+  type: string = 'sendLocation';
+  payload: SendLocationPayload = new SendLocationPayload();
+}
+
 // D27: dice/darts/slots go through sendMessage with inputMessageDice.
 export class SendDicePayload {
   chatId: ChatId = 0;
@@ -1420,6 +1433,7 @@ export type AnyAppCommand =
 | SetProfileNameCommand
 | SetProfileBioCommand
 | SendDiceCommand
+| SendLocationCommand
 | SetProfileUsernameCommand
 | CheckChatUsernameCommand
 | SetProfilePhotoCommand
@@ -1594,6 +1608,16 @@ export function createOpenChatCommand(chatId: ChatId): OpenChatCommand {
 export function createSetTdlibOnlineCommand(online: boolean): SetTdlibOnlineCommand {
   const cmd = new SetTdlibOnlineCommand();
   cmd.payload.online = online;
+  return cmd;
+}
+
+export function createSendLocationCommand(chatId: ChatId, latitude: number, longitude: number,
+  horizontalAccuracy: number = 0): SendLocationCommand {
+  const cmd = new SendLocationCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.latitude = latitude;
+  cmd.payload.longitude = longitude;
+  cmd.payload.horizontalAccuracy = horizontalAccuracy;
   return cmd;
 }
 

@@ -1599,3 +1599,11 @@ Last updated: 2026-10-23
   the six-emoji list in the controller (with a parity assertion in the dice suite) kept the text path free of
   dice plumbing while the actual send still goes through its use case.
 - `scale`/`rotation` are reserved names on `CustomComponent`; local animation state needs different names.
+
+## 276. Permission, reading and send belong to one flow
+
+- Splitting them lets a refused permission leave the composer in "sending" state. One guarded flow with a
+  single in-flight flag and a finally that only clears state for the same lifecycle token keeps the state
+  truthful.
+- Location needs both `APPROXIMATELY_LOCATION` and `LOCATION` on HarmonyOS; the platform permission type is
+  `Permissions` from `@kit.AbilityKit`, not `PermissionName`.

@@ -2481,6 +2481,18 @@
       "value": "Media sending is not available yet"
     },
     {
+      "name": "composer_location_denied",
+      "value": "Location access is off"
+    },
+    {
+      "name": "composer_location_unavailable",
+      "value": "Could not get your location"
+    },
+    {
+      "name": "composer_location_failed",
+      "value": "Could not send the location"
+    },
+    {
       "name": "composer_media_send_failed",
       "value": "Could not send media"
     },
