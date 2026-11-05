@@ -833,6 +833,10 @@
       "value": "Фото профиля обновлено"
     },
     {
+      "name": "edit_profile_username_taken",
+      "value": "Этот username уже занят"
+    },
+    {
       "name": "edit_profile_title",
       "value": "Изменить профиль"
     },

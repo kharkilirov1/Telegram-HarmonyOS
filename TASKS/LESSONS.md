@@ -1404,3 +1404,11 @@ Last updated: 2026-10-23
   and a local mirror class cannot be cast to `image.Region` (ArkTS rejects the conversion).
 - Decode with `desiredSize` at the crop size so a camera photo never inflates the heap, and release both
   the pixel map and the source in `finally`.
+
+## 251. A typed error is only as typed as its accessors
+
+- The use case imported `tdGetNumber`/`tdGetString`; the suite passed only `TdObject`, so the mapping threw a
+  ReferenceError, the catch wrapped it into a generic AppError, and the new assertions looked like a mapping
+  bug. Pass every accessor a module references.
+- Client-side validation runs before the request, so a server-side `USERNAME_INVALID` test needs a locally
+  valid username; otherwise the client error wins.

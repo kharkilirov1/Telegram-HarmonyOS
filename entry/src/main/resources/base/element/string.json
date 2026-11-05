@@ -833,6 +833,10 @@
       "value": "Profile photo updated"
     },
     {
+      "name": "edit_profile_username_taken",
+      "value": "This username is already taken"
+    },
+    {
       "name": "edit_profile_title",
       "value": "Edit Profile"
     },

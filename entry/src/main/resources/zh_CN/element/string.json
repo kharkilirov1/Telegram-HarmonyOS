@@ -833,6 +833,10 @@
       "value": "头像已更新"
     },
     {
+      "name": "edit_profile_username_taken",
+      "value": "该用户名已被占用"
+    },
+    {
       "name": "edit_profile_title",
       "value": "编辑资料"
     },

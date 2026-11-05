@@ -181,6 +181,13 @@ Documentation and repository structure were reconciled; no product code changed.
   Суита `test-reactions-model.cjs` расширена (`parseMessageContent` с custom-сущностью, поле у обычной
   сущности, клонирование). Гейты: host **136/136**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток D16:
   рендер картинки стикера, выбор кастомной реакции, witness.
+- **A5-taken-username (lead).** Ответы TDLib теперь разбираются по типу: `appErrorFromTdlib` различает
+  `USERNAME_OCCUPIED` и `USERNAME_INVALID` (специфичный `userMessage`, `tdlibCode`, `requestRejected`),
+  `isUsernameTakenError` даёт странице признак, `suggestProfileUsernameAlternatives` строит до трёх
+  валидных вариантов (санитайз, буквенный префикс, лимит 32). UI: при занятом username — строка ошибки и
+  тапабельные чипы, клик подставляет значение и сбрасывает состояние; строка в base/ru/zh. Суита
+  `test-edit-profile.cjs` расширена (mapping трёх ошибок, recognizer, генератор вариантов, UI-проводка).
+  Гейты: host **139/139**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток A5: интерактивный редактор, witness.
 - **A5-avatar-crop (lead).** Кроп аватара: `avatarCrop` (центрированный квадрат, uniform scale до 512,
   валидация rect) и `AvatarImagePreparation` (decode через ImageKit, `crop` с `Region{size}`, scale,
   JPEG-пакер, запись в `cacheDir`, release pixelMap/source, ошибка → пустой путь). Страница использует

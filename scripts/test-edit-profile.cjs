@@ -21,6 +21,9 @@ function load(relative, names, deps = {}) {
 async function main() {
   const hilog = { info() {}, warn() {}, error() {}, debug() {} };
   const { TdObject } = load('models/td/common/index.ets', ['TdObject']);
+  const accessors = load('core/utils/tdAccessors.ets',
+    ['tdGetNumber', 'tdGetString', 'tdGetBoolean', 'tdGetObject', 'tdGetArray', 'tdGetInt64',
+      'tdHasKeys', 'compareInt64'], { TdObject });
   const C = load('core/model/AppCommand.ets',
     ['createSetProfileNameCommand', 'createSetProfileBioCommand', 'createSetProfileUsernameCommand',
       'createSetProfilePhotoCommand', 'AppCommand']);
@@ -28,10 +31,11 @@ async function main() {
   const serializer = load('infra/td/serialization/CommandSerializer.ets',
     ['serializeCommand', 'buildTdlibRequestJson'], { ...C, TdObject, hilog, ...errors });
   const U = load('domain/usecases/editProfile.ets',
-    ['EditProfileUseCase', 'createEditProfileUseCase', 'isValidProfileUsername', 'isValidProfileNamePart',
+    ['EditProfileUseCase', 'createEditProfileUseCase', 'isValidProfileUsername',
+      'isUsernameTakenError', 'suggestProfileUsernameAlternatives', 'isValidProfileNamePart',
       'isValidProfileBio', 'PROFILE_NAME_PART_MAX_LENGTH', 'PROFILE_BIO_MAX_LENGTH',
       'PROFILE_USERNAME_MIN_LENGTH', 'PROFILE_USERNAME_MAX_LENGTH'],
-    { ...C, ...errors, TdObject, hilog });
+    { ...C, ...errors, TdObject, hilog, ...accessors });
 
   // Wire ------------------------------------------------------------------------------------------
   const nameWire = serializer.buildTdlibRequestJson('setName',
@@ -116,7 +120,7 @@ async function main() {
     /Failed to update the profile/);
   await assert.rejects(() => new U.EditProfileUseCase(
     { send: () => Promise.resolve(TdObject.fromJSON('{"@type":"error"}')) }).updateName('Ann'),
-    /Profile update rejected/);
+    /Failed to update the profile/);
   await assert.rejects(() => new U.EditProfileUseCase(
     { send: () => Promise.resolve(TdObject.fromJSON('{"@type":"ok"}')) }).updateUsername('a'.repeat(33)),
     /Invalid username/, 'validation still runs on the success path');
@@ -133,6 +137,58 @@ async function main() {
   const useCaseSource = read('domain/usecases/editProfile.ets');
   assert.match(useCaseSource, /export function createEditProfileUseCase\(gateway: TdGatewayPort\): EditProfileUseCase/);
   assert.match(useCaseSource, /response\.getTopLevelStringStrict\('@type'\) !== 'ok'/);
+
+  const gatewayReturning = (response) => ({ send: () => Promise.resolve(response) });
+
+  // A taken username is recognised and alternatives are offered -----------------------------------
+  const occupied = new U.EditProfileUseCase(gatewayReturning(TdObject.fromJSON('{"@type":"error","code":400,"message":"USERNAME_OCCUPIED"}')));
+  let occupiedError;
+  try {
+    await occupied.updateUsername('taken');
+  } catch (error) {
+    occupiedError = error;
+  }
+  assert.ok(occupiedError, 'a taken username fails');
+  assert.equal(U.isUsernameTakenError(occupiedError), true);
+  assert.equal(occupiedError.userMessage, 'This username is already taken');
+  assert.equal(occupiedError.tdlibCode, 400);
+  assert.equal(occupiedError.requestRejected, true);
+
+  const invalidName = new U.EditProfileUseCase(gatewayReturning(TdObject.fromJSON('{"@type":"error","code":400,"message":"USERNAME_INVALID"}')));
+  let invalidError;
+  try {
+    await invalidName.updateUsername('validname1');
+  } catch (error) {
+    invalidError = error;
+  }
+  assert.equal(U.isUsernameTakenError(invalidError), false, 'invalid is not taken');
+  assert.equal(invalidError.userMessage, 'This username is invalid');
+
+  const otherError = new U.EditProfileUseCase(gatewayReturning(TdObject.fromJSON('{"@type":"error","code":500,"message":"SOMETHING_ELSE"}')));
+  let genericError;
+  try {
+    await otherError.updateBio('hello');
+  } catch (error) {
+    genericError = error;
+  }
+  assert.equal(U.isUsernameTakenError(genericError), false);
+  assert.equal(genericError.userMessage, 'Failed to update the profile');
+
+  assert.deepEqual(U.suggestProfileUsernameAlternatives('alex'), ['alex_1', 'alex_2', 'alex_3']);
+  assert.deepEqual(U.suggestProfileUsernameAlternatives('@alex!'), ['alex_1', 'alex_2', 'alex_3'],
+    'the @ and invalid characters are stripped');
+  assert.deepEqual(U.suggestProfileUsernameAlternatives(''), ['user_1', 'user_2', 'user_3'],
+    'an empty base falls back to a neutral prefix');
+  const longBase = 'a' + 'b'.repeat(35);
+  const longSuggestions = U.suggestProfileUsernameAlternatives(longBase);
+  assert.ok(longSuggestions.length > 0);
+  for (const suggestion of longSuggestions) {
+    assert.ok(suggestion.length <= 32, 'suggestions respect the upper bound');
+    assert.ok(U.isValidProfileUsername(suggestion), 'suggestions are valid usernames');
+  }
+  for (const suggestion of U.suggestProfileUsernameAlternatives('9lives')) {
+    assert.ok(/^[A-Za-z]/.test(suggestion), 'a suggestion always starts with a letter');
+  }
 
   // Page and entry point -------------------------------------------------------------------------
   const page = read('ui/pages/settings/TgEditProfilePage.ets');
@@ -181,13 +237,21 @@ async function main() {
   assert.match(tabs, /new EditProfileRouteParams\(/);
   assert.match(tabs, /this\.chatDetailNavStack\.pushPathByName\('TgEditProfilePage', params\)/);
 
+  assert.match(page, /@Local private usernameTaken: boolean = false;/);
+  assert.match(page, /@Local private usernameSuggestions: string\[\] = \[\];/);
+  assert.match(page, /if \(isUsernameTakenError\(error\)\) \{/);
+  assert.match(page, /this\.usernameSuggestions = suggestProfileUsernameAlternatives\(this\.username\);/);
+  assert.match(page, /private applySuggestion\(value: string\): void \{/);
+  assert.match(page, /ForEach\(this\.usernameSuggestions, \(suggestion: string\) => \{/);
+  assert.match(page, /edit_profile_username_taken/);
+
   for (const locale of ['base', 'ru_RU', 'zh_CN']) {
     const strings = JSON.parse(fs.readFileSync(path.join(
       root, '../resources', locale, 'element/string.json'), 'utf8'));
     for (const name of ['edit_profile_title', 'edit_profile_first_name', 'edit_profile_last_name',
       'edit_profile_username', 'edit_profile_bio', 'edit_profile_save', 'edit_profile_saving',
       'edit_profile_username_hint', 'edit_profile_change_photo', 'edit_profile_photo_busy',
-      'edit_profile_photo_updated']) {
+      'edit_profile_photo_updated', 'edit_profile_username_taken']) {
       assert.ok(strings.string.some((entry) => entry.name === name), name + ' exists in ' + locale);
     }
   }

@@ -11,7 +11,7 @@ import {
   createSetProfileUsernameCommand
 } from '../../core/model/AppCommand';
 import { AppError, AppErrorKind } from '../../core/model/AppError';
-import { TdObject } from '../../core/utils/tdAccessors';
+import { TdObject, tdGetNumber, tdGetString } from '../../core/utils/tdAccessors';
 import { TdGatewayPort } from '../ports/TdGatewayPort';
 
 const DOMAIN = 0x00A5;
@@ -32,6 +32,57 @@ export function isValidProfileNamePart(value: string): boolean {
 
 export function isValidProfileBio(bio: string): boolean {
   return bio.length <= PROFILE_BIO_MAX_LENGTH;
+}
+
+export const USERNAME_OCCUPIED_MARKER = 'USERNAME_OCCUPIED';
+export const USERNAME_INVALID_MARKER = 'USERNAME_INVALID';
+
+// TDLib answers with a typed error object; the server text carries the reason we can act on.
+function appErrorFromTdlib(response: Object, what: string): AppError | undefined {
+  if (!(response instanceof TdObject) || response.getTopLevelStringStrict('@type') !== 'error') {
+    return undefined;
+  }
+  const code = tdGetNumber(response, 'code');
+  const message = tdGetString(response, 'message');
+  const upper = message.toUpperCase();
+  if (upper.includes(USERNAME_OCCUPIED_MARKER) || upper.includes('USERNAME IS ALREADY TAKEN')) {
+    return new AppError(AppErrorKind.TDLIB_ERROR, 'This username is already taken', message, code, false, true);
+  }
+  if (upper.includes(USERNAME_INVALID_MARKER)) {
+    return new AppError(AppErrorKind.TDLIB_ERROR, 'This username is invalid', message, code, false, true);
+  }
+  return new AppError(AppErrorKind.TDLIB_ERROR, 'Failed to update the profile', message, code, false, true);
+}
+
+export function isUsernameTakenError(error: Object): boolean {
+  if (!(error instanceof AppError)) {
+    return false;
+  }
+  return error.requestRejected && error.tdlibCode === 400 &&
+    error.userMessage === 'This username is already taken';
+}
+
+// Free-looking alternatives offered after a taken username, derived only from allowed characters.
+export function suggestProfileUsernameAlternatives(base: string): string[] {
+  let sanitized = base.trim().replace(/^@/, '').replace(/[^A-Za-z0-9_]/g, '');
+  if (sanitized.length === 0) {
+    sanitized = 'user';
+  }
+  if (!/^[A-Za-z]/.test(sanitized)) {
+    sanitized = 'user' + sanitized;
+  }
+  const suggestions: string[] = [];
+  for (const suffix of ['_1', '_2', '_3']) {
+    let candidate = sanitized + suffix;
+    if (candidate.length > PROFILE_USERNAME_MAX_LENGTH) {
+      candidate = sanitized.substring(0, PROFILE_USERNAME_MAX_LENGTH - suffix.length) + suffix;
+    }
+    if (candidate.length >= PROFILE_USERNAME_MIN_LENGTH && isValidProfileUsername(candidate) &&
+      !suggestions.includes(candidate)) {
+      suggestions.push(candidate);
+    }
+  }
+  return suggestions;
 }
 
 function assertOkResponse(response: TdObject, what: string): void {
@@ -90,6 +141,10 @@ export class EditProfileUseCase {
   private async send(command: AnyAppCommand, what: string): Promise<void> {
     try {
       const response = await this.gateway.send(command) as TdObject;
+      const typedError = appErrorFromTdlib(response, what);
+      if (typedError !== undefined) {
+        throw typedError;
+      }
       assertOkResponse(response, what);
     } catch (error) {
       if (error instanceof AppError) {

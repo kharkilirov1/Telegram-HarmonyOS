@@ -15,7 +15,9 @@ import {
   PROFILE_USERNAME_MAX_LENGTH,
   PROFILE_USERNAME_MIN_LENGTH,
   createEditProfileUseCase,
-  isValidProfileUsername
+  isUsernameTakenError,
+  isValidProfileUsername,
+  suggestProfileUsernameAlternatives
 } from '../../../domain/usecases/editProfile';
 import { TgChatTopBar, TgChatTopBarTrailingAction } from '../../tg_ui/atoms/TgChatTopBar';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
@@ -53,6 +55,8 @@ export struct TgEditProfilePage {
   @Local private saving: boolean = false;
   @Local private errorText: string = '';
   @Local private photoNotice: string = '';
+  @Local private usernameTaken: boolean = false;
+  @Local private usernameSuggestions: string[] = [];
   @Local private photoBusy: boolean = false;
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
   @Local private topBarInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
@@ -122,6 +126,12 @@ export struct TgEditProfilePage {
         });
       });
     }).catch((error: Error) => {
+      if (isUsernameTakenError(error)) {
+        this.usernameTaken = true;
+        this.usernameSuggestions = suggestProfileUsernameAlternatives(this.username);
+        this.errorText = '';
+        return;
+      }
       this.errorText = error.message;
       hilog.warn(DOMAIN, TAG, 'Profile photo update failed: %{public}s', error.message);
     }).finally(() => {
@@ -141,6 +151,13 @@ export struct TgEditProfilePage {
       hilog.warn(DOMAIN, TAG, 'Preparing the picked photo failed: %{public}s', String(error));
       return Promise.resolve('');
     }
+  }
+
+  private applySuggestion(value: string): void {
+    this.username = value;
+    this.usernameTaken = false;
+    this.usernameSuggestions = [];
+    this.errorText = '';
   }
 
   private save(): void {
@@ -323,6 +340,31 @@ export struct TgEditProfilePage {
             this.buildFieldLabel(localized($r('app.string.edit_profile_username').id, 'Username'))
             this.buildUsernameField()
             this.buildHint()
+            if (this.usernameTaken) {
+              Text(localized($r('app.string.edit_profile_username_taken').id,
+                'This username is already taken'))
+                .fontSize(TgUiTokens.FONT_META_SIZE)
+                .fontColor(TgUiTokens.COLOR_TEXT_ERROR)
+                .width('100%')
+                .margin({ top: TgUiTokens.SPACE_4 })
+
+              Flex({ wrap: FlexWrap.Wrap }) {
+                ForEach(this.usernameSuggestions, (suggestion: string) => {
+                  Text('@' + suggestion)
+                    .fontSize(TgUiTokens.FONT_META_SIZE)
+                    .fontColor(TgUiTokens.LINK_PREVIEW_ACCENT_INCOMING)
+                    .padding({ left: 8, right: 8, top: 4, bottom: 4 })
+                    .margin({ right: TgUiTokens.SPACE_4, top: TgUiTokens.SPACE_4 })
+                    .borderRadius(TgUiTokens.RADIUS_8)
+                    .backgroundColor(TgUiTokens.COLOR_BG_SECONDARY)
+                    .onClick(() => {
+                      this.applySuggestion(suggestion);
+                    })
+                }, (suggestion: string) => suggestion)
+              }
+              .width('100%')
+            }
+
             this.buildFieldLabel(localized($r('app.string.edit_profile_bio').id, 'Bio'))
             this.buildBioField()
             if (this.errorText.length > 0) {
