@@ -90,6 +90,7 @@
 | D24c | Inline-перевод в бабле (D24) | D24 | store-event → reducer → row → bubble, плашки; остаток — выбор языка и witness |
 | I1a | Локальные уведомления о сообщениях (I1) | I1 | policy + bridge + sink; далее wantAgent и inline reply |
 | I1b | Тап по уведомлению открывает чат (I1) | I1 | wantAgent + intake + MainTabsPage; далее inline reply |
+| H4a | Анимация диаграммы хранилища (H4) | H4 | reveal через animateTo + токен; остаток — witness |
 | S12b | Меню действий в шапке чата (C10) | C10 | `showMoreAction`/`onMorePress` в `TgChatTopBar`, меню Chat Info / Mute / Clear History / Delete в `TgChatScreenPage`, live-store состояние, контракт `test-chat-header-actions.cjs`, smoke-пин на 4 действия; C10 → `available` |
 | S12c | Leave Chat и Share My Contact (C10) | C10 | `leaveChat` + `inputMessageContact` (команды/сериализаторы), `LeaveChatUseCase`/`ShareMyContactUseCase`, пятый контекстный пункт меню в шапке, 6 строк в 3 локалях, контракт расширен |
 | S12d | Report с причинами + `ChatActionsCoordinator` (C10) | C10 | `reportChat`/`ReportChatDto`/`ReportChatUseCase`, `canBeReported` в модели/DTO/reducer, шестой пункт меню, меню вынесено в координатор (страница ≤500 строк), контракт расширен |

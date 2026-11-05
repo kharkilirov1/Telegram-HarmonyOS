@@ -151,7 +151,10 @@ assert.match(chart, /@Param segments: StorageUsageSegment\[\] = \[\];/);
 assert.match(chart, /@Param scaleBytes: number = 0;/);
 assert.match(chart, /storageSegmentPercent\(segment\.bytes, this\.scaleBytes\)/);
 assert.match(chart, /STORAGE_CHART_MEDIA/);
-assert.match(chart, /storageSegmentPercent\(segment\.bytes, this\.scaleBytes\)\.toString\(\) \+ '%'/);
+assert.match(chart, /private revealedPercent\(segment: StorageUsageSegment\): number \{/);
+assert.match(chart, /\.width\(this\.revealedPercent\(segment\)\.toString\(\) \+ '%'\)/,
+  'the segment width is the measured share scaled by the reveal');
+assert.match(chart, /revealProgress/);
 
   for (const locale of ['base', 'ru_RU', 'zh_CN']) {
     const strings = JSON.parse(fs.readFileSync(

@@ -1324,3 +1324,11 @@ Last updated: 2026-10-23
   route: navigation does not exist at `onNewWant` time, and an unauthorized session must keep the request.
 - Harnesses that copy a fixed method list need the new `captureChatOpen` listed, and a stubbed intake module,
   or onCreate fails with a missing method.
+
+## 241. Update every pinned assertion of a widget you restyle
+
+- Replacing the storage bar width with a revealed width left an old exact-width regex in
+  `test-cache-limit.cjs`; the suite that asserts the same widget from a different angle must change in the
+  same commit.
+- Animating in `aboutToAppear` with `animateTo` on a numeric field keeps the layout width interpolation
+  short and tokenized; the measured share stays a pure function so the model is unchanged.

@@ -173,7 +173,21 @@ async function checkUseCase() {
 
 checkUseCase()
   .then(() => {
-    console.log('PASS data storage contract');
+    // H4: the storage bar grows from zero instead of appearing at full size.
+const tokens = read('ui/tg_ui/tokens/TgUiTokens.ets');
+assert.match(tokens, /STORAGE_CHART_REVEAL_DURATION_MS: number = 420;/);
+const chart = read('ui/tg_ui/molecules/TgStorageUsageChart.ets');
+assert.match(chart, /@Local private revealProgress: number = 0;/);
+assert.match(chart, /aboutToAppear\(\): void \{\n\s+this\.revealProgress = 0;/);
+assert.match(chart, /this\.getUIContext\(\)\.animateTo\(\{/);
+assert.match(chart, /duration: TgUiTokens\.STORAGE_CHART_REVEAL_DURATION_MS,/);
+assert.match(chart, /curve: Curve\.EaseOut/);
+assert.match(chart, /this\.revealProgress = 1;/);
+assert.match(chart, /private revealedPercent\(segment: StorageUsageSegment\): number \{/);
+assert.match(chart, /storageSegmentPercent\(segment\.bytes, this\.scaleBytes\) \* this\.revealProgress/);
+assert.match(chart, /if \(storageSegmentPercent\(segment\.bytes, this\.scaleBytes\) > 0\)/);
+
+console.log('PASS data storage contract');
   })
   .catch((error) => {
     console.error(error);

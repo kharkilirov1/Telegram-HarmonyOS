@@ -10,6 +10,8 @@ export struct TgStorageUsageChart {
   @Param segments: StorageUsageSegment[] = [];
   @Param scaleBytes: number = 0;
   @Param caption: string = '';
+  // H4: 0 while the bar is hidden, 1 when it has grown to its real proportions.
+  @Local private revealProgress: number = 0;
 
   private segmentColor(index: number): Resource {
     if (index === 1) {
@@ -22,6 +24,20 @@ export struct TgStorageUsageChart {
       return TgUiTokens.STORAGE_CHART_LOGS;
     }
     return TgUiTokens.STORAGE_CHART_MEDIA;
+  }
+
+  aboutToAppear(): void {
+    this.revealProgress = 0;
+    this.getUIContext().animateTo({
+      duration: TgUiTokens.STORAGE_CHART_REVEAL_DURATION_MS,
+      curve: Curve.EaseOut
+    }, (): void => {
+      this.revealProgress = 1;
+    });
+  }
+
+  private revealedPercent(segment: StorageUsageSegment): number {
+    return storageSegmentPercent(segment.bytes, this.scaleBytes) * this.revealProgress;
   }
 
   build() {
@@ -39,7 +55,7 @@ export struct TgStorageUsageChart {
         ForEach(this.segments, (segment: StorageUsageSegment) => {
           if (storageSegmentPercent(segment.bytes, this.scaleBytes) > 0) {
             Row()
-              .width(storageSegmentPercent(segment.bytes, this.scaleBytes).toString() + '%')
+              .width(this.revealedPercent(segment).toString() + '%')
               .height(8)
               .backgroundColor(this.segmentColor(segment.colorIndex))
           }

@@ -146,6 +146,11 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **H4-chart-reveal (lead).** Анимация диаграммы хранилища: `revealProgress` 0→1 через `animateTo`
+  (420 ms, EaseOut, токен `STORAGE_CHART_REVEAL_DURATION_MS`), ширина сегмента = измеренная доля ×
+  reveal, нулевые сегменты не попадают в дерево. Суита `test-data-storage.cjs` расширена (токен,
+  aboutToAppear, animateTo, revealedPercent), старая width-ассерта в `test-cache-limit.cjs` обновлена.
+  Гейты: host **135/135**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток H4: witness.
 - **I1-notification-tap (lead).** Тап по уведомлению открывает чат: `wantAgent` START_ABILITY с
   `parameters.chatId` и UPDATE_PRESENT_FLAG (ошибка агента деградирует в обычное уведомление),
   `chatOpenIntake` (валидация id, take/clear, singleton), `captureChatOpen` в onCreate/onNewWant,
