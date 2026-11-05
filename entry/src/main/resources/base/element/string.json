@@ -817,6 +817,10 @@
       "value": "Show Translation"
     },
     {
+      "name": "action_translate_to",
+      "value": "Translate to"
+    },
+    {
       "name": "action_translate",
       "value": "Translate"
     },

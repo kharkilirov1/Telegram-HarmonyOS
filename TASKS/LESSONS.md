@@ -1458,3 +1458,13 @@ Last updated: 2026-10-23
   `ICON_RES_LANGUAGE` does not exist, so use a shipped token rather than a missing media resource.
 - The settings tab owns `settingsNavStack`, not a page-level stack; pushing from the wrong stack silently
   fails to compile.
+
+## 258. The page contract source is stricter than the compiler
+
+- `chat-screen-source.cjs` requires every popup binding to be a Session delegate with the `(this, ...)`
+  receiver, and requires the 500-line owner bound; a bindings-only implementation compiles but fails the
+  contract. Keep the delegate chain and reclaim lines by compacting blank lines.
+- Any top-level comment between two `export function`s breaks the graph's export brace matcher (the
+  sliced text must end with `}`), so comments belong inside the function body.
+- Slicing "from method A to the next method B" is destructive: verify the removed block is exactly the
+  new methods, or restore the file from git and insert instead.

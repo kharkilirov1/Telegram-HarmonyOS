@@ -56,6 +56,14 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D24-popup-language (lead).** Смена языка из попапа действий: строка «Translate to <CODE>» с
+  раскрываемым списком кодов (текущий выделен), выбор пишет язык чата, закрывает попап и
+  переотправляет перевод (`translateIntoLanguage` → `translateMessage(force)`). Новые порт/биндинги/
+  делегаты Session, координатор с `translationLanguageFor/setTranslationLanguage`, событие внесено в
+  contract-source; Session удержан в 500 строк. Строка `action_translate_to` в 3 локалях. Суита
+  `test-translation-language.cjs` расширена (попап, порт, биндинги, координатор); в `test-
+  translate-message.cjs` и decomposition обновлены пины. Гейты: host **143/143**, оба smoke, hvigor
+  BUILD SUCCESSFUL. Остаток D24: witness.
 - **D24-translation-picker (lead).** UI выбора языка перевода: глобальный default в
   `translationLanguagePreferences` (`GLOBAL_TRANSLATION_CHAT_ID`), порядок chat→global→system→en;
   строка «Translation Language» в Settings (значение = выбранный код) → `TgTranslationLanguagePage`

@@ -107,6 +107,47 @@ async function main() {
   assert.match(controller, /const language = this\.targetLanguageCode\(chatId\);/, 'translation uses the chat choice');
   assert.match(controller, /translationLanguageLabelFor\(code: string\): string \{/);
 
+  // Message popup wiring ---------------------------------------------------------------------------
+  assert.match(controller, /translateIntoLanguage\(entry: ChatTimelineEntryVO, host: ChatMessageActionsHost\): void \{/);
+  assert.match(controller, /this\.translateMessage\(entry, host, true\);/);
+  assert.match(controller, /force: boolean = false\): void \{/);
+  assert.match(controller, /if \(entry\.message\.translationVisible && !force\) \{/);
+
+  const bindings = read('ui/pages/chat/ChatScreenViewBindings.ets');
+  assert.match(bindings, /messageActionTranslationLanguages\(\): string\[\] \{ return this\.session\.messageActionTranslationLanguages\(\); \}/);
+  assert.match(bindings, /handleMessageActionTranslationLanguage\(code: string\): void \{ this\.session\.handleMessageActionTranslationLanguage\(code\); \}/);
+
+  const coordinator = read('ui/pages/chat/ChatMessagePopupCoordinator.ets');
+  assert.match(coordinator, /export function messageActionTranslationLanguages\(host: ChatMessagePopupCoordinatorPort\): string\[\] \{/);
+  assert.match(coordinator, /export function messageActionTranslationLanguage\(host: ChatMessagePopupCoordinatorPort\): string \{/);
+  assert.match(coordinator, /host\.messageActionsCtrl\.translationLanguageFor\(host\.activeChatId\)/);
+  assert.match(coordinator, /export function handleMessageActionTranslationLanguage\(host: ChatMessagePopupCoordinatorPort,/);
+  assert.match(coordinator, /host\.messageActionsCtrl\.setTranslationLanguage\(chatId, code\)/);
+  assert.match(coordinator, /host\.messageActionsCtrl\.translateIntoLanguage\(entry, host\)/);
+
+  const session = read('ui/pages/chat/ChatScreenSession.ets');
+  assert.match(session, /messageActionTranslationLanguages\(\): string\[\] \{ return delegateMessageActionTranslationLanguages\(this\); \}/);
+  assert.match(session, /handleMessageActionTranslationLanguage\(code: string\): void \{ delegateHandleMessageActionTranslationLanguage\(this, code\); \}/);
+  const ports = read('ui/pages/chat/ChatScreenViewPorts.ets');
+  assert.match(ports, /messageActionTranslationLanguages\(\): string\[\];/);
+  assert.match(ports, /messageActionTranslationLanguage\(\): string;/);
+  assert.match(ports, /handleMessageActionTranslationLanguage\(code: string\): void;/);
+
+
+
+  const popup = read('ui/pages/chat/TgChatMessageActionsPopup.ets');
+  assert.match(popup, /@Local private translationLanguagesOpen: boolean = false;/);
+  assert.match(popup, /private buildTranslationLanguageRow\(\) \{/);
+  assert.match(popup, /action_translate_to/);
+  assert.match(popup, /this\.bindings\.messageActionTranslationLanguages\(\)\.length > 0/);
+  assert.match(popup, /this\.bindings\.handleMessageActionTranslationLanguage\(code\);/);
+  assert.match(popup, /code === this\.bindings\.messageActionTranslationLanguage\(\)/);
+
+  for (const locale of ['base', 'ru_RU', 'zh_CN']) {
+    const strings = JSON.parse(readResource(`${locale}/element/string.json`)).string;
+    assert.ok(strings.some((entry) => entry.name === 'action_translate_to'), `${locale} ships action_translate_to`);
+  }
+
   // Picker page + settings wiring -----------------------------------------------------------------
   const page = read('ui/pages/settings/TgTranslationLanguagePage.ets');
   assert.match(page, /export class TranslationLanguageRouteParams/);

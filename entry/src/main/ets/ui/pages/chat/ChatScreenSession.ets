@@ -32,7 +32,7 @@ import { ChatScreenContext } from './ChatScreenContext';
 import { ChatScreenViewState } from './ChatScreenViewState';
 import { ChatScreenSessionPorts } from './ChatScreenSessionPorts';
 import { toggleMessageReaction as delegateToggleMessageReaction } from './ChatReactionController';
-import { messageActionReactionKeys as delegateMessageActionReactionKeys, handleMessageActionReaction as delegateHandleMessageActionReaction } from './ChatMessagePopupCoordinator';
+import { messageActionReactionKeys as delegateMessageActionReactionKeys, handleMessageActionReaction as delegateHandleMessageActionReaction, messageActionTranslationLanguages as delegateMessageActionTranslationLanguages, messageActionTranslationLanguage as delegateMessageActionTranslationLanguage, handleMessageActionTranslationLanguage as delegateHandleMessageActionTranslationLanguage } from './ChatMessagePopupCoordinator';
 import {
   getActiveChatId as delegateGetActiveChatId, getLifecycleToken as delegateGetLifecycleToken, getChatUIContext as delegateGetChatUIContext, getSendUseCase as delegateGetSendUseCase,
   getSendMediaUseCase as delegateGetSendMediaUseCase, setVoiceRecordingState as delegateSetVoiceRecordingState, isSendingMessage as delegateIsSendingMessage, setSendingMessage as delegateSetSendingMessage,
@@ -185,9 +185,7 @@ import {
   handleTimelineScrollIndex as delegateHandleTimelineScrollIndex, handleComposerTextChange as delegateHandleComposerTextChange, handleComposerAreaChange as delegateHandleComposerAreaChange, handleGalleryIndexChange as delegateHandleGalleryIndexChange,
   handleNavReady as delegateHandleNavReady, handleNavShown as delegateHandleNavShown, handleNavBackPressed as delegateHandleNavBackPressed
 } from './ChatScreenViewEventHandlers';
-
 const PROGRAMMATIC_SCROLL_GUARD_MS = 320;
-
 export class ChatScreenSession extends ChatScreenContext implements ChatScreenSessionPorts {
   constructor(
     view: ChatScreenViewState,
@@ -196,7 +194,6 @@ export class ChatScreenSession extends ChatScreenContext implements ChatScreenSe
   ) {
     super(view, uiContextCallback, queryNavigationInfoCallback);
   }
-
   getActiveChatId(): number { return delegateGetActiveChatId(this); }
   getLifecycleToken(): number { return delegateGetLifecycleToken(this); }
   getChatUIContext(): UIContext { return delegateGetChatUIContext(this); }
@@ -384,6 +381,9 @@ export class ChatScreenSession extends ChatScreenContext implements ChatScreenSe
   toggleMessageReaction(messageId: string, key: string): void { delegateToggleMessageReaction(this, messageId, key); }
   messageActionReactionKeys(): string[] { return delegateMessageActionReactionKeys(this); }
   handleMessageActionReaction(key: string): void { delegateHandleMessageActionReaction(this, key); }
+  messageActionTranslationLanguages(): string[] { return delegateMessageActionTranslationLanguages(this); }
+  messageActionTranslationLanguage(): string { return delegateMessageActionTranslationLanguage(this); }
+  handleMessageActionTranslationLanguage(code: string): void { delegateHandleMessageActionTranslationLanguage(this, code); }
   enterMessageSelection(messageId: string): void { delegateEnterMessageSelection(this, messageId); }
   toggleMessageSelection(messageId: string): void { delegateToggleMessageSelection(this, messageId); }
   clearMessageSelection(): void { delegateClearMessageSelection(this); }

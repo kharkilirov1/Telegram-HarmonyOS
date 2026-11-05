@@ -817,6 +817,10 @@
       "value": "Показать перевод"
     },
     {
+      "name": "action_translate_to",
+      "value": "Перевести на"
+    },
+    {
       "name": "action_translate",
       "value": "Перевести"
     },

@@ -27,6 +27,9 @@ const eventArguments = {
   // S3d: the popup asks for the chat's available reaction keys, then reports the picked one.
   messageActionReactionKeys: [],
   handleMessageActionReaction: ['key'],
+  messageActionTranslationLanguages: [],
+  messageActionTranslationLanguage: [],
+  handleMessageActionTranslationLanguage: ['code'],
   enterMessageSelection: ['messageId'],
   toggleMessageSelection: ['messageId'],
   clearMessageSelection: [],

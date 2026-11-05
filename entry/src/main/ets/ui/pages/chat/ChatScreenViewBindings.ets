@@ -79,6 +79,9 @@ export class ChatScreenViewBindings implements ChatMessageActionsPopupPort, Chat
   toggleMessageReaction(messageId: string, key: string): void { this.session.toggleMessageReaction(messageId, key); }
   messageActionReactionKeys(): string[] { return this.session.messageActionReactionKeys(); }
   handleMessageActionReaction(key: string): void { this.session.handleMessageActionReaction(key); }
+  messageActionTranslationLanguages(): string[] { return this.session.messageActionTranslationLanguages(); }
+  messageActionTranslationLanguage(): string { return this.session.messageActionTranslationLanguage(); }
+  handleMessageActionTranslationLanguage(code: string): void { this.session.handleMessageActionTranslationLanguage(code); }
   toggleMessageSelection(messageId: string): void { this.session.toggleMessageSelection(messageId); }
   selectionActive(): boolean { return this.session.selectionActive; }
   selectionTitle(): string { return this.session.selectionTitle(); }

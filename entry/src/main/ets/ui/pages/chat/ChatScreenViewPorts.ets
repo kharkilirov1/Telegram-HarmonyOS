@@ -12,6 +12,10 @@ export interface ChatMessageActionsPopupPort {
   // S3d: the reaction row above the actions; availability is chat-level state.
   messageActionReactionKeys(): string[];
   handleMessageActionReaction(key: string): void;
+  // D24: translation target of the open message's chat, changeable from the popup.
+  messageActionTranslationLanguages(): string[];
+  messageActionTranslationLanguage(): string;
+  handleMessageActionTranslationLanguage(code: string): void;
   messageActionItems(forwardState: string): ChatMessageActionItem[];
   messageActionsPopupHeight(forwardState: string): number;
   messageActionsPopupWidth(): number;

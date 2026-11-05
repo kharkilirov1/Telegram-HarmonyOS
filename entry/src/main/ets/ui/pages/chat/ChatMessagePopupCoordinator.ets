@@ -11,6 +11,7 @@ import { Chat, availableReactionKeys, chatAllowsReactions, pickerReactionKeys } 
 import { MessageAvailableReactionsSnapshot } from '../../../core/model/dto/MessageDto';
 import { createGetMessageAvailableReactionsUseCase } from '../../../domain/usecases/getMessageAvailableReactions';
 import { localized } from '../../../core/utils/AppResource';
+import { SUPPORTED_TRANSLATION_LANGUAGES } from '../../../domain/usecases/translationLanguage';
 
 export interface ChatMessagePopupCoordinatorPort extends ChatMessageActionsHost, ChatReactionHost {
   activeChatId: number;
@@ -246,6 +247,31 @@ export function handleMessageActionReaction(host: ChatMessagePopupCoordinatorPor
 }
 
 
+export function messageActionTranslationLanguages(host: ChatMessagePopupCoordinatorPort): string[] {
+  // The receiver is unused: the delegate contract requires the session instance.
+  return SUPPORTED_TRANSLATION_LANGUAGES.slice();
+}
+export function messageActionTranslationLanguage(host: ChatMessagePopupCoordinatorPort): string {
+  // D24: the language that Translate will use for the open message chat.
+  if (host.activeChatId === 0) {
+    return '';
+  }
+  return host.messageActionsCtrl.translationLanguageFor(host.activeChatId);
+}
+export function handleMessageActionTranslationLanguage(host: ChatMessagePopupCoordinatorPort,
+  code: string): void {
+  // Choosing a language stores it for this chat and re-requests the open message.
+  const chatId = host.activeChatId;
+  const entry = host.messageActionsEntry;
+  if (chatId === 0 || entry === undefined) {
+    return;
+  }
+  if (!host.messageActionsCtrl.setTranslationLanguage(chatId, code)) {
+    return;
+  }
+  host.closeMessageActions();
+  host.messageActionsCtrl.translateIntoLanguage(entry, host);
+}
 export function enterMessageSelection(host: ChatMessagePopupCoordinatorPort, messageId: string): void {
   // Selection mode is page UI state (ids in ChatTimelineViewState); actions reuse the existing
   // copy/forward/delete controllers so the TDLib paths and their fences stay single-sourced.

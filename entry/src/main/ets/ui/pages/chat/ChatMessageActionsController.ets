@@ -423,11 +423,17 @@ export class ChatMessageActionsController {
     return /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})?$/.test(code);
   }
 
-  private translateMessage(entry: ChatTimelineEntryVO, host: ChatMessageActionsHost): void {
+  // D24: a language change must re-request even while the previous translation is still visible.
+  translateIntoLanguage(entry: ChatTimelineEntryVO, host: ChatMessageActionsHost): void {
+    this.translateMessage(entry, host, true);
+  }
+
+  private translateMessage(entry: ChatTimelineEntryVO, host: ChatMessageActionsHost,
+    force: boolean = false): void {
     const chatId = host.getActiveChatId();
     const messageId = entry.message.messageId;
     // Already shown: flip back to the original text without another request.
-    if (entry.message.translationVisible) {
+    if (entry.message.translationVisible && !force) {
       this.applyTranslation(chatId, messageId, entry.message.translatedText, false);
       return;
     }

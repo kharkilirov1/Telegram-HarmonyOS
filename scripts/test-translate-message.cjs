@@ -140,7 +140,7 @@ async function main() {
   assert.match(cacheSource, /if \(cached !== undefined\) \{/, 'a cached translation never hits the network');
   assert.match(cacheSource, /this\.cacheTranslation\(this\.translationKey\(messageId, language\), translated\.text\);/);
   assert.match(cacheSource, /private applyTranslation\(chatId: number, messageId: string, text: string, visible: boolean\): void \{/);
-  assert.match(cacheSource, /if \(entry\.message\.translationVisible\) \{/, 'the action toggles the shown translation off');
+  assert.match(cacheSource, /if \(entry\.message\.translationVisible && !force\) \{/, 'the action toggles the shown translation off');
   assert.match(cacheSource, /this\.translationCache\.has\(this\.translationKey\(entry\.message\.messageId, this\.targetLanguageCode\(\)\)\)/,
     'the menu label reflects the cache');
   assert.match(cacheSource, /action_show_translation/, 'a translated message offers Show Translation');
@@ -149,7 +149,7 @@ async function main() {
   const actions = read('ui/pages/chat/ChatMessageActionsController.ets');
   assert.match(actions, /new ChatMessageActionItem\('translate',/, 'the menu offers Translate');
   assert.match(actions, /if \(actionId === 'translate'\) \{/);
-  assert.match(actions, /private translateMessage\(entry: ChatTimelineEntryVO, host: ChatMessageActionsHost\): void \{/);
+  assert.match(actions, /private translateMessage\(entry: ChatTimelineEntryVO, host: ChatMessageActionsHost,\n    force: boolean = false\): void \{/);
   assert.match(actions, /createTranslateMessageUseCase\(getTdGatewayAdapter\(\)\)/);
   assert.match(actions, /useCase\.translate\(text, language\)/);
   assert.match(actions, /i18n\.System\.getSystemLanguage\(\)\.toLowerCase\(\)/);
