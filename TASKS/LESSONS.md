@@ -1505,3 +1505,11 @@ Last updated: 2026-10-23
   routing audit suite fails on the omission instead of silently dropping the event.
 - Type aliases cannot be read through the loader name list, and a parser module needs the DTO class and
   event factories injected, otherwise `new StoryFullDto()` is a ReferenceError at runtime.
+
+## 264. File paths reach UI through the files reducer, not through the download call
+
+- `downloadFile` only starts the transfer; the local path arrives as `fileDownloaded`. Anything that is
+  not a message (stories, profile media) must teach `filesReducer` where to write the path, including the
+  pre-scan that decides whether a clone is needed at all.
+- Finger coordinates in a TapGesture are unreliable for split zones; two explicit layout-weighted tap
+  columns are simpler and testable.

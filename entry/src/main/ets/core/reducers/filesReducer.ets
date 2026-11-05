@@ -4,6 +4,7 @@
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppState, FileTransfer, Message, MessageContent, MessageQuoteEntity, ReducerAction } from '../model/AppState';
+import { StoryFullDto } from '../model/dto/StoryDto';
 import { FileDownloadedEvent, FileTransferUpdatedEvent } from '../model/AppEvent';
 import { cloneAppState, cloneChat, cloneStateForFiles, cloneUser } from '../utils/stateClone';
 
@@ -248,6 +249,19 @@ function registerFileAlias(state: AppState, uniqueId: string, fileId: number): v
   }
 }
 
+// I6: story media is not referenced from a message, so the story map gets its own path scan.
+function applyStoryFilePath(newState: AppState, fileId: number, localPath: string): void {
+  if (fileId === 0 || localPath.length === 0) {
+    return;
+  }
+  for (const story of newState.chats.storyContentsByKey.values()) {
+    if (story.mediaFileId === fileId) {
+      const updated: StoryFullDto = story;
+      updated.localPath = localPath;
+    }
+  }
+}
+
 export function filesReducer(state: AppState, action: ReducerAction): AppState {
   if (action.type === 'fileTransferUpdated') {
     const event = action as FileTransferUpdatedEvent;
@@ -333,12 +347,22 @@ export function filesReducer(state: AppState, action: ReducerAction): AppState {
   hilog.debug(DOMAIN, TAG, 'fileDownloaded id=%{public}d uid=%{public}s needsUpdate=%{public}s',
     fileId, event.uniqueId, String(needsUpdate));
 
+  // I6: story media is only referenced by the story map, so it counts as an update too.
+  let storyNeedsUpdate = false;
+  state.chats.storyContentsByKey.forEach((story) => {
+    if (story.mediaFileId === fileId && story.localPath !== localPath) {
+      storyNeedsUpdate = true;
+    }
+  });
+  needsUpdate = needsUpdate || storyNeedsUpdate;
+
   if (!needsUpdate) {
     return state;
   }
 
   // Clone state and apply updates
   const newState = cloneAppState(state);
+  applyStoryFilePath(newState, fileId, localPath);
 
   const completedTransfer = cloneFileTransfer(newState.files.transfers.get(fileId));
   completedTransfer.fileId = fileId;

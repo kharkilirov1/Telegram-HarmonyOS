@@ -56,6 +56,13 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **I6-story-viewer (lead).** Полноэкранный вьювер: `StoryViewerModel` (маршрут-параметры, клампы
+  индекса, сегментный прогресс, next/prev, длительности фото/видео, renderability), `TgStoryViewerPage`
+  (загрузка через `LoadStoryUseCase`, download-команда медиа, путь через filesReducer, сегменты,
+  тап-зоны + long-press пауза, закрытие), route `TgStoryViewerPage`, вход из полосы историй в
+  `ChatListPage` (`onStoryPress`/`onStoryStripPress`). Новая суита `test-story-viewer.cjs` (147-я):
+  математика, страница, route, вход, путь медиа, токены. Гейты: host **147/147**, оба smoke, hvigor
+  BUILD SUCCESSFUL. Остаток I6: реакции, публикация, статистика, witness.
 - **I6-story-content (lead).** Слой контента историй: `StoryFullDto` (`photo`/`video`/`unsupported`,
   caption, размеры, файл, длительность, minithumbnail), `parseStoryFull` (крупнейший размер фото),
   `updateStory` → `storyFullUpdated` → `chats.storyContentsByKey` (reducer, маршрут, clone),

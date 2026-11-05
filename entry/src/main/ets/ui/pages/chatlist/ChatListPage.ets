@@ -25,6 +25,8 @@ import { TgChatListFilter, TgChatListFilterTab } from '../../tg_ui/atoms/TgChatL
 import { selectChatFolderTabs, selectChatIdsForFolder, ChatFolderTab } from '../../../domain/selectors/chatFolderSelectors';
 import { selectChatContextMenuEntries, chatContextActionIcon, ChatContextAction, ChatContextMenuEntry, selectAddToFolderTargets, ChatFolderTarget } from '../../../domain/selectors/chatContextMenuSelectors';
 import { localized } from '../../../core/utils/AppResource';
+import { StoryViewerRouteParams } from '../stories/StoryViewerModel';
+import { StoryInfoDto } from '../../../core/model/dto/StoryDto';
 import {
   computeTabBottomInset,
   getMainWindow,
@@ -550,6 +552,27 @@ export struct ChatListPage {
         // to a gateway error, so absence of previews remains a valid empty state.
         hilog.info(DOMAIN, TAG, 'Active stories bootstrap settled without more peers: %{public}s', String(error));
       });
+  }
+
+  // I6: the strip opens the first friend's story, like iOS.
+  private openStoryViewer(): void {
+    const store = this.accountStore;
+    if (store === undefined) {
+      return;
+    }
+    const state = store.getState();
+    const chatIds = state.chats.orderedStoryChatIds;
+    for (const chatId of chatIds) {
+      const activeStories = state.chats.activeStoriesByChatId.get(chatId);
+      if (activeStories === undefined || activeStories.stories.length === 0) {
+        continue;
+      }
+      const storyIds: number[] = activeStories.stories.map((story: StoryInfoDto): number => story.storyId);
+      const chat = state.chats.chats.get(chatId);
+      const params = new StoryViewerRouteParams(chatId, chat !== undefined ? chat.title : '', storyIds, 0);
+      this.pageStack.pushPathByName('TgStoryViewerPage', params);
+      return;
+    }
   }
 
   private rebuildStoryPreviews(state: AppState): void {
@@ -1688,6 +1711,13 @@ export struct ChatListPage {
         selectedFilterIndex: this.selectedFilterIndex,
         unreadFilterCount: this.unreadFilterCount,
         storyPreviews: this.storyPreviews,
+        storyStripInteractive: true,
+        onStoryPress: (): void => {
+          this.openStoryViewer();
+        },
+        onStoryStripPress: (): void => {
+          this.openStoryViewer();
+        },
         allFilterText: localized($r('app.string.chat_filter_all').id, 'All'),
         unreadFilterText: localized($r('app.string.chat_filter_unread').id, 'Unread'),
         personalFilterText: localized($r('app.string.chat_filter_personal').id, 'Personal'),

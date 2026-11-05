@@ -57,6 +57,8 @@ export class StoryFullDto {
   // Video only.
   duration: number = 0;
   minithumbnail: string = '';
+  // Set once TDLib reports the media file as downloaded; empty until then.
+  localPath: string = '';
 }
 
 export function storyContentKey(posterChatId: number, storyId: number): string {

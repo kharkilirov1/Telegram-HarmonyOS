@@ -169,7 +169,7 @@
 | I3 | Inline reply из шторки | `missing` | нет | `Components/Calls`/push extension | I2 |
 | I4 | VoIP-звонки | `frozen` | — | `Components/Calls` | — |
 | I5 | Список звонков (read-only) | `available` | `loadCalls.ets`, `TgCallRow.ets` | `Components/Calls` | I4 |
-| I6 | Stories (UI) | `partial` | Данные: `ChatActiveStoriesDto`/`StoryInfoDto`, update-нормализатор активных историй, порядок чатов с историями. Контент: `StoryFullDto` (`photo`/`video`/`unsupported`, caption, размеры, файл, длительность, minithumbnail), `parseStoryFull`, `updateStory` → `storyFullUpdated` → `chats.storyContentsByKey`; `getStory` команда+сериализация (`poster_chat_id`, `story_id`, `only_local`), `LoadStoryUseCase` (кэш, in-flight). Нет: вьювера, реакций, публикации, witness | `Stories` | — |
+| I6 | Stories (UI) | `partial` | Данные: активные истории (`ChatActiveStoriesDto`), порядок чатов, `StoryFullDto` + `parseStoryFull` (photo/video/unsupported), `updateStory` → `chats.storyContentsByKey`, `getStory` + `LoadStoryUseCase`, путь медиа через filesReducer. UI: полоса превью в списке чатов → `TgStoryViewerPage` (route): сегментный прогресс (5 с фото, длительность видео), тап влево/вправо, long-press пауза, закрытие, загрузка контента и медиа, header с названием чата. Нет: реакций, публикации, статистики, witness | `Stories` | — |
 
 ## J. Платформа и качество
 

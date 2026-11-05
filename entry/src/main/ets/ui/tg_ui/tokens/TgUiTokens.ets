@@ -1318,6 +1318,11 @@ export class TgUiTokens {
   static readonly SETTINGS_SECTION_BG: Resource = $r('app.color.settings_section_bg');
 
   // ── Settings row (Phase E-3) ──
+  // I6: story viewer chrome.
+  static readonly STORY_VIEWER_BACKGROUND: ResourceColor = '#000000';
+  static readonly STORY_PROGRESS_HEIGHT: number = 2;
+  static readonly STORY_PROGRESS_TRACK: ResourceColor = 'rgba(255, 255, 255, 0.3)';
+  static readonly STORY_LOADING_SIZE: number = 32;
   // A5: avatar editor viewport and controls.
   static readonly AVATAR_EDITOR_VIEWPORT_SIZE: number = 280;
   static readonly AVATAR_EDITOR_VIEWPORT_INSET: number = 24;
