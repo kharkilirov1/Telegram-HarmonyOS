@@ -23,7 +23,9 @@ import {
   previousStoryIndex,
   storyCacheKey,
   storyDisplayDurationMs,
-  storySegmentFill
+  storyReactionsLabel,
+  storySegmentFill,
+  storyViewsLabel
 } from './StoryViewerModel';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { computeTopBarHeight } from '../../utils/SafeAreaUtils';
@@ -328,6 +330,18 @@ export struct TgStoryViewerPage {
       .alignItems(VerticalAlign.Center)
 
       Row() {
+        if (storyViewsLabel(this.story).length > 0) {
+          Text('👁 ' + storyViewsLabel(this.story))
+            .fontSize(TgUiTokens.FONT_META_SIZE)
+            .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+            .margin({ right: TgUiTokens.SPACE_8 })
+        }
+        if (storyReactionsLabel(this.story).length > 0) {
+          Text('♥ ' + storyReactionsLabel(this.story))
+            .fontSize(TgUiTokens.FONT_META_SIZE)
+            .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+            .margin({ right: TgUiTokens.SPACE_8 })
+        }
         Text(this.chatTitle.length > 0 ? this.chatTitle : '')
           .fontSize(TgUiTokens.FONT_META_SIZE)
           .fontWeight(FontWeight.Medium)

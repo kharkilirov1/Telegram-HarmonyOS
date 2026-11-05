@@ -24,7 +24,8 @@ async function main() {
   const M = load('ui/pages/stories/StoryViewerModel.ets',
     ['StoryViewerRouteParams', 'clampStoryIndex', 'storySegmentFill', 'nextStoryIndex',
       'previousStoryIndex', 'storyDisplayDurationMs', 'storyCacheKey', 'storyPosterPath',
-      'isRenderableStory', 'STORY_PHOTO_DURATION_MS', 'STORY_MIN_DURATION_MS', 'STORY_MAX_DURATION_MS'],
+      'isRenderableStory', 'STORY_PHOTO_DURATION_MS', 'STORY_MIN_DURATION_MS', 'STORY_MAX_DURATION_MS',
+      'compactStoryCount', 'storyViewsLabel', 'storyReactionsLabel'],
     { storyContentKey: (chatId, storyId) => chatId + ':' + storyId });
 
   // Params -----------------------------------------------------------------------------------------
@@ -84,6 +85,35 @@ async function main() {
   assert.equal(M.isRenderableStory({ kind: 'photo', mediaFileId: 5 }), true);
   assert.equal(M.isRenderableStory({ kind: 'video', mediaFileId: 5 }), true);
 
+  // View counters ----------------------------------------------------------------------------------
+  assert.equal(M.compactStoryCount(0), '0');
+  assert.equal(M.compactStoryCount(-3), '0');
+  assert.equal(M.compactStoryCount(7), '7');
+  assert.equal(M.compactStoryCount(999), '999');
+  assert.equal(M.compactStoryCount(1000), '1K');
+  assert.equal(M.compactStoryCount(1200), '1.2K');
+  assert.equal(M.compactStoryCount(12000), '12K');
+  assert.equal(M.compactStoryCount(150000), '150K');
+  assert.equal(M.compactStoryCount(1000000), '1M');
+  assert.equal(M.compactStoryCount(2500000), '2.5M');
+  assert.equal(M.compactStoryCount(120000000), '120M');
+  assert.equal(M.compactStoryCount(Number.NaN), '0');
+  assert.equal(M.storyViewsLabel(undefined), '');
+  assert.equal(M.storyViewsLabel({ viewCount: 0 }), '');
+  assert.equal(M.storyViewsLabel({ viewCount: 42 }), '42');
+  assert.equal(M.storyReactionsLabel(undefined), '');
+  assert.equal(M.storyReactionsLabel({ reactionCount: 0 }), '');
+  assert.equal(M.storyReactionsLabel({ reactionCount: 1500 }), '1.5K');
+  const dtoSource = read('core/model/dto/StoryDto.ets');
+  assert.match(dtoSource, /viewCount: number = 0;/);
+  assert.match(dtoSource, /reactionCount: number = 0;/);
+  assert.match(dtoSource, /forwardCount: number = 0;/);
+  const normalizerSource = read('core/events/normalizers/StoryNormalizer.ets');
+  assert.match(normalizerSource, /const interactionInfo = tdGetObject\(story, 'interaction_info'\);/);
+  assert.match(normalizerSource, /dto\.viewCount = tdGetNumber\(interactionInfo, 'view_count'\);/);
+  assert.match(normalizerSource, /dto\.reactionCount = tdGetNumber\(interactionInfo, 'reaction_count'\);/);
+  assert.match(normalizerSource, /dto\.forwardCount = tdGetNumber\(interactionInfo, 'forward_count'\);/);
+
   // Page wiring ------------------------------------------------------------------------------------
   const page = read('ui/pages/stories/TgStoryViewerPage.ets');
   assert.match(page, /export struct TgStoryViewerPage \{/);
@@ -105,6 +135,8 @@ async function main() {
   assert.match(page, /onReady\(\(context: NavDestinationContext\): void => \{/);
   assert.match(page, /const params = context\.pathInfo\.param as StoryViewerRouteParams;/);
   assert.match(page, /@Builder\nexport function TgStoryViewerPageBuilder\(\) \{/);
+  assert.match(page, /storyViewsLabel\(this\.story\)/);
+  assert.match(page, /storyReactionsLabel\(this\.story\)/);
 
   // Route ------------------------------------------------------------------------------------------
   const routes = JSON.parse(readResource('base/profile/route_map.json')).routerMap;

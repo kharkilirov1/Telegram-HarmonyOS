@@ -56,6 +56,12 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **I6-story-counters + housekeeping (lead).** Счётчики истории: `viewCount/reactionCount/forwardCount`
+  из `interaction_info`, `compactStoryCount` (K/M), подписи в header вьювера. Уборка: TODO избавлен от
+  устаревших долгов (редактор аватара, выбор языка, F6-пагинация/TGS закрыты кодом), счётчики матрицы
+  пересчитаны из строк (**38/61/2/3/1**, 105 строк). Гейты: host **148/148**, оба smoke, hvigor
+  BUILD SUCCESSFUL. Раунд-100 чекпойнт: цель остаётся активной — паритет не достигнут (witness-очередь
+  и платформенные пределы I1/I3/F7).
 - **I6-story-reactions (lead).** Реакции на истории: `StoryFullDto.chosenReactionKey` (парсинг через
   общий `parseReactionTypeKey`), команды `setStoryReaction` (nullable `_reaction_type_json`, повторный
   тап снимает реакцию) и `getStoryAvailableReactions`, сериализация с общим валидатором ключей,

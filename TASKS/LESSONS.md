@@ -1521,3 +1521,11 @@ Last updated: 2026-10-23
   removal sends an empty array).
 - Toggling is a client decision: the same key as the current one means "remove", so the use case takes
   both keys and the viewer never sends a reaction the user already has.
+
+## 266. A hundred rounds of documentation drift is one recount away
+
+- Debts that code already closed (avatar editor, translation picker, F6 paging/TGS) kept the matrix
+  `partial` and the TODO noisy. Recount rows and re-read each debt against the code before trusting the
+  numbers; the story dropped from 8 to 2 `missing` this way.
+- Compact counters need their own pure formatter: rounding and the K/M thresholds are user-visible and
+  cheaper to test than to eyeball in the UI.

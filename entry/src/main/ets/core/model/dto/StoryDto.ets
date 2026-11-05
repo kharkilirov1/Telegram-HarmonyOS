@@ -61,6 +61,10 @@ export class StoryFullDto {
   localPath: string = '';
   // Chip key of the reaction chosen by the current user ('emoji:👍' / 'custom:<id>'), empty if none.
   chosenReactionKey: string = '';
+  // Only present for stories the current user may see interactions of (own stories).
+  viewCount: number = 0;
+  reactionCount: number = 0;
+  forwardCount: number = 0;
 }
 
 export function storyContentKey(posterChatId: number, storyId: number): string {

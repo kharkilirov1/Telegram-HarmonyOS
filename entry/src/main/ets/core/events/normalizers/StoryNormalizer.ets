@@ -100,6 +100,12 @@ export function parseStoryFull(story: TdObject): StoryFullDto {
     dto.caption = tdGetString(caption, 'text');
   }
   dto.chosenReactionKey = parseReactionTypeKey(tdGetObject(story, 'chosen_reaction_type'));
+  const interactionInfo = tdGetObject(story, 'interaction_info');
+  if (interactionInfo !== undefined) {
+    dto.viewCount = tdGetNumber(interactionInfo, 'view_count');
+    dto.reactionCount = tdGetNumber(interactionInfo, 'reaction_count');
+    dto.forwardCount = tdGetNumber(interactionInfo, 'forward_count');
+  }
   const content = tdGetObject(story, 'content');
   const contentKind: StoryContentKind = content !== undefined ? storyContentKindFromTd(content) : 'unsupported';
   dto.kind = contentKind;

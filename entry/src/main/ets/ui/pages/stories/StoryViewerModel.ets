@@ -99,3 +99,33 @@ export function storyPosterPath(story: StoryFullDto | undefined): string {
 export function isRenderableStory(story: StoryFullDto | undefined): boolean {
   return story !== undefined && story.kind !== 'unsupported' && story.mediaFileId !== 0;
 }
+
+// I6: compact view counters like iOS ("1.2K", "3.4M"). Zero hides the label.
+export function compactStoryCount(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) {
+    return '0';
+  }
+  if (value < 1000) {
+    return Math.floor(value).toString();
+  }
+  if (value < 1000000) {
+    const thousands = value / 1000;
+    return (thousands >= 100 ? Math.floor(thousands).toString() : thousands.toFixed(1).replace('.0', '')) + 'K';
+  }
+  const millions = value / 1000000;
+  return (millions >= 100 ? Math.floor(millions).toString() : millions.toFixed(1).replace('.0', '')) + 'M';
+}
+
+export function storyViewsLabel(story: StoryFullDto | undefined): string {
+  if (story === undefined || story.viewCount <= 0) {
+    return '';
+  }
+  return compactStoryCount(story.viewCount);
+}
+
+export function storyReactionsLabel(story: StoryFullDto | undefined): string {
+  if (story === undefined || story.reactionCount <= 0) {
+    return '';
+  }
+  return compactStoryCount(story.reactionCount);
+}

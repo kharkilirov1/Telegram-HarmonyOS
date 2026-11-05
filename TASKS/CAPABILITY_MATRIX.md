@@ -169,7 +169,7 @@
 | I3 | Inline reply из шторки | `missing` | нет | `Components/Calls`/push extension | I2 |
 | I4 | VoIP-звонки | `frozen` | — | `Components/Calls` | — |
 | I5 | Список звонков (read-only) | `available` | `loadCalls.ets`, `TgCallRow.ets` | `Components/Calls` | I4 |
-| I6 | Stories (UI) | `partial` | Данные: активные истории, `StoryFullDto` + `parseStoryFull` (photo/video/unsupported, chosen reaction), `updateStory` → `chats.storyContentsByKey`, `getStory`/`setStoryReaction`/`getStoryAvailableReactions` + сериализация (nullable reaction, remove по повторному тапу), `LoadStoryUseCase`, путь медиа через filesReducer. UI: полоса превью → `TgStoryViewerPage` (route): сегментный прогресс, тапы, long-press пауза, ряд реакций (чипы, выбранная подсвечена, toggle). Нет: публикации, статистики, ответа, witness | `Stories` | — |
+| I6 | Stories (UI) | `partial` | Данные: активные истории, `StoryFullDto` + `parseStoryFull` (photo/video/unsupported, chosen reaction), `updateStory` → `chats.storyContentsByKey`, `getStory`/`setStoryReaction`/`getStoryAvailableReactions` + сериализация (nullable reaction, remove по повторному тапу), `LoadStoryUseCase`, путь медиа через filesReducer. UI: полоса превью → `TgStoryViewerPage` (route): сегментный прогресс, тапы, long-press пауза, ряд реакций (чипы, выбранная подсвечена, toggle), счётчики просмотров/реакций из `interaction_info` (компактный формат K/M). Нет: публикации, статистики, ответа, witness | `Stories` | — |
 
 ## J. Платформа и качество
 
