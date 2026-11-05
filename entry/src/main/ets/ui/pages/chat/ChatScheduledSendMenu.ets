@@ -27,9 +27,8 @@ export function schedulePresets(nowMs: number): number[] {
 }
 
 // System date + time dialogs; a pair that resolves into the past is rejected instead of silently scheduling.
-export function pickScheduledDate(host: ChatScheduledSendHost, text: string, send: SendScheduledText): void {
+export function pickScheduledDate(context: UIContext, text: string, send: SendScheduledText): void {
   const now = Date.now();
-  const context = host.getChatUIContext();
   context.showDatePickerDialog({
     start: new Date(now),
     end: new Date(now + 365 * 24 * 3600 * 1000),
@@ -65,7 +64,7 @@ export function openScheduledSendMenu(host: ChatScheduledSendHost, text: string,
     buttons: [b0, b1, b2]
   }).then((result: promptAction.ActionMenuSuccessResponse) => {
     if (result.index === 2) {
-      pickScheduledDate(host, trimmed, send);
+      pickScheduledDate(host.getChatUIContext(), trimmed, send);
       return;
     }
     const seconds = presets[result.index];

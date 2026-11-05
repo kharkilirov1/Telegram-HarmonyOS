@@ -1767,3 +1767,11 @@ Last updated: 2026-10-23
 - The 600-line warn line is a real design pressure: the scheduled-send UI pushed `ChatComposerController` to 629,
   so the menu and its dialogs moved to `ChatScheduledSendMenu.ets` (505th file) and the controller dropped to 577.
   Extract at the warn line, not at the hard cap.
+
+## 295. Take the platform context, not the owner host
+
+- `pickScheduledDate` first took a `ChatScheduledSendHost`, which forced every second caller to satisfy that
+  interface (and ArkTS rejects structural host passing). Changing the parameter to `UIContext` made the same
+  picker usable from the scheduled-messages page with one line.
+- When an owner module is shared by two screens, its inputs should be platform values and plain callbacks, never
+  one screen's host interface.

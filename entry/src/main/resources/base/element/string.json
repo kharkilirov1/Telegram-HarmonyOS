@@ -729,6 +729,10 @@
       "value": "In 1 hour"
     },
     {
+      "name": "scheduled_reschedule_custom",
+      "value": "Date and time"
+    },
+    {
       "name": "scheduled_cancel",
       "value": "Delete"
     },

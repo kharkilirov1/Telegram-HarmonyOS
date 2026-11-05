@@ -34,9 +34,9 @@ function checkChain() {
   assert.match(menuOwner, /send\(trimmed, seconds\);/);
 
   // Custom date and time: system dialogs, past dates rejected.
-  assert.match(menuOwner, /export function pickScheduledDate\(host: ChatScheduledSendHost, text: string, send: SendScheduledText\): void \{/);
-  assert.match(menuOwner, /context\.showDatePickerDialog\(\{/);
-  assert.match(menuOwner, /context\.showTimePickerDialog\(\{/);
+  assert.match(menuOwner, /export function pickScheduledDate\(context: UIContext, text: string, send: SendScheduledText\): void \{/);
+  assert.match(menuOwner, /showDatePickerDialog\(\{/);
+  assert.match(menuOwner, /showTimePickerDialog\(\{/);
   assert.match(menuOwner, /useMilitaryTime: true,/);
   assert.match(menuOwner, /if \(seconds > Math\.floor\(Date\.now\(\) \/ 1000\)\) \{/);
   assert.match(menuOwner, /buttons: \[b0, b1, b2\]/);
@@ -59,6 +59,17 @@ function checkChain() {
   // Gate registration keeps the bridge honest.
   const gate = fs.readFileSync(path.join(__dirname, 'test-chat-screen-decomposition.cjs'), 'utf8');
   assert.match(gate, /openScheduledSendMenu: \['composerCtrl', 'openScheduledSendMenu', 'ChatComposerController'\]/);
+
+
+  // Scheduled list: the same picker reschedules an existing message.
+  const listPage = read('ui/pages/chat/TgChatScheduledMessagesPage.ets');
+  assert.match(listPage, /type ScheduledRowAction = 'sendNow' \| 'rescheduleHour' \| 'rescheduleCustom' \| 'cancel';/);
+  assert.match(listPage, /const actions: ScheduledRowAction\[\] = \['sendNow', 'rescheduleHour', 'rescheduleCustom', 'cancel'\];/);
+  assert.match(listPage, /buttons: \[b0, b1, b2, b3\]/);
+  assert.match(listPage, /if \(action === 'rescheduleCustom'\) \{/);
+  assert.match(listPage, /pickScheduledDate\(this\.getUIContext\(\), message\.text,/);
+  assert.match(listPage, /useCase\.reschedule\(this\.chatId, message\.messageId, seconds, nowSeconds\)/);
+  assert.match(listPage, /scheduled_reschedule_custom/);
 
   console.log('PASS scheduled send contract');
 }

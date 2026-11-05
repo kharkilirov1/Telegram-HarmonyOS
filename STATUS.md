@@ -56,6 +56,12 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D21: перенос запланированного сообщения на выбранную дату (lead).** В меню строки
+  `TgChatScheduledMessagesPage` появился четвёртый пункт «Дата и время» (`rescheduleCustom`): он переиспользует
+  `pickScheduledDate` из owner-модуля (теперь функция принимает `UIContext`, а не host — так её может звать и
+  композер, и список) и вызывает уже существующий `ScheduledMessagesUseCase.reschedule`
+  (`editMessageSchedulingState`). Пресет «Через час» остался. Гейты: host **162/162**, оба smoke, hvigor OK,
+  размер — PASS. Урок — №295.
 - **D21: произвольные дата и время (lead).** Меню «Отправить позже» получило третий пункт — системные
   `showDatePickerDialog` + `showTimePickerDialog`; выбор, ушедший в прошлое, отклоняется, а не планируется молча.
   Меню вынесено в отдельный owner-модуль `ChatScheduledSendMenu.ets` (контроллер остался на 577 строках вместо

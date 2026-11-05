@@ -6,6 +6,7 @@ import { promptAction } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { localized } from '../../../core/utils/AppResource';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
+import { pickScheduledDate } from './ChatScheduledSendMenu';
 import { ScheduledMessageDto } from '../../../core/model/dto/ScheduledMessageDto';
 import {
   ScheduledMessagesUseCase,
@@ -19,7 +20,7 @@ import { computeTopBarHeight } from '../../utils/SafeAreaUtils';
 const DOMAIN = 0x0047;
 const TAG = 'TgChatScheduledMessagesPage';
 
-type ScheduledRowAction = 'sendNow' | 'rescheduleHour' | 'cancel';
+type ScheduledRowAction = 'sendNow' | 'rescheduleHour' | 'rescheduleCustom' | 'cancel';
 
 @Builder
 export function TgChatScheduledMessagesPageBuilder() {
@@ -114,17 +115,19 @@ export struct TgChatScheduledMessagesPage {
     const labels: string[] = [
       localized($r('app.string.scheduled_send_now').id, 'Send Now'),
       localized($r('app.string.scheduled_reschedule_hour').id, 'In 1 hour'),
+      localized($r('app.string.scheduled_reschedule_custom').id, 'Date and time'),
       localized($r('app.string.scheduled_cancel').id, 'Delete')
     ];
-    const actions: ScheduledRowAction[] = ['sendNow', 'rescheduleHour', 'cancel'];
+    const actions: ScheduledRowAction[] = ['sendNow', 'rescheduleHour', 'rescheduleCustom', 'cancel'];
     const normal: Resource = TgUiTokens.CHAT_TOP_BAR_ACTION_FOREGROUND;
     const destructive: Resource = TgUiTokens.CHAT_CONTEXT_MENU_DESTRUCTIVE;
     const b0: promptAction.Button = { text: labels[0], color: normal };
     const b1: promptAction.Button = { text: labels[1], color: normal };
-    const b2: promptAction.Button = { text: labels[2], color: destructive };
+    const b2: promptAction.Button = { text: labels[2], color: normal };
+    const b3: promptAction.Button = { text: labels[3], color: destructive };
     this.getUIContext().getPromptAction().showActionMenu({
       title: this.rowTitle(message),
-      buttons: [b0, b1, b2]
+      buttons: [b0, b1, b2, b3]
     }).then((result: promptAction.ActionMenuSuccessResponse) => {
       this.applyAction(actions[result.index], message);
     }).catch((error: Error) => {
@@ -152,6 +155,23 @@ export struct TgChatScheduledMessagesPage {
           }
           this.errorText = error.message;
         });
+      return;
+    }
+    if (action === 'rescheduleCustom') {
+      pickScheduledDate(this.getUIContext(), message.text, (text: string, seconds: number): void => {
+        const nowSeconds: number = Math.floor(Date.now() / 1000);
+        useCase.reschedule(this.chatId, message.messageId, seconds, nowSeconds)
+          .then(() => {
+            if (token === this.pageLifecycleToken) {
+              this.reload();
+            }
+          })
+          .catch((error: Error) => {
+            if (token === this.pageLifecycleToken) {
+              this.errorText = error.message;
+            }
+          });
+      });
       return;
     }
     if (action === 'rescheduleHour') {

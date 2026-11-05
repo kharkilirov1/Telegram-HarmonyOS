@@ -729,6 +729,10 @@
       "value": "Через час"
     },
     {
+      "name": "scheduled_reschedule_custom",
+      "value": "Дата и время"
+    },
+    {
       "name": "scheduled_cancel",
       "value": "Удалить"
     },
