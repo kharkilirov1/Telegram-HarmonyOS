@@ -4,7 +4,13 @@
 
 import { common } from '@kit.AbilityKit';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
-import { AvatarImagePreparation } from './avatarImagePrep';
+import { AvatarImagePreparation, AvatarSourceSize } from './avatarImagePrep';
+import {
+  AvatarCropRect,
+  clampAvatarZoom,
+  computeAvatarCropRectFromTransform,
+  isValidAvatarCropRect
+} from '../../../domain/usecases/avatarCrop';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { localized } from '../../../core/utils/AppResource';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
@@ -58,6 +64,17 @@ export struct TgEditProfilePage {
   @Local private usernameTaken: boolean = false;
   @Local private usernameSuggestions: string[] = [];
   @Local private photoBusy: boolean = false;
+  // A5: the picked photo is framed before upload (pinch to zoom, drag to pan).
+  @Local private editorOpen: boolean = false;
+  @Local private editorUri: string = '';
+  @Local private editorWidth: number = 0;
+  @Local private editorHeight: number = 0;
+  @Local private editorZoom: number = 1;
+  @Local private editorOffsetX: number = 0;
+  @Local private editorOffsetY: number = 0;
+  private pinchStartZoom: number = 1;
+  private panStartX: number = 0;
+  private panStartY: number = 0;
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
   @Local private topBarInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
   private useCase?: EditProfileUseCase;
@@ -116,14 +133,17 @@ export struct TgEditProfilePage {
         return;
       }
       const sourceUri = uris[0];
-      return this.copyPickedPhoto(sourceUri).then((localPath: string): Promise<void> => {
-        if (localPath.length === 0) {
-          throw new Error('Could not copy the selected photo');
+      return AvatarImagePreparation.measure(sourceUri).then((size: AvatarSourceSize): void => {
+        if (size.width <= 0 || size.height <= 0) {
+          throw new Error('Could not read the selected photo');
         }
-        return useCase.updatePhoto(localPath).then((): void => {
-          this.photoNotice = localized($r('app.string.edit_profile_photo_updated').id, 'Profile photo updated');
-          this.errorText = '';
-        });
+        this.editorUri = sourceUri;
+        this.editorWidth = size.width;
+        this.editorHeight = size.height;
+        this.editorZoom = 1;
+        this.editorOffsetX = 0;
+        this.editorOffsetY = 0;
+        this.editorOpen = true;
       });
     }).catch((error: Error) => {
       if (isUsernameTakenError(error)) {
@@ -149,6 +169,56 @@ export struct TgEditProfilePage {
       return AvatarImagePreparation.prepare(context, sourceUri);
     } catch (error) {
       hilog.warn(DOMAIN, TAG, 'Preparing the picked photo failed: %{public}s', String(error));
+      return Promise.resolve('');
+    }
+  }
+
+  // A5: the frame the user chose is exactly the crop that reaches TDLib.
+  private commitEditorCrop(): void {
+    const useCase = this.useCase;
+    if (useCase === undefined || this.photoBusy || this.editorUri.length === 0) {
+      return;
+    }
+    const rect = computeAvatarCropRectFromTransform(this.editorWidth, this.editorHeight,
+      TgUiTokens.AVATAR_EDITOR_VIEWPORT_SIZE, this.editorZoom, this.editorOffsetX, this.editorOffsetY);
+    if (!isValidAvatarCropRect(rect, this.editorWidth, this.editorHeight)) {
+      this.errorText = localized($r('app.string.edit_profile_error').id, 'Could not update the profile');
+      return;
+    }
+    const uri = this.editorUri;
+    this.photoBusy = true;
+    this.photoNotice = '';
+    this.errorText = '';
+    this.cropPickedPhoto(uri, rect).then((localPath: string): Promise<void> => {
+      if (localPath.length === 0) {
+        throw new Error('Could not prepare the selected photo');
+      }
+      return useCase.updatePhoto(localPath).then((): void => {
+        this.photoNotice = localized($r('app.string.edit_profile_photo_updated').id, 'Profile photo updated');
+        this.editorOpen = false;
+        this.editorUri = '';
+      });
+    }).catch((error: Error) => {
+      this.errorText = error.message;
+    }).finally((): void => {
+      this.photoBusy = false;
+    });
+  }
+
+  private cancelEditor(): void {
+    this.editorOpen = false;
+    this.editorUri = '';
+    this.editorZoom = 1;
+    this.editorOffsetX = 0;
+    this.editorOffsetY = 0;
+  }
+
+  private cropPickedPhoto(sourceUri: string, rect: AvatarCropRect): Promise<string> {
+    try {
+      const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      return AvatarImagePreparation.prepare(context, sourceUri, rect);
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Preparing the cropped photo failed: %{public}s', String(error));
       return Promise.resolve('');
     }
   }
@@ -299,9 +369,94 @@ export struct TgEditProfilePage {
       })
   }
 
+  // A5: frame the picked photo; the square viewport is what the upload will contain.
+  @Builder
+  private buildAvatarEditor() {
+    Column() {
+      Text(localized($r('app.string.edit_profile_photo_frame').id, 'Frame your photo'))
+        .fontSize(TgUiTokens.GENERIC_TEXT_FIELD_FONT_SIZE)
+        .fontColor(TgUiTokens.COLOR_TEXT_TITLE)
+        .margin({ bottom: TgUiTokens.SPACE_16 })
+
+      Stack({ alignContent: Alignment.Center }) {
+        Image(this.editorUri)
+          .width(TgUiTokens.AVATAR_EDITOR_VIEWPORT_SIZE)
+          .height(TgUiTokens.AVATAR_EDITOR_VIEWPORT_SIZE)
+          .objectFit(ImageFit.Cover)
+          .scale({ x: this.editorZoom, y: this.editorZoom })
+          .translate({ x: this.editorOffsetX, y: this.editorOffsetY })
+          .gesture(
+            GestureGroup(GestureMode.Parallel,
+              PinchGesture({ fingers: 2 })
+                .onActionStart((): void => {
+                  this.pinchStartZoom = this.editorZoom;
+                })
+                .onActionUpdate((event: GestureEvent): void => {
+                  this.editorZoom = clampAvatarZoom(this.pinchStartZoom * event.scale);
+                }),
+              PanGesture({ fingers: 1, direction: PanDirection.All })
+                .onActionStart((): void => {
+                  this.panStartX = this.editorOffsetX;
+                  this.panStartY = this.editorOffsetY;
+                })
+                .onActionUpdate((event: GestureEvent): void => {
+                  const limit = (this.editorZoom - 1) * TgUiTokens.AVATAR_EDITOR_VIEWPORT_SIZE / 2;
+                  this.editorOffsetX = Math.max(-limit, Math.min(limit, this.panStartX + event.offsetX));
+                  this.editorOffsetY = Math.max(-limit, Math.min(limit, this.panStartY + event.offsetY));
+                })
+            )
+          )
+        // The circular frame matches the avatar the user will get.
+        Circle()
+          .width(TgUiTokens.AVATAR_EDITOR_VIEWPORT_SIZE)
+          .height(TgUiTokens.AVATAR_EDITOR_VIEWPORT_SIZE)
+          .fill(Color.Transparent)
+          .stroke(TgUiTokens.COLOR_TEXT_TITLE)
+          .strokeWidth(1)
+      }
+      .width(TgUiTokens.AVATAR_EDITOR_VIEWPORT_SIZE)
+      .height(TgUiTokens.AVATAR_EDITOR_VIEWPORT_SIZE)
+      .clip(true)
+      .borderRadius(TgUiTokens.AVATAR_EDITOR_VIEWPORT_SIZE / 2)
+      .margin({ bottom: TgUiTokens.SPACE_16 })
+
+      Row() {
+        Text(this.photoBusy
+          ? localized($r('app.string.edit_profile_photo_busy').id, 'Updating photo…')
+          : localized($r('app.string.edit_profile_photo_use').id, 'Use photo'))
+          .fontSize(TgUiTokens.GENERIC_TEXT_FIELD_FONT_SIZE)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(TgUiTokens.MSG_LINK_INCOMING)
+          .onClick((): void => {
+            if (!this.photoBusy) {
+              this.commitEditorCrop();
+            }
+          })
+        Text(localized($r('app.string.cancel').id, 'Cancel'))
+          .fontSize(TgUiTokens.GENERIC_TEXT_FIELD_FONT_SIZE)
+          .fontColor(TgUiTokens.COLOR_TEXT_PREVIEW)
+          .margin({ left: TgUiTokens.SPACE_16 })
+          .onClick((): void => {
+            if (!this.photoBusy) {
+              this.cancelEditor();
+            }
+          })
+      }
+      .justifyContent(FlexAlign.Center)
+      .width('100%')
+      .height(TgUiTokens.AVATAR_EDITOR_CONTROL_HEIGHT)
+    }
+    .width('100%')
+    .height('100%')
+    .padding({ left: TgUiTokens.AVATAR_EDITOR_VIEWPORT_INSET, right: TgUiTokens.AVATAR_EDITOR_VIEWPORT_INSET })
+    .justifyContent(FlexAlign.Center)
+    .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
+  }
+
   build() {
     NavDestination() {
-      Column() {
+      Stack({ alignContent: Alignment.Center }) {
+        Column() {
         TgChatTopBar({
           title: localized($r('app.string.edit_profile_title').id, 'Edit Profile'),
           subtitle: '',
@@ -394,9 +549,16 @@ export struct TgEditProfilePage {
         .layoutWeight(1)
         .align(Alignment.Top)
       }
+        .width('100%')
+        .height('100%')
+        .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
+
+        if (this.editorOpen) {
+          this.buildAvatarEditor()
+        }
+      }
       .width('100%')
       .height('100%')
-      .backgroundColor(TgUiTokens.COLOR_BG_PRIMARY)
     }
     .hideTitleBar(true)
     .onReady((context: NavDestinationContext) => {

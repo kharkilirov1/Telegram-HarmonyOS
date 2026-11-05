@@ -829,6 +829,18 @@
       "value": "Change photo"
     },
     {
+      "name": "edit_profile_error",
+      "value": "Could not update the profile"
+    },
+    {
+      "name": "edit_profile_photo_frame",
+      "value": "Frame your photo"
+    },
+    {
+      "name": "edit_profile_photo_use",
+      "value": "Use photo"
+    },
+    {
       "name": "edit_profile_photo_busy",
       "value": "Updating photo…"
     },

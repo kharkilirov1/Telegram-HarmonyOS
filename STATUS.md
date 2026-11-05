@@ -56,6 +56,14 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **A5-avatar-editor (lead).** Интерактивный редактор аватара: `AvatarImagePreparation.measure` (размер до
+  декода), `prepare(context, uri, rect)` принимает кадр; `computeAvatarCropRectFromTransform`
+  (cover-фит → исходные пиксели, зум 1–4 с клампом, pan с клампом, границы), `clampAvatarZoom`.
+  В `TgEditProfilePage` оверлей: квадратный вьюпорт, `PinchGesture`+`PanGesture`, круглая рамка,
+  «Use photo»/«Cancel», `commitEditorCrop` → crop → `updatePhoto`; строки `edit_profile_photo_frame/use/error`
+  в 3 локалях, токены редактора. Суита `test-avatar-crop.cjs` расширена (математика зума/пана/границ,
+  measure/prepare, UI-проводка), обновлена `test-edit-profile.cjs`. Гейты: host **143/143**, оба smoke,
+  hvigor BUILD SUCCESSFUL. Остаток A5: witness.
 - **D24-popup-language (lead).** Смена языка из попапа действий: строка «Translate to <CODE>» с
   раскрываемым списком кодов (текущий выделен), выбор пишет язык чата, закрывает попап и
   переотправляет перевод (`translateIntoLanguage` → `translateMessage(force)`). Новые порт/биндинги/

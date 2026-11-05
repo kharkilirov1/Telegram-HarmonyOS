@@ -829,6 +829,18 @@
       "value": "更换照片"
     },
     {
+      "name": "edit_profile_error",
+      "value": "无法更新个人资料"
+    },
+    {
+      "name": "edit_profile_photo_frame",
+      "value": "选择照片区域"
+    },
+    {
+      "name": "edit_profile_photo_use",
+      "value": "使用照片"
+    },
+    {
       "name": "edit_profile_photo_busy",
       "value": "正在更新照片…"
     },

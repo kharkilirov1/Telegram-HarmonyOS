@@ -1468,3 +1468,11 @@ Last updated: 2026-10-23
   sliced text must end with `}`), so comments belong inside the function body.
 - Slicing "from method A to the next method B" is destructive: verify the removed block is exactly the
   new methods, or restore the file from git and insert instead.
+
+## 259. Gesture state must be mapped back to source pixels, not preview pixels
+
+- The preview shows a cover fit: at zoom 1 the viewport already contains the short side, so the crop
+  side is `shortSide / zoom` and one preview pixel is `shortSide / (viewport * zoom)` source pixels.
+  Panning then moves the crop by that ratio before clamping inside the image.
+- Measure the image before opening the editor; decoding at crop time keeps a camera photo from being
+  fully materialized just to show its aspect ratio.

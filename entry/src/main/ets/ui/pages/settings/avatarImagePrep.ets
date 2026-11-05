@@ -14,6 +14,11 @@ import {
   isValidAvatarCropRect
 } from '../../../domain/usecases/avatarCrop';
 
+export class AvatarSourceSize {
+  width: number = 0;
+  height: number = 0;
+}
+
 const DOMAIN = 0x00A6;
 const TAG = 'AvatarImagePrep';
 
@@ -26,13 +31,41 @@ function toRegion(rect: AvatarCropRect): image.Region {
 
 export class AvatarImagePreparation {
   // Returns the cached JPEG path, or '' when the source cannot be decoded.
-  static async prepare(context: common.UIAbilityContext, sourceUri: string): Promise<string> {
+  // A5: the editor needs the source aspect before any crop is chosen, so measure first and decode later.
+  static async measure(sourceUri: string): Promise<AvatarSourceSize> {
+    const size = new AvatarSourceSize();
+    let source: image.ImageSource | undefined;
+    try {
+      source = image.createImageSource(sourceUri);
+      const info = await source.getImageInfo();
+      if (info !== undefined && Number.isFinite(info.size.width) && Number.isFinite(info.size.height)) {
+        size.width = info.size.width;
+        size.height = info.size.height;
+      }
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Measuring the picked photo failed: %{public}s', String(error));
+    } finally {
+      if (source !== undefined) {
+        try {
+          await source.release();
+        } catch (_error) {
+        }
+      }
+    }
+    return size;
+  }
+
+  static async prepare(context: common.UIAbilityContext, sourceUri: string,
+    requestedRect?: AvatarCropRect): Promise<string> {
     let source: image.ImageSource | undefined;
     let pixelMap: image.PixelMap | undefined;
     try {
       source = image.createImageSource(sourceUri);
       const info = await source.getImageInfo();
-      const cropRect = computeAvatarCropRect(info.size.width, info.size.height);
+      // A5: the editor passes the user's frame; without one the center square is used.
+    const cropRect = requestedRect !== undefined
+      ? requestedRect
+      : computeAvatarCropRect(info.size.width, info.size.height);
       if (!isValidAvatarCropRect(cropRect, info.size.width, info.size.height)) {
         return '';
       }

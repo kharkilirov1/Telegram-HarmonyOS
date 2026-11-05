@@ -41,3 +41,47 @@ export function isValidAvatarCropRect(rect: AvatarCropRect, width: number, heigh
   }
   return rect.x + rect.size <= width && rect.y + rect.size <= height;
 }
+
+// A5: interactive editor. The preview is a square viewport that shows the photo "cover"-fitted; the user
+// pinches to zoom and pans. This maps that gesture state back into source pixels so the upload crop
+// matches exactly what the user framed.
+export const AVATAR_EDITOR_MIN_ZOOM = 1;
+export const AVATAR_EDITOR_MAX_ZOOM = 4;
+
+export function clampAvatarZoom(zoom: number): number {
+  if (!Number.isFinite(zoom)) {
+    return AVATAR_EDITOR_MIN_ZOOM;
+  }
+  if (zoom < AVATAR_EDITOR_MIN_ZOOM) {
+    return AVATAR_EDITOR_MIN_ZOOM;
+  }
+  if (zoom > AVATAR_EDITOR_MAX_ZOOM) {
+    return AVATAR_EDITOR_MAX_ZOOM;
+  }
+  return zoom;
+}
+
+// offsetX/offsetY are preview pixels (positive = the image moved right/down).
+export function computeAvatarCropRectFromTransform(width: number, height: number, viewportSide: number,
+  zoom: number, offsetX: number, offsetY: number): AvatarCropRect {
+  const rect = new AvatarCropRect();
+  if (!Number.isFinite(width) || !Number.isFinite(height) || !Number.isFinite(viewportSide) ||
+    width <= 0 || height <= 0 || viewportSide <= 0) {
+    return rect;
+  }
+  const clampedZoom = clampAvatarZoom(zoom);
+  const shortSide = Math.min(width, height);
+  // Source pixels per preview pixel: the cover fit at zoom 1 shows exactly the short side.
+  const sourcePerPreview = shortSide / (viewportSide * clampedZoom);
+  const size = Math.max(1, Math.floor(shortSide / clampedZoom));
+  const centerX = width / 2 - (Number.isFinite(offsetX) ? offsetX : 0) * sourcePerPreview;
+  const centerY = height / 2 - (Number.isFinite(offsetY) ? offsetY : 0) * sourcePerPreview;
+  rect.size = Math.min(size, Math.floor(shortSide));
+  let x = Math.round(centerX - rect.size / 2);
+  let y = Math.round(centerY - rect.size / 2);
+  x = Math.max(0, Math.min(x, width - rect.size));
+  y = Math.max(0, Math.min(y, height - rect.size));
+  rect.x = x;
+  rect.y = y;
+  return rect;
+}

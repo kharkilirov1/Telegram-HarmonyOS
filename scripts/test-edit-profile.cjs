@@ -213,8 +213,8 @@ async function main() {
   assert.match(page, /private pickProfilePhoto\(\): void \{/);
   assert.match(page, /maxSelectNumber: 1/);
   assert.match(page, /private copyPickedPhoto\(sourceUri: string\): Promise<string> \{/);
-  assert.match(page, /import \{ AvatarImagePreparation \} from '\.\/avatarImagePrep';/);
-  assert.match(page, /return AvatarImagePreparation\.prepare\(context, sourceUri\);/);
+  assert.match(page, /import \{ AvatarImagePreparation, AvatarSourceSize \} from '\.\/avatarImagePrep';/);
+  assert.match(page, /return AvatarImagePreparation\.prepare\(context, sourceUri, rect\);/);
   assert.match(page, /useCase\.updatePhoto\(localPath\)/);
   assert.match(page, /edit_profile_change_photo/);
 

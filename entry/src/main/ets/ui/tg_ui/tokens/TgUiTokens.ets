@@ -1318,6 +1318,10 @@ export class TgUiTokens {
   static readonly SETTINGS_SECTION_BG: Resource = $r('app.color.settings_section_bg');
 
   // ── Settings row (Phase E-3) ──
+  // A5: avatar editor viewport and controls.
+  static readonly AVATAR_EDITOR_VIEWPORT_SIZE: number = 280;
+  static readonly AVATAR_EDITOR_VIEWPORT_INSET: number = 24;
+  static readonly AVATAR_EDITOR_CONTROL_HEIGHT: number = 48;
   static readonly SETTINGS_ROW_HEIGHT: number = 44;
   static readonly SETTINGS_ROW_PADDING_H: number = 16;
   static readonly SETTINGS_ROW_GAP: number = 12;

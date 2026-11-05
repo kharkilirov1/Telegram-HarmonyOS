@@ -829,6 +829,18 @@
       "value": "Изменить фото"
     },
     {
+      "name": "edit_profile_error",
+      "value": "Не удалось обновить профиль"
+    },
+    {
+      "name": "edit_profile_photo_frame",
+      "value": "Выберите кадр"
+    },
+    {
+      "name": "edit_profile_photo_use",
+      "value": "Использовать фото"
+    },
+    {
       "name": "edit_profile_photo_busy",
       "value": "Обновление фото…"
     },
