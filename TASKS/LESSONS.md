@@ -1575,3 +1575,12 @@ Last updated: 2026-10-23
   distinguish two checks on the same screen.
 - A concrete command must be added to `AnyAppCommand`; the compiler reports the missing membership as
   structural typing on the gateway call, which is a confusing place to look for a union edit.
+
+## 273. `snapshot_display` lies on a headless emulator; `uitest screenCap` does not
+
+- `snapshot_display -f x.jpeg` returned a frame whose lower two thirds were an unpainted grey block,
+  while `uitest dumpLayout` showed the full tree (Continue button, QR link) at valid coordinates and
+  `uitest screenCap` rendered everything. Do not file a UI bug from a `snapshot_display` frame alone:
+  cross-check the layout dump and `screenCap` first.
+- A fresh-process check is `ps -ef` STIME against `date` on the device, not the `aa start` success line.
+- Witness runs are repeatable: `scripts/witness-emulator.ps1` boots, launches, captures and counts faults.

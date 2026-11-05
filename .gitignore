@@ -126,3 +126,6 @@ hs_err_pid*.log
 /docs/reviews/2026-10-02-slow-mode-evidence.json
 /du.exe.stackdump
 
+
+# Local device-witness screenshots and layout dumps
+.witness/

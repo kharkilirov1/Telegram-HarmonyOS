@@ -32,7 +32,7 @@
 
 | # | Возможность | Статус | Доказательство | iOS-референс | Связанные / шов |
 |---|---|---|---|---|---|
-| A1 | Логин по номеру | `partial` | `PhoneInputPage.ets`, `LoginController.ets` (5/1) | `Components/AuthConfirmationScreen`, `Sources/Login*` | A2, A3 |
+| A1 | Логин по номеру | `partial` | `PhoneInputPage.ets`, `LoginController.ets` (5/1). Witness 2026-11-05 (API 26 эмулятор): экран входа, ввод номера с клавиатурой, выбор страны (шит с поиском/секциями/индексом), disabled «Продолжить» — `TASKS/WITNESS.md` | `Components/AuthConfirmationScreen`, `Sources/Login*` | A2, A3 |
 | A2 | Код подтверждения / 2FA | `partial` | `CodeInputPage.ets` (9/1) | `Sources/Login*` | A1; единый auth-state machine |
 | A3 | QR-логин | `partial` | `QrLoginPage.ets` (11/2) | `Sources/Login*` | A2 |
 | A4 | Выход из аккаунта | `partial` | `AuthSideEffect.ets`, `CommandSerializer.ets` (7/4) | `Settings` sessions | H5; очистка сессии |

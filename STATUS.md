@@ -56,6 +56,14 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **Witness-прогон на API 26 (lead).** Впервые за сессию снят живой witness: эмулятор "Mate 90 Pro"
+  (HarmonyOS 7.0.0, API 26), свежий процесс после `aa force-stop`/`aa start`, 0 fault-логов, экран
+  входа отрисован полностью, ввод номера открывает клавиатуру, шит выбора страны с поиском/секциями/
+  индексом работает и применяет выбор (`+994`). `snapshot_display` на headless-эмуляторе отдаёт
+  недорисованный кадр с серой областью — кадры снимаются `uitest screenCap`. Добавлен
+  `scripts/witness-emulator.ps1` (поднять эмулятор → hdc → запуск → проверка свежего PID → кадр +
+  fault-логи) и `TASKS/WITNESS.md` с записями. Аккаунт по-прежнему не авторизован, поэтому остальные
+  witness-долги (чаты, истории, уведомления, медиа) остаются открытыми.
 - **A5-username-check (lead).** Доступность username до сохранения, как в iOS: `checkChatUsername`
   (команда + сериализация + членство в `AnyAppCommand`), `usernameAvailabilityFromTd` (ok/invalid/occupied/
   purchasable/tooMany/groupsUnavailable/unknown), `usernameAvailabilityMessage`, `CheckUsernameUseCase`
