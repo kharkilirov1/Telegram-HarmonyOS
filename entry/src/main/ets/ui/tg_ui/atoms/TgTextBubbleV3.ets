@@ -43,6 +43,8 @@ export struct TgTextBubbleV3 {
   @Param linkPreviewShowAboveText: boolean = false
   // A tapped preview opens its URL in the browser, like iOS.
   @Event onLinkPreviewPress: (url: string) => void = (_: string) => {}
+  // D18: a tapped link inside the text.
+  @Event onTextLinkPress: (target: string) => void = (_: string) => {}
 
   // ── Sender ──
   @Param showSenderName: boolean = false
@@ -181,6 +183,7 @@ export struct TgTextBubbleV3 {
           .width(this.layout?.contentWidth ?? undefined)
       } else {
         TgTextBodyV3({
+    onLinkPress: (target: string): void => { this.onTextLinkPress(target); },
           text: this.text,
           isOutgoing: this.isOutgoing,
           contentWidth: this.layout?.contentWidth ?? 300,

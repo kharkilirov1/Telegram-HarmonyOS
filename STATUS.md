@@ -56,6 +56,13 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D18: кликабельные ссылки в тексте (lead).** `Span` в ArkUI наследует `CommonMethod`, поэтому клик вешается на
+  сам span. Значение резолвится из энтити: `url`/`textUrl` → URL (для `textUrl` берётся настоящий `entity.url`),
+  `emailAddress` → `mailto:`, `phoneNumber` → `tel:<digits>`, прочее → видимый текст. Цепочка идёт через уже
+  существующий `onMessageLinkPress` → `openSharedMediaLink`, то есть один путь открытия на превью и текст.
+  Новый гейт `scripts/test-text-link-tap.cjs` (161-я суита). Нет: упоминания/хэштеги открываются как ссылки, а не
+  профиль/поиск; `t.me/<username>` не навигируется внутрь; runtime-witness недоступен. Гейты: host **161/161**,
+  оба smoke, hvigor OK. Урок — №288.
 - **D17: тап по превью ссылки (lead).** Превью было декоративным — тап ничего не делал. Добавлен `onPreviewPress(url)`
   в `TgLinkPreviewBubble` (клик по корневому `Stack`), сквозной `onLinkPreviewPress` через `TgTextBubbleV3`,
   `onMessageLinkPress` в `TgMessageRouter` и `TgChatTimelineRow`, и переиспользован существующий делегат

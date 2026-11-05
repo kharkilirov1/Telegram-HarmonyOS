@@ -13,8 +13,27 @@ class RichSpan {
   isStrikethrough: boolean = false;
   isCode: boolean = false;
   isLink: boolean = false;
+  // What the link opens: a URL, mailto:, tel: or a bare command.
+  target: string = '';
   // D16: the custom emoji id when this span is one, '0' otherwise.
   customEmojiId: string = '0';
+}
+
+// Turns the typed text of a link entity into the value the OS/app can open.
+function linkTargetForSpan(typed: string, entity: TextEntity): string {
+  const value = typed.trim();
+  if (entity.type === 'url' || entity.type === 'textUrl') {
+    const explicit = entity.url !== undefined ? String(entity.url).trim() : '';
+    return explicit.length > 0 ? explicit : value;
+  }
+  if (entity.type === 'emailAddress') {
+    return value.length > 0 ? 'mailto:' + value : '';
+  }
+  if (entity.type === 'phoneNumber') {
+    const digits = value.replace(/[^0-9+]/g, '');
+    return digits.length > 0 ? 'tel:' + digits : '';
+  }
+  return value;
 }
 
 function splitRichSpans(text: string, segStart: number, entities: TextEntity[]): RichSpan[] {
@@ -49,7 +68,10 @@ function splitRichSpans(text: string, segStart: number, entities: TextEntity[]):
           case 'code': case 'pre': case 'preCode': span.isCode = true; break;
           case 'url': case 'textUrl': case 'mention': case 'mentionName':
           case 'emailAddress': case 'phoneNumber': case 'hashtag':
-          case 'cashtag': case 'botCommand': span.isLink = true; break;
+          case 'cashtag': case 'botCommand':
+            span.isLink = true;
+            span.target = linkTargetForSpan(span.text, e);
+            break;
           case 'customEmoji': span.customEmojiId = e.customEmojiId; break;
           default: break;
         }
@@ -100,6 +122,8 @@ export struct TgTextBodyV3 {
   // Ordinal indices of quotes the user expanded inline (collapsed quotes only)
   @Param expandedQuoteIndices: number[] = []
   @Event onQuoteToggle: (quoteIndex: number) => void = (_: number) => {}
+  // D18: link/mention/hashtag taps; the owner decides how to open the value.
+  @Event onLinkPress: (target: string) => void = (_: string) => {}
 
   private hasQuotes(): boolean {
     return this.quoteOffsets.length > 0 && this.quoteLengths.length > 0
@@ -294,6 +318,11 @@ export struct TgTextBodyV3 {
                 color: span.isLink ? this.linkColor() : this.textColor()
               })
               .fontFamily(span.isCode ? 'monospace' : 'HarmonyOS Sans')
+              .onClick((): void => {
+                if (span.isLink && span.target.length > 0) {
+                  this.onLinkPress(span.target);
+                }
+              })
               .textBackgroundStyle(span.isCode ? { color: this.codeBg(), radius: 4 } : undefined)
             }
           })

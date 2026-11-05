@@ -1705,3 +1705,11 @@ Last updated: 2026-10-23
   and bindings instead of adding a wrapper.
 - Pinned god-file budgets apply to the files the slice touches: adding five lines to `TgMessageRouter` failed the
   gate, so the wiring had to be paid for by compacting blank lines in the same file.
+
+## 288. Span does take gestures
+
+- The earlier assumption that links cannot be tapped inside `Text` was wrong: `declare class BaseSpan<T> extends
+  CommonMethod<T>` in `component/span.d.ts`, so `Span(...).onClick(...)` is legal and no layout hit-testing is
+  needed. Resolve the target from the entity at span-build time, not from the tapped character.
+- `textUrl` hides the real URL behind the visible text, so the entity is the only correct source; its absence
+  falls back to the typed text.

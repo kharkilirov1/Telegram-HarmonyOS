@@ -1135,6 +1135,9 @@ export struct TgMessageRouter {
           onLinkPreviewPress: (url: string): void => {
             this.onMessageLinkPress(url);
           },
+          onTextLinkPress: (target: string): void => {
+            this.onMessageLinkPress(target);
+          },
           isOutgoing: this.isOutgoing,
           isEmojiOnly: this.isEmojiOnly,
           forceBreakAll: this.forceBreakAll,
@@ -1471,13 +1474,11 @@ export struct TgMessageRouter {
       .width('100%')
       .justifyContent(this.isOutgoing ? FlexAlign.End : FlexAlign.Start)
       .alignItems(VerticalAlign.Bottom)
-
     } else {
       // ── Non-visual media bubble (document, audio, voice) ──
       Row() {
         this.buildAvatarSlot()
         this.buildIncomingTail()
-
         Column() {
           if (this.showSenderName && this.senderName.length > 0) {
             Text(this.senderName)
@@ -1494,7 +1495,6 @@ export struct TgMessageRouter {
                 top: TgUiTokens.BUBBLE_PADDING_V
               })
           }
-
           if (this.showReplySnippet) {
             Row() {
               TgReplySnippet({
