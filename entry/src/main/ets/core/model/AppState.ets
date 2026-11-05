@@ -164,6 +164,8 @@ export class TextEntity {
   url: string = ''; // for textUrl type
   userId: number = 0; // for mentionName type
   language: string = ''; // for preCode type
+  // D16: customEmoji entity — the custom sticker id, '0' for every other type.
+  customEmojiId: string = '0';
 }
 
 // Message content

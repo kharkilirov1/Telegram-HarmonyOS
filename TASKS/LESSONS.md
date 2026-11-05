@@ -1350,3 +1350,10 @@ Last updated: 2026-10-23
   place the stack becomes available, so params are read after it in practice for pushed pages.
 - Keep the save chain sequential: a rejected name must stop before username and bio, otherwise a partial
   profile update looks successful.
+
+## 244. Entity identity must be carried before it can be rendered
+
+- The entity type mapping already produced `customEmoji`, but the id was dropped in the DTO, so every  later layer had a glyph with no way to resolve the sticker. Carrying the id is a one-field change in four
+  places (DTO parse, AppState field, two reducer builders, stateClone).
+- `tdGetInt64` returns a string; keep it a string end to end so ids above 2^53 survive.
+- Fixtures for nested TdObject arrays are simpler as plain objects inside one `td({...})` call; wrapping  each nested object separately yields empty arrays.

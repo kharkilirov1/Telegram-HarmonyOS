@@ -146,6 +146,12 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **D16-custom-emoji-entity (lead).** Идентичность кастомного эмодзи в тексте больше не теряется:
+  `TextEntityDto.customEmojiId` парсится из `custom_emoji_id`, `TextEntity.customEmojiId` живёт в AppState,
+  копируется в двух builder-ах reducer-а (including `cloneMessage`) и в `stateClone` → `CustomEmojiTextEntity`.
+  Суита `test-reactions-model.cjs` расширена (`parseMessageContent` с custom-сущностью, поле у обычной
+  сущности, клонирование). Гейты: host **136/136**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток D16:
+  рендер картинки стикера, выбор кастомной реакции, witness.
 - **A5-edit-profile-page (lead).** Экран редактирования: `TgEditProfilePage` (route + `EditProfileRouteParams`),
   поля first/last/username/bio с лимитами, inline-хинт username, счётчик био, Save-гейт, последовательные
   updateName→updateUsername→updateBio, pop по успеху, inline-ошибка при отказе. Вход — шапка профиля в

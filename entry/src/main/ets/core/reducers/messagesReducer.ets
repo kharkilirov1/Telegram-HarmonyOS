@@ -53,6 +53,7 @@ function contentFromDto(dto: MessageContentDto): MessageContent {
     clone.url = e.url;
     clone.userId = e.userId;
     clone.language = e.language;
+    clone.customEmojiId = e.customEmojiId;
     return clone;
   });
   content.captionEntities = dto.captionEntities.map((e) => {
@@ -238,6 +239,7 @@ function cloneMessage(msg: Message): Message {
     const ce = new TextEntity();
     ce.offset = e.offset; ce.length = e.length; ce.type = e.type;
     ce.url = e.url; ce.userId = e.userId; ce.language = e.language;
+    ce.customEmojiId = e.customEmojiId;
     return ce;
   });
   clonedContent.captionEntities = msg.content.captionEntities.map((e) => {

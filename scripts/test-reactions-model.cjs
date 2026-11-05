@@ -149,4 +149,34 @@ const timeline = read('ui/pages/chat/ChatTimelineVO.ets');
 assert.match(timeline, /packReactionChips\(message\.reactions\)/, 'the VO packs the row once');
 assert.match(timeline, /reactionRenderStamp\(row\)/, 'the LazyForEach key must change when chips change');
 
+// D16: a custom emoji entity keeps its sticker id through the DTO so the bubble can resolve it later.
+const content = dto.parseMessageContent(td({
+  '@type': 'messageText',
+  text: {
+    '@type': 'formattedText',
+    text: '🙂abc',
+    entities: [
+      { '@type': 'textEntity', offset: 0, length: 2,
+        type: { '@type': 'textEntityTypeCustomEmoji', custom_emoji_id: '5301234567890123456' } },
+      { '@type': 'textEntity', offset: 2, length: 3,
+        type: { '@type': 'textEntityTypeBold' } }
+    ]
+  }
+}));
+assert.equal(content.textEntities.length, 2);
+assert.equal(content.textEntities[0].type, 'customEmoji');
+assert.equal(content.textEntities[0].customEmojiId, '5301234567890123456',
+  'the custom emoji id survives parsing');
+assert.equal(content.textEntities[1].customEmojiId, '0', 'other entity types carry no emoji id');
+
+// The AppState entity exposes the same field and clones keep it.
+const modelEntity = new state.TextEntity();
+modelEntity.customEmojiId = '5301234567890123456';
+assert.equal(modelEntity.customEmojiId, '5301234567890123456');
+const reducerSource = fs.readFileSync(path.join(etsRoot, 'core/reducers/messagesReducer.ets'), 'utf8');
+assert.match(reducerSource, /clone\.customEmojiId = e\.customEmojiId;/);
+assert.match(reducerSource, /ce\.customEmojiId = e\.customEmojiId;/);
+const cloneUtil = fs.readFileSync(path.join(etsRoot, 'core/utils/stateClone.ets'), 'utf8');
+assert.match(cloneUtil, /new CustomEmojiTextEntity\(entity\.offset, entity\.length, entity\.customEmojiId\)/);
+
 console.log('PASS reaction model contracts');

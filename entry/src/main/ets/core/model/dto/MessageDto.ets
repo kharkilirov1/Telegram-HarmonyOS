@@ -34,6 +34,8 @@ export class TextEntityDto {
   url: string = '';
   userId: number = 0;
   language: string = '';
+  // D16: textEntityTypeCustomEmoji.custom_emoji_id — the sticker identity behind the character.
+  customEmojiId: string = '0';
 }
 
 export class MessageContentDto {
@@ -308,6 +310,8 @@ function extractTextEntities(formattedTextObj: TdObject): TextEntityDto[] {
       dto.userId = tdGetNumber(typeObj, 'user_id');
     } else if (mapped === 'preCode') {
       dto.language = tdGetString(typeObj, 'language');
+    } else if (mapped === 'customEmoji') {
+      dto.customEmojiId = tdGetInt64(typeObj, 'custom_emoji_id');
     }
     result.push(dto);
   }
