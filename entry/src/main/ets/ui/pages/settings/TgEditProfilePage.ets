@@ -14,6 +14,7 @@ import {
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { localized } from '../../../core/utils/AppResource';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
+import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import {
   EditProfileUseCase,
   PROFILE_BIO_MAX_LENGTH,
@@ -25,6 +26,12 @@ import {
   isValidProfileUsername,
   suggestProfileUsernameAlternatives
 } from '../../../domain/usecases/editProfile';
+import {
+  CheckUsernameUseCase,
+  UsernameAvailability,
+  createCheckUsernameUseCase,
+  usernameAvailabilityMessage
+} from '../../../domain/usecases/checkUsername';
 import { TgChatTopBar, TgChatTopBarTrailingAction } from '../../tg_ui/atoms/TgChatTopBar';
 import { TgUiTokens } from '../../tg_ui/tokens/TgUiTokens';
 import { computeTopBarHeight } from '../../utils/SafeAreaUtils';
@@ -62,6 +69,7 @@ export struct TgEditProfilePage {
   @Local private errorText: string = '';
   @Local private photoNotice: string = '';
   @Local private usernameTaken: boolean = false;
+  @Local private usernameAvailability: UsernameAvailability = 'idle';
   @Local private usernameSuggestions: string[] = [];
   @Local private photoBusy: boolean = false;
   // A5: the picked photo is framed before upload (pinch to zoom, drag to pan).
@@ -78,6 +86,8 @@ export struct TgEditProfilePage {
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
   @Local private topBarInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
   private useCase?: EditProfileUseCase;
+  private checkUsernameUseCase?: CheckUsernameUseCase;
+  private usernameCheckTimer: number = -1;
   private pageLifecycleToken: number = 0;
 
   aboutToAppear(): void {
@@ -92,9 +102,12 @@ export struct TgEditProfilePage {
     }
     try {
       this.useCase = createEditProfileUseCase(getTdGatewayAdapter());
+    this.checkUsernameUseCase = createCheckUsernameUseCase(getTdGatewayAdapter());
     } catch (error) {
       hilog.error(DOMAIN, TAG, 'Use case init failed: %{public}s', String(error));
       this.useCase = undefined;
+    this.checkUsernameUseCase = undefined;
+    this.cancelUsernameCheck();
     }
     const params = this.pageStack.getParamByName('TgEditProfilePage') as Object[];
     if (params.length > 0) {
@@ -223,9 +236,63 @@ export struct TgEditProfilePage {
     }
   }
 
+  // A5: check availability while typing, like iOS. Each keystroke cancels the previous check so a stale
+  // answer cannot label the current username.
+  private scheduleUsernameCheck(): void {
+    this.cancelUsernameCheck();
+    const useCase = this.checkUsernameUseCase;
+    const selfUserId = getAppCoreRuntime().getStore().getState().auth.userId;
+    const candidate = this.username.trim().replace(/^@/, '');
+    if (useCase === undefined || selfUserId <= 0 || candidate.length === 0) {
+      this.usernameAvailability = 'idle';
+      return;
+    }
+    const token = this.pageLifecycleToken;
+    const sequence = useCase.nextSequence();
+    this.usernameAvailability = 'checking';
+    this.usernameCheckTimer = setTimeout((): void => {
+      this.usernameCheckTimer = -1;
+      useCase.check(selfUserId, candidate).then((availability: UsernameAvailability) => {
+        if (token !== this.pageLifecycleToken || !useCase.isCurrent(sequence)) {
+          return;
+        }
+        this.usernameAvailability = availability;
+      }).catch((): void => {
+        if (token === this.pageLifecycleToken && useCase.isCurrent(sequence)) {
+          this.usernameAvailability = 'unknown';
+        }
+      });
+    }, 400);
+  }
+
+  private cancelUsernameCheck(): void {
+    if (this.usernameCheckTimer >= 0) {
+      clearTimeout(this.usernameCheckTimer);
+      this.usernameCheckTimer = -1;
+    }
+  }
+
+  private usernameAvailabilityText(): string {
+    if (this.usernameAvailability === 'checking') {
+      return localized($r('app.string.edit_profile_username_checking').id, 'Checking…');
+    }
+    return usernameAvailabilityMessage(this.usernameAvailability);
+  }
+
+  private usernameAvailabilityColor(): ResourceColor {
+    if (this.usernameAvailability === 'available') {
+      return TgUiTokens.MSG_LINK_INCOMING;
+    }
+    if (this.usernameAvailability === 'checking' || this.usernameAvailability === 'idle') {
+      return TgUiTokens.COLOR_TEXT_PREVIEW;
+    }
+    return TgUiTokens.COLOR_TEXT_ERROR;
+  }
+
   private applySuggestion(value: string): void {
     this.username = value;
     this.usernameTaken = false;
+    this.usernameAvailability = 'idle';
     this.usernameSuggestions = [];
     this.errorText = '';
   }
@@ -318,6 +385,7 @@ export struct TgEditProfilePage {
         .enabled(!this.saving)
         .onChange((value: string) => {
           this.username = value;
+          this.scheduleUsernameCheck();
         })
     }
     .width('100%')
@@ -495,6 +563,13 @@ export struct TgEditProfilePage {
             this.buildFieldLabel(localized($r('app.string.edit_profile_username').id, 'Username'))
             this.buildUsernameField()
             this.buildHint()
+            if (this.usernameAvailabilityText().length > 0 && !this.usernameTaken) {
+              Text(this.usernameAvailabilityText())
+                .fontSize(TgUiTokens.FONT_META_SIZE)
+                .fontColor(this.usernameAvailabilityColor())
+                .width('100%')
+                .margin({ top: TgUiTokens.SPACE_4 })
+            }
             if (this.usernameTaken) {
               Text(localized($r('app.string.edit_profile_username_taken').id,
                 'This username is already taken'))

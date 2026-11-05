@@ -921,6 +921,10 @@
       "value": "Profile photo updated"
     },
     {
+      "name": "edit_profile_username_checking",
+      "value": "Checking…"
+    },
+    {
       "name": "edit_profile_username_taken",
       "value": "This username is already taken"
     },

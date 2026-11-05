@@ -56,6 +56,13 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **A5-username-check (lead).** Доступность username до сохранения, как в iOS: `checkChatUsername`
+  (команда + сериализация + членство в `AnyAppCommand`), `usernameAvailabilityFromTd` (ok/invalid/occupied/
+  purchasable/tooMany/groupsUnavailable/unknown), `usernameAvailabilityMessage`, `CheckUsernameUseCase`
+  (снятие `@`/пробелов, локальная валидация до сети, sequence-гард от устаревших ответов), inline-статус
+  в `TgEditProfilePage` (debounce 400 мс, цвета available/error/neutral, отмена при уходе). Строки в 3
+  локалях. Новая суита `test-username-check.cjs` (154-я). Гейты: host **154/154**, оба smoke, hvigor
+  BUILD SUCCESSFUL.
 - **I6-story-audience (lead).** Выбор адресатов истории: `StoryAudienceModel` (фильтр по имени/username,
   toggle без мутации, подписи Select People/1 Person/N People, гейт Done), `TgStoryAudiencePage`
   (приватные чаты без себя, сортировка, поиск, чекбоксы, возврат `StoryAudienceResult` через `pop`),

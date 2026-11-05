@@ -1567,3 +1567,11 @@ Last updated: 2026-10-23
   the composer owns the selection and the picker only pops it.
 - The "selected users" mode should not be a dead end: cycling into it opens the picker instead of
   choosing a mode the user cannot complete.
+
+## 272. Debounced checks need a sequence, not just a timer
+
+- Clearing the timer stops the next request but not an answer already in flight, so the check carries a
+  sequence number and the page ignores answers that are not current. The lifecycle token alone cannot
+  distinguish two checks on the same screen.
+- A concrete command must be added to `AnyAppCommand`; the compiler reports the missing membership as
+  structural typing on the gateway call, which is a confusing place to look for a union edit.

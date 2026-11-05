@@ -921,6 +921,10 @@
       "value": "Фото профиля обновлено"
     },
     {
+      "name": "edit_profile_username_checking",
+      "value": "Проверяем…"
+    },
+    {
       "name": "edit_profile_username_taken",
       "value": "Этот username уже занят"
     },

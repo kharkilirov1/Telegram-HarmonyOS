@@ -802,6 +802,17 @@ export class SetProfileUsernamePayload {
   username: string = '';
 }
 
+// A5: availability of a username before the save round trip (checkChatUsername).
+export class CheckChatUsernamePayload {
+  chatId: ChatId = 0;
+  username: string = '';
+}
+
+export class CheckChatUsernameCommand extends AppCommand {
+  type: string = 'checkChatUsername';
+  payload: CheckChatUsernamePayload = new CheckChatUsernamePayload();
+}
+
 export class SetProfileUsernameCommand extends AppCommand {
   type: string = 'setUsername';
   payload: SetProfileUsernamePayload = new SetProfileUsernamePayload();
@@ -1398,6 +1409,7 @@ export type AnyAppCommand =
 | SetProfileNameCommand
 | SetProfileBioCommand
 | SetProfileUsernameCommand
+| CheckChatUsernameCommand
 | SetProfilePhotoCommand
 | GetMessageThreadCommand
 | GetMessageThreadHistoryCommand
@@ -1803,6 +1815,14 @@ export function createSetProfilePhotoCommand(photoPath: string, isPublic: boolea
   const cmd = new SetProfilePhotoCommand();
   cmd.payload.photoPath = photoPath;
   cmd.payload.isPublic = isPublic;
+  return cmd;
+}
+
+export function createCheckChatUsernameCommand(chatId: ChatId,
+  username: string): CheckChatUsernameCommand {
+  const cmd = new CheckChatUsernameCommand();
+  cmd.payload.chatId = chatId;
+  cmd.payload.username = username;
   return cmd;
 }
 

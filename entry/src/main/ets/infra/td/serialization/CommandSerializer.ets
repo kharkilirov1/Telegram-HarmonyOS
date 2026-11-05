@@ -74,7 +74,7 @@ import {
   GetMessagePropertiesCommand,
   GetChatPinnedMessageCommand,
   GetRepliedMessageCommand, GetMessageThreadCommand, GetMessageThreadHistoryCommand, TranslateTextCommand,
-  SetProfileNameCommand, SetProfileBioCommand, SetProfileUsernameCommand, GetCustomEmojiStickersCommand,
+  SetProfileNameCommand, SetProfileBioCommand, SetProfileUsernameCommand, CheckChatUsernameCommand, GetCustomEmojiStickersCommand,
   SetProfilePhotoCommand,
   CloseChatCommand,
   SetTdlibOnlineCommand,
@@ -206,6 +206,7 @@ COMMAND_SERIALIZATION_HANDLERS.set('setProfilePhoto', serializeSetProfilePhoto);
 COMMAND_SERIALIZATION_HANDLERS.set('getCustomEmojiStickers', serializeGetCustomEmojiStickers);
 COMMAND_SERIALIZATION_HANDLERS.set('setBio', serializeSetProfileBio);
 COMMAND_SERIALIZATION_HANDLERS.set('setUsername', serializeSetProfileUsername);
+  COMMAND_SERIALIZATION_HANDLERS.set('checkChatUsername', serializeCheckChatUsername);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageThreadHistory', serializeGetMessageThreadHistory);
 COMMAND_SERIALIZATION_HANDLERS.set('getMessageProperties', serializeGetMessageProperties);
 COMMAND_SERIALIZATION_HANDLERS.set('getChatPinnedMessage', serializeGetChatPinnedMessage);
@@ -1140,6 +1141,13 @@ function serializeSetProfileBio(command: AnyAppCommand, result: SerializedComman
   const cmd = command as SetProfileBioCommand;
   result.method = 'setBio';
   result.params.setString('bio', cmd.payload.bio);
+}
+
+function serializeCheckChatUsername(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as CheckChatUsernameCommand;
+  result.method = 'checkChatUsername';
+  result.params.setNumber('chat_id', cmd.payload.chatId);
+  result.params.setString('username', cmd.payload.username);
 }
 
 function serializeSetProfileUsername(command: AnyAppCommand, result: SerializedCommand): void {

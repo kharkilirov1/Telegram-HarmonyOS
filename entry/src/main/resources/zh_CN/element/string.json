@@ -921,6 +921,10 @@
       "value": "头像已更新"
     },
     {
+      "name": "edit_profile_username_checking",
+      "value": "检查中…"
+    },
+    {
       "name": "edit_profile_username_taken",
       "value": "该用户名已被占用"
     },
