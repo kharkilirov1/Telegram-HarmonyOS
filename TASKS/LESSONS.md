@@ -1729,3 +1729,11 @@ Last updated: 2026-10-23
   case, open the chat with the same navigation transaction.
 - A resolution failure must fall back to the browser rather than swallow the tap: no gateway (cold start), an
   unknown username or a network error all land in the same `.catch`, which calls the external opener.
+
+## 291. A dead tap is a behaviour, not a gap
+
+- Hashtags were deliberately inert for two rounds. That was honest but still wrong for parity: the honest
+  fallback is the nearest meaningful action, and the chat already owns a search delegate that accepts a query.
+  Reusing `setSearchModeActive` + `handleSearchQueryChange` needed no new session method and no new route.
+- Prefer wiring a target to an existing delegate over adding an owner method: the page contract gate checks
+  binding names against Session delegates, so reuse both satisfies the gate and keeps the line budget.

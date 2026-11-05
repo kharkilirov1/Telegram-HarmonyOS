@@ -154,6 +154,7 @@ export interface ChatScreenPagePort {
   handlePinnedMessageClose(): void;
   handlePinnedMessageListPress(): void;
   handlePinnedMessagePress(): void;
+  setSearchModeActive(value: boolean): void;
   handleSearchQueryChange(query: string): void;
   openProfile(): void;
   openSearch(): void;

@@ -56,6 +56,11 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D18: хэштег открывает поиск в чате (lead).** Раньше `hashtag`/`cashtag` были намеренно инертны; теперь
+  атом отдаёт `hashtag:<tag>`, а владелец `openMessageTarget` вызывает существующие делегаты сессии
+  `setSearchModeActive(true)` + `handleSearchQueryChange(tag)`. Порты и bindings получили `setSearchModeActive`
+  (имя совпадает с делегатом — контрактный гейт проходит), сессия осталась 499 строк. В тексте больше нет
+  «мёртвых» тапов. Гейты: host **161/161**, оба smoke, hvigor OK, размер — PASS. Урок — №291.
 - **D18: `@username` открывается внутри приложения (lead).** `openMessageTarget` распознаёт `t.me`-ссылку и
   резолвит её через уже существующий `createResolveUsernameUseCase(chatGateway).resolve()` (`searchPublicChat`),
   затем `createChatRouteParams` + `pushChatScreenRoute` — тот же транзакционный переход, что из списка чатов.

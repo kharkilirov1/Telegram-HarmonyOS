@@ -35,8 +35,8 @@ function linkTargetForSpan(typed: string, entity: TextEntity): string {
     return value.startsWith('@') ? 'https://t.me/' + value.slice(1) : '';
   }
   if (entity.type === 'hashtag' || entity.type === 'cashtag') {
-    // No hashtag search route yet: keep the text inert instead of sending it to the browser.
-    return '';
+    // The chat search understands the tag itself; the owner opens it pre-filled.
+    return value.length > 0 ? 'hashtag:' + value : '';
   }
   if (entity.type === 'emailAddress') {
     return value.length > 0 ? 'mailto:' + value : '';

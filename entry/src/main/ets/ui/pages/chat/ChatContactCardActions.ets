@@ -20,6 +20,8 @@ const TAG = 'ContactCard';
 
 export interface ChatMessageTargetPort {
   pageStack: NavPathStack;
+  setSearchModeActive(value: boolean): void;
+  handleSearchQueryChange(query: string): void;
   openSharedMediaLink(value: string): boolean;
   createChatRouteParams(chatId: number, chatTitle: string): ChatScreenRouteParams | undefined;
   chatGateway?: TdGatewayPort;
@@ -49,6 +51,12 @@ export function openMessageTarget(host: ChatMessageTargetPort, value: string): b
       }
     }
     return false;
+  }
+  if (target.startsWith('hashtag:')) {
+    // Telegram searches the tag inside the current chat first.
+    host.setSearchModeActive(true);
+    host.handleSearchQueryChange(target.slice('hashtag:'.length));
+    return true;
   }
   if (isTelegramUsernameLink(target)) {
     return openResolvedUsername(host, target);

@@ -48,6 +48,16 @@ function checkChain() {
   assert.match(actions, /pushChatScreenRoute\(params, host\.pageStack, getAppCoreRuntime\(\)\.getStore\(\)\)/);
   assert.match(actions, /chatGateway\?: TdGatewayPort;/);
   assert.match(actions, /host\.openSharedMediaLink\(target\);\n    \}\);/, 'fallback opens externally');
+
+  // A hashtag searches the current chat instead of leaving the app.
+  assert.match(body, /return value\.length > 0 \? 'hashtag:' \+ value : '';/);
+  assert.match(actions, /if \(target\.startsWith\('hashtag:'\)\) \{/);
+  assert.match(actions, /host\.setSearchModeActive\(true\);/);
+  assert.match(actions, /host\.handleSearchQueryChange\(target\.slice\('hashtag:'.length\)\);/);
+  const portsSrc = read('ui/pages/chat/ChatScreenViewPorts.ets');
+  assert.match(portsSrc, /setSearchModeActive\(value: boolean\): void;/);
+  const bindingsSrc = read('ui/pages/chat/ChatScreenViewBindings.ets');
+  assert.match(bindingsSrc, /setSearchModeActive\(value: boolean\): void \{ this\.session\.setSearchModeActive\(value\); \}/);
   console.log('PASS text link tap contract');
 }
 

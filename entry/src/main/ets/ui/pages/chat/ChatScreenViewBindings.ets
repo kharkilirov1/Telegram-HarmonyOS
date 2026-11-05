@@ -96,6 +96,7 @@ export class ChatScreenViewBindings implements ChatMessageActionsPopupPort, Chat
   handlePinnedMessageListPress(): void { this.session.handlePinnedMessageListPress(); }
   handlePinnedMessagePress(): void { this.session.handlePinnedMessagePress(); }
   handleScrollToBottomPress(): void { this.session.handleScrollToBottomPress(); }
+  setSearchModeActive(value: boolean): void { this.session.setSearchModeActive(value); }
   handleSearchQueryChange(query: string): void { this.session.handleSearchQueryChange(query); }
   handleSendMessage(text: string): void { this.session.handleSendMessage(text); }
   handleStickerSearchQueryChange(query: string): void { this.session.handleStickerSearchQueryChange(query); }
