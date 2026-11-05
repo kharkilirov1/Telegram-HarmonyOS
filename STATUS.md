@@ -56,6 +56,13 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **Раунд 125: «Отправить позже» — попытка откатилась (lead).** Планировщик (D21) доведён до зелёной сборки:
+  `SendMessageParams.scheduledDateSeconds`, фабрика команды, `ChatTextSendController.handleSend(..., seconds)`,
+  `ChatComposerController`, long-press на Send и меню `showActionMenu`. Но контрактный гейт страницы требует
+  каждому render-callback отдельный делегат `ChatScreenSession` с именем-в-имя, а сессия уже стоит на пределе
+  (лимит гейта — 499 строк после вычета хвостового перевода). Любое добавление делегата пробивает лимит, и
+  сжать файл нечем: в классе нет пустых строк, методы обязаны начинаться с начала строки. Срез откачен целиком,
+  дерево зелёное: host **161/161**. Урок — №292, план разблокировки — в `TASKS/TODO.md`.
 - **D18: хэштег открывает поиск в чате (lead).** Раньше `hashtag`/`cashtag` были намеренно инертны; теперь
   атом отдаёт `hashtag:<tag>`, а владелец `openMessageTarget` вызывает существующие делегаты сессии
   `setSearchModeActive(true)` + `handleSearchQueryChange(tag)`. Порты и bindings получили `setSearchModeActive`

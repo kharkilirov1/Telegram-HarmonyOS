@@ -1737,3 +1737,15 @@ Last updated: 2026-10-23
   Reusing `setSearchModeActive` + `handleSearchQueryChange` needed no new session method and no new route.
 - Prefer wiring a target to an existing delegate over adding an owner method: the page contract gate checks
   binding names against Session delegates, so reuse both satisfies the gate and keeps the line budget.
+
+## 292. The session file is the real budget, not the feature
+
+- `ChatScreenSession.ets` sits at the 499-line gate limit with no blank lines and one method per line, so a new
+  render callback cannot be added at all: the page contract demands `name`-for-`name` delegate, and there is no
+  line left to hold it. Formatting tricks (merging imports, inlining two methods) break the same contract, which
+  parses methods by `^  name(`.
+- The unblocking move is structural: extract a group of existing delegates (composer send/attach/emoji/sticker)
+  into its own owner module and delete those lines from the session. Do that before attempting composer features
+  such as D21 send-later.
+- Reverting a half-built slice is the correct end state when the contract gate cannot be satisfied in the round:
+  the tree stayed green and the constraint is now written down instead of hiding in a broken branch.
