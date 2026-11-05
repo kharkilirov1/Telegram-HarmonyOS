@@ -56,6 +56,13 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **F6-gallery-sticker-animation (lead).** TGS во вьювере: `GalleryStickerLayout` (`isTgsPath`,
+  contained-fit `galleryStickerSize` с долей 0.86 и фолбэком на квадрат), `TgMediaGalleryPage.buildStickerItem`
+  играет `TgTgsPlayer` только когда стикер — текущая страница, с поверхностью `StickerViewer`;
+  `TgTgsPlayer` получил `@Param surface` и больше не хардкодит `Timeline` в гейте политики. Новая суита
+  `test-gallery-sticker-animation.cjs` (142-я): детекция, fit-математика (квадрат/широкий/высокий/мусорные
+  размеры), поверхность, проводка страницы; обновлён `test-sticker-viewer.cjs`. Гейты: host **142/142**,
+  оба smoke, hvigor BUILD SUCCESSFUL. Остаток F6: witness.
 - **F6-sticker-pack-preload (lead).** Предзагрузка соседних стикеров: `stickerPackPreloadPlan`/
   `stickerPackPreloadFileIds` (next-first, пропуск скачанных и без download-хэндла, границы, одиночный пак,
   инвалидный индекс) и вызовы `requestMediaDownload` в оверлее при входе в пак и смене индекса. Суита

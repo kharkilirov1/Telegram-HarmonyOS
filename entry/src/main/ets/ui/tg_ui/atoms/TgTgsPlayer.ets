@@ -145,6 +145,8 @@ export struct TgTgsPlayer {
   @Param fileId: number = 0;
   @Param renderWidth: number = 160;
   @Param renderHeight: number = 160;
+  // D13/F6: which surface asked for the render; the policy decides whether it may animate.
+  @Param surface: TgsPlaybackSurface = TgsPlaybackSurface.Timeline;
 
   private readonly settings: RenderingContextSettings = new RenderingContextSettings(true);
   private readonly ctx: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.settings);
@@ -402,7 +404,7 @@ export struct TgTgsPlayer {
   // Single admission point for both renderers: the policy owns visibility and
   // the concurrency budget, so neither path can start an extra renderer.
   private startPlayback(): void {
-    if (!TgsPlaybackPolicy.shouldPlay(this.nativeVisible, TgsPlaybackSurface.Timeline)) {
+    if (!TgsPlaybackPolicy.shouldPlay(this.nativeVisible, this.surface)) {
       this.stopPlayback();
       return;
     }

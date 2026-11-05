@@ -29,7 +29,8 @@ const searchBlock = coordinator.slice(coordinator.indexOf('handleMediaGalleryOpe
 assert.match(searchBlock, /ct === 'sticker'/, 'index search counts stickers');
 
 // Rendering: the photo branch already draws path/thumbnail with Contain, which is right for stickers.
-assert.match(galleryPage, /if \(item\.type === 'photo' \|\| item\.type === 'sticker'\) \{/);
+assert.match(galleryPage, /if \(item\.type === 'sticker'\) \{\n\s+this\.buildStickerItem\(item, index\)/);
+  assert.match(galleryPage, /} else if \(item\.type === 'photo'\) \{/);
 assert.match(galleryPage, /this\.buildPhotoItem\(item\)/);
 
 // Model: the type union documents the new kind.

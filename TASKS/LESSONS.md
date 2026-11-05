@@ -1435,3 +1435,11 @@ Last updated: 2026-10-23
   download calls; putting the checks in the overlay would make them untestable without a UI harness.
 - Skip neighbours that are already on disk and those without a download handle: an id of 0 reaches the
   download pipeline as an invalid request.
+
+## 255. A policy gate is only real if every caller passes its input
+
+- `TgsPlaybackPolicy.shouldPlay(visible, surface)` existed, but the player hardcoded `Timeline`, so a new
+  surface could never be gated differently. Adding `@Param surface` and passing it through is what makes
+  the second surface honest.
+- Rendering the animated node only for `index === currentIndex` keeps the player budget bounded without a
+  per-item visibility callback.

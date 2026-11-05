@@ -1,5 +1,11 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgInlineVideoView } from './TgInlineVideoView';
+import { TgTgsPlayer, TgsPlaybackSurface } from './TgTgsPlayer';
+import {
+  GALLERY_STICKER_MAX_FRACTION,
+  galleryStickerSize,
+  isTgsPath
+} from '../util/GalleryStickerLayout';
 import { TgIcon } from './TgIcon';
 import { MediaGalleryItem } from '../../../models/MediaGalleryItem';
 import { mediaGeometryTransitionId } from '../utils/TgMediaGeometryTransition';
@@ -278,6 +284,24 @@ export struct TgMediaGalleryPage {
     }
   }
 
+  // F6: an animated sticker plays only while it is the current page; neighbours keep the still frame.
+  @Builder
+  private buildStickerItem(item: MediaGalleryItem, index: number) {
+    if (this.hasFile(item.path) && isTgsPath(item.path as string) && index === this.currentIndex) {
+      TgTgsPlayer({
+        tgsPath: item.path as string,
+        fileId: item.fileId,
+        renderWidth: galleryStickerSize(item.width, item.height, this.galleryViewportWidth,
+          this.galleryViewportHeight).width,
+        renderHeight: galleryStickerSize(item.width, item.height, this.galleryViewportWidth,
+          this.galleryViewportHeight).height,
+        surface: TgsPlaybackSurface.StickerViewer
+      })
+    } else {
+      this.buildPhotoItem(item)
+    }
+  }
+
   @Builder
   private buildPhotoItem(item: MediaGalleryItem) {
     if (this.hasFile(item.path)) {
@@ -505,7 +529,9 @@ export struct TgMediaGalleryPage {
 
   @Builder
   private buildGalleryItemContent(item: MediaGalleryItem, index: number) {
-    if (item.type === 'photo' || item.type === 'sticker') {
+    if (item.type === 'sticker') {
+      this.buildStickerItem(item, index)
+    } else if (item.type === 'photo') {
       this.buildPhotoItem(item)
     } else {
       this.buildVideoItem(item, index)
