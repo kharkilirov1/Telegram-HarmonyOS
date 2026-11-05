@@ -21,6 +21,10 @@
       "value": "Не удалось открыть чат"
     },
     {
+      "name": "schedule_send_custom",
+      "value": "Дата и время"
+    },
+    {
       "name": "schedule_send_title",
       "value": "Отправить позже"
     },

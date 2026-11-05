@@ -26,11 +26,21 @@ function checkChain() {
 
   // The menu owner: controller method with two presets wired into the same send path.
   const composer = read('ui/pages/chat/ChatComposerController.ets');
+  const menuOwner = read('ui/pages/chat/ChatScheduledSendMenu.ets');
   assert.match(composer, /openScheduledSendMenu\(text: string, host: ChatComposerControllerHost\): void \{/);
-  assert.match(composer, /function schedulePresets\(nowMs: number\): number\[\] \{/);
-  assert.match(composer, /tomorrow\.setHours\(9, 0, 0, 0\);/);
-  assert.match(composer, /showActionMenu\(\{/);
-  assert.match(composer, /this\.handleSendMessage\(trimmed, host, seconds\);/);
+  assert.match(menuOwner, /export function schedulePresets\(nowMs: number\): number\[\] \{/);
+  assert.match(menuOwner, /tomorrow\.setHours\(9, 0, 0, 0\);/);
+  assert.match(menuOwner, /showActionMenu\(\{/);
+  assert.match(menuOwner, /send\(trimmed, seconds\);/);
+
+  // Custom date and time: system dialogs, past dates rejected.
+  assert.match(menuOwner, /export function pickScheduledDate\(host: ChatScheduledSendHost, text: string, send: SendScheduledText\): void \{/);
+  assert.match(menuOwner, /context\.showDatePickerDialog\(\{/);
+  assert.match(menuOwner, /context\.showTimePickerDialog\(\{/);
+  assert.match(menuOwner, /useMilitaryTime: true,/);
+  assert.match(menuOwner, /if \(seconds > Math\.floor\(Date\.now\(\) \/ 1000\)\) \{/);
+  assert.match(menuOwner, /buttons: \[b0, b1, b2\]/);
+  assert.match(menuOwner, /schedule_send_custom/);
 
   // Bridge: bindings call the controller directly (no Session delegate line).
   const bindings = read('ui/pages/chat/ChatScreenViewBindings.ets');

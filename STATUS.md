@@ -56,6 +56,11 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D21: произвольные дата и время (lead).** Меню «Отправить позже» получило третий пункт — системные
+  `showDatePickerDialog` + `showTimePickerDialog`; выбор, ушедший в прошлое, отклоняется, а не планируется молча.
+  Меню вынесено в отдельный owner-модуль `ChatScheduledSendMenu.ets` (контроллер остался на 577 строках вместо
+  переполнения 600), `ChatComposerControllerHost` расширен `ChatScheduledSendHost` — иначе ArkTS запрещает
+  структурную передачу host. Гейты: host **162/162**, оба smoke, hvigor OK, размер — PASS. Урок — №294.
 - **D21: «Отправить позже» из композера (lead).** Долгое нажатие на Send при наличии текста открывает меню с
   двумя пресетами («Через час», «Завтра в 9:00»); выбор уходит тем же путём отправки с `scheduledDateSeconds`,
   который доходит до `createSendMessageCommand` (сериализатор уже формировал `messageSchedulingStateSendAtDate`).

@@ -21,6 +21,10 @@
       "value": "Could not open the chat"
     },
     {
+      "name": "schedule_send_custom",
+      "value": "Date and time"
+    },
+    {
       "name": "schedule_send_title",
       "value": "Send later"
     },

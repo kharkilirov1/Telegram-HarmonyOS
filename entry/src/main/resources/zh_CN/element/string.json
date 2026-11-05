@@ -21,6 +21,10 @@
       "value": "无法打开聊天"
     },
     {
+      "name": "schedule_send_custom",
+      "value": "日期和时间"
+    },
+    {
       "name": "schedule_send_title",
       "value": "稍后发送"
     },

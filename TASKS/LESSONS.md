@@ -1758,3 +1758,12 @@ Last updated: 2026-10-23
 - A bridge is checked harder than a delegate: the gate derives the ViewBindings parameter names from
   `bridgeArguments` and executes the binding against a frozen payload, so the argument list has to be declared
   there, not inferred.
+
+## 294. Extending an interface is cheaper than converting a host
+
+- ArkTS has no structural typing: passing `ChatComposerControllerHost` where a smaller `ChatScheduledSendHost` is
+  expected fails, even when every member matches. The fix is to let the larger interface `extends` the smaller
+  one, not to build an adapter object.
+- The 600-line warn line is a real design pressure: the scheduled-send UI pushed `ChatComposerController` to 629,
+  so the menu and its dialogs moved to `ChatScheduledSendMenu.ets` (505th file) and the controller dropped to 577.
+  Extract at the warn line, not at the hard cap.

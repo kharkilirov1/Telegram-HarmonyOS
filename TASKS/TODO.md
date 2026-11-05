@@ -17,8 +17,8 @@ decision over 265 dirty paths) are closed by later work and stay in the archive 
 - [x] **Разблокировать `ChatScreenSession`.** Решено не сжатием, а мостом: `controllerBridges` в
   `test-chat-screen-decomposition` позволяют binding вызывать контроллер напрямую
   (`this.session.composerCtrl.method(text, this.session)`), без делегата сессии. Так сделан D21.
-- [ ] **D21 хвост:** произвольные дата/время (нужен date-picker sheet поверх `sendDate`), reschedule-жест,
-  witness на устройстве. Триггер: следующий срез по планировщику.
+- [ ] **D21 хвост:** reschedule-жест для уже запланированного сообщения (перенос даты из списка) и witness
+  на устройстве. Триггер: срез по планировщику или witness-сессия.
 - [ ] **D18 хвост: глобальный поиск по хэштегу.** В чате хэштег уже открывает поиск с запросом. Осталось:
   переход в глобальный поиск, когда чат не содержит результатов (нужен роут поиска), и witness.
   Триггер: срез по поиску.
