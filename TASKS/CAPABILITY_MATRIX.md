@@ -164,7 +164,7 @@
 
 | # | Возможность | Статус | Доказательство | iOS-референс | Связанные / шов |
 |---|---|---|---|---|---|
-| I1 | In-app уведомления | `partial` | Локальные уведомления: `notificationPolicy` (background + входящее + не активный чат + не mute; «Имя: превью», caption/медиа-fallback, лимит 160), `MessageNotificationBridge` (basic text, permission с деградацией, уникальные id), sink из EntryAbility в runtime после committed batch, foreground из `navigationUIState.applicationForeground`. Тап: wantAgent START_ABILITY с `parameters.chatId` (+ UPDATE_PRESENT_FLAG, деградация в уведомление без wantAgent), `chatOpenIntake` (валидация id, take/clear), EntryAbility `captureChatOpen` в onCreate/onNewWant, `MainTabsPage.consumeChatOpen` пушит чат (при неавторизованной сессии запрос сохраняется). Нет: inline reply, группировка, per-chat настройки, witness | `Notifications/MessageNotifications` | I2, H2 |
+| I1 | Уведомления | `partial` | Гейт (`shouldPublishMessageNotification`: фон, только входящие, не активный чат, mute), текст (title/body, лимит 160), мост (`NotificationKit`, wantAgent на чат, разрешение). Группировка: стабильный id на чат (`chatNotificationIds`, второе сообщение обновляет запись), `groupName`/`appMessageId`/`badgeNumber` из unread; `cancelForChat` при открытии чата, `cancelAll`. Inline reply: `NotificationUserInput` есть в SDK, но публичного API получения текста нет → недостижим. Нет: witness | `Notifications/MessageNotifications` | I2 |
 | I2 | Push-уведомления | `blocked` | нужен AGC/Push Kit | `Sources/Push*` | I3, I1 |
 | I3 | Inline reply из шторки | `missing` | нет | `Components/Calls`/push extension | I2 |
 | I4 | VoIP-звонки | `frozen` | — | `Components/Calls` | — |

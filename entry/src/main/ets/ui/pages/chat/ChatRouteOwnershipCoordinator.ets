@@ -1,5 +1,6 @@
 // Extracted chat-page behavior. The per-page session supplies this narrow port.
 
+import { getMessageNotificationBridge } from '../../../app/notifications/MessageNotificationBridge';
 import { StorageKeys } from '../../../app/bridge/AppStoreBridge';
 import { chatUIState, navigationUIState } from '../../../core/model/UIStateModels';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
@@ -77,6 +78,11 @@ export function syncOwnedChatContext(host: ChatRouteOwnershipCoordinatorPort): v
     if (navigationUIState.activeChatOwnerToken !== route.navigationToken) return;
     navigationUIState.activeChatId = ownedChatId;
     navigationUIState.activeChatTitle = ownedChatTitle;
+    // I1: a chat that is now on screen is read, so its notification must not linger.
+    try {
+      getMessageNotificationBridge().cancelForChat(ownedChatId).catch((): void => {});
+    } catch (_error) {
+    }
     chatUIState.activeChatId = ownedChatId;
     chatUIState.activeChatTitle = ownedChatTitle;
     AppStorage.set<number>(StorageKeys.ACTIVE_CHAT_ID, ownedChatId);

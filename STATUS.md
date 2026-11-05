@@ -56,6 +56,13 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **I1-notification-grouping (lead).** Уведомления чата больше не копятся: `notificationIdFor` держит
+  стабильный id на чат (новое сообщение заменяет запись), `groupName`/`appMessageId` из chatId,
+  `badgeNumber` из unread (`notificationBadgeNumber`), `cancelForChat` при открытии чата и `cancelAll`;
+  вызов в `ChatRouteOwnershipCoordinator` защищён от probe-окружений. Новая суита
+  `test-notification-grouping.cjs` (144-я): identity, бейдж, прежний гейт, мост, хук открытия. Гейты:
+  host **144/144**, оба smoke, hvigor BUILD SUCCESSFUL. Inline reply недостижим (нет публичного API
+  получения `NotificationUserInput`), witness не снят.
 - **A5-avatar-editor (lead).** Интерактивный редактор аватара: `AvatarImagePreparation.measure` (размер до
   декода), `prepare(context, uri, rect)` принимает кадр; `computeAvatarCropRectFromTransform`
   (cover-фит → исходные пиксели, зум 1–4 с клампом, pan с клампом, границы), `clampAvatarZoom`.

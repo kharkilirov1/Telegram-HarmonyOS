@@ -58,3 +58,28 @@ export function buildMessageNotificationContent(state: AppState, event: NewMessa
   content.body = truncate(body, NOTIFICATION_BODY_MAX_LENGTH);
   return content;
 }
+
+// I1: one notification per chat. The group name and the app message id are both derived from the chat id,
+// so a second message in the same chat replaces the previous notification instead of stacking, and the
+// system can group several chats together.
+export const NOTIFICATION_GROUP_PREFIX = 'telegram_chat_';
+
+export function notificationGroupName(chatId: number): string {
+  return chatId > 0 ? NOTIFICATION_GROUP_PREFIX + chatId.toString() : '';
+}
+
+export function notificationAppMessageId(chatId: number): string {
+  return chatId > 0 ? 'chat_' + chatId.toString() : '';
+}
+
+// Badge shows the chat's unread count so the group summary is meaningful.
+export function notificationBadgeNumber(state: AppState, chatId: number): number {
+  if (chatId === 0) {
+    return 0;
+  }
+  const chat = state.chats.chats.get(chatId);
+  if (chat === undefined || !Number.isFinite(chat.unreadCount) || chat.unreadCount <= 0) {
+    return 0;
+  }
+  return Math.floor(chat.unreadCount);
+}

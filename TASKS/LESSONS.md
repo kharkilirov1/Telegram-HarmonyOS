@@ -1476,3 +1476,11 @@ Last updated: 2026-10-23
   Panning then moves the crop by that ratio before clamping inside the image.
 - Measure the image before opening the editor; decoding at crop time keeps a camera photo from being
   fully materialized just to show its aspect ratio.
+
+## 260. Probe harnesses execute coordinator code without app singletons
+
+- Adding `getMessageNotificationBridge()` to a coordinator made the page-contract probes throw inside
+  `showOwnedChatRoute`, which surfaced as a wrong boolean rather than a missing dependency. Guard such
+  calls with try/catch so the probe path stays inert and production still cancels notifications.
+- A stable notification id per chat plus `groupName`/`appMessageId` gives replacement and grouping with
+  the same keys; the badge count belongs to the policy, not the adapter.

@@ -13,6 +13,9 @@ import { AnyAppEvent, NewMessageEvent } from '../../core/model/AppEvent';
 import {
   MessageNotificationContent,
   buildMessageNotificationContent,
+  notificationAppMessageId,
+  notificationBadgeNumber,
+  notificationGroupName,
   shouldPublishMessageNotification
 } from './notificationPolicy';
 
@@ -25,6 +28,7 @@ const NOTIFICATION_ID_BASE = 4200;
 export class MessageNotificationBridge implements MessageNotificationSink {
   private enabled: boolean = false;
   private nextNotificationId: number = NOTIFICATION_ID_BASE;
+  private chatNotificationIds: Map<number, number> = new Map<number, number>();
   // The chat currently on screen, so its new messages never produce a notification.
   private activeChatIdProvider: () => number = (): number => 0;
   private bundleName: string = '';
@@ -72,7 +76,7 @@ export class MessageNotificationBridge implements MessageNotificationSink {
         continue;
       }
       const content = buildMessageNotificationContent(state, messageEvent);
-      this.publish(content);
+      this.publish(state, content);
     }
   }
 
@@ -101,12 +105,52 @@ export class MessageNotificationBridge implements MessageNotificationSink {
     }
   }
 
-  private publish(content: MessageNotificationContent): void {
-    const notificationId = this.nextNotificationId;
+  // I1: the same chat reuses its notification id, so a burst of messages updates one entry.
+  private notificationIdFor(chatId: number): number {
+    const existing = this.chatNotificationIds.get(chatId);
+    if (existing !== undefined) {
+      return existing;
+    }
+    const id = this.nextNotificationId;
     this.nextNotificationId += 1;
+    this.chatNotificationIds.set(chatId, id);
+    return id;
+  }
+
+  // iOS clears a chat's notifications once the chat is open.
+  async cancelForChat(chatId: number): Promise<void> {
+    const id = this.chatNotificationIds.get(chatId);
+    if (id === undefined || !this.enabled) {
+      return;
+    }
+    this.chatNotificationIds.delete(chatId);
+    try {
+      await notificationManager.cancel(id);
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Cancelling a notification failed: %{public}s', String(error));
+    }
+  }
+
+  async cancelAll(): Promise<void> {
+    if (!this.enabled) {
+      return;
+    }
+    this.chatNotificationIds.clear();
+    try {
+      await notificationManager.cancelAll();
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Cancelling all notifications failed: %{public}s', String(error));
+    }
+  }
+
+  private publish(state: AppState, content: MessageNotificationContent): void {
+    const notificationId = this.notificationIdFor(content.chatId);
     this.buildChatWantAgent(content.chatId).then((agent: WantAgent | undefined): Promise<void> => {
       const request: notificationManager.NotificationRequest = {
         id: notificationId,
+        groupName: notificationGroupName(content.chatId),
+        appMessageId: notificationAppMessageId(content.chatId),
+        badgeNumber: notificationBadgeNumber(state, content.chatId),
         content: {
           notificationContentType: notificationManager.ContentType.NOTIFICATION_CONTENT_BASIC_TEXT,
           normal: {
