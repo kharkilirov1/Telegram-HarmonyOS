@@ -62,23 +62,28 @@ async function main() {
   assert.match(router, /onMessagePress: \(\): void => this\.onContactMessagePress\(\)/);
 
   const row = read('ui/pages/chat/TgChatTimelineRow.ets');
-  assert.match(row, /onContactMessagePress: \(\): void => \{\n      this\.bindings\.openContactProfile\(this\.entry\.message\.contactUserId\);/);
+  assert.match(row, /onContactMessagePress: \(\): void => \{\n      this\.bindings\.openContactChat\(this\.entry\.message\.contactUserId\);/);
   assert.match(row, /this\.bindings\.addContactCard\(this\.entry\.message\.contactFirstName, this\.entry\.message\.contactLastName,/);
 
   const ports = read('ui/pages/chat/ChatScreenViewPorts.ets');
-  assert.match(ports, /openContactProfile\(userId: number\): void;/);
+  assert.match(ports, /openContactChat\(userId: number\): void;/);
+  assert.match(ports, /createChatRouteParams\(chatId: number, chatTitle: string\)/);
   assert.match(ports, /addContactCard\(firstName: string, lastName: string, phoneNumber: string\): void;/);
 
   const bindings = read('ui/pages/chat/ChatScreenViewBindings.ets');
-  assert.match(bindings, /openContactProfile\(userId: number\): void \{ this\.session\.openContactProfile\(userId\); \}/);
+  assert.match(bindings, /openContactChat\(userId: number\): void \{ this\.session\.openContactChat\(userId\); \}/);
   assert.match(bindings, /this\.session\.addContactCard\(firstName, lastName, phoneNumber\);/);
   // The page-contract gate requires the callbacks to be Session delegates.
   const session = read('ui/pages/chat/ChatScreenSession.ets');
-  assert.match(session, /openContactProfile\(userId: number\): void \{ delegateOpenContactProfile\(this, userId\); \}/);
+  assert.match(session, /openContactChat\(userId: number\): void \{ delegateOpenContactChat\(this, userId\); \}/);
   assert.match(session, /addContactCard\(firstName: string, lastName: string, phoneNumber: string\): void \{ delegateAddContactCard\(this, firstName, lastName, phoneNumber\); \}/);
   const actions = read('ui/pages/chat/ChatContactCardActions.ets');
-  assert.match(actions, /export function openContactProfile\(host: ChatContactCardPort, userId: number\): void \{/);
-  assert.match(actions, /host\.pageStack\.pushPathByName\(PROFILE_ROUTE, new ProfileRouteParams\(0, userId\)\);/);
+  assert.match(actions, /export function openContactChat\(host: ChatContactCardPort, userId: number\): void \{/);
+// The Message button resolves the private chat and pushes the chat route, like iOS.
+  assert.match(actions, /createPrivateChatUseCase\(getTdGatewayAdapter\(\)\)\.execute\(userId\)/);
+  assert.match(actions, /host\.createChatRouteParams\(chat\.id, chat\.title\)/);
+  assert.match(actions, /pushChatScreenRoute\(params, host\.pageStack, runtime\.getStore\(\)\)/);
+  assert.match(actions, /contact_card_open_failed/);
   assert.match(actions, /export function addContactCard\(host: ChatContactCardPort, firstName: string, lastName: string,/);
   assert.match(actions, /requestPermissionsFromUser\(context, CONTACT_WRITE_PERMISSIONS\)/);
   assert.match(actions, /saveContactToDevice\(firstName, lastName, phoneNumber\)/);
@@ -86,6 +91,8 @@ async function main() {
   assert.match(actions, /contact_card_added/);
   assert.match(actions, /contact_card_add_failed/);
   assert.ok(session.split('\n').length <= 500, 'the session owner stays within the line budget');
+  const pageContract = fs.readFileSync(path.join(__dirname, 'chat-screen-source.cjs'), 'utf8');
+  assert.match(pageContract, /openContactChat: \['userId'\]/);
 
   // Manifest permission ----------------------------------------------------------------------------
   const manifest = fs.readFileSync(path.join(root, '..', 'module.json5'), 'utf8');
@@ -94,7 +101,7 @@ async function main() {
 
   for (const locale of ['base', 'ru_RU', 'zh_CN']) {
     const strings = JSON.parse(readResource(`${locale}/element/string.json`)).string;
-    for (const name of ['contact_card_message', 'contact_card_add', 'contact_card_add_denied',
+    for (const name of ['contact_card_message', 'contact_card_add', 'contact_card_open_failed', 'contact_card_add_denied',
       'contact_card_added', 'contact_card_add_failed', 'permission_contacts_reason']) {
       assert.ok(strings.find((item) => item.name === name), `${locale} ships ${name}`);
     }

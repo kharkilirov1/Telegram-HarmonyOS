@@ -1,30 +1,45 @@
-// D26: contact card actions. The card's Message button opens the known user's profile; Add Contact writes
-// the card into the device address book after one permission prompt.
+// D26: contact card actions. The card's Message button resolves the user's private chat and pushes it, the
+// way iOS opens the conversation; Add Contact writes the card into the device address book after one
+// permission prompt.
 
 import { abilityAccessCtrl, common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { localized } from '../../../core/utils/AppResource';
+import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
+import { createPrivateChatUseCase } from '../../../domain/usecases/createPrivateChat';
+import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { CONTACT_WRITE_PERMISSIONS, saveContactToDevice } from '../../../infra/contacts/DeviceContacts';
-import { ProfileRouteParams } from '../profile/TgProfilePage';
+import { ChatScreenRouteParams } from './ChatScreenRouteParams';
+import { pushChatScreenRoute } from './ChatOpenTransaction';
 
 const DOMAIN = 0x00D26;
 const TAG = 'ContactCard';
-const PROFILE_ROUTE = 'TgProfilePage';
 
 export interface ChatContactCardPort {
   pageStack: NavPathStack;
   getChatUIContext(): UIContext;
+  createChatRouteParams(chatId: number, chatTitle: string): ChatScreenRouteParams | undefined;
 }
 
-export function openContactProfile(host: ChatContactCardPort, userId: number): void {
+export function openContactChat(host: ChatContactCardPort, userId: number): void {
   if (userId <= 0) {
     return;
   }
-  try {
-    host.pageStack.pushPathByName(PROFILE_ROUTE, new ProfileRouteParams(0, userId));
-  } catch (error) {
-    hilog.error(DOMAIN, TAG, 'Opening the contact profile failed: %{public}s', String(error));
-  }
+  const runtime = getAppCoreRuntime();
+  createPrivateChatUseCase(getTdGatewayAdapter()).execute(userId)
+    .then((chat) => {
+      const params = host.createChatRouteParams(chat.id, chat.title);
+      if (params === undefined) {
+        return;
+      }
+      pushChatScreenRoute(params, host.pageStack, runtime.getStore());
+    })
+    .catch((error: Error) => {
+      hilog.error(DOMAIN, TAG, 'Opening the contact chat failed: %{public}s', String(error));
+      host.getChatUIContext().getPromptAction().showToast({
+        message: localized($r('app.string.contact_card_open_failed').id, 'Could not open the chat')
+      });
+    });
 }
 
 export function addContactCard(host: ChatContactCardPort, firstName: string, lastName: string,

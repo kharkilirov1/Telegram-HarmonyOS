@@ -10,7 +10,7 @@ const manifest = require('./chat-screen-probe-signatures.cjs');
 // contract as the original method manifest. Do not infer it from the call body.
 const eventArguments = {
   // D26: contact card actions.
-  openContactProfile: ['userId'],
+  openContactChat: ['userId'],
   addContactCard: ['firstName', 'lastName', 'phoneNumber'],
   getComposerInputRevision: [],
   removePendingPhoto: ['uri'],

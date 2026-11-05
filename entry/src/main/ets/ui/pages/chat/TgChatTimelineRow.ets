@@ -177,7 +177,7 @@ export struct TgChatTimelineRow {
         contactLastName: this.entry.message.contactLastName,
         contactPhoneNumber: this.entry.message.contactPhoneNumber,
     onContactMessagePress: (): void => {
-      this.bindings.openContactProfile(this.entry.message.contactUserId);
+      this.bindings.openContactChat(this.entry.message.contactUserId);
     },
     onContactAddPress: (): void => {
       this.bindings.addContactCard(this.entry.message.contactFirstName, this.entry.message.contactLastName,

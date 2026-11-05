@@ -1687,3 +1687,12 @@ Last updated: 2026-10-23
 - Mutant harnesses pass their own per-module mocks, so a shared loader that resolves children by itself runs
   production code where the harness expected a fixture: the two suites still fail on behaviour, not syntax.
   They need the `source` hook plus their explicit dependency map, which is a dedicated migration each.
+
+## 286. Reuse the route transaction, not a raw push
+
+- Opening a chat from inside the chat screen must go through `pushChatScreenRoute`, which owns the navigation
+  lock, the active-chat state and the rollback on a throwing push. A direct `pushPathByName` would leave a
+  stale active chat and swallow the next tap.
+- The gateway type matters: `AppCoreRuntime.getGateway()` returns `TdGateway`, while use cases need the
+  `TdGatewayPort` adapter, and ArkTS refuses structural typing — use `getTdGatewayAdapter()` as the compose and
+  settings pages do.

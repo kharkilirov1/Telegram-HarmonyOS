@@ -6,6 +6,7 @@ import { StickerCellVO } from '../../tg_ui/atoms/TgComposerStickerPanel';
 import { TgPinnedMessageListItem } from '../../tg_ui/atoms/TgPinnedMessageList';
 import { ChatTimelineEntryVO } from './ChatTimelineVO';
 import { ChatMessageActionItem } from './ChatMessageActionsController';
+import { ChatScreenRouteParams } from './ChatScreenRouteParams';
 
 export interface ChatMessageActionsPopupPort {
   handleMessageActionPress(item: ChatMessageActionItem): void;
@@ -31,7 +32,8 @@ export interface ChatTimelineRowPort extends ChatMessageActionsPopupPort {
   handleDocumentTap(documentPath: string, documentFileId: number, mimeType: string, messageId?: string ): void;
   handleMediaGalleryOpen(messageId: string): void;
   // D26: contact card actions.
-  openContactProfile(userId: number): void;
+  openContactChat(userId: number): void;
+  createChatRouteParams(chatId: number, chatTitle: string): ChatScreenRouteParams | undefined;
   addContactCard(firstName: string, lastName: string, phoneNumber: string): void;
   toggleMessageReaction(messageId: string, key: string): void;
   // S5b (C9): tap in selection mode toggles this row instead of opening the actions menu.

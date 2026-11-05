@@ -17,6 +17,10 @@
       "value": "Contacts access is off"
     },
     {
+      "name": "contact_card_open_failed",
+      "value": "Could not open the chat"
+    },
+    {
       "name": "contact_card_added",
       "value": "Contact added"
     },

@@ -56,6 +56,12 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D26 «Написать» из карточки контакта (lead).** Кнопка Message больше не открывает профиль: резолвится
+  личный чат (`createPrivateChatUseCase(getTdGatewayAdapter()).execute(userId)`), строятся параметры
+  маршрута через уже существующий `Session.createChatRouteParams` и выполняется `pushChatScreenRoute`, то есть
+  тот же транзакционный переход, что из списка чатов (навигационные блокировки/откат состояния). Ошибка
+  показывает тост `contact_card_open_failed` (base/ru/zh). Профиль по-прежнему открывается тапом по аватару.
+  Гейты: host **159/159**, оба smoke, hvigor BUILD SUCCESSFUL, гейт размера — PASS. Урок — №286.
 - **Загрузчик суит: доводка под мутирующие харнессы (lead).** Добавлены `source`-хук (харнесс может
   подставить пропатченный исходник по абсолютному пути), корректный резолв путей с `../` (раньше срезались
   все ведущие точки и `../../ohosTest/...` не находился) и распознавание `export default function name()`

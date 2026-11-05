@@ -8,6 +8,7 @@ import { ChatTimelineDataSource } from './ChatTimelineDataSource';
 import { ChatTimelineEntryVO } from './ChatTimelineVO';
 import { ChatMessageActionItem } from './ChatMessageActionsController';
 import { ChatScreenSession } from './ChatScreenSession';
+import { ChatScreenRouteParams } from './ChatScreenRouteParams';
 import { ChatMessageActionsPopupPort, ChatTimelineRowPort, ChatTimelineViewportPort, ChatKeyboardPanelsPort, ChatComposerDockPort, ChatPinnedOverlayPort, ChatMediaOverlayPort, ChatScreenPagePort } from './ChatScreenViewPorts';
 
 export class ChatScreenViewBindings implements ChatMessageActionsPopupPort, ChatTimelineRowPort, ChatTimelineViewportPort, ChatKeyboardPanelsPort, ChatComposerDockPort, ChatPinnedOverlayPort, ChatMediaOverlayPort, ChatScreenPagePort {
@@ -124,7 +125,8 @@ export class ChatScreenViewBindings implements ChatMessageActionsPopupPort, Chat
   openProfile(): void { this.session.openProfile(); }
 
   // D26: contact card actions live in ChatContactCardActions; the bindings only forward.
-  openContactProfile(userId: number): void { this.session.openContactProfile(userId); }
+  openContactChat(userId: number): void { this.session.openContactChat(userId); }
+  createChatRouteParams(chatId: number, chatTitle: string): ChatScreenRouteParams | undefined { return this.session.createChatRouteParams(chatId, chatTitle); }
 
   addContactCard(firstName: string, lastName: string, phoneNumber: string): void { this.session.addContactCard(firstName, lastName, phoneNumber); }
   openSearch(): void { this.session.openSearch(); }

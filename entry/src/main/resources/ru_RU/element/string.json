@@ -17,6 +17,10 @@
       "value": "Доступ к контактам выключен"
     },
     {
+      "name": "contact_card_open_failed",
+      "value": "Не удалось открыть чат"
+    },
+    {
       "name": "contact_card_added",
       "value": "Контакт добавлен"
     },

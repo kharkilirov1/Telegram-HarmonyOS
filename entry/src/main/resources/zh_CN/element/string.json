@@ -17,6 +17,10 @@
       "value": "通讯录权限已关闭"
     },
     {
+      "name": "contact_card_open_failed",
+      "value": "无法打开聊天"
+    },
+    {
       "name": "contact_card_added",
       "value": "已添加联系人"
     },
