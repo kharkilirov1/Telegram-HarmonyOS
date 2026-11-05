@@ -56,6 +56,12 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **Загрузчик суит: доводка под мутирующие харнессы (lead).** Добавлены `source`-хук (харнесс может
+  подставить пропатченный исходник по абсолютному пути), корректный резолв путей с `../` (раньше срезались
+  все ведущие точки и `../../ohosTest/...` не находился) и распознавание `export default function name()`
+  (иначе харнесс экспортировал пустоту). Проверено на `basic-group-access`/`basic-group-media`: они теперь
+  доходят до ассертов, но падают на поведении — их моки рассчитаны на явный `deps` для каждого модуля.
+  Откачены, host **159/159**. Урок — №285.
 - **Сплит AppCommand: отрицательный результат (lead).** Вынес 21 класс команд + 2 payload-хелпера в
   `commands/MessageCommands.ets` и `SessionCommands.ets` (-127 строк, сборка зелёная), но 15 суит упали с
   `EditMessageTextPayload is not defined`: их харнессы исполняют сниппеты с `{...C}` и ждут весь экспорт

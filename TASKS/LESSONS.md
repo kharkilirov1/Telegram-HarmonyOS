@@ -1677,3 +1677,13 @@ Last updated: 2026-10-23
 - Consequence: the command inventory can only be split after every suite runs on the shared loader, and the
   loader needs a `source` hook to serve the mutation harnesses. The experiment was reverted and the budget
   map kept, so AppCommand stays pinned at 2599.
+
+## 285. Loader features discovered by migrating the mutant harnesses
+
+- `export default function name()` keeps its name for callers that import the default identifier, so the
+  export scan has to cover the default form separately; otherwise the harness exports nothing callable.
+- Relative paths may climb out of the base (`../../ohosTest/...`). Stripping every leading dot turned that
+  into a lookup inside the base and failed with "cannot resolve"; only a leading `./` may be dropped.
+- Mutant harnesses pass their own per-module mocks, so a shared loader that resolves children by itself runs
+  production code where the harness expected a fixture: the two suites still fail on behaviour, not syntax.
+  They need the `source` hook plus their explicit dependency map, which is a dedicated migration each.

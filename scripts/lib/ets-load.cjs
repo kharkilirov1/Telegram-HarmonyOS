@@ -17,6 +17,8 @@ const SIDE_EFFECT_IMPORT = /^import\s+['"][^'"]+['"];?\s*$/gm;
 const EXPORT_FROM_PATTERN = /^export\s*\{([\s\S]*?)\}\s*from\s*['"]([^'"]+)['"];?\s*$/gm;
 const EXPORT_LIST_PATTERN = /^export\s*\{([^}]*)\};?\s*$/gm;
 const DECLARATION_PATTERN = /^export\s+(?:async\s+)?(class|function|enum|const|let|type|interface)\s+(\w+)/gm;
+// "export default function name()" keeps its name for callers that import the default by identifier.
+const DEFAULT_DECLARATION_PATTERN = /^export\s+default\s+(?:async\s+)?(class|function)\s+(\w+)/gm;
 const MEMBER_BASE_PATTERN = /\b([A-Z][A-Za-z0-9_]*)\./g;
 
 const NATIVE_GLOBALS = new Set([
@@ -54,13 +56,15 @@ function bindingNames(binding) {
   return [{ imported: 'default', local: trimmed }];
 }
 
-function createLoader(baseDirectory) {
+function createLoader(baseDirectory, options = {}) {
   const cache = new Map();
   const inFlight = new Set();
 
   function resolvePath(relative) {
+    // Relative paths may climb out of the base (../../ohosTest/...), so only a leading "./" is dropped.
+    const normalized = relative.startsWith('./') ? relative.slice(2) : relative;
     const candidates = [
-      path.resolve(baseDirectory, relative.replace(/^[./\\]+/, '')),
+      path.resolve(baseDirectory, normalized),
       path.resolve(baseDirectory, relative)
     ];
     for (const candidate of candidates) {
@@ -76,7 +80,8 @@ function createLoader(baseDirectory) {
     if (inFlight.has(absolute)) return {};
     inFlight.add(absolute);
     try {
-      const source = fs.readFileSync(absolute, 'utf8').replaceAll('\r\n', '\n');
+      const defaultSource = fs.readFileSync(absolute, 'utf8').replaceAll('\r\n', '\n');
+      const source = typeof options.source === 'function' ? options.source(absolute, defaultSource) : defaultSource;
       const directory = path.dirname(absolute);
       const resolved = {};
       const external = new Set();
@@ -144,6 +149,9 @@ function createLoader(baseDirectory) {
       const declared = [...source.matchAll(DECLARATION_PATTERN)]
         .filter((match) => match[1] !== 'type' && match[1] !== 'interface')
         .map((match) => match[2]);
+      for (const match of source.matchAll(DEFAULT_DECLARATION_PATTERN)) {
+        if (!declared.includes(match[2])) declared.push(match[2]);
+      }
 
       // Locals matter as much as exports: COMMAND_SERIALIZATION_HANDLERS.set(...) is a declaration, not an
       // ambient global, and injecting a stub for it would collide with the module's own const.
