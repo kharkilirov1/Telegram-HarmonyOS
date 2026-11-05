@@ -176,6 +176,13 @@ export struct TgChatTimelineRow {
         contactFirstName: this.entry.message.contactFirstName,
         contactLastName: this.entry.message.contactLastName,
         contactPhoneNumber: this.entry.message.contactPhoneNumber,
+    onContactMessagePress: (): void => {
+      this.bindings.openContactProfile(this.entry.message.contactUserId);
+    },
+    onContactAddPress: (): void => {
+      this.bindings.addContactCard(this.entry.message.contactFirstName, this.entry.message.contactLastName,
+        this.entry.message.contactPhoneNumber);
+    },
         contactUserId: this.entry.message.contactUserId,
         locationLatitude: this.entry.message.locationLatitude,
         locationLongitude: this.entry.message.locationLongitude,

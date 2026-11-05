@@ -3,6 +3,7 @@
 
 import { TgUiTokens } from '../tokens/TgUiTokens';
 import { TgAvatar } from './TgAvatar';
+import { localized } from '../../../core/utils/AppResource';
 
 @ComponentV2
 export struct TgContactBubble {
@@ -11,6 +12,8 @@ export struct TgContactBubble {
   @Param phoneNumber: string = '';
   @Param contactUserId: number = 0;
   @Param isOutgoing: boolean = false;
+  @Event onMessagePress: () => void = () => {};
+  @Event onAddContactPress: () => void = () => {};
 
   private displayName(): string {
     const full = (this.firstName + ' ' + this.lastName).trim();
@@ -68,24 +71,35 @@ export struct TgContactBubble {
 
       // Action buttons row (iOS: Message + Add Contact)
       Row() {
-        Text('Message')
-          .fontSize(14)
-          .fontColor(TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT)
+        Text(localized($r('app.string.contact_card_message').id, 'Message'))
+          .fontSize(TgUiTokens.FONT_META_SIZE)
+          .fontColor(this.contactUserId > 0 ? TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT : TgUiTokens.COLOR_TEXT_PREVIEW)
           .textAlign(TextAlign.Center)
           .layoutWeight(1)
-          .height(33)
+          .height(TgUiTokens.CONTACT_CARD_ACTION_HEIGHT)
+          .onClick((): void => {
+            if (this.contactUserId > 0) {
+              this.onMessagePress();
+            }
+          })
 
         Row()
           .width(0.5)
           .height(20)
           .backgroundColor(TgUiTokens.COLOR_SEPARATOR)
 
-        Text('Add Contact')
-          .fontSize(14)
-          .fontColor(TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT)
+        Text(localized($r('app.string.contact_card_add').id, 'Add Contact'))
+          .fontSize(TgUiTokens.FONT_META_SIZE)
+          .fontColor(this.phoneNumber.length > 0 ? TgUiTokens.CHAT_TOP_BAR_SUBTITLE_ACCENT
+            : TgUiTokens.COLOR_TEXT_PREVIEW)
           .textAlign(TextAlign.Center)
           .layoutWeight(1)
-          .height(33)
+          .height(TgUiTokens.CONTACT_CARD_ACTION_HEIGHT)
+          .onClick((): void => {
+            if (this.phoneNumber.length > 0) {
+              this.onAddContactPress();
+            }
+          })
       }
       .width('100%')
       .alignItems(VerticalAlign.Center)

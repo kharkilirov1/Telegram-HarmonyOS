@@ -1,6 +1,30 @@
 {
   "string": [
     {
+      "name": "permission_contacts_reason",
+      "value": "Add a received contact to the address book"
+    },
+    {
+      "name": "contact_card_message",
+      "value": "Message"
+    },
+    {
+      "name": "contact_card_add",
+      "value": "Add Contact"
+    },
+    {
+      "name": "contact_card_add_denied",
+      "value": "Contacts access is off"
+    },
+    {
+      "name": "contact_card_added",
+      "value": "Contact added"
+    },
+    {
+      "name": "contact_card_add_failed",
+      "value": "Could not add the contact"
+    },
+    {
       "name": "document_no_viewer",
       "value": "No app can open this file"
     },

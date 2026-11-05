@@ -136,6 +136,14 @@
       },
       {
         "name": "ohos.permission.VIBRATE"
+      },
+      {
+        "name": "ohos.permission.WRITE_CONTACTS",
+        "reason": "$string:permission_contacts_reason",
+        "usedScene": {
+          "abilities": ["EntryAbility"],
+          "when": "inuse"
+        }
       }
     ]
   }

@@ -2,10 +2,13 @@
 // app only receives the entries the user picked.
 
 import { contact } from '@kit.ContactsKit';
+import { Permissions } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN = 0x00D26;
 const TAG = 'DeviceContacts';
+
+export const CONTACT_WRITE_PERMISSIONS: Permissions[] = ['ohos.permission.WRITE_CONTACTS'];
 
 export class PickedContact {
   phoneNumber: string = '';
@@ -35,6 +38,34 @@ export function toPickedContact(name: string, givenName: string, familyName: str
   picked.firstName = givenName.trim().length > 0 ? givenName.trim() : split[0];
   picked.lastName = familyName.trim().length > 0 ? familyName.trim() : split[1];
   return picked;
+}
+
+// Writes a card into the device address book. The caller owns the permission prompt.
+export async function saveContactToDevice(firstName: string, lastName: string,
+  phoneNumber: string): Promise<boolean> {
+  const given = firstName.trim();
+  const family = lastName.trim();
+  const phone = phoneNumber.trim();
+  if (phone.length === 0 || (given.length === 0 && family.length === 0)) {
+    return false;
+  }
+  try {
+    const card: contact.Contact = {
+      name: { fullName: (given + ' ' + family).trim() },
+      phoneNumbers: [{ phoneNumber: phone }]
+    };
+    if (given.length > 0) {
+      card.name = { fullName: (given + ' ' + family).trim(), givenName: given };
+    }
+    if (family.length > 0 && card.name !== undefined) {
+      card.name.familyName = family;
+    }
+    await contact.addContact(card);
+    return true;
+  } catch (error) {
+    hilog.info(DOMAIN, TAG, 'Adding a contact failed: %{public}s', String(error));
+    return false;
+  }
 }
 
 // Resolves undefined when the user cancels the picker or the entry has no phone number.

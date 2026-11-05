@@ -1,6 +1,30 @@
 {
   "string": [
     {
+      "name": "permission_contacts_reason",
+      "value": "Добавляет полученный контакт в адресную книгу"
+    },
+    {
+      "name": "contact_card_message",
+      "value": "Написать"
+    },
+    {
+      "name": "contact_card_add",
+      "value": "Добавить контакт"
+    },
+    {
+      "name": "contact_card_add_denied",
+      "value": "Доступ к контактам выключен"
+    },
+    {
+      "name": "contact_card_added",
+      "value": "Контакт добавлен"
+    },
+    {
+      "name": "contact_card_add_failed",
+      "value": "Не удалось добавить контакт"
+    },
+    {
       "name": "document_no_viewer",
       "value": "Нет приложения для открытия этого файла"
     },

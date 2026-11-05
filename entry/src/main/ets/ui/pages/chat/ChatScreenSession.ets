@@ -29,6 +29,7 @@ import { CustomEmojiTextEntity } from '../../../core/model/AppCommand';
 import { MediaGalleryItem } from '../../../models/MediaGalleryItem';
 import { uiObserver } from '@kit.ArkUI';
 import { ChatScreenContext } from './ChatScreenContext';
+import { openContactProfile as delegateOpenContactProfile, addContactCard as delegateAddContactCard } from './ChatContactCardActions';
 import { ChatScreenViewState } from './ChatScreenViewState';
 import { ChatScreenSessionPorts } from './ChatScreenSessionPorts';
 import { toggleMessageReaction as delegateToggleMessageReaction } from './ChatReactionController';
@@ -187,11 +188,8 @@ import {
 } from './ChatScreenViewEventHandlers';
 const PROGRAMMATIC_SCROLL_GUARD_MS = 320;
 export class ChatScreenSession extends ChatScreenContext implements ChatScreenSessionPorts {
-  constructor(
-    view: ChatScreenViewState,
-    uiContextCallback: () => UIContext,
-    queryNavigationInfoCallback: () => uiObserver.NavigationInfo | undefined
-  ) {
+  constructor(view: ChatScreenViewState, uiContextCallback: () => UIContext,
+    queryNavigationInfoCallback: () => uiObserver.NavigationInfo | undefined) {
     super(view, uiContextCallback, queryNavigationInfoCallback);
   }
   getActiveChatId(): number { return delegateGetActiveChatId(this); }
@@ -478,6 +476,8 @@ export class ChatScreenSession extends ChatScreenContext implements ChatScreenSe
   restoreDraftFromChat(): void { delegateRestoreDraftFromChat(this); }
   scheduleDraftDebounce(): void { delegateScheduleDraftDebounce(this); }
   openProfile(): void { delegateOpenProfile(this); }
+  openContactProfile(userId: number): void { delegateOpenContactProfile(this, userId); }
+  addContactCard(firstName: string, lastName: string, phoneNumber: string): void { delegateAddContactCard(this, firstName, lastName, phoneNumber); }
   handleBackPress(): void { delegateHandleBackPress(this); }
   bindNavigationStack(): NavPathStack | undefined { return delegateBindNavigationStack(this); }
   scheduleHistoryLoad(chatId: number, attempt: number): void { delegateScheduleHistoryLoad(this, chatId, attempt); }

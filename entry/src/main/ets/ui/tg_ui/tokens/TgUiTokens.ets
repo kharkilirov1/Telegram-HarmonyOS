@@ -1285,6 +1285,7 @@ export class TgUiTokens {
   static readonly GLASS_SPECULAR_BOTTOM: string = '#00FFFFFF';
 
   // ── Contact row (Phase E-1) ──
+  static readonly CONTACT_CARD_ACTION_HEIGHT: number = 33;
   static readonly CONTACT_ROW_HEIGHT: number = 56;
   static readonly CONTACT_ROW_AVATAR_SIZE: number = 40;
   static readonly CONTACT_ROW_PADDING_H: number = 16;

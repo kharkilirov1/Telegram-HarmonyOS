@@ -56,6 +56,14 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D26-card-actions (lead).** Карточка контакта перестала быть декоративной: кнопки «Написать» и
+  «Добавить контакт» локализованы и работают. `ChatContactCardActions` (owner-модуль) открывает профиль
+  известного пользователя и пишет карточку в адресную книгу после одного запроса `WRITE_CONTACTS` с
+  тостами «добавлено / отказ / ошибка»; в манифест добавлено разрешение с reason. Кнопки гаснут, когда
+  userId или номер пусты. Поведение вынесено в Session-делегаты (`openContactProfile`, `addContactCard`),
+  контракт событий и счётчик делегатов обновлены, Session удержан в 500 строках. Новая суита
+  `test-contact-card.cjs` (158-я): запись в адресную книгу, кнопки, роутер, строка, порт, делегаты, манифест,
+  строки. Гейты: host **158/158**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **D26-send-contact (lead).** Плитка Contact в меню вложений заработала: `DeviceContacts` (системный
   пикер `contact.selectContacts`, без запроса разрешений, нормализация имени в first/last и отказ для
   записи без номера), `SendContactUseCase` (проверка номера 5..32 символов с ≥5 цифрами и имени),

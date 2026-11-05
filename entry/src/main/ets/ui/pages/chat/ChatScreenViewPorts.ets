@@ -30,6 +30,9 @@ export interface ChatTimelineRowPort extends ChatMessageActionsPopupPort {
   handleAudioTap(audioPath: string, audioFileId: number, mimeType: string, messageId?: string ): void;
   handleDocumentTap(documentPath: string, documentFileId: number, mimeType: string, messageId?: string ): void;
   handleMediaGalleryOpen(messageId: string): void;
+  // D26: contact card actions.
+  openContactProfile(userId: number): void;
+  addContactCard(firstName: string, lastName: string, phoneNumber: string): void;
   toggleMessageReaction(messageId: string, key: string): void;
   // S5b (C9): tap in selection mode toggles this row instead of opening the actions menu.
   toggleMessageSelection(messageId: string): void;

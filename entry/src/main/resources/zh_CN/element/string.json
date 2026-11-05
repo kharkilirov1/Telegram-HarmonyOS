@@ -1,6 +1,30 @@
 {
   "string": [
     {
+      "name": "permission_contacts_reason",
+      "value": "将收到的联系人添加到通讯录"
+    },
+    {
+      "name": "contact_card_message",
+      "value": "发消息"
+    },
+    {
+      "name": "contact_card_add",
+      "value": "添加联系人"
+    },
+    {
+      "name": "contact_card_add_denied",
+      "value": "通讯录权限已关闭"
+    },
+    {
+      "name": "contact_card_added",
+      "value": "已添加联系人"
+    },
+    {
+      "name": "contact_card_add_failed",
+      "value": "无法添加联系人"
+    },
+    {
       "name": "document_no_viewer",
       "value": "没有可打开此文件的应用"
     },

@@ -122,6 +122,11 @@ export class ChatScreenViewBindings implements ChatMessageActionsPopupPort, Chat
   messageActionsPopupWidth(): number { return this.session.messageActionsPopupWidth(); }
   openChannelShare(entry: ChatTimelineEntryVO): void { this.session.messageActionsCtrl.openForwardTargetPickerForEntry(entry, this.session); }
   openProfile(): void { this.session.openProfile(); }
+
+  // D26: contact card actions live in ChatContactCardActions; the bindings only forward.
+  openContactProfile(userId: number): void { this.session.openContactProfile(userId); }
+
+  addContactCard(firstName: string, lastName: string, phoneNumber: string): void { this.session.addContactCard(firstName, lastName, phoneNumber); }
   openSearch(): void { this.session.openSearch(); }
   openStickerSettings(): void { this.session.openStickerSettings(); }
   pinnedMessageListItems(): TgPinnedMessageListItem[] { return this.session.pinnedMessageListItems(); }

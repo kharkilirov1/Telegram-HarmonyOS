@@ -195,6 +195,8 @@ export struct TgMessageRouter {
   @Param contactFirstName: string = '';
   @Param contactLastName: string = '';
   @Param contactPhoneNumber: string = '';
+  @Event onContactMessagePress: () => void = () => {};
+  @Event onContactAddPress: () => void = () => {};
   @Param contactUserId: number = 0;
 
   // ── Location ──
@@ -1313,7 +1315,9 @@ export struct TgMessageRouter {
               lastName: this.contactLastName,
               phoneNumber: this.contactPhoneNumber,
               contactUserId: this.contactUserId,
-              isOutgoing: this.isOutgoing
+              isOutgoing: this.isOutgoing,
+              onMessagePress: (): void => this.onContactMessagePress(),
+              onAddContactPress: (): void => this.onContactAddPress()
             })
             Row() {
               this.buildInlineMeta(false)
