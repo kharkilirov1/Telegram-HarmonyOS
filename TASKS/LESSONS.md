@@ -1631,3 +1631,12 @@ Last updated: 2026-10-23
   every entry must still point at an existing file.
 - The line count must ignore the trailing newline, or every file reads one line larger than the editor shows
   and every budget is off by one.
+
+## 280. A split is only green if the harness can follow imports
+
+- Moving story commands out of `AppCommand.ets` compiled, but 53 of 99 host suites failed with
+  `ReferenceError`: every suite has its own `load()` that strips `import`/`export` and evaluates the file in
+  isolation, so re-exported names simply do not exist there. Build green proves nothing about this boundary.
+- God-file splits therefore need a shared module loader (resolve local imports, cache modules) before they can
+  land. Until then the size gate still prevents growth, and every split must be verified with the full suite
+  runner, not the build.
