@@ -23,7 +23,7 @@ import { ChatStickerSearchController } from './ChatStickerSearchController';
 import { PendingSharedMediaAction } from './PendingSharedMediaActionSignal';
 import { SendMessageUseCase } from '../../../domain/usecases/sendMessage';
 import { StickerPanelUseCase } from '../../../domain/usecases/stickerPanel';
-import { StickerPackUseCase } from '../../../domain/usecases/stickerPack';
+import { StickerPackUseCase, StickerPackSticker } from '../../../domain/usecases/stickerPack';
 import { SendMediaMessageUseCase } from '../../../domain/usecases/sendMediaMessage';
 import { EditMessageUseCase } from '../../../domain/usecases/editMessage';
 import { DeleteMessagesUseCase } from '../../../domain/usecases/deleteMessages';
@@ -398,6 +398,10 @@ export class ChatScreenContext {
   set gallerySourceMessageId(value: string) { this.view.media.gallerySourceMessageId = value; }
   get stickerPackSetId(): string { return this.view.media.stickerPackSetId; }
   set stickerPackSetId(value: string) { this.view.media.stickerPackSetId = value; }
+  get stickerPackStickers(): StickerPackSticker[] { return this.view.media.stickerPackStickers; }
+  set stickerPackStickers(value: StickerPackSticker[]) { this.view.media.stickerPackStickers = value; }
+  get stickerPackPagingIndex(): number { return this.view.media.stickerPackPagingIndex; }
+  set stickerPackPagingIndex(value: number) { this.view.media.stickerPackPagingIndex = value; }
   get stickerPackTitle(): string { return this.view.media.stickerPackTitle; }
   set stickerPackTitle(value: string) { this.view.media.stickerPackTitle = value; }
   get stickerPackInstalled(): boolean { return this.view.media.stickerPackInstalled; }

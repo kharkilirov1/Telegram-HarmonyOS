@@ -45,6 +45,8 @@ export function buildMediaGalleryItems(host: ChatMediaGalleryCoordinatorPort): M
           stickerItem.senderName = entry.message.senderName;
           stickerItem.timestamp = entry.message.timeText;
           stickerItem.stickerSetId = entry.message.stickerSetId;
+          // F6: file identity picks the start index when the viewer pages the pack.
+          stickerItem.fileId = entry.message.stickerFileId;
           items.push(stickerItem);
         } else if (ct === 'photoAlbum') {
           for (let j = 0; j < entry.message.albumPhotoPaths.length; j++) {

@@ -194,7 +194,7 @@ async function main() {
   // Card UI and wiring.
   const overlay = read('ui/pages/chat/TgChatMediaOverlay.ets');
   assert.match(overlay, /this\.bindings\.loadStickerPack\(\);/);
-  assert.match(overlay, /@Monitor\('media\.galleryCurrentIndex'\)/);
+  assert.match(overlay, /@Monitor\('media\.galleryCurrentIndex', 'media\.stickerPackStickers', 'media\.galleryItems'\)/);
   assert.match(overlay, /private buildStickerPackCard\(\)/);
   assert.match(overlay, /this\.bindings\.toggleStickerPackInstalled\(\);/);
   const viewState = read('ui/pages/chat/ChatMediaViewState.ets');

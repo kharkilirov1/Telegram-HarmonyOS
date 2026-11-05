@@ -15,12 +15,73 @@ export function isValidStickerSetId(setId: string): boolean {
   return /^[1-9][0-9]{0,18}$/.test(setId);
 }
 
+// F6: one sticker of a pack, enough to page the viewer and pre-download the next file.
+export class StickerPackSticker {
+  stickerId: string = '0';
+  remoteFileId: string = '';
+  fileId: number = 0;
+  localPath: string = '';
+  thumbFileId: number = 0;
+  thumbPath: string = '';
+  emoji: string = '';
+  isAnimated: boolean = false;
+  isVideo: boolean = false;
+  width: number = 0;
+  height: number = 0;
+}
+
 export class StickerPackInfo {
   setId: string = '0';
   title: string = '';
   isInstalled: boolean = false;
   isArchived: boolean = false;
   stickerCount: number = 0;
+  // Paging order is the pack order TDLib returned.
+  stickers: StickerPackSticker[] = [];
+}
+
+export function parseStickerPackSticker(sticker: TdObject): StickerPackSticker {
+  const entry = new StickerPackSticker();
+  entry.stickerId = sticker.getTopLevelStringStrict('id') ?? '0';
+  entry.emoji = sticker.getTopLevelStringStrict('emoji') ?? '';
+  entry.width = sticker.getTopLevelNumberStrict('width') ?? 0;
+  entry.height = sticker.getTopLevelNumberStrict('height') ?? 0;
+  const format = sticker.getTopLevelStringStrict('format') ?? '';
+  const formatType = format.length > 0
+    ? format
+    : sticker.getObject('format').getTopLevelStringStrict('@type') ?? '';
+  entry.isAnimated = formatType === 'stickerFormatTgs';
+  entry.isVideo = formatType === 'stickerFormatWebm';
+  const file = sticker.getObject('sticker');
+  entry.fileId = file.getTopLevelNumberStrict('id') ?? 0;
+  entry.remoteFileId = file.getObject('remote').getTopLevelStringStrict('id') ?? '';
+  const local = file.getObject('local');
+  if (local.getTopLevelBooleanStrict('is_downloading_completed') === true) {
+    entry.localPath = local.getTopLevelStringStrict('path') ?? '';
+  }
+  const thumbFile = sticker.getObject('thumbnail').getObject('file');
+  entry.thumbFileId = thumbFile.getTopLevelNumberStrict('id') ?? 0;
+  const thumbLocal = thumbFile.getObject('local');
+  if (thumbLocal.getTopLevelBooleanStrict('is_downloading_completed') === true) {
+    entry.thumbPath = thumbLocal.getTopLevelStringStrict('path') ?? '';
+  }
+  return entry;
+}
+
+// Clamped neighbour inside the pack; a single-sticker pack never wraps onto itself.
+export function nextStickerPackIndex(current: number, count: number, delta: number): number {
+  if (!Number.isInteger(current) || !Number.isInteger(count) || !Number.isInteger(delta) ||
+    count <= 0 || delta === 0) {
+    return current;
+  }
+  const next = current + delta;
+  if (next < 0) {
+    return 0;
+  }
+  if (next >= count) {
+    return count - 1;
+  }
+  return next;
 }
 
 export function parseStickerPack(td: TdObject): StickerPackInfo | undefined {
@@ -32,8 +93,20 @@ export function parseStickerPack(td: TdObject): StickerPackInfo | undefined {
   info.title = td.getTopLevelStringStrict('title') ?? '';
   info.isInstalled = td.getTopLevelBooleanStrict('is_installed') === true;
   info.isArchived = td.getTopLevelBooleanStrict('is_archived') === true;
-  const stickers = td.getTopLevelRawItemArrayStrict('stickers');
+  const stickers = td.getTopLevelObjectArrayStrict('stickers');
   info.stickerCount = stickers === undefined ? 0 : stickers.length;
+  info.stickers = [];
+  if (stickers !== undefined) {
+    for (const sticker of stickers) {
+      if (sticker === null) {
+        continue;
+      }
+      const parsed = parseStickerPackSticker(sticker);
+      if (parsed.stickerId !== '0' && parsed.stickerId.length > 0) {
+        info.stickers.push(parsed);
+      }
+    }
+  }
   return info;
 }
 

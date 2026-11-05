@@ -56,6 +56,14 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **F6-sticker-pack-paging (lead).** Листание по стикер-паку: `StickerPackSticker` + парсер `getStickerSet`
+  (id/files/thumbnail/emoji/format/размер), `nextStickerPackIndex` (клампинг без зацикливания),
+  `buildStickerPackGalleryItems`/`stickerPackStartIndex`, `ChatMediaViewState.stickerPackStickers`/
+  `stickerPackPagingIndex`, оверлей подменяет галерею на пак и держит индекс (старт — по `fileId`
+  тапнутого стикера), карточка пака остаётся. Новая суита `test-sticker-pack-paging.cjs` (141-я):
+  stepping, парсинг пака, элементы, проводка; обновлены `test-sticker-pack.cjs` и
+  `test-chat-screen-decomposition.cjs` (125 полей). Гейты: host **141/141**, оба smoke, hvigor BUILD
+  SUCCESSFUL. Остаток F6: TGS/предзагрузка соседних файлов, witness.
 - **Roadmap rewritten.** `TASKS/AGENT_EXECUTION_PLAN.md` now states the current route only. Release
   Track v2 (R0→R3+, `v0.1.0` as the goal, "pixel fidelity is not a goal") moved to
   `TASKS/ARCHIVE/AGENT_EXECUTION_PLAN_release-track-v2_2026-07-02.md` and is not to be executed.

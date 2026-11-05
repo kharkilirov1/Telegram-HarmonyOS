@@ -2,7 +2,7 @@
 // installed state; iOS shows the same title + Add/Remove Stickers action under the sticker.
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { StickerPackUseCase, isValidStickerSetId } from '../../../domain/usecases/stickerPack';
+import { StickerPackUseCase, StickerPackSticker, isValidStickerSetId } from '../../../domain/usecases/stickerPack';
 
 const DOMAIN = 0x004A;
 const TAG = 'ChatStickerPack';
@@ -15,6 +15,8 @@ export interface ChatStickerPackHost {
   galleryCurrentIndex: number;
   galleryItems: ChatStickerPackItem[];
   stickerPackSetId: string;
+  stickerPackStickers: StickerPackSticker[];
+  stickerPackPagingIndex: number;
   stickerPackTitle: string;
   stickerPackInstalled: boolean;
   stickerPackBusy: boolean;
@@ -41,6 +43,8 @@ function syncStickerPackCardInternal(host: ChatStickerPackHost): void {
     host.stickerPackTitle = '';
     host.stickerPackInstalled = false;
     host.stickerPackBusy = false;
+    host.stickerPackStickers = [];
+    host.stickerPackPagingIndex = -1;
     return;
   }
   if (setId === host.stickerPackSetId) {
@@ -69,6 +73,7 @@ function loadStickerPackInternal(host: ChatStickerPackHost, setId: string): void
       }
       host.stickerPackTitle = info.title;
       host.stickerPackInstalled = info.isInstalled;
+      host.stickerPackStickers = info.stickers;
       host.stickerPackBusy = false;
     })
     .catch((error: Error) => {

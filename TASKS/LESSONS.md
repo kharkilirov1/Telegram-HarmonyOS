@@ -1420,3 +1420,11 @@ Last updated: 2026-10-23
   dependency to register.
 - UI atoms should not import the page layer: the picker state lives in `ui/tg_ui/state` so the atom owns no
   page dependency, and relative depth drops from four levels to three.
+
+## 253. The page contract source merges extracted components
+
+- `readChatSource` merges the page with its extracted members, so a lifecycle method (`aboutToAppear`)
+  added to an extracted component makes the page-contract harness see two. Extracted components must not
+  declare page lifecycle methods; drive their first sync from an `@Monitor` on the inputs instead.
+- Adding `@Trace` fields to a view-state model shifts the pinned field counts in the decomposition suite;
+  update both the number and its comment.
