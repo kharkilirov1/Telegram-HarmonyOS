@@ -4109,6 +4109,14 @@
       "value": "Удалённый аккаунт"
     },
     {
+      "name": "composer_contact_unavailable",
+      "value": "Не выбран контакт с номером телефона"
+    },
+    {
+      "name": "composer_contact_failed",
+      "value": "Не удалось отправить контакт"
+    },
+    {
       "name": "composer_location_denied",
       "value": "Доступ к геолокации выключен"
     },

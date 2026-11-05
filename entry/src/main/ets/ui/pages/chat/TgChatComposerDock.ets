@@ -99,7 +99,7 @@ export struct TgChatComposerDock {
               attachmentCategoryEnabled: [
                 this.bindings.composerAllows('photo') || this.bindings.composerAllows('video'),
                 this.bindings.composerAllows('photo') || this.bindings.composerAllows('video'),
-                this.bindings.composerAllows('document'), true, false, false
+                this.bindings.composerAllows('document'), true, false, true
               ],
               bottomInset: this.bindings.composerKeyboardPanelVisible() ? 0 : this.chrome.bottomOverlayInset,
               showReplySnippet: this.composer.replyToMessageId !== '0',

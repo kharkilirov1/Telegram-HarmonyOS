@@ -1607,3 +1607,11 @@ Last updated: 2026-10-23
   truthful.
 - Location needs both `APPROXIMATELY_LOCATION` and `LOCATION` on HarmonyOS; the platform permission type is
   `Permissions` from `@kit.AbilityKit`, not `PermissionName`.
+
+## 277. Read the command inventory before adding a command
+
+- `inputMessageContact` was already implemented as `ShareContactCommand` (used when sharing a Telegram user);
+  adding a second contact command duplicated the serializer and would have drifted. The check is one grep
+  over `AppCommand.ets` for the TDLib method shape (`inputMessageContact`) before writing a new command.
+- A shell-level edit script must use `must()` anchors: two silent replacements in this round simply did not
+  match, and only a later check caught them.

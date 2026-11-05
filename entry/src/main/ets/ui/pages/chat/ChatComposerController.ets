@@ -26,6 +26,8 @@ import {
 } from '../../../domain/usecases/sendLocation';
 import { DeviceLocationPoint, LOCATION_PERMISSIONS, getDeviceLocationOnce } from '../../../infra/location/DeviceLocation';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
+import { PickedContact, pickContactOnce } from '../../../infra/contacts/DeviceContacts';
+import { SendContactUseCase, createSendContactUseCase } from '../../../domain/usecases/sendContact';
 
 const DOMAIN = 0x0021;
 const TAG = 'ChatComposerController';
@@ -67,6 +69,8 @@ export class ChatComposerController {
   private pickerGeneration: number = 0;
   private locationUseCase?: SendLocationUseCase;
   private locationRequestInFlight: boolean = false;
+  private contactUseCase?: SendContactUseCase;
+  private contactPickInFlight: boolean = false;
   private readonly attachmentFiles: ChatAttachmentFilePreparer = new ChatAttachmentFilePreparer();
   private readonly photoAlbums: ChatPhotoAlbumController = new ChatPhotoAlbumController();
   private readonly textSender: ChatTextSendController = new ChatTextSendController();
@@ -102,6 +106,9 @@ export class ChatComposerController {
         break;
       case 3:
         this.sendCurrentLocation(host);
+        break;
+      case 5:
+        this.sendPickedContact(host);
         break;
       default:
         break;
@@ -417,6 +424,43 @@ export class ChatComposerController {
       }
     } finally {
       this.locationRequestInFlight = false;
+      if (lifecycleToken === host.getLifecycleToken()) {
+        host.setSendingMessage(false);
+      }
+    }
+  }
+
+  // D26: the system picker runs on its own window, so there is no permission prompt in this flow.
+  async sendPickedContact(host: ChatComposerControllerHost): Promise<void> {
+    const chatId = host.getActiveChatId();
+    if (this.contactPickInFlight || host.isSendingMessage() || chatId === 0 ||
+      !host.canSendNewMessages('contact') || host.isEditModeActive() || host.isForwardModeActive()) {
+      return;
+    }
+    this.contactPickInFlight = true;
+    const lifecycleToken = host.getLifecycleToken();
+    try {
+      const picked: PickedContact | undefined = await pickContactOnce();
+      if (picked === undefined) {
+        this.showPendingToast(host, localized($r('app.string.composer_contact_unavailable').id,
+          'No contact with a phone number was picked'));
+        return;
+      }
+      if (lifecycleToken !== host.getLifecycleToken() || host.getActiveChatId() !== chatId) {
+        return;
+      }
+      if (this.contactUseCase === undefined) {
+        this.contactUseCase = createSendContactUseCase(getTdGatewayAdapter());
+      }
+      host.setSendingMessage(true);
+      const accepted = await this.contactUseCase.execute(chatId, picked.phoneNumber, picked.firstName,
+        picked.lastName);
+      if (!accepted && lifecycleToken === host.getLifecycleToken()) {
+        this.showPendingToast(host, localized($r('app.string.composer_contact_failed').id,
+          'Could not send the contact'));
+      }
+    } finally {
+      this.contactPickInFlight = false;
       if (lifecycleToken === host.getLifecycleToken()) {
         host.setSendingMessage(false);
       }

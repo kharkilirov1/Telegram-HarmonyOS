@@ -56,6 +56,15 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **D26-send-contact (lead).** Плитка Contact в меню вложений заработала: `DeviceContacts` (системный
+  пикер `contact.selectContacts`, без запроса разрешений, нормализация имени в first/last и отказ для
+  записи без номера), `SendContactUseCase` (проверка номера 5..32 символов с ≥5 цифрами и имени),
+  отправка через уже существующий `ShareContactCommand` (`inputMessageContact`) — дубликат команды не
+  добавлен, а удалён; поток «пикер → отправка» с тостами недоступности и ошибки, плитка включена в dock.
+  Строки в 3 локалях. Новая суита `test-send-contact.cjs` (157-я): нормализация, валидация, use case,
+  сериализация существующей команды, проводка. Гейты: host **157/157**, оба smoke, hvigor BUILD
+  SUCCESSFUL. Остаток D26: выбор конкретного номера, если у контакта их несколько, и карточка контакта в
+  чате.
 - **D25-send-location (lead).** Плитка Location в меню вложений заработала: `SendLocationCommand`
   (`sendMessage` + `inputMessageLocation`, `live_period` 0 — обычный пин), `SendLocationUseCase`
   (проверка WGS-84 границ, отказ на null island, отрицательная/нулевая точность → 0), `DeviceLocation`

@@ -2473,6 +2473,14 @@
       "value": "Open emoji picker"
     },
     {
+      "name": "composer_contact_unavailable",
+      "value": "No contact with a phone number was picked"
+    },
+    {
+      "name": "composer_contact_failed",
+      "value": "Could not send the contact"
+    },
+    {
       "name": "composer_attachment_unavailable",
       "value": "Attachment picker is not available yet"
     },

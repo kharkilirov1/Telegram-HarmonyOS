@@ -107,8 +107,8 @@ async function main() {
   assert.match(controller, /      case 3:\n        this\.sendCurrentLocation\(host\);\n        break;/);
 
   const dock = read('ui/pages/chat/TgChatComposerDock.ets');
-  assert.match(dock, /this\.bindings\.composerAllows\('document'\), true, false, false/,
-    'the location tile is enabled');
+  assert.match(dock, /this\.bindings\.composerAllows\('document'\), true, false, true/,
+    'the location tile (index 3) is enabled');
 
   for (const locale of ['base', 'ru_RU', 'zh_CN']) {
     const strings = JSON.parse(readResource(`${locale}/element/string.json`)).string;

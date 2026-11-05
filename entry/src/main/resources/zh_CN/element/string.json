@@ -4109,6 +4109,14 @@
       "value": "已注销账户"
     },
     {
+      "name": "composer_contact_unavailable",
+      "value": "未选择带电话号码的联系人"
+    },
+    {
+      "name": "composer_contact_failed",
+      "value": "无法发送联系人"
+    },
+    {
       "name": "composer_location_denied",
       "value": "定位权限已关闭"
     },
