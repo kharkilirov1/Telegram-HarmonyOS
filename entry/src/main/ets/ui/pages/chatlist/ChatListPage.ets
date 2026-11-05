@@ -554,6 +554,34 @@ export struct ChatListPage {
       });
   }
 
+  // I6: the camera action posts when the user has no active story, like iOS.
+  private openStoryComposer(): void {
+    const store = this.accountStore;
+    if (store === undefined) {
+      return;
+    }
+    this.pageStack.pushPathByName('TgStoryComposerPage', undefined);
+  }
+
+  private openOwnStoryOrComposer(): void {
+    const store = this.accountStore;
+    if (store === undefined) {
+      return;
+    }
+    const state = store.getState();
+    const selfUserId = state.auth.userId;
+    const ownStories = selfUserId > 0 ? state.chats.activeStoriesByChatId.get(selfUserId) : undefined;
+    if (ownStories !== undefined && ownStories.stories.length > 0) {
+      const storyIds: number[] = ownStories.stories.map((story: StoryInfoDto): number => story.storyId);
+      const chat = state.chats.chats.get(selfUserId);
+      const params = new StoryViewerRouteParams(selfUserId, chat !== undefined ? chat.title : '',
+        storyIds, 0);
+      this.pageStack.pushPathByName('TgStoryViewerPage', params);
+      return;
+    }
+    this.openStoryComposer();
+  }
+
   // I6: the strip opens the first friend's story, like iOS.
   private openStoryViewer(): void {
     const store = this.accountStore;
@@ -1713,7 +1741,7 @@ export struct ChatListPage {
         storyPreviews: this.storyPreviews,
         storyStripInteractive: true,
         onStoryPress: (): void => {
-          this.openStoryViewer();
+          this.openOwnStoryOrComposer();
         },
         onStoryStripPress: (): void => {
           this.openStoryViewer();

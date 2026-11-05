@@ -829,6 +829,50 @@
       "value": "更换照片"
     },
     {
+      "name": "story_composer_title",
+      "value": "新故事"
+    },
+    {
+      "name": "story_composer_cancel",
+      "value": "取消"
+    },
+    {
+      "name": "story_composer_publish",
+      "value": "发布"
+    },
+    {
+      "name": "story_composer_publishing",
+      "value": "发布中…"
+    },
+    {
+      "name": "story_composer_pick",
+      "value": "照片或视频"
+    },
+    {
+      "name": "story_composer_caption",
+      "value": "添加说明"
+    },
+    {
+      "name": "story_composer_who_sees",
+      "value": "谁可以看"
+    },
+    {
+      "name": "story_error_prepare",
+      "value": "无法读取所选文件"
+    },
+    {
+      "name": "story_error_media",
+      "value": "请先选择照片或视频"
+    },
+    {
+      "name": "story_error_publish",
+      "value": "无法发布故事"
+    },
+    {
+      "name": "story_published",
+      "value": "故事已发布"
+    },
+    {
       "name": "edit_profile_error",
       "value": "无法更新个人资料"
     },

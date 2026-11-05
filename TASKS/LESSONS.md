@@ -1537,3 +1537,10 @@ Last updated: 2026-10-23
   uses, which keeps one store entry point.
 - Optional TDLib values are nullable objects (`from_story_full_id`), so the serializer sends `null` rather
   than an empty object; vectors are JSON arrays, not concatenated strings.
+
+## 268. Do not offer a mode the UI cannot complete
+
+- The privacy cycle included "selected users" before any people picker existed, which would publish to
+  nobody. The cycle now skips that mode and the gate refuses it, so the visible options are all viable.
+- Picker URIs only live during the picker session: copy the media into the cache first, then hand the
+  cached path to TDLib (`inputFileLocal`).

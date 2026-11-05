@@ -829,6 +829,50 @@
       "value": "Изменить фото"
     },
     {
+      "name": "story_composer_title",
+      "value": "Новая история"
+    },
+    {
+      "name": "story_composer_cancel",
+      "value": "Отмена"
+    },
+    {
+      "name": "story_composer_publish",
+      "value": "Опубликовать"
+    },
+    {
+      "name": "story_composer_publishing",
+      "value": "Публикуем…"
+    },
+    {
+      "name": "story_composer_pick",
+      "value": "Фото или видео"
+    },
+    {
+      "name": "story_composer_caption",
+      "value": "Добавить подпись"
+    },
+    {
+      "name": "story_composer_who_sees",
+      "value": "Кто увидит"
+    },
+    {
+      "name": "story_error_prepare",
+      "value": "Не удалось прочитать выбранный файл"
+    },
+    {
+      "name": "story_error_media",
+      "value": "Сначала выберите фото или видео"
+    },
+    {
+      "name": "story_error_publish",
+      "value": "Не удалось опубликовать историю"
+    },
+    {
+      "name": "story_published",
+      "value": "История опубликована"
+    },
+    {
       "name": "edit_profile_error",
       "value": "Не удалось обновить профиль"
     },

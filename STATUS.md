@@ -56,6 +56,13 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **I6-story-composer (lead).** Экран публикации: `StoryComposerModel` (mediaKind по расширению,
+  clamp caption 200, цикл приватности без недоступного режима, сборка payload, гейт Publish),
+  `StoryMediaPrep` (копия выбранного файла в кэш), `TgStoryComposerPage` (пикер IMAGE_VIDEO_TYPE,
+  превью фото/видео, caption, строка «Who can see», Publish/Cancel, ошибки/успех), route; вход из
+  «Add story»: своя активная история → вьювер, иначе композер. Строки в 3 локалях. Новая суита
+  `test-story-composer.cjs` (150-я); обновлена `test-story-viewer.cjs`. Гейты: host **150/150**, оба
+  smoke, hvigor BUILD SUCCESSFUL. Остаток I6: статистика, ответ, выбор адресатов, witness.
 - **I6-story-publish (lead).** Слой публикации: `PostStoryCommand`/`PostStoryPayload` (`StoryPrivacy`
   everyone/contacts/closeFriends/selectedUsers, mediaKind photo/video, caption, active_period,
   protect_content), сериализация `postStory` (inputStoryContent JSON, inputFileLocal, areas, caption,

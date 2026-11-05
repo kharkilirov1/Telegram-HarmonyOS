@@ -152,7 +152,8 @@ async function main() {
   assert.match(list, /const chatIds = state\.chats\.orderedStoryChatIds;/);
   assert.match(list, /state\.chats\.activeStoriesByChatId\.get\(chatId\)/);
   assert.match(list, /this\.pageStack\.pushPathByName\('TgStoryViewerPage', params\);/);
-  assert.match(list, /onStoryPress: \(\): void => \{\n\s+this\.openStoryViewer\(\);/);
+  assert.match(list, /onStoryPress: \(\): void => \{\n\s+this\.openOwnStoryOrComposer\(\);/,
+    'the camera action posts when the user has no active story');
   assert.match(list, /onStoryStripPress: \(\): void => \{\n\s+this\.openStoryViewer\(\);/);
   assert.match(list, /storyStripInteractive: true,/);
 

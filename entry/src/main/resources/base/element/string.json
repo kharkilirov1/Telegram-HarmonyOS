@@ -829,6 +829,50 @@
       "value": "Change photo"
     },
     {
+      "name": "story_composer_title",
+      "value": "New Story"
+    },
+    {
+      "name": "story_composer_cancel",
+      "value": "Cancel"
+    },
+    {
+      "name": "story_composer_publish",
+      "value": "Publish"
+    },
+    {
+      "name": "story_composer_publishing",
+      "value": "Publishing…"
+    },
+    {
+      "name": "story_composer_pick",
+      "value": "Photo or video"
+    },
+    {
+      "name": "story_composer_caption",
+      "value": "Add a caption"
+    },
+    {
+      "name": "story_composer_who_sees",
+      "value": "Who can see"
+    },
+    {
+      "name": "story_error_prepare",
+      "value": "Could not read the selected media"
+    },
+    {
+      "name": "story_error_media",
+      "value": "Choose a photo or a video first"
+    },
+    {
+      "name": "story_error_publish",
+      "value": "Could not publish the story"
+    },
+    {
+      "name": "story_published",
+      "value": "Story published"
+    },
+    {
       "name": "edit_profile_error",
       "value": "Could not update the profile"
     },

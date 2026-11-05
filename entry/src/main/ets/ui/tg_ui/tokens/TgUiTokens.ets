@@ -1323,6 +1323,9 @@ export class TgUiTokens {
   static readonly STORY_PROGRESS_HEIGHT: number = 2;
   static readonly STORY_PROGRESS_TRACK: ResourceColor = 'rgba(255, 255, 255, 0.3)';
   static readonly STORY_LOADING_SIZE: number = 32;
+  static readonly STORY_COMPOSER_MEDIA_HEIGHT: number = 360;
+  static readonly STORY_COMPOSER_MEDIA_BG: ResourceColor = '#111111';
+  static readonly STORY_COMPOSER_PLUS_SIZE: number = 44;
   static readonly STORY_REACTION_EMOJI_SIZE: number = 22;
   static readonly STORY_REACTION_CHIP_RADIUS: number = 16;
   static readonly STORY_REACTION_CHIP_BG: ResourceColor = 'rgba(255, 255, 255, 0.16)';
