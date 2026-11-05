@@ -5,18 +5,60 @@
 // it to ChatReactionController, which owns the optimistic toggle and rollback.
 
 import { TgUiTokens } from '../tokens/TgUiTokens';
+import {
+  prefetchReactionPickerEmoji,
+  reactionPickerEmojiState,
+  syncPickerPaths
+} from '../state/ReactionPickerEmojiState';
 
 @ComponentV2
 export struct TgReactionPicker {
   // Chip keys in display order (already capped by AppState.availableReactionKeys).
   @Param keys: string[] = [];
   @Event onReactionPress: (key: string) => void = (_: string) => {};
+  // Bumped by the resolver when a custom emoji file lands; reading it keeps the pills in sync.
+  @Local private emojiRevision: number = 0;
+
+  aboutToAppear(): void {
+    this.syncCustomEmoji();
+  }
+
+  @Monitor('keys')
+  onKeysChanged(): void {
+    this.syncCustomEmoji();
+  }
+
+  private syncCustomEmoji(): void {
+    if (this.keys.length === 0) {
+      return;
+    }
+    syncPickerPaths(this.keys);
+    this.emojiRevision = reactionPickerEmojiState.revision;
+    prefetchReactionPickerEmoji(this.keys).then((filled: number): void => {
+      if (filled > 0) {
+        this.emojiRevision = reactionPickerEmojiState.revision;
+      }
+    }).catch((): void => {});
+  }
+
+  private customEmojiPath(key: string): string {
+    // Touch the revision so a resolved file re-renders the pill.
+    const revision = this.emojiRevision + reactionPickerEmojiState.revision;
+    return revision >= 0 ? reactionPickerEmojiState.pathFor(key) : '';
+  }
 
   @Builder
   private buildPill(key: string) {
     Row() {
-      Text(reactionPickerGlyph(key))
-        .fontSize(TgUiTokens.REACTION_PICKER_GLYPH_SIZE)
+      if (this.customEmojiPath(key).length > 0) {
+        Image(this.customEmojiPath(key))
+          .width(TgUiTokens.REACTION_PICKER_GLYPH_SIZE)
+          .height(TgUiTokens.REACTION_PICKER_GLYPH_SIZE)
+          .objectFit(ImageFit.Contain)
+      } else {
+        Text(reactionPickerGlyph(key))
+          .fontSize(TgUiTokens.REACTION_PICKER_GLYPH_SIZE)
+      }
     }
     .width(TgUiTokens.REACTION_PICKER_PILL_SIZE)
     .height(TgUiTokens.REACTION_PICKER_PILL_SIZE)

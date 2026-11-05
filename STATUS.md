@@ -146,6 +146,14 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **D16-reaction-picker-emoji (lead).** Кастомные реакции в пикере: `ReactionPickerEmojiState`
+  (`@ObservedV2`, `@Trace paths/revision`), `customReactionIds` (разбор `custom:`-ключей),
+  `prefetchReactionPickerEmoji` (через общий prefetch-координатор), `syncPickerPaths`. Атом
+  `TgReactionPicker` при `aboutToAppear` и смене `keys` синхронизирует состояние, префетчит и рисует
+  `Image` вместо fallback-глифа, сохраняя глиф-запас. Новая суита
+  `test-reaction-picker-emoji.cjs` (140-я): разбор ключей, наблюдаемое состояние, sync/prefetch/reset,
+  проводка атома. Гейты: host **140/140**, оба smoke, hvigor BUILD SUCCESSFUL. Остаток D16: TGS для
+  кастомных эмодзи в тексте, набор-пикер, witness.
 - **D16-custom-emoji-page (lead).** Prefetch теперь запускается со страницы: `ChatMessageCustomEmojiCoordinator`
   собирает сущности из строк сообщений (текст и подпись), делает один проход на чат (in-flight +
   `resolvedChatIds`, сброс при смене чата), по прибытии файлов вызывает один `rebuildTimeline`; хук стоит

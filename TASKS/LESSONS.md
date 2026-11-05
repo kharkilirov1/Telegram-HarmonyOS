@@ -1412,3 +1412,11 @@ Last updated: 2026-10-23
   bug. Pass every accessor a module references.
 - Client-side validation runs before the request, so a server-side `USERNAME_INVALID` test needs a locally
   valid username; otherwise the client error wins.
+
+## 252. Observed state needs a revision the component reads
+
+- A `Map` inside an `@ObservedV2` object does not notify when its contents change; replacing the map plus
+  bumping a `@Trace` revision does. The component must actually read the revision in `build` for the
+  dependency to register.
+- UI atoms should not import the page layer: the picker state lives in `ui/tg_ui/state` so the atom owns no
+  page dependency, and relative depth drops from four levels to three.
