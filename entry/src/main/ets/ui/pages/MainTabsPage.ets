@@ -62,6 +62,7 @@ import { createPrivateChatUseCase } from '../../domain/usecases/createPrivateCha
 import { createNewChatEvent } from '../../core/model/AppEvent';
 import { isSavedMessagesChat } from '../../core/model/AppState';
 import { ChatScreenRouteParams } from './chat/ChatScreenRouteParams';
+import { EditProfileRouteParams } from './settings/TgEditProfilePage';
 import { ChatDto } from '../../core/model/dto/ChatDto';
 import { createResolveUsernameUseCase as resolveUsernameUseCase } from '../../domain/usecases/resolveUsername';
 import { externalLinkIntake, ExternalLinkTarget } from '../../core/model/ExternalLink';
@@ -776,6 +777,16 @@ export struct MainTabsPage {
   // t.me/<username> opens that chat: searchPublicChat resolves it, the DTO is hydrated into the store
   // (same contract as Saved Messages) and the chat screen is pushed with the resolved title.
   // A joined chat comes back as a DTO from TgChatInvitePage; hydrate it and open the chat screen.
+  // A5: the settings header opens the editor with the current values pre-filled.
+  private pushEditProfile(): void {
+    const store = getAppCoreRuntime().getStore();
+    const state = store.getState();
+    const user = state.users.users.get(state.auth.userId);
+    const params = new EditProfileRouteParams(
+      user?.firstName ?? '', user?.lastName ?? '', user?.username ?? '', user?.bio ?? '');
+    this.chatDetailNavStack.pushPathByName('TgEditProfilePage', params);
+  }
+
   private openJoinedChat(chat: ChatDto): void {
     const runtime = getAppCoreRuntime();
     const store = runtime.getStore();
@@ -1058,6 +1069,9 @@ export struct MainTabsPage {
             },
             onOpenChatFolders: (): void => {
               this.chatDetailNavStack.pushPathByName('TgChatFoldersPage', undefined);
+            },
+            onOpenEditProfile: (): void => {
+              this.pushEditProfile();
             }
           })
         }

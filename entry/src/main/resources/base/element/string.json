@@ -821,6 +821,42 @@
       "value": "Translate"
     },
     {
+      "name": "edit_profile_title",
+      "value": "Edit Profile"
+    },
+    {
+      "name": "edit_profile_name",
+      "value": "Name"
+    },
+    {
+      "name": "edit_profile_first_name",
+      "value": "First name"
+    },
+    {
+      "name": "edit_profile_last_name",
+      "value": "Last name"
+    },
+    {
+      "name": "edit_profile_username",
+      "value": "Username"
+    },
+    {
+      "name": "edit_profile_bio",
+      "value": "Bio"
+    },
+    {
+      "name": "edit_profile_username_hint",
+      "value": "Username must be 5–32 characters: latin letters, digits or underscores, starting with a letter."
+    },
+    {
+      "name": "edit_profile_save",
+      "value": "Save"
+    },
+    {
+      "name": "edit_profile_saving",
+      "value": "Saving…"
+    },
+    {
       "name": "translation_label",
       "value": "Translated"
     },

@@ -36,6 +36,11 @@ export struct SettingsPage {
   @Local private userPhone: string = '';
   @Local private userInitials: string = 'ME';
   @Local private userPhoto: string = '';
+  // A5: raw editable values, kept next to the presentation strings.
+  @Local private userFirstName: string = '';
+  @Local private userLastName: string = '';
+  @Local private userUsername: string = '';
+  @Local private userBio: string = '';
   @Local private topBarTotalHeight: number = TgUiTokens.TOP_BAR_HEIGHT;
   @Local private contentBottomInset: number = ROOT_TAB_BAR_FALLBACK_CONTENT_INSET;
 
@@ -47,6 +52,7 @@ export struct SettingsPage {
   @Event onOpenBlockedUsers: () => void = (): void => {};
   @Event onOpenDataStorage: () => void = (): void => {};
   @Event onOpenChatFolders: () => void = (): void => {};
+  @Event onOpenEditProfile: () => void = (): void => {};
 
   private unsubscribe?: () => void;
   private pageLifecycleToken: number = 0;
@@ -151,6 +157,10 @@ export struct SettingsPage {
     this.userName = full.length > 0
       ? full
       : (user.username.length > 0 ? '@' + user.username : localized($r('app.string.profile_title').id, 'User'));
+    this.userFirstName = user.firstName;
+    this.userLastName = user.lastName;
+    this.userUsername = user.username;
+    this.userBio = user.bio;
     this.userPhone = user.phoneNumber.length > 0 ? '+' + user.phoneNumber : '';
     this.userPhoto = user.photoSmall.length > 0 ? fileUri.getUriFromPath(user.photoSmall) : '';
 
@@ -196,6 +206,9 @@ export struct SettingsPage {
       bottom: TgUiTokens.SPACE_16
     })
     .alignItems(VerticalAlign.Center)
+    .onClick(() => {
+      this.onOpenEditProfile();
+    })
   }
 
   build() {

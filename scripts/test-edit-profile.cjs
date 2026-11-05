@@ -118,6 +118,54 @@ async function main() {
   assert.match(useCaseSource, /export function createEditProfileUseCase\(gateway: TdGatewayPort\): EditProfileUseCase/);
   assert.match(useCaseSource, /response\.getTopLevelStringStrict\('@type'\) !== 'ok'/);
 
+  // Page and entry point -------------------------------------------------------------------------
+  const page = read('ui/pages/settings/TgEditProfilePage.ets');
+  assert.match(page, /export class EditProfileRouteParams/);
+  assert.match(page, /export function TgEditProfilePageBuilder\(\)/);
+  assert.match(page, /@ComponentV2/);
+  assert.match(page, /@Local private firstName: string = '';/);
+  assert.match(page, /@Local private saving: boolean = false;/);
+  assert.match(page, /getParamByName\('TgEditProfilePage'\)/, 'the page reads its route params');
+  assert.match(page, /useCase\.updateName\(this\.firstName, this\.lastName\)/);
+  assert.match(page, /useCase\.updateUsername\(username\)/);
+  assert.match(page, /useCase\.updateBio\(this\.bio\)/);
+  assert.match(page, /this\.pageStack\.pop\(true\);/, 'a saved profile closes the page');
+  assert.match(page, /private canSave\(\): boolean \{/);
+  assert.match(page, /isValidProfileUsername\(username\)/, 'the save gate uses the shared validator');
+  assert.match(page, /maxLength\(PROFILE_NAME_PART_MAX_LENGTH\)/);
+  assert.match(page, /maxLength\(PROFILE_BIO_MAX_LENGTH\)/);
+  assert.match(page, /this\.errorText = error\.message;/, 'a rejected update stays on screen');
+  assert.match(page, /localized\(\$r\('app\.string\.edit_profile_save'\)\.id, 'Save'\)/);
+
+  const routes = JSON.parse(fs.readFileSync(path.join(root, '../module.json5'), 'utf8'));
+  assert.ok(routes.module);
+  const routeMap = JSON.parse(fs.readFileSync(path.join(
+    root, '../resources/base/profile/route_map.json'), 'utf8'));
+  const route = routeMap.routerMap.find((item) => item.name === 'TgEditProfilePage');
+  assert.ok(route, 'the editor is registered in the system route table');
+  assert.equal(route.buildFunction, 'TgEditProfilePageBuilder');
+  assert.ok(route.pageSourceFile.includes('TgEditProfilePage.ets'));
+
+  const settings = read('ui/pages/settings/SettingsPage.ets');
+  assert.match(settings, /@Event onOpenEditProfile: \(\) => void/);
+  assert.match(settings, /this\.userFirstName = user\.firstName;/);
+  assert.match(settings, /this\.onOpenEditProfile\(\);/, 'the profile header is the entry point');
+
+  const tabs = read('ui/pages/MainTabsPage.ets');
+  assert.match(tabs, /private pushEditProfile\(\): void \{/);
+  assert.match(tabs, /new EditProfileRouteParams\(/);
+  assert.match(tabs, /this\.chatDetailNavStack\.pushPathByName\('TgEditProfilePage', params\)/);
+
+  for (const locale of ['base', 'ru_RU', 'zh_CN']) {
+    const strings = JSON.parse(fs.readFileSync(path.join(
+      root, '../resources', locale, 'element/string.json'), 'utf8'));
+    for (const name of ['edit_profile_title', 'edit_profile_first_name', 'edit_profile_last_name',
+      'edit_profile_username', 'edit_profile_bio', 'edit_profile_save', 'edit_profile_saving',
+      'edit_profile_username_hint']) {
+      assert.ok(strings.string.some((entry) => entry.name === name), name + ' exists in ' + locale);
+    }
+  }
+
   console.log('PASS profile editing contract');
 }
 

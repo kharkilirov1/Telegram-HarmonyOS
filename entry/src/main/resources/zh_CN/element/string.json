@@ -821,6 +821,42 @@
       "value": "翻译"
     },
     {
+      "name": "edit_profile_title",
+      "value": "编辑资料"
+    },
+    {
+      "name": "edit_profile_name",
+      "value": "姓名"
+    },
+    {
+      "name": "edit_profile_first_name",
+      "value": "名字"
+    },
+    {
+      "name": "edit_profile_last_name",
+      "value": "姓氏"
+    },
+    {
+      "name": "edit_profile_username",
+      "value": "用户名"
+    },
+    {
+      "name": "edit_profile_bio",
+      "value": "简介"
+    },
+    {
+      "name": "edit_profile_username_hint",
+      "value": "用户名需 5–32 个字符：字母、数字或下划线，且以字母开头。"
+    },
+    {
+      "name": "edit_profile_save",
+      "value": "保存"
+    },
+    {
+      "name": "edit_profile_saving",
+      "value": "保存中…"
+    },
+    {
       "name": "translation_label",
       "value": "已翻译"
     },

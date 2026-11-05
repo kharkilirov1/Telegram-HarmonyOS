@@ -821,6 +821,42 @@
       "value": "Перевести"
     },
     {
+      "name": "edit_profile_title",
+      "value": "Изменить профиль"
+    },
+    {
+      "name": "edit_profile_name",
+      "value": "Имя"
+    },
+    {
+      "name": "edit_profile_first_name",
+      "value": "Имя"
+    },
+    {
+      "name": "edit_profile_last_name",
+      "value": "Фамилия"
+    },
+    {
+      "name": "edit_profile_username",
+      "value": "Имя пользователя"
+    },
+    {
+      "name": "edit_profile_bio",
+      "value": "О себе"
+    },
+    {
+      "name": "edit_profile_username_hint",
+      "value": "Username: 5–32 символа, латиница, цифры или «_», первая — буква."
+    },
+    {
+      "name": "edit_profile_save",
+      "value": "Сохранить"
+    },
+    {
+      "name": "edit_profile_saving",
+      "value": "Сохранение…"
+    },
+    {
       "name": "translation_label",
       "value": "Переведено"
     },

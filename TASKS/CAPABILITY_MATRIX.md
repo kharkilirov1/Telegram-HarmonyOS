@@ -36,7 +36,7 @@
 | A2 | Код подтверждения / 2FA | `partial` | `CodeInputPage.ets` (9/1) | `Sources/Login*` | A1; единый auth-state machine |
 | A3 | QR-логин | `partial` | `QrLoginPage.ets` (11/2) | `Sources/Login*` | A2 |
 | A4 | Выход из аккаунта | `partial` | `AuthSideEffect.ets`, `CommandSerializer.ets` (7/4) | `Settings` sessions | H5; очистка сессии |
-| A5 | Редактирование профиля | `partial` | Data layer: `setName`/`setBio`/`setUsername` через `SetProfile*Command` + сериализатор, `EditProfileUseCase.updateName/updateBio/updateUsername` (trim, `@`-префикс, лимиты имя 64/био 70/username 5..32 латиница+цифры+`_`, пустой username удаляет, Ok-контракт, AppError). Нет: UI-страницы редактирования и загрузки аватара | `Components/Profile*`, `AvatarEditorScreen` | G1 |
+| A5 | Редактирование профиля | `partial` | Data layer: `setName`/`setBio`/`setUsername` через `SetProfile*Command` + сериализатор, `EditProfileUseCase.updateName/updateBio/updateUsername` (trim, `@`-префикс, лимиты имя 64/био 70/username 5..32 латиница+цифры+`_`, пустой username удаляет, Ok-контракт, AppError). UI: `TgEditProfilePage` (route `TgEditProfilePage`, `EditProfileRouteParams`), поля first/last/username/bio с maxLength, inline-хинт username, счётчик био, Save-гейт `canSave` (первое имя + валидный username), последовательные updateName→updateUsername→updateBio, pop по успеху, inline-ошибка при отказе; вход — клик по шапке профиля в `SettingsPage` (`onOpenEditProfile` → `MainTabsPage.pushEditProfile` с текущими значениями). Нет: загрузка/смена аватара, подтверждение «username занят», witness | `Components/Profile*`, `AvatarEditorScreen` | G1 |
 | A6 | Смена аккаунта / мультиаккаунт | `frozen` | — | `Sources/Account*` | заморожено |
 
 ## B. Список чатов

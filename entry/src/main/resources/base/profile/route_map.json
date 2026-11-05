@@ -16,6 +16,11 @@
       "buildFunction": "TgChatAdminRightsPageBuilder"
     },
     {
+      "name": "TgEditProfilePage",
+      "pageSourceFile": "src/main/ets/ui/pages/settings/TgEditProfilePage.ets",
+      "buildFunction": "TgEditProfilePageBuilder"
+    },
+    {
       "name": "TgMessageThreadPage",
       "pageSourceFile": "src/main/ets/ui/pages/chat/TgMessageThreadPage.ets",
       "buildFunction": "TgMessageThreadPageBuilder"

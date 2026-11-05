@@ -146,6 +146,12 @@ Documentation and repository structure were reconciled; no product code changed.
   не даёт им вернуться. Гейты: host **97/97**, оба smoke, hvigor BUILD SUCCESSFUL.
 - **M0 (matrix-verifier).** Девять `unverified` строк верифицированы по коду: B6/C10/D20/D24/H4 —
   `missing`, D29/E1/J5/J7 — `partial`. `unverified` = 0.
+- **A5-edit-profile-page (lead).** Экран редактирования: `TgEditProfilePage` (route + `EditProfileRouteParams`),
+  поля first/last/username/bio с лимитами, inline-хинт username, счётчик био, Save-гейт, последовательные
+  updateName→updateUsername→updateBio, pop по успеху, inline-ошибка при отказе. Вход — шапка профиля в
+  `SettingsPage` → `MainTabsPage.pushEditProfile` с текущими значениями (первым добавлены raw-поля).
+  Суита `test-edit-profile.cjs` расширена (page/route/entry/локали). Гейты: host **136/136**, оба smoke,
+  hvigor BUILD SUCCESSFUL. Остаток A5: аватар, обработка «username занят», witness.
 - **A5-edit-profile-data (lead).** Слой данных редактирования профиля: команды `setName`/`setBio`/
   `setUsername` (+payload/фабрики) и сериализатор; `EditProfileUseCase.updateName/updateBio/
   updateUsername` — trim, снятие `@`, лимиты (имя 64, био 70, username 5..32, латиница/цифры/`_`,

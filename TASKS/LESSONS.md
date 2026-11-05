@@ -1341,3 +1341,12 @@ Last updated: 2026-10-23
   as `AnyAppCommand`.
 - Status-vs-Ok responses differ per method; assert `@type === "ok"` explicitly instead of trusting a
   resolved promise.
+
+## 243. A settings header becomes tappable only after the raw fields exist
+
+- The settings page had only presentation strings (name/phone/initials); the editor needs raw first/last/
+  username/bio, so those are captured in `loadCurrentUser` next to the display values.
+- The page reads route params through `pageStack.getParamByName` in `aboutToAppear`; `onReady` is the only
+  place the stack becomes available, so params are read after it in practice for pushed pages.
+- Keep the save chain sequential: a rejected name must stop before username and bio, otherwise a partial
+  profile update looks successful.
