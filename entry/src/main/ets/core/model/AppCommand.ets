@@ -557,6 +557,28 @@ export class GetStoryCommand extends AppCommand {
   payload: GetStoryPayload = new GetStoryPayload();
 }
 
+export class SetStoryReactionPayload {
+  posterChatId: ChatId = 0;
+  storyId: number = 0;
+  // Chip key ('emoji:…' / 'custom:…'); empty removes the reaction.
+  reactionKey: string = '';
+  updateRecentReactions: boolean = true;
+}
+
+export class SetStoryReactionCommand extends AppCommand {
+  type: string = 'setStoryReaction';
+  payload: SetStoryReactionPayload = new SetStoryReactionPayload();
+}
+
+export class GetStoryAvailableReactionsCommand extends AppCommand {
+  type: string = 'getStoryAvailableReactions';
+  payload: GetStoryAvailableReactionsPayload = new GetStoryAvailableReactionsPayload();
+}
+
+export class GetStoryAvailableReactionsPayload {
+  rowSize: number = 12;
+}
+
 export class OpenChatCommand extends AppCommand {
   type: string = 'openChat';
   payload: OpenChatPayload = new OpenChatPayload();
@@ -1301,6 +1323,8 @@ export type AnyAppCommand =
   | LoadChatsCommand
   | LoadActiveStoriesCommand
   | GetStoryCommand
+  | SetStoryReactionCommand
+  | GetStoryAvailableReactionsCommand
   | OpenChatCommand
   | SetTdlibOnlineCommand
   | SendMessageCommand
@@ -1454,6 +1478,21 @@ export function createLoadChatsCommand(
 
 export function createLoadActiveStoriesCommand(): LoadActiveStoriesCommand {
   return new LoadActiveStoriesCommand();
+}
+
+export function createSetStoryReactionCommand(posterChatId: ChatId, storyId: number,
+  reactionKey: string): SetStoryReactionCommand {
+  const cmd = new SetStoryReactionCommand();
+  cmd.payload.posterChatId = posterChatId;
+  cmd.payload.storyId = storyId;
+  cmd.payload.reactionKey = reactionKey;
+  return cmd;
+}
+
+export function createGetStoryAvailableReactionsCommand(rowSize: number): GetStoryAvailableReactionsCommand {
+  const cmd = new GetStoryAvailableReactionsCommand();
+  cmd.payload.rowSize = rowSize;
+  return cmd;
 }
 
 export function createGetStoryCommand(posterChatId: ChatId, storyId: number): GetStoryCommand {

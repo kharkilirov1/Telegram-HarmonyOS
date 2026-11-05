@@ -7,9 +7,12 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppState } from '../../../core/model/AppState';
 import { createDownloadFileCommand } from '../../../core/model/AppCommand';
 import { StoryFullDto } from '../../../core/model/dto/StoryDto';
+import { MessageAvailableReactionsSnapshot } from '../../../core/model/dto/MessageDto';
 import { getAppCoreRuntime } from '../../../app/bootstrap/AppCoreRuntime';
 import { getTdGatewayAdapter } from '../../../infra/td/adapter/TdGatewayAdapter';
 import { LoadStoryUseCase, createLoadStoryUseCase } from '../../../domain/usecases/loadStory';
+import { GetStoryAvailableReactionsUseCase, createGetStoryAvailableReactionsUseCase } from '../../../domain/usecases/getStoryAvailableReactions';
+import { SetStoryReactionUseCase, createSetStoryReactionUseCase } from '../../../domain/usecases/setStoryReaction';
 import { AppStore } from '../../../core/store/AppStore';
 import { TdGatewayPort } from '../../../domain/ports/TdGatewayPort';
 import {
@@ -41,11 +44,14 @@ export struct TgStoryViewerPage {
   @Local private paused: boolean = false;
   @Local private progress: number = 0;
   @Local private topInset: number = TgUiTokens.STATUS_BAR_FALLBACK_INSET;
+  @Local private reactionKeys: string[] = [];
 
   private pageStack: NavPathStack = new NavPathStack();
   private store?: AppStore;
   private gateway?: TdGatewayPort;
   private loadStoryUseCase?: LoadStoryUseCase;
+  private availableReactionsUseCase?: GetStoryAvailableReactionsUseCase;
+  private setReactionUseCase?: SetStoryReactionUseCase;
   private unsubscribe?: () => void;
   private pageLifecycleToken: number = 0;
   private progressTimerId: number = -1;
@@ -64,6 +70,9 @@ export struct TgStoryViewerPage {
     this.store = store;
     this.gateway = getTdGatewayAdapter();
     this.loadStoryUseCase = createLoadStoryUseCase(store, getTdGatewayAdapter());
+    this.availableReactionsUseCase = createGetStoryAvailableReactionsUseCase(getTdGatewayAdapter());
+    this.setReactionUseCase = createSetStoryReactionUseCase(getTdGatewayAdapter());
+    this.loadReactionKeys();
     const token = this.pageLifecycleToken;
     let activeUnsubscribe: (() => void) | undefined = undefined;
     activeUnsubscribe = store.subscribe((newState: AppState, prevState: AppState) => {
@@ -87,6 +96,49 @@ export struct TgStoryViewerPage {
     this.store = undefined;
     this.gateway = undefined;
     this.loadStoryUseCase = undefined;
+    this.availableReactionsUseCase = undefined;
+    this.setReactionUseCase = undefined;
+  }
+
+  // I6: the story reaction row. Chips come from TDLib; keys are the same ones messages use.
+  private loadReactionKeys(): void {
+    const useCase = this.availableReactionsUseCase;
+    if (useCase === undefined) {
+      return;
+    }
+    const token = this.pageLifecycleToken;
+    useCase.load().then((snapshot: MessageAvailableReactionsSnapshot) => {
+      if (token !== this.pageLifecycleToken) {
+        return;
+      }
+      this.reactionKeys = snapshot.top.slice(0, 6);
+    }).catch((): void => {});
+  }
+
+  private reactionLabel(key: string): string {
+    if (key.startsWith('emoji:')) {
+      return key.substring('emoji:'.length);
+    }
+    return '★';
+  }
+
+  private toggleReaction(key: string): void {
+    const useCase = this.setReactionUseCase;
+    const story = this.story;
+    const storyId = this.currentStoryId();
+    if (useCase === undefined || story === undefined || storyId === 0) {
+      return;
+    }
+    const currentKey = story.chosenReactionKey;
+    const token = this.pageLifecycleToken;
+    useCase.execute(this.chatId, storyId, key, currentKey).then((accepted: boolean) => {
+      if (!accepted || token !== this.pageLifecycleToken) {
+        return;
+      }
+      const updated = story;
+      updated.chosenReactionKey = key === currentKey ? '' : key;
+      this.story = updated;
+    }).catch((): void => {});
   }
 
   private applyParams(params: StoryViewerRouteParams): void {
@@ -295,6 +347,27 @@ export struct TgStoryViewerPage {
   }
 
   @Builder
+  private buildReactionRow() {
+    Row() {
+      ForEach(this.reactionKeys, (key: string) => {
+        Text(this.reactionLabel(key))
+          .fontSize(TgUiTokens.STORY_REACTION_EMOJI_SIZE)
+          .padding(TgUiTokens.SPACE_4)
+          .borderRadius(TgUiTokens.STORY_REACTION_CHIP_RADIUS)
+          .backgroundColor(this.story !== undefined && this.story.chosenReactionKey === key
+            ? TgUiTokens.STORY_REACTION_CHOSEN_BG
+            : TgUiTokens.STORY_REACTION_CHIP_BG)
+          .onClick((): void => {
+            this.toggleReaction(key);
+          })
+      }, (key: string) => key)
+    }
+    .width('100%')
+    .justifyContent(FlexAlign.Center)
+    .padding({ bottom: TgUiTokens.SPACE_16 })
+  }
+
+  @Builder
   private buildContent() {
     Stack({ alignContent: Alignment.Center }) {
       if (this.story !== undefined && this.story.localPath.length > 0) {
@@ -365,6 +438,9 @@ export struct TgStoryViewerPage {
       Column() {
         this.buildHeader()
         this.buildContent()
+        if (this.reactionKeys.length > 0) {
+          this.buildReactionRow()
+        }
       }
       .width('100%')
       .height('100%')

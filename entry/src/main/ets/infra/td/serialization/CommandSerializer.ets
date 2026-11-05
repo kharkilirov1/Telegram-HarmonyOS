@@ -29,6 +29,8 @@ import {
   LoadChatsCommand,
   LoadActiveStoriesCommand,
   GetStoryCommand,
+  SetStoryReactionCommand,
+  GetStoryAvailableReactionsCommand,
   OpenChatCommand,
   SendMessageCommand,
   SendMediaMessageCommand,
@@ -120,6 +122,8 @@ COMMAND_SERIALIZATION_HANDLERS.set('resendAuthCode', serializeResendAuthCode);
 COMMAND_SERIALIZATION_HANDLERS.set('loadChats', serializeLoadChats);
 COMMAND_SERIALIZATION_HANDLERS.set('loadActiveStories', serializeLoadActiveStories);
   COMMAND_SERIALIZATION_HANDLERS.set('getStory', serializeGetStory);
+  COMMAND_SERIALIZATION_HANDLERS.set('setStoryReaction', serializeSetStoryReaction);
+  COMMAND_SERIALIZATION_HANDLERS.set('getStoryAvailableReactions', serializeGetStoryAvailableReactions);
 COMMAND_SERIALIZATION_HANDLERS.set('openChat', serializeOpenChat);
 COMMAND_SERIALIZATION_HANDLERS.set('sendMessage', serializeSendMessage);
 COMMAND_SERIALIZATION_HANDLERS.set('sendMediaMessage', serializeSendMediaMessage);
@@ -297,6 +301,25 @@ function serializeLoadChats(command: AnyAppCommand, result: SerializedCommand): 
   result.params.setNumber('limit', cmd.payload.limit);
 }
 
+// setStoryReaction (td_api.tl:12492): reaction_type is nullable, so an empty key serializes as null.
+function serializeSetStoryReaction(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as SetStoryReactionCommand;
+  result.method = 'setStoryReaction';
+  result.params.setString('story_poster_chat_id', cmd.payload.posterChatId.toString());
+  result.params.setNumber('story_id', cmd.payload.storyId);
+  const reactionJson = cmd.payload.reactionKey.length > 0
+    ? buildReactionTypeJsonObject(cmd.payload.reactionKey)
+    : 'null';
+  result.params.setString('_reaction_type_json', reactionJson);
+  result.params.setBool('update_recent_reactions', cmd.payload.updateRecentReactions);
+}
+
+function serializeGetStoryAvailableReactions(command: AnyAppCommand, result: SerializedCommand): void {
+  const cmd = command as GetStoryAvailableReactionsCommand;
+  result.method = 'getStoryAvailableReactions';
+  result.params.setNumber('row_size', cmd.payload.rowSize);
+}
+
 function serializeGetStory(command: AnyAppCommand, result: SerializedCommand): void {
   const cmd = command as GetStoryCommand;
   result.method = 'getStory';
@@ -409,27 +432,28 @@ function serializeSetChatMute(command: AnyAppCommand, result: SerializedCommand)
 
 // setMessageReactions chat_id:int53 message_id:int53 reaction_types:vector<ReactionType> is_big
 // (td_api.tl:11643). Chip keys are expanded here so the command layer never knows td_api shapes.
+function buildReactionTypeJsonObject(key: string): string {
+  if (key.startsWith('emoji:')) {
+    const emoji = key.substring('emoji:'.length);
+    if (emoji.length === 0) {
+      throw new Error('Invalid reaction emoji key');
+    }
+    return `{"@type":"reactionTypeEmoji","emoji":${JSON.stringify(emoji)}}`;
+  }
+  if (key.startsWith('custom:')) {
+    const customEmojiId = key.substring('custom:'.length);
+    if (!/^-?[1-9][0-9]{0,18}$/.test(customEmojiId)) {
+      throw new Error('Invalid custom reaction id');
+    }
+    return `{"@type":"reactionTypeCustomEmoji","custom_emoji_id":${JSON.stringify(customEmojiId)}}`;
+  }
+  throw new Error('Unsupported reaction key');
+}
+
 function buildReactionTypesJson(reactionKeys: string[]): string {
   const parts: string[] = [];
   for (const key of reactionKeys) {
-    if (key.startsWith('emoji:')) {
-      const emoji = key.substring('emoji:'.length);
-      if (emoji.length === 0) {
-        throw new Error('Invalid reaction emoji key');
-      }
-      parts.push(`{"@type":"reactionTypeEmoji","emoji":${JSON.stringify(emoji)}}`);
-      continue;
-    }
-    if (key.startsWith('custom:')) {
-      const customEmojiId = key.substring('custom:'.length);
-      // TDLib encodes int64 as a decimal string; reject anything that could round.
-      if (!/^-?[1-9][0-9]{0,18}$/.test(customEmojiId)) {
-        throw new Error('Invalid custom reaction id');
-      }
-      parts.push(`{"@type":"reactionTypeCustomEmoji","custom_emoji_id":${JSON.stringify(customEmojiId)}}`);
-      continue;
-    }
-    throw new Error('Unsupported reaction key');
+    parts.push(buildReactionTypeJsonObject(key));
   }
   return '[' + parts.join(',') + ']';
 }

@@ -59,6 +59,8 @@ export class StoryFullDto {
   minithumbnail: string = '';
   // Set once TDLib reports the media file as downloaded; empty until then.
   localPath: string = '';
+  // Chip key of the reaction chosen by the current user ('emoji:👍' / 'custom:<id>'), empty if none.
+  chosenReactionKey: string = '';
 }
 
 export function storyContentKey(posterChatId: number, storyId: number): string {

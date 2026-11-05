@@ -126,7 +126,8 @@ async function main() {
     ['parseStoryFull', 'registerStoryHandlers'],
     { ...accessors, StoryFullDto: S.StoryFullDto, ChatActiveStoriesDto: S.ChatActiveStoriesDto,
       StoryInfoDto: S.StoryInfoDto, createChatActiveStoriesUpdatedEvent: E.createChatActiveStoriesUpdatedEvent,
-      createStoryFullUpdatedEvent: E.createStoryFullUpdatedEvent });
+      createStoryFullUpdatedEvent: E.createStoryFullUpdatedEvent,
+      parseReactionTypeKey: () => '' });
   const photo = N.parseStoryFull(new TdObject(td));
   assert.equal(photo.storyId, 12);
   assert.equal(photo.posterChatId, 345);

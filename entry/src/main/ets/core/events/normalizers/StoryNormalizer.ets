@@ -13,6 +13,7 @@ import {
   StoryListType
 } from '../../model/dto/StoryDto';
 import { TdObject } from '../../../models/TdTypes';
+import { parseReactionTypeKey } from '../../model/dto/MessageDto';
 import {
   tdGetArray,
   tdGetBoolean,
@@ -98,6 +99,7 @@ export function parseStoryFull(story: TdObject): StoryFullDto {
   if (caption !== undefined) {
     dto.caption = tdGetString(caption, 'text');
   }
+  dto.chosenReactionKey = parseReactionTypeKey(tdGetObject(story, 'chosen_reaction_type'));
   const content = tdGetObject(story, 'content');
   const contentKind: StoryContentKind = content !== undefined ? storyContentKindFromTd(content) : 'unsupported';
   dto.kind = contentKind;

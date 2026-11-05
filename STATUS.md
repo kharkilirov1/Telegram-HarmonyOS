@@ -56,6 +56,13 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **I6-story-reactions (lead).** Реакции на истории: `StoryFullDto.chosenReactionKey` (парсинг через
+  общий `parseReactionTypeKey`), команды `setStoryReaction` (nullable `_reaction_type_json`, повторный
+  тап снимает реакцию) и `getStoryAvailableReactions`, сериализация с общим валидатором ключей,
+  `SetStoryReactionUseCase` (toggle) и `GetStoryAvailableReactionsUseCase`; во вьювере ряд эмодзи-чипов
+  с подсветкой выбранной и optimistic-обновлением. Новая суита `test-story-reaction.cjs` (148-я);
+  `test-story-content.cjs` получил заглушку нового парсера. Гейты: host **148/148**, оба smoke, hvigor
+  BUILD SUCCESSFUL. Остаток I6: публикация, статистика, ответ, witness.
 - **I6-story-viewer (lead).** Полноэкранный вьювер: `StoryViewerModel` (маршрут-параметры, клампы
   индекса, сегментный прогресс, next/prev, длительности фото/видео, renderability), `TgStoryViewerPage`
   (загрузка через `LoadStoryUseCase`, download-команда медиа, путь через filesReducer, сегменты,

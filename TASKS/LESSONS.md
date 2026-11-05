@@ -1513,3 +1513,11 @@ Last updated: 2026-10-23
   pre-scan that decides whether a clone is needed at all.
 - Finger coordinates in a TapGesture are unreliable for split zones; two explicit layout-weighted tap
   columns are simpler and testable.
+
+## 265. Reuse the reaction key vocabulary instead of inventing a story one
+
+- Stories and messages share `ReactionType` in TDLib, so keys stay `emoji:` / `custom:` and the
+  serializer validator is shared; only the empty case differs (story removal needs `null`, message
+  removal sends an empty array).
+- Toggling is a client decision: the same key as the current one means "remove", so the use case takes
+  both keys and the viewer never sends a reaction the user already has.
