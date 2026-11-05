@@ -56,6 +56,12 @@ that stands. [Report](docs/reviews/2026-10-21-arkgram-analysis.md)
 
 Documentation and repository structure were reconciled; no product code changed.
 
+- **H9-power-saving (lead).** `PowerModeMonitor` (`power.getPowerMode` → `isPowerSavingMode`, кеш и
+  флаг опроса, ошибка чтения не меняет политику) и гейт `TgsPlaybackPolicy.setPowerSaving` — в режиме
+  энергосбережения TGS не проигрывается ни на одной поверхности; EntryAbility сэмплит режим при старте.
+  Новая суита `test-power-saving.cjs` (145-я): классификация, сэмплинг/ошибки, гейт поверхностей,
+  проводка. Гейты: host **145/145**, оба smoke, hvigor BUILD SUCCESSFUL. Счётчики матрицы пересчитаны
+  (были устаревшие). Остаток H9: реакция на смену режима, autoplay видео/GIF, witness.
 - **I1-notification-grouping (lead).** Уведомления чата больше не копятся: `notificationIdFor` держит
   стабильный id на чат (новое сообщение заменяет запись), `groupName`/`appMessageId` из chatId,
   `badgeNumber` из unread (`notificationBadgeNumber`), `cancelForChat` при открытии чата и `cancelAll`;

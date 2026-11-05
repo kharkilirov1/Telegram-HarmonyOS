@@ -1484,3 +1484,10 @@ Last updated: 2026-10-23
   calls with try/catch so the probe path stays inert and production still cancels notifications.
 - A stable notification id per chat plus `groupName`/`appMessageId` gives replacement and grouping with
   the same keys; the badge count belongs to the policy, not the adapter.
+
+## 261. Counters in the matrix are a claim; recount before quoting
+
+- The capability matrix header carried numbers that no longer matched its rows (38/59/4 against a
+  quoted 39/58/8). Recount from the rows whenever the header is reported.
+- Power mode has no change subscription in the SDK: sample it on start and cache it, and treat a failed
+  read as "no change" so a transient permission error does not silently disable animation.

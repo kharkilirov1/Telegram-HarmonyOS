@@ -102,7 +102,21 @@ export class TgsPlaybackPolicy {
 
   // Playback needs a visible node on a surface that is allowed to animate.
   // The decoded cache is a separate concern and stays keyed by fileId only.
+  // H9: power saving suppresses animation work on every surface.
+  private static powerSaving: boolean = false;
+
+  static setPowerSaving(value: boolean): void {
+    TgsPlaybackPolicy.powerSaving = value;
+  }
+
+  static isPowerSaving(): boolean {
+    return TgsPlaybackPolicy.powerSaving;
+  }
+
   static shouldPlay(visible: boolean, surface: TgsPlaybackSurface): boolean {
+    if (TgsPlaybackPolicy.powerSaving) {
+      return false;
+    }
     return visible && TgsPlaybackPolicy.allowsAnimation(surface);
   }
 

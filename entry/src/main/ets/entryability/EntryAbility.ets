@@ -6,6 +6,8 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window, KeyboardAvoidMode } from '@kit.ArkUI';
 import { getAppCoreRuntime, resetAppCoreRuntime } from '../app/bootstrap/AppCoreRuntime';
 import { getMessageNotificationBridge } from '../app/notifications/MessageNotificationBridge';
+import { refreshPowerMode } from '../infra/device/PowerModeMonitor';
+import { TgsPlaybackPolicy } from '../ui/tg_ui/atoms/TgTgsPlayer';
 import { StorageKeys } from '../app/bridge/AppStoreBridge';
 import { getMessageCacheManager } from '../core/utils/MessageLruCache';
 import { setAppContext } from '../core/utils/AppResource';
@@ -60,7 +62,9 @@ export default class EntryAbility extends UIAbility {
         AppStorage.setOrCreate<string>(StorageKeys.GLASS_MODE, 'auto');
         hilog.info(DOMAIN, TAG, 'AppCoreRuntime initialized');
         // I1: ask for notification permission only after the pipeline is alive.
-        getMessageNotificationBridge().setActiveChatIdProvider((): number => navigationUIState.activeChatId);
+        // H9: power saving is sampled on start; a policy flip only affects new renders.
+      TgsPlaybackPolicy.setPowerSaving(refreshPowerMode());
+      getMessageNotificationBridge().setActiveChatIdProvider((): number => navigationUIState.activeChatId);
         runtime.setMessageNotificationSink(getMessageNotificationBridge());
         getMessageNotificationBridge().start(this.context).catch((error: Error): void => {
           hilog.warn(DOMAIN, TAG, 'Message notifications unavailable: %{public}s', error.message);
