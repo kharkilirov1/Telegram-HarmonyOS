@@ -1783,3 +1783,10 @@ Last updated: 2026-10-23
   made the bubble honest until a real map snapshot exists.
 - When a block is a placeholder, give it the cheapest truthful action first; the expensive renderer (Map Kit with
   an AGC key) can arrive later without changing the contract.
+
+## 297. A tap handler without a label is invisible to half the users
+
+- The three atoms that gained tap handlers in this run (location map, link preview, dice) were built from Texts
+  and an onClick: visually fine, but a screen reader read coordinates, title and glyph as unrelated fragments.
+- The fix is one line per atom: `accessibilityGroup(true)` collapses the subtree and `accessibilityText` states
+  the action plus its subject. Do it in the patch that adds the tap, not in a later sweep.
