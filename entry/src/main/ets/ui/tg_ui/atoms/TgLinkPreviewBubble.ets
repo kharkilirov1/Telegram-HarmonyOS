@@ -1,4 +1,5 @@
 import { TgUiTokens } from '../tokens/TgUiTokens';
+import { localized } from '../../../core/utils/AppResource';
 
 @ComponentV2
 export struct TgLinkPreviewBubble {
@@ -16,6 +17,12 @@ export struct TgLinkPreviewBubble {
   @Param availableWidth: number = TgUiTokens.LINK_PREVIEW_MIN_WIDTH;
   // The preview is a link: iOS opens the URL when the card is tapped.
   @Event onPreviewPress: (url: string) => void = (_: string) => {};
+
+  private previewAccessibilityLabel(): string {
+    const action = localized($r('app.string.accessibility_open_link').id, 'Open link');
+    const name = this.title.trim().length > 0 ? this.title : (this.displayUrl.trim().length > 0 ? this.displayUrl : this.url);
+    return action + ': ' + name;
+  }
 
   private accentColor(): ResourceColor {
     return this.isOutgoing ? TgUiTokens.LINK_PREVIEW_ACCENT_OUTGOING
@@ -208,5 +215,8 @@ export struct TgLinkPreviewBubble {
         this.onPreviewPress(this.url);
       }
     })
+    // J4: one control, labelled with what opening it leads to.
+    .accessibilityGroup(true)
+    .accessibilityText(this.previewAccessibilityLabel())
   }
 }

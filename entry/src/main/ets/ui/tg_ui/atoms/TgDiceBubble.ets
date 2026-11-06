@@ -2,6 +2,7 @@
 // value change the way iOS shows it. Tokens only, no layout magic numbers.
 
 import { TgUiTokens } from '../tokens/TgUiTokens';
+import { localized } from '../../../core/utils/AppResource';
 
 @ComponentV2
 export struct TgDiceBubble {
@@ -38,6 +39,11 @@ export struct TgDiceBubble {
     return this.emoji.length > 0 ? this.emoji : '🎲';
   }
 
+  private diceAccessibilityLabel(): string {
+    const action = localized($r('app.string.accessibility_dice').id, 'Dice');
+    return action + ': ' + this.value;
+  }
+
   build() {
     Column() {
       Text(this.displayEmoji())
@@ -62,5 +68,6 @@ export struct TgDiceBubble {
     }
     .alignItems(HorizontalAlign.Center)
     .padding(TgUiTokens.DICE_BUBBLE_PADDING)
+      .accessibilityText(this.diceAccessibilityLabel())
   }
 }

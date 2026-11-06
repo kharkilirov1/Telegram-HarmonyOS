@@ -2,6 +2,7 @@
 // Layout: Map placeholder (2:1 aspect) + optional venue title/address
 
 import { TgUiTokens } from '../tokens/TgUiTokens';
+import { localized } from '../../../core/utils/AppResource';
 
 @ComponentV2
 export struct TgLocationBubble {
@@ -16,6 +17,12 @@ export struct TgLocationBubble {
 
   private hasVenue(): boolean {
     return this.venueTitle.length > 0;
+  }
+
+  private accessibilityLabel(): string {
+    const action = localized($r('app.string.accessibility_open_location').id, 'Open location');
+    const place = this.hasVenue() ? this.venueTitle : this.coordsText();
+    return action + ': ' + place;
   }
 
   private coordsText(): string {
@@ -52,6 +59,9 @@ export struct TgLocationBubble {
       .onClick((): void => {
         this.onLocationPress(this.latitude, this.longitude);
       })
+      // J4: the placeholder map is one control for screen readers, not a pile of Texts.
+      .accessibilityGroup(true)
+      .accessibilityText(this.accessibilityLabel())
 
       // Venue info (if available)
       if (this.hasVenue()) {

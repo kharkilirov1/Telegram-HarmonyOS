@@ -37,6 +37,18 @@
       "value": "Завтра в 9:00"
     },
     {
+      "name": "accessibility_open_location",
+      "value": "Открыть место"
+    },
+    {
+      "name": "accessibility_open_link",
+      "value": "Открыть ссылку"
+    },
+    {
+      "name": "accessibility_dice",
+      "value": "Кубик"
+    },
+    {
       "name": "contact_card_added",
       "value": "Контакт добавлен"
     },

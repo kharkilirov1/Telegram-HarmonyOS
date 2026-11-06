@@ -37,6 +37,18 @@
       "value": "明天 9:00"
     },
     {
+      "name": "accessibility_open_location",
+      "value": "打开位置"
+    },
+    {
+      "name": "accessibility_open_link",
+      "value": "打开链接"
+    },
+    {
+      "name": "accessibility_dice",
+      "value": "骰子"
+    },
+    {
       "name": "contact_card_added",
       "value": "已添加联系人"
     },
